@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Discrete and Process Production Schema Filters Implementation (July 29, 2025)**:
+- **NEW FILTERS ADDED**: Created two specialized manufacturing filters for focused data exploration
+- **Discrete Production Filter**: Bills of materials, routings, discrete operations, BOM-based production workflows, quality inspections for discrete manufacturing
+- **Process Production Filter**: Recipes, ingredients, material requirements, process operations, recipe-based workflows, batch records, process parameters
+- **Manufacturing Specialization**: Each filter focuses on specific manufacturing paradigm - discrete (BOM + routing) vs process (recipe-based)
+- **Production Infrastructure**: Both filters include shared elements like production orders, production versions, resources, work centers, capabilities
+- **Quality Integration**: Discrete filter includes quality inspections for manufactured items, process filter includes process parameters and batch quality control
+- **Focused Data Exploration**: Users can now filter schema view to see only tables relevant to their specific manufacturing approach
+- **Clear Labeling**: Discrete Production (BOM + Routing) and Process Production (Recipe-based) for immediate user understanding
+- Enhanced manufacturing teams' ability to explore database schema based on their specific production methodology and workflow requirements
+
 ✓ **Engineering Schema Filter Enhancement for Process Manufacturing (July 29, 2025)**:
 - **COMPREHENSIVE UPDATE**: Enhanced Engineering & Product Design filter to include all process manufacturing tables discussed recently
 - **Process Manufacturing Tables**: Added recipes, recipe_operations, recipe_phases, recipe_operation_relationships, recipe_material_assignments, recipe_formulas, ingredients, material_requirements, process_operations

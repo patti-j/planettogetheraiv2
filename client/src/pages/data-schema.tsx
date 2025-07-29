@@ -331,6 +331,38 @@ const featureTableMapping: Record<string, string[]> = {
     'financial_periods', 'exchange_rates', 'price_changes', 'cost_rollups',
     'profitability_analysis'
   ],
+  'discrete_production': [
+    // Discrete Manufacturing (BOM + Routing based)
+    'bills_of_material', 'bom_items', 'bom_material_requirements', 'bom_product_outputs',
+    'routings', 'routing_operations', 'discrete_operations',
+    // Production control for discrete manufacturing
+    'production_orders', 'production_versions', 'planned_orders',
+    // Resources and infrastructure
+    'work_centers', 'resources', 'resource_capabilities', 'capabilities', 'resource_requirements',
+    // Products and items
+    'items', 'products', 'product_structures', 'product_categories',
+    // Planning and scheduling
+    'shift_templates', 'resource_shift_assignments', 'capacity_planning_scenarios',
+    // Quality for discrete
+    'quality_inspections', 'quality_specifications'
+  ],
+  'process_production': [
+    // Process Manufacturing (Recipe-based)
+    'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 
+    'recipe_material_assignments', 'recipe_formulas', 'process_operations',
+    // Ingredients and materials for process manufacturing
+    'ingredients', 'material_requirements',
+    // Production control for process manufacturing
+    'production_orders', 'production_versions', 'planned_orders',
+    // Resources and infrastructure
+    'work_centers', 'resources', 'resource_capabilities', 'capabilities', 'resource_requirements',
+    // Plants and storage for process manufacturing
+    'plants', 'storage_locations',
+    // Quality for process manufacturing
+    'quality_inspections', 'quality_specifications', 'process_parameters',
+    // Batch and lot tracking
+    'production_lots', 'batch_records'
+  ],
   'engineering': [
     // Process Manufacturing (Recipe-based)
     'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'recipe_formulas',
@@ -361,6 +393,8 @@ const availableFeatures = [
   { value: 'sales', label: 'Sales & Orders' },
   { value: 'purchasing', label: 'Purchasing & Procurement' },
   { value: 'finance', label: 'Financial Management' },
+  { value: 'discrete_production', label: 'Discrete Production (BOM + Routing)' },
+  { value: 'process_production', label: 'Process Production (Recipe-based)' },
   { value: 'engineering', label: 'Engineering & Product Design' }
 ];
 
