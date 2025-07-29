@@ -978,8 +978,45 @@ function DataSchemaViewContent() {
               markerEnd: markerEnd
             });
 
-            // Add source cardinality indicator positioned near source table (25% along edge)
-            if (sourceLabel) {
+            // Create two separate edges with positioned labels for better cardinality indication
+            if (rel.type === 'many-to-many' || rel.type === 'one-to-many' || rel.type === 'one-to-one') {
+              // Remove the main edge we just added and replace with two positioned label edges
+              flowEdges.pop();
+              
+              // Determine source and target labels
+              let sourceCardinalityLabel = '';
+              let targetCardinalityLabel = '';
+              
+              if (rel.type === 'many-to-many') {
+                sourceCardinalityLabel = '∞';
+                targetCardinalityLabel = '∞';
+              } else if (rel.type === 'one-to-many') {
+                sourceCardinalityLabel = '1';
+                targetCardinalityLabel = '∞';
+              } else if (rel.type === 'one-to-one') {
+                sourceCardinalityLabel = '1';
+                targetCardinalityLabel = '1';
+              }
+              
+              // Create the main relationship line without labels
+              flowEdges.push({
+                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
+                source: rel.fromTable,
+                target: rel.toTable,
+                type: edgeType,
+                animated: !!isHighlighted,
+                style: { 
+                  stroke: edgeColor,
+                  strokeWidth: isHighlighted ? 6 : 3,
+                  opacity: focusMode && !isHighlighted ? 0.2 : 0.9,
+                  strokeDasharray: strokeDasharray,
+                  filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.5))' : 'drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.1))',
+                },
+                markerStart: markerStart,
+                markerEnd: markerEnd
+              });
+              
+              // Add source cardinality label edge - positioned closer to source
               flowEdges.push({
                 id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-source-label`,
                 source: rel.fromTable,
@@ -988,35 +1025,31 @@ function DataSchemaViewContent() {
                 style: { 
                   stroke: 'transparent',
                   strokeWidth: 0,
-                  opacity: 0,
                 },
-                label: sourceLabel,
+                label: sourceCardinalityLabel,
                 labelStyle: {
-                  fontSize: isHighlighted ? 16 : 14,
+                  fontSize: '20px',
                   fill: isHighlighted ? '#1e40af' : '#374151',
                   fontWeight: 'bold',
                   backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
                   border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
                   fontFamily: 'monospace',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 },
                 labelBgStyle: {
                   fill: 'rgba(255, 255, 255, 0.95)',
                   fillOpacity: 0.95,
+                  rx: 6,
+                  ry: 6,
                 },
-                // Position closer to source
                 labelShowBg: true,
-                data: { 
-                  sourceLabel: true,
-                  // Move label 25% from source toward target
-                  labelPosition: 0.25
-                }
+                // This positions the label closer to the source node
+                data: { labelPosition: 0.2 }
               });
-            }
-
-            // Add target cardinality indicator positioned near target table (75% along edge)  
-            if (targetLabel) {
+              
+              // Add target cardinality label edge - positioned closer to target
               flowEdges.push({
                 id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-target-label`,
                 source: rel.fromTable,
@@ -1025,30 +1058,28 @@ function DataSchemaViewContent() {
                 style: { 
                   stroke: 'transparent',
                   strokeWidth: 0,
-                  opacity: 0,
                 },
-                label: targetLabel,
+                label: targetCardinalityLabel,
                 labelStyle: {
-                  fontSize: isHighlighted ? 16 : 14,
+                  fontSize: '20px',
                   fill: isHighlighted ? '#1e40af' : '#374151',
                   fontWeight: 'bold',
                   backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
                   border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
                   fontFamily: 'monospace',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 },
                 labelBgStyle: {
                   fill: 'rgba(255, 255, 255, 0.95)',
                   fillOpacity: 0.95,
+                  rx: 6,
+                  ry: 6,
                 },
-                // Position closer to target
                 labelShowBg: true,
-                data: { 
-                  targetLabel: true,
-                  // Move label 75% from source toward target
-                  labelPosition: 0.75
-                }
+                // This positions the label closer to the target node
+                data: { labelPosition: 0.8 }
               });
             }
           }
