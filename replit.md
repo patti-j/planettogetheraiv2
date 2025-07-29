@@ -2,16 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
-✓ **Complete Production Versions SAP Manufacturing Hierarchy Implementation (July 29, 2025)**:
+✓ **Complete Production Versions SAP Manufacturing Hierarchy Implementation & Cardinality Marker Endpoint Positioning Fix (July 29, 2025)**:
 - Successfully implemented complete SAP-style manufacturing hierarchy with both BOM and routing relationships to production versions
 - Added bomId foreign key to production_versions table alongside existing routingId for complete discrete manufacturing support
 - Enhanced Drizzle ORM relations: productionVersions now link to both BOMs and routings, with bidirectional relationships
 - Bills of materials and routings both reference production versions through one-to-many relationships
 - Production versions now support complete SAP manufacturing approaches: routingId + bomId (discrete) OR recipeId (process)
 - Created sample data: PV-001 uses BOM-001 and routing for TABLET-500MG, PV-002 uses BOM-002 and routing for ADHESIVE-INDUSTRIAL
-- Fixed relationship direction detection in Data Schema View - cardinality markers correctly show parent vs child relationships
+- Fixed cardinality marker positioning from 0.2/0.8 to 0.05/0.95 for proper endpoint visibility near actual table connections
+- Green "1" and Red "∞" markers now appear at relationship line endpoints (5% and 95% positions) for immediate visual clarity
 - Manufacturing hierarchy complete: Production Order → Production Version → BOM + Routing (discrete) OR Recipe (process)
-- Green "1" markers indicate parent tables, Red "∞" markers indicate child tables for clear relationship understanding
+- Cardinality indicators positioned at actual line endpoints showing clear parent-child relationships at table connection points
 
 ## Recent Changes (July 29, 2025)
 

@@ -1070,8 +1070,8 @@ function DataSchemaViewContent() {
                   ry: 6,
                 },
                 labelShowBg: true,
-                // This positions the label closer to the source node
-                data: { labelPosition: 0.2 }
+                // This positions the label very close to the source node endpoint
+                data: { labelPosition: 0.05 }
               });
               
               // Add target cardinality label edge - positioned closer to target
@@ -1104,8 +1104,8 @@ function DataSchemaViewContent() {
                   ry: 6,
                 },
                 labelShowBg: true,
-                // This positions the label closer to the target node
-                data: { labelPosition: 0.8 }
+                // This positions the label very close to the target node endpoint
+                data: { labelPosition: 0.95 }
               });
             }
           }
