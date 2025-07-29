@@ -349,7 +349,7 @@ const featureTableMapping: Record<string, string[]> = {
     // Products and items
     'items', 'products', 'product_structures', 'product_categories',
     // Planning and scheduling
-    'shift_templates', 'resource_shift_assignments', 'capacity_planning_scenarios',
+    'shift_templates', 'resource_shift_assignments',
     // Quality for discrete
     'quality_inspections', 'quality_specifications'
   ],
