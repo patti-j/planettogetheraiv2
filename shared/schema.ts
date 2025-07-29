@@ -31,6 +31,8 @@ export const resources = pgTable("resources", {
   // Removed isShared and sharedPlants - now handled by multiple entries in plantResources table
 });
 
+
+
 // Junction table for many-to-many relationship between plants and resources
 export const plantResources = pgTable("plant_resources", {
   id: serial("id").primaryKey(),
@@ -6454,6 +6456,34 @@ export const workCenters = pgTable("work_centers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Many-to-many junction table: Work Centers ↔ Resources
+export const workCenterResources = pgTable("work_center_resources", {
+  id: serial("id").primaryKey(),
+  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  isPrimary: boolean("is_primary").default(true), // Indicates if this is the primary work center for this resource
+  allocationPercentage: integer("allocation_percentage").default(100), // percentage of resource allocated to this work center
+  effectiveDate: timestamp("effective_date").defaultNow(),
+  endDate: timestamp("end_date"), // null = no end date
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  workCenterResourceUnique: unique().on(table.workCenterId, table.resourceId),
+}));
+
+// Many-to-many junction table: Departments ↔ Resources (for shared resources)
+export const departmentResources = pgTable("department_resources", {
+  id: serial("id").primaryKey(),
+  departmentId: integer("department_id").references(() => departments.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  allocationPercentage: integer("allocation_percentage").default(100), // percentage of resource allocated to this department
+  costAllocationMethod: text("cost_allocation_method").default("percentage"), // percentage, hours, activity_based
+  effectiveDate: timestamp("effective_date").defaultNow(),
+  endDate: timestamp("end_date"), // null = no end date
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  departmentResourceUnique: unique().on(table.departmentId, table.resourceId),
+}));
+
 // Employees - personnel who can be assigned to work centers or used as resources
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
@@ -7066,6 +7096,8 @@ export const plantsRelations = relations(plants, ({ many }) => ({
 // Resources Relations
 export const resourcesRelations = relations(resources, ({ many }) => ({
   plantResources: many(plantResources),
+  workCenterResourceLinks: many(workCenterResources), // Many-to-many relationship with work centers
+  departmentResourceLinks: many(departmentResources), // Many-to-many relationship with departments
 }));
 
 // Plant Resources Junction Table Relations
@@ -7076,6 +7108,30 @@ export const plantResourcesRelations = relations(plantResources, ({ one }) => ({
   }),
   resource: one(resources, {
     fields: [plantResources.resourceId],
+    references: [resources.id],
+  }),
+}));
+
+// Work Center Resources Junction Table Relations
+export const workCenterResourcesRelations = relations(workCenterResources, ({ one }) => ({
+  workCenter: one(workCenters, {
+    fields: [workCenterResources.workCenterId],
+    references: [workCenters.id],
+  }),
+  resource: one(resources, {
+    fields: [workCenterResources.resourceId],
+    references: [resources.id],
+  }),
+}));
+
+// Department Resources Junction Table Relations
+export const departmentResourcesRelations = relations(departmentResources, ({ one }) => ({
+  department: one(departments, {
+    fields: [departmentResources.departmentId],
+    references: [departments.id],
+  }),
+  resource: one(resources, {
+    fields: [departmentResources.resourceId],
     references: [resources.id],
   }),
 }));
@@ -7091,6 +7147,7 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
   }),
   workCenters: many(workCenters),
   employees: many(employees),
+  departmentResourceLinks: many(departmentResources), // Many-to-many relationship with resources
 }));
 
 export const workCentersRelations = relations(workCenters, ({ one, many }) => ({
@@ -7104,6 +7161,7 @@ export const workCentersRelations = relations(workCenters, ({ one, many }) => ({
   }),
   employees: many(employees),
   routingOperations: many(routingOperations),
+  workCenterResourceLinks: many(workCenterResources), // Many-to-many relationship with resources
 }));
 
 export const employeesRelations = relations(employees, ({ one }) => ({
@@ -7635,6 +7693,22 @@ export const insertWorkCenterSchema = createInsertSchema(workCenters).omit({
   createdAt: true,
 });
 
+export const insertWorkCenterResourceSchema = createInsertSchema(workCenterResources).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]).optional(),
+  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDepartmentResourceSchema = createInsertSchema(departmentResources).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  effectiveDate: z.union([z.string().datetime(), z.date()]).optional(),
+  endDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,
   createdAt: true,
@@ -7811,6 +7885,12 @@ export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 
 export type WorkCenter = typeof workCenters.$inferSelect;
 export type InsertWorkCenter = z.infer<typeof insertWorkCenterSchema>;
+
+export type WorkCenterResource = typeof workCenterResources.$inferSelect;
+export type InsertWorkCenterResource = z.infer<typeof insertWorkCenterResourceSchema>;
+
+export type DepartmentResource = typeof departmentResources.$inferSelect;
+export type InsertDepartmentResource = z.infer<typeof insertDepartmentResourceSchema>;
 
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;

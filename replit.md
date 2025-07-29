@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Departments & Work Centers Many-to-Many Resource Relationships Implementation (July 29, 2025)**:
+- **ORGANIZATIONAL STRUCTURE ENHANCED**: Successfully implemented departments and work_centers tables with proper many-to-many relationships to resources following ERP best practices
+- **JUNCTION TABLES CREATED**: Added work_center_resources and department_resources junction tables enabling flexible resource allocation across organizational units
+- **COMPREHENSIVE DATABASE SCHEMA**: Departments link to plants and contain work centers, work centers belong to departments and link to resources with allocation percentages
+- **MANY-TO-MANY RELATIONSHIPS**: Resources can be shared across multiple departments and work centers with different allocation percentages and cost allocation methods
+- **COMPLETE DRIZZLE ORM INTEGRATION**: Added insert schemas, TypeScript types, and bidirectional relations for all new tables and junction relationships
+- **SAMPLE DATA CREATED**: Manufacturing, Quality Control, and Maintenance departments with Production Lines, Assembly Lines, and Testing Stations work centers
+- **RESOURCE ALLOCATION DEMONSTRATED**: Reactor 1, Tablet Press 1, Filling Line A, Cleanroom #1, and HPLC System allocated across work centers and departments
+- **ADVANCED ALLOCATION TRACKING**: Junction tables support allocation percentages, effective dates, end dates, cost allocation methods, and primary resource flags
+- **DATABASE MIGRATION COMPLETED**: All tables created successfully with proper foreign key constraints and unique indexes
+- **ERP COMPLIANCE**: System now follows standard manufacturing organizational hierarchy - plants → departments → work centers → resources with many-to-many allocation
+- Enhanced manufacturing ERP capabilities by providing complete organizational resource allocation system enabling pharmaceutical and industrial manufacturing workflows with detailed department and work center resource management
+
 ✓ **Sales Orders Customer Relationship Implementation - Proper CRM Integration (July 29, 2025)**:
 - **CUSTOMER FOREIGN KEY ADDED**: Enhanced sales_orders table with customerId foreign key linking to customers table for proper customer relationship management
 - **SCHEMA RELATIONSHIPS UPDATED**: Updated Drizzle ORM relations - sales orders now properly link to customers, customers have many sales orders relationship
