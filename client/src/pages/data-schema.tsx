@@ -54,7 +54,8 @@ import {
   Settings,
   Plus,
   Minus,
-  RefreshCw
+  RefreshCw,
+  Flag
 } from "lucide-react";
 
 // Custom edge component for relationships with cardinality labels
@@ -177,13 +178,15 @@ interface SchemaRelationship {
 
 // Custom node component for database tables
 const TableNode = ({ data }: { data: any }) => {
-  const { table, showColumns, showRelationships, isFocused, isConnected } = data;
+  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect } = data;
   
   const getCardClassName = () => {
     let baseClasses = "min-w-[250px] max-w-[350px] shadow-lg border-2 transition-all duration-200";
     
     if (isFocused) {
       return `${baseClasses} ring-4 ring-blue-500 ring-opacity-50 border-blue-500 scale-105`;
+    } else if (isSelected) {
+      return `${baseClasses} ring-2 ring-green-500 ring-opacity-50 border-green-500 bg-green-50/30`;
     } else if (isConnected) {
       return `${baseClasses} border-blue-300 bg-blue-50/30`;
     } else {
@@ -194,6 +197,8 @@ const TableNode = ({ data }: { data: any }) => {
   const getCardStyle = () => {
     if (isFocused || isConnected) {
       return { borderColor: '#3b82f6' };
+    } else if (isSelected) {
+      return { borderColor: '#10b981' };
     } else {
       return { borderColor: getCategoryColor(table.category) };
     }
@@ -205,10 +210,24 @@ const TableNode = ({ data }: { data: any }) => {
         <CardTitle className="flex items-center gap-2 text-sm">
           <Table className="w-4 h-4" />
           {table.name}
-          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
-          <Badge variant="outline" className="text-xs">
-            {table.category}
-          </Badge>
+          <div className="flex items-center gap-2 ml-auto">
+            {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
+            {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white">SELECTED</Badge>}
+            <Badge variant="outline" className="text-xs">
+              {table.category}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 w-6 p-0 ${isSelected ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect?.(table.name);
+              }}
+            >
+              <Flag className={`w-4 h-4 ${isSelected ? 'fill-current' : ''}`} />
+            </Button>
+          </div>
         </CardTitle>
         {table.description && (
           <p className="text-xs text-gray-600 mt-1">{table.description}</p>
@@ -587,6 +606,20 @@ function DataSchemaViewContent() {
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [tableSelectorSearch, setTableSelectorSearch] = useState("");
   
+  // Card-based selection for relationship filtering - separate from table selector
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
+  
+  // Handler for card selection via flag icon
+  const handleCardSelection = useCallback((tableName: string) => {
+    setSelectedCards(prev => {
+      if (prev.includes(tableName)) {
+        return prev.filter(name => name !== tableName);
+      } else {
+        return [...prev, tableName];
+      }
+    });
+  }, []);
+  
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
     try {
@@ -958,6 +991,7 @@ function DataSchemaViewContent() {
     const flowNodes: Node[] = filteredTables.map(table => {
       const isFocused = focusMode && table.name === focusTable;
       const isConnected = focusMode && focusTable && connectedTableNames.includes(table.name) && table.name !== focusTable;
+      const isSelected = selectedCards.includes(table.name);
       
       return {
         id: table.name,
@@ -969,7 +1003,9 @@ function DataSchemaViewContent() {
           showRelationships,
           isFocused,
           isConnected,
-          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected }} />
+          isSelected,
+          onSelect: handleCardSelection,
+          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect: handleCardSelection }} />
         },
         style: {
           background: 'transparent',
@@ -994,6 +1030,14 @@ function DataSchemaViewContent() {
               return;
             }
             processedRelationships.add(relationshipKey);
+            
+            // If cards are selected, only show relationships between selected cards
+            if (selectedCards.length > 0) {
+              if (!selectedCards.includes(rel.fromTable) || !selectedCards.includes(rel.toTable)) {
+                return;
+              }
+            }
+            
             const isHighlighted = focusMode && focusTable && 
               (rel.fromTable === focusTable || rel.toTable === focusTable || 
                (connectedTableNames.includes(rel.fromTable) && connectedTableNames.includes(rel.toTable)));
@@ -1143,7 +1187,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, handleCardSelection]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
@@ -1708,6 +1752,29 @@ function DataSchemaViewContent() {
           </div>
         )}
         
+        {/* Card Selection Status - shows when cards are selected for relationship analysis */}
+        {selectedCards.length > 0 && !isFullScreen && (
+          <div className="flex items-center justify-between gap-4 mt-2 pt-2 border-t border-green-200 bg-green-50/30 px-3 py-2 rounded">
+            <div className="flex items-center gap-2">
+              <Flag className="w-4 h-4 text-green-600" />
+              <Label className="text-sm text-green-800 font-medium">
+                {selectedCards.length} card{selectedCards.length !== 1 ? 's' : ''} selected for relationship analysis
+              </Label>
+              <Badge variant="outline" className="text-xs border-green-300 text-green-700">
+                {selectedCards.join(', ')}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedCards([])}
+              className="text-green-700 hover:text-green-800 hover:bg-green-100"
+            >
+              Clear Selection
+            </Button>
+          </div>
+        )}
+        
         {/* Show Related Tables Toggle - appears when tables are selected */}
         {selectedTables.length > 0 && !isFullScreen && (
           <div className="flex items-center gap-4 mt-2 pt-2 border-t border-gray-200">
@@ -2008,6 +2075,16 @@ function DataSchemaViewContent() {
                     <div className="flex items-center gap-2">
                       <span className="text-red-500">*</span>
                       <span>Required Field</span>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-3" />
+                  
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Card Selection:</h4>
+                    <div className="flex items-center gap-2">
+                      <Flag className="w-3 h-3 text-green-600" />
+                      <span className="text-xs">Click flag to select cards for focused relationship analysis</span>
                     </div>
                   </div>
                   
