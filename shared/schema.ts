@@ -6622,6 +6622,56 @@ export const salesOrderLines = pgTable("sales_order_lines", {
   salesOrderLineIdx: unique().on(table.salesOrderId, table.lineNumber),
 }));
 
+// Sales order line distributions - track how much is or was shipped from the full line qty at various dates
+export const salesOrderLineDistributions = pgTable("sales_order_line_distributions", {
+  id: serial("id").primaryKey(),
+  salesOrderLineId: integer("sales_order_line_id").references(() => salesOrderLines.id).notNull(),
+  distributionNumber: integer("distribution_number").notNull(), // Sequential number for this line
+  shippedQuantity: integer("shipped_quantity").notNull(),
+  shipmentDate: timestamp("shipment_date").notNull(),
+  storageLocationId: integer("storage_location_id").references(() => storageLocations.id),
+  carrierName: text("carrier_name"),
+  trackingNumber: text("tracking_number"),
+  shippingMethod: text("shipping_method"), // ground, air, express, freight
+  status: text("status").notNull().default("planned"), // planned, picked, packed, shipped, delivered, returned
+  actualDeliveryDate: timestamp("actual_delivery_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  salesOrderLineDistributionIdx: unique().on(table.salesOrderLineId, table.distributionNumber),
+  shipmentDateIdx: index("sales_order_line_distributions_shipment_date_idx").on(table.shipmentDate),
+  statusIdx: index("sales_order_line_distributions_status_idx").on(table.status),
+}));
+
+// Stocks table - indicates how much of an item is in stock (linked to storage_locations and other tables)
+export const stocks = pgTable("stocks", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
+  quantityOnHand: integer("quantity_on_hand").notNull().default(0),
+  quantityReserved: integer("quantity_reserved").default(0), // Reserved for sales orders
+  quantityAvailable: integer("quantity_available").notNull().default(0), // On hand - reserved
+  unitCost: integer("unit_cost").default(0), // in cents - current average unit cost
+  totalValue: integer("total_value").default(0), // in cents - quantity * unit cost
+  minimumLevel: integer("minimum_level").default(0), // Reorder point
+  maximumLevel: integer("maximum_level").default(0), // Maximum stock level
+  lastCountDate: timestamp("last_count_date"), // Last physical inventory count
+  lastReceiptDate: timestamp("last_receipt_date"), // Last receipt/adjustment
+  lastIssueDate: timestamp("last_issue_date"), // Last issue/shipment
+  lotControl: boolean("lot_control").default(false), // Whether this item uses lot tracking
+  serialControl: boolean("serial_control").default(false), // Whether this item uses serial tracking
+  status: text("status").notNull().default("active"), // active, inactive, blocked, quarantine
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  stocksItemLocationIdx: unique().on(table.itemId, table.storageLocationId), // One stock record per item per location
+  quantityOnHandIdx: index("stocks_quantity_on_hand_idx").on(table.quantityOnHand),
+  quantityAvailableIdx: index("stocks_quantity_available_idx").on(table.quantityAvailable),
+  statusIdx: index("stocks_status_idx").on(table.status),
+}));
+
 // Purchase orders to suppliers
 export const purchaseOrders = pgTable("purchase_orders", {
   id: serial("id").primaryKey(),
@@ -7095,6 +7145,8 @@ export const storageLocationsRelations = relations(storageLocations, ({ one, man
   }),
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
+  stocks: many(stocks),
+  salesOrderLineDistributions: many(salesOrderLineDistributions),
   transferOrdersFrom: many(transferOrders, { relationName: "fromStorageLocation" }),
   transferOrdersTo: many(transferOrders, { relationName: "toStorageLocation" }),
 }));
@@ -7129,7 +7181,7 @@ export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
   lines: many(salesOrderLines),
 }));
 
-export const salesOrderLinesRelations = relations(salesOrderLines, ({ one }) => ({
+export const salesOrderLinesRelations = relations(salesOrderLines, ({ one, many }) => ({
   salesOrder: one(salesOrders, {
     fields: [salesOrderLines.salesOrderId],
     references: [salesOrders.id],
@@ -7137,6 +7189,29 @@ export const salesOrderLinesRelations = relations(salesOrderLines, ({ one }) => 
   item: one(items, {
     fields: [salesOrderLines.itemId],
     references: [items.id],
+  }),
+  distributions: many(salesOrderLineDistributions),
+}));
+
+export const salesOrderLineDistributionsRelations = relations(salesOrderLineDistributions, ({ one }) => ({
+  salesOrderLine: one(salesOrderLines, {
+    fields: [salesOrderLineDistributions.salesOrderLineId],
+    references: [salesOrderLines.id],
+  }),
+  storageLocation: one(storageLocations, {
+    fields: [salesOrderLineDistributions.storageLocationId],
+    references: [storageLocations.id],
+  }),
+}));
+
+export const stocksRelations = relations(stocks, ({ one }) => ({
+  item: one(items, {
+    fields: [stocks.itemId],
+    references: [items.id],
+  }),
+  storageLocation: one(storageLocations, {
+    fields: [stocks.storageLocationId],
+    references: [storageLocations.id],
   }),
 }));
 
@@ -7575,6 +7650,25 @@ export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines).om
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
+export const insertSalesOrderLineDistributionSchema = createInsertSchema(salesOrderLineDistributions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  shipmentDate: z.union([z.string().datetime(), z.date()]),
+  actualDeliveryDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertStockSchema = createInsertSchema(stocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  lastCountDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastReceiptDate: z.union([z.string().datetime(), z.date()]).optional(),
+  lastIssueDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
   id: true,
   createdAt: true,
@@ -7700,6 +7794,12 @@ export type InsertSalesOrder = z.infer<typeof insertSalesOrderSchema>;
 
 export type SalesOrderLine = typeof salesOrderLines.$inferSelect;
 export type InsertSalesOrderLine = z.infer<typeof insertSalesOrderLineSchema>;
+
+export type SalesOrderLineDistribution = typeof salesOrderLineDistributions.$inferSelect;
+export type InsertSalesOrderLineDistribution = z.infer<typeof insertSalesOrderLineDistributionSchema>;
+
+export type Stock = typeof stocks.$inferSelect;
+export type InsertStock = z.infer<typeof insertStockSchema>;
 
 export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
 export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;

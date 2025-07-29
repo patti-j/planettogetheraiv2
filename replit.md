@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
+- **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables
+- **SALES ORDER LINE DISTRIBUTIONS ADDED**: Created sales_order_line_distributions table to track shipment quantities and dates from order lines with complete audit trail
+- **INVENTORY FILTER ENHANCED**: Updated inventory management schema filter to include new tables (stocks, sales_order_line_distributions) for complete inventory ecosystem visibility
+- **COMPREHENSIVE STOCK TRACKING**: Stocks table supports quantity on hand, reserved, available amounts with unit costs, total values, min/max levels, and lot/serial control
+- **SHIPMENT TRACKING SYSTEM**: Sales order line distributions track carrier information, tracking numbers, shipping methods, delivery status, and actual delivery dates
+- **DATABASE RELATIONSHIPS**: Established proper foreign key relationships - stocks link to items and storage_locations, distributions link to sales_order_lines and storage_locations
+- **COMPLETE SCHEMA INTEGRATION**: Added insert schemas, TypeScript types, and bidirectional relations for both new tables with proper date handling and validation
+- **INDEXES CREATED**: Performance indexes added for quantity levels, status tracking, shipment dates, and status monitoring for optimal query performance
+- Enhanced inventory management capabilities by providing comprehensive stock level tracking and detailed shipment distribution monitoring for complete supply chain visibility
+
 ✓ **Data Schema View Inventory Filter Enhancement & Relationship TypeScript Fix (July 29, 2025)**:
 - **COMPREHENSIVE INVENTORY FILTER**: Enhanced inventory management schema filter to include all inventory-affecting tables including stock_items, stock_transactions, stock_balances, sales orders/lines, purchase orders/lines, demand forecasts, and product outputs
 - **RELATIONSHIP MAPPINGS CONFIRMED**: Verified database relationships between sales_orders ↔ sales_order_lines and purchase_orders ↔ purchase_order_lines via foreign key columns (sales_order_id, purchase_order_id)
