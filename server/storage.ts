@@ -3280,18 +3280,39 @@ export class DatabaseStorage implements IStorage {
         });
       });
 
-      // Process relationships
+      // Process relationships with proper cardinality detection
       allRelationshipsQuery.rows.forEach((rel: any) => {
         if (!relationshipsByTable.has(rel.table_name)) {
           relationshipsByTable.set(rel.table_name, []);
         }
+        
+        // Determine relationship cardinality based on foreign key direction
+        // When a table has a foreign key to another table, it's the "many" side
+        // The referenced table is the "one" side
+        // So from the perspective of the table with the foreign key, it's many-to-one
+        const relationshipType = 'many-to-one' as const;
+        
         relationshipsByTable.get(rel.table_name)!.push({
-          type: 'one-to-many' as const,
+          type: relationshipType,
           fromTable: rel.table_name,
           fromColumn: rel.from_column,
           toTable: rel.to_table,
           toColumn: rel.to_column,
           description: `${rel.table_name}.${rel.from_column} → ${rel.to_table}.${rel.to_column}`
+        });
+        
+        // Also add the reverse relationship for the referenced table (one-to-many)
+        if (!relationshipsByTable.has(rel.to_table)) {
+          relationshipsByTable.set(rel.to_table, []);
+        }
+        
+        relationshipsByTable.get(rel.to_table)!.push({
+          type: 'one-to-many' as const,
+          fromTable: rel.to_table,
+          fromColumn: rel.to_column,
+          toTable: rel.table_name,
+          toColumn: rel.from_column,
+          description: `${rel.to_table}.${rel.to_column} ← ${rel.table_name}.${rel.from_column}`
         });
       });
 
