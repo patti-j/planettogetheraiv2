@@ -1790,18 +1790,19 @@ function DataSchemaViewContent() {
     return positions;
   }, []);
 
-  // Smart Layout Algorithm - Multiple proven algorithms
+  // Smart Layout Algorithm - Prioritizes Force-Directed for Better Space Utilization
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
     if (!tables.length) return {};
     
-    console.log('Smart layout: Processing', tables.length, 'tables with proven algorithms');
+    console.log('Smart layout: Processing', tables.length, 'tables with enhanced force-directed algorithm');
     
-    // For small graphs (≤10 tables), use force-directed layout
-    if (tables.length <= 10) {
+    // Use force-directed layout as primary choice for better space utilization
+    // Only use hierarchical for very specific cases with clear layer structures
+    if (tables.length <= 30) {
       return generateForceDirectedLayout(tables);
     }
     
-    // For medium graphs (11-25 tables), check if hierarchical structure exists
+    // For larger graphs, check if there's a very clear hierarchical structure
     const relationshipGraph: Record<string, string[]> = {};
     const incomingEdges: Record<string, string[]> = {};
     
@@ -1819,15 +1820,16 @@ function DataSchemaViewContent() {
       });
     });
     
-    // Calculate if graph has clear hierarchical structure
-    const totalEdges = Object.values(relationshipGraph).reduce((sum, edges) => sum + edges.length, 0);
-    const hasHierarchy = totalEdges > tables.length * 0.8; // Strong connectivity suggests hierarchy
+    // Only use hierarchical if there are clear root nodes and multiple layers
+    const rootNodes = tables.filter(table => incomingEdges[table.name].length === 0);
+    const leafNodes = tables.filter(table => relationshipGraph[table.name].length === 0);
+    const hasMultipleLayers = rootNodes.length > 0 && leafNodes.length > 0 && rootNodes.length + leafNodes.length < tables.length * 0.8;
     
-    if (hasHierarchy && tables.length <= 25) {
+    if (hasMultipleLayers && tables.length > 30) {
       return generateHierarchicalLayout(tables);
     }
     
-    // For larger or less hierarchical graphs, use enhanced force-directed with multilevel approach
+    // Default to force-directed for better space utilization multilevel approach
     return generateForceDirectedLayout(tables);
   }, [generateForceDirectedLayout, generateHierarchicalLayout]);
 
