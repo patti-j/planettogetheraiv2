@@ -356,7 +356,7 @@ const featureTableMapping: Record<string, string[]> = {
   'process_production': [
     // Process Manufacturing (Recipe-based)
     'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 
-    'recipe_material_assignments', 'recipe_formulas', 'process_operations',
+    'recipe_material_assignments', 'recipe_formulas', 'recipe_product_outputs', 'process_operations',
     // Ingredients and materials for process manufacturing
     'ingredients', 'material_requirements',
     // Production control for process manufacturing
@@ -372,7 +372,7 @@ const featureTableMapping: Record<string, string[]> = {
   ],
   'engineering': [
     // Process Manufacturing (Recipe-based)
-    'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'recipe_formulas',
+    'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'recipe_formulas', 'recipe_product_outputs',
     'ingredients', 'material_requirements', 'process_operations',
     // Discrete Manufacturing (BOM-based)
     'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs',
