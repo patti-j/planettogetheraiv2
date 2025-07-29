@@ -5890,6 +5890,7 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
   materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
   resourceRequirements: many(resourceRequirements), // One-to-many with resource requirements
+  formulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
 }));
 
 export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
@@ -6386,6 +6387,30 @@ export const formulationDetails = pgTable("formulation_details", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Junction table linking formulation details to specific recipe phases within production versions
+export const productionVersionPhaseFormulationDetails = pgTable("production_version_phase_formulation_details", {
+  id: serial("id").primaryKey(),
+  productionVersionId: integer("production_version_id").notNull().references(() => productionVersions.id, { onDelete: "cascade" }),
+  recipePhaseId: integer("recipe_phase_id").notNull().references(() => recipePhases.id, { onDelete: "cascade" }),
+  formulationDetailId: integer("formulation_detail_id").notNull().references(() => formulationDetails.id, { onDelete: "cascade" }),
+  phaseSpecificValue: text("phase_specific_value"), // Override value for this specific phase
+  phaseSpecificNotes: text("phase_specific_notes"), // Phase-specific instructions or notes
+  applicabilityConditions: text("applicability_conditions"), // When this detail applies in the phase
+  criticality: text("criticality").default("medium"), // "low", "medium", "high", "critical"
+  validationRequired: boolean("validation_required").default(false), // Whether this detail requires validation in this phase
+  monitoringFrequency: text("monitoring_frequency"), // "continuous", "batch_start", "batch_end", "hourly", etc.
+  alertThresholds: jsonb("alert_thresholds"), // JSON for threshold configurations
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Unique constraint to prevent duplicate assignments
+  uniqueAssignment: unique().on(table.productionVersionId, table.recipePhaseId, table.formulationDetailId),
+  // Indexes for efficient querying
+  productionVersionIdx: index("pvpfd_production_version_idx").on(table.productionVersionId),
+  recipePhaseIdx: index("pvpfd_recipe_phase_idx").on(table.recipePhaseId),
+  formulationDetailIdx: index("pvpfd_formulation_detail_idx").on(table.formulationDetailId),
+}));
+
 // Formulations - master list of formulations for process manufacturing (similar to BOM but for process manufacturing)
 export const formulations = pgTable("formulations", {
   id: serial("id").primaryKey(),
@@ -6831,6 +6856,7 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   productionOrders: many(productionOrders),
   plannedOrders: many(plannedOrders),
   formulations: many(formulations), // One-to-many: one production version can have many formulations
+  phaseFormulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
 }));
 
 export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
@@ -6916,10 +6942,27 @@ export const formulationsRelations = relations(formulations, ({ one, many }) => 
 }));
 
 // Relations for formulation details
-export const formulationDetailsRelations = relations(formulationDetails, ({ one }) => ({
+export const formulationDetailsRelations = relations(formulationDetails, ({ one, many }) => ({
   formulation: one(formulations, {
     fields: [formulationDetails.formulationId],
     references: [formulations.id],
+  }),
+  phaseAssignments: many(productionVersionPhaseFormulationDetails), // Many-to-many: one formulation detail can be assigned to many phases
+}));
+
+// Relations for production version phase formulation details junction table
+export const productionVersionPhaseFormulationDetailsRelations = relations(productionVersionPhaseFormulationDetails, ({ one }) => ({
+  productionVersion: one(productionVersions, {
+    fields: [productionVersionPhaseFormulationDetails.productionVersionId],
+    references: [productionVersions.id],
+  }),
+  recipePhase: one(recipePhases, {
+    fields: [productionVersionPhaseFormulationDetails.recipePhaseId],
+    references: [recipePhases.id],
+  }),
+  formulationDetail: one(formulationDetails, {
+    fields: [productionVersionPhaseFormulationDetails.formulationDetailId],
+    references: [formulationDetails.id],
   }),
 }));
 
@@ -7247,4 +7290,13 @@ export const insertFormulationDetailSchema = createInsertSchema(formulationDetai
 
 export type FormulationDetail = typeof formulationDetails.$inferSelect;
 export type InsertFormulationDetail = z.infer<typeof insertFormulationDetailSchema>;
+
+export const insertProductionVersionPhaseFormulationDetailSchema = createInsertSchema(productionVersionPhaseFormulationDetails).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ProductionVersionPhaseFormulationDetail = typeof productionVersionPhaseFormulationDetails.$inferSelect;
+export type InsertProductionVersionPhaseFormulationDetail = z.infer<typeof insertProductionVersionPhaseFormulationDetailSchema>;
 

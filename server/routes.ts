@@ -47,7 +47,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -16784,6 +16784,138 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching formulation details by formulation:", error);
       res.status(500).json({ error: "Failed to fetch formulation details by formulation" });
+    }
+  });
+
+  // Production Version Phase Formulation Details Junction Management
+  app.get("/api/production-version-phase-formulation-details", async (req, res) => {
+    try {
+      const productionVersionId = req.query.productionVersionId ? parseInt(req.query.productionVersionId as string) : undefined;
+      const assignments = await storage.getProductionVersionPhaseFormulationDetails(productionVersionId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching production version phase formulation details:", error);
+      res.status(500).json({ error: "Failed to fetch production version phase formulation details" });
+    }
+  });
+
+  app.get("/api/production-version-phase-formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const assignment = await storage.getProductionVersionPhaseFormulationDetail(id);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error fetching assignment:", error);
+      res.status(500).json({ error: "Failed to fetch assignment" });
+    }
+  });
+
+  app.post("/api/production-version-phase-formulation-details", async (req, res) => {
+    try {
+      const validation = insertProductionVersionPhaseFormulationDetailSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid assignment data", details: validation.error.errors });
+      }
+
+      const assignment = await storage.createProductionVersionPhaseFormulationDetail(validation.data);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ error: "Failed to create assignment" });
+    }
+  });
+
+  app.put("/api/production-version-phase-formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const validation = insertProductionVersionPhaseFormulationDetailSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid assignment data", details: validation.error.errors });
+      }
+
+      const assignment = await storage.updateProductionVersionPhaseFormulationDetail(id, validation.data);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      res.status(500).json({ error: "Failed to update assignment" });
+    }
+  });
+
+  app.delete("/api/production-version-phase-formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const deleted = await storage.deleteProductionVersionPhaseFormulationDetail(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ error: "Failed to delete assignment" });
+    }
+  });
+
+  // Related endpoint routes for junction table
+  app.get("/api/production-versions/:productionVersionId/phase-formulation-details", async (req, res) => {
+    try {
+      const productionVersionId = parseInt(req.params.productionVersionId);
+      if (isNaN(productionVersionId)) {
+        return res.status(400).json({ error: "Invalid production version ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseFormulationDetailsByProductionVersion(productionVersionId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments by production version:", error);
+      res.status(500).json({ error: "Failed to fetch assignments by production version" });
+    }
+  });
+
+  app.get("/api/recipe-phases/:recipePhaseId/formulation-details", async (req, res) => {
+    try {
+      const recipePhaseId = parseInt(req.params.recipePhaseId);
+      if (isNaN(recipePhaseId)) {
+        return res.status(400).json({ error: "Invalid recipe phase ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments by recipe phase:", error);
+      res.status(500).json({ error: "Failed to fetch assignments by recipe phase" });
+    }
+  });
+
+  app.get("/api/formulation-details/:formulationDetailId/phase-assignments", async (req, res) => {
+    try {
+      const formulationDetailId = parseInt(req.params.formulationDetailId);
+      if (isNaN(formulationDetailId)) {
+        return res.status(400).json({ error: "Invalid formulation detail ID" });
+      }
+
+      const assignments = await storage.getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments by formulation detail:", error);
+      res.status(500).json({ error: "Failed to fetch assignments by formulation detail" });
     }
   });
 

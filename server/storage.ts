@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails,
+  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail,
+  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1260,6 +1260,16 @@ export interface IStorage {
   updateFormulationDetail(id: number, detail: Partial<InsertFormulationDetail>): Promise<FormulationDetail | undefined>;
   deleteFormulationDetail(id: number): Promise<boolean>;
   getFormulationDetailsByFormulation(formulationId: number): Promise<FormulationDetail[]>;
+
+  // Production Version Phase Formulation Details Junction
+  getProductionVersionPhaseFormulationDetails(productionVersionId?: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
+  getProductionVersionPhaseFormulationDetail(id: number): Promise<ProductionVersionPhaseFormulationDetail | undefined>;
+  createProductionVersionPhaseFormulationDetail(assignment: InsertProductionVersionPhaseFormulationDetail): Promise<ProductionVersionPhaseFormulationDetail>;
+  updateProductionVersionPhaseFormulationDetail(id: number, assignment: Partial<InsertProductionVersionPhaseFormulationDetail>): Promise<ProductionVersionPhaseFormulationDetail | undefined>;
+  deleteProductionVersionPhaseFormulationDetail(id: number): Promise<boolean>;
+  getProductionVersionPhaseFormulationDetailsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
+  getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
+  getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -10865,6 +10875,73 @@ export class DatabaseStorage implements IStorage {
       .from(formulationDetails)
       .where(eq(formulationDetails.formulationId, formulationId))
       .orderBy(formulationDetails.category, formulationDetails.detailName);
+  }
+
+  // Production Version Phase Formulation Details Junction Methods
+  async getProductionVersionPhaseFormulationDetails(productionVersionId?: number): Promise<ProductionVersionPhaseFormulationDetail[]> {
+    let query = db.select().from(productionVersionPhaseFormulationDetails);
+    
+    if (productionVersionId) {
+      query = query.where(eq(productionVersionPhaseFormulationDetails.productionVersionId, productionVersionId));
+    }
+    
+    return await query.orderBy(productionVersionPhaseFormulationDetails.id);
+  }
+
+  async getProductionVersionPhaseFormulationDetail(id: number): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
+    const [result] = await db
+      .select()
+      .from(productionVersionPhaseFormulationDetails)
+      .where(eq(productionVersionPhaseFormulationDetails.id, id));
+    return result;
+  }
+
+  async createProductionVersionPhaseFormulationDetail(assignment: InsertProductionVersionPhaseFormulationDetail): Promise<ProductionVersionPhaseFormulationDetail> {
+    const [result] = await db
+      .insert(productionVersionPhaseFormulationDetails)
+      .values(assignment)
+      .returning();
+    return result;
+  }
+
+  async updateProductionVersionPhaseFormulationDetail(id: number, assignment: Partial<InsertProductionVersionPhaseFormulationDetail>): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
+    const [result] = await db
+      .update(productionVersionPhaseFormulationDetails)
+      .set(assignment)
+      .where(eq(productionVersionPhaseFormulationDetails.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteProductionVersionPhaseFormulationDetail(id: number): Promise<boolean> {
+    const result = await db
+      .delete(productionVersionPhaseFormulationDetails)
+      .where(eq(productionVersionPhaseFormulationDetails.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getProductionVersionPhaseFormulationDetailsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseFormulationDetail[]> {
+    return await db
+      .select()
+      .from(productionVersionPhaseFormulationDetails)
+      .where(eq(productionVersionPhaseFormulationDetails.productionVersionId, productionVersionId))
+      .orderBy(productionVersionPhaseFormulationDetails.id);
+  }
+
+  async getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId: number): Promise<ProductionVersionPhaseFormulationDetail[]> {
+    return await db
+      .select()
+      .from(productionVersionPhaseFormulationDetails)
+      .where(eq(productionVersionPhaseFormulationDetails.recipePhaseId, recipePhaseId))
+      .orderBy(productionVersionPhaseFormulationDetails.id);
+  }
+
+  async getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId: number): Promise<ProductionVersionPhaseFormulationDetail[]> {
+    return await db
+      .select()
+      .from(productionVersionPhaseFormulationDetails)
+      .where(eq(productionVersionPhaseFormulationDetails.formulationDetailId, formulationDetailId))
+      .orderBy(productionVersionPhaseFormulationDetails.id);
   }
 
   // Customers
