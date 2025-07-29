@@ -101,6 +101,45 @@ import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+// Legacy Operation interface for backward compatibility
+export interface Operation {
+  id: number;
+  name: string;
+  description?: string;
+  duration: number;
+  jobId: number; // productionOrderId for backward compatibility
+  order: number; // sequenceNumber 
+  status?: string;
+  assignedResourceId?: number;
+  startTime?: Date;
+  endTime?: Date;
+  scheduledStartDate?: Date;
+  scheduledEndDate?: Date;
+  isBottleneck?: boolean;
+  isEarly?: boolean;
+  isLate?: boolean;
+  timeVarianceHours?: number;
+  criticality?: string;
+  optimizationNotes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Legacy InsertOperation interface for backward compatibility  
+export interface InsertOperation {
+  name: string;
+  description?: string;
+  duration: number;
+  jobId: number; // productionOrderId for backward compatibility
+  order: number; // sequenceNumber
+  status?: string;
+  assignedResourceId?: number;
+  startTime?: Date;
+  endTime?: Date;
+  scheduledStartDate?: Date;
+  scheduledEndDate?: Date;
+}
+
 export interface IStorage {
   // Plants
   getPlants(): Promise<Plant[]>;
@@ -1808,28 +1847,41 @@ export class DatabaseStorage implements IStorage {
 
   // Backwards-compatible operations methods that combine discrete and process operations
   async getOperations(): Promise<Operation[]> {
-    const discreteOps = await db.select().from(discreteOperations);
-    const processOps = await db.select().from(processOperations);
-    
-    // Convert both types to the legacy Operation interface for backwards compatibility
-    const combinedOps: Operation[] = [
-      ...discreteOps.map(op => ({
-        ...op,
-        name: op.operationName,
-        duration: op.standardDuration,
-        jobId: op.productionOrderId, // For backward compatibility
-        order: op.sequenceNumber
-      } as Operation)),
-      ...processOps.map(op => ({
-        ...op,
-        name: op.operationName,
-        duration: op.standardDuration,
-        jobId: op.productionOrderId, // For backward compatibility
-        order: op.sequenceNumber
-      } as Operation))
-    ];
-    
-    return combinedOps;
+    try {
+      console.log("Starting getOperations - querying discrete operations...");
+      const discreteOps = await db.select().from(discreteOperations);
+      console.log("Discrete operations count:", discreteOps.length);
+      
+      console.log("Querying process operations...");
+      const processOps = await db.select().from(processOperations);
+      console.log("Process operations count:", processOps.length);
+      
+      // Convert both types to the legacy Operation interface for backwards compatibility
+      console.log("Converting operations to legacy format...");
+      const combinedOps: Operation[] = [
+        ...discreteOps.map(op => ({
+          ...op,
+          name: op.operationName,
+          duration: op.standardDuration,
+          jobId: op.productionOrderId, // For backward compatibility
+          order: op.sequenceNumber
+        } as Operation)),
+        ...processOps.map(op => ({
+          ...op,
+          name: op.operationName,
+          duration: op.standardDuration,
+          jobId: op.productionOrderId, // For backward compatibility
+          order: op.sequenceNumber
+        } as Operation))
+      ];
+      
+      console.log("Successfully combined operations, total:", combinedOps.length);
+      return combinedOps;
+    } catch (error) {
+      console.error("Error in getOperations:", error);
+      console.error("Error stack:", error.stack);
+      throw error;
+    }
   }
 
   async getOperationsByJobId(jobId: number): Promise<Operation[]> {

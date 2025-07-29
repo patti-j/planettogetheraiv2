@@ -584,105 +584,56 @@ export const productionVersions = pgTable("production_versions", {
 export const discreteOperations = pgTable("discrete_operations", {
   id: serial("id").primaryKey(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
-  name: text("name").notNull(),
+  operationName: text("operation_name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
-  duration: integer("duration").notNull(), // in hours
-  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]),
+  standardDuration: integer("standard_duration").notNull(), // in hours
+  actualDuration: integer("actual_duration"), // Actual time taken
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
-  order: integer("order").notNull().default(0),
-  
-  // Discrete manufacturing specific fields
-  setupTime: integer("setup_time").default(0), // Setup time in minutes
-  runTimePerUnit: integer("run_time_per_unit").notNull(), // Processing time per unit in minutes
-  teardownTime: integer("tear_down_time").default(0), // Cleanup time in minutes
-  lotSize: integer("lot_size").notNull().default(1), // Number of units processed in this operation
-  workCenter: text("work_center"), // Work center or machine where operation is performed
-  toolingRequired: jsonb("tooling_required").$type<string[]>().default([]), // List of tools/fixtures needed
-  qualityControlPoints: jsonb("quality_control_points").$type<Array<{
-    checkpoint_name: string;
-    inspection_type: string; // "dimensional", "visual", "functional", "material"
-    frequency: string; // "first_piece", "last_piece", "every_unit", "sampling"
-    specifications: string;
-  }>>().default([]),
-  
-  // Optimization algorithm flags
-  isBottleneck: boolean("is_bottleneck").default(false),
-  isEarly: boolean("is_early").default(false),
-  isLate: boolean("is_late").default(false),
-  timeVarianceHours: integer("time_variance_hours").default(0), // Positive = early, negative = late
-  criticality: text("criticality").default("normal"), // "low", "normal", "high", "critical"
-  optimizationNotes: text("optimization_notes"), // Notes from optimization algorithms
+  sequenceNumber: integer("sequence_number").notNull().default(0),
+  workCenterId: integer("work_center_id"),
+  priority: integer("priority").default(5),
+  completionPercentage: integer("completion_percentage").default(0),
+  qualityCheckRequired: boolean("quality_check_required").default(false),
+  qualityStatus: text("quality_status").default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Process Operations - for process manufacturing with continuous flows, batches, and recipes
 export const processOperations = pgTable("process_operations", {
   id: serial("id").primaryKey(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(), // Many-to-one relationship with recipes
   recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id), // Links to specific recipe phase
-  name: text("name").notNull(),
+  operationName: text("operation_name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
-  duration: integer("duration").notNull(), // in hours
-  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]),
+  standardDuration: integer("standard_duration").notNull(), // in hours
+  actualDuration: integer("actual_duration"), // Actual time taken
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
-  order: integer("order").notNull().default(0),
-  
-  // Process manufacturing specific fields
-  phaseType: text("phase_type").notNull(), // "mixing", "heating", "cooling", "reaction", "separation", "filling", "packaging"
-  batchSize: numeric("batch_size", { precision: 10, scale: 4 }).notNull(), // Amount processed in this operation
-  batchUnit: text("batch_unit").notNull().default("kg"), // Unit of measure for batch
-  targetTemperature: numeric("target_temperature", { precision: 5, scale: 2 }), // Target temperature in Celsius
-  targetPressure: numeric("target_pressure", { precision: 8, scale: 3 }), // Target pressure in bar
-  agitationSpeed: integer("agitation_speed"), // Mixing speed in RPM
-  flowRate: numeric("flow_rate", { precision: 8, scale: 3 }), // Flow rate for continuous processes
-  
-  // Process control parameters
-  processParameters: jsonb("process_parameters").$type<Array<{
-    parameter_name: string;
-    target_value: number;
-    min_value: number;
-    max_value: number;
-    unit: string;
-    control_type: string; // "manual", "automatic", "cascade"
-  }>>().default([]),
-  
-  // Material additions during process
-  materialAdditions: jsonb("material_additions").$type<Array<{
-    material_code: string;
-    material_name: string;
-    addition_point: string; // When to add: "start", "middle", "end", "continuous"
-    quantity: number;
-    unit: string;
-    addition_rate: number; // For continuous additions
-    temperature_condition: string; // Temperature requirement for addition
-  }>>().default([]),
-  
-  // Yield and quality tracking
-  expectedYield: numeric("expected_yield", { precision: 5, scale: 2 }).default("100"), // Expected yield percentage
-  qualityTests: jsonb("quality_tests").$type<Array<{
-    test_name: string;
-    test_type: string; // "chemical", "physical", "microbiological"
-    sampling_point: string; // "start", "during", "end"
-    frequency: string;
-    specifications: string;
-  }>>().default([]),
-  
-  // Optimization algorithm flags
-  isBottleneck: boolean("is_bottleneck").default(false),
-  isEarly: boolean("is_early").default(false),
-  isLate: boolean("is_late").default(false),
-  timeVarianceHours: integer("time_variance_hours").default(0), // Positive = early, negative = late
-  criticality: text("criticality").default("normal"), // "low", "normal", "high", "critical"
-  optimizationNotes: text("optimization_notes"), // Notes from optimization algorithms
+  sequenceNumber: integer("sequence_number").notNull().default(0),
+  setupTime: integer("setup_time").default(0), // Setup time in minutes
+  priority: integer("priority").default(5),
+  completionPercentage: integer("completion_percentage").default(0),
+  qualityCheckRequired: boolean("quality_check_required").default(false),
+  qualityStatus: text("quality_status").default("pending"),
+  temperature: numeric("temperature"),
+  pressure: numeric("pressure"),
+  phLevel: numeric("ph_level"),
+  batchSize: numeric("batch_size"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Resource Requirements - defines what resources each operation needs
@@ -5927,6 +5878,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   }),
   operations: many(recipeOperations),
   phases: many(recipePhases),
+  processOperations: many(processOperations), // One-to-many relationship with process operations
   operationRelationships: many(recipeOperationRelationships, {
     relationName: "recipeToRelationships"
   }),
@@ -6799,6 +6751,10 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
   productionOrder: one(productionOrders, {
     fields: [processOperations.productionOrderId],
     references: [productionOrders.id],
+  }),
+  recipe: one(recipes, {
+    fields: [processOperations.recipeId],
+    references: [recipes.id],
   }),
   recipePhase: one(recipePhases, {
     fields: [processOperations.recipePhaseId],

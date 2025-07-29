@@ -1949,9 +1949,13 @@ Rules:
   // Operations
   app.get("/api/operations", async (req, res) => {
     try {
+      console.log("Fetching operations...");
       const operations = await storage.getOperations();
+      console.log("Operations fetched successfully:", operations.length);
       res.json(operations);
     } catch (error) {
+      console.error("Error fetching operations:", error);
+      console.error("Error stack:", error.stack);
       res.status(500).json({ message: "Failed to fetch operations" });
     }
   });

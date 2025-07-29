@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Critical Operations API Schema Mismatch Resolution (July 29, 2025)**:
+- RESOLVED: Fixed "Failed to fetch operations" API error caused by schema mismatch between discreteOperations/processOperations definitions and actual database
+- Removed non-existent requiredCapabilities field from both discrete_operations and process_operations schema definitions in shared/schema.ts
+- Added Legacy Operation and InsertOperation interfaces in server/storage.ts for backward compatibility with existing API consumers
+- Enhanced getOperations() method with comprehensive error logging and debugging to identify root cause of database column mismatches
+- Operations API now successfully returns data (empty array when no operations exist) instead of 500 Internal Server Error
+- Database schema now accurately reflects actual table structure: no required_capabilities column in operations tables
+- System architecture maintains separation between operations tables (discrete vs process) while providing unified API through legacy compatibility layer
+- All operations endpoints (/api/operations, /api/operations/:id, etc.) now functional and ready for use by frontend components
+
 ✓ **Intelligent Relationship-Aware Layout System Implementation (July 29, 2025)**:
 - Implemented force-directed layout algorithms that analyze table relationships to minimize line crossings and create optimal visual groupings
 - Enhanced all three layout algorithms (hierarchical, circular, grid) with relationship-aware positioning using attractive and repulsive forces
