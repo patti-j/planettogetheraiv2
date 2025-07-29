@@ -1225,7 +1225,7 @@ function DataSchemaViewContent() {
             }
             
             // Add visual distinction for different relationship types with one-to-many indicators
-            const isDashed = rel.type === 'one-to-many' || rel.type === 'many-to-many';
+            const isDashed = rel.type === 'one-to-many' || rel.type === 'many-to-one' || rel.type === 'many-to-many';
             const strokeDasharray = isDashed ? '5,5' : undefined;
             
             // Determine markers and labels based on relationship type - positioned closer to objects
@@ -1250,6 +1250,22 @@ function DataSchemaViewContent() {
               };
               sourceLabel = '1';
               targetLabel = '∞';
+            } else if (rel.type === 'many-to-one') {
+              // From side is "many" (larger crow's foot), to side is "one" (simple arrow)
+              markerStart = {
+                type: MarkerType.ArrowClosed,
+                color: edgeColor,
+                width: isHighlighted ? 20 : 16,
+                height: isHighlighted ? 20 : 16,
+              };
+              markerEnd = {
+                type: MarkerType.Arrow,
+                color: edgeColor,
+                width: isHighlighted ? 16 : 12,
+                height: isHighlighted ? 16 : 12,
+              };
+              sourceLabel = '∞';
+              targetLabel = '1';
             } else if (rel.type === 'many-to-many') {
               // Both sides are "many" (large crow's foot on both ends)
               markerStart = {
@@ -1312,7 +1328,7 @@ function DataSchemaViewContent() {
             });
 
             // Add cardinality labels as edge labels using a single edge
-            if (rel.type === 'many-to-many' || rel.type === 'one-to-many' || rel.type === 'one-to-one') {
+            if (rel.type === 'many-to-many' || rel.type === 'one-to-many' || rel.type === 'many-to-one' || rel.type === 'one-to-one') {
               // Remove the main edge we just added and replace with a single labeled edge
               const mainEdge = flowEdges.pop()!;
               
@@ -1326,6 +1342,9 @@ function DataSchemaViewContent() {
               } else if (rel.type === 'one-to-many') {
                 sourceCardinalityLabel = '1';
                 targetCardinalityLabel = '∞';
+              } else if (rel.type === 'many-to-one') {
+                sourceCardinalityLabel = '∞';
+                targetCardinalityLabel = '1';
               } else if (rel.type === 'one-to-one') {
                 sourceCardinalityLabel = '1';
                 targetCardinalityLabel = '1';
