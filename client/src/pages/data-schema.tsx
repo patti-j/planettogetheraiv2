@@ -1192,37 +1192,26 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Update nodes and edges when data changes
+  // Update nodes and edges when data changes - preserve user-moved positions
   React.useEffect(() => {
-    setNodes(nodes);
+    setNodes((currentNodes) => {
+      // Create a map of current positions to preserve user movements
+      const positionMap = new Map(currentNodes.map(node => [node.id, node.position]));
+      
+      // Update nodes while preserving positions
+      return nodes.map(node => ({
+        ...node,
+        // Use preserved position if available, otherwise use new position
+        position: positionMap.get(node.id) || node.position
+      }));
+    });
     setEdges(edges);
   }, [nodes, edges, setNodes, setEdges]);
-
-  // Update node selection when selectedCards changes - preserve user-moved positions
-  React.useEffect(() => {
-    setNodes((nds) => 
-      nds.map((node) => ({
-        ...node,
-        // Preserve the current position (user may have moved it)
-        position: node.position,
-        data: {
-          ...node.data,
-          isSelected: selectedCards.includes(node.id),
-          // Update the label with new selection state while preserving other data
-          label: <TableNode data={{ 
-            ...node.data, 
-            isSelected: selectedCards.includes(node.id), 
-            onSelect: handleCardSelection 
-          }} />
-        }
-      }))
-    );
-  }, [selectedCards, setNodes, handleCardSelection]);
 
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {
