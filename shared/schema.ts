@@ -6443,6 +6443,7 @@ export const materialRequirements = pgTable("material_requirements", {
 export const formulationDetails = pgTable("formulation_details", {
   id: serial("id").primaryKey(),
   formulationId: integer("formulation_id").references(() => formulations.id, { onDelete: 'cascade' }).notNull(),
+  itemId: integer("item_id").references(() => items.id), // Link to item master for standardized specifications
   detailType: text("detail_type").notNull(), // composition, specification, property, instruction, safety, storage
   detailName: text("detail_name").notNull(),
   detailValue: text("detail_value"),
@@ -6721,6 +6722,7 @@ export const itemsRelations = relations(items, ({ many }) => ({
   billsOfMaterial: many(billsOfMaterial),
   bomLines: many(bomLines),
   materialRequirements: many(materialRequirements), // Link to material requirements for inventory management
+  formulationDetails: many(formulationDetails), // Link to formulation details for standardized specifications
   routings: many(routings),
   forecasts: many(forecasts),
 }));
@@ -7051,6 +7053,10 @@ export const formulationDetailsRelations = relations(formulationDetails, ({ one,
   formulation: one(formulations, {
     fields: [formulationDetails.formulationId],
     references: [formulations.id],
+  }),
+  item: one(items, {
+    fields: [formulationDetails.itemId],
+    references: [items.id],
   }),
   phaseAssignments: many(productionVersionPhaseFormulationDetails), // Many-to-many: one formulation detail can be assigned to many phases
 }));

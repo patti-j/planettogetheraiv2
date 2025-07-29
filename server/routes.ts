@@ -16949,6 +16949,22 @@ Response must be valid JSON:
     }
   });
 
+  // Get formulation details by Item
+  app.get("/api/items/:itemId/formulation-details", requireAuth, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ error: "Invalid item ID" });
+      }
+
+      const details = await storage.getFormulationDetailsByItem(itemId);
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching formulation details by item:", error);
+      res.status(500).json({ error: "Failed to fetch formulation details by item" });
+    }
+  });
+
   // Production Version Phase Formulation Details Junction Management
   app.get("/api/production-version-phase-formulation-details", async (req, res) => {
     try {

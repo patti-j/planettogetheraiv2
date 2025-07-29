@@ -1260,6 +1260,7 @@ export interface IStorage {
   updateFormulationDetail(id: number, detail: Partial<InsertFormulationDetail>): Promise<FormulationDetail | undefined>;
   deleteFormulationDetail(id: number): Promise<boolean>;
   getFormulationDetailsByFormulation(formulationId: number): Promise<FormulationDetail[]>;
+  getFormulationDetailsByItem(itemId: number): Promise<FormulationDetail[]>;
 
   // Production Version Phase Formulation Details Junction
   getProductionVersionPhaseFormulationDetails(productionVersionId?: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
@@ -10971,6 +10972,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(formulationDetails)
       .where(eq(formulationDetails.formulationId, formulationId))
+      .orderBy(formulationDetails.category, formulationDetails.detailName);
+  }
+
+  async getFormulationDetailsByItem(itemId: number): Promise<FormulationDetail[]> {
+    return await db
+      .select()
+      .from(formulationDetails)
+      .where(eq(formulationDetails.itemId, itemId))
       .orderBy(formulationDetails.category, formulationDetails.detailName);
   }
 

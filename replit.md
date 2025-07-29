@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Complete Formulation Details Item Master Integration (July 29, 2025)**:
+- **ITEM MASTER INTEGRATION COMPLETED**: Successfully enhanced formulation_details table with itemId foreign key column for complete inventory standardization
+- **COMPREHENSIVE DATABASE SCHEMA**: Added itemId column to formulation_details table alongside existing formulationId column enabling dual relationship support for inventory management
+- **ENHANCED DRIZZLE ORM RELATIONS**: Updated formulationDetailsRelations to include item relationship and itemsRelations to include formulationDetails for bidirectional data access
+- **COMPLETE API INFRASTRUCTURE**: Implemented getFormulationDetailsByItem storage method and /api/items/:itemId/formulation-details REST endpoint with proper authentication
+- **REAL-WORLD TESTING COMPLETED**: Successfully created and tested item-linked formulation details demonstrating pharmaceutical manufacturing scenarios with API content specifications, particle size requirements, and safety handling instructions
+- **COMPREHENSIVE INVENTORY INTEGRATION**: Formulation details now support both formulation-specific requirements AND item master standardization enabling unified inventory management across discrete and process manufacturing
+- **DUAL RELATIONSHIP SYSTEM**: System now supports formulation details linked to both formulations (process manufacturing) AND items (inventory standardization) within same integrated database architecture
+- **MANUFACTURING FLEXIBILITY**: Enhanced manufacturing ERP capabilities by providing flexible formulation detail management supporting both process-specific formulations and standardized item master inventory control
+- Formulation details system now provides complete inventory standardization layer enabling pharmaceutical and chemical processing workflows with standardized item specifications alongside formulation-specific requirements
+
 ✓ **Complete Item Master Integration with Material Requirements System (July 29, 2025)**:
 - **TRIPLE RELATIONSHIP SYSTEM**: Successfully enhanced material requirements to support discrete manufacturing (BOM-based), process manufacturing (formulation-based), AND item master standardization workflows
 - **COMPREHENSIVE DATABASE INTEGRATION**: Added itemId foreign key to material_requirements table alongside existing bomId and formulationId columns for complete inventory integration
