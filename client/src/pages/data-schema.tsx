@@ -491,11 +491,29 @@ const forceDirectedLayout = (tables: SchemaTable[], iterations: number = 100) =>
   const positions: { [key: string]: { x: number; y: number } } = {};
   const { tableConnections } = analyzeRelationshipClusters(tables);
   
-  // Initialize random positions
+  // Enhanced initial positioning with better screen utilization
+  const layoutWidth = Math.max(1600, tables.length * 300);
+  const layoutHeight = Math.max(1200, tables.length * 250);
+  
+  // Create initial grid-like distribution instead of random
+  const gridCols = Math.ceil(Math.sqrt(tables.length * 1.3));
+  const gridRows = Math.ceil(tables.length / gridCols);
+  const spacingX = layoutWidth * 0.85 / Math.max(1, gridCols - 1);
+  const spacingY = layoutHeight * 0.85 / Math.max(1, gridRows - 1);
+  const startX = layoutWidth * 0.075; // 7.5% margin
+  const startY = layoutHeight * 0.075; // 7.5% margin
+  
   tables.forEach((table, index) => {
+    const row = Math.floor(index / gridCols);
+    const col = index % gridCols;
+    
+    // Add controlled jitter for natural positioning
+    const jitterX = (Math.random() - 0.5) * spacingX * 0.2;
+    const jitterY = (Math.random() - 0.5) * spacingY * 0.2;
+    
     positions[table.name] = {
-      x: Math.random() * 1200 + 100,
-      y: Math.random() * 800 + 100
+      x: startX + col * spacingX + jitterX,
+      y: startY + row * spacingY + jitterY
     };
   });
   
@@ -549,9 +567,9 @@ const forceDirectedLayout = (tables: SchemaTable[], iterations: number = 100) =>
       positions[table.name].x += forces[table.name].x * 0.1 * damping;
       positions[table.name].y += forces[table.name].y * 0.1 * damping;
       
-      // Keep within bounds
-      positions[table.name].x = Math.max(50, Math.min(1400, positions[table.name].x));
-      positions[table.name].y = Math.max(50, Math.min(1000, positions[table.name].y));
+      // Keep within enhanced layout bounds
+      positions[table.name].x = Math.max(50, Math.min(layoutWidth - 50, positions[table.name].x));
+      positions[table.name].y = Math.max(50, Math.min(layoutHeight - 50, positions[table.name].y));
     });
   }
   
@@ -1510,30 +1528,33 @@ function DataSchemaViewContent() {
     };
   };
 
-  // Fruchterman-Reingold Force-Directed Layout Algorithm
+  // Enhanced Force-Directed Layout Algorithm - Better Screen Utilization
   const generateForceDirectedLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
     if (!tables.length) return {};
     
-    console.log('Force-directed layout: Processing', tables.length, 'tables');
+    console.log('Enhanced force-directed layout: Processing', tables.length, 'tables');
     
     const positions: Record<string, { x: number; y: number }> = {};
     const nodeWidth = 320;
     const nodeHeight = 200;
     
-    // Layout area and algorithm parameters
-    const W = Math.max(1400, tables.length * 300); // Dynamic width based on table count
-    const H = Math.max(1000, tables.length * 200); // Dynamic height
+    // Enhanced layout area calculations for better screen utilization
+    const minWidth = 1600;
+    const minHeight = 1200;
+    const scaleFactor = Math.max(1, Math.sqrt(tables.length / 5)); // More aggressive scaling
+    const W = Math.max(minWidth, tables.length * 400 * scaleFactor); // Wider distribution
+    const H = Math.max(minHeight, tables.length * 300 * scaleFactor); // Taller distribution
     const area = W * H;
-    const iterations = Math.min(50, Math.max(30, tables.length * 2)); // Adaptive iterations
+    const iterations = Math.min(80, Math.max(40, tables.length * 3)); // More iterations for better positioning
     
-    // Calculate optimal distance between vertices (k parameter)
-    const k = Math.sqrt(area / tables.length);
+    // Calculate optimal distance between vertices (k parameter) - more spaced out
+    const k = Math.sqrt(area / tables.length) * 1.5; // Increased spacing factor
     
-    // Force functions based on Fruchterman-Reingold paper
+    // Enhanced force functions
     const fa = (x: number): number => (x * x) / k; // Attractive force
     const fr = (x: number): number => (k * k) / x; // Repulsive force
     
-    console.log('FR Algorithm parameters:', { W, H, area, k, iterations });
+    console.log('Enhanced FR Algorithm parameters:', { W, H, area, k, iterations, scaleFactor });
     
     // Build relationship graph for attractive forces
     const relationshipGraph: Record<string, string[]> = {};
@@ -1546,14 +1567,29 @@ function DataSchemaViewContent() {
       });
     });
     
-    // Initialize positions randomly
+    // Initialize positions with better distribution instead of purely random
     const nodePositions: Record<string, Vector2D> = {};
     const displacements: Record<string, Vector2D> = {};
     
-    tables.forEach(table => {
+    // Create initial grid-like distribution for better starting positions
+    const gridCols = Math.ceil(Math.sqrt(tables.length * 1.5)); // Slightly wider grid
+    const gridRows = Math.ceil(tables.length / gridCols);
+    const gridSpacingX = W * 0.8 / gridCols; // Use 80% of width
+    const gridSpacingY = H * 0.8 / gridRows; // Use 80% of height
+    const offsetX = -W * 0.4; // Center the grid
+    const offsetY = -H * 0.4; // Center the grid
+    
+    tables.forEach((table, index) => {
+      const row = Math.floor(index / gridCols);
+      const col = index % gridCols;
+      
+      // Add some random jitter to avoid perfect grid
+      const jitterX = (Math.random() - 0.5) * gridSpacingX * 0.3;
+      const jitterY = (Math.random() - 0.5) * gridSpacingY * 0.3;
+      
       nodePositions[table.name] = createVector(
-        Math.random() * W - W/2,
-        Math.random() * H - H/2
+        offsetX + col * gridSpacingX + jitterX,
+        offsetY + row * gridSpacingY + jitterY
       );
       displacements[table.name] = createVector(0, 0);
     });
