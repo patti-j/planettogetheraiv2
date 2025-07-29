@@ -1949,7 +1949,14 @@ function DataSchemaViewContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleSmartLayout}
+                    onClick={() => {
+                      console.log('Smart Layout clicked');
+                      if (typeof handleSmartLayout === 'function') {
+                        handleSmartLayout();
+                      } else {
+                        console.error('handleSmartLayout is not a function');
+                      }
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Zap className="w-4 h-4" />
