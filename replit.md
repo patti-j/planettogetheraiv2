@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Sales Order Line Distributions Database Relationship Correction (July 29, 2025)**:
+- **CORRECTED RELATIONSHIP**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for more logical inventory tracking
+- **DATABASE MIGRATION COMPLETED**: Successfully migrated from storage_location_id to stock_id foreign key column in sales_order_line_distributions table
+- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - sales order line distributions now connect to stocks, stocks have many sales order line distributions
+- **REMOVED INCORRECT LINK**: Removed direct relationship between storage_locations and sales_order_line_distributions since shipments should track specific stock records, not just locations
+- **LOGICAL DATA FLOW**: Shipments now properly track which specific stock inventory is being distributed rather than just the storage location
+- **FOREIGN KEY CONSTRAINTS**: Added proper foreign key constraint from sales_order_line_distributions.stock_id to stocks.id table for data integrity
+- **RELATIONSHIP PATH**: Storage locations connect to shipments indirectly through stocks (storage_locations → stocks → sales_order_line_distributions)
+- Enhanced inventory management by creating logical relationship where shipments track specific stock records being moved, enabling better inventory accuracy and traceability
+
 ✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
 - **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables
 - **SALES ORDER LINE DISTRIBUTIONS ADDED**: Created sales_order_line_distributions table to track shipment quantities and dates from order lines with complete audit trail

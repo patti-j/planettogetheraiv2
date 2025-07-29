@@ -6629,7 +6629,7 @@ export const salesOrderLineDistributions = pgTable("sales_order_line_distributio
   distributionNumber: integer("distribution_number").notNull(), // Sequential number for this line
   shippedQuantity: integer("shipped_quantity").notNull(),
   shipmentDate: timestamp("shipment_date").notNull(),
-  storageLocationId: integer("storage_location_id").references(() => storageLocations.id),
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record being shipped
   carrierName: text("carrier_name"),
   trackingNumber: text("tracking_number"),
   shippingMethod: text("shipping_method"), // ground, air, express, freight
@@ -7147,7 +7147,6 @@ export const storageLocationsRelations = relations(storageLocations, ({ one, man
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
   stocks: many(stocks),
-  salesOrderLineDistributions: many(salesOrderLineDistributions),
   transferOrdersFrom: many(transferOrders, { relationName: "fromStorageLocation" }),
   transferOrdersTo: many(transferOrders, { relationName: "toStorageLocation" }),
 }));
@@ -7199,13 +7198,13 @@ export const salesOrderLineDistributionsRelations = relations(salesOrderLineDist
     fields: [salesOrderLineDistributions.salesOrderLineId],
     references: [salesOrderLines.id],
   }),
-  storageLocation: one(storageLocations, {
-    fields: [salesOrderLineDistributions.storageLocationId],
-    references: [storageLocations.id],
+  stock: one(stocks, {
+    fields: [salesOrderLineDistributions.stockId],
+    references: [stocks.id],
   }),
 }));
 
-export const stocksRelations = relations(stocks, ({ one }) => ({
+export const stocksRelations = relations(stocks, ({ one, many }) => ({
   item: one(items, {
     fields: [stocks.itemId],
     references: [items.id],
@@ -7214,6 +7213,7 @@ export const stocksRelations = relations(stocks, ({ one }) => ({
     fields: [stocks.storageLocationId],
     references: [storageLocations.id],
   }),
+  salesOrderLineDistributions: many(salesOrderLineDistributions),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
