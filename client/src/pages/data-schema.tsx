@@ -333,7 +333,7 @@ const featureTableMapping: Record<string, string[]> = {
     'downtime_records', 'resource_downtime'
   ],
   'sales': [
-    'sales_orders', 'customers', 'customer_contacts', 'sales_order_items',
+    'sales_orders', 'sales_order_lines', 'sales_order_line_distributions', 'customers', 'customer_contacts', 'sales_order_items',
     'delivery_schedules', 'customer_forecasts', 'price_lists', 'sales_contracts',
     'order_confirmations', 'shipping_notices'
   ],
