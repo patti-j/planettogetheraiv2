@@ -203,7 +203,6 @@ export const recipeOperations = pgTable("recipe_operations", {
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 export const recipePhases = pgTable("recipe_phases", {
   id: serial("id").primaryKey(),
-  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
   operationId: integer("operation_id").references(() => recipeOperations.id).notNull(), // Which operation this phase belongs to
   processOperationId: integer("process_operation_id").references(() => processOperations.id), // Many-to-one with process operations
   phaseNumber: text("phase_number").notNull(), // e.g., "A", "B" within operation
@@ -5870,7 +5869,6 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     references: [plants.id],
   }),
   operations: many(recipeOperations),
-  phases: many(recipePhases),
   processOperations: many(processOperations), // One-to-many relationship with process operations
   operationRelationships: many(recipeOperationRelationships, {
     relationName: "recipeToRelationships"
@@ -5899,10 +5897,6 @@ export const recipeOperationsRelations = relations(recipeOperations, ({ one, man
 }));
 
 export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => ({
-  recipe: one(recipes, {
-    fields: [recipePhases.recipeId],
-    references: [recipes.id],
-  }),
   operation: one(recipeOperations, {
     fields: [recipePhases.operationId],
     references: [recipeOperations.id],
