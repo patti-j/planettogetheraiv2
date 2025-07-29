@@ -206,29 +206,36 @@ const TableNode = ({ data }: { data: any }) => {
 
   return (
     <Card className={getCardClassName()} style={getCardStyle()}>
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Table className="w-4 h-4" />
-          {table.name}
-          <div className="flex items-center gap-2 ml-auto">
-            {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
-            {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white">SELECTED</Badge>}
-            <Badge variant="outline" className="text-xs">
-              {table.category}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-6 w-6 p-0 ${isSelected ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect?.(table.name);
-              }}
-            >
-              <Flag className={`w-4 h-4 ${isSelected ? 'fill-current' : ''}`} />
-            </Button>
-          </div>
+      <CardHeader className="pb-2 relative">
+        <CardTitle className="flex items-center gap-2 text-sm pr-8">
+          <Table className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{table.name}</span>
         </CardTitle>
+        
+        {/* Positioned controls container to prevent overflow */}
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white">FOCUS</Badge>}
+          {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white">SELECTED</Badge>}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-6 w-6 p-0 flex-shrink-0 ${isSelected ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(table.name);
+            }}
+          >
+            <Flag className={`w-4 h-4 ${isSelected ? 'fill-current' : ''}`} />
+          </Button>
+        </div>
+        
+        {/* Category badge positioned below title */}
+        <div className="flex items-center gap-2 mt-1">
+          <Badge variant="outline" className="text-xs">
+            {table.category}
+          </Badge>
+        </div>
+        
         {table.description && (
           <p className="text-xs text-gray-600 mt-1">{table.description}</p>
         )}
