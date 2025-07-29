@@ -1160,6 +1160,15 @@ export interface IStorage {
   updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
   deleteRecipe(id: number): Promise<boolean>;
 
+  // Bills of Material Management
+  getBillsOfMaterial(): Promise<any[]>;
+  
+  // Routings Management  
+  getRoutings(): Promise<any[]>;
+  
+  // Production Versions Management
+  getProductionVersions(): Promise<ProductionVersion[]>;
+
   // Recipe Phases
   getRecipePhases(recipeId: number): Promise<RecipePhase[]>;
   getRecipePhase(id: number): Promise<RecipePhase | undefined>;
@@ -10404,6 +10413,16 @@ export class DatabaseStorage implements IStorage {
   async deleteRecipeEquipment(id: number): Promise<boolean> {
     const result = await db.delete(recipeEquipment).where(eq(recipeEquipment.id, id));
     return result.rowCount > 0;
+  }
+
+  // Bills of Material Management
+  async getBillsOfMaterial(): Promise<any[]> {
+    return await db.select().from(billsOfMaterial);
+  }
+  
+  // Routings Management  
+  async getRoutings(): Promise<any[]> {
+    return await db.select().from(routings);
   }
 
   // Production Versions
