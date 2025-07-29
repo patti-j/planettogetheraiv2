@@ -62,8 +62,69 @@ export const productionOrders = pgTable("production_orders", {
   itemNumber: text("item_number"), // Reference to items table
   salesOrderNumber: text("sales_order_number"), // Reference to sales order
   productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
-  createdAt: timestamp("created_at").defaultNow(),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
+  
+  // WIP tracking and actual cost capture
+  wipValue: numeric("wip_value", { precision: 15, scale: 2 }).default("0"),
+  actualLaborHours: numeric("actual_labor_hours", { precision: 10, scale: 2 }).default("0"),
+  actualMaterialCost: numeric("actual_material_cost", { precision: 15, scale: 2 }).default("0"),
+  actualOverheadCost: numeric("actual_overhead_cost", { precision: 15, scale: 2 }).default("0"),
+  standardCost: numeric("standard_cost", { precision: 15, scale: 2 }).default("0"),
+  costVariance: numeric("cost_variance", { precision: 15, scale: 2 }).default("0"),
+  laborRateVariance: numeric("labor_rate_variance", { precision: 15, scale: 2 }).default("0"),
+  materialPriceVariance: numeric("material_price_variance", { precision: 15, scale: 2 }).default("0"),
+  
+  // Yield, scrap, and quality tracking
+  yieldQuantity: numeric("yield_quantity", { precision: 15, scale: 5 }).default("0"),
+  scrapQuantity: numeric("scrap_quantity", { precision: 15, scale: 5 }).default("0"),
+  reworkQuantity: numeric("rework_quantity", { precision: 15, scale: 5 }).default("0"),
+  goodQuantity: numeric("good_quantity", { precision: 15, scale: 5 }).default("0"),
+  yieldPercentage: numeric("yield_percentage", { precision: 5, scale: 2 }).default("0"),
+  scrapPercentage: numeric("scrap_percentage", { precision: 5, scale: 2 }).default("0"),
+  reworkPercentage: numeric("rework_percentage", { precision: 5, scale: 2 }).default("0"),
+  qualityGrade: text("quality_grade").default("A"),
+  
+  // Detailed timing information
+  setupTimePlanned: numeric("setup_time_planned", { precision: 8, scale: 2 }).default("0"),
+  setupTimeActual: numeric("setup_time_actual", { precision: 8, scale: 2 }).default("0"),
+  runTimePlanned: numeric("run_time_planned", { precision: 10, scale: 2 }).default("0"),
+  runTimeActual: numeric("run_time_actual", { precision: 10, scale: 2 }).default("0"),
+  cleanupTimePlanned: numeric("cleanup_time_planned", { precision: 8, scale: 2 }).default("0"),
+  cleanupTimeActual: numeric("cleanup_time_actual", { precision: 8, scale: 2 }).default("0"),
+  totalTimePlanned: numeric("total_time_planned", { precision: 10, scale: 2 }).default("0"),
+  totalTimeActual: numeric("total_time_actual", { precision: 10, scale: 2 }).default("0"),
+  
+  // Traceability and batch information
+  batchNumber: text("batch_number"),
+  lotNumber: text("lot_number"),
+  campaignNumber: text("campaign_number"),
+  productionLine: text("production_line"),
+  shiftNumber: text("shift_number"),
+  operatorId: integer("operator_id").references(() => users.id),
+  supervisorId: integer("supervisor_id").references(() => users.id),
+  equipmentUsed: jsonb("equipment_used").$type<string[]>().default([]),
+  
+  // Production tracking
+  completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
+  lastOperationCompleted: text("last_operation_completed"),
+  nextOperationDue: text("next_operation_due"),
+  bottleneckResource: text("bottleneck_resource"),
+  downtimeMinutes: numeric("downtime_minutes", { precision: 8, scale: 2 }).default("0"),
+  efficiencyPercentage: numeric("efficiency_percentage", { precision: 5, scale: 2 }).default("100"),
+  oeePercentage: numeric("oee_percentage", { precision: 5, scale: 2 }).default("0"), // Overall Equipment Effectiveness
+  firstPassYield: numeric("first_pass_yield", { precision: 5, scale: 2 }).default("0"),
+  
+  // Quality and compliance tracking
+  inspectionStatus: text("inspection_status").default("pending"), // pending, in_progress, passed, failed, conditional
+  certificateOfAnalysis: jsonb("certificate_of_analysis").$type<Record<string, any>>().default({}),
+  deviationReports: text("deviation_reports").array().default([]),
+  correctiveActions: text("corrective_actions").array().default([]),
+  batchRecordComplete: boolean("batch_record_complete").default(false),
+  releaseApproved: boolean("release_approved").default(false),
+  releaseApprovedBy: integer("release_approved_by").references(() => users.id),
+  releaseDate: timestamp("release_date"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Planned Orders - preliminary orders from MRP planning before becoming production orders
@@ -1353,6 +1414,13 @@ export const insertPlantResourceSchema = createInsertSchema(plantResources).omit
 export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
   id: true,
   createdAt: true,
+}).extend({
+  dueDate: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
+  actualStartDate: z.union([z.string().datetime(), z.date()]).optional(),
+  actualEndDate: z.union([z.string().datetime(), z.date()]).optional(),
+  releaseDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
