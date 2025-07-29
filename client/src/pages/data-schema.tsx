@@ -1478,15 +1478,15 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Smart Layout Algorithm - Fixed to prevent overlapping cards
+  // Smart Layout Algorithm - Grid-based with generous spacing for relationship visibility
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
     if (!tables.length) return {};
 
     const positions: Record<string, { x: number; y: number }> = {};
     const nodeWidth = 320;
     const nodeHeight = 200;
-    const minSpacing = 60; // Spacing between cards
-    const safeDistance = nodeWidth + minSpacing; // Minimum safe distance between card centers
+    const horizontalSpacing = 120; // Generous horizontal spacing for relationship lines
+    const verticalSpacing = 100;   // Generous vertical spacing for relationship lines
     
     // Build relationship graph
     const relationshipGraph: Record<string, string[]> = {};
@@ -1506,91 +1506,70 @@ function DataSchemaViewContent() {
                   Object.values(relationshipGraph).filter(rels => rels.includes(table.name)).length
     }));
 
-    // Sort by connection count (most connected first)
+    // Sort by connection count (most connected first) for better hub placement
     connectionCounts.sort((a, b) => b.connections - a.connections);
 
-    // Helper function to check if a position collides with existing positions
-    const hasCollision = (x: number, y: number, existing: Record<string, { x: number; y: number }>) => {
-      return Object.values(existing).some(pos => {
-        const dx = Math.abs(x - pos.x);
-        const dy = Math.abs(y - pos.y);
-        return dx < safeDistance && dy < (nodeHeight + minSpacing);
-      });
-    };
-
-    // Start with a grid-based layout to ensure no overlaps
-    const cols = Math.ceil(Math.sqrt(tables.length));
-    const startX = 100;
-    const startY = 100;
+    // Use an adaptive grid layout that expands based on table count
+    const tableCount = tables.length;
+    let cols: number;
     
-    // First pass: Place tables in a grid to guarantee no overlaps
+    if (tableCount <= 4) {
+      cols = 2;
+    } else if (tableCount <= 9) {
+      cols = 3;
+    } else if (tableCount <= 16) {
+      cols = 4;
+    } else if (tableCount <= 25) {
+      cols = 5;
+    } else {
+      cols = Math.ceil(Math.sqrt(tableCount));
+    }
+    
+    const startX = 150; // More padding from screen edge
+    const startY = 150;
+    
+    // Calculate actual spacing including card dimensions
+    const totalHorizontalSpacing = nodeWidth + horizontalSpacing;
+    const totalVerticalSpacing = nodeHeight + verticalSpacing;
+    
+    // Place tables in organized grid with relationship-aware ordering
     connectionCounts.forEach((table, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
-      const x = startX + col * (nodeWidth + minSpacing);
-      const y = startY + row * (nodeHeight + minSpacing);
+      
+      // Position with generous spacing
+      const x = startX + col * totalHorizontalSpacing;
+      const y = startY + row * totalVerticalSpacing;
+      
       positions[table.name] = { x, y };
     });
 
-    // Second pass: Try to improve positions based on relationships while maintaining no overlaps
-    const maxIterations = 3; // Limit iterations to prevent infinite loops
-    for (let iteration = 0; iteration < maxIterations; iteration++) {
-      let improved = false;
+    // Optional refinement: Try to move highly connected tables to more central positions
+    if (tableCount > 6) {
+      const centerCol = Math.floor(cols / 2);
+      const centerRow = Math.floor(Math.ceil(tableCount / cols) / 2);
       
-      connectionCounts.forEach((table) => {
-        const tableName = table.name;
-        const currentPos = positions[tableName];
-        let bestPos = currentPos;
-        let bestScore = -Infinity;
+      // Find the most connected table and try to place it more centrally if possible
+      const mostConnected = connectionCounts[0];
+      if (mostConnected.connections > 2) {
+        const centerX = startX + centerCol * totalHorizontalSpacing;
+        const centerY = startY + centerRow * totalVerticalSpacing;
         
-        // Try positions in a small radius around current position
-        const searchRadius = 150;
-        const searchSteps = 12;
-        
-        for (let angle = 0; angle < 2 * Math.PI; angle += (2 * Math.PI) / searchSteps) {
-          for (let radius = safeDistance; radius <= searchRadius; radius += 40) {
-            const candidateX = currentPos.x + Math.cos(angle) * radius;
-            const candidateY = currentPos.y + Math.sin(angle) * radius;
-            
-            // Create temporary positions without current table
-            const tempPositions = { ...positions };
-            delete tempPositions[tableName];
-            
-            // Check if this position would cause collisions
-            if (!hasCollision(candidateX, candidateY, tempPositions)) {
-              // Calculate score based on relationships
-              let score = 0;
-              
-              Object.entries(tempPositions).forEach(([otherName, otherPos]) => {
-                const dx = candidateX - otherPos.x;
-                const dy = candidateY - otherPos.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                const hasRelationship = relationshipGraph[tableName].includes(otherName) || 
-                                      relationshipGraph[otherName].includes(tableName);
-                
-                if (hasRelationship) {
-                  // Prefer moderate distance for related tables
-                  const idealDistance = safeDistance + 80;
-                  const distanceFromIdeal = Math.abs(distance - idealDistance);
-                  score += Math.max(0, 100 - distanceFromIdeal / 2);
-                }
-              });
-              
-              if (score > bestScore) {
-                bestScore = score;
-                bestPos = { x: candidateX, y: candidateY };
-                improved = true;
-              }
-            }
+        // Check if center position is different from current position
+        const currentPos = positions[mostConnected.name];
+        if (currentPos.x !== centerX || currentPos.y !== centerY) {
+          // Find what's currently at center and swap if beneficial
+          const centerOccupant = Object.entries(positions).find(([_, pos]) => 
+            pos.x === centerX && pos.y === centerY
+          );
+          
+          if (centerOccupant) {
+            // Swap positions
+            positions[centerOccupant[0]] = currentPos;
+            positions[mostConnected.name] = { x: centerX, y: centerY };
           }
         }
-        
-        positions[tableName] = bestPos;
-      });
-      
-      // If no improvements were made, stop iterating
-      if (!improved) break;
+      }
     }
 
     return positions;
