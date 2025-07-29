@@ -6582,13 +6582,7 @@ export const inventoryLots = pgTable("inventory_lots", {
 export const salesOrders = pgTable("sales_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(),
-  customerName: text("customer_name").notNull(),
-  customerCode: text("customer_code"),
-  customerContact: jsonb("customer_contact").$type<{
-    name?: string;
-    email?: string;
-    phone?: string;
-  }>(),
+  customerId: integer("customer_id").references(() => customers.id).notNull(),
   orderDate: timestamp("order_date").notNull(),
   requestedDate: timestamp("requested_date").notNull(),
   promisedDate: timestamp("promised_date"),
@@ -7185,7 +7179,15 @@ export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
   }),
 }));
 
+export const customersRelations = relations(customers, ({ many }) => ({
+  salesOrders: many(salesOrders),
+}));
+
 export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [salesOrders.customerId],
+    references: [customers.id],
+  }),
   site: one(sites, {
     fields: [salesOrders.siteId],
     references: [sites.id],

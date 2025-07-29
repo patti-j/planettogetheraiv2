@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Sales Orders Customer Relationship Implementation - Proper CRM Integration (July 29, 2025)**:
+- **CUSTOMER FOREIGN KEY ADDED**: Enhanced sales_orders table with customerId foreign key linking to customers table for proper customer relationship management
+- **SCHEMA RELATIONSHIPS UPDATED**: Updated Drizzle ORM relations - sales orders now properly link to customers, customers have many sales orders relationship
+- **DATABASE MIGRATION COMPLETED**: Removed redundant customer text fields (customerName, customerCode, customerContact) and replaced with proper customerId foreign key reference
+- **CRM INTEGRATION READY**: Sales orders now follow proper ERP design pattern with normalized customer data enabling comprehensive customer relationship tracking
+- **DATA INTEGRITY ENHANCED**: Eliminated data duplication by linking to centralized customer master data instead of storing customer information directly in sales orders
+- **CUSTOMER ANALYTICS ENABLED**: Proper relationship structure now supports customer-based sales analytics, order history tracking, and customer lifecycle management
+- Enhanced sales order management capabilities by establishing proper customer relationships following manufacturing ERP best practices for customer relationship management
+
 ✓ **Transfer Orders Architecture Fixed - Proper Inventory Relationship Structure (July 29, 2025)**:
 - **ARCHITECTURAL CORRECTION COMPLETED**: Fixed improper direct storage location relationships in transfer orders table by moving them to transfer order lines level
 - **DATABASE MIGRATION SUCCESSFUL**: Removed fromStorageLocationId and toStorageLocationId columns from transfer_orders table and added them to transfer_order_lines table
