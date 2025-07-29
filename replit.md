@@ -12,15 +12,17 @@
 - Manufacturing hierarchy complete: production versions define HOW to make products via BOM (discrete) or recipe (process)
 - Schema supports both manufacturing paradigms within same system for different product types
 
-✓ **Planned Orders-Production Versions Relationship Implementation (July 29, 2025)**:
-- Added missing production_version_id foreign key column to planned_orders table matching production_orders structure
-- Created planned_orders table in database (was missing despite being defined in schema)
-- Implemented plannedOrdersRelations with production version, plant, and production order relationships
-- Enhanced productionVersionsRelations to include both production orders and planned orders
-- Added sample data demonstrating working relationships: production version PV-001 now links to 3 production orders AND 3 planned orders
-- Database relationship structure now complete: planned_orders (many) ←→ (one) production_versions ←→ (many) production_orders
-- Both order types follow SAP's production version approach for consistent manufacturing hierarchy
-- Schema now supports complete order lifecycle: planned orders → production orders via same production version
+✓ **Production Orders-Planned Orders Many-to-Many Relationship Implementation (July 29, 2025)**:
+- Implemented proper many-to-many relationship between production orders and planned orders via junction table
+- Created planned_order_production_orders junction table supporting consolidation and splitting scenarios
+- Multiple planned orders can be consolidated into single production order (many → one)
+- Single planned orders can be split into multiple production orders (one → many)
+- Junction table tracks conversion details: conversion type, quantities, ratios, timing, and responsible user
+- Removed simple foreign key relationship from planned_orders.production_order_id
+- Enhanced Drizzle ORM relations with plannedOrderLinks and productionOrderLinks through junction table
+- Added comprehensive insert schemas and TypeScript types for PlannedOrderProductionOrder entity
+- Database schema now properly supports real-world manufacturing scenarios where planned orders are flexibly converted to production orders
+- System enables advanced production planning with quantity consolidation, order splitting, and detailed conversion tracking
 
 ✓ **Session Persistence Fix - Proper Last Visited Route Restoration (July 29, 2025)**:
 - Fixed session startup issue where users were always redirected to production schedule view instead of their last visited page

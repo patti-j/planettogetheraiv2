@@ -81,9 +81,26 @@ export const plannedOrders = pgTable("planned_orders", {
   salesOrderNumber: text("sales_order_number"), // Originating sales order if applicable
   productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
   createdAt: timestamp("created_at").defaultNow(),
-  convertedToProductionOrder: boolean("converted_to_production_order").default(false),
-  productionOrderId: integer("production_order_id").references(() => productionOrders.id), // If converted
+  // Removed productionOrderId foreign key - now handled via many-to-many junction table
 });
+
+// Many-to-Many Junction Table: Planned Orders ↔ Production Orders
+// Supports consolidation (multiple planned orders → 1 production order) and splitting (1 planned order → multiple production orders)
+export const plannedOrderProductionOrders = pgTable("planned_order_production_orders", {
+  id: serial("id").primaryKey(),
+  plannedOrderId: integer("planned_order_id").references(() => plannedOrders.id).notNull(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  conversionType: text("conversion_type").notNull(), // "consolidation", "split", "one_to_one"
+  plannedQuantity: integer("planned_quantity").notNull(), // Quantity from planned order allocated to this production order
+  convertedQuantity: integer("converted_quantity").notNull(), // Actual quantity converted
+  conversionRatio: numeric("conversion_ratio", { precision: 8, scale: 4 }).notNull().default("1.0000"), // plannedQuantity/totalPlannedQuantity for this production order
+  notes: text("notes"), // Reason for consolidation/split
+  convertedAt: timestamp("converted_at").defaultNow(),
+  convertedBy: integer("converted_by").references(() => users.id),
+}, (table) => ({
+  // Ensure each planned order can only be converted to a production order once with the same conversion details
+  uniquePlannedProductionOrder: unique().on(table.plannedOrderId, table.productionOrderId),
+}));
 
 // SAP S/4HANA Process Industries Master Recipes - Header level (equivalent of routing for process manufacturing)
 export const recipes = pgTable("recipes", {
@@ -1067,6 +1084,14 @@ export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
   createdAt: true,
 });
 
+// Junction table insert schema for many-to-many relationship
+export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders).omit({
+  id: true,
+  convertedAt: true,
+}).extend({
+  convertedAt: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
 export const insertOperationSchema = createInsertSchema(operations).omit({
   id: true,
 }).extend({
@@ -1911,6 +1936,10 @@ export type ProductionOrder = typeof productionOrders.$inferSelect;
 
 export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 export type PlannedOrder = typeof plannedOrders.$inferSelect;
+
+// Junction table types for many-to-many relationship
+export type PlannedOrderProductionOrder = typeof plannedOrderProductionOrders.$inferSelect;
+export type InsertPlannedOrderProductionOrder = z.infer<typeof insertPlannedOrderProductionOrderSchema>;
 
 export type InsertOperation = z.infer<typeof insertOperationSchema>;
 export type Operation = typeof operations.$inferSelect;
@@ -6570,6 +6599,8 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
     references: [productionVersions.id],
   }),
   operations: many(operations),
+  // Many-to-many relationship with planned orders via junction table
+  plannedOrderLinks: many(plannedOrderProductionOrders),
 }));
 
 export const productionVersionsRelations = relations(productionVersions, ({ one, many }) => ({
@@ -6589,7 +6620,7 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   plannedOrders: many(plannedOrders),
 }));
 
-export const plannedOrdersRelations = relations(plannedOrders, ({ one }) => ({
+export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
   plant: one(plants, {
     fields: [plannedOrders.plantId],
     references: [plants.id],
@@ -6598,9 +6629,23 @@ export const plannedOrdersRelations = relations(plannedOrders, ({ one }) => ({
     fields: [plannedOrders.productionVersionId],
     references: [productionVersions.id],
   }),
+  // Many-to-many relationship with production orders via junction table
+  productionOrderLinks: many(plannedOrderProductionOrders),
+}));
+
+// Junction table relations for many-to-many relationship
+export const plannedOrderProductionOrdersRelations = relations(plannedOrderProductionOrders, ({ one }) => ({
+  plannedOrder: one(plannedOrders, {
+    fields: [plannedOrderProductionOrders.plannedOrderId],
+    references: [plannedOrders.id],
+  }),
   productionOrder: one(productionOrders, {
-    fields: [plannedOrders.productionOrderId],
+    fields: [plannedOrderProductionOrders.productionOrderId],
     references: [productionOrders.id],
+  }),
+  convertedBy: one(users, {
+    fields: [plannedOrderProductionOrders.convertedBy],
+    references: [users.id],
   }),
 }));
 
