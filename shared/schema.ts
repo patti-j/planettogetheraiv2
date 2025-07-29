@@ -7125,6 +7125,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
 export const itemsRelations = relations(items, ({ many }) => ({
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
+  stocks: many(stocks), // Link to stocks for comprehensive inventory tracking
   salesOrderLines: many(salesOrderLines),
   purchaseOrderLines: many(purchaseOrderLines),
   transferOrderLines: many(transferOrderLines),

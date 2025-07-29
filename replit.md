@@ -11,6 +11,7 @@
 - **DATABASE RELATIONSHIPS**: Established proper foreign key relationships - stocks link to items and storage_locations, distributions link to sales_order_lines and storage_locations
 - **COMPLETE SCHEMA INTEGRATION**: Added insert schemas, TypeScript types, and bidirectional relations for both new tables with proper date handling and validation
 - **INDEXES CREATED**: Performance indexes added for quantity levels, status tracking, shipment dates, and status monitoring for optimal query performance
+- **FOREIGN KEY RELATIONSHIPS FIXED**: Added missing foreign key constraints between sales_orders ↔ sales_order_lines and purchase_orders ↔ purchase_order_lines for proper data integrity
 - Enhanced inventory management capabilities by providing comprehensive stock level tracking and detailed shipment distribution monitoring for complete supply chain visibility
 
 ✓ **Data Schema View Inventory Filter Enhancement & Relationship TypeScript Fix (July 29, 2025)**:
