@@ -332,13 +332,20 @@ const featureTableMapping: Record<string, string[]> = {
     'profitability_analysis'
   ],
   'engineering': [
-    'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'routings', 'routing_operations',
-    'production_versions', 'work_centers', 'product_masters', 'products',
-    'product_categories', 'product_structures', 'engineering_changes',
-    'specifications', 'documents', 'alternate_routings', 'operations',
-    'capabilities', 'resource_capabilities', 'quality_specifications',
-    'material_specifications', 'process_parameters', 'technical_documents',
-    'resources', 'plants', 'resource_requirements', 'storage_locations'
+    // Process Manufacturing (Recipe-based)
+    'recipes', 'recipe_operations', 'recipe_phases', 'recipe_operation_relationships', 'recipe_material_assignments', 'recipe_formulas',
+    'ingredients', 'material_requirements', 'process_operations',
+    // Discrete Manufacturing (BOM-based)
+    'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs',
+    'routings', 'routing_operations', 'discrete_operations',
+    // Production Versions (links BOMs/recipes to plants)
+    'production_versions',
+    // Core Engineering Infrastructure
+    'work_centers', 'resources', 'plants', 'capabilities', 'resource_capabilities', 'resource_requirements', 'storage_locations',
+    // Product & Technical Data
+    'product_masters', 'products', 'product_categories', 'product_structures', 'items',
+    'engineering_changes', 'specifications', 'documents', 'alternate_routings', 'operations',
+    'quality_specifications', 'material_specifications', 'process_parameters', 'technical_documents'
   ]
 };
 

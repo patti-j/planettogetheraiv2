@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Engineering Schema Filter Enhancement for Process Manufacturing (July 29, 2025)**:
+- **COMPREHENSIVE UPDATE**: Enhanced Engineering & Product Design filter to include all process manufacturing tables discussed recently
+- **Process Manufacturing Tables**: Added recipes, recipe_operations, recipe_phases, recipe_operation_relationships, recipe_material_assignments, recipe_formulas, ingredients, material_requirements, process_operations
+- **Discrete Manufacturing Tables**: Maintained bills_of_materials, bom_items, bom_material_requirements, bom_product_outputs, routings, routing_operations, discrete_operations
+- **Production Versions Integration**: Included production_versions as central linking entity between BOMs/recipes and plants
+- **Engineering Infrastructure**: Added work_centers, resources, plants, capabilities, resource_capabilities, resource_requirements, storage_locations
+- **Product & Technical Data**: Included product_masters, products, product_categories, product_structures, items, engineering_changes, specifications, documents
+- **Complete Process Coverage**: Engineering teams can now explore both process manufacturing (recipe-based) and discrete manufacturing (BOM-based) workflows in unified view
+- **Organized Categories**: Filter organized with clear comments separating process manufacturing, discrete manufacturing, production versions, and supporting infrastructure
+- Enhanced engineering data exploration by including all recently implemented process manufacturing tables alongside traditional discrete manufacturing structures
+
 ✓ **Ingredients to Production Versions Relationship Implementation (July 29, 2025)**:
 - **IMPLEMENTED RELATIONSHIP**: Successfully established one-to-many relationship between production_versions and ingredients tables
 - **Database Migration**: Added production_version_id column to ingredients table with proper foreign key constraint
