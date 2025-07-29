@@ -6408,10 +6408,11 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Material Requirements - detailed requirements for formulations in process manufacturing
+// Material Requirements - detailed requirements for formulations in process manufacturing OR bills of material in discrete manufacturing
 export const materialRequirements = pgTable("material_requirements", {
   id: serial("id").primaryKey(),
   formulationId: integer("formulation_id").references(() => formulations.id),
+  bomId: integer("bom_id").references(() => billsOfMaterial.id), // New relationship to bills of material
   requirementName: text("requirement_name").notNull(),
   requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
@@ -6824,7 +6825,8 @@ export const billsOfMaterialRelations = relations(billsOfMaterial, ({ one, many 
     references: [items.id],
   }),
   lines: many(bomLines),
-  materialRequirements: many(bomMaterialRequirements),
+  bomMaterialRequirements: many(bomMaterialRequirements), // Renamed for clarity - direct BOM-material link
+  materialRequirements: many(materialRequirements), // New relationship - detailed material requirements
   productOutputs: many(bomProductOutputs),
   productionVersions: many(productionVersions),
 }));
@@ -7017,6 +7019,10 @@ export const materialRequirementsRelations = relations(materialRequirements, ({ 
   formulation: one(formulations, {
     fields: [materialRequirements.formulationId],
     references: [formulations.id],
+  }),
+  billOfMaterial: one(billsOfMaterial, {
+    fields: [materialRequirements.bomId],
+    references: [billsOfMaterial.id],
   }),
 }));
 

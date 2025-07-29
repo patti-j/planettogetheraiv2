@@ -2,6 +2,19 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Material Requirements Dual BOM-Formulation Relationship Implementation Complete (July 29, 2025)**:
+- **DUAL RELATIONSHIP SYSTEM**: Successfully enhanced material_requirements table to support both discrete manufacturing (BOM-based) and process manufacturing (formulation-based) workflows
+- **DATABASE SCHEMA ENHANCEMENT**: Added bomId nullable foreign key column to material_requirements table enabling dual relationships - formulationId for process manufacturing, bomId for discrete manufacturing
+- **COMPREHENSIVE STORAGE LAYER**: Added complete storage interface methods getMaterialRequirements, getMaterialRequirement, createMaterialRequirement, updateMaterialRequirement, deleteMaterialRequirement, getMaterialRequirementsByFormulation, getMaterialRequirementsByBom
+- **FULL API COVERAGE**: Implemented 8 REST API endpoints with authentication and validation - GET/POST/PUT/DELETE for material requirements plus specialized routes for formulation-specific and BOM-specific requirements
+- **MANUFACTURING FLEXIBILITY**: System now supports granular material requirement specification for both discrete manufacturing (tablet production with APIs, excipients, lubricants) and process manufacturing (acetaminophen crystallization with raw materials, solvents, reagents)
+- **REAL-WORLD TESTING COMPLETED**: Successfully created and tested meaningful data - BOM-based requirements (Acetaminophen API, Microcrystalline Cellulose, Magnesium Stearate for tablet production) and formulation-based requirements (Raw Acetaminophen Crystals, Purified Water, Sodium Hydroxide for chemical processing)
+- **BIDIRECTIONAL SCHEMA RELATIONS**: Updated Drizzle ORM with proper bidirectional relationships - materialRequirementsRelations linking to both formulations and billsOfMaterial, billsOfMaterialRelations and formulationsRelations with materialRequirements
+- **ADVANCED MATERIAL SPECIFICATIONS**: Enhanced requirements support detailed quality specifications (purity, particle size, moisture content), process stages (mixing, dissolution, pH adjustment), consumption types (variable, fixed), and criticality flags
+- **API VALIDATION SUCCESS**: All endpoints tested and working correctly - POST creates requirements (201), GET retrieves by parent entity (200), proper Zod validation with detailed error messages
+- **DISCRETE-PROCESS MANUFACTURING BRIDGE**: System now seamlessly bridges discrete manufacturing (BOM + routing approach) and process manufacturing (formulation + recipe approach) through unified material requirements table
+- Enhanced manufacturing ERP capabilities by providing flexible material requirement management supporting both pharmaceutical tablet production (discrete) and chemical formulation processing (process) within same integrated system
+
 ✓ **Complete Discrete Operation Phase Resource Requirements Junction Table System Implementation (July 29, 2025)**:
 - **FULL JUNCTION TABLE SYSTEM**: Successfully implemented complete many-to-many relationship between discrete_operation_phases and resource_requirements tables via junction table discrete_operation_phase_resource_requirements
 - **COMPREHENSIVE DATABASE SCHEMA**: Added junction table with 9 detailed fields including phaseSpecificQuantity (numeric), phasePriority (enum: low/medium/high/critical), timingConstraints (JSONB), and notes for flexible resource allocation

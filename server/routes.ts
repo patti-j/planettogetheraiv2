@@ -47,7 +47,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertMaterialRequirementSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -17078,6 +17078,122 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching assignments by formulation detail:", error);
       res.status(500).json({ error: "Failed to fetch assignments by formulation detail" });
+    }
+  });
+
+  // Material Requirements - dual relationship with formulations and BOMs
+  app.get("/api/material-requirements", requireAuth, async (req, res) => {
+    try {
+      const requirements = await storage.getMaterialRequirements();
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching material requirements:", error);
+      res.status(500).json({ error: "Failed to fetch material requirements" });
+    }
+  });
+
+  app.get("/api/material-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material requirement ID" });
+      }
+
+      const requirement = await storage.getMaterialRequirement(id);
+      if (!requirement) {
+        return res.status(404).json({ error: "Material requirement not found" });
+      }
+      res.json(requirement);
+    } catch (error) {
+      console.error("Error fetching material requirement:", error);
+      res.status(500).json({ error: "Failed to fetch material requirement" });
+    }
+  });
+
+  app.post("/api/material-requirements", requireAuth, async (req, res) => {
+    try {
+      const validation = insertMaterialRequirementSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid material requirement data", details: validation.error.errors });
+      }
+
+      const requirement = await storage.createMaterialRequirement(validation.data);
+      res.status(201).json(requirement);
+    } catch (error) {
+      console.error("Error creating material requirement:", error);
+      res.status(500).json({ error: "Failed to create material requirement" });
+    }
+  });
+
+  app.put("/api/material-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material requirement ID" });
+      }
+
+      const validation = insertMaterialRequirementSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid material requirement data", details: validation.error.errors });
+      }
+
+      const requirement = await storage.updateMaterialRequirement(id, validation.data);
+      if (!requirement) {
+        return res.status(404).json({ error: "Material requirement not found" });
+      }
+      res.json(requirement);
+    } catch (error) {
+      console.error("Error updating material requirement:", error);
+      res.status(500).json({ error: "Failed to update material requirement" });
+    }
+  });
+
+  app.delete("/api/material-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid material requirement ID" });
+      }
+
+      const success = await storage.deleteMaterialRequirement(id);
+      if (!success) {
+        return res.status(404).json({ error: "Material requirement not found" });
+      }
+      res.json({ message: "Material requirement deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting material requirement:", error);
+      res.status(500).json({ error: "Failed to delete material requirement" });
+    }
+  });
+
+  // Specialized routes for dual relationships
+  app.get("/api/formulations/:formulationId/material-requirements", requireAuth, async (req, res) => {
+    try {
+      const formulationId = parseInt(req.params.formulationId);
+      if (isNaN(formulationId)) {
+        return res.status(400).json({ error: "Invalid formulation ID" });
+      }
+
+      const requirements = await storage.getMaterialRequirementsByFormulation(formulationId);
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching material requirements by formulation:", error);
+      res.status(500).json({ error: "Failed to fetch material requirements" });
+    }
+  });
+
+  app.get("/api/bills-of-material/:bomId/material-requirements", requireAuth, async (req, res) => {
+    try {
+      const bomId = parseInt(req.params.bomId);
+      if (isNaN(bomId)) {
+        return res.status(400).json({ error: "Invalid BOM ID" });
+      }
+
+      const requirements = await storage.getMaterialRequirementsByBom(bomId);
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching material requirements by BOM:", error);
+      res.status(500).json({ error: "Failed to fetch material requirements" });
     }
   });
 

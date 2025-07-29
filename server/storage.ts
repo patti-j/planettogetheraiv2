@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails,
+  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail,
+  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1270,6 +1270,15 @@ export interface IStorage {
   getProductionVersionPhaseFormulationDetailsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
   getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
   getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
+
+  // Material Requirements - dual relationship with formulations and BOMs
+  getMaterialRequirements(): Promise<MaterialRequirement[]>;
+  getMaterialRequirement(id: number): Promise<MaterialRequirement | undefined>;
+  createMaterialRequirement(requirement: InsertMaterialRequirement): Promise<MaterialRequirement>;
+  updateMaterialRequirement(id: number, requirement: Partial<InsertMaterialRequirement>): Promise<MaterialRequirement | undefined>;
+  deleteMaterialRequirement(id: number): Promise<boolean>;
+  getMaterialRequirementsByFormulation(formulationId: number): Promise<MaterialRequirement[]>;
+  getMaterialRequirementsByBom(bomId: number): Promise<MaterialRequirement[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -11029,6 +11038,50 @@ export class DatabaseStorage implements IStorage {
       .from(productionVersionPhaseFormulationDetails)
       .where(eq(productionVersionPhaseFormulationDetails.formulationDetailId, formulationDetailId))
       .orderBy(productionVersionPhaseFormulationDetails.id);
+  }
+
+  // Material Requirements - dual relationship with formulations and BOMs
+  async getMaterialRequirements(): Promise<MaterialRequirement[]> {
+    return await db.select().from(materialRequirements).orderBy(materialRequirements.requirementName);
+  }
+
+  async getMaterialRequirement(id: number): Promise<MaterialRequirement | undefined> {
+    const [requirement] = await db.select().from(materialRequirements).where(eq(materialRequirements.id, id));
+    return requirement || undefined;
+  }
+
+  async createMaterialRequirement(requirement: InsertMaterialRequirement): Promise<MaterialRequirement> {
+    const [newRequirement] = await db.insert(materialRequirements).values(requirement).returning();
+    return newRequirement;
+  }
+
+  async updateMaterialRequirement(id: number, requirement: Partial<InsertMaterialRequirement>): Promise<MaterialRequirement | undefined> {
+    const [updated] = await db.update(materialRequirements)
+      .set({ ...requirement, updatedAt: new Date() })
+      .where(eq(materialRequirements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteMaterialRequirement(id: number): Promise<boolean> {
+    const result = await db.delete(materialRequirements).where(eq(materialRequirements.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getMaterialRequirementsByFormulation(formulationId: number): Promise<MaterialRequirement[]> {
+    return await db
+      .select()
+      .from(materialRequirements)
+      .where(eq(materialRequirements.formulationId, formulationId))
+      .orderBy(materialRequirements.requirementName);
+  }
+
+  async getMaterialRequirementsByBom(bomId: number): Promise<MaterialRequirement[]> {
+    return await db
+      .select()
+      .from(materialRequirements)
+      .where(eq(materialRequirements.bomId, bomId))
+      .orderBy(materialRequirements.requirementName);
   }
 
   // Customers
