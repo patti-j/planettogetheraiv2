@@ -2,6 +2,15 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Process Operations to Recipe Phases Relationship Correction (July 29, 2025)**:
+- **CORRECTED RELATIONSHIP**: Fixed recipe_phases and process_operations relationship to proper many-to-one architecture where one process operation has many recipe phases
+- **Database Migration**: Added process_operation_id column to recipe_phases table and removed recipe_phase_id column from process_operations table
+- **Schema Update**: Updated Drizzle ORM relations - processOperations now has recipePhases many relationship, recipePhases has processOperation one relationship
+- **Architectural Fix**: Process manufacturing workflow now correctly supports one operation containing multiple phases for complex batch processing scenarios
+- **System Integration**: All changes successfully integrated with no TypeScript errors and application running correctly
+- **Relationship Hierarchy**: Process manufacturing now follows correct hierarchy: Production Order → Process Operation → Recipe Phases for proper granular control
+- Enhanced process manufacturing capabilities by enabling proper phase-level control within operations for pharmaceutical and chemical processing workflows
+
 ✓ **Recipe Phase Resource Requirements Many-to-Many Relationship Implementation (July 29, 2025)**:
 - Successfully implemented many-to-many relationship between recipe_phases and resource_requirements tables through junction table recipe_phase_resource_requirements
 - Created comprehensive junction table with phase-specific resource allocation capabilities: phaseSpecificQuantity, phasePriority, timingConstraints, and detailed notes

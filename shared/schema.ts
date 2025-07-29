@@ -205,6 +205,7 @@ export const recipePhases = pgTable("recipe_phases", {
   id: serial("id").primaryKey(),
   recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
   operationId: integer("operation_id").references(() => recipeOperations.id).notNull(), // Which operation this phase belongs to
+  processOperationId: integer("process_operation_id").references(() => processOperations.id), // Many-to-one with process operations
   phaseNumber: text("phase_number").notNull(), // e.g., "A", "B" within operation
   phaseName: text("phase_name").notNull(), // e.g., "Mixing", "Heating"
   phaseType: text("phase_type").notNull(), // process, quality_check, setup, cleanup
@@ -586,7 +587,6 @@ export const processOperations = pgTable("process_operations", {
   id: serial("id").primaryKey(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   recipeId: integer("recipe_id").references(() => recipes.id).notNull(), // Many-to-one relationship with recipes
-  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id), // Links to specific recipe phase
   operationName: text("operation_name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
@@ -5907,6 +5907,10 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
     fields: [recipePhases.operationId],
     references: [recipeOperations.id],
   }),
+  processOperation: one(processOperations, { // Many-to-one relationship: many recipe phases belong to one process operation
+    fields: [recipePhases.processOperationId],
+    references: [processOperations.id],
+  }),
   specificResource: one(resources, {
     fields: [recipePhases.specificResourceId],
     references: [resources.id],
@@ -6867,10 +6871,7 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
     fields: [processOperations.recipeId],
     references: [recipes.id],
   }),
-  recipePhase: one(recipePhases, {
-    fields: [processOperations.recipePhaseId],
-    references: [recipePhases.id],
-  }),
+  recipePhases: many(recipePhases), // One-to-many relationship: one process operation has many recipe phases
   assignedResource: one(resources, {
     fields: [processOperations.assignedResourceId],
     references: [resources.id],
