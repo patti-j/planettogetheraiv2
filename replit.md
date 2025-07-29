@@ -54,15 +54,13 @@
 - Positioned markers at 20% (source) and 80% (target) of relationship lines for optimal table association clarity
 - Users can now instantly identify relationship directions without analyzing foreign key structures or table schemas
 
-✓ **SAP-Compliant Production Version Architecture Fix (July 29, 2025)**:
-- ARCHITECTURAL CORRECTION: Removed direct foreign key relationship between production_versions and bills_of_material tables
-- Fixed critical issue where direct BOM relationship violated SAP's standard production version approach  
-- Production versions now correctly link to BOMs through routing operations only, not directly
+✓ **SAP-Compliant Production Version Architecture Clarification (July 29, 2025)**:
+- ARCHITECTURAL CLARIFICATION: Bills of Material correctly connect to Production Versions via production_versions.bom_id foreign key
+- Production Versions act as the linking entity between BOMs and Plants, following proper SAP manufacturing hierarchy
+- Correct relationship path: BOM → Production Version → Plant (no direct BOM → Plant connection)
+- Bills of Material remain plant-agnostic and only become plant-specific through production versions
 - Maintained recipe relationship for process manufacturing scenarios (production_versions.recipe_id → recipes.id)
-- Updated Drizzle ORM relations to remove direct BOM relationship from productionVersionsRelations
-- Modified storage layer to remove BOM reference logic from productionVersions data relationships
-- Database migration executed: ALTER TABLE production_versions DROP COLUMN bom_id
-- System now properly implements SAP architecture where BOMs are accessed through routing operations, not production version direct links
+- Database properly implements SAP architecture: bills_of_material ← production_versions.bom_id → production_versions.plant_id → plants
 - Enhanced manufacturing hierarchy compliance with industry-standard SAP approach for production version management
 
 ✓ **Enhanced Database Relationship Cardinality Indicators (July 29, 2025)**:
