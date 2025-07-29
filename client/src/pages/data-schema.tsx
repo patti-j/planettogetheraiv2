@@ -55,7 +55,8 @@ import {
   Plus,
   Minus,
   RefreshCw,
-  Flag
+  Flag,
+  Zap
 } from "lucide-react";
 
 // Custom edge component for relationships with cardinality labels
@@ -985,6 +986,8 @@ function DataSchemaViewContent() {
     }
   };
 
+
+
   // Always show schema by default since it loads quickly now (2-3 seconds)
   const [hasAppliedFilters, setHasAppliedFilters] = useState(true);
 
@@ -1446,6 +1449,151 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
+  // Smart Layout Algorithm - Intelligently arrange nodes to minimize relationship confusion
+  const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
+    if (!tables.length) return {};
+
+    const positions: Record<string, { x: number; y: number }> = {};
+    const nodeWidth = 320;
+    const nodeHeight = 200;
+    const minSpacing = 80; // Minimum space between nodes for relationship visibility
+    
+    // Build relationship graph
+    const relationshipGraph: Record<string, string[]> = {};
+    tables.forEach(table => {
+      relationshipGraph[table.name] = [];
+      table.relationships.forEach(rel => {
+        if (tables.some(t => t.name === rel.toTable)) {
+          relationshipGraph[table.name].push(rel.toTable);
+        }
+      });
+    });
+
+    // Calculate connection counts for each table
+    const connectionCounts = tables.map(table => ({
+      name: table.name,
+      connections: relationshipGraph[table.name].length + 
+                  Object.values(relationshipGraph).filter(rels => rels.includes(table.name)).length
+    }));
+
+    // Sort by connection count (most connected first)
+    connectionCounts.sort((a, b) => b.connections - a.connections);
+
+    // Use force-directed layout with relationship awareness
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    
+    // Place most connected table at center
+    if (connectionCounts.length > 0) {
+      positions[connectionCounts[0].name] = { x: centerX - nodeWidth/2, y: centerY - nodeHeight/2 };
+    }
+
+    // Place remaining tables using force-directed algorithm
+    for (let i = 1; i < connectionCounts.length; i++) {
+      const tableName = connectionCounts[i].name;
+      let bestPosition = { x: 0, y: 0 };
+      let bestScore = -Infinity;
+      
+      // Try multiple positions around existing nodes
+      const attempts = 50;
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        const angle = (attempt / attempts) * 2 * Math.PI;
+        const radius = 300 + (attempt * 20); // Increasing radius for each attempt
+        
+        const candidateX = centerX + Math.cos(angle) * radius - nodeWidth/2;
+        const candidateY = centerY + Math.sin(angle) * radius - nodeHeight/2;
+        
+        // Calculate score for this position
+        let score = 0;
+        let hasCollision = false;
+        
+        // Check for collisions and calculate relationship quality
+        Object.entries(positions).forEach(([otherName, otherPos]) => {
+          const dx = candidateX - otherPos.x;
+          const dy = candidateY - otherPos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Collision penalty
+          if (distance < nodeWidth + minSpacing) {
+            hasCollision = true;
+            score -= 1000;
+          }
+          
+          // Relationship bonus/penalty
+          const hasRelationship = relationshipGraph[tableName].includes(otherName) || 
+                                relationshipGraph[otherName].includes(tableName);
+          
+          if (hasRelationship) {
+            // Prefer moderate distance for related tables (not too close, not too far)
+            const idealDistance = nodeWidth + minSpacing + 100;
+            const distanceFromIdeal = Math.abs(distance - idealDistance);
+            score += Math.max(0, 200 - distanceFromIdeal);
+          } else {
+            // Prefer more distance for unrelated tables
+            score += Math.min(100, distance / 10);
+          }
+        });
+        
+        // Prefer positions closer to center but not too close
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(candidateX + nodeWidth/2 - centerX, 2) + 
+          Math.pow(candidateY + nodeHeight/2 - centerY, 2)
+        );
+        score += Math.max(0, 300 - distanceFromCenter / 3);
+        
+        if (!hasCollision && score > bestScore) {
+          bestScore = score;
+          bestPosition = { x: candidateX, y: candidateY };
+        }
+      }
+      
+      positions[tableName] = bestPosition;
+    }
+
+    return positions;
+  }, []);
+
+  // Smart Layout Handler
+  const handleSmartLayout = useCallback(() => {
+    if (!filteredTables.length) return;
+    
+    const smartPositions = generateSmartLayout(filteredTables);
+    
+    // Apply smart positions to nodes
+    setNodes(currentNodes => {
+      return currentNodes.map(node => ({
+        ...node,
+        position: smartPositions[node.id] || node.position
+      }));
+    });
+    
+    // Save these positions for the current filter
+    const filterKey = `${selectedFeature}-${selectedCategory}-${layoutType}-${selectedTables.join(',')}-${showRelatedTables}`;
+    setCustomPositions(prev => {
+      const updated = { ...prev };
+      updated[filterKey] = smartPositions;
+      
+      try {
+        localStorage.setItem('dataSchemaCustomPositions', JSON.stringify(updated));
+      } catch (error) {
+        console.warn('Failed to save smart layout positions:', error);
+      }
+      
+      return updated;
+    });
+    
+    // Auto-fit view after applying smart layout
+    setTimeout(() => {
+      fitView({ 
+        padding: 0.15, 
+        minZoom: 0.05, 
+        maxZoom: 2.0, 
+        duration: 1000 
+      });
+    }, 100);
+    
+  }, [filteredTables, generateSmartLayout, setNodes, selectedFeature, selectedCategory, layoutType, selectedTables, showRelatedTables, setCustomPositions, fitView]);
+
   // Enhanced node change handler to save positions per filter
   const handleNodesChange = useCallback((changes: any[]) => {
     onNodesChange(changes);
@@ -1790,6 +1938,26 @@ function DataSchemaViewContent() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Manually refresh schema data to load recent changes</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Smart Layout Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSmartLayout}
+                    className="flex items-center gap-2"
+                  >
+                    <Zap className="w-4 h-4" />
+                    <span className="hidden sm:inline">Smart Layout</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reorganize tables to minimize relationship confusion and maximize visibility</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
