@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Production Versions BOM/Recipe Reference Implementation (July 29, 2025)**:
+- Created bills_of_material table in database to support discrete manufacturing approach (BOM + routing)
+- Enhanced production versions to demonstrate both manufacturing methods: BOM-based (discrete) and recipe-based (process)
+- PV-001 now references BOM-001 for discrete manufacturing of TABLET-500MG using bill of materials approach
+- PV-002 now references RCP-001 for process manufacturing of ADHESIVE-INDUSTRIAL using recipe approach
+- Production versions correctly implement SAP's approach: each version references either BOM OR recipe, never both
+- Database relationships properly configured: production_versions ←→ bills_of_material AND production_versions ←→ recipes
+- Manufacturing hierarchy complete: production versions define HOW to make products via BOM (discrete) or recipe (process)
+- Schema supports both manufacturing paradigms within same system for different product types
+
 ✓ **Planned Orders-Production Versions Relationship Implementation (July 29, 2025)**:
 - Added missing production_version_id foreign key column to planned_orders table matching production_orders structure
 - Created planned_orders table in database (was missing despite being defined in schema)
