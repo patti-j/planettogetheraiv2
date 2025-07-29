@@ -18055,13 +18055,20 @@ Response must be valid JSON:
   // Database Schema endpoint - simplified to avoid complex queries
   app.get("/api/database/schema", async (req, res) => {
     try {
-      // First get table names
+      // First get table names with comments
       const tablesQuery = `
-        SELECT table_name, table_comment
-        FROM information_schema.tables
-        WHERE table_schema = 'public' 
-          AND table_type = 'BASE TABLE'
-        ORDER BY table_name;
+        SELECT 
+          t.table_name,
+          COALESCE(
+            obj_description(c.oid, 'pg_class'),
+            ''
+          ) as table_comment
+        FROM information_schema.tables t
+        LEFT JOIN pg_class c ON c.relname = t.table_name 
+          AND c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+        WHERE t.table_schema = 'public' 
+          AND t.table_type = 'BASE TABLE'
+        ORDER BY t.table_name;
       `;
       
       const tablesResult = await db.execute(tablesQuery);
@@ -18072,18 +18079,22 @@ Response must be valid JSON:
       for (const tableRow of tablesResult.rows) {
         const tableName = (tableRow as any).table_name;
         
-        // Get columns for this table
+        // Get columns for this table with comments
         const columnsQuery = `
           SELECT 
-            column_name,
-            data_type,
-            is_nullable,
-            column_default,
-            '' as column_comment
-          FROM information_schema.columns
-          WHERE table_schema = 'public' 
-            AND table_name = $1
-          ORDER BY ordinal_position;
+            c.column_name,
+            c.data_type,
+            c.is_nullable,
+            c.column_default,
+            COALESCE(
+              col_description(pgc.oid, c.ordinal_position),
+              ''
+            ) as column_comment
+          FROM information_schema.columns c
+          LEFT JOIN pg_class pgc ON pgc.relname = c.table_name
+          WHERE c.table_schema = 'public' 
+            AND c.table_name = $1
+          ORDER BY c.ordinal_position;
         `;
         
         const columnsResult = await db.execute(columnsQuery, [tableName]);

@@ -164,6 +164,7 @@ interface SchemaColumn {
   };
   unique?: boolean;
   defaultValue?: string;
+  comment?: string;
 }
 
 interface SchemaRelationship {
@@ -247,14 +248,21 @@ const TableNode = ({ data }: { data: any }) => {
         <CardContent className="pt-0">
           <div className="space-y-1 max-h-[200px] overflow-y-auto">
             {table.columns.slice(0, 10).map((column: SchemaColumn, idx: number) => (
-              <div key={idx} className="flex items-center gap-2 text-xs">
-                {column.primaryKey && <Key className="w-3 h-3 text-yellow-500" />}
-                {column.foreignKey && <Link2 className="w-3 h-3 text-blue-500" />}
-                <span className={column.primaryKey ? "font-bold" : ""}>{column.name}</span>
-                <Badge variant="secondary" className="text-xs px-1 py-0">
-                  {column.type}
-                </Badge>
-                {!column.nullable && <span className="text-red-500">*</span>}
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center gap-2 text-xs">
+                  {column.primaryKey && <Key className="w-3 h-3 text-yellow-500" />}
+                  {column.foreignKey && <Link2 className="w-3 h-3 text-blue-500" />}
+                  <span className={column.primaryKey ? "font-bold" : ""}>{column.name}</span>
+                  <Badge variant="secondary" className="text-xs px-1 py-0">
+                    {column.type}
+                  </Badge>
+                  {!column.nullable && <span className="text-red-500">*</span>}
+                </div>
+                {column.comment && (
+                  <div className="ml-6 text-xs text-gray-500 italic leading-snug">
+                    {column.comment}
+                  </div>
+                )}
               </div>
             ))}
             {table.columns.length > 10 && (
