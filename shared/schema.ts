@@ -499,8 +499,7 @@ export const productionVersions = pgTable("production_versions", {
   validFrom: timestamp("valid_from").notNull(), // When this version becomes active
   validTo: timestamp("valid_to"), // When this version expires (null = unlimited)
   
-  // Links to BOM and Recipe
-  bomId: integer("bom_id").references(() => billsOfMaterial.id), // For discrete manufacturing
+  // Link to Recipe for process manufacturing (BOM is linked through routing operations, not directly)
   recipeId: integer("recipe_id").references(() => recipes.id), // For process manufacturing
   
   // Routing information - links operations to material consumption
@@ -6607,10 +6606,6 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   plant: one(plants, {
     fields: [productionVersions.plantId],
     references: [plants.id],
-  }),
-  bom: one(billsOfMaterial, {
-    fields: [productionVersions.bomId],
-    references: [billsOfMaterial.id],
   }),
   recipe: one(recipes, {
     fields: [productionVersions.recipeId],

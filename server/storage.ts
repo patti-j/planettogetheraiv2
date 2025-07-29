@@ -3099,30 +3099,13 @@ export class DatabaseStorage implements IStorage {
           break;
 
         case 'productionVersions':
-          // Find related BOMs and recipes
+          // Find related recipes (BOMs are linked through routing operations, not directly per SAP standards)
           const versionData = await db
             .select()
             .from(productionVersions)
             .where(eq(productionVersions.id, objectId))
             .limit(1);
           
-          if (versionData[0]?.bomId) {
-            const bom = await db
-              .select()
-              .from(billsOfMaterial)
-              .where(eq(billsOfMaterial.id, versionData[0].bomId))
-              .limit(1);
-            
-            if (bom[0]) {
-              relationships.push({
-                from: { ...versionData[0], type: 'productionVersions' },
-                to: { ...bom[0], type: 'billsOfMaterial' },
-                relationshipType: 'uses',
-                description: 'Production version uses BOM'
-              });
-            }
-          }
-
           if (versionData[0]?.recipeId) {
             const recipe = await db
               .select()

@@ -31,14 +31,16 @@
 - Positioned markers at 20% (source) and 80% (target) of relationship lines for optimal table association clarity
 - Users can now instantly identify relationship directions without analyzing foreign key structures or table schemas
 
-✓ **Production Versions Foreign Key Relationships Fix (July 29, 2025)**:
-- Fixed critical missing foreign key constraints between production_versions and bills_of_material/recipes tables
-- Added production_versions_bom_id_fkey constraint linking production_versions.bom_id → bills_of_material.id
-- Added production_versions_recipe_id_fkey constraint linking production_versions.recipe_id → recipes.id
-- Production versions table now correctly shows related tables: plants, bills_of_material, recipes, planned_orders, production_orders
-- Enhanced manufacturing hierarchy visibility in Data Schema View - BOMs, routings, and recipes now appear as related to production versions
-- Completed SAP-style production version approach with proper database relationships for discrete (BOM) and process (recipe) manufacturing
-- Data Schema View now accurately reflects manufacturing relationships enabling users to understand complete production version dependencies
+✓ **SAP-Compliant Production Version Architecture Fix (July 29, 2025)**:
+- ARCHITECTURAL CORRECTION: Removed direct foreign key relationship between production_versions and bills_of_material tables
+- Fixed critical issue where direct BOM relationship violated SAP's standard production version approach  
+- Production versions now correctly link to BOMs through routing operations only, not directly
+- Maintained recipe relationship for process manufacturing scenarios (production_versions.recipe_id → recipes.id)
+- Updated Drizzle ORM relations to remove direct BOM relationship from productionVersionsRelations
+- Modified storage layer to remove BOM reference logic from productionVersions data relationships
+- Database migration executed: ALTER TABLE production_versions DROP COLUMN bom_id
+- System now properly implements SAP architecture where BOMs are accessed through routing operations, not production version direct links
+- Enhanced manufacturing hierarchy compliance with industry-standard SAP approach for production version management
 
 ✓ **Enhanced Database Relationship Cardinality Indicators (July 29, 2025)**:
 - Fixed cardinality indicators positioning from tiny center symbols to large, readable "1" and "∞" markers
