@@ -2,6 +2,14 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Session Persistence Fix - Proper Last Visited Route Restoration (July 29, 2025)**:
+- Fixed session startup issue where users were always redirected to production schedule view instead of their last visited page
+- Enhanced useSessionPersistence hook to redirect to lastVisitedRoute only when user visits root URL (/)
+- Users now return to their exact last visited page when starting new sessions or refreshing the browser
+- Prevents unwanted redirects to dashboard when user is actively navigating other pages
+- Maintains user workflow continuity by preserving navigation context across sessions
+- Fixed root cause: default route was overriding user's intended destination
+
 ✓ **Database Relationship Visual Indicators Implementation (July 29, 2025)**:
 - Added visual indicators on relationship lines showing "one" vs "many" sides for better relationship comprehension
 - One-to-many relationships now display "1 ——→ ∞" with different arrow markers on each end
