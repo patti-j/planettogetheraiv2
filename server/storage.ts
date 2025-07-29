@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations,
+  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation,
+  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1252,6 +1252,14 @@ export interface IStorage {
   updateFormulation(id: number, formulation: Partial<InsertFormulation>): Promise<Formulation | undefined>;
   deleteFormulation(id: number): Promise<boolean>;
   getFormulationsByVendor(vendorId: number): Promise<Formulation[]>;
+
+  // Formulation Details
+  getFormulationDetails(formulationId?: number): Promise<FormulationDetail[]>;
+  getFormulationDetail(id: number): Promise<FormulationDetail | undefined>;
+  createFormulationDetail(detail: InsertFormulationDetail): Promise<FormulationDetail>;
+  updateFormulationDetail(id: number, detail: Partial<InsertFormulationDetail>): Promise<FormulationDetail | undefined>;
+  deleteFormulationDetail(id: number): Promise<boolean>;
+  getFormulationDetailsByFormulation(formulationId: number): Promise<FormulationDetail[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -10806,6 +10814,57 @@ export class DatabaseStorage implements IStorage {
 
   async getFormulationsByVendor(vendorId: number): Promise<Formulation[]> {
     return await db.select().from(formulations).where(eq(formulations.preferredVendorId, vendorId));
+  }
+
+  // Formulation Details CRUD operations
+  async getFormulationDetails(formulationId?: number): Promise<FormulationDetail[]> {
+    let query = db.select().from(formulationDetails);
+    
+    if (formulationId) {
+      query = query.where(eq(formulationDetails.formulationId, formulationId));
+    }
+    
+    return await query.orderBy(formulationDetails.category, formulationDetails.detailName);
+  }
+
+  async getFormulationDetail(id: number): Promise<FormulationDetail | undefined> {
+    const [detail] = await db
+      .select()
+      .from(formulationDetails)
+      .where(eq(formulationDetails.id, id));
+    return detail;
+  }
+
+  async createFormulationDetail(detail: InsertFormulationDetail): Promise<FormulationDetail> {
+    const [newDetail] = await db
+      .insert(formulationDetails)
+      .values(detail)
+      .returning();
+    return newDetail;
+  }
+
+  async updateFormulationDetail(id: number, detail: Partial<InsertFormulationDetail>): Promise<FormulationDetail | undefined> {
+    const [updatedDetail] = await db
+      .update(formulationDetails)
+      .set({ ...detail, updatedAt: new Date() })
+      .where(eq(formulationDetails.id, id))
+      .returning();
+    return updatedDetail;
+  }
+
+  async deleteFormulationDetail(id: number): Promise<boolean> {
+    const result = await db
+      .delete(formulationDetails)
+      .where(eq(formulationDetails.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getFormulationDetailsByFormulation(formulationId: number): Promise<FormulationDetail[]> {
+    return await db
+      .select()
+      .from(formulationDetails)
+      .where(eq(formulationDetails.formulationId, formulationId))
+      .orderBy(formulationDetails.category, formulationDetails.detailName);
   }
 
   // Customers

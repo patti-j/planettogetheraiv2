@@ -47,7 +47,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -16683,6 +16683,107 @@ Response must be valid JSON:
     } catch (error) {
       console.error("Error fetching formulations by vendor:", error);
       res.status(500).json({ error: "Failed to fetch formulations by vendor" });
+    }
+  });
+
+  // Formulation Details Management
+  app.get("/api/formulation-details", async (req, res) => {
+    try {
+      const formulationId = req.query.formulationId ? parseInt(req.query.formulationId as string) : undefined;
+      const details = await storage.getFormulationDetails(formulationId);
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching formulation details:", error);
+      res.status(500).json({ error: "Failed to fetch formulation details" });
+    }
+  });
+
+  app.get("/api/formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid formulation detail ID" });
+      }
+
+      const detail = await storage.getFormulationDetail(id);
+      if (!detail) {
+        return res.status(404).json({ error: "Formulation detail not found" });
+      }
+      res.json(detail);
+    } catch (error) {
+      console.error("Error fetching formulation detail:", error);
+      res.status(500).json({ error: "Failed to fetch formulation detail" });
+    }
+  });
+
+  app.post("/api/formulation-details", async (req, res) => {
+    try {
+      const validation = insertFormulationDetailSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid formulation detail data", details: validation.error.errors });
+      }
+
+      const detail = await storage.createFormulationDetail(validation.data);
+      res.status(201).json(detail);
+    } catch (error) {
+      console.error("Error creating formulation detail:", error);
+      res.status(500).json({ error: "Failed to create formulation detail" });
+    }
+  });
+
+  app.put("/api/formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid formulation detail ID" });
+      }
+
+      const validation = insertFormulationDetailSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid formulation detail data", details: validation.error.errors });
+      }
+
+      const detail = await storage.updateFormulationDetail(id, validation.data);
+      if (!detail) {
+        return res.status(404).json({ error: "Formulation detail not found" });
+      }
+      res.json(detail);
+    } catch (error) {
+      console.error("Error updating formulation detail:", error);
+      res.status(500).json({ error: "Failed to update formulation detail" });
+    }
+  });
+
+  app.delete("/api/formulation-details/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid formulation detail ID" });
+      }
+
+      const deleted = await storage.deleteFormulationDetail(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Formulation detail not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting formulation detail:", error);
+      res.status(500).json({ error: "Failed to delete formulation detail" });
+    }
+  });
+
+  app.get("/api/formulations/:formulationId/details", async (req, res) => {
+    try {
+      const formulationId = parseInt(req.params.formulationId);
+      if (isNaN(formulationId)) {
+        return res.status(400).json({ error: "Invalid formulation ID" });
+      }
+
+      const details = await storage.getFormulationDetailsByFormulation(formulationId);
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching formulation details by formulation:", error);
+      res.status(500).json({ error: "Failed to fetch formulation details by formulation" });
     }
   });
 

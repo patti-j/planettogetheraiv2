@@ -6361,6 +6361,31 @@ export const materialRequirements = pgTable("material_requirements", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Formulation Details - detailed specifications and properties for each formulation
+export const formulationDetails = pgTable("formulation_details", {
+  id: serial("id").primaryKey(),
+  formulationId: integer("formulation_id").references(() => formulations.id, { onDelete: 'cascade' }).notNull(),
+  detailType: text("detail_type").notNull(), // composition, specification, property, instruction, safety, storage
+  detailName: text("detail_name").notNull(),
+  detailValue: text("detail_value"),
+  numericValue: numeric("numeric_value", { precision: 15, scale: 6 }),
+  unitOfMeasure: text("unit_of_measure"),
+  rangeMin: numeric("range_min", { precision: 15, scale: 6 }),
+  rangeMax: numeric("range_max", { precision: 15, scale: 6 }),
+  targetValue: numeric("target_value", { precision: 15, scale: 6 }),
+  tolerance: numeric("tolerance", { precision: 15, scale: 6 }),
+  testMethod: text("test_method"),
+  specification: text("specification"),
+  category: text("category"), // chemical, physical, microbiological, sensory
+  isRequired: boolean("is_required").notNull().default(true),
+  isCritical: boolean("is_critical").notNull().default(false),
+  processStage: text("process_stage"), // where this detail applies
+  conditions: text("conditions"), // environmental conditions for measurement
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Formulations - master list of formulations for process manufacturing (similar to BOM but for process manufacturing)
 export const formulations = pgTable("formulations", {
   id: serial("id").primaryKey(),
@@ -6887,6 +6912,15 @@ export const formulationsRelations = relations(formulations, ({ one, many }) => 
     references: [vendors.id],
   }),
   materialRequirements: many(materialRequirements), // One-to-many: one formulation can have many material requirements
+  formulationDetails: many(formulationDetails), // One-to-many: one formulation can have many formulation details
+}));
+
+// Relations for formulation details
+export const formulationDetailsRelations = relations(formulationDetails, ({ one }) => ({
+  formulation: one(formulations, {
+    fields: [formulationDetails.formulationId],
+    references: [formulations.id],
+  }),
 }));
 
 // Enhanced vendor relations to include formulations
@@ -7203,4 +7237,14 @@ export const insertFormulationSchema = createInsertSchema(formulations).omit({
 
 export type Formulation = typeof formulations.$inferSelect;
 export type InsertFormulation = z.infer<typeof insertFormulationSchema>;
+
+// Formulation Details Insert Schema and Types
+export const insertFormulationDetailSchema = createInsertSchema(formulationDetails).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type FormulationDetail = typeof formulationDetails.$inferSelect;
+export type InsertFormulationDetail = z.infer<typeof insertFormulationDetailSchema>;
 
