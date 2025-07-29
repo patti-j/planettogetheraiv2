@@ -5987,13 +5987,13 @@ export const items = pgTable("items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Storage Locations - warehouses and storage areas
+// Storage Locations - warehouses and storage areas within plants
 export const storageLocations = pgTable("storage_locations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   code: text("code").notNull().unique(),
   description: text("description"),
-  siteId: integer("site_id").references(() => sites.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(), // Changed from siteId to plantId for one-to-many relationship
   locationType: text("location_type").notNull().default("general"), // general, finished_goods, raw_materials, work_in_process
   address: jsonb("address").$type<{
     street?: string;
@@ -6308,6 +6308,7 @@ export const plantsRelations = relations(plants, ({ many }) => ({
   workCenters: many(workCenters),
   productionVersions: many(productionVersions),
   plannedOrders: many(plannedOrders),
+  storageLocations: many(storageLocations), // One-to-many: plants can have multiple storage locations
 }));
 
 // Resources Relations
@@ -6369,7 +6370,7 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
     fields: [sites.parentSiteId],
     references: [sites.id],
   }),
-  storageLocations: many(storageLocations),
+  // Removed storageLocations: storage locations now belong to plants instead of sites
   salesOrders: many(salesOrders),
   purchaseOrders: many(purchaseOrders),
   forecasts: many(forecasts),
@@ -6388,9 +6389,9 @@ export const itemsRelations = relations(items, ({ many }) => ({
 }));
 
 export const storageLocationsRelations = relations(storageLocations, ({ one, many }) => ({
-  site: one(sites, {
-    fields: [storageLocations.siteId],
-    references: [sites.id],
+  plant: one(plants, {
+    fields: [storageLocations.plantId],
+    references: [plants.id],
   }),
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),

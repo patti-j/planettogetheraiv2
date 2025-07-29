@@ -1,5 +1,24 @@
 # PlanetTogether - Manufacturing Production Scheduler
 
+## Recent Changes (July 29, 2025)
+
+✓ **Plants-Storage Locations One-to-Many Relationship Implementation (July 29, 2025)**:
+- Successfully implemented one-to-many relationship between plants and storage locations as requested
+- Updated storage_locations table schema to reference plantId instead of siteId for proper plant-based organization  
+- Enhanced Drizzle ORM relations: plants now have storageLocations many relationship, storage locations have plant one relationship
+- Removed storage locations from sites relations since they now belong directly to plants for improved manufacturing hierarchy
+- Database schema migration applied successfully - storage locations now properly organized under their respective plants
+- Manufacturing facility structure now reflects real-world organization where storage areas belong to specific plant locations
+- Enhanced data relationships enable better inventory management and plant-specific storage location tracking
+
+✓ **Critical Navigation Infinite Loop Resolution (July 29, 2025)**:
+- Fixed critical infinite navigation loop specifically affecting data relationship map view
+- Root cause: data-map.tsx component automatically calling addRecentPage in useEffect created feedback loop with NavigationContext
+- Removed problematic automatic page registration that was causing continuous API calls and interface lockups
+- Eliminated unused NavigationContext imports and trackMenuClick function to prevent TypeScript compilation errors
+- Data Relationship Map now loads smoothly without causing navigation system instability
+- Enhanced system reliability by preventing automatic page registration cycles in data visualization components
+
 ## Recent Changes (July 28, 2025)
 
 ✓ **Data Relationships Page Implementation & Navigation Loop Fix (July 28, 2025)**:
