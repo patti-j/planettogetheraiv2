@@ -559,13 +559,12 @@ export const productionVersions = pgTable("production_versions", {
 // Discrete Operations - for discrete manufacturing with distinct, countable parts
 export const discreteOperations = pgTable("discrete_operations", {
   id: serial("id").primaryKey(),
-  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  routingId: integer("routing_id").references(() => routings.id).notNull(),
   operationName: text("operation_name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
   standardDuration: integer("standard_duration").notNull(), // in hours
   actualDuration: integer("actual_duration"), // Actual time taken
-  assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   scheduledStartDate: timestamp("scheduled_start_date"),
@@ -6795,6 +6794,7 @@ export const routingsRelations = relations(routings, ({ one, many }) => ({
     references: [items.id],
   }),
   operations: many(routingOperations),
+  discreteOperations: many(discreteOperations),
   productionVersions: many(productionVersions),
 }));
 
@@ -6890,13 +6890,9 @@ export const plannedOrderProductionOrdersRelations = relations(plannedOrderProdu
 
 // Relations for discrete operations
 export const discreteOperationsRelations = relations(discreteOperations, ({ one, many }) => ({
-  productionOrder: one(productionOrders, {
-    fields: [discreteOperations.productionOrderId],
-    references: [productionOrders.id],
-  }),
-  assignedResource: one(resources, {
-    fields: [discreteOperations.assignedResourceId],
-    references: [resources.id],
+  routing: one(routings, {
+    fields: [discreteOperations.routingId],
+    references: [routings.id],
   }),
   resourceRequirements: many(resourceRequirements),
 }));

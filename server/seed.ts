@@ -71,6 +71,7 @@ export async function seedDatabase() {
       // Insert jobs
       const jobData = [
         { 
+          orderNumber: "PO-001",
           name: "Widget Assembly - Batch A", 
           plantId: 1,
           customer: "Tech Corp", 
@@ -80,6 +81,7 @@ export async function seedDatabase() {
           quantity: 100
         },
         { 
+          orderNumber: "PO-002",
           name: "Motor Housing Production", 
           plantId: 1,
           customer: "AutoParts Inc", 
@@ -101,8 +103,7 @@ export async function seedDatabase() {
           duration: 4,
           status: "active",
           requiredCapabilities: [1],
-          order: 1,
-          assignedResourceId: 1
+          order: 1
         },
         {
           jobId: 1,
@@ -111,8 +112,7 @@ export async function seedDatabase() {
           duration: 2,
           status: "pending",
           requiredCapabilities: [2],
-          order: 2,
-          assignedResourceId: 3
+          order: 2
         },
         {
           jobId: 1,
@@ -121,8 +121,7 @@ export async function seedDatabase() {
           duration: 3,
           status: "pending",
           requiredCapabilities: [3],
-          order: 3,
-          assignedResourceId: 4
+          order: 3
         },
         {
           jobId: 2,
@@ -131,8 +130,7 @@ export async function seedDatabase() {
           duration: 6,
           status: "active",
           requiredCapabilities: [1],
-          order: 1,
-          assignedResourceId: 2
+          order: 1
         },
         {
           jobId: 2,
@@ -141,12 +139,15 @@ export async function seedDatabase() {
           duration: 1,
           status: "pending",
           requiredCapabilities: [4],
-          order: 2,
-          assignedResourceId: 5
+          order: 2
         }
       ];
 
-      await db.insert(operations).values(operationData);
+      // Insert operations using storage method for backward compatibility
+      const storage = new DatabaseStorage();
+      for (const opData of operationData) {
+        await storage.createOperation(opData);
+      }
     }
 
     // TEMPORARILY DISABLED: Insert sample disruptions only if they don't exist and master data exists

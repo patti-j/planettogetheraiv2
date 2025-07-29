@@ -130,10 +130,10 @@ export interface InsertOperation {
   name: string;
   description?: string;
   duration: number;
-  jobId: number; // productionOrderId for backward compatibility
+  jobId: number; // For legacy API compatibility
   order: number; // sequenceNumber
   status?: string;
-  assignedResourceId?: number;
+  routingId?: number; // Link to routing instead of direct production order
   startTime?: Date;
   endTime?: Date;
   scheduledStartDate?: Date;
@@ -1916,18 +1916,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
-    const discreteOps = await db.select().from(discreteOperations).where(eq(discreteOperations.productionOrderId, productionOrderId));
+    // For discrete operations, we need to find them through production version -> routing relationship
+    // For now, return process operations only since discrete operations no longer have direct production order link
     const processOps = await db.select().from(processOperations).where(eq(processOperations.productionOrderId, productionOrderId));
     
-    // Convert both types to the legacy Operation interface for backwards compatibility
+    // Convert to the legacy Operation interface for backwards compatibility
     const combinedOps: Operation[] = [
-      ...discreteOps.map(op => ({
-        ...op,
-        name: op.operationName,
-        duration: op.standardDuration,
-        jobId: op.productionOrderId, // For backward compatibility
-        order: op.sequenceNumber
-      } as Operation)),
       ...processOps.map(op => ({
         ...op,
         name: op.operationName,
@@ -1948,7 +1942,7 @@ export class DatabaseStorage implements IStorage {
         ...discreteOp,
         name: discreteOp.operationName,
         duration: discreteOp.standardDuration,
-        jobId: discreteOp.productionOrderId,
+        jobId: null, // No direct production order link for discrete operations
         order: discreteOp.sequenceNumber
       } as Operation;
     }
@@ -1971,13 +1965,12 @@ export class DatabaseStorage implements IStorage {
   // Backwards compatible create operation - defaults to discrete
   async createOperation(operation: InsertOperation): Promise<Operation> {
     const discreteOp = {
-      productionOrderId: operation.productionOrderId || operation.jobId,
+      routingId: operation.routingId, // Now links to routing instead of production order
       operationName: operation.name,
       description: operation.description,
       standardDuration: operation.duration,
       sequenceNumber: operation.order || 1,
       status: operation.status,
-      assignedResourceId: operation.assignedResourceId,
       startTime: operation.startTime,
       endTime: operation.endTime,
       scheduledStartDate: operation.scheduledStartDate,
@@ -1989,7 +1982,7 @@ export class DatabaseStorage implements IStorage {
       ...newOp,
       name: newOp.operationName,
       duration: newOp.standardDuration,
-      jobId: newOp.productionOrderId,
+      jobId: null, // No direct production order link
       order: newOp.sequenceNumber
     } as Operation;
   }
@@ -2005,7 +1998,7 @@ export class DatabaseStorage implements IStorage {
         standardDuration: operation.duration,
         sequenceNumber: operation.order,
         status: operation.status,
-        assignedResourceId: operation.assignedResourceId,
+        routingId: operation.routingId,
         startTime: operation.startTime,
         endTime: operation.endTime,
         scheduledStartDate: operation.scheduledStartDate,
@@ -2021,7 +2014,7 @@ export class DatabaseStorage implements IStorage {
         ...updated,
         name: updated.operationName,
         duration: updated.standardDuration,
-        jobId: updated.productionOrderId,
+        jobId: null, // No direct production order link
         order: updated.sequenceNumber
       } as Operation;
     }

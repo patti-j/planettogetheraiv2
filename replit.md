@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Discrete Operations SAP Manufacturing Hierarchy Architectural Correction (July 29, 2025)**:
+- **ARCHITECTURAL FIX COMPLETED**: Corrected discrete operations to properly link to routings instead of direct production order/resource relationships, following SAP manufacturing standards
+- **DATABASE MIGRATION SUCCESSFUL**: Removed productionOrderId and assignedResourceId columns from discrete_operations table, added routingId foreign key to routings table
+- **SCHEMA RELATIONS UPDATED**: Enhanced discreteOperationsRelations to link to routings, added discreteOperations relation to routingsRelations for bidirectional relationship
+- **STORAGE LAYER CORRECTED**: Updated all storage methods to use routing-based relationships, removed references to non-existent fields while maintaining backward compatibility
+- **MANUFACTURING HIERARCHY COMPLIANCE**: Discrete operations now follow proper SAP hierarchy - Production Orders → Production Versions → Routings → Operations instead of direct links
+- **LEGACY API COMPATIBILITY**: Maintained backward compatibility for existing API consumers while implementing correct architectural relationships
+- **SEED DATA CLEANED**: Removed assignedResourceId references from seeding data to match updated table structure
+- **ZERO COMPILATION ERRORS**: All TypeScript compilation successful with proper field references and relationship integrity
+- System now correctly implements SAP-compliant discrete manufacturing where operations belong to routings, which belong to production versions, providing proper manufacturing process hierarchy and resource allocation through resource requirements system
+
 ✓ **Production Version Phase Formulation Details Junction Table Complete Implementation (July 29, 2025)**:
 - **JUNCTION TABLE COMPLETE**: Successfully implemented full production_version_phase_formulation_details junction table system enabling phase-specific formulation detail management
 - **STORAGE LAYER COMPLETE**: Added comprehensive CRUD operations in DatabaseStorage class - getProductionVersionPhaseFormulationDetails, createProductionVersionPhaseFormulationDetail, updateProductionVersionPhaseFormulationDetail, deleteProductionVersionPhaseFormulationDetail
