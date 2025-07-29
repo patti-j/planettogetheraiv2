@@ -398,84 +398,217 @@ const resolveCollision = (newPos: { x: number; y: number }, existingPositions: {
   return resolvedPos;
 };
 
-// Layout algorithms with improved collision detection and spacing
+// Helper function to analyze relationship clusters for intelligent positioning
+const analyzeRelationshipClusters = (tables: SchemaTable[]) => {
+  const clusters: { [key: string]: string[] } = {};
+  const tableConnections: { [key: string]: Set<string> } = {};
+  
+  // Initialize connection tracking
+  tables.forEach(table => {
+    tableConnections[table.name] = new Set();
+  });
+  
+  // Map all relationships
+  tables.forEach(table => {
+    table.relationships.forEach(rel => {
+      if (tables.some(t => t.name === rel.toTable)) {
+        tableConnections[table.name].add(rel.toTable);
+        tableConnections[rel.toTable]?.add(table.name);
+      }
+    });
+  });
+  
+  // Find highly connected tables as cluster centers
+  const connectionCounts = Object.entries(tableConnections).map(([name, connections]) => ({
+    name,
+    count: connections.size
+  })).sort((a, b) => b.count - a.count);
+  
+  return { tableConnections, connectionCounts };
+};
+
+// Force-directed layout algorithm for relationship-aware positioning
+const forceDirectedLayout = (tables: SchemaTable[], iterations: number = 100) => {
+  const positions: { [key: string]: { x: number; y: number } } = {};
+  const { tableConnections } = analyzeRelationshipClusters(tables);
+  
+  // Initialize random positions
+  tables.forEach((table, index) => {
+    positions[table.name] = {
+      x: Math.random() * 1200 + 100,
+      y: Math.random() * 800 + 100
+    };
+  });
+  
+  // Force-directed positioning
+  for (let iter = 0; iter < iterations; iter++) {
+    const forces: { [key: string]: { x: number; y: number } } = {};
+    
+    // Initialize forces
+    tables.forEach(table => {
+      forces[table.name] = { x: 0, y: 0 };
+    });
+    
+    // Repulsive forces (prevent overlapping)
+    tables.forEach(table1 => {
+      tables.forEach(table2 => {
+        if (table1.name !== table2.name) {
+          const pos1 = positions[table1.name];
+          const pos2 = positions[table2.name];
+          const dx = pos1.x - pos2.x;
+          const dy = pos1.y - pos2.y;
+          const distance = Math.max(Math.sqrt(dx * dx + dy * dy), 50);
+          const repulsiveForce = 8000 / (distance * distance);
+          
+          forces[table1.name].x += (dx / distance) * repulsiveForce;
+          forces[table1.name].y += (dy / distance) * repulsiveForce;
+        }
+      });
+    });
+    
+    // Attractive forces (related tables pull toward each other)
+    tables.forEach(table => {
+      const connections = tableConnections[table.name];
+      connections.forEach(connectedTable => {
+        if (positions[connectedTable]) {
+          const pos1 = positions[table.name];
+          const pos2 = positions[connectedTable];
+          const dx = pos2.x - pos1.x;
+          const dy = pos2.y - pos1.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const attractiveForce = distance * 0.01;
+          
+          forces[table.name].x += (dx / distance) * attractiveForce;
+          forces[table.name].y += (dy / distance) * attractiveForce;
+        }
+      });
+    });
+    
+    // Apply forces with damping
+    const damping = 0.9;
+    tables.forEach(table => {
+      positions[table.name].x += forces[table.name].x * 0.1 * damping;
+      positions[table.name].y += forces[table.name].y * 0.1 * damping;
+      
+      // Keep within bounds
+      positions[table.name].x = Math.max(50, Math.min(1400, positions[table.name].x));
+      positions[table.name].y = Math.max(50, Math.min(1000, positions[table.name].y));
+    });
+  }
+  
+  return positions;
+};
+
+// Layout algorithms with improved collision detection and relationship-aware spacing
 const layoutAlgorithms = {
   hierarchical: (tables: SchemaTable[]) => {
-    const categories = Array.from(new Set(tables.map(t => t.category)));
+    const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
     
-    // Dynamic spacing based on table count and content
+    // Start with force-directed layout for relationship awareness
+    const forcePositions = forceDirectedLayout(tables, 50);
+    
+    // Then organize by categories with relationship-aware grouping
+    const categories = Array.from(new Set(tables.map(t => t.category)));
     const minCardWidth = 320;
     const minCardHeight = 200;
-    const padding = 50;
+    const padding = 60;
     
     let currentY = 0;
     
     categories.forEach((category, categoryIndex) => {
       const categoryTables = tables.filter(t => t.category === category);
       
-      // Calculate optimal columns based on table count and screen utilization
-      const maxCols = Math.max(2, Math.min(5, Math.ceil(Math.sqrt(categoryTables.length * 2))));
+      // Sort tables within category by connection count (most connected first)
+      categoryTables.sort((a, b) => {
+        const aConnections = tableConnections[a.name]?.size || 0;
+        const bConnections = tableConnections[b.name]?.size || 0;
+        return bConnections - aConnections;
+      });
+      
+      // Calculate optimal columns based on table count and relationship density
+      const avgConnections = categoryTables.reduce((sum, t) => sum + (tableConnections[t.name]?.size || 0), 0) / categoryTables.length;
+      const maxCols = avgConnections > 3 ? 4 : Math.max(2, Math.min(5, Math.ceil(Math.sqrt(categoryTables.length * 1.5))));
       const cols = Math.min(maxCols, categoryTables.length);
       
-      // Dynamic spacing based on column count
       const horizontalSpacing = minCardWidth + padding;
       
       categoryTables.forEach((table, tableIndex) => {
         const row = Math.floor(tableIndex / cols);
         const col = tableIndex % cols;
         
-        // Estimate card height based on column count (more columns = taller card)
         const estimatedHeight = minCardHeight + (table.columns.length > 10 ? 60 : table.columns.length * 6);
         
-        const proposedPosition = {
+        // Use force-directed position as base, then adjust for grid structure
+        const forcePos = forcePositions[table.name];
+        const gridPos = {
           x: col * horizontalSpacing,
           y: currentY + row * (estimatedHeight + padding)
         };
         
-        // Use collision detection as backup safety measure
+        // Blend force-directed and grid positions (favor grid for organization)
+        const proposedPosition = {
+          x: gridPos.x + (forcePos.x - gridPos.x) * 0.2,
+          y: gridPos.y + (forcePos.y - gridPos.y) * 0.2
+        };
+        
         const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
         positions[table.name] = finalPosition;
         existingPositions.push(finalPosition);
       });
       
-      // Update Y position for next category
       const categoryRows = Math.ceil(categoryTables.length / cols);
       const maxEstimatedHeight = Math.max(...categoryTables.map(t => 
         minCardHeight + (t.columns.length > 10 ? 60 : t.columns.length * 6)
       ));
-      currentY += categoryRows * (maxEstimatedHeight + padding) + 80; // Extra space between categories
+      currentY += categoryRows * (maxEstimatedHeight + padding) + 100;
     });
     
     return positions;
   },
   
   circular: (tables: SchemaTable[]) => {
+    const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
     const centerX = 600;
     const centerY = 400;
     
-    // Dynamic radius based on table count and estimated card size
+    // Dynamic radius based on table count and relationship density
     const minRadius = 350;
     const cardWidth = 320;
     const cardHeight = 200;
     
-    // Calculate minimum radius to prevent overlaps
-    // Use card width as the arc length and solve for radius
-    const arcLength = cardWidth + 80; // Add padding
+    // Calculate radius considering relationships
+    const arcLength = cardWidth + 80;
     const minRadiusForSpacing = (tables.length * arcLength) / (2 * Math.PI);
     const calculatedRadius = Math.max(minRadius, minRadiusForSpacing);
     
-    tables.forEach((table, index) => {
+    // Sort tables by connection count (most connected in optimal positions)
+    const sortedTables = [...tables].sort((a, b) => {
+      const aConnections = tableConnections[a.name]?.size || 0;
+      const bConnections = tableConnections[b.name]?.size || 0;
+      return bConnections - aConnections;
+    });
+    
+    // Use force-directed positioning as base
+    const forcePositions = forceDirectedLayout(tables, 30);
+    
+    sortedTables.forEach((table, index) => {
       const angle = (index / tables.length) * 2 * Math.PI;
-      const proposedPosition = {
+      const circularPos = {
         x: centerX + calculatedRadius * Math.cos(angle),
         y: centerY + calculatedRadius * Math.sin(angle)
       };
       
-      // Use collision detection as backup
+      // Blend circular and force-directed positions
+      const forcePos = forcePositions[table.name];
+      const proposedPosition = {
+        x: circularPos.x * 0.7 + forcePos.x * 0.3,
+        y: circularPos.y * 0.7 + forcePos.y * 0.3
+      };
+      
       const finalPosition = resolveCollision(proposedPosition, existingPositions, cardWidth, cardHeight);
       positions[table.name] = finalPosition;
       existingPositions.push(finalPosition);
@@ -485,35 +618,55 @@ const layoutAlgorithms = {
   },
   
   grid: (tables: SchemaTable[]) => {
+    const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
     
-    // Dynamic grid sizing
     const minCardWidth = 320;
     const minCardHeight = 200;
-    const padding = 50;
+    const padding = 60;
     
-    // Calculate optimal grid dimensions
-    const aspectRatio = 16 / 9; // Target wider than tall layout
+    // Calculate optimal grid dimensions based on relationships
+    const avgConnections = tables.reduce((sum, t) => sum + (tableConnections[t.name]?.size || 0), 0) / tables.length;
+    const aspectRatio = avgConnections > 2 ? 4/3 : 16/9; // More square layout for highly connected tables
     let cols = Math.ceil(Math.sqrt(tables.length * aspectRatio));
-    cols = Math.max(2, Math.min(6, cols)); // Limit between 2-6 columns
+    cols = Math.max(2, Math.min(6, cols));
     
+    // Sort tables by connection count and category
+    const sortedTables = [...tables].sort((a, b) => {
+      // Primary sort: category for grouping
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      // Secondary sort: connection count (most connected first within category)
+      const aConnections = tableConnections[a.name]?.size || 0;
+      const bConnections = tableConnections[b.name]?.size || 0;
+      return bConnections - aConnections;
+    });
+    
+    // Use force-directed layout as base for relationship awareness
+    const forcePositions = forceDirectedLayout(tables, 40);
     const horizontalSpacing = minCardWidth + padding;
     
-    tables.forEach((table, index) => {
+    sortedTables.forEach((table, index) => {
       const row = Math.floor(index / cols);
       const col = index % cols;
       
-      // Estimate card height based on column count
       const estimatedHeight = minCardHeight + (table.columns.length > 10 ? 60 : table.columns.length * 6);
       const verticalSpacing = estimatedHeight + padding;
       
-      const proposedPosition = {
+      const gridPos = {
         x: col * horizontalSpacing,
         y: row * verticalSpacing
       };
       
-      // Use collision detection to ensure no overlaps
+      // Blend grid and force-directed positions (favor grid structure)
+      const forcePos = forcePositions[table.name];
+      const proposedPosition = {
+        x: gridPos.x + (forcePos.x - gridPos.x) * 0.15,
+        y: gridPos.y + (forcePos.y - gridPos.y) * 0.15
+      };
+      
       const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
       positions[table.name] = finalPosition;
       existingPositions.push(finalPosition);
@@ -1197,21 +1350,56 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Update nodes and edges when data changes - preserve user-moved positions
+  // Track filter changes to reset positions when filters change
+  const filterState = useMemo(() => ({
+    searchTerm,
+    selectedCategory,
+    selectedFeature,
+    focusMode,
+    focusTable,
+    layoutType,
+    selectedTables: selectedTables.join(','),
+    showRelatedTables,
+    selectedCards: selectedCards.join(',')
+  }), [searchTerm, selectedCategory, selectedFeature, focusMode, focusTable, layoutType, selectedTables, showRelatedTables, selectedCards]);
+  
+  const [previousFilterState, setPreviousFilterState] = useState(filterState);
+  const [shouldPreservePositions, setShouldPreservePositions] = useState(true);
+  
+  // Reset position preservation when filters change for intelligent reorganization
+  React.useEffect(() => {
+    const filtersChanged = JSON.stringify(previousFilterState) !== JSON.stringify(filterState);
+    if (filtersChanged) {
+      setShouldPreservePositions(false);
+      setPreviousFilterState(filterState);
+      
+      // Re-enable position preservation after layout completes
+      const timer = setTimeout(() => {
+        setShouldPreservePositions(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [filterState, previousFilterState]);
+
+  // Update nodes and edges when data changes
   React.useEffect(() => {
     setNodes((currentNodes) => {
-      // Create a map of current positions to preserve user movements
-      const positionMap = new Map(currentNodes.map(node => [node.id, node.position]));
-      
-      // Update nodes while preserving positions
-      return nodes.map(node => ({
-        ...node,
-        // Use preserved position if available, otherwise use new position
-        position: positionMap.get(node.id) || node.position
-      }));
+      // Only preserve positions if filters haven't changed and user has manually moved nodes
+      if (shouldPreservePositions && currentNodes.length > 0) {
+        const positionMap = new Map(currentNodes.map(node => [node.id, node.position]));
+        
+        return nodes.map(node => ({
+          ...node,
+          position: positionMap.get(node.id) || node.position
+        }));
+      } else {
+        // Use new intelligent layout positions when filters change
+        return nodes;
+      }
     });
     setEdges(edges);
-  }, [nodes, edges, setNodes, setEdges]);
+  }, [nodes, edges, setNodes, setEdges, shouldPreservePositions]);
 
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {

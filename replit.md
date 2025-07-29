@@ -2,6 +2,26 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Intelligent Relationship-Aware Layout System Implementation (July 29, 2025)**:
+- Implemented force-directed layout algorithms that analyze table relationships to minimize line crossings and create optimal visual groupings
+- Enhanced all three layout algorithms (hierarchical, circular, grid) with relationship-aware positioning using attractive and repulsive forces
+- Added cluster analysis system that identifies highly connected tables and positions them optimally within each layout
+- Hierarchical layout now sorts tables by connection count and uses relationship density to determine column arrangements
+- Circular layout positions most connected tables in optimal angles and blends force-directed positions for relationship awareness
+- Grid layout combines category grouping with connection-based sorting and applies subtle force adjustments for relationship optimization
+- Implemented intelligent position reset system: preserves user movements during normal use but resets to optimized positions when filters change
+- Layout algorithms now consider table relationships, connection density, and category grouping for comprehensive visual organization
+- Filter changes trigger automatic reorganization with 500ms delay before re-enabling position preservation for optimal user experience
+- Force-directed algorithm uses configurable iterations (30-100) with damping and boundary constraints for stable positioning
+
+✓ **Data Schema View Flag Toggle Fix & Position Preservation Enhancement (July 29, 2025)**:
+- Fixed flag toggle behavior so selected cards stay selected until user clicks to deselect (proper toggle functionality)
+- Enhanced node selection state to properly reflect selectedCards array instead of hardcoded false values
+- Maintained position preservation system while allowing intelligent layout reorganization when filters change
+- Flag toggles now work correctly: click to select/highlight, click again to deselect, with proper visual feedback
+- Relationship filtering between flagged cards functions properly with enhanced edge filtering logic
+- Card positions preserved during selection state changes but reset during filter changes for optimal reorganization
+
 ✓ **Bills of Material Direct Plant Relationship Removal & SAP Architecture Compliance Fix (July 29, 2025)**:
 - CRITICAL ARCHITECTURAL FIX: Removed incorrect direct foreign key relationship between bills_of_material and plants tables
 - Bills of material now correctly connect to plants ONLY through production versions, following proper SAP manufacturing hierarchy
