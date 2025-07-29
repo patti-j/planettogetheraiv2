@@ -611,12 +611,11 @@ export const processOperations = pgTable("process_operations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Resource Requirements - defines what resources each operation needs
+// Resource Requirements - defines what resources each recipe phase needs
 export const resourceRequirements = pgTable("resource_requirements", {
   id: serial("id").primaryKey(),
-  // Can reference either discrete or process operations
-  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
-  processOperationId: integer("process_operation_id").references(() => processOperations.id),
+  // Links to recipe phases (many-to-one relationship)
+  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id).notNull(),
   requirementName: text("requirement_name").notNull(), // e.g., "Primary Machine", "Secondary Setup", "Quality Control"
   requirementType: text("requirement_type").notNull().default("primary"), // primary, secondary, setup, quality, maintenance
   quantity: integer("quantity").notNull().default(1), // how many resources needed
@@ -642,8 +641,7 @@ export const resourceRequirements = pgTable("resource_requirements", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  discreteOperationRequirementIndex: index("resource_requirements_discrete_operation_idx").on(table.discreteOperationId),
-  processOperationRequirementIndex: index("resource_requirements_process_operation_idx").on(table.processOperationId),
+  recipePhaseRequirementIndex: index("resource_requirements_recipe_phase_idx").on(table.recipePhaseId),
   defaultResourceIndex: index("resource_requirements_default_resource_idx").on(table.defaultResourceId),
 }));
 
@@ -678,27 +676,7 @@ export const resourceRequirementAssignments = pgTable("resource_requirement_assi
   statusIndex: index("resource_assignments_status_idx").on(table.status),
 }));
 
-// Junction table for many-to-many relationship between recipe_phases and resource_requirements
-export const recipePhaseResourceRequirements = pgTable("recipe_phase_resource_requirements", {
-  id: serial("id").primaryKey(),
-  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id).notNull(),
-  resourceRequirementId: integer("resource_requirement_id").references(() => resourceRequirements.id).notNull(),
-  phaseSpecificQuantity: integer("phase_specific_quantity").default(1), // quantity needed for this specific phase
-  phasePriority: text("phase_priority").default("medium"), // low, medium, high, critical - phase-specific priority
-  timingConstraints: jsonb("timing_constraints").$type<{
-    startOffset?: number; // minutes after phase start when resource is needed
-    endOffset?: number; // minutes before phase end when resource is released
-    duration?: number; // specific duration for this phase-resource relationship
-    flexibility?: "fixed" | "flexible" | "preferred"; // timing flexibility level
-  }>().default({}),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  recipePhaseResourceIndex: index("recipe_phase_resource_requirements_phase_idx").on(table.recipePhaseId),
-  resourceRequirementPhaseIndex: index("recipe_phase_resource_requirements_resource_idx").on(table.resourceRequirementId),
-  uniquePhaseResource: unique().on(table.recipePhaseId, table.resourceRequirementId), // prevent duplicate links
-}));
+
 
 // Dependencies between operations (can be discrete-to-discrete, process-to-process, or cross-type)
 export const dependencies = pgTable("dependencies", {
@@ -5911,7 +5889,7 @@ export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => 
   }),
   materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
-  resourceRequirementLinks: many(recipePhaseResourceRequirements), // Many-to-many with resource requirements
+  resourceRequirements: many(resourceRequirements), // One-to-many with resource requirements
 }));
 
 export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
@@ -5968,28 +5946,14 @@ export const recipeFormulasRelations = relations(recipeFormulas, ({ one }) => ({
 
 
 
-// Junction table relations for recipe phase - resource requirements many-to-many
-export const recipePhaseResourceRequirementsRelations = relations(recipePhaseResourceRequirements, ({ one }) => ({
-  recipePhase: one(recipePhases, {
-    fields: [recipePhaseResourceRequirements.recipePhaseId],
-    references: [recipePhases.id],
-  }),
-  resourceRequirement: one(resourceRequirements, {
-    fields: [recipePhaseResourceRequirements.resourceRequirementId],
-    references: [resourceRequirements.id],
-  }),
-}));
+
 
 // Resource Requirements relations
 export const resourceRequirementsRelations = relations(resourceRequirements, ({ one, many }) => ({
-  // Operations relationships
-  discreteOperation: one(discreteOperations, {
-    fields: [resourceRequirements.discreteOperationId],
-    references: [discreteOperations.id],
-  }),
-  processOperation: one(processOperations, {
-    fields: [resourceRequirements.processOperationId],
-    references: [processOperations.id],
+  // Recipe phase relationship (many-to-one)
+  recipePhase: one(recipePhases, {
+    fields: [resourceRequirements.recipePhaseId],
+    references: [recipePhases.id],
   }),
   // Default resource relationship
   defaultResource: one(resources, {
@@ -5998,8 +5962,6 @@ export const resourceRequirementsRelations = relations(resourceRequirements, ({ 
   }),
   // Assignment relationships
   assignments: many(resourceRequirementAssignments),
-  // Many-to-many with recipe phases
-  recipePhaseLinks: many(recipePhaseResourceRequirements),
 }));
 
 // Resource Requirement Assignments relations
@@ -7220,20 +7182,14 @@ export const insertResourceRequirementAssignmentSchema = createInsertSchema(reso
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-// Recipe Phase Resource Requirements Junction Table Insert Schema
-export const insertRecipePhaseResourceRequirementSchema = createInsertSchema(recipePhaseResourceRequirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+
 
 // Resource Requirements Types
 export type ResourceRequirement = typeof resourceRequirements.$inferSelect;
 export type InsertResourceRequirement = z.infer<typeof insertResourceRequirementSchema>;
 export type ResourceRequirementAssignment = typeof resourceRequirementAssignments.$inferSelect;
 export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
-export type RecipePhaseResourceRequirement = typeof recipePhaseResourceRequirements.$inferSelect;
-export type InsertRecipePhaseResourceRequirement = z.infer<typeof insertRecipePhaseResourceRequirementSchema>;
+
 
 // Ingredients Insert Schema and Types
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({

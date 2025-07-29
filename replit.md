@@ -2,6 +2,17 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Resource Requirements Direct Recipe Phase Relationship Implementation (July 29, 2025)**:
+- **ARCHITECTURAL CHANGE**: Resource requirements now link directly to recipe phases via many-to-one relationship instead of many-to-many junction table
+- **Database Migration**: Added recipe_phase_id column to resource_requirements table with proper foreign key constraint
+- **Schema Cleanup**: Removed discrete_operation_id and process_operation_id columns from resource_requirements table 
+- **Junction Table Removal**: Dropped recipe_phase_resource_requirements junction table as it's no longer needed for direct relationship
+- **Relationship Structure**: One recipe phase can have many resource requirements - supports granular resource allocation per manufacturing phase
+- **Schema Integration**: Updated recipePhasesRelations with direct resourceRequirements many relationship and resourceRequirementsRelations with recipePhase one relationship
+- **Index Optimization**: Created resource_requirements_recipe_phase_idx index for optimal query performance
+- **Complete Integration**: All changes integrated successfully with proper database constraints and relationship integrity
+- System now supports direct resource requirement allocation to specific recipe phases for precise process manufacturing resource planning without unnecessary junction table complexity
+
 ✓ **Filter-Specific Layout Persistence Implementation (July 29, 2025)**:
 - **POSITION SAVING**: Cards repositioned by users in Data Schema View are now saved per filter configuration
 - **AUTOMATIC RESTORATION**: When returning to the same filter, card positions are restored exactly as user left them
