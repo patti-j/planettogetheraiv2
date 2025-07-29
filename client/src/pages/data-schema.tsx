@@ -1288,7 +1288,9 @@ function DataSchemaViewContent() {
     if (showRelationships) {
       filteredTables.forEach(table => {
         table.relationships.forEach(rel => {
-          if (filteredTables.some(t => t.name === rel.toTable)) {
+          // Ensure both source and target tables exist in the filtered set
+          if (filteredTables.some(t => t.name === rel.toTable) && 
+              filteredTables.some(t => t.name === rel.fromTable)) {
             // Create a unique identifier for this relationship that ignores direction
             // This prevents duplicate lines for bidirectional relationships
             const relationshipKey = [rel.fromTable, rel.toTable].sort().join('-') + '-' + [rel.fromColumn, rel.toColumn].sort().join('-');
