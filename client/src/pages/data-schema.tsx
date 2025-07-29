@@ -338,7 +338,7 @@ const featureTableMapping: Record<string, string[]> = {
     'order_confirmations', 'shipping_notices'
   ],
   'purchasing': [
-    'purchase_orders', 'suppliers', 'supplier_contacts', 'purchase_requisitions',
+    'purchase_orders', 'purchase_order_lines', 'suppliers', 'supplier_contacts', 'purchase_requisitions',
     'goods_receipts', 'supplier_evaluations', 'contracts', 'purchase_agreements',
     'vendor_managed_inventory', 'supplier_schedules'
   ],
