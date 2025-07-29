@@ -6376,6 +6376,35 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Material Requirements - detailed requirements for ingredients in process manufacturing
+export const materialRequirements = pgTable("material_requirements", {
+  id: serial("id").primaryKey(),
+  ingredientId: integer("ingredient_id").references(() => ingredients.id),
+  requirementName: text("requirement_name").notNull(),
+  requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
+  unitOfMeasure: text("unit_of_measure").notNull(),
+  materialType: text("material_type").notNull().default("ingredient"),
+  consumptionType: text("consumption_type").notNull().default("variable"), // variable, fixed, backflush
+  processStage: text("process_stage"), // mixing, heating, cooling, finishing
+  timingRequirements: text("timing_requirements"), // when this material is needed
+  qualitySpecifications: jsonb("quality_specifications").$type<{
+    purity_min?: number;
+    purity_max?: number;
+    moisture_max?: number;
+    particle_size?: string;
+    color_requirements?: string;
+    other_specs?: Array<{ parameter: string; value: string; tolerance: string }>;
+  }>().default({}),
+  storageConditions: text("storage_conditions"),
+  handlingInstructions: text("handling_instructions"),
+  safetyRequirements: text("safety_requirements"),
+  isCritical: boolean("is_critical").default(false),
+  substituteIngredients: jsonb("substitute_ingredients").$type<number[]>().default([]), // Array of substitute ingredient IDs
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Ingredients - master list of ingredients for process manufacturing (similar to BOM but for process manufacturing)
 export const ingredients = pgTable("ingredients", {
   id: serial("id").primaryKey(),
@@ -6879,12 +6908,21 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
   resourceRequirements: many(resourceRequirements),
 }));
 
+// Relations for material requirements
+export const materialRequirementsRelations = relations(materialRequirements, ({ one }) => ({
+  ingredient: one(ingredients, {
+    fields: [materialRequirements.ingredientId],
+    references: [ingredients.id],
+  }),
+}));
+
 // Relations for ingredients
 export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
   preferredVendor: one(vendors, {
     fields: [ingredients.preferredVendorId],
     references: [vendors.id],
   }),
+  materialRequirements: many(materialRequirements), // One-to-many: one ingredient can have many material requirements
 }));
 
 // Enhanced vendor relations to include ingredients
@@ -7034,6 +7072,18 @@ export const insertRoutingOperationSchema = createInsertSchema(routingOperations
   createdAt: true,
 });
 
+export const insertMaterialRequirementSchema = createInsertSchema(materialRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIngredientsSchema = createInsertSchema(ingredients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertForecastSchema = createInsertSchema(forecasts).omit({
   id: true,
   createdAt: true,
@@ -7103,6 +7153,12 @@ export type InsertRouting = z.infer<typeof insertRoutingSchema>;
 
 export type RoutingOperation = typeof routingOperations.$inferSelect;
 export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema>;
+
+export type MaterialRequirement = typeof materialRequirements.$inferSelect;
+export type InsertMaterialRequirement = z.infer<typeof insertMaterialRequirementSchema>;
+
+export type Ingredient = typeof ingredients.$inferSelect;
+export type InsertIngredient = z.infer<typeof insertIngredientsSchema>;
 
 export type Forecast = typeof forecasts.$inferSelect;
 export type InsertForecast = z.infer<typeof insertForecastSchema>;
