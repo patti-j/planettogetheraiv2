@@ -1480,34 +1480,60 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Smart Layout Algorithm - Simple grid with extra-large spacing to guarantee no overlaps
-  const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
+  // Vector2D utility for force-directed calculations
+  interface Vector2D {
+    x: number;
+    y: number;
+    length: number;
+    add: (v: Vector2D) => Vector2D;
+    subtract: (v: Vector2D) => Vector2D;
+    divide: (n: number) => Vector2D;
+    multiply: (n: number) => Vector2D;
+    normalize: () => Vector2D;
+  }
+
+  const createVector = (x: number, y: number): Vector2D => {
+    const length = Math.sqrt(x * x + y * y);
+    return {
+      x,
+      y,
+      length,
+      add: function(v: Vector2D) { return createVector(this.x + v.x, this.y + v.y); },
+      subtract: function(v: Vector2D) { return createVector(this.x - v.x, this.y - v.y); },
+      divide: function(n: number) { return createVector(this.x / n, this.y / n); },
+      multiply: function(n: number) { return createVector(this.x * n, this.y * n); },
+      normalize: function() { 
+        return this.length === 0 ? createVector(0, 0) : this.divide(this.length); 
+      }
+    };
+  };
+
+  // Fruchterman-Reingold Force-Directed Layout Algorithm
+  const generateForceDirectedLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
     if (!tables.length) return {};
     
-    console.log('Smart layout: Processing', tables.length, 'tables');
-
+    console.log('Force-directed layout: Processing', tables.length, 'tables');
+    
     const positions: Record<string, { x: number; y: number }> = {};
     const nodeWidth = 320;
     const nodeHeight = 200;
     
-    // Use very large spacing to absolutely guarantee no overlaps
-    const horizontalSpacing = 200; // Extra large horizontal spacing
-    const verticalSpacing = 180;   // Extra large vertical spacing
+    // Layout area and algorithm parameters
+    const W = Math.max(1400, tables.length * 300); // Dynamic width based on table count
+    const H = Math.max(1000, tables.length * 200); // Dynamic height
+    const area = W * H;
+    const iterations = Math.min(50, Math.max(30, tables.length * 2)); // Adaptive iterations
     
-    // Calculate total spacing between cards
-    const totalHorizontalSpacing = nodeWidth + horizontalSpacing; // 520px between card starts
-    const totalVerticalSpacing = nodeHeight + verticalSpacing;    // 380px between card starts
+    // Calculate optimal distance between vertices (k parameter)
+    const k = Math.sqrt(area / tables.length);
     
-    console.log('Spacing calculations:', {
-      nodeWidth,
-      nodeHeight,
-      horizontalSpacing,
-      verticalSpacing,
-      totalHorizontalSpacing,
-      totalVerticalSpacing
-    });
-
-    // Build relationship graph for connection analysis
+    // Force functions based on Fruchterman-Reingold paper
+    const fa = (x: number): number => (x * x) / k; // Attractive force
+    const fr = (x: number): number => (k * k) / x; // Repulsive force
+    
+    console.log('FR Algorithm parameters:', { W, H, area, k, iterations });
+    
+    // Build relationship graph for attractive forces
     const relationshipGraph: Record<string, string[]> = {};
     tables.forEach(table => {
       relationshipGraph[table.name] = [];
@@ -1517,53 +1543,255 @@ function DataSchemaViewContent() {
         }
       });
     });
-
-    // Calculate connection counts and sort by most connected first
-    const connectionCounts = tables.map(table => ({
-      name: table.name,
-      connections: relationshipGraph[table.name].length + 
-                  Object.values(relationshipGraph).filter(rels => rels.includes(table.name)).length
-    }));
-    connectionCounts.sort((a, b) => b.connections - a.connections);
-
-    // Determine grid dimensions - favor more columns for better relationship visibility
-    const tableCount = tables.length;
-    let cols: number;
     
-    if (tableCount <= 4) {
-      cols = 2;
-    } else if (tableCount <= 6) {
-      cols = 3;
-    } else if (tableCount <= 12) {
-      cols = 4;
-    } else if (tableCount <= 20) {
-      cols = 5;
-    } else {
-      cols = 6; // Maximum columns to keep layout manageable
+    // Initialize positions randomly
+    const nodePositions: Record<string, Vector2D> = {};
+    const displacements: Record<string, Vector2D> = {};
+    
+    tables.forEach(table => {
+      nodePositions[table.name] = createVector(
+        Math.random() * W - W/2,
+        Math.random() * H - H/2
+      );
+      displacements[table.name] = createVector(0, 0);
+    });
+    
+    // Temperature system for cooling
+    let t = W / 10;
+    const dt = t / (iterations + 1);
+    
+    // Main force-directed algorithm iteration
+    for (let i = 1; i <= iterations; i++) {
+      // Reset displacements
+      tables.forEach(table => {
+        displacements[table.name] = createVector(0, 0);
+      });
+      
+      // Calculate repulsive forces between all pairs
+      tables.forEach(tableV => {
+        tables.forEach(tableU => {
+          if (tableU.name !== tableV.name) {
+            const delta = nodePositions[tableV.name].subtract(nodePositions[tableU.name]);
+            if (delta.length > 0) {
+              const repulsiveForce = fr(delta.length);
+              const direction = delta.normalize();
+              displacements[tableV.name] = displacements[tableV.name].add(
+                direction.multiply(repulsiveForce)
+              );
+            } else {
+              // Handle case where nodes are at same position
+              const randomDirection = createVector(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+              ).normalize();
+              displacements[tableV.name] = displacements[tableV.name].add(
+                randomDirection.multiply(fr(1))
+              );
+            }
+          }
+        });
+      });
+      
+      // Calculate attractive forces between connected nodes
+      tables.forEach(table => {
+        relationshipGraph[table.name].forEach(connectedTable => {
+          const delta = nodePositions[connectedTable].subtract(nodePositions[table.name]);
+          if (delta.length > 0) {
+            const attractiveForce = fa(delta.length);
+            const direction = delta.normalize();
+            
+            displacements[connectedTable] = displacements[connectedTable].subtract(
+              direction.multiply(attractiveForce)
+            );
+            displacements[table.name] = displacements[table.name].add(
+              direction.multiply(attractiveForce)
+            );
+          }
+        });
+      });
+      
+      // Apply displacements limited by temperature
+      tables.forEach(table => {
+        const displacement = displacements[table.name];
+        if (displacement.length > 0) {
+          const limitedDisplacement = displacement.normalize().multiply(
+            Math.min(displacement.length, t)
+          );
+          nodePositions[table.name] = nodePositions[table.name].add(limitedDisplacement);
+          
+          // Keep nodes within frame
+          nodePositions[table.name] = createVector(
+            Math.min(W/2, Math.max(-W/2, nodePositions[table.name].x)),
+            Math.min(H/2, Math.max(-H/2, nodePositions[table.name].y))
+          );
+        }
+      });
+      
+      // Cool down temperature
+      t -= dt;
     }
     
-    console.log('Grid layout:', { tableCount, cols });
+    // Convert to final positions with centering offset
+    const centerX = 800;
+    const centerY = 600;
     
-    const startX = 200; // Large padding from screen edge
-    const startY = 200;
-    
-    // Place tables in simple grid pattern - most connected tables first
-    connectionCounts.forEach((table, index) => {
-      const row = Math.floor(index / cols);
-      const col = index % cols;
-      
-      // Calculate position with guaranteed large spacing
-      const x = startX + col * totalHorizontalSpacing;
-      const y = startY + row * totalVerticalSpacing;
-      
-      positions[table.name] = { x, y };
-      
-      console.log(`Placed ${table.name} at (${x}, ${y}) - row ${row}, col ${col}, connections: ${table.connections}`);
+    tables.forEach(table => {
+      positions[table.name] = {
+        x: nodePositions[table.name].x + centerX,
+        y: nodePositions[table.name].y + centerY
+      };
     });
-
-    console.log('Final positions:', positions);
+    
+    console.log('Force-directed layout complete:', positions);
     return positions;
   }, []);
+
+  // Enhanced Hierarchical Layout with Layer Assignment
+  const generateHierarchicalLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
+    if (!tables.length) return {};
+    
+    console.log('Hierarchical layout: Processing', tables.length, 'tables');
+    
+    const positions: Record<string, { x: number; y: number }> = {};
+    
+    // Build relationship graph
+    const relationshipGraph: Record<string, string[]> = {};
+    const incomingEdges: Record<string, string[]> = {};
+    
+    tables.forEach(table => {
+      relationshipGraph[table.name] = [];
+      incomingEdges[table.name] = [];
+    });
+    
+    tables.forEach(table => {
+      table.relationships.forEach(rel => {
+        if (tables.some(t => t.name === rel.toTable)) {
+          relationshipGraph[table.name].push(rel.toTable);
+          incomingEdges[rel.toTable].push(table.name);
+        }
+      });
+    });
+    
+    // Layer assignment using modified topological sort
+    const layers: string[][] = [];
+    const visited = new Set<string>();
+    const tempMark = new Set<string>();
+    
+    // Find root nodes (no incoming edges) for starting points
+    const rootNodes = tables
+      .filter(table => incomingEdges[table.name].length === 0)
+      .map(table => table.name);
+    
+    if (rootNodes.length === 0) {
+      // If no clear roots, use most connected nodes
+      const connectionCounts = tables.map(table => ({
+        name: table.name,
+        connections: relationshipGraph[table.name].length + incomingEdges[table.name].length
+      }));
+      connectionCounts.sort((a, b) => b.connections - a.connections);
+      rootNodes.push(connectionCounts[0].name);
+    }
+    
+    // Assign layers using BFS-like approach
+    const nodeLayer: Record<string, number> = {};
+    const queue = rootNodes.map(node => ({ node, layer: 0 }));
+    
+    while (queue.length > 0) {
+      const { node, layer } = queue.shift()!;
+      
+      if (nodeLayer[node] !== undefined) {
+        nodeLayer[node] = Math.max(nodeLayer[node], layer);
+        continue;
+      }
+      
+      nodeLayer[node] = layer;
+      
+      // Add children to next layer
+      relationshipGraph[node].forEach(child => {
+        if (nodeLayer[child] === undefined) {
+          queue.push({ node: child, layer: layer + 1 });
+        }
+      });
+    }
+    
+    // Handle unassigned nodes (put them in layer 0)
+    tables.forEach(table => {
+      if (nodeLayer[table.name] === undefined) {
+        nodeLayer[table.name] = 0;
+      }
+    });
+    
+    // Group nodes by layer
+    const maxLayer = Math.max(...Object.values(nodeLayer));
+    for (let i = 0; i <= maxLayer; i++) {
+      layers[i] = [];
+    }
+    
+    tables.forEach(table => {
+      layers[nodeLayer[table.name]].push(table.name);
+    });
+    
+    // Position nodes within layers
+    const nodeWidth = 320;
+    const nodeHeight = 200;
+    const horizontalSpacing = 100;
+    const verticalSpacing = 250; // Larger spacing between layers
+    
+    layers.forEach((layer, layerIndex) => {
+      const layerWidth = layer.length * (nodeWidth + horizontalSpacing) - horizontalSpacing;
+      const startX = (1400 - layerWidth) / 2; // Center the layer
+      const y = 200 + layerIndex * verticalSpacing;
+      
+      layer.forEach((tableName, index) => {
+        const x = startX + index * (nodeWidth + horizontalSpacing);
+        positions[tableName] = { x, y };
+      });
+    });
+    
+    console.log('Hierarchical layout complete:', { layers: layers.length, positions });
+    return positions;
+  }, []);
+
+  // Smart Layout Algorithm - Multiple proven algorithms
+  const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
+    if (!tables.length) return {};
+    
+    console.log('Smart layout: Processing', tables.length, 'tables with proven algorithms');
+    
+    // For small graphs (≤10 tables), use force-directed layout
+    if (tables.length <= 10) {
+      return generateForceDirectedLayout(tables);
+    }
+    
+    // For medium graphs (11-25 tables), check if hierarchical structure exists
+    const relationshipGraph: Record<string, string[]> = {};
+    const incomingEdges: Record<string, string[]> = {};
+    
+    tables.forEach(table => {
+      relationshipGraph[table.name] = [];
+      incomingEdges[table.name] = [];
+    });
+    
+    tables.forEach(table => {
+      table.relationships.forEach(rel => {
+        if (tables.some(t => t.name === rel.toTable)) {
+          relationshipGraph[table.name].push(rel.toTable);
+          incomingEdges[rel.toTable].push(table.name);
+        }
+      });
+    });
+    
+    // Calculate if graph has clear hierarchical structure
+    const totalEdges = Object.values(relationshipGraph).reduce((sum, edges) => sum + edges.length, 0);
+    const hasHierarchy = totalEdges > tables.length * 0.8; // Strong connectivity suggests hierarchy
+    
+    if (hasHierarchy && tables.length <= 25) {
+      return generateHierarchicalLayout(tables);
+    }
+    
+    // For larger or less hierarchical graphs, use enhanced force-directed with multilevel approach
+    return generateForceDirectedLayout(tables);
+  }, [generateForceDirectedLayout, generateHierarchicalLayout]);
 
   // Smart Layout Handler
   const handleSmartLayout = useCallback(() => {
