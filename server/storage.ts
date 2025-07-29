@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, operations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   recipes, recipePhases, recipeFormulas, recipeEquipment, vendors, customers, productionVersions,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -9,7 +9,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type Operation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeEquipment, type Vendor, type Customer, type ProductionVersion,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -20,7 +20,7 @@ import {
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
-  type InsertOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertDiscreteOperation, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeEquipment, type InsertVendor, type InsertCustomer, type InsertProductionVersion,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -1806,38 +1806,245 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
+  // Backwards-compatible operations methods that combine discrete and process operations
   async getOperations(): Promise<Operation[]> {
-    return await db.select().from(operations);
+    const discreteOps = await db.select().from(discreteOperations);
+    const processOps = await db.select().from(processOperations);
+    
+    // Convert both types to the legacy Operation interface for backwards compatibility
+    const combinedOps: Operation[] = [
+      ...discreteOps.map(op => ({
+        ...op,
+        name: op.operationName,
+        duration: op.standardDuration,
+        jobId: op.productionOrderId, // For backward compatibility
+        order: op.sequenceNumber
+      } as Operation)),
+      ...processOps.map(op => ({
+        ...op,
+        name: op.operationName,
+        duration: op.standardDuration,
+        jobId: op.productionOrderId, // For backward compatibility
+        order: op.sequenceNumber
+      } as Operation))
+    ];
+    
+    return combinedOps;
   }
 
   async getOperationsByJobId(jobId: number): Promise<Operation[]> {
-    return await db.select().from(operations).where(eq(operations.productionOrderId, jobId));
+    return this.getOperationsByProductionOrderId(jobId);
   }
 
   async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
-    return await db.select().from(operations).where(eq(operations.productionOrderId, productionOrderId));
+    const discreteOps = await db.select().from(discreteOperations).where(eq(discreteOperations.productionOrderId, productionOrderId));
+    const processOps = await db.select().from(processOperations).where(eq(processOperations.productionOrderId, productionOrderId));
+    
+    // Convert both types to the legacy Operation interface for backwards compatibility
+    const combinedOps: Operation[] = [
+      ...discreteOps.map(op => ({
+        ...op,
+        name: op.operationName,
+        duration: op.standardDuration,
+        jobId: op.productionOrderId, // For backward compatibility
+        order: op.sequenceNumber
+      } as Operation)),
+      ...processOps.map(op => ({
+        ...op,
+        name: op.operationName,
+        duration: op.standardDuration,
+        jobId: op.productionOrderId, // For backward compatibility
+        order: op.sequenceNumber
+      } as Operation))
+    ];
+    
+    return combinedOps;
   }
 
   async getOperation(id: number): Promise<Operation | undefined> {
-    const [operation] = await db.select().from(operations).where(eq(operations.id, id));
+    // Try to find in discrete operations first
+    const [discreteOp] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
+    if (discreteOp) {
+      return {
+        ...discreteOp,
+        name: discreteOp.operationName,
+        duration: discreteOp.standardDuration,
+        jobId: discreteOp.productionOrderId,
+        order: discreteOp.sequenceNumber
+      } as Operation;
+    }
+    
+    // Try to find in process operations
+    const [processOp] = await db.select().from(processOperations).where(eq(processOperations.id, id));
+    if (processOp) {
+      return {
+        ...processOp,
+        name: processOp.operationName,
+        duration: processOp.standardDuration,
+        jobId: processOp.productionOrderId,
+        order: processOp.sequenceNumber
+      } as Operation;
+    }
+    
+    return undefined;
+  }
+
+  // Backwards compatible create operation - defaults to discrete
+  async createOperation(operation: InsertOperation): Promise<Operation> {
+    const discreteOp = {
+      productionOrderId: operation.productionOrderId || operation.jobId,
+      operationName: operation.name,
+      description: operation.description,
+      standardDuration: operation.duration,
+      sequenceNumber: operation.order || 1,
+      status: operation.status,
+      assignedResourceId: operation.assignedResourceId,
+      startTime: operation.startTime,
+      endTime: operation.endTime,
+      scheduledStartDate: operation.scheduledStartDate,
+      scheduledEndDate: operation.scheduledEndDate
+    };
+    
+    const [newOp] = await db.insert(discreteOperations).values(discreteOp).returning();
+    return {
+      ...newOp,
+      name: newOp.operationName,
+      duration: newOp.standardDuration,
+      jobId: newOp.productionOrderId,
+      order: newOp.sequenceNumber
+    } as Operation;
+  }
+
+  // Backwards compatible update operation - tries discrete first, then process
+  async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
+    // Try to update in discrete operations first
+    const [discreteOp] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
+    if (discreteOp) {
+      const updateData = {
+        operationName: operation.name,
+        description: operation.description,
+        standardDuration: operation.duration,
+        sequenceNumber: operation.order,
+        status: operation.status,
+        assignedResourceId: operation.assignedResourceId,
+        startTime: operation.startTime,
+        endTime: operation.endTime,
+        scheduledStartDate: operation.scheduledStartDate,
+        scheduledEndDate: operation.scheduledEndDate
+      };
+      
+      const [updated] = await db.update(discreteOperations)
+        .set(updateData)
+        .where(eq(discreteOperations.id, id))
+        .returning();
+      
+      return {
+        ...updated,
+        name: updated.operationName,
+        duration: updated.standardDuration,
+        jobId: updated.productionOrderId,
+        order: updated.sequenceNumber
+      } as Operation;
+    }
+    
+    // Try to update in process operations
+    const [processOp] = await db.select().from(processOperations).where(eq(processOperations.id, id));
+    if (processOp) {
+      const updateData = {
+        operationName: operation.name,
+        description: operation.description,
+        standardDuration: operation.duration,
+        sequenceNumber: operation.order,
+        status: operation.status,
+        assignedResourceId: operation.assignedResourceId,
+        startTime: operation.startTime,
+        endTime: operation.endTime,
+        scheduledStartDate: operation.scheduledStartDate,
+        scheduledEndDate: operation.scheduledEndDate
+      };
+      
+      const [updated] = await db.update(processOperations)
+        .set(updateData)
+        .where(eq(processOperations.id, id))
+        .returning();
+      
+      return {
+        ...updated,
+        name: updated.operationName,
+        duration: updated.standardDuration,
+        jobId: updated.productionOrderId,
+        order: updated.sequenceNumber
+      } as Operation;
+    }
+    
+    return undefined;
+  }
+
+  // New discrete operations methods
+  async getDiscreteOperations(): Promise<DiscreteOperation[]> {
+    return await db.select().from(discreteOperations);
+  }
+
+  async getDiscreteOperation(id: number): Promise<DiscreteOperation | undefined> {
+    const [operation] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
     return operation || undefined;
   }
 
-  async createOperation(operation: InsertOperation): Promise<Operation> {
-    const [newOperation] = await db
-      .insert(operations)
-      .values(operation)
-      .returning();
+  async createDiscreteOperation(operation: InsertDiscreteOperation): Promise<DiscreteOperation> {
+    const [newOperation] = await db.insert(discreteOperations).values(operation).returning();
     return newOperation;
   }
 
-  async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
-    const [updatedOperation] = await db
-      .update(operations)
+  async updateDiscreteOperation(id: number, operation: Partial<InsertDiscreteOperation>): Promise<DiscreteOperation | undefined> {
+    const [updated] = await db.update(discreteOperations)
       .set(operation)
-      .where(eq(operations.id, id))
+      .where(eq(discreteOperations.id, id))
       .returning();
-    return updatedOperation || undefined;
+    return updated || undefined;
+  }
+
+  async deleteDiscreteOperation(id: number): Promise<boolean> {
+    const result = await db.delete(discreteOperations).where(eq(discreteOperations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // New process operations methods
+  async getProcessOperations(): Promise<ProcessOperation[]> {
+    return await db.select().from(processOperations);
+  }
+
+  async getProcessOperation(id: number): Promise<ProcessOperation | undefined> {
+    const [operation] = await db.select().from(processOperations).where(eq(processOperations.id, id));
+    return operation || undefined;
+  }
+
+  async createProcessOperation(operation: InsertProcessOperation): Promise<ProcessOperation> {
+    const [newOperation] = await db.insert(processOperations).values(operation).returning();
+    return newOperation;
+  }
+
+  async updateProcessOperation(id: number, operation: Partial<InsertProcessOperation>): Promise<ProcessOperation | undefined> {
+    const [updated] = await db.update(processOperations)
+      .set(operation)
+      .where(eq(processOperations.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteProcessOperation(id: number): Promise<boolean> {
+    const result = await db.delete(processOperations).where(eq(processOperations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Backwards compatible delete operation
+  async deleteOperation(id: number): Promise<boolean> {
+    // Try to delete from discrete operations first
+    const discreteResult = await db.delete(discreteOperations).where(eq(discreteOperations.id, id));
+    if ((discreteResult.rowCount || 0) > 0) return true;
+    
+    // Try to delete from process operations
+    const processResult = await db.delete(processOperations).where(eq(processOperations.id, id));
+    return (processResult.rowCount || 0) > 0;
   }
 
   async updateOperationOptimizationFlags(id: number, flags: {

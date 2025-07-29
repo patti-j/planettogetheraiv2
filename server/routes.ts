@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
-  insertOperationSchema, insertDependencySchema, insertResourceViewSchema,
+  insertDiscreteOperationSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
@@ -830,14 +830,15 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
                   const randomJob = existingJobs[Math.floor(Math.random() * existingJobs.length)];
                   
                   if (randomJob) {
-                    const insertOperation = insertOperationSchema.parse({
+                    // Default to discrete operations for imports
+                    const insertOperation = insertDiscreteOperationSchema.parse({
                       productionOrderId: randomJob.id,
-                      name: item.name || item.operationName || 'Unknown Operation',
+                      operationName: item.name || item.operationName || 'Unknown Operation',
                       description: item.description || '',
-                      duration: typeof item.duration === 'string' ? parseFloat(item.duration) || 8 : item.duration || 8,
-                      requiredCapabilities: item.requiredCapabilities || []
+                      standardDuration: typeof item.duration === 'string' ? parseFloat(item.duration) || 8 : item.duration || 8,
+                      sequenceNumber: 1
                     });
-                    const operation = await storage.createOperation(insertOperation);
+                    const operation = await storage.createDiscreteOperation(insertOperation);
                     results.push(operation);
                   }
                 }
@@ -1165,14 +1166,15 @@ Rules:
                     : existingJobs[Math.floor(Math.random() * existingJobs.length)];
                   
                   if (targetJob) {
-                    const insertOperation = insertOperationSchema.parse({
+                    // Default to discrete operations for bulk modifications
+                    const insertOperation = insertDiscreteOperationSchema.parse({
                       productionOrderId: targetJob.id,
-                      name: record.name,
+                      operationName: record.name,
                       description: record.description || '',
-                      duration: record.duration || 8,
-                      requiredCapabilities: record.requiredCapabilities || []
+                      standardDuration: record.duration || 8,
+                      sequenceNumber: 1
                     });
-                    const operation = await storage.createOperation(insertOperation);
+                    const operation = await storage.createDiscreteOperation(insertOperation);
                     results.push(operation);
                   }
                 }
@@ -1990,8 +1992,9 @@ Rules:
 
   app.post("/api/operations", async (req, res) => {
     try {
-      const operation = insertOperationSchema.parse(req.body);
-      const newOperation = await storage.createOperation(operation);
+      // Default to discrete operations for backward compatibility
+      const operation = insertDiscreteOperationSchema.parse(req.body);
+      const newOperation = await storage.createDiscreteOperation(operation);
       res.status(201).json(newOperation);
     } catch (error) {
       res.status(400).json({ message: "Invalid operation data" });
@@ -2011,8 +2014,9 @@ Rules:
         requestData.endTime = new Date(requestData.endTime);
       }
       
-      const operation = insertOperationSchema.partial().parse(requestData);
-      const updatedOperation = await storage.updateOperation(id, operation);
+      // Default to discrete operations for backward compatibility  
+      const operation = insertDiscreteOperationSchema.partial().parse(requestData);
+      const updatedOperation = await storage.updateDiscreteOperation(id, operation);
       if (!updatedOperation) {
         return res.status(404).json({ message: "Operation not found" });
       }

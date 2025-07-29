@@ -580,7 +580,8 @@ export const productionVersions = pgTable("production_versions", {
   validityIndex: index("production_versions_validity_idx").on(table.validFrom, table.validTo),
 }));
 
-export const operations = pgTable("operations", {
+// Discrete Operations - for discrete manufacturing with distinct, countable parts
+export const discreteOperations = pgTable("discrete_operations", {
   id: serial("id").primaryKey(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   name: text("name").notNull(),
@@ -594,6 +595,87 @@ export const operations = pgTable("operations", {
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
   order: integer("order").notNull().default(0),
+  
+  // Discrete manufacturing specific fields
+  setupTime: integer("setup_time").default(0), // Setup time in minutes
+  runTimePerUnit: integer("run_time_per_unit").notNull(), // Processing time per unit in minutes
+  teardownTime: integer("tear_down_time").default(0), // Cleanup time in minutes
+  lotSize: integer("lot_size").notNull().default(1), // Number of units processed in this operation
+  workCenter: text("work_center"), // Work center or machine where operation is performed
+  toolingRequired: jsonb("tooling_required").$type<string[]>().default([]), // List of tools/fixtures needed
+  qualityControlPoints: jsonb("quality_control_points").$type<Array<{
+    checkpoint_name: string;
+    inspection_type: string; // "dimensional", "visual", "functional", "material"
+    frequency: string; // "first_piece", "last_piece", "every_unit", "sampling"
+    specifications: string;
+  }>>().default([]),
+  
+  // Optimization algorithm flags
+  isBottleneck: boolean("is_bottleneck").default(false),
+  isEarly: boolean("is_early").default(false),
+  isLate: boolean("is_late").default(false),
+  timeVarianceHours: integer("time_variance_hours").default(0), // Positive = early, negative = late
+  criticality: text("criticality").default("normal"), // "low", "normal", "high", "critical"
+  optimizationNotes: text("optimization_notes"), // Notes from optimization algorithms
+});
+
+// Process Operations - for process manufacturing with continuous flows, batches, and recipes
+export const processOperations = pgTable("process_operations", {
+  id: serial("id").primaryKey(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
+  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id), // Links to specific recipe phase
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("planned"),
+  duration: integer("duration").notNull(), // in hours
+  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]),
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  scheduledStartDate: timestamp("scheduled_start_date"),
+  scheduledEndDate: timestamp("scheduled_end_date"),
+  order: integer("order").notNull().default(0),
+  
+  // Process manufacturing specific fields
+  phaseType: text("phase_type").notNull(), // "mixing", "heating", "cooling", "reaction", "separation", "filling", "packaging"
+  batchSize: numeric("batch_size", { precision: 10, scale: 4 }).notNull(), // Amount processed in this operation
+  batchUnit: text("batch_unit").notNull().default("kg"), // Unit of measure for batch
+  targetTemperature: numeric("target_temperature", { precision: 5, scale: 2 }), // Target temperature in Celsius
+  targetPressure: numeric("target_pressure", { precision: 8, scale: 3 }), // Target pressure in bar
+  agitationSpeed: integer("agitation_speed"), // Mixing speed in RPM
+  flowRate: numeric("flow_rate", { precision: 8, scale: 3 }), // Flow rate for continuous processes
+  
+  // Process control parameters
+  processParameters: jsonb("process_parameters").$type<Array<{
+    parameter_name: string;
+    target_value: number;
+    min_value: number;
+    max_value: number;
+    unit: string;
+    control_type: string; // "manual", "automatic", "cascade"
+  }>>().default([]),
+  
+  // Material additions during process
+  materialAdditions: jsonb("material_additions").$type<Array<{
+    material_code: string;
+    material_name: string;
+    addition_point: string; // When to add: "start", "middle", "end", "continuous"
+    quantity: number;
+    unit: string;
+    addition_rate: number; // For continuous additions
+    temperature_condition: string; // Temperature requirement for addition
+  }>>().default([]),
+  
+  // Yield and quality tracking
+  expectedYield: numeric("expected_yield", { precision: 5, scale: 2 }).default("100"), // Expected yield percentage
+  qualityTests: jsonb("quality_tests").$type<Array<{
+    test_name: string;
+    test_type: string; // "chemical", "physical", "microbiological"
+    sampling_point: string; // "start", "during", "end"
+    frequency: string;
+    specifications: string;
+  }>>().default([]),
+  
   // Optimization algorithm flags
   isBottleneck: boolean("is_bottleneck").default(false),
   isEarly: boolean("is_early").default(false),
@@ -606,7 +688,9 @@ export const operations = pgTable("operations", {
 // Resource Requirements - defines what resources each operation needs
 export const resourceRequirements = pgTable("resource_requirements", {
   id: serial("id").primaryKey(),
-  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  // Can reference either discrete or process operations
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
   requirementName: text("requirement_name").notNull(), // e.g., "Primary Machine", "Secondary Setup", "Quality Control"
   requirementType: text("requirement_type").notNull().default("primary"), // primary, secondary, setup, quality, maintenance
   quantity: integer("quantity").notNull().default(1), // how many resources needed
@@ -632,7 +716,8 @@ export const resourceRequirements = pgTable("resource_requirements", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  operationRequirementIndex: index("resource_requirements_operation_idx").on(table.operationId),
+  discreteOperationRequirementIndex: index("resource_requirements_discrete_operation_idx").on(table.discreteOperationId),
+  processOperationRequirementIndex: index("resource_requirements_process_operation_idx").on(table.processOperationId),
   defaultResourceIndex: index("resource_requirements_default_resource_idx").on(table.defaultResourceId),
 }));
 
@@ -667,10 +752,17 @@ export const resourceRequirementAssignments = pgTable("resource_requirement_assi
   statusIndex: index("resource_assignments_status_idx").on(table.status),
 }));
 
+// Dependencies between operations (can be discrete-to-discrete, process-to-process, or cross-type)
 export const dependencies = pgTable("dependencies", {
   id: serial("id").primaryKey(),
-  fromOperationId: integer("from_operation_id").references(() => operations.id).notNull(),
-  toOperationId: integer("to_operation_id").references(() => operations.id).notNull(),
+  // From operation (can be either discrete or process)
+  fromDiscreteOperationId: integer("from_discrete_operation_id").references(() => discreteOperations.id),
+  fromProcessOperationId: integer("from_process_operation_id").references(() => processOperations.id),
+  // To operation (can be either discrete or process)
+  toDiscreteOperationId: integer("to_discrete_operation_id").references(() => discreteOperations.id),
+  toProcessOperationId: integer("to_process_operation_id").references(() => processOperations.id),
+  dependencyType: text("dependency_type").notNull().default("finish_to_start"), // finish_to_start, start_to_start, finish_to_finish, start_to_finish
+  lagTime: integer("lag_time").default(0), // Time lag in minutes between operations
 });
 
 export const resourceViews = pgTable("resource_views", {
@@ -837,7 +929,9 @@ export const scheduleScenarios: ReturnType<typeof pgTable> = pgTable("schedule_s
 export const scenarioOperations = pgTable("scenario_operations", {
   id: serial("id").primaryKey(),
   scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
-  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  // Can reference either discrete or process operations
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
@@ -1016,7 +1110,9 @@ export const disruptions = pgTable("disruptions", {
   description: text("description"),
   affectedResourceId: integer("affected_resource_id").references(() => resources.id),
   affectedProductionOrderId: integer("affected_production_order_id").references(() => productionOrders.id),
-  affectedOperationId: integer("affected_operation_id").references(() => operations.id),
+  // Can reference either discrete or process operations
+  affectedDiscreteOperationId: integer("affected_discrete_operation_id").references(() => discreteOperations.id),
+  affectedProcessOperationId: integer("affected_process_operation_id").references(() => processOperations.id),
   startTime: timestamp("start_time").notNull(),
   estimatedDuration: integer("estimated_duration"), // in hours
   actualEndTime: timestamp("actual_end_time"),
@@ -1097,11 +1193,23 @@ export const insertPlannedOrderProductionOrderSchema = createInsertSchema(planne
   convertedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertOperationSchema = createInsertSchema(operations).omit({
+// Insert schemas for both operation types
+export const insertDiscreteOperationSchema = createInsertSchema(discreteOperations).omit({
   id: true,
 }).extend({
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertProcessOperationSchema = createInsertSchema(processOperations).omit({
+  id: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]).optional(),
+  endTime: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertDependencySchema = createInsertSchema(dependencies).omit({
@@ -1946,8 +2054,12 @@ export type PlannedOrder = typeof plannedOrders.$inferSelect;
 export type PlannedOrderProductionOrder = typeof plannedOrderProductionOrders.$inferSelect;
 export type InsertPlannedOrderProductionOrder = z.infer<typeof insertPlannedOrderProductionOrderSchema>;
 
-export type InsertOperation = z.infer<typeof insertOperationSchema>;
-export type Operation = typeof operations.$inferSelect;
+// Types for both operation types
+export type InsertDiscreteOperation = z.infer<typeof insertDiscreteOperationSchema>;
+export type DiscreteOperation = typeof discreteOperations.$inferSelect;
+
+export type InsertProcessOperation = z.infer<typeof insertProcessOperationSchema>;
+export type ProcessOperation = typeof processOperations.$inferSelect;
 
 export type InsertDependency = z.infer<typeof insertDependencySchema>;
 export type Dependency = typeof dependencies.$inferSelect;
@@ -3856,7 +3968,9 @@ export const schedulingHistory = pgTable("scheduling_history", {
 export const schedulingResults = pgTable("scheduling_results", {
   id: serial("id").primaryKey(),
   historyId: integer("history_id").references(() => schedulingHistory.id).notNull(),
-  operationId: integer("operation_id").references(() => operations.id).notNull(),
+  // Can reference either discrete or process operations
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   resourceId: integer("resource_id").references(() => resources.id),
   originalStartTime: timestamp("original_start_time"),
@@ -5771,9 +5885,14 @@ export const schedulingResultsRelations = relations(schedulingResults, ({ one })
     fields: [schedulingResults.historyId],
     references: [schedulingHistory.id],
   }),
-  operation: one(operations, {
-    fields: [schedulingResults.operationId],
-    references: [operations.id],
+  // Can reference either discrete or process operations
+  discreteOperation: one(discreteOperations, {
+    fields: [schedulingResults.discreteOperationId],
+    references: [discreteOperations.id],
+  }),
+  processOperation: one(processOperations, {
+    fields: [schedulingResults.processOperationId],
+    references: [processOperations.id],
   }),
   productionOrder: one(productionOrders, {
     fields: [schedulingResults.productionOrderId],
@@ -6605,7 +6724,9 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
     fields: [productionOrders.productionVersionId],
     references: [productionVersions.id],
   }),
-  operations: many(operations),
+  // Relations to both discrete and process operations
+  discreteOperations: many(discreteOperations),
+  processOperations: many(processOperations),
   // Many-to-many relationship with planned orders via junction table
   plannedOrderLinks: many(plannedOrderProductionOrders),
 }));
@@ -6660,15 +6781,34 @@ export const plannedOrderProductionOrdersRelations = relations(plannedOrderProdu
   }),
 }));
 
-export const operationsRelations = relations(operations, ({ one }) => ({
+// Relations for discrete operations
+export const discreteOperationsRelations = relations(discreteOperations, ({ one, many }) => ({
   productionOrder: one(productionOrders, {
-    fields: [operations.productionOrderId],
+    fields: [discreteOperations.productionOrderId],
     references: [productionOrders.id],
   }),
   assignedResource: one(resources, {
-    fields: [operations.assignedResourceId],
+    fields: [discreteOperations.assignedResourceId],
     references: [resources.id],
   }),
+  resourceRequirements: many(resourceRequirements),
+}));
+
+// Relations for process operations
+export const processOperationsRelations = relations(processOperations, ({ one, many }) => ({
+  productionOrder: one(productionOrders, {
+    fields: [processOperations.productionOrderId],
+    references: [productionOrders.id],
+  }),
+  recipePhase: one(recipePhases, {
+    fields: [processOperations.recipePhaseId],
+    references: [recipePhases.id],
+  }),
+  assignedResource: one(resources, {
+    fields: [processOperations.assignedResourceId],
+    references: [resources.id],
+  }),
+  resourceRequirements: many(resourceRequirements),
 }));
 
 

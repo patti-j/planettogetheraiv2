@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertOperationSchema } from "@shared/schema";
-import type { Operation, Job, Capability, Resource } from "@shared/schema";
+import { insertDiscreteOperationSchema } from "@shared/schema";
+import type { DiscreteOperation, ProductionOrder, Capability, Resource } from "@shared/schema";
 
-const operationFormSchema = insertOperationSchema.extend({
+const operationFormSchema = insertDiscreteOperationSchema.extend({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   scheduledStartDate: z.string().optional(),
@@ -24,8 +24,8 @@ const operationFormSchema = insertOperationSchema.extend({
 type OperationFormData = z.infer<typeof operationFormSchema>;
 
 interface OperationFormProps {
-  operation?: Operation;
-  jobs: Job[];
+  operation?: DiscreteOperation;
+  jobs: ProductionOrder[];
   capabilities: Capability[];
   resources: Resource[];
   onSuccess?: () => void;
@@ -45,14 +45,13 @@ export default function OperationForm({
   const form = useForm<OperationFormData>({
     resolver: zodResolver(operationFormSchema),
     defaultValues: {
-      jobId: operation?.jobId || (jobs[0]?.id ?? 0),
-      name: operation?.name || "",
+      productionOrderId: operation?.productionOrderId || (jobs[0]?.id ?? 0),
+      operationName: operation?.operationName || "",
       description: operation?.description || "",
       status: operation?.status || "planned",
-      duration: operation?.duration || 8,
-      requiredCapabilities: operation?.requiredCapabilities || [],
+      standardDuration: operation?.standardDuration || 8,
       assignedResourceId: operation?.assignedResourceId || undefined,
-      order: operation?.order || 0,
+      sequenceNumber: operation?.sequenceNumber || 1,
       startTime: operation?.startTime ? new Date(operation.startTime).toISOString().slice(0, 16) : "",
       endTime: operation?.endTime ? new Date(operation.endTime).toISOString().slice(0, 16) : "",
       scheduledStartDate: operation?.scheduledStartDate ? new Date(operation.scheduledStartDate).toISOString().slice(0, 16) : "",
