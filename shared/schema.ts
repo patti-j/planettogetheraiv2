@@ -781,11 +781,12 @@ export const processOperations = pgTable("process_operations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Resource Requirements - defines what resources each recipe phase needs
+// Resource Requirements - defines what resources each recipe phase or discrete operation phase needs
 export const resourceRequirements = pgTable("resource_requirements", {
   id: serial("id").primaryKey(),
-  // Links to recipe phases (many-to-one relationship)
-  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id).notNull(),
+  // Links to recipe phases OR discrete operation phases (many-to-one relationship)
+  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id),
+  discreteOperationPhaseId: integer("discrete_operation_phase_id").references(() => discreteOperationPhases.id),
   requirementName: text("requirement_name").notNull(), // e.g., "Primary Machine", "Secondary Setup", "Quality Control"
   requirementType: text("requirement_type").notNull().default("primary"), // primary, secondary, setup, quality, maintenance
   quantity: integer("quantity").notNull().default(1), // how many resources needed
@@ -812,6 +813,7 @@ export const resourceRequirements = pgTable("resource_requirements", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   recipePhaseRequirementIndex: index("resource_requirements_recipe_phase_idx").on(table.recipePhaseId),
+  discreteOperationPhaseRequirementIndex: index("resource_requirements_discrete_operation_phase_idx").on(table.discreteOperationPhaseId),
   defaultResourceIndex: index("resource_requirements_default_resource_idx").on(table.defaultResourceId),
 }));
 
@@ -6190,6 +6192,11 @@ export const resourceRequirementsRelations = relations(resourceRequirements, ({ 
     fields: [resourceRequirements.recipePhaseId],
     references: [recipePhases.id],
   }),
+  // Discrete operation phase relationship (many-to-one)
+  discreteOperationPhase: one(discreteOperationPhases, {
+    fields: [resourceRequirements.discreteOperationPhaseId],
+    references: [discreteOperationPhases.id],
+  }),
   // Default resource relationship
   defaultResource: one(resources, {
     fields: [resourceRequirements.defaultResourceId],
@@ -6197,8 +6204,6 @@ export const resourceRequirementsRelations = relations(resourceRequirements, ({ 
   }),
   // Assignment relationships
   assignments: many(resourceRequirementAssignments),
-  // Discrete operation phase links through junction table
-  discretePhaseLinks: many(discreteOperationPhaseResourceRequirements),
 }));
 
 // Resource Requirement Assignments relations
@@ -7146,6 +7151,9 @@ export const discreteOperationPhasesRelations = relations(discreteOperationPhase
     fields: [discreteOperationPhases.discreteOperationId],
     references: [discreteOperations.id],
   }),
+  // Direct resource requirements relationship (one phase to many requirements)
+  resourceRequirements: many(resourceRequirements),
+  // Junction table links (keeping for backward compatibility if needed)
   resourceRequirementLinks: many(discreteOperationPhaseResourceRequirements),
   predecessorRelationships: many(discreteOperationPhaseRelationships, {
     relationName: "predecessor"
