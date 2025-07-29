@@ -22,6 +22,15 @@
 - Auto-fit functionality now properly centers all filtered tables within visible area with appropriate spacing
 - Users can now reliably see all schema objects without any being cut off at screen edges
 
+✓ **Enhanced Relationship Direction Visual Clarity (July 29, 2025)**:
+- Dramatically improved cardinality indicators with color-coded markers for immediate relationship direction understanding
+- Green "1" markers clearly indicate the "one" side (parent) of relationships with larger font size (28px) and prominent styling
+- Red "∞" markers clearly indicate the "many" side (children) of relationships with matching visual prominence
+- Enhanced marker styling with stronger borders (3px), larger padding, shadows, and text shadows for maximum visibility
+- Added comprehensive relationship legend explaining color coding: Green "1" = One side (parent), Red "∞" = Many side (children)
+- Positioned markers at 20% (source) and 80% (target) of relationship lines for optimal table association clarity
+- Users can now instantly identify relationship directions without analyzing foreign key structures or table schemas
+
 ✓ **Production Versions Foreign Key Relationships Fix (July 29, 2025)**:
 - Fixed critical missing foreign key constraints between production_versions and bills_of_material/recipes tables
 - Added production_versions_bom_id_fkey constraint linking production_versions.bom_id → bills_of_material.id

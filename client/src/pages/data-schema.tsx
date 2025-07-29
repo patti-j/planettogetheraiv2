@@ -1052,15 +1052,16 @@ function DataSchemaViewContent() {
                 },
                 label: sourceCardinalityLabel,
                 labelStyle: {
-                  fontSize: '20px',
-                  fill: isHighlighted ? '#1e40af' : '#374151',
+                  fontSize: '28px',
+                  fill: sourceCardinalityLabel === '1' ? '#059669' : '#dc2626', // Green for "1", Red for "∞"
                   fontWeight: 'bold',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  border: sourceCardinalityLabel === '1' ? '3px solid #059669' : '3px solid #dc2626',
                   fontFamily: 'monospace',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  boxShadow: '0 6px 12px rgba(0,0,0,0.25)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                 },
                 labelBgStyle: {
                   fill: 'rgba(255, 255, 255, 0.95)',
@@ -1085,15 +1086,16 @@ function DataSchemaViewContent() {
                 },
                 label: targetCardinalityLabel,
                 labelStyle: {
-                  fontSize: '20px',
-                  fill: isHighlighted ? '#1e40af' : '#374151',
+                  fontSize: '28px',
+                  fill: targetCardinalityLabel === '1' ? '#059669' : '#dc2626', // Green for "1", Red for "∞"
                   fontWeight: 'bold',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
+                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  border: targetCardinalityLabel === '1' ? '3px solid #059669' : '3px solid #dc2626',
                   fontFamily: 'monospace',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  boxShadow: '0 6px 12px rgba(0,0,0,0.25)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
                 },
                 labelBgStyle: {
                   fill: 'rgba(255, 255, 255, 0.95)',
@@ -1976,6 +1978,20 @@ function DataSchemaViewContent() {
                     <div className="flex items-center gap-2">
                       <span className="text-red-500">*</span>
                       <span>Required Field</span>
+                    </div>
+                  </div>
+                  
+                  <Separator className="my-3" />
+                  
+                  <div className="space-y-1">
+                    <h4 className="font-medium">Relationships:</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 font-bold text-lg" style={{ fontFamily: 'monospace' }}>1</span>
+                      <span className="text-xs">One side (parent)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-600 font-bold text-lg" style={{ fontFamily: 'monospace' }}>∞</span>
+                      <span className="text-xs">Many side (children)</span>
                     </div>
                   </div>
                   
