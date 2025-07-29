@@ -901,57 +901,57 @@ function DataSchemaViewContent() {
             let label: string = rel.type;
             
             if (rel.type === 'one-to-many') {
-              // From side is "one" (no marker or single line), to side is "many" (crow's foot)
+              // From side is "one" (simple arrow), to side is "many" (larger crow's foot)
               markerStart = {
                 type: MarkerType.Arrow,
                 color: edgeColor,
-                width: isHighlighted ? 8 : 6,
-                height: isHighlighted ? 8 : 6,
+                width: isHighlighted ? 16 : 12,
+                height: isHighlighted ? 16 : 12,
               };
               markerEnd = {
                 type: MarkerType.ArrowClosed,
                 color: edgeColor,
-                width: isHighlighted ? 12 : 8,
-                height: isHighlighted ? 12 : 8,
+                width: isHighlighted ? 20 : 16,
+                height: isHighlighted ? 20 : 16,
               };
               label = '1 ——→ ∞';
             } else if (rel.type === 'many-to-many') {
-              // Both sides are "many" (crow's foot on both ends)
+              // Both sides are "many" (large crow's foot on both ends)
               markerStart = {
                 type: MarkerType.ArrowClosed,
                 color: edgeColor,
-                width: isHighlighted ? 12 : 8,
-                height: isHighlighted ? 12 : 8,
+                width: isHighlighted ? 20 : 16,
+                height: isHighlighted ? 20 : 16,
               };
               markerEnd = {
                 type: MarkerType.ArrowClosed,
                 color: edgeColor,
-                width: isHighlighted ? 12 : 8,
-                height: isHighlighted ? 12 : 8,
+                width: isHighlighted ? 20 : 16,
+                height: isHighlighted ? 20 : 16,
               };
               label = '∞ ←→ ∞';
             } else if (rel.type === 'one-to-one') {
-              // Both sides are "one" (single line on both ends)
+              // Both sides are "one" (larger simple arrows on both ends)
               markerStart = {
                 type: MarkerType.Arrow,
                 color: edgeColor,
-                width: isHighlighted ? 8 : 6,
-                height: isHighlighted ? 8 : 6,
+                width: isHighlighted ? 16 : 12,
+                height: isHighlighted ? 16 : 12,
               };
               markerEnd = {
                 type: MarkerType.Arrow,
                 color: edgeColor,
-                width: isHighlighted ? 8 : 6,
-                height: isHighlighted ? 8 : 6,
+                width: isHighlighted ? 16 : 12,
+                height: isHighlighted ? 16 : 12,
               };
               label = '1 ←→ 1';
             } else {
-              // Default arrow for other relationship types
+              // Default arrow for other relationship types - larger size
               markerEnd = {
                 type: MarkerType.ArrowClosed,
                 color: edgeColor,
-                width: isHighlighted ? 12 : 8,
-                height: isHighlighted ? 12 : 8,
+                width: isHighlighted ? 20 : 16,
+                height: isHighlighted ? 20 : 16,
               };
             }
             
@@ -963,20 +963,20 @@ function DataSchemaViewContent() {
               animated: !!isHighlighted,
               style: { 
                 stroke: edgeColor,
-                strokeWidth: isHighlighted ? 4 : 2,
-                opacity: focusMode && !isHighlighted ? 0.2 : 0.8,
+                strokeWidth: isHighlighted ? 6 : 3,
+                opacity: focusMode && !isHighlighted ? 0.2 : 0.9,
                 strokeDasharray: strokeDasharray,
-                filter: isHighlighted ? 'drop-shadow(0px 0px 6px rgba(59, 130, 246, 0.4))' : undefined,
+                filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.5))' : 'drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.1))',
               },
               label: label,
               labelStyle: { 
-                fontSize: 11,
+                fontSize: isHighlighted ? 14 : 12,
                 fill: isHighlighted ? '#1e40af' : '#374151',
-                fontWeight: isHighlighted ? 'bold' : 'normal',
+                fontWeight: isHighlighted ? 'bold' : 'bold',
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: '3px 6px',
-                borderRadius: '4px',
-                border: isHighlighted ? '1px solid #3b82f6' : '1px solid #d1d5db',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
                 fontFamily: 'monospace',
               },
               labelBgStyle: {
