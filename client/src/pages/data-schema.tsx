@@ -1536,33 +1536,71 @@ function DataSchemaViewContent() {
     };
   };
 
-  // Enhanced Force-Directed Layout Algorithm - Better Screen Utilization
+  // Content-Aware Force-Directed Layout Algorithm
   const generateForceDirectedLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
     if (!tables.length) return {};
     
-    console.log('Enhanced force-directed layout: Processing', tables.length, 'tables');
+    console.log('Content-aware force-directed layout: Processing', tables.length, 'tables');
     
-    const positions: Record<string, { x: number; y: number }> = {};
-    const nodeWidth = 320;
-    const nodeHeight = 200;
+    // Calculate actual card dimensions based on content
+    const getCardDimensions = (table: SchemaTable) => {
+      const baseWidth = 300;
+      const baseHeight = 120; // Header height
+      const columnHeight = showColumns ? Math.min(table.columns.length, 10) * 28 : 0; // 28px per column (including comments)
+      const commentHeight = showColumns ? table.columns.slice(0, 10).reduce((acc, col) => 
+        acc + (col.comment ? 24 : 0), 0) : 0; // Extra height for comments
+      
+      return {
+        width: baseWidth,
+        height: baseHeight + columnHeight + commentHeight + 40 // padding
+      };
+    };
     
-    // Enhanced layout area calculations for better screen utilization
-    const minWidth = 1600;
-    const minHeight = 1200;
-    const scaleFactor = Math.max(1, Math.sqrt(tables.length / 5)); // More aggressive scaling
-    const W = Math.max(minWidth, tables.length * 400 * scaleFactor); // Wider distribution
-    const H = Math.max(minHeight, tables.length * 300 * scaleFactor); // Taller distribution
-    const area = W * H;
-    const iterations = Math.min(80, Math.max(40, tables.length * 3)); // More iterations for better positioning
+    // Calculate card dimensions and total content area
+    const cardDimensions: Record<string, { width: number; height: number }> = {};
+    let totalCardArea = 0;
+    let maxCardWidth = 0;
+    let maxCardHeight = 0;
     
-    // Calculate optimal distance between vertices (k parameter) - more spaced out
-    const k = Math.sqrt(area / tables.length) * 1.5; // Increased spacing factor
+    tables.forEach(table => {
+      const dims = getCardDimensions(table);
+      cardDimensions[table.name] = dims;
+      totalCardArea += dims.width * dims.height;
+      maxCardWidth = Math.max(maxCardWidth, dims.width);
+      maxCardHeight = Math.max(maxCardHeight, dims.height);
+    });
     
-    // Enhanced force functions
+    // Calculate optimal viewport dimensions based on content
+    const targetDensity = 0.35; // 35% of space filled with cards
+    const requiredArea = totalCardArea / targetDensity;
+    const aspectRatio = 1.4; // Prefer slightly wider layouts
+    const W = Math.sqrt(requiredArea * aspectRatio);
+    const H = requiredArea / W;
+    
+    // Ensure minimum viable spacing
+    const minW = Math.sqrt(tables.length) * maxCardWidth * 1.8;
+    const minH = Math.sqrt(tables.length) * maxCardHeight * 1.8;
+    const finalW = Math.max(W, minW);
+    const finalH = Math.max(H, minH);
+    
+    const iterations = Math.min(60, Math.max(40, tables.length * 2));
+    
+    // Calculate optimal distance (k) based on average card size
+    const avgCardWidth = totalCardArea / tables.length / (maxCardHeight || 200);
+    const k = avgCardWidth * 1.3; // Spacing based on actual card width
+    
     const fa = (x: number): number => (x * x) / k; // Attractive force
-    const fr = (x: number): number => (k * k) / x; // Repulsive force
+    const fr = (x: number): number => (k * k) / Math.max(x, 20); // Repulsive force with minimum distance
     
-    console.log('Enhanced FR Algorithm parameters:', { W, H, area, k, iterations, scaleFactor });
+    console.log('Content-aware FR parameters:', { 
+      finalW: finalW.toFixed(0), 
+      finalH: finalH.toFixed(0), 
+      totalCardArea: totalCardArea.toFixed(0),
+      avgCardWidth: avgCardWidth.toFixed(0),
+      k: k.toFixed(0),
+      iterations,
+      targetDensity
+    });
     
     // Build relationship graph for attractive forces
     const relationshipGraph: Record<string, string[]> = {};
@@ -1579,13 +1617,13 @@ function DataSchemaViewContent() {
     const nodePositions: Record<string, Vector2D> = {};
     const displacements: Record<string, Vector2D> = {};
     
-    // Create initial grid-like distribution for better starting positions
-    const gridCols = Math.ceil(Math.sqrt(tables.length * 1.5)); // Slightly wider grid
+    // Create initial grid-like distribution based on content dimensions
+    const gridCols = Math.ceil(Math.sqrt(tables.length * 1.3));
     const gridRows = Math.ceil(tables.length / gridCols);
-    const gridSpacingX = W * 0.8 / gridCols; // Use 80% of width
-    const gridSpacingY = H * 0.8 / gridRows; // Use 80% of height
-    const offsetX = -W * 0.4; // Center the grid
-    const offsetY = -H * 0.4; // Center the grid
+    const gridSpacingX = finalW * 0.85 / gridCols; // Use actual calculated width
+    const gridSpacingY = finalH * 0.85 / gridRows; // Use actual calculated height
+    const offsetX = -finalW * 0.425; // Center the grid
+    const offsetY = -finalH * 0.425; // Center the grid
     
     tables.forEach((table, index) => {
       const row = Math.floor(index / gridCols);
@@ -1602,8 +1640,8 @@ function DataSchemaViewContent() {
       displacements[table.name] = createVector(0, 0);
     });
     
-    // Temperature system for cooling
-    let t = W / 10;
+    // Temperature system for cooling based on content dimensions
+    let t = finalW / 12; // Slower cooling for better convergence
     const dt = t / (iterations + 1);
     
     // Main force-directed algorithm iteration
@@ -1665,10 +1703,10 @@ function DataSchemaViewContent() {
           );
           nodePositions[table.name] = nodePositions[table.name].add(limitedDisplacement);
           
-          // Keep nodes within frame
+          // Keep nodes within content-aware frame
           nodePositions[table.name] = createVector(
-            Math.min(W/2, Math.max(-W/2, nodePositions[table.name].x)),
-            Math.min(H/2, Math.max(-H/2, nodePositions[table.name].y))
+            Math.min(finalW/2, Math.max(-finalW/2, nodePositions[table.name].x)),
+            Math.min(finalH/2, Math.max(-finalH/2, nodePositions[table.name].y))
           );
         }
       });
@@ -1688,9 +1726,9 @@ function DataSchemaViewContent() {
       };
     });
     
-    console.log('Force-directed layout complete:', positions);
+    console.log('Content-aware force-directed layout complete:', positions);
     return positions;
-  }, []);
+  }, [showColumns]); // Include showColumns dependency to recalculate when column visibility changes
 
   // Enhanced Hierarchical Layout with Layer Assignment
   const generateHierarchicalLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
