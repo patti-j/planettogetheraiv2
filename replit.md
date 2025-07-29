@@ -2,6 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Filter-Specific Layout Persistence Implementation (July 29, 2025)**:
+- **POSITION SAVING**: Cards repositioned by users in Data Schema View are now saved per filter configuration
+- **AUTOMATIC RESTORATION**: When returning to the same filter, card positions are restored exactly as user left them
+- **FILTER-SPECIFIC STORAGE**: Each combination of feature filter, category, layout type, and table selection maintains separate position data
+- **INTELLIGENT FALLBACK**: New tables appearing in existing filters use algorithm positioning while preserving user-arranged positions
+- **LOCAL STORAGE PERSISTENCE**: All custom positions saved to browser localStorage with comprehensive error handling
+- **DRAG DETECTION**: Only final position changes (after drag completion) are saved to avoid performance issues
+- **LAYOUT PRESERVATION**: Users can now maintain their preferred card arrangements across different schema views
+- Enhanced user experience by remembering personalized layouts for each Data Schema View filter configuration
+
 ✓ **Discrete and Process Production Schema Filters Implementation (July 29, 2025)**:
 - **NEW FILTERS ADDED**: Created two specialized manufacturing filters for focused data exploration
 - **Discrete Production Filter**: Bills of materials, routings, discrete operations, BOM-based production workflows, quality inspections for discrete manufacturing

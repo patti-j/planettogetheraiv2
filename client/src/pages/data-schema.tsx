@@ -1176,11 +1176,43 @@ function DataSchemaViewContent() {
     });
   }, []);
 
+  // State for storing custom positions per filter
+  const [customPositions, setCustomPositions] = useState<Record<string, Record<string, { x: number; y: number }>>>(() => {
+    try {
+      const saved = localStorage.getItem('dataSchemaCustomPositions');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Track if positions have been restored for current filter to prevent overriding user changes
+  const [positionsRestored, setPositionsRestored] = useState(false);
+
   // Generate layout positions (separate from selection state to prevent recalculation on flag clicks)
   const tablePositions = useMemo(() => {
     if (!filteredTables.length) return {};
+    
+    // Create filter key based on current filter settings
+    const filterKey = `${selectedFeature}-${selectedCategory}-${layoutType}-${selectedTables.join(',')}-${showRelatedTables}`;
+    
+    // Check if we have saved positions for this filter
+    const savedPositions = customPositions[filterKey];
+    if (savedPositions && positionsRestored) {
+      // Use saved positions for tables that exist, fallback to algorithm for new tables
+      const algorithmPositions = layoutAlgorithms[layoutType](filteredTables);
+      const positions: Record<string, { x: number; y: number }> = {};
+      
+      filteredTables.forEach(table => {
+        positions[table.name] = savedPositions[table.name] || algorithmPositions[table.name] || { x: 0, y: 0 };
+      });
+      
+      return positions;
+    }
+    
+    // Use algorithm-generated positions
     return layoutAlgorithms[layoutType](filteredTables);
-  }, [filteredTables, layoutType]);
+  }, [filteredTables, layoutType, selectedFeature, selectedCategory, selectedTables, showRelatedTables, customPositions, positionsRestored]);
 
   // Generate nodes and edges for React Flow
   const { nodes, edges } = useMemo(() => {
@@ -1414,6 +1446,42 @@ function DataSchemaViewContent() {
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
 
+  // Enhanced node change handler to save positions per filter
+  const handleNodesChange = useCallback((changes: any[]) => {
+    onNodesChange(changes);
+    
+    // Check if any changes are position changes from user dragging
+    const positionChanges = changes.filter(change => 
+      change.type === 'position' && change.dragging === false // Position settled after drag
+    );
+    
+    if (positionChanges.length > 0) {
+      // Create filter key based on current filter settings
+      const filterKey = `${selectedFeature}-${selectedCategory}-${layoutType}-${selectedTables.join(',')}-${showRelatedTables}`;
+      
+      setCustomPositions(prev => {
+        const updated = { ...prev };
+        if (!updated[filterKey]) {
+          updated[filterKey] = {};
+        }
+        
+        // Update positions for changed nodes
+        positionChanges.forEach(change => {
+          updated[filterKey][change.id] = change.position;
+        });
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('dataSchemaCustomPositions', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save custom positions to localStorage:', error);
+        }
+        
+        return updated;
+      });
+    }
+  }, [onNodesChange, selectedFeature, selectedCategory, layoutType, selectedTables, showRelatedTables]);
+
   // Track filter changes to reset positions when filters change
   const filterState = useMemo(() => ({
     searchTerm,
@@ -1430,7 +1498,7 @@ function DataSchemaViewContent() {
   const [previousFilterState, setPreviousFilterState] = useState(filterState);
   const [shouldPreservePositions, setShouldPreservePositions] = useState(true);
   
-  // Reset position preservation when filters change for intelligent reorganization
+  // Reset positions restored flag when filters change
   React.useEffect(() => {
     // Exclude selectedCards from filter change detection to prevent position reset on flag clicks
     const currentFilterStateWithoutCards = { ...filterState, selectedCards: '' };
@@ -1438,12 +1506,12 @@ function DataSchemaViewContent() {
     
     const filtersChanged = JSON.stringify(previousFilterStateWithoutCards) !== JSON.stringify(currentFilterStateWithoutCards);
     if (filtersChanged) {
-      setShouldPreservePositions(false);
+      setPositionsRestored(false);
       setPreviousFilterState(filterState);
       
-      // Re-enable position preservation after layout completes
+      // Re-enable position restoration after layout completes
       const timer = setTimeout(() => {
-        setShouldPreservePositions(true);
+        setPositionsRestored(true);
       }, 500);
       
       return () => clearTimeout(timer);
@@ -1472,6 +1540,7 @@ function DataSchemaViewContent() {
         });
       } else {
         // Use new intelligent layout positions when filters change or no existing positions
+        setPositionsRestored(true);
         return nodes;
       }
     });
@@ -2175,7 +2244,7 @@ function DataSchemaViewContent() {
         <ReactFlow
           nodes={flowNodes}
           edges={flowEdges}
-          onNodesChange={onNodesChange}
+          onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleTableClick}
           onEdgeMouseEnter={handleEdgeMouseEnter}
