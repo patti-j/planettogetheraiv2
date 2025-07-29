@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, primaryKey, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, primaryKey, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -608,6 +608,29 @@ export const discreteOperationPhases = pgTable("discrete_operation_phases", {
   phaseSequenceIdx: index("discrete_operation_phases_sequence_idx").on(table.discreteOperationId, table.sequenceNumber)
 }));
 
+// Discrete Operation Phase Resource Requirements - junction table linking phases to resource requirements
+export const discreteOperationPhaseResourceRequirements = pgTable("discrete_operation_phase_resource_requirements", {
+  id: serial("id").primaryKey(),
+  discreteOperationPhaseId: integer("discrete_operation_phase_id").notNull().references(() => discreteOperationPhases.id, { onDelete: "cascade" }),
+  resourceRequirementId: integer("resource_requirement_id").notNull().references(() => resourceRequirements.id, { onDelete: "cascade" }),
+  phaseSpecificQuantity: numeric("phase_specific_quantity"), // Override quantity for this specific phase
+  phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
+  timingConstraints: jsonb("timing_constraints").$type<{
+    startOffset?: number; // Minutes from phase start
+    endOffset?: number; // Minutes from phase end
+    duration?: number; // Required duration in minutes
+    flexibility?: "fixed" | "flexible" | "preferred";
+  }>(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => ({
+  // Composite primary key alternative
+  uniquePhaseResourceIdx: uniqueIndex("discrete_phase_resource_unique_idx").on(table.discreteOperationPhaseId, table.resourceRequirementId),
+  phaseIdx: index("discrete_phase_resource_phase_idx").on(table.discreteOperationPhaseId),
+  resourceIdx: index("discrete_phase_resource_requirement_idx").on(table.resourceRequirementId)
+}));
+
 // Process Operations - for process manufacturing with continuous flows, batches, and recipes
 export const processOperations = pgTable("process_operations", {
   id: serial("id").primaryKey(),
@@ -1165,6 +1188,12 @@ export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOpe
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
   scheduledStartTime: z.union([z.string().datetime(), z.date()]).optional(),
   scheduledEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertProcessOperationSchema = createInsertSchema(processOperations).omit({
@@ -2024,6 +2053,9 @@ export type DiscreteOperation = typeof discreteOperations.$inferSelect;
 
 export type InsertDiscreteOperationPhase = z.infer<typeof insertDiscreteOperationPhaseSchema>;
 export type DiscreteOperationPhase = typeof discreteOperationPhases.$inferSelect;
+
+export type InsertDiscreteOperationPhaseResourceRequirement = z.infer<typeof insertDiscreteOperationPhaseResourceRequirementSchema>;
+export type DiscreteOperationPhaseResourceRequirement = typeof discreteOperationPhaseResourceRequirements.$inferSelect;
 
 export type InsertProcessOperation = z.infer<typeof insertProcessOperationSchema>;
 export type ProcessOperation = typeof processOperations.$inferSelect;
@@ -6004,6 +6036,8 @@ export const resourceRequirementsRelations = relations(resourceRequirements, ({ 
   }),
   // Assignment relationships
   assignments: many(resourceRequirementAssignments),
+  // Discrete operation phase links through junction table
+  discretePhaseLinks: many(discreteOperationPhaseResourceRequirements),
 }));
 
 // Resource Requirement Assignments relations
@@ -6940,10 +6974,23 @@ export const discreteOperationsRelations = relations(discreteOperations, ({ one,
   phases: many(discreteOperationPhases), // One-to-many relationship: one operation has many phases
 }));
 
-export const discreteOperationPhasesRelations = relations(discreteOperationPhases, ({ one }) => ({
+export const discreteOperationPhasesRelations = relations(discreteOperationPhases, ({ one, many }) => ({
   discreteOperation: one(discreteOperations, {
     fields: [discreteOperationPhases.discreteOperationId],
     references: [discreteOperations.id],
+  }),
+  resourceRequirementLinks: many(discreteOperationPhaseResourceRequirements),
+}));
+
+// Discrete Operation Phase Resource Requirements junction table relations
+export const discreteOperationPhaseResourceRequirementsRelations = relations(discreteOperationPhaseResourceRequirements, ({ one }) => ({
+  discreteOperationPhase: one(discreteOperationPhases, {
+    fields: [discreteOperationPhaseResourceRequirements.discreteOperationPhaseId],
+    references: [discreteOperationPhases.id],
+  }),
+  resourceRequirement: one(resourceRequirements, {
+    fields: [discreteOperationPhaseResourceRequirements.resourceRequirementId],
+    references: [resourceRequirements.id],
   }),
 }));
 

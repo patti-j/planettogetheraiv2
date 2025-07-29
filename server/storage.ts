@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
   recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -9,7 +9,7 @@ import {
   disruptions, disruptionActions, disruptionEscalations,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
   type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -20,7 +20,7 @@ import {
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
-  type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertDiscreteOperation, type InsertDiscreteOperationPhase, type InsertDiscreteOperationPhaseResourceRequirement, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -1320,6 +1320,15 @@ export interface IStorage {
   createDiscreteOperationPhase(phase: InsertDiscreteOperationPhase): Promise<DiscreteOperationPhase>;
   updateDiscreteOperationPhase(id: number, phase: Partial<InsertDiscreteOperationPhase>): Promise<DiscreteOperationPhase | undefined>;
   deleteDiscreteOperationPhase(id: number): Promise<boolean>;
+
+  // Discrete Operation Phase Resource Requirements junction table
+  getDiscreteOperationPhaseResourceRequirements(): Promise<DiscreteOperationPhaseResourceRequirement[]>;
+  getDiscreteOperationPhaseResourceRequirementsByPhaseId(phaseId: number): Promise<DiscreteOperationPhaseResourceRequirement[]>;
+  getDiscreteOperationPhaseResourceRequirementsByResourceRequirementId(resourceRequirementId: number): Promise<DiscreteOperationPhaseResourceRequirement[]>;
+  getDiscreteOperationPhaseResourceRequirement(id: number): Promise<DiscreteOperationPhaseResourceRequirement | undefined>;
+  createDiscreteOperationPhaseResourceRequirement(link: InsertDiscreteOperationPhaseResourceRequirement): Promise<DiscreteOperationPhaseResourceRequirement>;
+  updateDiscreteOperationPhaseResourceRequirement(id: number, link: Partial<InsertDiscreteOperationPhaseResourceRequirement>): Promise<DiscreteOperationPhaseResourceRequirement | undefined>;
+  deleteDiscreteOperationPhaseResourceRequirement(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -2119,6 +2128,49 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDiscreteOperationPhase(id: number): Promise<boolean> {
     const result = await db.delete(discreteOperationPhases).where(eq(discreteOperationPhases.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Discrete Operation Phase Resource Requirements junction table methods
+  async getDiscreteOperationPhaseResourceRequirements(): Promise<DiscreteOperationPhaseResourceRequirement[]> {
+    return await db.select().from(discreteOperationPhaseResourceRequirements);
+  }
+
+  async getDiscreteOperationPhaseResourceRequirementsByPhaseId(phaseId: number): Promise<DiscreteOperationPhaseResourceRequirement[]> {
+    return await db.select().from(discreteOperationPhaseResourceRequirements)
+      .where(eq(discreteOperationPhaseResourceRequirements.discreteOperationPhaseId, phaseId));
+  }
+
+  async getDiscreteOperationPhaseResourceRequirementsByResourceRequirementId(resourceRequirementId: number): Promise<DiscreteOperationPhaseResourceRequirement[]> {
+    return await db.select().from(discreteOperationPhaseResourceRequirements)
+      .where(eq(discreteOperationPhaseResourceRequirements.resourceRequirementId, resourceRequirementId));
+  }
+
+  async getDiscreteOperationPhaseResourceRequirement(id: number): Promise<DiscreteOperationPhaseResourceRequirement | undefined> {
+    const [link] = await db.select().from(discreteOperationPhaseResourceRequirements)
+      .where(eq(discreteOperationPhaseResourceRequirements.id, id));
+    return link || undefined;
+  }
+
+  async createDiscreteOperationPhaseResourceRequirement(link: InsertDiscreteOperationPhaseResourceRequirement): Promise<DiscreteOperationPhaseResourceRequirement> {
+    const [newLink] = await db.insert(discreteOperationPhaseResourceRequirements).values(link).returning();
+    return newLink;
+  }
+
+  async updateDiscreteOperationPhaseResourceRequirement(id: number, link: Partial<InsertDiscreteOperationPhaseResourceRequirement>): Promise<DiscreteOperationPhaseResourceRequirement | undefined> {
+    const [updated] = await db.update(discreteOperationPhaseResourceRequirements)
+      .set({
+        ...link,
+        updatedAt: new Date(),
+      })
+      .where(eq(discreteOperationPhaseResourceRequirements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDiscreteOperationPhaseResourceRequirement(id: number): Promise<boolean> {
+    const result = await db.delete(discreteOperationPhaseResourceRequirements)
+      .where(eq(discreteOperationPhaseResourceRequirements.id, id));
     return (result.rowCount || 0) > 0;
   }
 

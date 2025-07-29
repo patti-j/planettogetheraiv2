@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
-  insertDiscreteOperationSchema, insertDiscreteOperationPhaseSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
+  insertDiscreteOperationSchema, insertDiscreteOperationPhaseSchema, insertDiscreteOperationPhaseResourceRequirementSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
@@ -2154,6 +2154,92 @@ Rules:
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete discrete operation phase" });
+    }
+  });
+
+  // Discrete Operation Phase Resource Requirements Junction Table Routes
+  app.get("/api/discrete-operation-phase-resource-requirements", requireAuth, async (req, res) => {
+    try {
+      const links = await storage.getDiscreteOperationPhaseResourceRequirements();
+      res.json(links);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phase resource requirements" });
+    }
+  });
+
+  app.get("/api/discrete-operation-phases/:phaseId/resource-requirements", requireAuth, async (req, res) => {
+    try {
+      const phaseId = parseInt(req.params.phaseId);
+      const links = await storage.getDiscreteOperationPhaseResourceRequirementsByPhaseId(phaseId);
+      res.json(links);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch resource requirements for discrete operation phase" });
+    }
+  });
+
+  app.get("/api/resource-requirements/:resourceRequirementId/discrete-operation-phases", requireAuth, async (req, res) => {
+    try {
+      const resourceRequirementId = parseInt(req.params.resourceRequirementId);
+      const links = await storage.getDiscreteOperationPhaseResourceRequirementsByResourceRequirementId(resourceRequirementId);
+      res.json(links);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phases for resource requirement" });
+    }
+  });
+
+  app.get("/api/discrete-operation-phase-resource-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const link = await storage.getDiscreteOperationPhaseResourceRequirement(id);
+      if (!link) {
+        return res.status(404).json({ message: "Discrete operation phase resource requirement link not found" });
+      }
+      res.json(link);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phase resource requirement link" });
+    }
+  });
+
+  app.post("/api/discrete-operation-phase-resource-requirements", requireAuth, async (req, res) => {
+    try {
+      const link = insertDiscreteOperationPhaseResourceRequirementSchema.parse(req.body);
+      const newLink = await storage.createDiscreteOperationPhaseResourceRequirement(link);
+      res.status(201).json(newLink);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid link data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create discrete operation phase resource requirement link" });
+    }
+  });
+
+  app.put("/api/discrete-operation-phase-resource-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const link = insertDiscreteOperationPhaseResourceRequirementSchema.partial().parse(req.body);
+      const updatedLink = await storage.updateDiscreteOperationPhaseResourceRequirement(id, link);
+      if (!updatedLink) {
+        return res.status(404).json({ message: "Discrete operation phase resource requirement link not found" });
+      }
+      res.json(updatedLink);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid link data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update discrete operation phase resource requirement link" });
+    }
+  });
+
+  app.delete("/api/discrete-operation-phase-resource-requirements/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteDiscreteOperationPhaseResourceRequirement(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Discrete operation phase resource requirement link not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete discrete operation phase resource requirement link" });
     }
   });
 
