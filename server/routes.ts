@@ -17197,6 +17197,22 @@ Response must be valid JSON:
     }
   });
 
+  // Get material requirements by Item
+  app.get("/api/items/:itemId/material-requirements", requireAuth, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.itemId);
+      if (isNaN(itemId)) {
+        return res.status(400).json({ error: "Invalid item ID" });
+      }
+
+      const requirements = await storage.getMaterialRequirementsByItem(itemId);
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching material requirements by item:", error);
+      res.status(500).json({ error: "Failed to fetch material requirements" });
+    }
+  });
+
   // Customer Management
   app.get("/api/customers", async (req, res) => {
     try {

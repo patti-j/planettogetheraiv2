@@ -1279,6 +1279,7 @@ export interface IStorage {
   deleteMaterialRequirement(id: number): Promise<boolean>;
   getMaterialRequirementsByFormulation(formulationId: number): Promise<MaterialRequirement[]>;
   getMaterialRequirementsByBom(bomId: number): Promise<MaterialRequirement[]>;
+  getMaterialRequirementsByItem(itemId: number): Promise<MaterialRequirement[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -11081,6 +11082,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(materialRequirements)
       .where(eq(materialRequirements.bomId, bomId))
+      .orderBy(materialRequirements.requirementName);
+  }
+
+  async getMaterialRequirementsByItem(itemId: number): Promise<MaterialRequirement[]> {
+    return await db
+      .select()
+      .from(materialRequirements)
+      .where(eq(materialRequirements.itemId, itemId))
       .orderBy(materialRequirements.requirementName);
   }
 
