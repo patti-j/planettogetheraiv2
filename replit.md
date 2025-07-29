@@ -2,15 +2,16 @@
 
 ## Recent Changes (July 29, 2025)
 
-✓ **Sales Order Line Distributions Database Relationship Correction (July 29, 2025)**:
-- **CORRECTED RELATIONSHIP**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for more logical inventory tracking
-- **DATABASE MIGRATION COMPLETED**: Successfully migrated from storage_location_id to stock_id foreign key column in sales_order_line_distributions table
-- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - sales order line distributions now connect to stocks, stocks have many sales order line distributions
-- **REMOVED INCORRECT LINK**: Removed direct relationship between storage_locations and sales_order_line_distributions since shipments should track specific stock records, not just locations
-- **LOGICAL DATA FLOW**: Shipments now properly track which specific stock inventory is being distributed rather than just the storage location
-- **FOREIGN KEY CONSTRAINTS**: Added proper foreign key constraint from sales_order_line_distributions.stock_id to stocks.id table for data integrity
-- **RELATIONSHIP PATH**: Storage locations connect to shipments indirectly through stocks (storage_locations → stocks → sales_order_line_distributions)
-- Enhanced inventory management by creating logical relationship where shipments track specific stock records being moved, enabling better inventory accuracy and traceability
+✓ **Purchase Order Lines & Sales Order Line Distributions Database Relationship Corrections (July 29, 2025)**:
+- **PURCHASE ORDER LINES ENHANCED**: Added stock_id foreign key to purchase_order_lines table enabling direct link to stocks when purchase orders are received
+- **SALES ORDER DISTRIBUTIONS CORRECTED**: Fixed sales_order_line_distributions table to link directly to stocks table instead of storage_locations for logical inventory tracking
+- **DATABASE MIGRATIONS COMPLETED**: Successfully added stock_id column to both purchase_order_lines and migrated sales_order_line_distributions from storage_location_id to stock_id
+- **SCHEMA RELATIONS UPDATED**: Updated Drizzle ORM relations - both purchase order lines and sales order line distributions now connect to stocks, stocks have many relationships to both
+- **COMPLETE INVENTORY INTEGRATION**: Both inbound (purchase orders) and outbound (sales shipments) transactions now properly track specific stock records being affected
+- **LOGICAL DATA FLOW**: Purchase receipts and sales shipments now properly track which specific stock inventory is being received or distributed
+- **FOREIGN KEY CONSTRAINTS**: Added proper foreign key constraints from purchase_order_lines.stock_id and sales_order_line_distributions.stock_id to stocks.id table
+- **COMPREHENSIVE STOCK TRACKING**: Stocks table now serves as central inventory hub with relationships to both purchase receipts and sales shipments
+- Enhanced inventory management by creating logical relationships where both inbound and outbound transactions track specific stock records, enabling complete inventory accuracy and traceability
 
 ✓ **Stocks & Sales Order Line Distributions Tables Implementation (July 29, 2025)**:
 - **STOCKS TABLE CREATED**: Successfully implemented comprehensive stocks table for inventory tracking linked to storage_locations and items tables

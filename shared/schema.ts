@@ -6705,6 +6705,7 @@ export const purchaseOrderLines = pgTable("purchase_order_lines", {
   purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id).notNull(),
   lineNumber: integer("line_number").notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
+  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record when received
   orderedQuantity: integer("ordered_quantity").notNull(),
   receivedQuantity: integer("received_quantity").default(0),
   unitCost: integer("unit_cost").notNull(), // in cents
@@ -7214,6 +7215,7 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
     references: [storageLocations.id],
   }),
   salesOrderLineDistributions: many(salesOrderLineDistributions),
+  purchaseOrderLines: many(purchaseOrderLines),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
@@ -7232,6 +7234,10 @@ export const purchaseOrderLinesRelations = relations(purchaseOrderLines, ({ one 
   item: one(items, {
     fields: [purchaseOrderLines.itemId],
     references: [items.id],
+  }),
+  stock: one(stocks, {
+    fields: [purchaseOrderLines.stockId],
+    references: [stocks.id],
   }),
 }));
 
