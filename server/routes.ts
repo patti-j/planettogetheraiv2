@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
-  insertDiscreteOperationSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
+  insertDiscreteOperationSchema, insertDiscreteOperationPhaseSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
@@ -2078,6 +2078,82 @@ Rules:
     } catch (error: any) {
       console.error('Optimization flags update error:', error);
       res.status(400).json({ message: "Invalid optimization flags data", error: error.message });
+    }
+  });
+
+  // Discrete Operation Phases
+  app.get("/api/discrete-operation-phases", requireAuth, async (req, res) => {
+    try {
+      const phases = await storage.getDiscreteOperationPhases();
+      res.json(phases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phases" });
+    }
+  });
+
+  app.get("/api/discrete-operations/:operationId/phases", requireAuth, async (req, res) => {
+    try {
+      const operationId = parseInt(req.params.operationId);
+      const phases = await storage.getDiscreteOperationPhasesByOperationId(operationId);
+      res.json(phases);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phases" });
+    }
+  });
+
+  app.get("/api/discrete-operation-phases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const phase = await storage.getDiscreteOperationPhase(id);
+      if (!phase) {
+        return res.status(404).json({ message: "Discrete operation phase not found" });
+      }
+      res.json(phase);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch discrete operation phase" });
+    }
+  });
+
+  app.post("/api/discrete-operation-phases", requireAuth, async (req, res) => {
+    try {
+      const phase = insertDiscreteOperationPhaseSchema.parse(req.body);
+      const newPhase = await storage.createDiscreteOperationPhase(phase);
+      res.status(201).json(newPhase);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid phase data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create discrete operation phase" });
+    }
+  });
+
+  app.put("/api/discrete-operation-phases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const phase = insertDiscreteOperationPhaseSchema.partial().parse(req.body);
+      const updatedPhase = await storage.updateDiscreteOperationPhase(id, phase);
+      if (!updatedPhase) {
+        return res.status(404).json({ message: "Discrete operation phase not found" });
+      }
+      res.json(updatedPhase);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid phase data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update discrete operation phase" });
+    }
+  });
+
+  app.delete("/api/discrete-operation-phases/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteDiscreteOperationPhase(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Discrete operation phase not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete discrete operation phase" });
     }
   });
 

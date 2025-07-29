@@ -339,7 +339,7 @@ const featureTableMapping: Record<string, string[]> = {
   'discrete_production': [
     // Discrete Manufacturing (BOM + Routing based)
     'bills_of_material', 'bom_items', 'bom_material_requirements', 'bom_product_outputs',
-    'routings', 'routing_operations', 'discrete_operations',
+    'routings', 'routing_operations', 'discrete_operations', 'discrete_operation_phases',
     // Production control for discrete manufacturing
     'production_orders', 'production_versions', 'planned_orders',
     // Resources and infrastructure

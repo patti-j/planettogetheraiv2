@@ -580,6 +580,34 @@ export const discreteOperations = pgTable("discrete_operations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Discrete Operation Phases - track phases like setup, run, cleanup for discrete operations
+export const discreteOperationPhases = pgTable("discrete_operation_phases", {
+  id: serial("id").primaryKey(),
+  discreteOperationId: integer("discrete_operation_id").notNull().references(() => discreteOperations.id),
+  phaseType: text("phase_type", { enum: ["setup", "run", "cleanup", "inspection", "changeover", "maintenance"] }).notNull(),
+  phaseName: text("phase_name").notNull(),
+  description: text("description"),
+  sequenceNumber: integer("sequence_number").notNull(), // Order within the operation
+  standardDuration: integer("standard_duration").notNull(), // in minutes
+  actualDuration: integer("actual_duration"), // in minutes
+  status: text("status", { enum: ["pending", "active", "completed", "skipped", "on_hold"] }).notNull().default("pending"),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  scheduledStartTime: timestamp("scheduled_start_time"),
+  scheduledEndTime: timestamp("scheduled_end_time"),
+  resourceRequirements: jsonb("resource_requirements"), // Specific resources needed for this phase
+  skillRequirements: text("skill_requirements").array(), // Required skills/certifications
+  instructions: text("instructions"), // Phase-specific instructions
+  qualityCheckpoints: jsonb("quality_checkpoints"), // Quality checks during phase
+  completionCriteria: text("completion_criteria"), // What defines phase completion
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => ({
+  discreteOperationPhaseIdx: index("discrete_operation_phases_discrete_operation_idx").on(table.discreteOperationId),
+  phaseSequenceIdx: index("discrete_operation_phases_sequence_idx").on(table.discreteOperationId, table.sequenceNumber)
+}));
+
 // Process Operations - for process manufacturing with continuous flows, batches, and recipes
 export const processOperations = pgTable("process_operations", {
   id: serial("id").primaryKey(),
@@ -1126,6 +1154,17 @@ export const insertDiscreteOperationSchema = createInsertSchema(discreteOperatio
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
   scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
   scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
+});
+
+export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]).optional(),
+  endTime: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+  scheduledEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertProcessOperationSchema = createInsertSchema(processOperations).omit({
@@ -1982,6 +2021,9 @@ export type InsertPlannedOrderProductionOrder = z.infer<typeof insertPlannedOrde
 // Types for both operation types
 export type InsertDiscreteOperation = z.infer<typeof insertDiscreteOperationSchema>;
 export type DiscreteOperation = typeof discreteOperations.$inferSelect;
+
+export type InsertDiscreteOperationPhase = z.infer<typeof insertDiscreteOperationPhaseSchema>;
+export type DiscreteOperationPhase = typeof discreteOperationPhases.$inferSelect;
 
 export type InsertProcessOperation = z.infer<typeof insertProcessOperationSchema>;
 export type ProcessOperation = typeof processOperations.$inferSelect;
@@ -6895,6 +6937,14 @@ export const discreteOperationsRelations = relations(discreteOperations, ({ one,
     references: [routings.id],
   }),
   resourceRequirements: many(resourceRequirements),
+  phases: many(discreteOperationPhases), // One-to-many relationship: one operation has many phases
+}));
+
+export const discreteOperationPhasesRelations = relations(discreteOperationPhases, ({ one }) => ({
+  discreteOperation: one(discreteOperations, {
+    fields: [discreteOperationPhases.discreteOperationId],
+    references: [discreteOperations.id],
+  }),
 }));
 
 // Relations for process operations
