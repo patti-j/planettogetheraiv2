@@ -895,10 +895,11 @@ function DataSchemaViewContent() {
             const isDashed = rel.type === 'one-to-many' || rel.type === 'many-to-many';
             const strokeDasharray = isDashed ? '5,5' : undefined;
             
-            // Determine markers based on relationship type
+            // Determine markers and labels based on relationship type - positioned closer to objects
             let markerStart = undefined;
             let markerEnd = undefined;
-            let label: string = rel.type;
+            let sourceLabel = '';
+            let targetLabel = '';
             
             if (rel.type === 'one-to-many') {
               // From side is "one" (simple arrow), to side is "many" (larger crow's foot)
@@ -914,7 +915,8 @@ function DataSchemaViewContent() {
                 width: isHighlighted ? 20 : 16,
                 height: isHighlighted ? 20 : 16,
               };
-              label = '1 ——→ ∞';
+              sourceLabel = '1';
+              targetLabel = '∞';
             } else if (rel.type === 'many-to-many') {
               // Both sides are "many" (large crow's foot on both ends)
               markerStart = {
@@ -929,7 +931,8 @@ function DataSchemaViewContent() {
                 width: isHighlighted ? 20 : 16,
                 height: isHighlighted ? 20 : 16,
               };
-              label = '∞ ←→ ∞';
+              sourceLabel = '∞';
+              targetLabel = '∞';
             } else if (rel.type === 'one-to-one') {
               // Both sides are "one" (larger simple arrows on both ends)
               markerStart = {
@@ -944,7 +947,8 @@ function DataSchemaViewContent() {
                 width: isHighlighted ? 16 : 12,
                 height: isHighlighted ? 16 : 12,
               };
-              label = '1 ←→ 1';
+              sourceLabel = '1';
+              targetLabel = '1';
             } else {
               // Default arrow for other relationship types - larger size
               markerEnd = {
@@ -953,8 +957,10 @@ function DataSchemaViewContent() {
                 width: isHighlighted ? 20 : 16,
                 height: isHighlighted ? 20 : 16,
               };
+              targetLabel = '→';
             }
             
+            // Create main relationship line
             flowEdges.push({
               id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}`,
               source: rel.fromTable,
@@ -968,24 +974,83 @@ function DataSchemaViewContent() {
                 strokeDasharray: strokeDasharray,
                 filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.5))' : 'drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.1))',
               },
-              label: label,
-              labelStyle: { 
-                fontSize: isHighlighted ? 14 : 12,
-                fill: isHighlighted ? '#1e40af' : '#374151',
-                fontWeight: isHighlighted ? 'bold' : 'bold',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
-                fontFamily: 'monospace',
-              },
-              labelBgStyle: {
-                fill: 'rgba(255, 255, 255, 0.95)',
-                fillOpacity: 0.95,
-              },
               markerStart: markerStart,
               markerEnd: markerEnd
             });
+
+            // Add source cardinality indicator positioned near source table (25% along edge)
+            if (sourceLabel) {
+              flowEdges.push({
+                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-source-label`,
+                source: rel.fromTable,
+                target: rel.toTable,
+                type: 'straight',
+                style: { 
+                  stroke: 'transparent',
+                  strokeWidth: 0,
+                  opacity: 0,
+                },
+                label: sourceLabel,
+                labelStyle: {
+                  fontSize: isHighlighted ? 16 : 14,
+                  fill: isHighlighted ? '#1e40af' : '#374151',
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
+                  fontFamily: 'monospace',
+                },
+                labelBgStyle: {
+                  fill: 'rgba(255, 255, 255, 0.95)',
+                  fillOpacity: 0.95,
+                },
+                // Position closer to source
+                labelShowBg: true,
+                data: { 
+                  sourceLabel: true,
+                  // Move label 25% from source toward target
+                  labelPosition: 0.25
+                }
+              });
+            }
+
+            // Add target cardinality indicator positioned near target table (75% along edge)  
+            if (targetLabel) {
+              flowEdges.push({
+                id: `${rel.fromTable}-${rel.toTable}-${rel.fromColumn}-target-label`,
+                source: rel.fromTable,
+                target: rel.toTable,
+                type: 'straight',
+                style: { 
+                  stroke: 'transparent',
+                  strokeWidth: 0,
+                  opacity: 0,
+                },
+                label: targetLabel,
+                labelStyle: {
+                  fontSize: isHighlighted ? 16 : 14,
+                  fill: isHighlighted ? '#1e40af' : '#374151',
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: isHighlighted ? '2px solid #3b82f6' : '1px solid #6b7280',
+                  fontFamily: 'monospace',
+                },
+                labelBgStyle: {
+                  fill: 'rgba(255, 255, 255, 0.95)',
+                  fillOpacity: 0.95,
+                },
+                // Position closer to target
+                labelShowBg: true,
+                data: { 
+                  targetLabel: true,
+                  // Move label 75% from source toward target
+                  labelPosition: 0.75
+                }
+              });
+            }
           }
         });
       });

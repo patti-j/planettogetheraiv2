@@ -30,14 +30,15 @@
 - Maintains user workflow continuity by preserving navigation context across sessions
 - Fixed root cause: default route was overriding user's intended destination
 
-✓ **Database Relationship Visual Indicators Implementation (July 29, 2025)**:
-- Added visual indicators on relationship lines showing "one" vs "many" sides for better relationship comprehension
-- One-to-many relationships now display "1 ——→ ∞" with different arrow markers on each end
-- Many-to-many relationships show "∞ ←→ ∞" with crow's foot markers on both ends  
-- One-to-one relationships display "1 ←→ 1" with single line markers on both ends
-- Enhanced relationship labels with monospace font and improved styling for clearer readability
-- Users can now immediately understand database cardinality without having to analyze foreign key structures
-- Relationship lines provide clear visual distinction between different marker types for better database comprehension
+✓ **Database Relationship Visual Indicators Enhancement - Positioned Cardinality Markers (July 29, 2025)**:
+- Enhanced relationship line cardinality indicators to position "1" and "∞" markers closer to their respective objects for better visual comprehension
+- One-to-many relationships now show "1" positioned near the one-side table and "∞" positioned near the many-side table
+- Many-to-many relationships display "∞" markers positioned near both connected tables instead of centered labels
+- One-to-one relationships show "1" markers positioned near both connected tables for clearer relationship understanding
+- Cardinality indicators now appear at 25% (source) and 75% (target) positions along relationship lines instead of center
+- Enhanced marker styling with monospace font, white background, and border for better visibility against complex schema backgrounds
+- Users can now immediately identify which side of each relationship represents one vs many without analyzing foreign key directions
+- Relationship comprehension significantly improved by positioning cardinality markers closer to the actual database objects they reference
 
 ✓ **Data Schema View Auto-Load Implementation (July 29, 2025)**:
 - Removed annoying filter selection requirement from Data Schema View page startup
