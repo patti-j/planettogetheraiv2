@@ -47,7 +47,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertIngredientSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -16585,104 +16585,104 @@ Response must be valid JSON:
     }
   });
 
-  // Ingredients Management
-  app.get("/api/ingredients", async (req, res) => {
+  // Formulations Management
+  app.get("/api/formulations", async (req, res) => {
     try {
-      const ingredients = await storage.getIngredients();
-      res.json(ingredients);
+      const formulations = await storage.getFormulations();
+      res.json(formulations);
     } catch (error) {
-      console.error("Error fetching ingredients:", error);
-      res.status(500).json({ error: "Failed to fetch ingredients" });
+      console.error("Error fetching formulations:", error);
+      res.status(500).json({ error: "Failed to fetch formulations" });
     }
   });
 
-  app.get("/api/ingredients/:id", async (req, res) => {
+  app.get("/api/formulations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid ingredient ID" });
+        return res.status(400).json({ error: "Invalid formulation ID" });
       }
 
-      const ingredient = await storage.getIngredient(id);
-      if (!ingredient) {
-        return res.status(404).json({ error: "Ingredient not found" });
+      const formulation = await storage.getFormulation(id);
+      if (!formulation) {
+        return res.status(404).json({ error: "Formulation not found" });
       }
-      res.json(ingredient);
+      res.json(formulation);
     } catch (error) {
-      console.error("Error fetching ingredient:", error);
-      res.status(500).json({ error: "Failed to fetch ingredient" });
+      console.error("Error fetching formulation:", error);
+      res.status(500).json({ error: "Failed to fetch formulation" });
     }
   });
 
-  app.post("/api/ingredients", async (req, res) => {
+  app.post("/api/formulations", async (req, res) => {
     try {
-      const validation = insertIngredientSchema.safeParse(req.body);
+      const validation = insertFormulationSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ error: "Invalid ingredient data", details: validation.error.errors });
+        return res.status(400).json({ error: "Invalid formulation data", details: validation.error.errors });
       }
 
-      const ingredient = await storage.createIngredient(validation.data);
-      res.status(201).json(ingredient);
+      const formulation = await storage.createFormulation(validation.data);
+      res.status(201).json(formulation);
     } catch (error) {
-      console.error("Error creating ingredient:", error);
-      res.status(500).json({ error: "Failed to create ingredient" });
+      console.error("Error creating formulation:", error);
+      res.status(500).json({ error: "Failed to create formulation" });
     }
   });
 
-  app.put("/api/ingredients/:id", async (req, res) => {
+  app.put("/api/formulations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid ingredient ID" });
+        return res.status(400).json({ error: "Invalid formulation ID" });
       }
 
-      const validation = insertIngredientSchema.partial().safeParse(req.body);
+      const validation = insertFormulationSchema.partial().safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ error: "Invalid ingredient data", details: validation.error.errors });
+        return res.status(400).json({ error: "Invalid formulation data", details: validation.error.errors });
       }
 
-      const ingredient = await storage.updateIngredient(id, validation.data);
-      if (!ingredient) {
-        return res.status(404).json({ error: "Ingredient not found" });
+      const formulation = await storage.updateFormulation(id, validation.data);
+      if (!formulation) {
+        return res.status(404).json({ error: "Formulation not found" });
       }
-      res.json(ingredient);
+      res.json(formulation);
     } catch (error) {
-      console.error("Error updating ingredient:", error);
-      res.status(500).json({ error: "Failed to update ingredient" });
+      console.error("Error updating formulation:", error);
+      res.status(500).json({ error: "Failed to update formulation" });
     }
   });
 
-  app.delete("/api/ingredients/:id", async (req, res) => {
+  app.delete("/api/formulations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid ingredient ID" });
+        return res.status(400).json({ error: "Invalid formulation ID" });
       }
 
-      const deleted = await storage.deleteIngredient(id);
+      const deleted = await storage.deleteFormulation(id);
       if (!deleted) {
-        return res.status(404).json({ error: "Ingredient not found" });
+        return res.status(404).json({ error: "Formulation not found" });
       }
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting ingredient:", error);
-      res.status(500).json({ error: "Failed to delete ingredient" });
+      console.error("Error deleting formulation:", error);
+      res.status(500).json({ error: "Failed to delete formulation" });
     }
   });
 
-  // Get ingredients by vendor
-  app.get("/api/vendors/:vendorId/ingredients", async (req, res) => {
+  // Get formulations by vendor
+  app.get("/api/vendors/:vendorId/formulations", async (req, res) => {
     try {
       const vendorId = parseInt(req.params.vendorId);
       if (isNaN(vendorId)) {
         return res.status(400).json({ error: "Invalid vendor ID" });
       }
 
-      const ingredients = await storage.getIngredientsByVendor(vendorId);
-      res.json(ingredients);
+      const formulations = await storage.getFormulationsByVendor(vendorId);
+      res.json(formulations);
     } catch (error) {
-      console.error("Error fetching ingredients by vendor:", error);
-      res.status(500).json({ error: "Failed to fetch ingredients by vendor" });
+      console.error("Error fetching formulations by vendor:", error);
+      res.status(500).json({ error: "Failed to fetch formulations by vendor" });
     }
   });
 

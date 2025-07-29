@@ -2,6 +2,18 @@
 
 ## Recent Changes (July 29, 2025)
 
+✓ **Ingredients Table Renamed to Formulations (July 29, 2025)**:
+- **COMPLETED**: Successfully renamed ingredients table to formulations throughout the entire system
+- **DATABASE MIGRATION**: Applied complete table rename: ingredients → formulations with column updates (ingredient_number → formulation_number, ingredient_name → formulation_name, ingredient_type → formulation_type)
+- **SCHEMA UPDATES**: Updated all Drizzle ORM definitions, relations, insert schemas, and TypeScript types to use formulations terminology
+- **API MIGRATION**: Renamed all API endpoints from /api/ingredients to /api/formulations with complete CRUD operations (GET, POST, PUT, DELETE)
+- **STORAGE LAYER**: Updated all storage interface methods and implementations to use formulation terminology (getFormulations, createFormulation, etc.)
+- **FOREIGN KEY UPDATES**: Updated material_requirements table to reference formulation_id instead of ingredient_id with proper constraint management
+- **RELATION FIXES**: Updated all database relations including production versions, material requirements, and vendor relationships to use formulations
+- **TYPE CONSISTENCY**: All TypeScript types now use Formulation and InsertFormulation interfaces for complete type safety
+- **TERMINOLOGY ALIGNMENT**: System now consistently uses "formulations" terminology for process manufacturing components, improving clarity and professional manufacturing terminology
+- Enhanced process manufacturing data model with industry-standard formulation terminology while maintaining all existing functionality and relationships
+
 ✓ **Resource Requirements Direct Recipe Phase Relationship Implementation (July 29, 2025)**:
 - **ARCHITECTURAL CHANGE**: Resource requirements now link directly to recipe phases via many-to-one relationship instead of many-to-many junction table
 - **Database Migration**: Added recipe_phase_id column to resource_requirements table with proper foreign key constraint

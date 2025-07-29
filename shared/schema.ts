@@ -6332,14 +6332,14 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Material Requirements - detailed requirements for ingredients in process manufacturing
+// Material Requirements - detailed requirements for formulations in process manufacturing
 export const materialRequirements = pgTable("material_requirements", {
   id: serial("id").primaryKey(),
-  ingredientId: integer("ingredient_id").references(() => ingredients.id),
+  formulationId: integer("formulation_id").references(() => formulations.id),
   requirementName: text("requirement_name").notNull(),
   requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
-  materialType: text("material_type").notNull().default("ingredient"),
+  materialType: text("material_type").notNull().default("formulation"),
   consumptionType: text("consumption_type").notNull().default("variable"), // variable, fixed, backflush
   processStage: text("process_stage"), // mixing, heating, cooling, finishing
   timingRequirements: text("timing_requirements"), // when this material is needed
@@ -6355,22 +6355,22 @@ export const materialRequirements = pgTable("material_requirements", {
   handlingInstructions: text("handling_instructions"),
   safetyRequirements: text("safety_requirements"),
   isCritical: boolean("is_critical").default(false),
-  substituteIngredients: jsonb("substitute_ingredients").$type<number[]>().default([]), // Array of substitute ingredient IDs
+  substituteFormulations: jsonb("substitute_formulations").$type<number[]>().default([]), // Array of substitute formulation IDs
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Ingredients - master list of ingredients for process manufacturing (similar to BOM but for process manufacturing)
-export const ingredients = pgTable("ingredients", {
+// Formulations - master list of formulations for process manufacturing (similar to BOM but for process manufacturing)
+export const formulations = pgTable("formulations", {
   id: serial("id").primaryKey(),
-  ingredientNumber: text("ingredient_number").notNull().unique(), // e.g., "ING-001"
-  ingredientName: text("ingredient_name").notNull(),
+  formulationNumber: text("formulation_number").notNull().unique(), // e.g., "FORM-001"
+  formulationName: text("formulation_name").notNull(),
   chemicalName: text("chemical_name"), // Official chemical name
   casNumber: text("cas_number"), // Chemical Abstracts Service number
   molecularFormula: text("molecular_formula"), // e.g., "C8H9NO2"
   molecularWeight: numeric("molecular_weight", { precision: 10, scale: 4 }), // g/mol
-  ingredientType: text("ingredient_type").notNull().default("raw_material"), // raw_material, catalyst, solvent, intermediate, additive, preservative
+  formulationType: text("formulation_type").notNull().default("raw_material"), // raw_material, catalyst, solvent, intermediate, additive, preservative
   
   // Physical properties
   physicalForm: text("physical_form").notNull().default("solid"), // solid, liquid, gas, powder, granular, paste
@@ -6805,7 +6805,7 @@ export const productionVersionsRelations = relations(productionVersions, ({ one,
   }),
   productionOrders: many(productionOrders),
   plannedOrders: many(plannedOrders),
-  ingredients: many(ingredients), // One-to-many: one production version can have many ingredients
+  formulations: many(formulations), // One-to-many: one production version can have many formulations
 }));
 
 export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
@@ -6870,28 +6870,28 @@ export const processOperationsRelations = relations(processOperations, ({ one, m
 
 // Relations for material requirements
 export const materialRequirementsRelations = relations(materialRequirements, ({ one }) => ({
-  ingredient: one(ingredients, {
-    fields: [materialRequirements.ingredientId],
-    references: [ingredients.id],
+  formulation: one(formulations, {
+    fields: [materialRequirements.formulationId],
+    references: [formulations.id],
   }),
 }));
 
-// Relations for ingredients
-export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
+// Relations for formulations
+export const formulationsRelations = relations(formulations, ({ one, many }) => ({
   productionVersion: one(productionVersions, {
-    fields: [ingredients.productionVersionId],
+    fields: [formulations.productionVersionId],
     references: [productionVersions.id],
   }),
   preferredVendor: one(vendors, {
-    fields: [ingredients.preferredVendorId],
+    fields: [formulations.preferredVendorId],
     references: [vendors.id],
   }),
-  materialRequirements: many(materialRequirements), // One-to-many: one ingredient can have many material requirements
+  materialRequirements: many(materialRequirements), // One-to-many: one formulation can have many material requirements
 }));
 
-// Enhanced vendor relations to include ingredients
+// Enhanced vendor relations to include formulations
 export const vendorsRelations = relations(vendors, ({ many }) => ({
-  preferredIngredients: many(ingredients),
+  preferredFormulations: many(formulations),
 }));
 
 
@@ -7042,7 +7042,7 @@ export const insertMaterialRequirementSchema = createInsertSchema(materialRequir
   updatedAt: true,
 });
 
-export const insertIngredientsSchema = createInsertSchema(ingredients).omit({
+export const insertFormulationsSchema = createInsertSchema(formulations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -7121,8 +7121,8 @@ export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema
 export type MaterialRequirement = typeof materialRequirements.$inferSelect;
 export type InsertMaterialRequirement = z.infer<typeof insertMaterialRequirementSchema>;
 
-export type Ingredient = typeof ingredients.$inferSelect;
-export type InsertIngredient = z.infer<typeof insertIngredientsSchema>;
+export type Formulation = typeof formulations.$inferSelect;
+export type InsertFormulation = z.infer<typeof insertFormulationsSchema>;
 
 export type Forecast = typeof forecasts.$inferSelect;
 export type InsertForecast = z.infer<typeof insertForecastSchema>;
@@ -7191,8 +7191,8 @@ export type ResourceRequirementAssignment = typeof resourceRequirementAssignment
 export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
 
 
-// Ingredients Insert Schema and Types
-export const insertIngredientSchema = createInsertSchema(ingredients).omit({
+// Formulations Insert Schema and Types
+export const insertFormulationSchema = createInsertSchema(formulations).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -7201,6 +7201,6 @@ export const insertIngredientSchema = createInsertSchema(ingredients).omit({
   lastCostUpdate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export type Ingredient = typeof ingredients.$inferSelect;
-export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
+export type Formulation = typeof formulations.$inferSelect;
+export type InsertFormulation = z.infer<typeof insertFormulationSchema>;
 

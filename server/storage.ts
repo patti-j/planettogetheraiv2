@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, ingredients,
+  recipes, recipePhases, recipeFormulas, vendors, customers, productionVersions, formulations,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
   capacityPlanningScenarios, staffingPlans, shiftPlans, equipmentPlans, capacityProjections,
@@ -10,7 +10,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Ingredient,
+  type Recipe, type RecipePhase, type RecipeFormula, type Vendor, type Customer, type ProductionVersion, type Formulation,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
   type CapacityPlanningScenario, type StaffingPlan, type ShiftPlan, type EquipmentPlan, type CapacityProjection,
@@ -21,7 +21,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertProductionOrder, type InsertPlannedOrder, 
   type InsertDiscreteOperation, type InsertProcessOperation, type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertIngredient,
+  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
   type InsertCapacityPlanningScenario, type InsertStaffingPlan, type InsertShiftPlan, type InsertEquipmentPlan, type InsertCapacityProjection,
@@ -1244,14 +1244,14 @@ export interface IStorage {
   updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
 
-  // Ingredients
-  getIngredients(): Promise<Ingredient[]>;
-  getIngredient(id: number): Promise<Ingredient | undefined>;
-  getIngredientByNumber(ingredientNumber: string): Promise<Ingredient | undefined>;
-  createIngredient(ingredient: InsertIngredient): Promise<Ingredient>;
-  updateIngredient(id: number, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined>;
-  deleteIngredient(id: number): Promise<boolean>;
-  getIngredientsByVendor(vendorId: number): Promise<Ingredient[]>;
+  // Formulations
+  getFormulations(): Promise<Formulation[]>;
+  getFormulation(id: number): Promise<Formulation | undefined>;
+  getFormulationByNumber(formulationNumber: string): Promise<Formulation | undefined>;
+  createFormulation(formulation: InsertFormulation): Promise<Formulation>;
+  updateFormulation(id: number, formulation: Partial<InsertFormulation>): Promise<Formulation | undefined>;
+  deleteFormulation(id: number): Promise<boolean>;
+  getFormulationsByVendor(vendorId: number): Promise<Formulation[]>;
 
   // Customers
   getCustomers(): Promise<Customer[]>;
@@ -10767,45 +10767,45 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // Ingredients
-  async getIngredients(): Promise<Ingredient[]> {
-    return await db.select().from(ingredients).orderBy(asc(ingredients.ingredientNumber));
+  // Formulations
+  async getFormulations(): Promise<Formulation[]> {
+    return await db.select().from(formulations).orderBy(asc(formulations.formulationNumber));
   }
 
-  async getIngredient(id: number): Promise<Ingredient | undefined> {
-    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.id, id));
-    return ingredient || undefined;
+  async getFormulation(id: number): Promise<Formulation | undefined> {
+    const [formulation] = await db.select().from(formulations).where(eq(formulations.id, id));
+    return formulation || undefined;
   }
 
-  async getIngredientByNumber(ingredientNumber: string): Promise<Ingredient | undefined> {
-    const [ingredient] = await db.select().from(ingredients).where(eq(ingredients.ingredientNumber, ingredientNumber));
-    return ingredient || undefined;
+  async getFormulationByNumber(formulationNumber: string): Promise<Formulation | undefined> {
+    const [formulation] = await db.select().from(formulations).where(eq(formulations.formulationNumber, formulationNumber));
+    return formulation || undefined;
   }
 
-  async createIngredient(ingredient: InsertIngredient): Promise<Ingredient> {
-    const [newIngredient] = await db
-      .insert(ingredients)
-      .values(ingredient)
+  async createFormulation(formulation: InsertFormulation): Promise<Formulation> {
+    const [newFormulation] = await db
+      .insert(formulations)
+      .values(formulation)
       .returning();
-    return newIngredient;
+    return newFormulation;
   }
 
-  async updateIngredient(id: number, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined> {
-    const [updatedIngredient] = await db
-      .update(ingredients)
-      .set({ ...ingredient, updatedAt: new Date() })
-      .where(eq(ingredients.id, id))
+  async updateFormulation(id: number, formulation: Partial<InsertFormulation>): Promise<Formulation | undefined> {
+    const [updatedFormulation] = await db
+      .update(formulations)
+      .set({ ...formulation, updatedAt: new Date() })
+      .where(eq(formulations.id, id))
       .returning();
-    return updatedIngredient || undefined;
+    return updatedFormulation || undefined;
   }
 
-  async deleteIngredient(id: number): Promise<boolean> {
-    const result = await db.delete(ingredients).where(eq(ingredients.id, id));
+  async deleteFormulation(id: number): Promise<boolean> {
+    const result = await db.delete(formulations).where(eq(formulations.id, id));
     return (result.rowCount || 0) > 0;
   }
 
-  async getIngredientsByVendor(vendorId: number): Promise<Ingredient[]> {
-    return await db.select().from(ingredients).where(eq(ingredients.preferredVendorId, vendorId));
+  async getFormulationsByVendor(vendorId: number): Promise<Formulation[]> {
+    return await db.select().from(formulations).where(eq(formulations.preferredVendorId, vendorId));
   }
 
   // Customers
