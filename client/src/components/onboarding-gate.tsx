@@ -36,7 +36,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   // Get onboarding status for authenticated users
   const { data: onboardingData, isLoading: onboardingLoading } = useQuery({
     queryKey: ['/api/onboarding/status'],
-    enabled: !!user
+    enabled: !!user && (location !== '/onboarding' && !location.startsWith('/onboarding?'))
   }) as { data: OnboardingData | undefined, isLoading: boolean };
 
   // Check if user needs to complete onboarding
@@ -108,7 +108,8 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
   };
 
   // Show loading state while checking authentication and onboarding status
-  if (authLoading || (user && onboardingLoading)) {
+  // Don't show loading state if user is on the onboarding page itself
+  if (authLoading || (user && onboardingLoading && location !== '/onboarding' && !location.startsWith('/onboarding?'))) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
