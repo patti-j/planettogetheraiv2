@@ -10701,12 +10701,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Onboarding Management Implementation
-  async getCompanyOnboarding(userId: number): Promise<CompanyOnboarding | undefined> {
+  async getCompanyOnboarding(userId: number | string): Promise<CompanyOnboarding | undefined> {
     try {
+      // Handle demo users (string IDs) - return mock onboarding data
+      if (typeof userId === 'string' && userId.startsWith('demo_')) {
+        console.log('Demo user detected, returning mock onboarding data for:', userId);
+        return {
+          id: 1,
+          companyName: userId === 'demo_director' ? 'Demo Manufacturing Corp' : 'Demo Company',
+          industry: 'food_beverage',
+          size: 'medium',
+          description: 'A demo manufacturing company for testing purposes',
+          primaryGoal: 'improve-efficiency',
+          selectedFeatures: ['production-scheduling', 'shop-floor', 'analytics'],
+          completedSteps: ['welcome', 'company-info', 'features'],
+          currentStep: 'complete',
+          teamMembers: 5,
+          isCompleted: true,
+          createdBy: 1, // Use integer for database compatibility
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date()
+        } as CompanyOnboarding;
+      }
+
+      // Handle regular users (numeric IDs)
+      const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+      if (isNaN(numericUserId)) {
+        console.log('Invalid user ID provided:', userId);
+        return undefined;
+      }
+
       const [onboarding] = await db
         .select()
         .from(companyOnboarding)
-        .where(eq(companyOnboarding.createdBy, userId))
+        .where(eq(companyOnboarding.createdBy, numericUserId))
         .orderBy(desc(companyOnboarding.createdAt))
         .limit(1);
       return onboarding;
@@ -10718,9 +10746,40 @@ export class DatabaseStorage implements IStorage {
 
   async createCompanyOnboarding(data: InsertCompanyOnboarding): Promise<CompanyOnboarding> {
     try {
+      // Handle demo users - return mock data without database insertion
+      if (typeof data.createdBy === 'string' && data.createdBy.startsWith('demo_')) {
+        console.log('Demo user detected, returning mock onboarding creation for:', data.createdBy);
+        return {
+          id: 1,
+          companyName: data.companyName || 'Demo Manufacturing Corp',
+          industry: data.industry || 'food_beverage',
+          size: data.size || 'medium',
+          description: data.description || 'A demo manufacturing company for testing purposes',
+          primaryGoal: data.primaryGoal || 'improve-efficiency',
+          selectedFeatures: data.selectedFeatures || ['production-scheduling', 'shop-floor', 'analytics'],
+          completedSteps: data.completedSteps || ['welcome'],
+          currentStep: data.currentStep || 'company-info',
+          teamMembers: data.teamMembers || 5,
+          isCompleted: data.isCompleted || false,
+          createdBy: 1, // Use integer for database compatibility
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as CompanyOnboarding;
+      }
+
+      // Handle regular users - ensure createdBy is numeric
+      const processedData = {
+        ...data,
+        createdBy: typeof data.createdBy === 'string' ? parseInt(data.createdBy) : data.createdBy
+      };
+
+      if (isNaN(processedData.createdBy)) {
+        throw new Error(`Invalid createdBy ID: ${data.createdBy}`);
+      }
+
       const [newOnboarding] = await db
         .insert(companyOnboarding)
-        .values(data)
+        .values(processedData)
         .returning();
       return newOnboarding;
     } catch (error) {
@@ -10733,9 +10792,39 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Updating company onboarding in database:', { id, data });
       
+      // Handle demo users - return mock updated data
+      if (typeof data.createdBy === 'string' && data.createdBy.startsWith('demo_')) {
+        console.log('Demo user detected, returning mock onboarding update for:', data.createdBy);
+        return {
+          id: id,
+          companyName: data.companyName || 'Demo Manufacturing Corp',
+          industry: data.industry || 'food_beverage',
+          size: data.size || 'medium',
+          description: data.description || 'A demo manufacturing company for testing purposes',
+          primaryGoal: data.primaryGoal || 'improve-efficiency',
+          selectedFeatures: data.selectedFeatures || ['production-scheduling', 'shop-floor', 'analytics'],
+          completedSteps: data.completedSteps || ['welcome', 'company-info'],
+          currentStep: data.currentStep || 'features',
+          teamMembers: data.teamMembers || 5,
+          isCompleted: data.isCompleted || false,
+          createdBy: 1, // Use integer for database compatibility
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date()
+        } as CompanyOnboarding;
+      }
+
+      // Process createdBy for regular users
+      const processedData = { ...data };
+      if (data.createdBy && typeof data.createdBy === 'string') {
+        processedData.createdBy = parseInt(data.createdBy);
+        if (isNaN(processedData.createdBy)) {
+          throw new Error(`Invalid createdBy ID: ${data.createdBy}`);
+        }
+      }
+      
       const [updated] = await db
         .update(companyOnboarding)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...processedData, updatedAt: new Date() })
         .where(eq(companyOnboarding.id, id))
         .returning();
       
