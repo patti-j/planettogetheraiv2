@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +39,8 @@ import {
   Sparkles,
   Wand2,
   Brain,
-  Zap
+  Zap,
+  FolderOpen
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Maximize } from "lucide-react";
@@ -48,7 +50,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import UniversalWidget from "@/components/universal-widget";
 import WidgetDesignStudio from "@/components/widget-design-studio";
 
-import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget } from "@/lib/widget-library";
+import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
 
 interface CockpitLayout {
@@ -89,6 +91,25 @@ interface CockpitAlert {
   created_at: string;
 }
 
+interface DashboardConfig {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  widgets: Partial<WidgetConfig>[];
+  layout: any;
+}
+
+interface DashboardConfig {
+  id: number;
+  name: string;
+  description: string;
+  configuration: any;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const widgetTypes = [
   { value: "metrics", label: "Key Metrics", icon: BarChart3 },
   { value: "chart", label: "Chart", icon: PieChart },
@@ -105,6 +126,112 @@ const themes = [
   { value: "dark", label: "Dark Mode" },
   { value: "manufacturing", label: "Manufacturing" },
   { value: "modern", label: "Modern" }
+];
+
+const dashboardConfigs: DashboardConfig[] = [
+  {
+    id: 'production-overview',
+    name: 'Production Overview Dashboard',
+    description: 'Complete overview of production operations with key metrics and alerts',
+    category: 'operations',
+    widgets: [
+      {
+        type: 'kpi',
+        title: 'Active Production Orders',
+        dataSource: 'productionOrders',
+        aggregation: 'count',
+        chartType: 'number',
+        size: { width: 300, height: 200 }
+      },
+      {
+        type: 'chart', 
+        title: 'Production Status Distribution',
+        dataSource: 'productionOrders',
+        chartType: 'pie',
+        groupBy: 'status',
+        aggregation: 'count',
+        size: { width: 400, height: 300 }
+      },
+      {
+        type: 'alert',
+        title: 'Critical Alerts',
+        dataSource: 'alerts',
+        filters: { severity: ['critical', 'warning'] },
+        limit: 5,
+        size: { width: 400, height: 250 }
+      }
+    ],
+    layout: { type: 'grid', columns: 2 }
+  },
+  {
+    id: 'resource-monitoring',
+    name: 'Resource Monitoring Dashboard', 
+    description: 'Monitor resource utilization and capacity across all plants',
+    category: 'management',
+    widgets: [
+      {
+        type: 'gauge',
+        title: 'Overall Resource Utilization',
+        dataSource: 'resources',
+        aggregation: 'avg',
+        groupBy: 'utilization',
+        size: { width: 300, height: 250 }
+      },
+      {
+        type: 'chart',
+        title: 'Resource Capacity by Plant',
+        dataSource: 'resources',
+        chartType: 'bar',
+        groupBy: 'plant_id',
+        aggregation: 'sum',
+        size: { width: 500, height: 300 }
+      },
+      {
+        type: 'table',
+        title: 'Resource Status Details',
+        dataSource: 'resources',
+        limit: 10,
+        sortBy: { field: 'utilization', direction: 'desc' },
+        size: { width: 600, height: 350 }
+      }
+    ],
+    layout: { type: 'grid', columns: 2 }
+  },
+  {
+    id: 'analytics-suite',
+    name: 'Analytics Suite Dashboard',
+    description: 'Advanced analytics and reporting for data-driven decisions',
+    category: 'analytics',
+    widgets: [
+      {
+        type: 'chart',
+        title: 'Production Trends',
+        dataSource: 'operations',
+        chartType: 'line',
+        groupBy: 'scheduled_date',
+        aggregation: 'count',
+        size: { width: 600, height: 300 }
+      },
+      {
+        type: 'kpi',
+        title: 'Efficiency Rate',
+        dataSource: 'operations',
+        aggregation: 'avg',
+        groupBy: 'efficiency',
+        chartType: 'progress',
+        size: { width: 300, height: 200 }
+      },
+      {
+        type: 'list',
+        title: 'Recent Activities',
+        dataSource: 'operations',
+        limit: 8,
+        sortBy: { field: 'updated_at', direction: 'desc' },
+        size: { width: 400, height: 350 }
+      }
+    ],
+    layout: { type: 'grid', columns: 2 }
+  }
 ];
 
 // Helper functions for widget type mapping
@@ -185,6 +312,8 @@ export default function ProductionCockpit() {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [algorithmParameters, setAlgorithmParameters] = useState<any>({});
   const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
+  const [widgetLibraryDialog, setWidgetLibraryDialog] = useState(false);
+  const [dashboardLibraryDialog, setDashboardLibraryDialog] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -207,6 +336,11 @@ export default function ProductionCockpit() {
   const { data: alerts = [], isLoading: alertsLoading } = useQuery<CockpitAlert[]>({
     queryKey: ["/api/cockpit/alerts"],
     refetchInterval: autoRefresh ? refreshInterval * 1000 : false
+  });
+
+  // Fetch dashboard configurations from dashboard library
+  const { data: dashboardConfigs = [] } = useQuery<DashboardConfig[]>({
+    queryKey: ["/api/dashboard-configs"]
   });
 
   // Fetch production metrics
@@ -441,6 +575,83 @@ export default function ProductionCockpit() {
     });
   };
 
+  // Handler to add widget from template
+  const handleAddWidgetFromTemplate = (template: WidgetTemplate) => {
+    if (!selectedLayout) {
+      toast({
+        title: "No Layout Selected",
+        description: "Please select a layout first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newWidget = {
+      layout_id: selectedLayout,
+      type: template.type,
+      title: template.name,
+      sub_title: template.description,
+      position: {
+        x: Math.floor(Math.random() * 8), // Random position
+        y: Math.floor(Math.random() * 6),
+        w: template.defaultConfig.size?.width || 4,
+        h: template.defaultConfig.size?.height || 3
+      },
+      configuration: {
+        ...template.defaultConfig,
+        dataSource: template.defaultConfig.dataSource || getDefaultDataSource(template.type),
+        chartType: template.defaultConfig.chartType || 'bar',
+        refreshInterval: 30000
+      },
+      is_visible: true
+    };
+
+    createWidgetMutation.mutate(newWidget);
+  };
+
+  // Handler to add dashboard from library
+  const handleAddDashboardFromLibrary = (dashboardConfig: DashboardConfig) => {
+    if (!selectedLayout) {
+      toast({
+        title: "No Layout Selected", 
+        description: "Please select a layout first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Convert dashboard widgets to cockpit widgets
+    const dashboardWidgets = dashboardConfig.configuration?.customWidgets || [];
+    
+    dashboardWidgets.forEach((widget: any, index: number) => {
+      const cockpitWidget = {
+        layout_id: selectedLayout,
+        type: mapCockpitTypeToUniversalType(widget.type),
+        title: widget.title || `Widget ${index + 1}`,
+        sub_title: `From ${dashboardConfig.name}`,
+        position: {
+          x: (widget.position?.x || 0) + (index % 3) * 4, // Offset to avoid overlap
+          y: (widget.position?.y || 0) + Math.floor(index / 3) * 4,
+          w: widget.size?.width || 4,
+          h: widget.size?.height || 3
+        },
+        configuration: {
+          ...widget.config,
+          dataSource: widget.dataSource || getDefaultDataSource(widget.type),
+          refreshInterval: 30000
+        },
+        is_visible: true
+      };
+
+      createWidgetMutation.mutate(cockpitWidget);
+    });
+
+    toast({
+      title: "Dashboard Added",
+      description: `${dashboardWidgets.length} widgets added from ${dashboardConfig.name}`,
+    });
+  };
+
 
 
 
@@ -650,7 +861,97 @@ export default function ProductionCockpit() {
               </DialogContent>
             </Dialog>
 
+            {/* Add Widget from Library */}
+            <Dialog open={widgetLibraryDialog} onOpenChange={setWidgetLibraryDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                  <Grid className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Widget</span>
+                  <span className="sm:hidden">Widget</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Grid className="h-5 w-5 text-blue-500" />
+                    Add Widget from Library
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                    {WIDGET_TEMPLATES.filter(template => template.targetSystems.includes('cockpit')).map((template) => (
+                      <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+                        handleAddWidgetFromTemplate(template);
+                        setWidgetLibraryDialog(false);
+                      }}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <template.icon className="h-4 w-4" />
+                            {template.name}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-xs text-muted-foreground mb-2">{template.description}</p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">{template.category}</Badge>
+                            <Badge variant={template.complexity === 'basic' ? 'default' : template.complexity === 'intermediate' ? 'secondary' : 'destructive'} className="text-xs">
+                              {template.complexity}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
 
+            {/* Add Dashboard from Library */}
+            <Dialog open={dashboardLibraryDialog} onOpenChange={setDashboardLibraryDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-xs sm:text-sm">
+                  <FolderOpen className="h-4 w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Dashboard</span>
+                  <span className="sm:hidden">Dashboard</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5 text-green-500" />
+                    Add Dashboard from Library
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+                    {dashboardConfigs.map((dashboard) => (
+                      <Card key={dashboard.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+                        handleAddDashboardFromLibrary(dashboard);
+                        setDashboardLibraryDialog(false);
+                      }}>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            {dashboard.name}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-xs text-muted-foreground mb-2">{dashboard.description}</p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">
+                              {dashboard.configuration?.customWidgets?.length || 0} widgets
+                            </Badge>
+                            {dashboard.isDefault && (
+                              <Badge variant="secondary" className="text-xs">Default</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
 
             {/* Optimization Dialog */}
             <Dialog open={optimizationDialog} onOpenChange={setOptimizationDialog}>

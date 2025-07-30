@@ -458,6 +458,11 @@ function Router() {
               <WidgetStudio />
             </ProtectedRoute>
           </Route>
+          <Route path="/widgets">
+            <ProtectedRoute feature="analytics" action="view">
+              <WidgetsPage />
+            </ProtectedRoute>
+          </Route>
           <Route path="/product-development">
             <ProtectedRoute feature="systems-management" action="view">
               <ProductDevelopment />

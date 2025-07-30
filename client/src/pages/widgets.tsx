@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/tabs";
 import { 
-  Widget, 
   Plus, 
   Search, 
   Filter, 
