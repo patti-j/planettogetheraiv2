@@ -17,6 +17,7 @@ import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { RoleSwitcher } from '@/components/role-switcher';
 import { TourManagementSettings } from '@/components/tour-management-settings';
+import { DashboardCardContainer } from '@/components/dashboard-card-container';
 import { apiRequest } from '@/lib/queryClient';
 import { useTour } from '@/contexts/TourContext';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -1026,52 +1027,83 @@ export default function Training() {
           {user && <RoleSwitcher userId={user.id} currentRole={currentRole as Role} />}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center">
-                <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3" />
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold">{trainingModules.length}</div>
-                  <div className="text-xs text-gray-500">Training Modules</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center">
-                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-2 sm:mr-3" />
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold">{allRoles.length}</div>
-                  <div className="text-xs text-gray-500">Available Roles</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center">
-                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mr-2 sm:mr-3" />
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold">{trainingModules.filter(m => m.completed).length}</div>
-                  <div className="text-xs text-gray-500">Completed</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center">
-                <Monitor className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mr-2 sm:mr-3" />
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold truncate max-w-[120px] sm:max-w-none">{(currentRole as Role)?.name || 'None'}</div>
-                  <div className="text-xs text-gray-500">Current Role</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <DashboardCardContainer 
+        className="mb-6"
+        gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+        maxVisibleCardsMobile={2}
+        maxVisibleCardsTablet={2}
+        maxVisibleCardsDesktop={3}
+        cards={[
+          {
+            id: 'training-modules',
+            priority: 1, // Highest priority - core feature
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold">{trainingModules.length}</div>
+                      <div className="text-xs text-gray-500">Training Modules</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          },
+          {
+            id: 'current-role',
+            priority: 2, // Second priority - important for context
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <Monitor className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold truncate max-w-[120px] sm:max-w-none">{(currentRole as Role)?.name || 'None'}</div>
+                      <div className="text-xs text-gray-500">Current Role</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          },
+          {
+            id: 'completed-modules',
+            priority: 3, // Third priority - progress tracking
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <Target className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold">{trainingModules.filter(m => m.completed).length}</div>
+                      <div className="text-xs text-gray-500">Completed</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          },
+          {
+            id: 'available-roles',
+            priority: 4, // Lower priority - nice to know
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold">{allRoles.length}</div>
+                      <div className="text-xs text-gray-500">Available Roles</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          }
+        ]}
+      />
       <Tabs defaultValue="modules" className="space-y-4 sm:space-y-6">
         <TabsList className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 h-auto p-1 sm:p-1 bg-gray-100 rounded-lg">
           <TabsTrigger 

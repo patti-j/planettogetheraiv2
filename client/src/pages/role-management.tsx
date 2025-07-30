@@ -16,6 +16,7 @@ import {
   CheckCircle, XCircle, AlertCircle, Maximize2, Minimize2, Sparkles, Copy,
   ArrowRight, Check, ChevronDown
 } from "lucide-react";
+import { DashboardCardContainer } from '@/components/dashboard-card-container';
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { UserRoleManager } from "@/components/user-role-manager";
@@ -799,7 +800,7 @@ export default function RoleManagementPage() {
             
             {roles.map((role) => {
               const isExpanded = expandedRoles.includes(role.id);
-              const features = [...new Set(role.permissions.map(p => p.feature))];
+              const features = Array.from(new Set(role.permissions.map(p => p.feature)));
               
               return (
                 <Card key={role.id} className="p-3 sm:p-4">
