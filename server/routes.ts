@@ -3769,6 +3769,68 @@ Manufacturing Context Available:
     }
   });
 
+  // Max AI Assistant Algorithm Feedback Endpoint (No Authentication Required)
+  app.post("/api/max/algorithm-feedback", async (req, res) => {
+    try {
+      console.log("Max algorithm feedback received:", req.body);
+      
+      // Get or create Max as a system user
+      let maxUser = await storage.getUserByUsername('max');
+      if (!maxUser) {
+        // Create Max system user if it doesn't exist
+        const maxUserData = {
+          username: 'max',
+          email: 'max@system.internal',
+          firstName: 'Max',
+          lastName: 'AI Assistant',
+          jobTitle: 'AI System Assistant',
+          department: 'System',
+          isActive: true,
+          passwordHash: 'system_user_no_login'
+        };
+        maxUser = await storage.createUser(maxUserData);
+        console.log("Created Max system user:", maxUser.id);
+      }
+      
+      const feedbackData = {
+        ...req.body,
+        submittedBy: maxUser.id,
+        // Mark as automated system feedback
+        notes: `[AUTOMATED FEEDBACK] ${req.body.notes || ''}`,
+        // Add special metadata for Max feedback
+        executionContext: {
+          ...req.body.executionContext,
+          feedbackSource: 'max_ai_assistant',
+          automatedSystem: true,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const validatedData = insertAlgorithmFeedbackSchema.parse(feedbackData);
+      const feedback = await storage.createAlgorithmFeedback(validatedData);
+      
+      console.log("Max algorithm feedback created successfully:", feedback.id);
+      res.status(201).json({
+        success: true,
+        feedback,
+        message: "Algorithm feedback logged by Max AI Assistant"
+      });
+    } catch (error) {
+      console.error("Error creating Max algorithm feedback:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          error: "Invalid feedback data", 
+          details: error.errors,
+          message: "Max feedback validation failed"
+        });
+      }
+      res.status(500).json({ 
+        error: "Failed to create Max algorithm feedback",
+        message: "Internal server error while processing Max feedback"
+      });
+    }
+  });
+
   app.put("/api/algorithm-feedback/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

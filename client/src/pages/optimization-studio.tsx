@@ -260,9 +260,15 @@ export default function OptimizationStudio() {
   // Filter feedback based on filter selection
   const filteredFeedback = selectedAlgorithmFeedback.filter((feedback: any) => {
     if (feedbackFilter === "all") return true;
-    if (feedbackFilter === "bugs") return feedback.feedbackType === "bug_report";
-    if (feedbackFilter === "improvements") return feedback.feedbackType === "improvement_suggestion";
+    if (feedbackFilter === "bugs") return feedback.feedbackType === "bug_report" || feedback.feedbackType === "bug";
+    if (feedbackFilter === "improvements") return feedback.feedbackType === "improvement_suggestion" || feedback.feedbackType === "improvement";
     if (feedbackFilter === "critical") return feedback.severity === "critical" || feedback.severity === "high";
+    if (feedbackFilter === "max") {
+      // Check if feedback is from Max AI Assistant (submitted by Max system user or has Max-specific metadata)
+      return feedback.submittedBy === 9 || // Max system user ID
+             (feedback.executionContext && feedback.executionContext.feedbackSource === "max_ai_assistant") ||
+             feedback.title?.includes("[AUTOMATED FEEDBACK]");
+    }
     return true;
   });
 
@@ -1016,6 +1022,7 @@ export default function OptimizationStudio() {
                               <SelectItem value="bugs">Bug Reports</SelectItem>
                               <SelectItem value="improvements">Improvement Ideas</SelectItem>
                               <SelectItem value="critical">Critical Issues</SelectItem>
+                              <SelectItem value="max">Max AI Feedback</SelectItem>
                             </SelectContent>
                           </Select>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -1054,13 +1061,30 @@ export default function OptimizationStudio() {
                                   </div>
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="font-medium">{feedback.title}</h4>
+                                      <h4 className="font-medium">
+                                        {/* Show Max indicator for automated feedback */}
+                                        {(feedback.submittedBy === 9 || 
+                                          (feedback.executionContext && feedback.executionContext.feedbackSource === "max_ai_assistant")) && (
+                                          <span className="inline-flex items-center gap-1 mr-2">
+                                            <Bot className="w-4 h-4 text-purple-600" />
+                                            <span className="text-xs font-medium text-purple-600">MAX AI</span>
+                                          </span>
+                                        )}
+                                        {feedback.title}
+                                      </h4>
                                       <Badge className={`${getSeverityColor(feedback.severity)} text-white text-xs`}>
                                         {feedback.severity}
                                       </Badge>
                                       <Badge variant="outline" className="text-xs">
                                         {feedback.category}
                                       </Badge>
+                                      {/* Automated feedback badge */}
+                                      {(feedback.submittedBy === 9 || 
+                                        (feedback.executionContext && feedback.executionContext.feedbackSource === "max_ai_assistant")) && (
+                                        <Badge className="bg-purple-100 text-purple-800 text-xs">
+                                          AUTOMATED
+                                        </Badge>
+                                      )}
                                     </div>
                                     <p className="text-sm text-gray-600 line-clamp-2">
                                       {feedback.description}
