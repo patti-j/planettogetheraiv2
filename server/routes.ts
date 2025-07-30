@@ -53,7 +53,8 @@ import {
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
   insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
-  insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema
+  insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
+  insertFieldCommentSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -18662,6 +18663,61 @@ Response must be valid JSON:
       res.status(500).json({ error: "Failed to fetch record counts" });
     }
   });
+
+  // Field Comments API
+  app.get("/api/field-comments", createSafeHandler(async (req, res) => {
+    const tableName = req.query.tableName as string;
+    const comments = await storage.getFieldComments(tableName);
+    res.json(comments);
+  }));
+
+  app.get("/api/field-comments/:tableName/:columnName", createSafeHandler(async (req, res) => {
+    const { tableName, columnName } = req.params;
+    const comment = await storage.getFieldComment(tableName, columnName);
+    if (!comment) {
+      return res.status(404).json({ error: "Field comment not found" });
+    }
+    res.json(comment);
+  }));
+
+  app.post("/api/field-comments", createSafeHandler(async (req, res) => {
+    const validatedData = insertFieldCommentSchema.parse(req.body);
+    
+    // Check if comment already exists and update it, otherwise create new
+    const existingComment = await storage.getFieldComment(validatedData.tableName, validatedData.columnName);
+    
+    if (existingComment) {
+      const updatedComment = await storage.updateFieldComment(
+        validatedData.tableName, 
+        validatedData.columnName, 
+        { comment: validatedData.comment }
+      );
+      res.json(updatedComment);
+    } else {
+      const newComment = await storage.createFieldComment(validatedData);
+      res.status(201).json(newComment);
+    }
+  }));
+
+  app.put("/api/field-comments/:tableName/:columnName", createSafeHandler(async (req, res) => {
+    const { tableName, columnName } = req.params;
+    const validatedData = insertFieldCommentSchema.partial().parse(req.body);
+    
+    const updatedComment = await storage.updateFieldComment(tableName, columnName, validatedData);
+    if (!updatedComment) {
+      return res.status(404).json({ error: "Field comment not found" });
+    }
+    res.json(updatedComment);
+  }));
+
+  app.delete("/api/field-comments/:tableName/:columnName", createSafeHandler(async (req, res) => {
+    const { tableName, columnName } = req.params;
+    const deleted = await storage.deleteFieldComment(tableName, columnName);
+    if (!deleted) {
+      return res.status(404).json({ error: "Field comment not found" });
+    }
+    res.status(204).send();
+  }));
 
   // Database Schema endpoint - simplified to avoid complex queries
   app.get("/api/database/schema", async (req, res) => {

@@ -73,6 +73,7 @@ import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
 import DataMapView from "@/pages/data-map";
 import DataSchemaView from "@/pages/data-schema";
+import TableFieldViewer from "@/pages/table-field-viewer";
 import DataRelationships from "@/pages/data-relationships";
 
 import FunctionalMap from "@/pages/functional-map";
@@ -377,6 +378,11 @@ function Router() {
           <Route path="/data-schema">
             <ProtectedRoute feature="systems-management" action="view">
               <DataSchemaView />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/table-field-viewer">
+            <ProtectedRoute feature="systems-management" action="view">
+              <TableFieldViewer />
             </ProtectedRoute>
           </Route>
           <Route path="/data-relationships">

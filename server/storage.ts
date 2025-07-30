@@ -37,6 +37,7 @@ import {
   demoTourParticipants, type DemoTourParticipant, type InsertDemoTourParticipant,
   voiceRecordingsCache, type VoiceRecordingsCache, type InsertVoiceRecordingsCache,
   tours, type Tour, type InsertTour,
+  fieldComments, type FieldComment, type InsertFieldComment,
   tourPromptTemplates, tourPromptTemplateUsage, type TourPromptTemplate, type TourPromptTemplateUsage, type InsertTourPromptTemplate, type InsertTourPromptTemplateUsage,
   userPreferences, type UserPreferences, type InsertUserPreferences,
   chatChannels, chatMembers, chatMessages, chatReactions,
@@ -1112,6 +1113,13 @@ export interface IStorage {
     lastUsed: Date | null;
     userCount: number;
   }>;
+
+  // Field Comments Management
+  getFieldComments(tableName?: string): Promise<FieldComment[]>;
+  getFieldComment(tableName: string, columnName: string): Promise<FieldComment | undefined>;
+  createFieldComment(comment: InsertFieldComment): Promise<FieldComment>;
+  updateFieldComment(tableName: string, columnName: string, updates: Partial<InsertFieldComment>): Promise<FieldComment | undefined>;
+  deleteFieldComment(tableName: string, columnName: string): Promise<boolean>;
 
   // Product Development
   // Strategy Documents
@@ -12020,6 +12028,64 @@ export class DatabaseStorage implements IStorage {
     const downvotes = votes.filter(v => v.voteType === 'downvote').length;
     
     return { upvotes, downvotes };
+  }
+
+  // Field Comments Management
+  async getFieldComments(tableName?: string): Promise<FieldComment[]> {
+    let query = db.select().from(fieldComments);
+    
+    if (tableName) {
+      query = query.where(eq(fieldComments.tableName, tableName));
+    }
+    
+    return await query.orderBy(asc(fieldComments.tableName), asc(fieldComments.columnName));
+  }
+
+  async getFieldComment(tableName: string, columnName: string): Promise<FieldComment | undefined> {
+    const [comment] = await db
+      .select()
+      .from(fieldComments)
+      .where(and(
+        eq(fieldComments.tableName, tableName),
+        eq(fieldComments.columnName, columnName)
+      ));
+    return comment;
+  }
+
+  async createFieldComment(comment: InsertFieldComment): Promise<FieldComment> {
+    const [newComment] = await db
+      .insert(fieldComments)
+      .values({
+        ...comment,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newComment;
+  }
+
+  async updateFieldComment(tableName: string, columnName: string, updates: Partial<InsertFieldComment>): Promise<FieldComment | undefined> {
+    const [comment] = await db
+      .update(fieldComments)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(fieldComments.tableName, tableName),
+        eq(fieldComments.columnName, columnName)
+      ))
+      .returning();
+    return comment;
+  }
+
+  async deleteFieldComment(tableName: string, columnName: string): Promise<boolean> {
+    const result = await db.delete(fieldComments)
+      .where(and(
+        eq(fieldComments.tableName, tableName),
+        eq(fieldComments.columnName, columnName)
+      ));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

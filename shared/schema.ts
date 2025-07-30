@@ -3446,12 +3446,34 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   updatedAt: true,
 });
 
+// Field Comments table for database documentation
+export const fieldComments = pgTable("field_comments", {
+  id: serial("id").primaryKey(),
+  tableName: varchar("table_name", { length: 255 }).notNull(),
+  columnName: varchar("column_name", { length: 255 }).notNull(),
+  comment: text("comment").notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  tableColumnUnique: unique().on(table.tableName, table.columnName),
+  tableNameIdx: index("field_comments_table_name_idx").on(table.tableName),
+}));
+
+export const insertFieldCommentSchema = createInsertSchema(fieldComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertDemoTourParticipant = z.infer<typeof insertDemoTourParticipantSchema>;
 export type DemoTourParticipant = typeof demoTourParticipants.$inferSelect;
 export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCacheSchema>;
 export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;
 export type InsertTour = z.infer<typeof insertTourSchema>;
 export type Tour = typeof tours.$inferSelect;
+export type InsertFieldComment = z.infer<typeof insertFieldCommentSchema>;
+export type FieldComment = typeof fieldComments.$inferSelect;
 
 // User Preferences Schema and Types
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
