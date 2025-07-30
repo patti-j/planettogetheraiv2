@@ -345,11 +345,11 @@ Tour Guidelines:
 
 CRITICAL DISTINCTION:
 - For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what functions can you perform", "what can you do", "your capabilities", "available commands", "list your functions", "show me your functions", "help", "commands", "what are your capabilities", "what do you do", "tell me about yourself"): ALWAYS use LIST_AVAILABLE_APIS action
-- For actual data requests ("list jobs", "show resources", "available jobs", "available resources", "show me jobs", "what jobs do we have", "how many jobs", "job data"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
+- For actual data requests ("list production orders", "show resources", "available production orders", "available resources", "show me production orders", "what production orders do we have", "how many production orders", "production order data"): Use appropriate data actions (LIST_PRODUCTION_ORDERS, LIST_RESOURCES, etc.)
 
-IMPORTANT: When users ask about "functions you can perform" or "what functions you have" or ANY question about Max's capabilities, they want to see your API capabilities, NOT the jobs in the system. Use LIST_AVAILABLE_APIS for these requests.
+IMPORTANT: When users ask about "functions you can perform" or "what functions you have" or ANY question about Max's capabilities, they want to see your API capabilities, NOT the production orders in the system. Use LIST_AVAILABLE_APIS for these requests.
 
-DEFAULT BEHAVIOR: If a user asks a general question about what Max can do, capabilities, functions, or help - ALWAYS default to LIST_AVAILABLE_APIS, NOT LIST_JOBS.
+DEFAULT BEHAVIOR: If a user asks a general question about what Max can do, capabilities, functions, or help - ALWAYS default to LIST_AVAILABLE_APIS, NOT LIST_PRODUCTION_ORDERS.
 
 EXAMPLES THAT REQUIRE LIST_AVAILABLE_APIS:
 - "What functions can you perform?"
@@ -362,12 +362,12 @@ EXAMPLES THAT REQUIRE LIST_AVAILABLE_APIS:
 - "What do you do?"
 - "How can you help?"
 
-EXAMPLES THAT REQUIRE LIST_JOBS:
-- "Show me the jobs"
-- "List all jobs"
-- "What jobs do we have?"
-- "How many jobs are there?"
-- "Show job data"
+EXAMPLES THAT REQUIRE LIST_PRODUCTION_ORDERS:
+- "Show me the production orders"
+- "List all production orders"
+- "What production orders do we have?"
+- "How many production orders are there?"
+- "Show production order data"
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (supports all application pages with permission checking)
@@ -546,63 +546,65 @@ Respond with JSON: {"action": "ACTION_NAME", "parameters": {...}, "message": "re
 async function getSystemContext(): Promise<SystemContext> {
   // For AI requests, don't load full data to prevent token overflow
   // Just get counts and limited samples
-  const [jobs, operations, resources, capabilities, plants] = await Promise.all([
-    storage.getJobs().then(jobs => jobs.slice(0, 10)), // Max 10 jobs for context
+  const [productionOrders, operations, resources, capabilities, plants] = await Promise.all([
+    storage.getProductionOrders().then(orders => orders.slice(0, 10)), // Max 10 production orders for context
     storage.getOperations().then(ops => ops.slice(0, 20)), // Max 20 operations
     storage.getResources().then(res => res.slice(0, 10)), // Max 10 resources
     storage.getCapabilities(),
     storage.getPlants() // Include all plants since there are typically fewer plants
   ]);
 
-  return { jobs, operations, resources, capabilities, plants };
+  return { jobs: productionOrders, operations, resources, capabilities, plants };
 }
 
 async function executeAction(action: string, parameters: any, message: string, context?: SystemContext, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     switch (action) {
-      case "LIST_JOBS":
-        const allJobs = await storage.getJobs();
+      case "LIST_PRODUCTION_ORDERS":
+      case "LIST_JOBS": // Keep backward compatibility
+        const allProductionOrders = await storage.getProductionOrders();
         
         // Check if this should be displayed in canvas - detect various ways users ask to see data
-        const shouldDisplayJobsInCanvas = parameters.displayInCanvas || 
+        const shouldDisplayProductionOrdersInCanvas = parameters.displayInCanvas || 
                                          parameters.canvas || 
                                          message.toLowerCase().includes('canvas') ||
                                          message.toLowerCase().includes('display') ||
                                          message.toLowerCase().includes('show') ||
                                          message.toLowerCase().includes('list');
         
-        if (shouldDisplayJobsInCanvas) {
+        if (shouldDisplayProductionOrdersInCanvas) {
           return {
             success: true,
-            message: message || "Here are all the jobs in your manufacturing system, displayed in the canvas above:",
-            data: allJobs,
+            message: message || "Here are all the production orders in your manufacturing system, displayed in the canvas above:",
+            data: allProductionOrders,
             canvasAction: {
               type: "ADD_CANVAS_CONTENT",
               content: {
                 type: "table",
-                title: "Manufacturing Jobs Overview",
+                title: "Production Orders Overview",
                 timestamp: new Date().toISOString(),
-                data: allJobs.map(job => ({
-                  "Job ID": job.id,
-                  "Job Name": job.name,
-                  "Customer": job.customerId,
-                  "Priority": job.priority,
-                  "Status": job.status,
-                  "Due Date": job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'
+                data: allProductionOrders.map(order => ({
+                  "Order ID": order.id,
+                  "Order Number": order.orderNumber,
+                  "Item": order.itemId,
+                  "Quantity": order.quantity,
+                  "Priority": order.priority,
+                  "Status": order.status,
+                  "Due Date": order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'Not set'
                 })),
                 width: "100%",
                 height: "auto"
               }
             },
-            actions: ["LIST_JOBS", "ADD_CANVAS_CONTENT"]
+            actions: ["LIST_PRODUCTION_ORDERS", "ADD_CANVAS_CONTENT"]
           };
         }
         
         return {
           success: true,
-          message: message || `Here are the active jobs in our system:\n\n${allJobs.map(job => `• ${job.name} (ID: ${job.id})\n  Customer: ${job.customerId || 'Not specified'}\n  Priority: ${job.priority}\n  Status: ${job.status}\n  Due: ${job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
-          data: allJobs,
-          actions: ["LIST_JOBS"]
+          message: message || `Here are the active production orders in our system:\n\n${allProductionOrders.map(order => `• ${order.orderNumber} (ID: ${order.id})\n  Item: ${order.itemId || 'Not specified'}\n  Quantity: ${order.quantity}\n  Priority: ${order.priority}\n  Status: ${order.status}\n  Due: ${order.dueDate ? new Date(order.dueDate).toLocaleDateString() : 'Not set'}`).join('\n\n')}`,
+          data: allProductionOrders,
+          actions: ["LIST_PRODUCTION_ORDERS"]
         };
 
       case "LIST_OPERATIONS":
@@ -735,32 +737,23 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["LIST_PLANTS"]
         };
 
-      case "CREATE_JOB":
-        // Extract customer from various parameter names or from the command itself
-        let customerName = parameters.customer || parameters.customerName;
-        if (!customerName && parameters.name) {
-          // Try to extract customer from job name if it contains "for [customer]"
-          const forMatch = parameters.name.match(/for\s+(.+?)(?:\s+with|\s+due|\s*$)/i);
-          if (forMatch) {
-            customerName = forMatch[1];
-          }
-        }
-        
-        const jobData: InsertProductionOrder = {
-          name: parameters.name || "New Job",
-          description: parameters.description || null,
-          customerId: customerName ? parseInt(customerName) || null : null,
+      case "CREATE_PRODUCTION_ORDER":
+      case "CREATE_JOB": // Keep backward compatibility
+        const productionOrderData: InsertProductionOrder = {
+          orderNumber: parameters.orderNumber || `PO-${Date.now()}`,
+          itemId: parameters.itemId || null,
+          quantity: parameters.quantity || 1,
           plantId: parameters.plantId || 1, // Default to plant 1
-          priority: parameters.priority || "medium",
+          priority: parameters.priority || "Medium",
           dueDate: parameters.dueDate ? new Date(parameters.dueDate) : null,
-          status: "active"
+          status: "Planned"
         };
-        const newJob = await storage.createJob(jobData);
+        const newProductionOrder = await storage.createProductionOrder(productionOrderData);
         return {
           success: true,
-          message: message || `Created job "${newJob.name}" successfully`,
-          data: newJob,
-          actions: ["CREATE_JOB"]
+          message: message || `Created production order "${newProductionOrder.orderNumber}" successfully`,
+          data: newProductionOrder,
+          actions: ["CREATE_PRODUCTION_ORDER"]
         };
 
       case "CREATE_OPERATION":
@@ -851,61 +844,63 @@ async function executeAction(action: string, parameters: any, message: string, c
           actions: ["SEARCH_OPERATIONS"]
         };
 
-      case "ANALYZE_LATE_JOBS":
+      case "ANALYZE_LATE_PRODUCTION_ORDERS":
+      case "ANALYZE_LATE_JOBS": // Keep backward compatibility
         let analysisContext = context;
         if (!analysisContext) {
           analysisContext = await getSystemContext();
         }
         
         const today = new Date();
-        const lateJobs = [];
+        const lateProductionOrders = [];
         const lateOperations = [];
         
-        // Analyze each job for lateness
-        for (const job of analysisContext.jobs) {
-          const jobDueDate = new Date(job.dueDate);
-          const jobOperations = analysisContext.operations.filter(op => op.jobId === job.id);
+        // Analyze each production order for lateness
+        for (const order of analysisContext.jobs) { // Note: jobs property contains production orders from getSystemContext
+          if (!order.dueDate) continue;
+          const orderDueDate = new Date(order.dueDate);
+          const orderOperations = analysisContext.operations.filter(op => op.productionOrderId === order.id);
           
-          // Check if job is past due date
-          if (today > jobDueDate) {
-            const daysLate = Math.floor((today.getTime() - jobDueDate.getTime()) / (24 * 60 * 60 * 1000));
-            lateJobs.push({
-              ...job,
+          // Check if production order is past due date
+          if (today > orderDueDate) {
+            const daysLate = Math.floor((today.getTime() - orderDueDate.getTime()) / (24 * 60 * 60 * 1000));
+            lateProductionOrders.push({
+              ...order,
               daysLate,
-              operations: jobOperations
+              operations: orderOperations
             });
           }
           
           // Check for operations that are overdue
-          for (const operation of jobOperations) {
-            if (operation.endTime && new Date(operation.endTime) > jobDueDate) {
-              const daysLate = Math.floor((new Date(operation.endTime).getTime() - jobDueDate.getTime()) / (24 * 60 * 60 * 1000));
+          for (const operation of orderOperations) {
+            if (operation.endTime && new Date(operation.endTime) > orderDueDate) {
+              const daysLate = Math.floor((new Date(operation.endTime).getTime() - orderDueDate.getTime()) / (24 * 60 * 60 * 1000));
               lateOperations.push({
                 ...operation,
-                jobName: job.name,
+                orderNumber: order.orderNumber,
                 daysLate
               });
             }
           }
         }
         
-        let analysisMessage = "Late Jobs Analysis:\n\n";
+        let analysisMessage = "Late Production Orders Analysis:\n\n";
         
-        if (lateJobs.length === 0) {
-          analysisMessage += "✅ No jobs are currently overdue.\n";
+        if (lateProductionOrders.length === 0) {
+          analysisMessage += "✅ No production orders are currently overdue.\n";
         } else {
-          analysisMessage += `⚠️ ${lateJobs.length} job(s) are overdue:\n`;
-          lateJobs.forEach(job => {
-            analysisMessage += `• ${job.name} (Customer ID: ${job.customerId || 'Unknown'}) - ${job.daysLate} days late\n`;
-            analysisMessage += `  Due: ${new Date(job.dueDate).toLocaleDateString()}\n`;
-            analysisMessage += `  Operations: ${job.operations.length} total\n`;
+          analysisMessage += `⚠️ ${lateProductionOrders.length} production order(s) are overdue:\n`;
+          lateProductionOrders.forEach(order => {
+            analysisMessage += `• ${order.orderNumber} (Item: ${order.itemId || 'Unknown'}) - ${order.daysLate} days late\n`;
+            analysisMessage += `  Due: ${new Date(order.dueDate).toLocaleDateString()}\n`;
+            analysisMessage += `  Operations: ${order.operations.length} total\n`;
           });
         }
         
         if (lateOperations.length > 0) {
           analysisMessage += `\n🔍 ${lateOperations.length} operation(s) completed late:\n`;
           lateOperations.forEach(op => {
-            analysisMessage += `• ${op.name} (${op.jobName}) - ${op.daysLate} days late\n`;
+            analysisMessage += `• ${op.name} (${op.orderNumber}) - ${op.daysLate} days late\n`;
           });
         }
         
@@ -913,15 +908,15 @@ async function executeAction(action: string, parameters: any, message: string, c
           success: true,
           message: analysisMessage,
           data: {
-            lateJobs,
+            lateProductionOrders,
             lateOperations,
             summary: {
-              totalLateJobs: lateJobs.length,
+              totalLateProductionOrders: lateProductionOrders.length,
               totalLateOperations: lateOperations.length,
               analysisDate: today.toISOString()
             }
           },
-          actions: ["ANALYZE_LATE_JOBS"]
+          actions: ["ANALYZE_LATE_PRODUCTION_ORDERS"]
         };
 
       case "CREATE_CUSTOM_METRIC":
@@ -1757,15 +1752,15 @@ async function executeAction(action: string, parameters: any, message: string, c
           { "API Function": "LIST_CANVAS_WIDGETS", "Description": "🔥 NEW: List all canvas widgets for current session" },
           { "API Function": "SUBMIT_ALGORITHM_FEEDBACK", "Description": "🔥 NEW: Submit automated algorithm performance feedback and improvements" },
           { "API Function": "LIST_ALGORITHM_FEEDBACK", "Description": "🔥 NEW: List algorithm feedback submissions with filtering" },
-          { "API Function": "LIST_JOBS", "Description": "List all active jobs with optional display in canvas." },
+          { "API Function": "LIST_PRODUCTION_ORDERS", "Description": "List all active production orders with optional display in canvas." },
           { "API Function": "LIST_OPERATIONS", "Description": "List all active operations with optional display in canvas." },
           { "API Function": "LIST_RESOURCES", "Description": "List all active resources with optional display in canvas." },
           { "API Function": "LIST_PLANTS", "Description": "List all active plants with optional display in canvas." },
-          { "API Function": "CREATE_JOB", "Description": "Create a new job with required details." },
-          { "API Function": "CREATE_OPERATION", "Description": "Create a new operation within a job." },
+          { "API Function": "CREATE_PRODUCTION_ORDER", "Description": "Create a new production order with required details." },
+          { "API Function": "CREATE_OPERATION", "Description": "Create a new operation within a production order." },
           { "API Function": "CREATE_RESOURCE", "Description": "Create a new resource (operator or machine)." },
-          { "API Function": "CREATE_KANBAN_BOARD", "Description": "Create a new Kanban board for tracking jobs or operations." },
-          { "API Function": "ANALYZE_LATE_JOBS", "Description": "Analyze jobs that are late." },
+          { "API Function": "CREATE_KANBAN_BOARD", "Description": "Create a new Kanban board for tracking production orders or operations." },
+          { "API Function": "ANALYZE_LATE_PRODUCTION_ORDERS", "Description": "Analyze production orders that are late." },
           { "API Function": "GET_STATUS", "Description": "Get current system status." },
           { "API Function": "ANALYZE_DOCUMENT", "Description": "Analyze uploaded documents." },
           { "API Function": "ANALYZE_IMAGE", "Description": "Analyze uploaded images." },

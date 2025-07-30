@@ -21,6 +21,18 @@
 
 ## Recent Changes (July 30, 2025)
 
+✓ **Max AI Terminology Update - Jobs to Production Orders Consistency (July 30, 2025)**:
+- **TERMINOLOGY ALIGNMENT**: Updated Max AI's API documentation and system prompts to use "production orders" instead of outdated "jobs" terminology, ensuring consistency with current system architecture
+- **API FUNCTION UPDATES**: Changed LIST_JOBS to LIST_PRODUCTION_ORDERS, CREATE_JOB to CREATE_PRODUCTION_ORDER, ANALYZE_LATE_JOBS to ANALYZE_LATE_PRODUCTION_ORDERS in Max's capability display
+- **BACKWARD COMPATIBILITY**: Maintained support for legacy "jobs" API calls while promoting correct "production orders" terminology for new interactions
+- **SYSTEM PROMPT ENHANCEMENT**: Updated AI system prompts, examples, and guidance text to reflect production orders terminology throughout manufacturing workflows
+- **CANVAS DISPLAY CONSISTENCY**: Updated table headers and data display to show "Order ID", "Order Number", "Item", "Quantity" instead of job-specific fields for proper manufacturing ERP alignment
+- **USER EXPERIENCE IMPROVEMENT**: Users asking Max "what can you do?" now see updated API functions with correct production order terminology, eliminating confusion between outdated job concepts and current manufacturing processes
+- **COMPREHENSIVE COVERAGE**: Updated case handlers, context functions, analysis tools, and canvas integration to consistently use production orders terminology while maintaining functional compatibility
+- Enhanced Max AI assistant accuracy by aligning terminology with current manufacturing ERP architecture ensuring users receive consistent, professional production order management guidance
+
+## Recent Changes (July 30, 2025)
+
 ✓ **Max AI TableWidget Data Display Issue COMPLETELY RESOLVED (July 30, 2025)**:
 - **ROOT CAUSE IDENTIFIED**: TableWidget component was using hardcoded job sample data instead of processing actual API function data from backend
 - **BACKEND CONFIRMATION**: Verified backend correctly sends API function data with proper structure - LIST_AVAILABLE_APIS action generates array of {API Function, Description} objects
