@@ -84,6 +84,9 @@ export default function Sidebar() {
     }
   };
 
+  // CRITICAL DEBUG: Check if this code is even running
+  console.log("🚨 SIDEBAR RENDER: Starting navigationItems creation");
+
   const navigationItems: Array<{
     icon: any;
     label: string;
@@ -138,11 +141,12 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
-    // Always show Getting Started, Production Schedule, Canvas, and Max AI Assistant (when closed) for authenticated users
+    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and WIDGETS for testing
     const isAlwaysVisible = item.href === "#" || 
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
-      item.href === "#max";
+      item.href === "#max" ||
+      item.href === "/widgets"; // TEMPORARY: Force Widgets to always show
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
