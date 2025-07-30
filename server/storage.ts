@@ -1137,39 +1137,39 @@ export interface IStorage {
   deleteArchitectureComponent(id: number): Promise<boolean>;
 
   // API Integrations
-  async createApiIntegration(integration: InsertApiIntegration): Promise<ApiIntegration>;
-  async getApiIntegrations(): Promise<ApiIntegration[]>;
-  async getApiIntegration(id: number): Promise<ApiIntegration | undefined>;
-  async updateApiIntegration(id: number, updates: Partial<ApiIntegration>): Promise<ApiIntegration>;
-  async deleteApiIntegration(id: number): Promise<void>;
-  async generateApiIntegrationWithAI(prompt: string, systemType: string, provider: string, userId: number): Promise<ApiIntegration>;
-  async testApiConnection(id: number): Promise<{ success: boolean; message: string; responseTime?: number }>;
-  async syncApiIntegration(id: number): Promise<{ success: boolean; recordsProcessed: number; message: string }>;
+  createApiIntegration(integration: InsertApiIntegration): Promise<ApiIntegration>;
+  getApiIntegrations(): Promise<ApiIntegration[]>;
+  getApiIntegration(id: number): Promise<ApiIntegration | undefined>;
+  updateApiIntegration(id: number, updates: Partial<ApiIntegration>): Promise<ApiIntegration>;
+  deleteApiIntegration(id: number): Promise<void>;
+  generateApiIntegrationWithAI(prompt: string, systemType: string, provider: string, userId: number): Promise<ApiIntegration>;
+  testApiConnection(id: number): Promise<{ success: boolean; message: string; responseTime?: number }>;
+  syncApiIntegration(id: number): Promise<{ success: boolean; recordsProcessed: number; message: string }>;
 
   // API Mappings
-  async createApiMapping(mapping: InsertApiMapping): Promise<ApiMapping>;
-  async getApiMappings(integrationId?: number): Promise<ApiMapping[]>;
-  async getApiMapping(id: number): Promise<ApiMapping | undefined>;
-  async updateApiMapping(id: number, updates: Partial<ApiMapping>): Promise<ApiMapping>;
-  async deleteApiMapping(id: number): Promise<void>;
-  async generateApiMappingWithAI(integrationId: number, description: string): Promise<ApiMapping>;
+  createApiMapping(mapping: InsertApiMapping): Promise<ApiMapping>;
+  getApiMappings(integrationId?: number): Promise<ApiMapping[]>;
+  getApiMapping(id: number): Promise<ApiMapping | undefined>;
+  updateApiMapping(id: number, updates: Partial<ApiMapping>): Promise<ApiMapping>;
+  deleteApiMapping(id: number): Promise<void>;
+  generateApiMappingWithAI(integrationId: number, description: string): Promise<ApiMapping>;
 
   // API Tests
-  async createApiTest(test: InsertApiTest): Promise<ApiTest>;
-  async getApiTests(integrationId?: number): Promise<ApiTest[]>;
-  async getApiTest(id: number): Promise<ApiTest | undefined>;
-  async runApiTest(id: number): Promise<ApiTest>;
-  async deleteApiTest(id: number): Promise<void>;
+  createApiTest(test: InsertApiTest): Promise<ApiTest>;
+  getApiTests(integrationId?: number): Promise<ApiTest[]>;
+  getApiTest(id: number): Promise<ApiTest | undefined>;
+  runApiTest(id: number): Promise<ApiTest>;
+  deleteApiTest(id: number): Promise<void>;
 
   // API Audit Logs
-  async createApiAuditLog(log: InsertApiAuditLog): Promise<ApiAuditLog>;
-  async getApiAuditLogs(integrationId?: number, limit?: number): Promise<ApiAuditLog[]>;
+  createApiAuditLog(log: InsertApiAuditLog): Promise<ApiAuditLog>;
+  getApiAuditLogs(integrationId?: number, limit?: number): Promise<ApiAuditLog[]>;
 
   // API Credentials
-  async createApiCredential(credential: InsertApiCredential): Promise<ApiCredential>;
-  async getApiCredentials(integrationId: number): Promise<ApiCredential[]>;
-  async updateApiCredential(id: number, updates: Partial<ApiCredential>): Promise<ApiCredential>;
-  async deleteApiCredential(id: number): Promise<void>;
+  createApiCredential(credential: InsertApiCredential): Promise<ApiCredential>;
+  getApiCredentials(integrationId: number): Promise<ApiCredential[]>;
+  updateApiCredential(id: number, updates: Partial<ApiCredential>): Promise<ApiCredential>;
+  deleteApiCredential(id: number): Promise<void>;
 
   // Scheduling History
   getSchedulingHistory(limit?: number, algorithmType?: string, plantId?: number): Promise<SchedulingHistory[]>;
@@ -1393,8 +1393,8 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private capabilities: Map<number, Capability> = new Map();
   private resources: Map<number, Resource> = new Map();
-  private jobs: Map<number, Job> = new Map();
-  private operations: Map<number, Operation> = new Map();
+  private jobs: Map<number, ProductionOrder> = new Map();
+  private operations: Map<number, DiscreteOperation> = new Map();
   private dependencies: Map<number, Dependency> = new Map();
   private resourceViews: Map<number, ResourceView> = new Map();
   

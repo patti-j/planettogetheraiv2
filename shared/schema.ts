@@ -45,7 +45,7 @@ export const plantResources = pgTable("plant_resources", {
 }));
 
 // Production Orders (formerly jobs) - firm manufacturing orders ready for execution
-export const productionOrders = pgTable("production_orders", {
+export const productionOrders: any = pgTable("production_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
   name: text("name").notNull(),
@@ -1139,7 +1139,7 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
 });
 
 // Schedule Scenarios for evaluation and comparison
-export const scheduleScenarios: ReturnType<typeof pgTable> = pgTable("schedule_scenarios", {
+export const scheduleScenarios: any = pgTable("schedule_scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
@@ -1209,7 +1209,7 @@ export const scenarioEvaluations = pgTable("scenario_evaluations", {
 });
 
 // Discussion threads for collaborative decision making
-export const scenarioDiscussions = pgTable("scenario_discussions", {
+export const scenarioDiscussions: any = pgTable("scenario_discussions", {
   id: serial("id").primaryKey(),
   scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
   parentId: integer("parent_id").references(() => scenarioDiscussions.id), // for threaded discussions
@@ -3489,7 +3489,7 @@ export const chatMembers = pgTable("chat_members", {
   channelUserUnique: unique().on(table.channelId, table.userId),
 }));
 
-export const chatMessages = pgTable("chat_messages", {
+export const chatMessages: any = pgTable("chat_messages", {
   id: serial("id").primaryKey(),
   channelId: integer("channel_id").notNull().references(() => chatChannels.id, { onDelete: "cascade" }),
   senderId: integer("sender_id").notNull().references(() => users.id),
@@ -4325,7 +4325,7 @@ export const integrationTemplates = pgTable("integration_templates", {
 });
 
 // Scheduling History System - Track algorithm execution results
-export const schedulingHistory = pgTable("scheduling_history", {
+export const schedulingHistory: any = pgTable("scheduling_history", {
   id: serial("id").primaryKey(),
   algorithmName: text("algorithm_name").notNull(),
   algorithmType: text("algorithm_type").notNull(), // backwards_scheduling, forward_scheduling, constraint_based, ai_optimized
@@ -4698,7 +4698,7 @@ export const extensionReviews = pgTable("extension_reviews", {
 });
 
 // Optimization Studio Tables
-export const optimizationAlgorithms = pgTable("optimization_algorithms", {
+export const optimizationAlgorithms: any = pgTable("optimization_algorithms", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   displayName: text("display_name").notNull(),
@@ -4910,7 +4910,7 @@ export const optimizationScopeConfigs = pgTable("optimization_scope_configs", {
     primary: string; // cost_reduction, time_optimization, resource_utilization, quality_improvement
     secondary?: string[];
     weights?: Record<string, number>; // Weight distribution for multi-objective optimization
-  }>().default({}),
+  }>().default(sql`'{"primary": "cost_reduction"}'::jsonb`),
   constraints: jsonb("constraints").$type<{
     maxExecutionTime?: number; // in minutes
     resourceCapacityLimits?: Record<string, number>;
