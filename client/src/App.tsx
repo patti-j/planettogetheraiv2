@@ -158,13 +158,11 @@ function useSessionPersistence() {
   const { lastVisitedRoute } = useNavigation();
   const [location, setLocation] = useLocation();
 
-  // Redirect to last visited route only on initial load if user is at root
+  // Disabled automatic redirection to prevent forced navigation to stored routes
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user && lastVisitedRoute && location === '/') {
-      console.log('Redirecting to last visited route:', lastVisitedRoute);
-      setLocation(lastVisitedRoute);
-    } else if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
-      console.log('Last visited route available:', lastVisitedRoute);
+    // Only log the available route, don't automatically redirect
+    if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
+      console.log('Last visited route available (not redirecting):', lastVisitedRoute);
     }
   }, [isAuthenticated, isLoading, user, lastVisitedRoute, location, setLocation]);
 }
