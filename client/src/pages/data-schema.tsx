@@ -2257,7 +2257,7 @@ function DataSchemaViewContent() {
                     <span className="hidden sm:inline">Refresh</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>Manually refresh schema data to load recent changes</p>
                 </TooltipContent>
               </Tooltip>
@@ -2277,7 +2277,7 @@ function DataSchemaViewContent() {
                     <Target className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>Fit to View - Center and zoom to show all tables</p>
                 </TooltipContent>
               </Tooltip>
@@ -2296,7 +2296,7 @@ function DataSchemaViewContent() {
                     {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>{showMiniMap ? 'Hide' : 'Show'} MiniMap</p>
                 </TooltipContent>
               </Tooltip>
@@ -2315,7 +2315,7 @@ function DataSchemaViewContent() {
                     {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>{isFullScreen ? 'Exit' : 'Enter'} Full Screen (F11)</p>
                 </TooltipContent>
               </Tooltip>
@@ -2772,7 +2772,7 @@ function DataSchemaViewContent() {
                     <Zap className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>Smart Layout - Reorganize tables to minimize relationship confusion and maximize visibility</p>
                 </TooltipContent>
               </Tooltip>
@@ -2796,7 +2796,7 @@ function DataSchemaViewContent() {
                     <Target className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>Fit all visible tables in view</p>
                 </TooltipContent>
               </Tooltip>
@@ -2832,7 +2832,7 @@ function DataSchemaViewContent() {
                     <RotateCcw className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>Reset all filters and show all tables with relationships</p>
                 </TooltipContent>
               </Tooltip>
@@ -2850,7 +2850,7 @@ function DataSchemaViewContent() {
                     {showMiniMap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>{showMiniMap ? 'Hide' : 'Show'} view finder (minimap)</p>
                 </TooltipContent>
               </Tooltip>
@@ -2868,7 +2868,7 @@ function DataSchemaViewContent() {
                     {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="bottom">
                   <p>{isFullScreen ? 'Exit' : 'Enter'} full screen mode (F11 or Esc)</p>
                 </TooltipContent>
               </Tooltip>
