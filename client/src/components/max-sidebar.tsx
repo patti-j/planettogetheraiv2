@@ -904,7 +904,7 @@ export function MaxSidebar() {
           
           try {
             // Call the tour system to start the tour
-            startTour(roleId, voiceEnabled, context);
+            startTour(Number(roleId), voiceEnabled, context);
             
             // Show success message
             toast({
@@ -915,7 +915,7 @@ export function MaxSidebar() {
             console.error('Error starting tour:', tourError);
             toast({
               title: "Tour Error",
-              description: `Failed to start tour: ${tourError.message || 'Unknown error'}`,
+              description: `Failed to start tour: ${tourError instanceof Error ? tourError.message : 'Unknown error'}`,
               variant: "destructive"
             });
           }
@@ -973,7 +973,7 @@ export function MaxSidebar() {
             console.error('Error starting custom tour:', customTourError);
             toast({
               title: "Custom Tour Error",
-              description: `Failed to start custom tour: ${customTourError.message || 'Unknown error'}`,
+              description: `Failed to start custom tour: ${customTourError instanceof Error ? customTourError.message : 'Unknown error'}`,
               variant: "destructive"
             });
           }
@@ -992,7 +992,7 @@ export function MaxSidebar() {
       console.error('Frontend action processing error:', error);
       toast({
         title: "Action Error",
-        description: `Unable to execute action: ${error.message || 'Unknown error'}`,
+        description: `Unable to execute action: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     }
@@ -1056,7 +1056,7 @@ export function MaxSidebar() {
         style={{ touchAction: 'none' }}
       >
         <div className="flex items-center gap-2 ml-12">
-          <Bot className={`h-5 w-5 ${themeClasses.text}`} />
+          <Bot className="h-5 w-5 text-white" />
           <h2 className="text-white text-sm font-medium">Max AI Assistant</h2>
         </div>
         <div className="flex gap-1">
@@ -1115,7 +1115,7 @@ export function MaxSidebar() {
                     className="h-6 w-6 p-0 text-white hover:bg-white/20"
                     title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
                   >
-                    {currentFullscreenView === 'main' ? <Bot className={`h-3 w-3 ${themeClasses.text}`} /> : <MessageSquare className="h-3 w-3" />}
+                    {currentFullscreenView === 'main' ? <Bot className="h-3 w-3 text-white" /> : <MessageSquare className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -1238,7 +1238,7 @@ export function MaxSidebar() {
         <div className="space-y-3">
           {messages.length === 0 && (
             <div className="text-center text-gray-500 text-sm py-8">
-              <Bot className={`h-8 w-8 mx-auto mb-2 ${themeClasses.text}`} />
+              <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
               <p>Hi! I'm Max, your AI planning assistant.</p>
               <p className="text-xs mt-1">I'm learning from your workflow to provide better suggestions.</p>
             </div>
