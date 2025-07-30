@@ -212,10 +212,12 @@ export default function OnboardingPage() {
   const queryClient = useQueryClient();
 
   // Check if company already has onboarding in progress
-  const { data: existingOnboarding } = useQuery({
+  const { data: existingOnboarding, isLoading: onboardingLoading } = useQuery({
     queryKey: ['/api/onboarding/status'],
-    enabled: !!user
-  }) as { data: CompanyOnboarding | undefined };
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000
+  }) as { data: CompanyOnboarding | undefined, isLoading: boolean };
 
   // Initialize selected features from existing onboarding data
   useEffect(() => {
@@ -228,7 +230,9 @@ export default function OnboardingPage() {
   // Fetch available industry templates
   const { data: industryTemplates = [] } = useQuery({
     queryKey: ['/api/industry-templates'],
-    enabled: !!user
+    enabled: !!user,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Map industry values to available templates
@@ -554,6 +558,18 @@ export default function OnboardingPage() {
   };
 
 
+
+  // Show loading state while essential data is loading
+  if (onboardingLoading && !existingOnboarding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 text-lg">Loading your onboarding...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
