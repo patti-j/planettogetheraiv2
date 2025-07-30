@@ -148,7 +148,7 @@ export function createSafeHandler(operation: string) {
         const context: ErrorContext = {
           operation,
           endpoint: `${req.method} ${req.path}`,
-          userId: req.user?.id,
+          userId: typeof req.user?.id === 'number' ? req.user.id : undefined,
           requestData: req.body,
           additionalInfo: {
             query: req.query,
@@ -226,7 +226,7 @@ export function errorMiddleware(error: Error, req: Request, res: Response, next:
   const context: ErrorContext = {
     operation: 'Global Error Handler',
     endpoint: `${req.method} ${req.path}`,
-    userId: req.user?.id,
+    userId: typeof req.user?.id === 'number' ? req.user.id : undefined,
     requestData: req.body
   };
 
