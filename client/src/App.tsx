@@ -62,6 +62,7 @@ import PresentationSystemPage from "@/pages/presentation-system";
 import ProductionPlanningPage from "@/pages/production-planning";
 import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
+import MarketingHome from "@/pages/marketing-home";
 import ShiftManagement from "@/pages/shift-management";
 import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
@@ -192,7 +193,8 @@ function Router() {
         <Route path="/demo-tour" component={DemoTour} />
         <Route path="/presentation" component={PresentationPage} />
         <Route path="/marketing" component={MarketingLandingPage} />
-        <Route path="/" component={Login} />
+        <Route path="/home" component={MarketingHome} />
+        <Route path="/" component={MarketingHome} />
         <Route component={Login} />
       </Switch>
     );
