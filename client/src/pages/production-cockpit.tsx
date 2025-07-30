@@ -939,11 +939,9 @@ export default function ProductionCockpit() {
                           <p className="text-xs text-muted-foreground mb-2">{dashboard.description}</p>
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
-                              {dashboard.configuration?.customWidgets?.length || 0} widgets
+                              {dashboard.widgets?.length || 0} widgets
                             </Badge>
-                            {dashboard.isDefault && (
-                              <Badge variant="secondary" className="text-xs">Default</Badge>
-                            )}
+                            <Badge variant="secondary" className="text-xs">{dashboard.category}</Badge>
                           </div>
                         </CardContent>
                       </Card>
