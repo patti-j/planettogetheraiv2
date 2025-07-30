@@ -27,7 +27,10 @@ import { addDays, format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { ProductionOrder, PlannedOrder, Operation, Resource, OptimizationProfile, ProfileUsageHistory } from "@shared/schema";
+import type { ProductionOrder, PlannedOrder, DiscreteOperation, ProcessOperation, Resource, OptimizationProfile, ProfileUsageHistory } from "@shared/schema";
+
+// Legacy Operation type for backward compatibility
+type Operation = DiscreteOperation | ProcessOperation;
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -710,7 +713,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
                         <div>
                           <p className="font-medium">{profile?.name || 'Unknown Profile'}</p>
                           <p className="text-sm text-gray-600">
-                            {new Date(usage.createdAt).toLocaleDateString()} at {new Date(usage.createdAt).toLocaleTimeString()}
+                            {usage.createdAt ? new Date(usage.createdAt).toLocaleDateString() : 'Unknown'} at {usage.createdAt ? new Date(usage.createdAt).toLocaleTimeString() : 'Unknown'}
                           </p>
                         </div>
                         <div className="text-right">
@@ -1174,7 +1177,7 @@ interface ProfileFormDialogProps {
 }
 
 function ProfileFormDialog({ open, onOpenChange, onSubmit, isLoading, title, description, defaultValues }: ProfileFormDialogProps) {
-  const form = useForm<ProfileFormData>({
+  const form = useForm({
     resolver: zodResolver(profileFormSchema),
     defaultValues: defaultValues ? {
       name: defaultValues.name,

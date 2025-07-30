@@ -1718,6 +1718,7 @@ function DataSchemaViewContent() {
     // Convert to final positions with centering offset
     const centerX = 800;
     const centerY = 600;
+    const positions: Record<string, { x: number; y: number }> = {};
     
     tables.forEach(table => {
       positions[table.name] = {
