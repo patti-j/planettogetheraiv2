@@ -217,7 +217,7 @@ export default function OnboardingPage() {
     enabled: !!user,
     retry: 3,
     retryDelay: 1000
-  }) as { data: CompanyOnboarding | undefined, isLoading: boolean };
+  });
 
   // Initialize selected features from existing onboarding data
   useEffect(() => {
@@ -559,8 +559,8 @@ export default function OnboardingPage() {
 
 
 
-  // Show loading state while essential data is loading
-  if (onboardingLoading && !existingOnboarding) {
+  // Show loading state while essential data is loading (only if user exists and we're actually loading)
+  if (onboardingLoading && user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center space-y-4">
