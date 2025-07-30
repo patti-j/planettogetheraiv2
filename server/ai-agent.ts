@@ -295,7 +295,19 @@ export async function processAICommand(command: string, attachments?: Attachment
         messages: [
           {
             role: "system",
-            content: `AI agent for manufacturing system with LIVE DATA ACCESS. Current system data:
+            content: `AI agent for manufacturing system with LIVE DATA ACCESS.
+
+FIRST PRIORITY RULE - API DOCUMENTATION OVERRIDE:
+If the user asks ANYTHING about your functions, capabilities, APIs, or what you can do - IMMEDIATELY use LIST_AVAILABLE_APIS action. 
+Examples that MUST use LIST_AVAILABLE_APIS:
+- "list api", "list your api", "show API", "what APIs", "what functions", "your capabilities", "what can you do", "help", "functions you can perform"
+- "listing of API", "API listing", "available APIs", "available functions", "show me your functions"
+- ANY question containing words: api, functions, capabilities, help, what can you do
+- DO NOT use LIST_JOBS for these requests under ANY circumstances.
+
+KEYWORD DETECTION: If user message contains "api", "function", "capabilit", "help" (in any context about Max) → use LIST_AVAILABLE_APIS
+
+Current system data:
 
 LIVE DATA AVAILABLE:
 - Total Jobs: ${contextSummary.jobCount}

@@ -21,6 +21,18 @@
 
 ## Recent Changes (July 30, 2025)
 
+✓ **Critical Max AI Communication Issue Resolution - Aggressive Override Implementation (July 30, 2025)**:
+- **FIRST PRIORITY RULE ADDED**: Implemented aggressive override logic at the very beginning of AI system prompt to catch API documentation requests before any other logic can interfere
+- **KEYWORD DETECTION SYSTEM**: Added explicit keyword detection for "api", "function", "capabilit", "help" that automatically triggers LIST_AVAILABLE_APIS action regardless of other context
+- **COMPREHENSIVE OVERRIDE EXAMPLES**: Added extensive examples of phrases that must trigger API documentation including "listing of API", "API listing", "available APIs", "show me your functions"
+- **EXPLICIT PROHIBITION**: Added clear prohibition against using LIST_JOBS for API capability requests under any circumstances
+- **CANVAS GUIDELINE CONFLICT RESOLUTION**: Addressed issue where Canvas Guidelines section was potentially confusing AI into showing jobs when users asked for API listings
+- **SYSTEM PROMPT RESTRUCTURING**: Moved API detection logic to absolute first priority before any other system data or guidelines to ensure proper precedence
+- **ENHANCED ERROR PREVENTION**: Added multiple layers of detection to prevent Max from ever showing job listings when users ask about his capabilities or functions
+- **USER EXPERIENCE IMPROVEMENT**: Max should now consistently show his API function table when users ask about what he can do, his capabilities, or available functions
+- **WORKFLOW RESTART COMPLETED**: System successfully restarted with enhanced API detection logic for immediate effect
+- Fixed critical recurring issue where Max AI assistant incorrectly showed job listings instead of API functions when users asked about his capabilities through aggressive first-priority system prompt override
+
 ✓ **Complete Table Field Viewer Implementation with Existing Data Import (July 30, 2025)**:
 - **COMPREHENSIVE FIELD COMMENTS SYSTEM**: Successfully implemented complete database field comment management system enabling teams to document and understand database schema fields with collaborative commenting capabilities
 - **EXISTING DATA PRESERVATION**: Successfully discovered and imported 209 existing PostgreSQL column comments from tables like bills_of_material into new field_comments system, preserving all previously added field documentation
