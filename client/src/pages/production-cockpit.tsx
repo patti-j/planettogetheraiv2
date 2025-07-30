@@ -48,7 +48,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import UniversalWidget from "@/components/universal-widget";
 import WidgetDesignStudio from "@/components/widget-design-studio";
 import WidgetStudioButton from "@/components/widget-studio-button";
-import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget } from "@/lib/widget-library";
+import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
 
 interface CockpitLayout {
@@ -158,6 +158,8 @@ export default function ProductionCockpit() {
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [newLayoutDialog, setNewLayoutDialog] = useState(false);
   const [newWidgetDialog, setNewWidgetDialog] = useState(false);
+  const [widgetCreationMode, setWidgetCreationMode] = useState<'basic' | 'template'>('basic');
+  const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
   const [aiLayoutDialog, setAiLayoutDialog] = useState(false);
   const [aiWidgetDialog, setAiWidgetDialog] = useState(false);
   const [newLayoutData, setNewLayoutData] = useState({
@@ -450,12 +452,29 @@ export default function ProductionCockpit() {
   const handleCreateWidget = () => {
     if (!selectedLayout) return;
     
-    createWidgetMutation.mutate({
-      ...newWidgetData,
-      layout_id: selectedLayout,
-      configuration: getDefaultWidgetConfig(newWidgetData.type)
-    });
+    if (widgetCreationMode === 'template' && selectedTemplate) {
+      // Create widget from template
+      const widget: WidgetConfig = {
+        id: `widget-${Date.now()}`,
+        ...selectedTemplate.defaultConfig,
+        title: selectedTemplate.name,
+        subtitle: selectedTemplate.description,
+        position: { x: 0, y: 0 }
+      };
+      
+      const cockpitWidget = convertUniversalToCockpitWidget(widget, selectedLayout);
+      createWidgetMutation.mutate(cockpitWidget);
+    } else {
+      // Create basic widget
+      createWidgetMutation.mutate({
+        ...newWidgetData,
+        layout_id: selectedLayout,
+        configuration: getDefaultWidgetConfig(newWidgetData.type)
+      });
+    }
   };
+
+
 
   const getDefaultWidgetConfig = (type: string) => {
     switch (type) {
@@ -512,6 +531,11 @@ export default function ProductionCockpit() {
   };
 
   const currentLayout = layouts?.find((layout: CockpitLayout) => layout?.id === selectedLayout);
+
+  // Get widget templates that target cockpit
+  const cockpitTemplates = WIDGET_TEMPLATES.filter(template => 
+    template.targetSystems.includes('cockpit')
+  );
 
   return (
     <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
@@ -1031,7 +1055,14 @@ export default function ProductionCockpit() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={newWidgetDialog} onOpenChange={setNewWidgetDialog}>
+            <Dialog open={newWidgetDialog} onOpenChange={(open) => {
+              setNewWidgetDialog(open);
+              if (!open) {
+                setWidgetCreationMode('basic');
+                setSelectedTemplate(null);
+                setNewWidgetData({ type: "metrics", title: "", sub_title: "", position: { x: 0, y: 0, w: 4, h: 3 } });
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" disabled={!selectedLayout} className="text-xs sm:text-sm">
                   <Plus className="h-4 w-4 mr-1 sm:mr-2" />
@@ -1039,54 +1070,145 @@ export default function ProductionCockpit() {
                   <span className="sm:hidden">Widget</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
                   <DialogTitle>Add Widget</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="widget-type">Widget Type</Label>
-                    <Select
-                      value={newWidgetData.type}
-                      onValueChange={(value) => setNewWidgetData({ ...newWidgetData, type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {widgetTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            <div className="flex items-center gap-2">
-                              <type.icon className="h-4 w-4" />
-                              {type.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="widget-title">Widget Title</Label>
-                    <Input
-                      id="widget-title"
-                      value={newWidgetData.title}
-                      onChange={(e) => setNewWidgetData({ ...newWidgetData, title: e.target.value })}
-                      placeholder="Enter widget title..."
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="widget-subtitle">Subtitle (Optional)</Label>
-                    <Input
-                      id="widget-subtitle"
-                      value={newWidgetData.sub_title}
-                      onChange={(e) => setNewWidgetData({ ...newWidgetData, sub_title: e.target.value })}
-                      placeholder="Enter subtitle..."
-                    />
-                  </div>
-                  <Button onClick={handleCreateWidget} className="w-full">
-                    Add Widget
+                
+                {/* Mode Selection */}
+                <div className="flex gap-2">
+                  <Button 
+                    variant={widgetCreationMode === 'basic' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setWidgetCreationMode('basic');
+                      setSelectedTemplate(null);
+                    }}
+                  >
+                    Basic Widgets
+                  </Button>
+                  <Button 
+                    variant={widgetCreationMode === 'template' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setWidgetCreationMode('template')}
+                  >
+                    Widget Library ({cockpitTemplates.length})
                   </Button>
                 </div>
+
+                <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+                  {widgetCreationMode === 'basic' ? (
+                    // Basic Widget Creation
+                    <>
+                      <div>
+                        <Label htmlFor="widget-type">Widget Type</Label>
+                        <Select
+                          value={newWidgetData.type}
+                          onValueChange={(value) => setNewWidgetData({ ...newWidgetData, type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {widgetTypes.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                <div className="flex items-center gap-2">
+                                  <type.icon className="h-4 w-4" />
+                                  {type.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="widget-title">Widget Title</Label>
+                        <Input
+                          id="widget-title"
+                          value={newWidgetData.title}
+                          onChange={(e) => setNewWidgetData({ ...newWidgetData, title: e.target.value })}
+                          placeholder="Enter widget title..."
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="widget-subtitle">Subtitle (Optional)</Label>
+                        <Input
+                          id="widget-subtitle"
+                          value={newWidgetData.sub_title}
+                          onChange={(e) => setNewWidgetData({ ...newWidgetData, sub_title: e.target.value })}
+                          placeholder="Enter subtitle..."
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    // Widget Library Templates
+                    <>
+                      <div>
+                        <Label>Choose from Widget Library</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                          {cockpitTemplates.map((template) => (
+                            <div
+                              key={template.id}
+                              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                                selectedTemplate?.id === template.id
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border hover:border-primary/50'
+                              }`}
+                              onClick={() => setSelectedTemplate(template)}
+                            >
+                              <div className="flex items-start gap-3">
+                                <template.icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-sm">{template.name}</div>
+                                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {template.description}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {template.category}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs">
+                                      {template.complexity}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {selectedTemplate && (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <selectedTemplate.icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-medium">{selectedTemplate.name}</div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {selectedTemplate.description}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-2">
+                                Data Source: {selectedTemplate.defaultConfig.dataSource} | 
+                                Type: {selectedTemplate.defaultConfig.type}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={handleCreateWidget} 
+                  className="w-full"
+                  disabled={
+                    widgetCreationMode === 'basic' 
+                      ? !newWidgetData.type || !newWidgetData.title
+                      : !selectedTemplate
+                  }
+                >
+                  {widgetCreationMode === 'basic' ? 'Add Widget' : 'Add from Library'}
+                </Button>
               </DialogContent>
             </Dialog>
 
