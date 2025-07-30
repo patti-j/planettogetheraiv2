@@ -1795,7 +1795,7 @@ async function executeAction(action: string, parameters: any, message: string, c
           message: message || `Hello! I'm Max, your AI manufacturing assistant. Here are the functions I can perform to help with your manufacturing operations: [Generated at ${timestamp}]`,
           data: apiDocumentation,
           canvasAction: {
-            type: "ADD_CANVAS_CONTENT",
+            type: "CLEAR_AND_ADD_CANVAS_CONTENT",
             content: {
               type: "table",
               title: "Available API Functions",
@@ -1805,7 +1805,7 @@ async function executeAction(action: string, parameters: any, message: string, c
               height: "auto"
             }
           },
-          actions: ["LIST_AVAILABLE_APIS", "ADD_CANVAS_CONTENT"]
+          actions: ["LIST_AVAILABLE_APIS", "CLEAR_CANVAS", "ADD_CANVAS_CONTENT"]
         };
 
       case "START_TOUR":

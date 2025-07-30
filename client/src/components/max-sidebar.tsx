@@ -743,6 +743,36 @@ export function MaxSidebar() {
           }
         }
         break;
+      case 'CLEAR_AND_ADD_CANVAS_CONTENT':
+        // First clear existing canvas items
+        setCanvasItems([]);
+        
+        // Then add new content
+        if (canvasAction.content) {
+          const newItem: CanvasItem = {
+            id: `canvas_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: canvasAction.content.type || 'custom',
+            title: canvasAction.content.title || 'AI Generated Content',
+            content: canvasAction.content.type === 'chart' ? canvasAction.content : (canvasAction.content.data || canvasAction.content),
+            width: canvasAction.content.width || '100%',
+            height: canvasAction.content.height || 'auto',
+            timestamp: canvasAction.content.timestamp || new Date().toISOString()
+          };
+          console.log('Creating new canvas item after clearing:', newItem);
+          setCanvasItems([newItem]); // Replace with new item only
+          setCanvasVisible(true); // Auto-show canvas when content is added
+
+          // Persist canvas content to database (background, non-blocking)
+          const sessionId = `session_${Date.now()}`;
+          try {
+            saveCanvasContentToDatabase(newItem, sessionId).catch(error => {
+              console.warn('Failed to persist canvas content to database:', error);
+            });
+          } catch (syncError) {
+            console.warn('Synchronous error in canvas persistence:', syncError);
+          }
+        }
+        break;
     }
   };
 
