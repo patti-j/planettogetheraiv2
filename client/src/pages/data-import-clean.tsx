@@ -94,8 +94,8 @@ function DataImport() {
   useEffect(() => {
     console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
     
-    if (onboardingData?.selectedFeatures) {
-      const features = onboardingData.selectedFeatures;
+    if (onboardingData && typeof onboardingData === 'object' && 'selectedFeatures' in onboardingData && onboardingData.selectedFeatures) {
+      const features = onboardingData.selectedFeatures as string[];
       setOnboardingFeatures(features);
       
       // Collect recommended data types based on selected features
@@ -116,18 +116,26 @@ function DataImport() {
   }, [onboardingData]);
 
   const handleGenerateAISampleData = () => {
-    const companyInfo = userPreferences?.companyInfo;
-    if (companyInfo) {
+    const companyInfo = userPreferences && typeof userPreferences === 'object' && 'companyInfo' in userPreferences ? userPreferences.companyInfo : null;
+    if (companyInfo && typeof companyInfo === 'object') {
       // Build AI prompt with company information
-      const prompt = `Generate realistic sample data for ${companyInfo.name}, a ${companyInfo.size} ${companyInfo.industry} company with ${companyInfo.numberOfPlants || '3'} manufacturing plants. 
+      const name = 'name' in companyInfo ? companyInfo.name : 'Manufacturing Company';
+      const size = 'size' in companyInfo ? companyInfo.size : 'medium';
+      const industry = 'industry' in companyInfo ? companyInfo.industry : 'manufacturing';
+      const plants = 'numberOfPlants' in companyInfo ? companyInfo.numberOfPlants : '3';
+      const website = 'website' in companyInfo ? companyInfo.website : '';
+      const products = 'products' in companyInfo ? companyInfo.products : '';
+      const description = 'description' in companyInfo ? companyInfo.description : '';
+      
+      const prompt = `Generate realistic sample data for ${name}, a ${size} ${industry} company with ${plants || '3'} manufacturing plants. 
       
 Company Details:
-- Industry: ${companyInfo.industry}
-- Size: ${companyInfo.size}
-- Plants: ${companyInfo.numberOfPlants || '3'}
-${companyInfo.website ? `- Website: ${companyInfo.website}` : ''}
-${companyInfo.products ? `- Products: ${companyInfo.products}` : ''}
-${companyInfo.description ? `- Description: ${companyInfo.description}` : ''}
+- Industry: ${industry}
+- Size: ${size}
+- Plants: ${plants || '3'}
+${website ? `- Website: ${website}` : ''}
+${products ? `- Products: ${products}` : ''}
+${description ? `- Description: ${description}` : ''}
 
 Create authentic manufacturing data that reflects this company's operations.`;
 
