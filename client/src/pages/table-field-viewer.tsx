@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Edit3, Save, X, Database, Key, FileText, Info, CheckCircle2 } from "lucide-react";
+import { Search, Edit3, Save, X, Database, Key, FileText, Info, CheckCircle2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import * as XLSX from "xlsx";
 
 interface TableColumn {
   name: string;
@@ -204,16 +205,117 @@ export default function TableFieldViewer() {
     return "bg-gray-100 text-gray-800";
   };
 
+  // Define master data tables (excluding relation/junction tables)
+  const masterDataTables = [
+    'plants', 'departments', 'work_centers', 'resources', 'capabilities',
+    'customers', 'vendors', 'users', 'items', 'user_preferences',
+    'production_orders', 'sales_orders', 'purchase_orders', 'stocks',
+    'bills_of_material', 'routings', 'formulations', 'recipes'
+  ];
+
+  // Filter master data tables only
+  const getMasterDataTables = () => {
+    return tables.filter((table: TableInfo) => 
+      masterDataTables.includes(table.name)
+    );
+  };
+
+  // Generate Excel export data
+  const generateExcelData = () => {
+    const masterTables = getMasterDataTables();
+    const exportData: any[] = [];
+
+    masterTables.forEach((table: TableInfo) => {
+      table.columns.forEach((column: TableColumn) => {
+        const fieldComment = getFieldComment(table.name, column.name);
+        
+        exportData.push({
+          'Table Name': table.name,
+          'Field Name': column.name,
+          'Data Type': column.type,
+          'Nullable': column.nullable ? 'Yes' : 'No',
+          'Primary Key': column.isPrimaryKey ? 'Yes' : 'No',
+          'Foreign Key': column.isForeignKey ? 'Yes' : 'No',
+          'References': column.references || '',
+          'Default Value': column.default || '',
+          'Description': fieldComment || '',
+        });
+      });
+    });
+
+    return exportData;
+  };
+
+  // Handle Excel download
+  const handleDownloadExcel = () => {
+    try {
+      const exportData = generateExcelData();
+      
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths for better readability
+      const colWidths = [
+        { wch: 25 }, // Table Name
+        { wch: 30 }, // Field Name
+        { wch: 20 }, // Data Type
+        { wch: 10 }, // Nullable
+        { wch: 15 }, // Primary Key
+        { wch: 15 }, // Foreign Key
+        { wch: 25 }, // References
+        { wch: 20 }, // Default Value
+        { wch: 60 }, // Description
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Master Data Fields');
+
+      // Generate filename with current date
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const filename = `manufacturing_erp_master_data_fields_${dateStr}.xlsx`;
+
+      // Download the file
+      XLSX.writeFile(wb, filename);
+
+      toast({
+        title: "Export successful",
+        description: `Downloaded ${exportData.length} field records to ${filename}`,
+      });
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to generate Excel file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Database Table Field Viewer
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Explore database table structures and manage field documentation for the manufacturing system.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Database Table Field Viewer
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Explore database table structures and manage field documentation for the manufacturing system.
+              </p>
+            </div>
+            <Button
+              onClick={handleDownloadExcel}
+              disabled={tablesLoading || commentsLoading}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Excel
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -224,6 +326,9 @@ export default function TableFieldViewer() {
                 <Database className="h-5 w-5" />
                 Database Tables ({filteredTables.length})
               </CardTitle>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Master data tables available for Excel export: {getMasterDataTables().length}
+              </p>
               <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
