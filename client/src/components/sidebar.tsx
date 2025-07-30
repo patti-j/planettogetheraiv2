@@ -12,6 +12,7 @@ import { UserProfileDialog } from "./user-profile";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -31,6 +32,7 @@ export default function Sidebar() {
   const { logout } = useAuth();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { getThemeClasses } = useAITheme();
+  const { addRecentPage } = useNavigation();
   
   console.log("Sidebar component loading, location:", location);
 
@@ -75,6 +77,11 @@ export default function Sidebar() {
     setMaxOpen(!isMaxOpen);
     setMobileMenuOpen(false);
     setDesktopMenuOpen(false);
+    
+    // Add Max AI to recent items when opened
+    if (!isMaxOpen) {
+      addRecentPage("#max", "Max AI Assistant", "Bot");
+    }
   };
 
   const navigationItems: Array<{

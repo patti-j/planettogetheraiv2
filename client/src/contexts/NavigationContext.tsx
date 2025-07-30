@@ -65,7 +65,8 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/data-map': { label: 'Data Relationship Map', icon: 'Network' },
   '/table-field-viewer': { label: 'Table Field Documentation', icon: 'FileText' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
-  '/account': { label: 'Account Settings', icon: 'Settings' }
+  '/account': { label: 'Account Settings', icon: 'Settings' },
+  '#max': { label: 'Max AI Assistant', icon: 'Bot' }
 };
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
