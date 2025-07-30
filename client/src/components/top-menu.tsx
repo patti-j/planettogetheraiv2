@@ -121,7 +121,7 @@ export default function TopMenu() {
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
-  const { aiTheme } = useAITheme();
+  const { aiTheme, getThemeClasses } = useAITheme();
   const { recentPages, clearRecentPages, togglePinPage, addRecentPage } = useNavigation();
   const { startTour } = useTour();
 
@@ -411,28 +411,41 @@ export default function TopMenu() {
                         // Find the icon and color from the feature groups
                         for (const group of featureGroups) {
                           const feature = group.features.find(f => f.href === path);
-                          if (feature) return { icon: feature.icon, color: feature.color };
+                          if (feature) return { 
+                            icon: feature.icon, 
+                            color: feature.color, 
+                            isAI: feature.isAI || false 
+                          };
                         }
                         // Default fallback
-                        return { icon: FileText, color: "bg-gray-500" };
+                        return { icon: FileText, color: "bg-gray-500", isAI: false };
                       };
                       
-                      const { icon: IconComponent, color } = getIconAndColorForPage(page.path);
-                      const iconColorClass = color.replace('bg-', 'text-').replace('-500', '-600');
+                      const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
+                      const iconColorClass = isAI ? 'text-white' : color.replace('bg-', 'text-').replace('-500', '-600');
                       
                       return (
                         <div key={`${page.path}-${index}`} className="relative group">
                           <Link 
-                            href={page.path}
-                            onClick={() => setMenuOpen(false)}
+                            href={page.path === "#max" ? "#" : page.path}
+                            onClick={() => {
+                              if (page.path === "#max") {
+                                toggleMaxAI();
+                              }
+                              setMenuOpen(false);
+                            }}
                           >
                             <div className={`
                               w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
                               bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                               flex flex-col items-center justify-center text-center space-y-1 relative
                               ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
+                              ${isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
                             `}>
-                              <div className="bg-gray-100 p-1.5 rounded-full flex items-center justify-center flex-shrink-0">
+                              <div className={`
+                                ${isAI ? getThemeClasses().primary : 'bg-gray-100'} 
+                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                              `}>
                                 <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                               </div>
                               <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
