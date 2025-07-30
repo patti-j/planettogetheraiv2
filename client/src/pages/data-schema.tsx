@@ -2726,7 +2726,6 @@ function DataSchemaViewContent() {
           fitViewOptions={{ padding: 0.2 }}
         >
           <Background 
-            variant="dots" 
             gap={20} 
             size={1}
             style={{ backgroundColor: 'transparent' }}

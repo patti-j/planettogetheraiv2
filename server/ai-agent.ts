@@ -323,10 +323,30 @@ Tour Guidelines:
 - Examples: "start tour" = START_TOUR with current user's role, "create a tour about scheduling for managers" = CREATE_TOUR with specific parameters
 
 CRITICAL DISTINCTION:
-- For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what functions can you perform", "what can you do", "your capabilities", "available commands", "list your functions", "show me your functions"): Use LIST_AVAILABLE_APIS action
-- For actual data requests ("list jobs", "show resources", "available jobs", "available resources", "show me jobs", "what jobs do we have"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
+- For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what functions can you perform", "what can you do", "your capabilities", "available commands", "list your functions", "show me your functions", "help", "commands", "what are your capabilities", "what do you do", "tell me about yourself"): ALWAYS use LIST_AVAILABLE_APIS action
+- For actual data requests ("list jobs", "show resources", "available jobs", "available resources", "show me jobs", "what jobs do we have", "how many jobs", "job data"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
 
-IMPORTANT: When users ask about "functions you can perform" or "what functions you have", they want to see your API capabilities, NOT the jobs in the system. Use LIST_AVAILABLE_APIS for these requests.
+IMPORTANT: When users ask about "functions you can perform" or "what functions you have" or ANY question about Max's capabilities, they want to see your API capabilities, NOT the jobs in the system. Use LIST_AVAILABLE_APIS for these requests.
+
+DEFAULT BEHAVIOR: If a user asks a general question about what Max can do, capabilities, functions, or help - ALWAYS default to LIST_AVAILABLE_APIS, NOT LIST_JOBS.
+
+EXAMPLES THAT REQUIRE LIST_AVAILABLE_APIS:
+- "What functions can you perform?"
+- "What can you do?"
+- "Help me understand what you can do"
+- "Show me your capabilities"
+- "List your functions"
+- "What are your capabilities?"
+- "Tell me about yourself"
+- "What do you do?"
+- "How can you help?"
+
+EXAMPLES THAT REQUIRE LIST_JOBS:
+- "Show me the jobs"
+- "List all jobs"
+- "What jobs do we have?"
+- "How many jobs are there?"
+- "Show job data"
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (supports all application pages with permission checking)
@@ -1750,7 +1770,7 @@ async function executeAction(action: string, parameters: any, message: string, c
 
         return {
           success: true,
-          message: message || "Here are the API functions I have access to:",
+          message: message || "Hello! I'm Max, your AI manufacturing assistant. Here are the functions I can perform to help with your manufacturing operations:",
           data: apiDocumentation,
           canvasAction: {
             type: "ADD_CANVAS_CONTENT",
