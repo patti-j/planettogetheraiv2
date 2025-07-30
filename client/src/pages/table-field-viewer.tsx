@@ -57,10 +57,48 @@ export default function TableFieldViewer() {
   });
 
   // Fetch field comments
-  const { data: fieldComments = [] } = useQuery({
+  const { data: fieldComments = [], isLoading: commentsLoading, error: commentsError } = useQuery({
     queryKey: ["/api/field-comments"],
     staleTime: 1 * 60 * 1000, // 1 minute
   });
+
+  // Debug field comments data
+  useEffect(() => {
+    console.log("=== FIELD COMMENTS DEBUG ===");
+    console.log("Comments loading:", commentsLoading);
+    console.log("Comments error:", commentsError);
+    console.log("Field comments data:", fieldComments);
+    console.log("Field comments length:", fieldComments.length);
+    if (fieldComments.length > 0) {
+      console.log("Sample comment:", fieldComments[0]);
+    }
+
+    // Test direct API calls
+    fetch("/api/test-field-comments")
+      .then(res => {
+        console.log("Test endpoint response status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Test endpoint data:", data);
+      })
+      .catch(error => {
+        console.error("Test endpoint error:", error);
+      });
+
+    fetch("/api/field-comments")
+      .then(res => {
+        console.log("Direct fetch response status:", res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Direct fetch data:", data);
+        console.log("Direct fetch data length:", data.length);
+      })
+      .catch(error => {
+        console.error("Direct fetch error:", error);
+      });
+  }, [fieldComments, commentsLoading, commentsError]);
 
   // Update field comment mutation
   const updateCommentMutation = useMutation({

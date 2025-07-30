@@ -18675,15 +18675,26 @@ Response must be valid JSON:
     }
   });
 
+  // Test endpoint
+  app.get("/api/test-field-comments", (req, res) => {
+    console.log("=== TEST FIELD COMMENTS API CALLED ===");
+    res.json({ message: "Test endpoint working", count: 209 });
+  });
+
   // Field Comments API
-  app.get("/api/field-comments", createSafeHandler(async (req, res) => {
-    console.log("=== FIELD COMMENTS API CALLED ===");
-    const tableName = req.query.tableName as string;
-    console.log("Table name filter:", tableName);
-    const comments = await storage.getFieldComments(tableName);
-    console.log("Comments retrieved:", comments.length);
-    res.json(comments);
-  }));
+  app.get("/api/field-comments", async (req, res) => {
+    try {
+      console.log("=== FIELD COMMENTS API CALLED ===");
+      const tableName = req.query.tableName as string;
+      console.log("Table name filter:", tableName);
+      const comments = await storage.getFieldComments(tableName);
+      console.log("Comments retrieved:", comments.length);
+      res.json(comments);
+    } catch (error) {
+      console.error("Field comments API error:", error);
+      res.status(500).json({ error: "Failed to fetch field comments" });
+    }
+  });
 
   app.get("/api/field-comments/:tableName/:columnName", createSafeHandler(async (req, res) => {
     const { tableName, columnName } = req.params;
