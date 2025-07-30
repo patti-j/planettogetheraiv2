@@ -12,7 +12,9 @@ import {
   Maximize2, Minimize2, Sparkles, Brain, Target, Cpu, Play, 
   CheckCircle, Settings, Database, Monitor, TrendingUp, 
   Code, TestTube, Rocket, BarChart3, Layers, Package,
-  Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock
+  Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
+  Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
+  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -78,6 +80,9 @@ export default function OptimizationStudio() {
   const [showBackwardsScheduling, setShowBackwardsScheduling] = useState(false);
   const [showArchitectureView, setShowArchitectureView] = useState(false);
   const [architectureAlgorithmName, setArchitectureAlgorithmName] = useState("");
+  const [selectedAlgorithmForDev, setSelectedAlgorithmForDev] = useState<OptimizationAlgorithm | null>(null);
+  const [feedbackFilter, setFeedbackFilter] = useState("all");
+  const [expandedFeedback, setExpandedFeedback] = useState<Set<number>>(new Set());
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -120,6 +125,28 @@ export default function OptimizationStudio() {
       if (!response.ok) throw new Error('Failed to fetch deployments');
       return response.json();
     }
+  });
+
+  // Fetch algorithm feedback for development purposes
+  const { data: algorithmFeedback = [] } = useQuery({
+    queryKey: ['/api/algorithm-feedback'],
+    queryFn: async () => {
+      const response = await fetch('/api/algorithm-feedback');
+      if (!response.ok) throw new Error('Failed to fetch algorithm feedback');
+      return response.json();
+    }
+  });
+
+  // Fetch feedback for specific algorithm when selected
+  const { data: selectedAlgorithmFeedback = [] } = useQuery({
+    queryKey: ['/api/algorithm-feedback/algorithm', selectedAlgorithmForDev?.name],
+    queryFn: async () => {
+      if (!selectedAlgorithmForDev?.name) return [];
+      const response = await fetch(`/api/algorithm-feedback/algorithm/${selectedAlgorithmForDev.name}`);
+      if (!response.ok) throw new Error('Failed to fetch algorithm feedback');
+      return response.json();
+    },
+    enabled: !!selectedAlgorithmForDev
   });
 
   // Create algorithm mutation
@@ -229,6 +256,50 @@ export default function OptimizationStudio() {
                          algo.displayName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  // Filter feedback based on filter selection
+  const filteredFeedback = selectedAlgorithmFeedback.filter((feedback: any) => {
+    if (feedbackFilter === "all") return true;
+    if (feedbackFilter === "bugs") return feedback.feedbackType === "bug_report";
+    if (feedbackFilter === "improvements") return feedback.feedbackType === "improvement_suggestion";
+    if (feedbackFilter === "critical") return feedback.severity === "critical" || feedback.severity === "high";
+    return true;
+  });
+
+  // Helper function to get severity color
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-500';
+      case 'high': return 'bg-orange-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-blue-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Helper function to get feedback type icon
+  const getFeedbackIcon = (feedbackType: string) => {
+    switch (feedbackType) {
+      case 'bug_report': return <Bug className="w-4 h-4" />;
+      case 'improvement_suggestion': return <Lightbulb className="w-4 h-4" />;
+      case 'performance_issue': return <AlertTriangle className="w-4 h-4" />;
+      case 'positive_feedback': return <ThumbsUp className="w-4 h-4" />;
+      default: return <MessageSquare className="w-4 h-4" />;
+    }
+  };
+
+  // Toggle feedback expansion
+  const toggleFeedbackExpansion = (feedbackId: number) => {
+    setExpandedFeedback(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(feedbackId)) {
+        newSet.delete(feedbackId);
+      } else {
+        newSet.add(feedbackId);
+      }
+      return newSet;
+    });
+  };
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -583,8 +654,9 @@ export default function OptimizationStudio() {
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-4 lg:grid-cols-4">
+            <TabsList className="grid w-full sm:w-auto grid-cols-5 lg:grid-cols-5">
               <TabsTrigger value="algorithms">Algorithms</TabsTrigger>
+              <TabsTrigger value="development">Development</TabsTrigger>
               <TabsTrigger value="testing">Testing</TabsTrigger>
               <TabsTrigger value="deployments">Deployments</TabsTrigger>
               <TabsTrigger value="extensions">Extensions</TabsTrigger>
@@ -787,6 +859,295 @@ export default function OptimizationStudio() {
                   ))}
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="development" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Algorithm Development & Improvement</h2>
+              <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
+                <Brain className="w-4 h-4 mr-2" />
+                Create New Algorithm
+              </Button>
+            </div>
+
+            {/* Development Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Algorithm Selection Panel */}
+              <div className="lg:col-span-1 space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Code2 className="w-5 h-5" />
+                      Select Algorithm
+                    </CardTitle>
+                    <CardDescription>
+                      Choose an algorithm to review feedback and make improvements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {algorithms.length === 0 ? (
+                      <div className="text-center py-4">
+                        <Code2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">No algorithms available</p>
+                        <p className="text-xs text-gray-500">Create your first algorithm to get started</p>
+                      </div>
+                    ) : (
+                      algorithms.map((algorithm: OptimizationAlgorithm) => (
+                        <div
+                          key={algorithm.id}
+                          onClick={() => setSelectedAlgorithmForDev(algorithm)}
+                          className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                            selectedAlgorithmForDev?.id === algorithm.id
+                              ? 'border-blue-300 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{algorithm.displayName}</h4>
+                              <p className="text-xs text-gray-600 mt-1">{algorithm.category}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant={algorithm.status === 'deployed' ? 'default' : 'secondary'} className="text-xs">
+                                  {algorithm.status}
+                                </Badge>
+                                <span className="text-xs text-gray-500">v{algorithm.version}</span>
+                              </div>
+                            </div>
+                            {selectedAlgorithmForDev?.id === algorithm.id && (
+                              <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Feedback Statistics */}
+                {selectedAlgorithmForDev && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Feedback Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Bug className="w-4 h-4 text-red-500" />
+                          <div>
+                            <p className="font-medium">{selectedAlgorithmFeedback.filter((f: any) => f.feedbackType === 'bug_report').length}</p>
+                            <p className="text-xs text-gray-600">Bugs</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="w-4 h-4 text-yellow-500" />
+                          <div>
+                            <p className="font-medium">{selectedAlgorithmFeedback.filter((f: any) => f.feedbackType === 'improvement_suggestion').length}</p>
+                            <p className="text-xs text-gray-600">Ideas</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-orange-500" />
+                          <div>
+                            <p className="font-medium">{selectedAlgorithmFeedback.filter((f: any) => f.severity === 'critical' || f.severity === 'high').length}</p>
+                            <p className="text-xs text-gray-600">Critical</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ThumbsUp className="w-4 h-4 text-green-500" />
+                          <div>
+                            <p className="font-medium">{selectedAlgorithmFeedback.filter((f: any) => f.feedbackType === 'positive_feedback').length}</p>
+                            <p className="text-xs text-gray-600">Positive</p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Feedback Review Panel */}
+              <div className="lg:col-span-2">
+                {!selectedAlgorithmForDev ? (
+                  <Card className="p-8 text-center">
+                    <Code2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Select an Algorithm</h3>
+                    <p className="text-gray-600 mb-4">
+                      Choose an algorithm from the left panel to review user feedback and identify improvement opportunities
+                    </p>
+                    <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
+                      <Brain className="w-4 h-4 mr-2" />
+                      Create New Algorithm Instead
+                    </Button>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Algorithm Info & Controls */}
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              <Code2 className="w-5 h-5" />
+                              {selectedAlgorithmForDev.displayName}
+                            </CardTitle>
+                            <CardDescription className="mt-1">
+                              {selectedAlgorithmForDev.description}
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className={selectedAlgorithmForDev.status === 'deployed' ? 'bg-green-500' : 'bg-yellow-500'}>
+                              {selectedAlgorithmForDev.status}
+                            </Badge>
+                            <Badge variant="outline">v{selectedAlgorithmForDev.version}</Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <Select value={feedbackFilter} onValueChange={setFeedbackFilter}>
+                            <SelectTrigger className="w-48">
+                              <Filter className="w-4 h-4 mr-2" />
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Feedback</SelectItem>
+                              <SelectItem value="bugs">Bug Reports</SelectItem>
+                              <SelectItem value="improvements">Improvement Ideas</SelectItem>
+                              <SelectItem value="critical">Critical Issues</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <MessageSquare className="w-4 h-4" />
+                            <span>{filteredFeedback.length} feedback items</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Feedback List */}
+                    <div className="space-y-3">
+                      {filteredFeedback.length === 0 ? (
+                        <Card className="p-8 text-center">
+                          <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2">No Feedback Yet</h3>
+                          <p className="text-gray-600 mb-4">
+                            {feedbackFilter === "all" 
+                              ? "No user feedback has been submitted for this algorithm yet"
+                              : `No ${feedbackFilter} feedback found for this algorithm`
+                            }
+                          </p>
+                          <Button variant="outline" onClick={() => window.open('/feedback?tab=submit&type=algorithm', '_blank')}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Feedback
+                          </Button>
+                        </Card>
+                      ) : (
+                        filteredFeedback.map((feedback: any) => (
+                          <Card key={feedback.id} className="transition-all hover:shadow-md">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-start gap-3 flex-1">
+                                  <div className="flex-shrink-0">
+                                    {getFeedbackIcon(feedback.feedbackType)}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-medium">{feedback.title}</h4>
+                                      <Badge className={`${getSeverityColor(feedback.severity)} text-white text-xs`}>
+                                        {feedback.severity}
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {feedback.category}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600 line-clamp-2">
+                                      {feedback.description}
+                                    </p>
+                                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                      <span>Submitted {new Date(feedback.createdAt).toLocaleDateString()}</span>
+                                      <span>•</span>
+                                      <span>Status: {feedback.status}</span>
+                                      {feedback.suggestedImprovement && (
+                                        <>
+                                          <span>•</span>
+                                          <span className="text-blue-600">Has suggestion</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleFeedbackExpansion(feedback.id)}
+                                  className="flex-shrink-0"
+                                >
+                                  {expandedFeedback.has(feedback.id) ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            
+                            {expandedFeedback.has(feedback.id) && (
+                              <CardContent className="pt-0">
+                                <div className="space-y-4 pl-7">
+                                  {feedback.expectedResult && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1">Expected Result:</h5>
+                                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.expectedResult}</p>
+                                    </div>
+                                  )}
+                                  {feedback.actualResult && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1">Actual Result:</h5>
+                                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.actualResult}</p>
+                                    </div>
+                                  )}
+                                  {feedback.suggestedImprovement && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1 flex items-center gap-1">
+                                        <Lightbulb className="w-4 h-4 text-yellow-500" />
+                                        Suggested Improvement:
+                                      </h5>
+                                      <p className="text-sm text-gray-700 bg-yellow-50 p-2 rounded border border-yellow-200">{feedback.suggestedImprovement}</p>
+                                    </div>
+                                  )}
+                                  {feedback.reproductionSteps && (
+                                    <div>
+                                      <h5 className="font-medium text-sm mb-1">Reproduction Steps:</h5>
+                                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.reproductionSteps}</p>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="flex items-center gap-2 pt-2 border-t">
+                                    <Button size="sm" variant="outline">
+                                      <ArrowRight className="w-3 h-3 mr-1" />
+                                      Implement
+                                    </Button>
+                                    <Button size="sm" variant="outline">
+                                      <MessageSquare className="w-3 h-3 mr-1" />
+                                      Respond
+                                    </Button>
+                                    <Button size="sm" variant="outline">
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Mark Resolved
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            )}
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
