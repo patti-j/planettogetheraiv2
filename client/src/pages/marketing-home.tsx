@@ -75,6 +75,10 @@ const MarketingHome: React.FC = () => {
     setLocation("/demo-tour");
   };
 
+  const handleLogin = () => {
+    setLocation("/login");
+  };
+
   const features = [
     {
       icon: <Bot className="w-6 h-6" />,
@@ -164,6 +168,16 @@ const MarketingHome: React.FC = () => {
               >
                 <Play className="mr-2 w-5 h-5" />
                 Watch Demo
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={handleLogin}
+                className="px-8 py-6 text-lg font-semibold border border-primary/20 hover:bg-primary/5"
+              >
+                Login
+                <ChevronRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
 
