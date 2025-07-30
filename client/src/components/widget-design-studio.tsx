@@ -124,15 +124,16 @@ export default function WidgetDesignStudio({
   const { data: resources = [] } = useQuery({ queryKey: ["/api/resources"] });
   const { data: metrics } = useQuery({ queryKey: ["/api/metrics"] });
 
-  // Initialize preview data
+  // Initialize preview data with memoization to prevent infinite re-renders
   useEffect(() => {
-    setPreviewData({
+    const newPreviewData = {
       productionOrders: Array.isArray(productionOrders) ? productionOrders : [],
       operations: Array.isArray(operations) ? operations : [],
       resources: Array.isArray(resources) ? resources : [],
       metrics: metrics || {}
-    });
-  }, [productionOrders, operations, resources, metrics]);
+    };
+    setPreviewData(newPreviewData);
+  }, [productionOrders?.length, operations?.length, resources?.length, metrics]);
 
   // Initialize editing mode
   useEffect(() => {
