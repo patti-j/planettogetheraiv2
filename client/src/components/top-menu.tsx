@@ -122,7 +122,7 @@ export default function TopMenu() {
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
   const { aiTheme } = useAITheme();
-  const { recentPages, clearRecentPages, togglePinPage } = useNavigation();
+  const { recentPages, clearRecentPages, togglePinPage, addRecentPage } = useNavigation();
   const { startTour } = useTour();
 
   // Get onboarding status for menu filtering
@@ -185,10 +185,15 @@ export default function TopMenu() {
 
   const handleFeatureClick = (feature: any) => {
     if (feature.href === "#max") {
+      // Add Max AI to recent pages
+      addRecentPage("#max", "Max AI Assistant", "Bot");
       toggleMaxAI();
     } else if (feature.href === "#tour") {
       // Open tour selection dialog to let user choose which tour to take
       setTourSelectionOpen(true);
+    } else {
+      // For all regular menu items, add them to recent pages
+      addRecentPage(feature.href, feature.label, feature.icon?.name || 'FileText');
     }
     setMenuOpen(false);
   };
