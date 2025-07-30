@@ -35,7 +35,9 @@ import {
   Monitor,
   Share2,
   Copy,
+  Sparkles,
 } from "lucide-react";
+import WidgetStudioButton from "./widget-studio-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
 
@@ -1176,6 +1178,27 @@ export function MaxSidebar() {
             <div className="space-y-2">
               <div className="text-xs font-medium text-gray-700">AI Theme</div>
               <AIThemeSelector />
+            </div>
+
+            {/* Widget Studio Access */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-gray-700">Quick Tools</div>
+              <WidgetStudioButton
+                variant="outline"
+                size="sm"
+                className="w-full h-7 text-xs"
+                targetSystems={['canvas']}
+                onWidgetCreate={(widget, systems) => {
+                  console.log('Widget created from Max for canvas:', widget, systems);
+                  toast({
+                    title: "Widget Created",
+                    description: `Widget "${widget.title}" added to ${systems.join(', ')}`,
+                  });
+                }}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Create Widget
+              </WidgetStudioButton>
             </div>
           </div>
         </div>

@@ -9,10 +9,12 @@ import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Set
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import AnalyticsWidget from "@/components/analytics-widget";
 import DashboardManager from "@/components/dashboard-manager";
+import WidgetDesignStudio from "@/components/widget-design-studio";
 import type { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { WidgetConfig } from '@/lib/widget-library';
 
 interface Metrics {
   activeJobs: number;
@@ -41,6 +43,7 @@ export default function Analytics() {
   const [showCustomWidgets] = useState(true);
   const [isMaximized, setIsMaximized] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
+  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
   const [currentDashboard, setCurrentDashboard] = useState<any>(null);
   const [selectedDashboardId, setSelectedDashboardId] = useState<string>("");
   const { toast } = useToast();
@@ -161,6 +164,40 @@ export default function Analytics() {
       setCurrentDashboard(null);
       setSelectedDashboardId("");
     }
+  };
+
+  const handleWidgetCreate = (widget: WidgetConfig, targetSystems: string[]) => {
+    // Convert universal widget config to analytics widget
+    const analyticsWidget: AnalyticsWidget = {
+      id: widget.id,
+      title: widget.title,
+      type: widget.type as "metric" | "chart" | "table" | "progress",
+      data: {}, // Will be populated by real data
+      visible: true,
+      position: widget.position || { x: 0, y: 0 },
+      size: widget.size || { width: 400, height: 300 },
+      config: widget
+    };
+
+    if (targetSystems.includes('analytics')) {
+      setCustomWidgets(prev => [...prev, analyticsWidget]);
+    }
+
+    // Here you could also save to other systems like cockpit, canvas, etc.
+    if (targetSystems.includes('cockpit')) {
+      // Save to cockpit system
+      console.log('Saving widget to cockpit:', widget);
+    }
+
+    if (targetSystems.includes('canvas')) {
+      // Save to Max AI canvas
+      console.log('Saving widget to canvas:', widget);
+    }
+
+    toast({
+      title: "Widget Created",
+      description: `${widget.title} has been added to ${targetSystems.join(', ')}`,
+    });
   };
 
   const getJobsByStatus = () => {
@@ -333,6 +370,15 @@ export default function Analytics() {
             >
               <Plus className="w-4 h-4 mr-2" />
               New Analytic
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setWidgetStudioOpen(true)}
+              className="whitespace-nowrap"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Widget Studio
             </Button>
           </div>
         </div>
@@ -585,6 +631,13 @@ export default function Analytics() {
             standardWidgets={standardWidgets}
             customWidgets={customWidgets}
           />
+          
+          {/* Widget Design Studio */}
+          <WidgetDesignStudio
+            open={widgetStudioOpen}
+            onOpenChange={setWidgetStudioOpen}
+            onWidgetCreate={handleWidgetCreate}
+          />
         </div>
       ) : (
         <div className="h-screen bg-gray-50">
@@ -613,6 +666,13 @@ export default function Analytics() {
         onDashboardDelete={handleDashboardDelete}
         standardWidgets={standardWidgets}
         customWidgets={customWidgets}
+      />
+      
+      {/* Widget Design Studio */}
+      <WidgetDesignStudio
+        open={widgetStudioOpen}
+        onOpenChange={setWidgetStudioOpen}
+        onWidgetCreate={handleWidgetCreate}
       />
     </>
   );

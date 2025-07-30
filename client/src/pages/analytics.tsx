@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Settings, Plus, Maximize2, Minimize2, FolderOpen, Sparkles, Eye, EyeOff, ChevronDown, PlayCircle, PauseCircle, GripVertical, BarChart3 } from "lucide-react";
+import WidgetStudioButton from "@/components/widget-studio-button";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
@@ -20,7 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";
 import { useMaxDock } from "@/contexts/MaxDockContext";
-import type { Job, Operation, Resource, Capability } from "@shared/schema";
+import type { Resource, Capability } from "@shared/schema";
 
 interface AnalyticsWidget {
   id: string;
@@ -435,13 +436,13 @@ export default function Analytics() {
   });
 
   // Fetch live data for widgets
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<any[]>({
     queryKey: ["/api/jobs"],
     enabled: visibleDashboards.size > 0,
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<any[]>({
     queryKey: ["/api/operations"],
     enabled: visibleDashboards.size > 0,
     refetchInterval: isLivePaused ? false : 30000, // Refresh every 30 seconds when not paused
@@ -477,7 +478,6 @@ export default function Analytics() {
     jobs,
     operations,
     resources,
-    capabilities,
     metrics,
     alerts
   };
@@ -670,6 +670,20 @@ export default function Analytics() {
                 <Settings className="h-4 w-4" />
                 Dashboard Manager
               </Button>
+              
+              <WidgetStudioButton
+                variant="outline"
+                size="default"
+                className="text-sm"
+                targetSystems={['analytics']}
+                onWidgetCreate={(widget, systems) => {
+                  console.log('Widget created for analytics:', widget, systems);
+                  // Refresh dashboards to show new widget
+                  queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+                }}
+              >
+                Create Widget
+              </WidgetStudioButton>
             </div>
 
             {!isMobile && (

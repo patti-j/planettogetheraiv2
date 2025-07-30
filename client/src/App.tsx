@@ -68,6 +68,7 @@ import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
+import WidgetStudio from "@/pages/widget-studio";
 import DataImportPage from "@/pages/data-import";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
@@ -449,6 +450,11 @@ function Router() {
           <Route path="/widget-showcase">
             <ProtectedRoute feature="systems-management" action="view">
               <WidgetShowcase />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/widget-studio">
+            <ProtectedRoute feature="analytics" action="view">
+              <WidgetStudio />
             </ProtectedRoute>
           </Route>
           <Route path="/product-development">

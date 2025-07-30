@@ -46,7 +46,9 @@ import { useMobile } from "@/hooks/use-mobile";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import UniversalWidget from "@/components/universal-widget";
-import { WidgetConfig, WidgetDataProcessor, SystemData, WIDGET_TEMPLATES } from "@/lib/widget-library";
+import WidgetDesignStudio from "@/components/widget-design-studio";
+import WidgetStudioButton from "@/components/widget-studio-button";
+import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
 
 interface CockpitLayout {
@@ -188,6 +190,7 @@ export default function ProductionCockpit() {
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [algorithmParameters, setAlgorithmParameters] = useState<any>({});
+  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -477,6 +480,28 @@ export default function ProductionCockpit() {
     }
   };
 
+  const handleWidgetCreate = (widget: WidgetConfig, targetSystems: string[]) => {
+    if (!selectedLayout) {
+      toast({
+        title: "No Layout Selected",
+        description: "Please select a layout first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (targetSystems.includes('cockpit')) {
+      const cockpitWidget = convertUniversalToCockpitWidget(widget, selectedLayout);
+      createWidgetMutation.mutate(cockpitWidget);
+    }
+
+    // Could also save to other systems if they're selected
+    toast({
+      title: "Widget Created",
+      description: `${widget.title} has been added to ${targetSystems.join(', ')}`,
+    });
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case "critical": return "destructive";
@@ -656,6 +681,19 @@ export default function ProductionCockpit() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Widget Studio Button */}
+            <WidgetStudioButton
+              variant="outline"
+              size="sm"
+              className="text-xs sm:text-sm"
+              targetSystems={['cockpit']}
+              onWidgetCreate={handleWidgetCreate}
+            >
+              <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Create Widget</span>
+              <span className="sm:hidden">Widget</span>
+            </WidgetStudioButton>
 
             {/* Optimization Dialog */}
             <Dialog open={optimizationDialog} onOpenChange={setOptimizationDialog}>
@@ -1148,6 +1186,18 @@ export default function ProductionCockpit() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Widget Design Studio */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setWidgetStudioOpen(true)}
+              className="border-purple-500 text-purple-600 hover:bg-purple-50 text-xs sm:text-sm"
+            >
+              <Wand2 className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Widget Studio</span>
+              <span className="sm:hidden">Studio</span>
+            </Button>
           </div>
 
           {/* Quick Status */}
@@ -1401,6 +1451,13 @@ export default function ProductionCockpit() {
           </Card>
         )}
       </div>
+
+      {/* Widget Design Studio */}
+      <WidgetDesignStudio
+        open={widgetStudioOpen}
+        onOpenChange={setWidgetStudioOpen}
+        onWidgetCreate={handleWidgetCreate}
+      />
     </div>
   );
 }

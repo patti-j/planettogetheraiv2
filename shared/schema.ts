@@ -1228,6 +1228,64 @@ export const scenarioDiscussions: any = pgTable("scenario_discussions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Unified Widget System - supports widgets across all application areas
+export const unifiedWidgets = pgTable("unified_widgets", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  widgetType: text("widget_type").notNull(), // kpi, chart, table, alert, progress, gauge, list, timeline
+  dataSource: text("data_source").notNull(), // jobs, operations, resources, metrics, alerts, plants, users
+  chartType: text("chart_type"), // bar, line, pie, doughnut, number, gauge, progress
+  aggregation: text("aggregation"), // count, sum, avg, min, max
+  groupBy: text("group_by"),
+  sortBy: jsonb("sort_by").$type<{ field: string; direction: "asc" | "desc" }>(),
+  filters: jsonb("filters").$type<Record<string, any>>().default({}),
+  colors: jsonb("colors").$type<string[]>().default([]),
+  thresholds: jsonb("thresholds").$type<Array<{ value: number; color: string; label?: string }>>().default([]),
+  limit: integer("limit"),
+  size: jsonb("size").$type<{ width: number; height: number }>().notNull(),
+  position: jsonb("position").$type<{ x: number; y: number }>().notNull(),
+  refreshInterval: integer("refresh_interval"), // in seconds
+  drillDownTarget: text("drill_down_target"),
+  drillDownParams: jsonb("drill_down_params").$type<Record<string, any>>().default({}),
+  
+  // Multi-system deployment support
+  deployedSystems: jsonb("deployed_systems").$type<string[]>().default([]), // cockpit, analytics, canvas, visual_factory
+  systemSpecificConfig: jsonb("system_specific_config").$type<Record<string, any>>().default({}),
+  
+  // Ownership and permissions
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  isShared: boolean("is_shared").default(false),
+  sharedWith: jsonb("shared_with").$type<string[]>().default([]), // user IDs or roles
+  
+  // Metadata
+  tags: jsonb("tags").$type<string[]>().default([]),
+  description: text("description"),
+  category: text("category"), // operational, financial, quality, safety, custom
+  isTemplate: boolean("is_template").default(false),
+  templateCategory: text("template_category"), // production, maintenance, quality, executive
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Widget deployment instances - tracks where widgets are deployed and with what specific configuration
+export const widgetDeployments = pgTable("widget_deployments", {
+  id: serial("id").primaryKey(),
+  widgetId: integer("widget_id").references(() => unifiedWidgets.id).notNull(),
+  targetSystem: text("target_system").notNull(), // cockpit, analytics, canvas, visual_factory
+  targetContext: text("target_context"), // layout_id, dashboard_id, canvas_id, etc.
+  systemSpecificId: integer("system_specific_id"), // reference to the system's own widget table
+  position: jsonb("position").$type<{ x: number; y: number }>(),
+  size: jsonb("size").$type<{ width: number; height: number }>(),
+  isActive: boolean("is_active").default(true),
+  customConfig: jsonb("custom_config").$type<Record<string, any>>().default({}), // system-specific overrides
+  deployedAt: timestamp("deployed_at").defaultNow(),
+  deployedBy: integer("deployed_by").references(() => users.id).notNull(),
+}, (table) => ({
+  widgetSystemUnique: unique().on(table.widgetId, table.targetSystem, table.targetContext),
+}));
+
 // Systems Management Tables for IT Administration
 
 // User management for the application
@@ -8593,6 +8651,22 @@ export const insertCanvasWidgetSchema = createInsertSchema(canvasWidgets).omit({
 
 export type CanvasWidget = typeof canvasWidgets.$inferSelect;
 export type InsertCanvasWidget = z.infer<typeof insertCanvasWidgetSchema>;
+
+// Unified Widget System Schemas
+export const insertUnifiedWidgetSchema = createInsertSchema(unifiedWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertUnifiedWidget = z.infer<typeof insertUnifiedWidgetSchema>;
+export type UnifiedWidget = typeof unifiedWidgets.$inferSelect;
+
+export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments).omit({
+  id: true,
+  deployedAt: true,
+});
+export type InsertWidgetDeployment = z.infer<typeof insertWidgetDeploymentSchema>;
+export type WidgetDeployment = typeof widgetDeployments.$inferSelect;
 
 
 
