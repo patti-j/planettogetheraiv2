@@ -133,6 +133,7 @@ export function MaxSidebar() {
     setCanvasItems
   } = useMaxDock();
   const { getThemeClasses } = useAITheme();
+  const themeClasses = getThemeClasses();
   const { startTour } = useTour();
   
   // State management
@@ -1055,7 +1056,7 @@ export function MaxSidebar() {
         style={{ touchAction: 'none' }}
       >
         <div className="flex items-center gap-2 ml-12">
-          <Bot className="h-5 w-5 text-white" />
+          <Bot className={`h-5 w-5 ${themeClasses.text}`} />
           <h2 className="text-white text-sm font-medium">Max AI Assistant</h2>
         </div>
         <div className="flex gap-1">
@@ -1114,7 +1115,7 @@ export function MaxSidebar() {
                     className="h-6 w-6 p-0 text-white hover:bg-white/20"
                     title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
                   >
-                    {currentFullscreenView === 'main' ? <Bot className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                    {currentFullscreenView === 'main' ? <Bot className={`h-3 w-3 ${themeClasses.text}`} /> : <MessageSquare className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -1237,7 +1238,7 @@ export function MaxSidebar() {
         <div className="space-y-3">
           {messages.length === 0 && (
             <div className="text-center text-gray-500 text-sm py-8">
-              <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <Bot className={`h-8 w-8 mx-auto mb-2 ${themeClasses.text}`} />
               <p>Hi! I'm Max, your AI planning assistant.</p>
               <p className="text-xs mt-1">I'm learning from your workflow to provide better suggestions.</p>
             </div>
