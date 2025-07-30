@@ -923,7 +923,7 @@ export default function OnboardingPage() {
                 <div className="space-y-4">
                   <h3 className="font-semibold">Get Started</h3>
                   <p className="text-sm text-gray-600">
-                    You can import your existing data or generate AI-powered sample data directly in the Master Data Setup screen.
+                    You have three options for setting up your data: <strong>manually enter</strong> information directly, <strong>import</strong> from existing files (Excel, CSV), or <strong>connect through integrations</strong> with your ERP systems. You can also generate AI-powered sample data to get started quickly.
                   </p>
                   <Link href="/data-import">
                     <Button variant="outline" className="w-full justify-start">
