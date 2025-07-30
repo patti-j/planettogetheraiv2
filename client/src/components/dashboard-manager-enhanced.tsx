@@ -17,6 +17,7 @@ import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import WidgetStudioButton from "@/components/widget-studio-button";
 
 interface AnalyticsWidget {
   id: string;
@@ -463,23 +464,21 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Widgets</h3>
-                    <Button
-                      onClick={() => {
-                        setEditingWidget(null);
-                        setEditingDashboard(null);
-                        setNewWidgetName("");
-                        setNewWidgetType("metric");
-                        setNewWidgetConfig({});
-                        setNewWidgetData({});
-                        setAiWidgetPrompt("");
-                        setEditMode("manual");
-                        setIsEditDialogOpen(true);
-                      }}
+                    <WidgetStudioButton
+                      variant="outline"
+                      size="default"
                       className="flex items-center gap-2"
+                      targetSystems={['analytics', 'dashboard']}
+                      onWidgetCreate={(widget, systems) => {
+                        console.log('Widget created via Dashboard Manager:', widget, systems);
+                        // Refresh dashboards to show new widget
+                        queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
+                      }}
                     >
                       <Plus className="w-4 h-4" />
                       New Widget
-                    </Button>
+                    </WidgetStudioButton>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
