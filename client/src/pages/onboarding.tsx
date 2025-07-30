@@ -212,7 +212,7 @@ export default function OnboardingPage() {
   const queryClient = useQueryClient();
 
   // Check if company already has onboarding in progress
-  const { data: existingOnboarding, isLoading: onboardingLoading } = useQuery({
+  const { data: existingOnboarding, isLoading: onboardingLoading } = useQuery<CompanyOnboarding | null>({
     queryKey: ['/api/onboarding/status'],
     enabled: !!user,
     retry: 3,
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
   }, [existingOnboarding]);
 
   // Fetch available industry templates
-  const { data: industryTemplates = [] } = useQuery({
+  const { data: industryTemplates = [] } = useQuery<any[]>({
     queryKey: ['/api/industry-templates'],
     enabled: !!user,
     retry: 3,
@@ -559,8 +559,8 @@ export default function OnboardingPage() {
 
 
 
-  // Show loading state while essential data is loading (only if user exists and we're actually loading)
-  if (onboardingLoading && user) {
+  // Show loading state briefly while essential data is loading
+  if (onboardingLoading && user && !existingOnboarding) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center space-y-4">
