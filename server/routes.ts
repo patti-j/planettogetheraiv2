@@ -52,7 +52,8 @@ import {
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
-  insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema
+  insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
+  insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -3702,6 +3703,368 @@ Manufacturing Context Available:
     } catch (error) {
       console.error("Error removing vote:", error);
       res.status(500).json({ error: "Failed to remove vote" });
+    }
+  });
+
+  // Algorithm Feedback Management Routes
+  app.get("/api/algorithm-feedback", requireAuth, async (req, res) => {
+    try {
+      const filters = {
+        algorithmName: req.query.algorithmName as string,
+        status: req.query.status as string,
+        severity: req.query.severity as string,
+        category: req.query.category as string,
+        submittedBy: req.query.submittedBy ? parseInt(req.query.submittedBy as string) : undefined,
+        plantId: req.query.plantId ? parseInt(req.query.plantId as string) : undefined
+      };
+
+      // Remove undefined values
+      Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
+
+      const feedback = await storage.getAlgorithmFeedback(filters);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm feedback" });
+    }
+  });
+
+  app.get("/api/algorithm-feedback/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const feedback = await storage.getAlgorithmFeedbackById(id);
+      if (!feedback) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm feedback" });
+    }
+  });
+
+  app.post("/api/algorithm-feedback", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const feedbackData = {
+        ...req.body,
+        submittedBy: userId
+      };
+
+      const validatedData = insertAlgorithmFeedbackSchema.parse(feedbackData);
+      const feedback = await storage.createAlgorithmFeedback(validatedData);
+      res.status(201).json(feedback);
+    } catch (error) {
+      console.error("Error creating algorithm feedback:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid feedback data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create algorithm feedback" });
+    }
+  });
+
+  app.put("/api/algorithm-feedback/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const feedback = await storage.updateAlgorithmFeedback(id, req.body);
+      if (!feedback) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error updating algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to update algorithm feedback" });
+    }
+  });
+
+  app.delete("/api/algorithm-feedback/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const deleted = await storage.deleteAlgorithmFeedback(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to delete algorithm feedback" });
+    }
+  });
+
+  // Algorithm Feedback by Algorithm
+  app.get("/api/algorithm-feedback/algorithm/:name", requireAuth, async (req, res) => {
+    try {
+      const algorithmName = req.params.name;
+      const algorithmVersion = req.query.version as string;
+
+      const feedback = await storage.getAlgorithmFeedbackByAlgorithm(algorithmName, algorithmVersion);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback by algorithm:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm feedback" });
+    }
+  });
+
+  // Algorithm Feedback by Execution
+  app.get("/api/algorithm-feedback/execution", requireAuth, async (req, res) => {
+    try {
+      const schedulingHistoryId = req.query.schedulingHistoryId ? parseInt(req.query.schedulingHistoryId as string) : undefined;
+      const algorithmPerformanceId = req.query.algorithmPerformanceId ? parseInt(req.query.algorithmPerformanceId as string) : undefined;
+      const optimizationRunId = req.query.optimizationRunId ? parseInt(req.query.optimizationRunId as string) : undefined;
+
+      const feedback = await storage.getAlgorithmFeedbackByExecution(schedulingHistoryId, algorithmPerformanceId, optimizationRunId);
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback by execution:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm feedback" });
+    }
+  });
+
+  // Algorithm Feedback Assignment
+  app.post("/api/algorithm-feedback/:id/assign", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const assignedTo = req.body.assignedTo;
+      if (!assignedTo) {
+        return res.status(400).json({ error: "assignedTo is required" });
+      }
+
+      const feedback = await storage.assignAlgorithmFeedback(id, assignedTo);
+      if (!feedback) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error assigning algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to assign algorithm feedback" });
+    }
+  });
+
+  // Algorithm Feedback Resolution
+  app.post("/api/algorithm-feedback/:id/resolve", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      const resolutionNotes = req.body.resolutionNotes;
+
+      if (!resolutionNotes) {
+        return res.status(400).json({ error: "resolutionNotes is required" });
+      }
+
+      const feedback = await storage.resolveAlgorithmFeedback(id, userId, resolutionNotes);
+      if (!feedback) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error resolving algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to resolve algorithm feedback" });
+    }
+  });
+
+  // Algorithm Feedback Implementation Status
+  app.post("/api/algorithm-feedback/:id/implementation", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const { status, notes, version } = req.body;
+      if (!status) {
+        return res.status(400).json({ error: "status is required" });
+      }
+
+      const feedback = await storage.updateImplementationStatus(id, status, notes, version);
+      if (!feedback) {
+        return res.status(404).json({ error: "Algorithm feedback not found" });
+      }
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Error updating implementation status:", error);
+      res.status(500).json({ error: "Failed to update implementation status" });
+    }
+  });
+
+  // Algorithm Feedback Comments
+  app.get("/api/algorithm-feedback/:id/comments", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const comments = await storage.getAlgorithmFeedbackComments(feedbackId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback comments:", error);
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/algorithm-feedback/:id/comments", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const commentData = {
+        ...req.body,
+        feedbackId,
+        authorId: userId
+      };
+
+      const validatedData = insertAlgorithmFeedbackCommentSchema.parse(commentData);
+      const comment = await storage.createAlgorithmFeedbackComment(validatedData);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating algorithm feedback comment:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid comment data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  app.put("/api/algorithm-feedback-comments/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+
+      const comment = await storage.updateAlgorithmFeedbackComment(id, req.body);
+      if (!comment) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+
+      res.json(comment);
+    } catch (error) {
+      console.error("Error updating algorithm feedback comment:", error);
+      res.status(500).json({ error: "Failed to update comment" });
+    }
+  });
+
+  app.delete("/api/algorithm-feedback-comments/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid comment ID" });
+      }
+
+      const deleted = await storage.deleteAlgorithmFeedbackComment(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Comment not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting algorithm feedback comment:", error);
+      res.status(500).json({ error: "Failed to delete comment" });
+    }
+  });
+
+  // Algorithm Feedback Voting
+  app.get("/api/algorithm-feedback/:id/votes", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const votes = await storage.getAlgorithmFeedbackVotes(feedbackId);
+      res.json(votes);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback votes:", error);
+      res.status(500).json({ error: "Failed to fetch votes" });
+    }
+  });
+
+  app.post("/api/algorithm-feedback/:id/vote", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      const voteType = req.body.voteType;
+
+      if (!voteType || !['upvote', 'downvote'].includes(voteType)) {
+        return res.status(400).json({ error: "Valid voteType is required (upvote or downvote)" });
+      }
+
+      const vote = await storage.voteAlgorithmFeedback(feedbackId, userId, voteType);
+      res.status(201).json(vote);
+    } catch (error) {
+      console.error("Error voting on algorithm feedback:", error);
+      res.status(500).json({ error: "Failed to vote on feedback" });
+    }
+  });
+
+  app.delete("/api/algorithm-feedback/:id/vote", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      const removed = await storage.removeAlgorithmFeedbackVote(feedbackId, userId);
+      
+      if (!removed) {
+        return res.status(404).json({ error: "Vote not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing algorithm feedback vote:", error);
+      res.status(500).json({ error: "Failed to remove vote" });
+    }
+  });
+
+  app.get("/api/algorithm-feedback/:id/vote-counts", requireAuth, async (req, res) => {
+    try {
+      const feedbackId = parseInt(req.params.id);
+      if (isNaN(feedbackId)) {
+        return res.status(400).json({ error: "Invalid feedback ID" });
+      }
+
+      const voteCounts = await storage.getAlgorithmFeedbackVoteCounts(feedbackId);
+      res.json(voteCounts);
+    } catch (error) {
+      console.error("Error fetching algorithm feedback vote counts:", error);
+      res.status(500).json({ error: "Failed to fetch vote counts" });
     }
   });
 

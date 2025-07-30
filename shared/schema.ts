@@ -4697,6 +4697,147 @@ export const extensionReviews = pgTable("extension_reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Algorithm Feedback System - User feedback on algorithm performance for continuous improvement
+export const algorithmFeedback = pgTable("algorithm_feedback", {
+  id: serial("id").primaryKey(),
+  // Links to specific algorithm execution
+  schedulingHistoryId: integer("scheduling_history_id").references(() => schedulingHistory.id),
+  algorithmPerformanceId: integer("algorithm_performance_id").references(() => algorithmPerformance.id),
+  optimizationRunId: integer("optimization_run_id").references(() => optimizationRuns.id),
+  
+  // Algorithm identification
+  algorithmName: text("algorithm_name").notNull(),
+  algorithmVersion: text("algorithm_version").notNull(),
+  executionId: text("execution_id"), // For tracking specific executions
+  
+  // Feedback details
+  submittedBy: integer("submitted_by").references(() => users.id).notNull(),
+  feedbackType: text("feedback_type").notNull(), // improvement_suggestion, bug_report, performance_issue, positive_feedback
+  severity: text("severity").notNull().default("medium"), // low, medium, high, critical
+  category: text("category").notNull(), // scheduling_accuracy, resource_utilization, performance, usability, results_quality
+  
+  // Feedback content
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  expectedResult: text("expected_result"),
+  actualResult: text("actual_result"),
+  suggestedImprovement: text("suggested_improvement"),
+  
+  // Context information
+  plantId: integer("plant_id").references(() => plants.id),
+  executionContext: jsonb("execution_context").$type<{
+    jobCount?: number;
+    resourceCount?: number;
+    operationCount?: number;
+    planningHorizon?: number;
+    constraints?: string[];
+    parameters?: Record<string, any>;
+    datasetSize?: string;
+    complexity?: "low" | "medium" | "high";
+  }>(),
+  
+  // Performance metrics at time of feedback
+  performanceSnapshot: jsonb("performance_snapshot").$type<{
+    executionTime?: number; // milliseconds
+    resourceUtilization?: number; // percentage
+    onTimeDelivery?: number; // percentage
+    costOptimization?: number; // percentage
+    makespan?: number; // minutes
+    bottlenecks?: string[];
+    errors?: string[];
+    warnings?: string[];
+  }>(),
+  
+  // Reproduction information
+  reproducible: boolean("reproducible").default(false),
+  reproductionSteps: jsonb("reproduction_steps").$type<string[]>(),
+  attachments: jsonb("attachments").$type<Array<{
+    filename: string;
+    type: string; // screenshot, log, data_export, config
+    content: string; // base64 or file path
+    description?: string;
+  }>>().default([]),
+  
+  // Feedback status and resolution
+  status: text("status").notNull().default("open"), // open, acknowledged, in_progress, resolved, closed, wont_fix
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  assignedTo: integer("assigned_to").references(() => users.id),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolutionNotes: text("resolution_notes"),
+  resolvedAt: timestamp("resolved_at"),
+  
+  // Implementation tracking
+  implementationStatus: text("implementation_status").default("pending"), // pending, planned, in_development, testing, deployed, rejected
+  targetVersion: text("target_version"),
+  implementedInVersion: text("implemented_in_version"),
+  estimatedEffort: text("estimated_effort"), // hours, days, weeks
+  implementationNotes: text("implementation_notes"),
+  
+  // Voting and validation
+  upvotes: integer("upvotes").default(0),
+  downvotes: integer("downvotes").default(0),
+  validatedBy: jsonb("validated_by").$type<Array<{
+    userId: number;
+    role: string;
+    validatedAt: string;
+    comments?: string;
+  }>>().default([]),
+  
+  // Categorization and tagging
+  tags: jsonb("tags").$type<string[]>().default([]),
+  relatedFeedback: jsonb("related_feedback").$type<number[]>().default([]), // IDs of related feedback items
+  
+  // Audit trail
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastViewedAt: timestamp("last_viewed_at"),
+}, (table) => ({
+  feedbackTypeIndex: index("algorithm_feedback_type_idx").on(table.feedbackType),
+  algorithmNameIndex: index("algorithm_feedback_algorithm_idx").on(table.algorithmName),
+  statusIndex: index("algorithm_feedback_status_idx").on(table.status),
+  submittedByIndex: index("algorithm_feedback_user_idx").on(table.submittedBy),
+  createdAtIndex: index("algorithm_feedback_created_idx").on(table.createdAt),
+  severityIndex: index("algorithm_feedback_severity_idx").on(table.severity),
+  categoryIndex: index("algorithm_feedback_category_idx").on(table.category),
+}));
+
+// Algorithm Feedback Comments - Discussion thread for each feedback item
+export const algorithmFeedbackComments = pgTable("algorithm_feedback_comments", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => algorithmFeedback.id, { onDelete: "cascade" }).notNull(),
+  parentCommentId: integer("parent_comment_id").references(() => algorithmFeedbackComments.id), // For nested comments
+  authorId: integer("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  commentType: text("comment_type").notNull().default("comment"), // comment, status_update, resolution, implementation_update
+  mentions: jsonb("mentions").$type<number[]>().default([]), // User IDs mentioned in comment
+  attachments: jsonb("attachments").$type<Array<{
+    filename: string;
+    type: string;
+    content: string;
+    description?: string;
+  }>>().default([]),
+  isInternal: boolean("is_internal").default(false), // Internal team comments vs public
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  feedbackIdIndex: index("feedback_comments_feedback_idx").on(table.feedbackId),
+  authorIndex: index("feedback_comments_author_idx").on(table.authorId),
+  createdAtIndex: index("feedback_comments_created_idx").on(table.createdAt),
+}));
+
+// Algorithm Feedback Votes - Track user votes on feedback items
+export const algorithmFeedbackVotes = pgTable("algorithm_feedback_votes", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => algorithmFeedback.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  voteType: text("vote_type").notNull(), // upvote, downvote
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueVote: unique().on(table.feedbackId, table.userId),
+  feedbackIdIndex: index("feedback_votes_feedback_idx").on(table.feedbackId),
+  userIdIndex: index("feedback_votes_user_idx").on(table.userId),
+}));
+
 // Optimization Studio Tables
 export const optimizationAlgorithms: any = pgTable("optimization_algorithms", {
   id: serial("id").primaryKey(),
@@ -5301,6 +5442,36 @@ export type ErrorLog = typeof errorLogs.$inferSelect;
 
 export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
 export type ErrorReport = typeof errorReports.$inferSelect;
+
+// Algorithm Feedback System Types and Schemas
+export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedback).omit({
+  id: true,
+  upvotes: true,
+  downvotes: true,
+  createdAt: true,
+  updatedAt: true,
+  lastViewedAt: true,
+});
+
+export const insertAlgorithmFeedbackCommentSchema = createInsertSchema(algorithmFeedbackComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAlgorithmFeedbackVoteSchema = createInsertSchema(algorithmFeedbackVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type AlgorithmFeedback = typeof algorithmFeedback.$inferSelect;
+export type InsertAlgorithmFeedback = z.infer<typeof insertAlgorithmFeedbackSchema>;
+
+export type AlgorithmFeedbackComment = typeof algorithmFeedbackComments.$inferSelect;
+export type InsertAlgorithmFeedbackComment = z.infer<typeof insertAlgorithmFeedbackCommentSchema>;
+
+export type AlgorithmFeedbackVote = typeof algorithmFeedbackVotes.$inferSelect;
+export type InsertAlgorithmFeedbackVote = z.infer<typeof insertAlgorithmFeedbackVoteSchema>;
 
 // Tour Prompt Templates System
 export const tourPromptTemplates = pgTable("tour_prompt_templates", {

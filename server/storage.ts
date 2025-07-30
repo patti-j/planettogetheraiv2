@@ -45,6 +45,9 @@ import {
   feedback, feedbackComments, feedbackVotes,
   type Feedback, type FeedbackComment, type FeedbackVote,
   type InsertFeedback, type InsertFeedbackComment, type InsertFeedbackVote,
+  algorithmFeedback, algorithmFeedbackComments, algorithmFeedbackVotes,
+  type AlgorithmFeedback, type AlgorithmFeedbackComment, type AlgorithmFeedbackVote,
+  type InsertAlgorithmFeedback, type InsertAlgorithmFeedbackComment, type InsertAlgorithmFeedbackVote,
   workflows, workflowTriggers, workflowActions, workflowActionMappings, workflowExecutions, workflowActionExecutions, workflowMonitoring,
   type Workflow, type WorkflowTrigger, type WorkflowAction, type WorkflowActionMapping, type WorkflowExecution, type WorkflowActionExecution, type WorkflowMonitoring,
   type InsertWorkflow, type InsertWorkflowTrigger, type InsertWorkflowAction, type InsertWorkflowActionMapping, type InsertWorkflowExecution, type InsertWorkflowActionExecution, type InsertWorkflowMonitoring,
@@ -1388,6 +1391,31 @@ export interface IStorage {
   createDiscreteOperationPhaseResourceRequirement(link: InsertDiscreteOperationPhaseResourceRequirement): Promise<DiscreteOperationPhaseResourceRequirement>;
   updateDiscreteOperationPhaseResourceRequirement(id: number, link: Partial<InsertDiscreteOperationPhaseResourceRequirement>): Promise<DiscreteOperationPhaseResourceRequirement | undefined>;
   deleteDiscreteOperationPhaseResourceRequirement(id: number): Promise<boolean>;
+
+  // Algorithm Feedback Management
+  getAlgorithmFeedback(filters?: { algorithmName?: string; status?: string; severity?: string; category?: string; submittedBy?: number; plantId?: number }): Promise<AlgorithmFeedback[]>;
+  getAlgorithmFeedbackById(id: number): Promise<AlgorithmFeedback | undefined>;
+  createAlgorithmFeedback(feedback: InsertAlgorithmFeedback): Promise<AlgorithmFeedback>;
+  updateAlgorithmFeedback(id: number, updates: Partial<InsertAlgorithmFeedback>): Promise<AlgorithmFeedback | undefined>;
+  deleteAlgorithmFeedback(id: number): Promise<boolean>;
+  getAlgorithmFeedbackByAlgorithm(algorithmName: string, algorithmVersion?: string): Promise<AlgorithmFeedback[]>;
+  getAlgorithmFeedbackByExecution(schedulingHistoryId?: number, algorithmPerformanceId?: number, optimizationRunId?: number): Promise<AlgorithmFeedback[]>;
+  assignAlgorithmFeedback(id: number, assignedTo: number): Promise<AlgorithmFeedback | undefined>;
+  resolveAlgorithmFeedback(id: number, resolvedBy: number, resolutionNotes: string): Promise<AlgorithmFeedback | undefined>;
+  updateImplementationStatus(id: number, status: string, notes?: string, version?: string): Promise<AlgorithmFeedback | undefined>;
+
+  // Algorithm Feedback Comments
+  getAlgorithmFeedbackComments(feedbackId: number): Promise<AlgorithmFeedbackComment[]>;
+  getAlgorithmFeedbackComment(id: number): Promise<AlgorithmFeedbackComment | undefined>;
+  createAlgorithmFeedbackComment(comment: InsertAlgorithmFeedbackComment): Promise<AlgorithmFeedbackComment>;
+  updateAlgorithmFeedbackComment(id: number, updates: Partial<InsertAlgorithmFeedbackComment>): Promise<AlgorithmFeedbackComment | undefined>;
+  deleteAlgorithmFeedbackComment(id: number): Promise<boolean>;
+
+  // Algorithm Feedback Voting
+  getAlgorithmFeedbackVotes(feedbackId: number): Promise<AlgorithmFeedbackVote[]>;
+  voteAlgorithmFeedback(feedbackId: number, userId: number, voteType: 'upvote' | 'downvote'): Promise<AlgorithmFeedbackVote>;
+  removeAlgorithmFeedbackVote(feedbackId: number, userId: number): Promise<boolean>;
+  getAlgorithmFeedbackVoteCounts(feedbackId: number): Promise<{ upvotes: number; downvotes: number }>;
 }
 
 export class MemStorage implements IStorage {
@@ -11665,6 +11693,223 @@ export class DatabaseStorage implements IStorage {
     await db.update(userSecrets)
       .set({ lastUsed: new Date() })
       .where(eq(userSecrets.id, id));
+  }
+
+  // Algorithm Feedback Management
+  async getAlgorithmFeedback(filters?: { algorithmName?: string; status?: string; severity?: string; category?: string; submittedBy?: number; plantId?: number }): Promise<AlgorithmFeedback[]> {
+    let query = db.select().from(algorithmFeedback);
+    
+    const conditions = [];
+    if (filters?.algorithmName) conditions.push(eq(algorithmFeedback.algorithmName, filters.algorithmName));
+    if (filters?.status) conditions.push(eq(algorithmFeedback.status, filters.status));
+    if (filters?.severity) conditions.push(eq(algorithmFeedback.severity, filters.severity));
+    if (filters?.category) conditions.push(eq(algorithmFeedback.category, filters.category));
+    if (filters?.submittedBy) conditions.push(eq(algorithmFeedback.submittedBy, filters.submittedBy));
+    if (filters?.plantId) conditions.push(eq(algorithmFeedback.plantId, filters.plantId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(algorithmFeedback.createdAt));
+  }
+
+  async getAlgorithmFeedbackById(id: number): Promise<AlgorithmFeedback | undefined> {
+    const [feedback] = await db.select().from(algorithmFeedback)
+      .where(eq(algorithmFeedback.id, id));
+    
+    if (feedback) {
+      // Update last viewed timestamp
+      await db.update(algorithmFeedback)
+        .set({ lastViewedAt: new Date() })
+        .where(eq(algorithmFeedback.id, id));
+    }
+    
+    return feedback || undefined;
+  }
+
+  async createAlgorithmFeedback(feedback: InsertAlgorithmFeedback): Promise<AlgorithmFeedback> {
+    const [newFeedback] = await db.insert(algorithmFeedback)
+      .values(feedback)
+      .returning();
+    return newFeedback;
+  }
+
+  async updateAlgorithmFeedback(id: number, updates: Partial<InsertAlgorithmFeedback>): Promise<AlgorithmFeedback | undefined> {
+    const [updatedFeedback] = await db.update(algorithmFeedback)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(algorithmFeedback.id, id))
+      .returning();
+    return updatedFeedback || undefined;
+  }
+
+  async deleteAlgorithmFeedback(id: number): Promise<boolean> {
+    const result = await db.delete(algorithmFeedback)
+      .where(eq(algorithmFeedback.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getAlgorithmFeedbackByAlgorithm(algorithmName: string, algorithmVersion?: string): Promise<AlgorithmFeedback[]> {
+    let query = db.select().from(algorithmFeedback)
+      .where(eq(algorithmFeedback.algorithmName, algorithmName));
+    
+    if (algorithmVersion) {
+      query = query.where(eq(algorithmFeedback.algorithmVersion, algorithmVersion));
+    }
+    
+    return await query.orderBy(desc(algorithmFeedback.createdAt));
+  }
+
+  async getAlgorithmFeedbackByExecution(schedulingHistoryId?: number, algorithmPerformanceId?: number, optimizationRunId?: number): Promise<AlgorithmFeedback[]> {
+    const conditions = [];
+    if (schedulingHistoryId) conditions.push(eq(algorithmFeedback.schedulingHistoryId, schedulingHistoryId));
+    if (algorithmPerformanceId) conditions.push(eq(algorithmFeedback.algorithmPerformanceId, algorithmPerformanceId));
+    if (optimizationRunId) conditions.push(eq(algorithmFeedback.optimizationRunId, optimizationRunId));
+    
+    if (conditions.length === 0) return [];
+    
+    return await db.select().from(algorithmFeedback)
+      .where(or(...conditions))
+      .orderBy(desc(algorithmFeedback.createdAt));
+  }
+
+  async assignAlgorithmFeedback(id: number, assignedTo: number): Promise<AlgorithmFeedback | undefined> {
+    const [updatedFeedback] = await db.update(algorithmFeedback)
+      .set({ 
+        assignedTo,
+        status: 'in_progress',
+        updatedAt: new Date()
+      })
+      .where(eq(algorithmFeedback.id, id))
+      .returning();
+    return updatedFeedback || undefined;
+  }
+
+  async resolveAlgorithmFeedback(id: number, resolvedBy: number, resolutionNotes: string): Promise<AlgorithmFeedback | undefined> {
+    const [updatedFeedback] = await db.update(algorithmFeedback)
+      .set({ 
+        resolvedBy,
+        resolutionNotes,
+        resolvedAt: new Date(),
+        status: 'resolved',
+        updatedAt: new Date()
+      })
+      .where(eq(algorithmFeedback.id, id))
+      .returning();
+    return updatedFeedback || undefined;
+  }
+
+  async updateImplementationStatus(id: number, status: string, notes?: string, version?: string): Promise<AlgorithmFeedback | undefined> {
+    const updates: any = { 
+      implementationStatus: status,
+      updatedAt: new Date()
+    };
+    
+    if (notes) updates.implementationNotes = notes;
+    if (version) updates.implementedInVersion = version;
+    
+    const [updatedFeedback] = await db.update(algorithmFeedback)
+      .set(updates)
+      .where(eq(algorithmFeedback.id, id))
+      .returning();
+    return updatedFeedback || undefined;
+  }
+
+  // Algorithm Feedback Comments
+  async getAlgorithmFeedbackComments(feedbackId: number): Promise<AlgorithmFeedbackComment[]> {
+    return await db.select().from(algorithmFeedbackComments)
+      .where(eq(algorithmFeedbackComments.feedbackId, feedbackId))
+      .orderBy(asc(algorithmFeedbackComments.createdAt));
+  }
+
+  async getAlgorithmFeedbackComment(id: number): Promise<AlgorithmFeedbackComment | undefined> {
+    const [comment] = await db.select().from(algorithmFeedbackComments)
+      .where(eq(algorithmFeedbackComments.id, id));
+    return comment || undefined;
+  }
+
+  async createAlgorithmFeedbackComment(comment: InsertAlgorithmFeedbackComment): Promise<AlgorithmFeedbackComment> {
+    const [newComment] = await db.insert(algorithmFeedbackComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+
+  async updateAlgorithmFeedbackComment(id: number, updates: Partial<InsertAlgorithmFeedbackComment>): Promise<AlgorithmFeedbackComment | undefined> {
+    const [updatedComment] = await db.update(algorithmFeedbackComments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(algorithmFeedbackComments.id, id))
+      .returning();
+    return updatedComment || undefined;
+  }
+
+  async deleteAlgorithmFeedbackComment(id: number): Promise<boolean> {
+    const result = await db.delete(algorithmFeedbackComments)
+      .where(eq(algorithmFeedbackComments.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Algorithm Feedback Voting
+  async getAlgorithmFeedbackVotes(feedbackId: number): Promise<AlgorithmFeedbackVote[]> {
+    return await db.select().from(algorithmFeedbackVotes)
+      .where(eq(algorithmFeedbackVotes.feedbackId, feedbackId))
+      .orderBy(desc(algorithmFeedbackVotes.createdAt));
+  }
+
+  async voteAlgorithmFeedback(feedbackId: number, userId: number, voteType: 'upvote' | 'downvote'): Promise<AlgorithmFeedbackVote> {
+    // Remove existing vote if any
+    await db.delete(algorithmFeedbackVotes)
+      .where(and(
+        eq(algorithmFeedbackVotes.feedbackId, feedbackId),
+        eq(algorithmFeedbackVotes.userId, userId)
+      ));
+    
+    // Add new vote
+    const [vote] = await db.insert(algorithmFeedbackVotes)
+      .values({ feedbackId, userId, voteType })
+      .returning();
+    
+    // Update vote counts on feedback record
+    const voteCounts = await this.getAlgorithmFeedbackVoteCounts(feedbackId);
+    await db.update(algorithmFeedback)
+      .set({ 
+        upvotes: voteCounts.upvotes,
+        downvotes: voteCounts.downvotes,
+        updatedAt: new Date()
+      })
+      .where(eq(algorithmFeedback.id, feedbackId));
+    
+    return vote;
+  }
+
+  async removeAlgorithmFeedbackVote(feedbackId: number, userId: number): Promise<boolean> {
+    const result = await db.delete(algorithmFeedbackVotes)
+      .where(and(
+        eq(algorithmFeedbackVotes.feedbackId, feedbackId),
+        eq(algorithmFeedbackVotes.userId, userId)
+      ));
+    
+    // Update vote counts on feedback record
+    const voteCounts = await this.getAlgorithmFeedbackVoteCounts(feedbackId);
+    await db.update(algorithmFeedback)
+      .set({ 
+        upvotes: voteCounts.upvotes,
+        downvotes: voteCounts.downvotes,
+        updatedAt: new Date()
+      })
+      .where(eq(algorithmFeedback.id, feedbackId));
+    
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getAlgorithmFeedbackVoteCounts(feedbackId: number): Promise<{ upvotes: number; downvotes: number }> {
+    const votes = await db.select().from(algorithmFeedbackVotes)
+      .where(eq(algorithmFeedbackVotes.feedbackId, feedbackId));
+    
+    const upvotes = votes.filter(v => v.voteType === 'upvote').length;
+    const downvotes = votes.filter(v => v.voteType === 'downvote').length;
+    
+    return { upvotes, downvotes };
   }
 }
 
