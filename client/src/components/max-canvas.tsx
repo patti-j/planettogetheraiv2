@@ -696,8 +696,6 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
 };
 
 const TableWidget: React.FC<{ data: any }> = ({ data }) => {
-  console.log('TableWidget received data:', data);
-  
   // Handle the API function data structure - use the direct array or fallback to rows
   const tableData = Array.isArray(data) ? data : (data?.rows || data?.data || []);
   
