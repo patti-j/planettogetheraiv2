@@ -22,10 +22,10 @@ import {
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization';
   title: string;
   subtitle?: string;
-  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts';
+  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization';
   chartType?: 'bar' | 'line' | 'pie' | 'doughnut' | 'number' | 'gauge' | 'progress';
   aggregation?: 'count' | 'sum' | 'avg' | 'min' | 'max';
   groupBy?: string;
@@ -785,6 +785,29 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     },
     targetSystems: ['cockpit', 'analytics', 'canvas'],
     complexity: 'basic'
+  },
+  // Schedule Optimization Widget
+  {
+    id: 'schedule-optimization',
+    name: 'Schedule Optimization',
+    description: 'Run optimization algorithms, view history, and track performance',
+    category: 'operations',
+    type: 'schedule-optimization',
+    icon: Target,
+    defaultConfig: {
+      type: 'schedule-optimization',
+      dataSource: 'optimization',
+      size: { width: 400, height: 350 },
+      showQuickActions: true,
+      showHistory: true,
+      showMetrics: true,
+      maxHistoryItems: 5,
+      defaultView: 'overview',
+      showAlgorithmSelector: true,
+      showProfileSelector: true
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas'],
+    complexity: 'advanced'
   }
 ];
 
@@ -883,6 +906,8 @@ function mapCockpitTypeToUniversalType(cockpitType: string): WidgetConfig['type'
       return 'gauge';
     case 'activity':
       return 'list';
+    case 'schedule-optimization':
+      return 'schedule-optimization';
     default:
       return 'kpi';
   }
@@ -906,6 +931,8 @@ function mapUniversalTypeToCockpitType(universalType: WidgetConfig['type']): str
       return 'metrics';
     case 'timeline':
       return 'schedule';
+    case 'schedule-optimization':
+      return 'schedule-optimization';
     default:
       return 'kpi';
   }

@@ -69,6 +69,7 @@ import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import WidgetStudio from "@/pages/widget-studio";
+import WidgetsPage from "@/pages/widgets";
 import DataImportPage from "@/pages/data-import";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";

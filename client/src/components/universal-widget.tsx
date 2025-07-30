@@ -33,6 +33,7 @@ import {
 } from 'chart.js';
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2';
 import { WidgetConfig, WidgetDataProcessor, SystemData } from '@/lib/widget-library';
+import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -343,6 +344,19 @@ export default function UniversalWidget({
     );
   };
 
+  const renderScheduleOptimizationWidget = () => {
+    return (
+      <ScheduleOptimizationWidget 
+        config={config}
+        data={data}
+        onAction={(action, data) => {
+          // Handle optimization actions if needed
+          console.log('Optimization action:', action, data);
+        }}
+      />
+    );
+  };
+
   const renderWidgetContent = () => {
     switch (config.type) {
       case 'kpi':
@@ -359,6 +373,8 @@ export default function UniversalWidget({
         return renderAlertWidget();
       case 'list':
         return renderListWidget();
+      case 'schedule-optimization':
+        return renderScheduleOptimizationWidget();
       default:
         return <div className="text-center text-muted-foreground">Unknown widget type</div>;
     }

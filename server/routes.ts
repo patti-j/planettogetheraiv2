@@ -18865,6 +18865,45 @@ Response must be valid JSON:
     }
   });
 
+  // Optimization Widget API Route Aliases
+  // Alias for optimization profiles to match widget expectations
+  app.get("/api/optimization/profiles", async (req, res) => {
+    try {
+      const { algorithmId, userId } = req.query;
+      const profiles = await storage.getOptimizationProfiles(
+        algorithmId ? parseInt(algorithmId as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching optimization profiles:", error);
+      res.status(500).json({ error: "Failed to fetch optimization profiles" });
+    }
+  });
+
+  // Optimization scheduling history for widget
+  app.get("/api/optimization/scheduling-history", async (req, res) => {
+    try {
+      const { limit = 20 } = req.query;
+      const history = await storage.getSchedulingHistory(parseInt(limit as string));
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching scheduling history:", error);
+      res.status(500).json({ error: "Failed to fetch scheduling history" });
+    }
+  });
+
+  // Alias for optimization algorithms to ensure consistency 
+  app.get("/api/optimization/algorithms", async (req, res) => {
+    try {
+      const algorithms = await storage.getOptimizationAlgorithms();
+      res.json(algorithms);
+    } catch (error) {
+      console.error("Error fetching optimization algorithms:", error);
+      res.status(500).json({ error: "Failed to fetch optimization algorithms" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

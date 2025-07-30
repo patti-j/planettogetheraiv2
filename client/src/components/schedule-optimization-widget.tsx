@@ -143,9 +143,9 @@ export default function ScheduleOptimizationWidget({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed": return "default";
-      case "running": return "blue";
+      case "running": return "secondary";
       case "failed": return "destructive";
-      case "cancelled": return "secondary";
+      case "cancelled": return "outline";
       default: return "outline";
     }
   };
