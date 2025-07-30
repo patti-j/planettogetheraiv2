@@ -32,21 +32,25 @@ export function AlgorithmFeedbackButton({
   const [, setLocation] = useLocation();
 
   const handleFeedbackClick = () => {
-    // Store algorithm context in sessionStorage to pre-populate the form
+    // Enhance algorithm context with better defaults
     const algorithmContext = {
-      algorithmName,
-      algorithmVersion,
-      executionId,
+      algorithmName: algorithmName || "backwards-scheduling", // Default to most common algorithm
+      algorithmVersion: algorithmVersion || "1.0.0",
+      executionId: executionId || `exec_${Date.now()}`, // Generate execution ID if not provided
       schedulingHistoryId,
       algorithmPerformanceId,
       optimizationRunId,
-      triggerContext
+      triggerContext: triggerContext || "manual-feedback",
+      // Add timestamp for better tracking
+      contextTimestamp: new Date().toISOString(),
+      // Add source page for better context
+      sourcePage: window.location.pathname
     };
     
     sessionStorage.setItem('algorithmFeedbackContext', JSON.stringify(algorithmContext));
     
-    // Navigate to feedback page with algorithm tab active
-    setLocation('/feedback?tab=algorithm');
+    // Navigate to unified feedback page (now all feedback is unified)
+    setLocation('/feedback?tab=submit&type=algorithm');
   };
 
   return (

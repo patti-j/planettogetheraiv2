@@ -150,13 +150,20 @@ export default function Feedback() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query for available algorithms to help with auto-completion
+  const { data: availableAlgorithms = [] } = useQuery({
+    queryKey: ["/api/optimization/algorithms"],
+  });
+
   // Handle URL parameters and sessionStorage context for algorithm feedback
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
+    const typeParam = urlParams.get('type');
     
-    if (tabParam === 'algorithm') {
-      setActiveTab('algorithm');
+    // Handle both algorithm tab and algorithm type
+    if (tabParam === 'algorithm' || (tabParam === 'submit' && typeParam === 'algorithm')) {
+      setActiveTab(tabParam || 'submit');
       
       // Check for algorithm context in sessionStorage
       const algorithmContextStr = sessionStorage.getItem('algorithmFeedbackContext');
@@ -169,9 +176,30 @@ export default function Feedback() {
         } catch (e) {
           console.error('Failed to parse algorithm feedback context:', e);
         }
+      } else {
+        // If no specific context, try to auto-detect from current page or recent activity
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('scheduling') && availableAlgorithms.length > 0) {
+          // Auto-detect scheduling algorithm context
+          const schedulingAlgorithm = availableAlgorithms.find((alg: any) => 
+            alg.name.includes('scheduling') || alg.type === 'scheduling'
+          );
+          if (schedulingAlgorithm) {
+            setSelectedAlgorithmContext({
+              algorithmName: schedulingAlgorithm.name,
+              algorithmVersion: schedulingAlgorithm.version || "1.0.0",
+              triggerContext: "auto-detected-scheduling"
+            });
+          }
+        }
       }
     }
-  }, []);
+    
+    // If URL has tab=submit and type=algorithm, auto-open algorithm feedback dialog
+    if (tabParam === 'submit' && typeParam === 'algorithm') {
+      setAlgorithmFeedbackDialogOpen(true);
+    }
+  }, [availableAlgorithms]);
 
   // Fetch feedback data from API
   const { data: feedbackData = [], isLoading: feedbackLoading } = useQuery({
@@ -1411,17 +1439,52 @@ export default function Feedback() {
             }}
             className="space-y-4"
           >
+            {/* Algorithm Detection and Context */}
+            {selectedAlgorithmContext && (
+              <Alert className="bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  Algorithm context detected: <strong>{selectedAlgorithmContext.algorithmName}</strong> v{selectedAlgorithmContext.algorithmVersion}
+                  {selectedAlgorithmContext.executionId && ` (Run #${selectedAlgorithmContext.executionId})`}
+                  {selectedAlgorithmContext.triggerContext === "auto-detected-scheduling" && " (Auto-detected from current page)"}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
                   Algorithm Name *
                 </label>
-                <Input 
+                <Select 
                   name="algorithmName"
                   defaultValue={selectedAlgorithmContext?.algorithmName || ""}
-                  placeholder="e.g., backwards-scheduling, forward-scheduling"
                   required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select algorithm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableAlgorithms.map((algorithm: any) => (
+                      <SelectItem key={algorithm.id} value={algorithm.name}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{algorithm.name}</span>
+                          {algorithm.version && <span className="text-xs text-gray-500">v{algorithm.version}</span>}
+                        </div>
+                        {algorithm.description && (
+                          <div className="text-xs text-gray-600 mt-1">{algorithm.description}</div>
+                        )}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="backwards-scheduling">backwards-scheduling</SelectItem>
+                    <SelectItem value="forward-scheduling">forward-scheduling</SelectItem>
+                    <SelectItem value="capacity-planning">capacity-planning</SelectItem>
+                    <SelectItem value="resource-optimization">resource-optimization</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select from available algorithms or recently used ones
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -1433,8 +1496,43 @@ export default function Feedback() {
                   placeholder="e.g., 1.0.0, 2.1.3"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Current version auto-detected when available
+                </p>
               </div>
             </div>
+
+            {/* Execution Context Display */}
+            {(selectedAlgorithmContext?.executionId || selectedAlgorithmContext?.schedulingHistoryId) && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Execution Context
+                </h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {selectedAlgorithmContext.executionId && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Run ID:</span>
+                      <span className="font-mono bg-white px-2 py-1 rounded border text-xs">
+                        {selectedAlgorithmContext.executionId}
+                      </span>
+                    </div>
+                  )}
+                  {selectedAlgorithmContext.schedulingHistoryId && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Scheduling History:</span>
+                      <span className="text-xs">#{selectedAlgorithmContext.schedulingHistoryId}</span>
+                    </div>
+                  )}
+                  {selectedAlgorithmContext.algorithmPerformanceId && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Performance Tracking:</span>
+                      <span className="text-xs">#{selectedAlgorithmContext.algorithmPerformanceId}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -1446,10 +1544,42 @@ export default function Feedback() {
                     <SelectValue placeholder="Select feedback type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="improvement_suggestion">Improvement Suggestion</SelectItem>
-                    <SelectItem value="bug_report">Bug Report</SelectItem>
-                    <SelectItem value="performance_issue">Performance Issue</SelectItem>
-                    <SelectItem value="positive_feedback">Positive Feedback</SelectItem>
+                    <SelectItem value="improvement_suggestion">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-600" />
+                        <div>
+                          <div className="font-medium">Improvement Suggestion</div>
+                          <div className="text-xs text-gray-500">Suggest ways to enhance algorithm performance</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="bug_report">
+                      <div className="flex items-center gap-2">
+                        <Bug className="w-4 h-4 text-red-600" />
+                        <div>
+                          <div className="font-medium">Bug Report</div>
+                          <div className="text-xs text-gray-500">Report unexpected behavior or errors</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="performance_issue">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-orange-600" />
+                        <div>
+                          <div className="font-medium">Performance Issue</div>
+                          <div className="text-xs text-gray-500">Report slow or inefficient execution</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="positive_feedback">
+                      <div className="flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-green-600" />
+                        <div>
+                          <div className="font-medium">Positive Feedback</div>
+                          <div className="text-xs text-gray-500">Share what worked well</div>
+                        </div>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1462,10 +1592,30 @@ export default function Feedback() {
                     <SelectValue placeholder="Select severity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="low">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span>Low - Minor enhancement or nice-to-have</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                        <span>Medium - Noticeable impact on workflow</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="high">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        <span>High - Significant disruption or inefficiency</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="critical">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span>Critical - System failure or major issue</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1480,11 +1630,36 @@ export default function Feedback() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="scheduling_accuracy">Scheduling Accuracy</SelectItem>
-                  <SelectItem value="resource_utilization">Resource Utilization</SelectItem>
-                  <SelectItem value="performance">Performance</SelectItem>
-                  <SelectItem value="usability">Usability</SelectItem>
-                  <SelectItem value="results_quality">Results Quality</SelectItem>
+                  <SelectItem value="scheduling_accuracy">
+                    <div>
+                      <div className="font-medium">Scheduling Accuracy</div>
+                      <div className="text-xs text-gray-500">Timeline predictions, sequencing, dependencies</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="resource_utilization">
+                    <div>
+                      <div className="font-medium">Resource Utilization</div>
+                      <div className="text-xs text-gray-500">Equipment allocation, capacity planning</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="performance">
+                    <div>
+                      <div className="font-medium">Performance</div>
+                      <div className="text-xs text-gray-500">Speed, efficiency, computational time</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="usability">
+                    <div>
+                      <div className="font-medium">Usability</div>
+                      <div className="text-xs text-gray-500">User interface, ease of use, workflow</div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="results_quality">
+                    <div>
+                      <div className="font-medium">Results Quality</div>
+                      <div className="text-xs text-gray-500">Output accuracy, feasibility, optimization</div>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1498,6 +1673,47 @@ export default function Feedback() {
                 placeholder="Brief summary of your feedback"
                 required
               />
+              <div className="mt-2">
+                <p className="text-xs text-gray-500 mb-1">Quick suggestions:</p>
+                <div className="flex flex-wrap gap-1">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs h-6"
+                    onClick={(e) => {
+                      const titleInput = (e.target as HTMLElement).closest('form')?.querySelector('input[name="title"]') as HTMLInputElement;
+                      if (titleInput) titleInput.value = `${selectedAlgorithmContext?.algorithmName || 'Algorithm'} scheduling takes too long`;
+                    }}
+                  >
+                    Performance issue
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs h-6"
+                    onClick={(e) => {
+                      const titleInput = (e.target as HTMLElement).closest('form')?.querySelector('input[name="title"]') as HTMLInputElement;
+                      if (titleInput) titleInput.value = `${selectedAlgorithmContext?.algorithmName || 'Algorithm'} results could be more accurate`;
+                    }}
+                  >
+                    Accuracy improvement
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs h-6"
+                    onClick={(e) => {
+                      const titleInput = (e.target as HTMLElement).closest('form')?.querySelector('input[name="title"]') as HTMLInputElement;
+                      if (titleInput) titleInput.value = `Unexpected error in ${selectedAlgorithmContext?.algorithmName || 'algorithm'}`;
+                    }}
+                  >
+                    Bug report
+                  </Button>
+                </div>
+              </div>
             </div>
             
             <div>
