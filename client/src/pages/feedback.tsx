@@ -150,6 +150,29 @@ export default function Feedback() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Handle URL parameters and sessionStorage context for algorithm feedback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam === 'algorithm') {
+      setActiveTab('algorithm');
+      
+      // Check for algorithm context in sessionStorage
+      const algorithmContextStr = sessionStorage.getItem('algorithmFeedbackContext');
+      if (algorithmContextStr) {
+        try {
+          const algorithmContext = JSON.parse(algorithmContextStr);
+          setSelectedAlgorithmContext(algorithmContext);
+          // Clear the context after using it
+          sessionStorage.removeItem('algorithmFeedbackContext');
+        } catch (e) {
+          console.error('Failed to parse algorithm feedback context:', e);
+        }
+      }
+    }
+  }, []);
+
   // Fetch feedback data from API
   const { data: feedbackData = [], isLoading: feedbackLoading } = useQuery({
     queryKey: ["/api/feedback"],
