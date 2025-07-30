@@ -205,27 +205,32 @@ export default function TableFieldViewer() {
     return "bg-gray-100 text-gray-800";
   };
 
-  // Define master data tables (excluding relation/junction tables)
-  const masterDataTables = [
-    'plants', 'departments', 'work_centers', 'resources', 'capabilities',
-    'customers', 'vendors', 'users', 'items', 'user_preferences',
-    'production_orders', 'sales_orders', 'purchase_orders', 'stocks',
-    'bills_of_material', 'routings', 'formulations', 'recipes'
+  // Define junction/relation tables to exclude (tables that only contain IDs for joins)
+  const junctionTables = [
+    'plant_resources', 'work_center_resources', 'department_resources',
+    'production_version_phase_material_requirements', 'production_version_phase_bom_product_outputs',
+    'production_version_phase_formulation_details', 'discrete_operation_phase_resource_requirements',
+    'discrete_operation_phase_relationships', 'recipe_phase_relationships',
+    'sales_order_line_distributions' // Has minimal business data beyond joins
   ];
 
-  // Filter master data tables only
-  const getMasterDataTables = () => {
+  // Get all business tables (excluding junction tables)
+  const getBusinessTables = () => {
     return tables.filter((table: TableInfo) => 
-      masterDataTables.includes(table.name)
+      !junctionTables.includes(table.name) && 
+      !table.name.startsWith('pg_') && // Exclude PostgreSQL system tables
+      !table.name.startsWith('information_schema') && // Exclude system schema tables
+      table.name !== 'spatial_ref_sys' && // Exclude PostGIS tables
+      table.columns.length > 2 // Exclude tables with only ID columns
     );
   };
 
   // Generate Excel export data
   const generateExcelData = () => {
-    const masterTables = getMasterDataTables();
+    const businessTables = getBusinessTables();
     const exportData: any[] = [];
 
-    masterTables.forEach((table: TableInfo) => {
+    businessTables.forEach((table: TableInfo) => {
       table.columns.forEach((column: TableColumn) => {
         const fieldComment = getFieldComment(table.name, column.name);
         
@@ -270,12 +275,12 @@ export default function TableFieldViewer() {
       ws['!cols'] = colWidths;
 
       // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Master Data Fields');
+      XLSX.utils.book_append_sheet(wb, ws, 'Database Schema Fields');
 
       // Generate filename with current date
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-      const filename = `manufacturing_erp_master_data_fields_${dateStr}.xlsx`;
+      const filename = `manufacturing_erp_database_schema_${dateStr}.xlsx`;
 
       // Download the file
       XLSX.writeFile(wb, filename);
@@ -327,7 +332,7 @@ export default function TableFieldViewer() {
                 Database Tables ({filteredTables.length})
               </CardTitle>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Master data tables available for Excel export: {getMasterDataTables().length}
+                Business tables available for Excel export: {getBusinessTables().length}
               </p>
               <div className="space-y-3">
                 <div className="relative">
