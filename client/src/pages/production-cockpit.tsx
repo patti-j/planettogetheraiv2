@@ -133,9 +133,9 @@ function getDefaultDataSource(cockpitType: string): string {
   switch (cockpitType) {
     case 'metrics':
     case 'kpi':
-      return 'jobs';
+      return 'productionOrders';
     case 'chart':
-      return 'jobs';
+      return 'productionOrders';
     case 'alerts':
       return 'alerts';
     case 'schedule':
@@ -144,9 +144,9 @@ function getDefaultDataSource(cockpitType: string): string {
     case 'resources':
       return 'resources';
     case 'activity':
-      return 'jobs';
+      return 'productionOrders';
     default:
-      return 'jobs';
+      return 'productionOrders';
   }
 }
 
@@ -181,7 +181,7 @@ export default function ProductionCockpit() {
   });
   const [aiWidgetData, setAiWidgetData] = useState({
     description: "",
-    dataSource: "jobs",
+    dataSource: "productionOrders",
     visualizationType: "chart"
   });
   const [optimizationDialog, setOptimizationDialog] = useState(false);
@@ -379,7 +379,7 @@ export default function ProductionCockpit() {
       setAiWidgetDialog(false);
       setAiWidgetData({
         description: "",
-        dataSource: "jobs",
+        dataSource: "productionOrders",
         visualizationType: "chart"
       });
       toast({ title: `AI widget "${widget.title}" added successfully` });
@@ -462,7 +462,7 @@ export default function ProductionCockpit() {
       case "metrics":
         return { metrics: ["activeJobs", "utilization", "efficiency"], showTrends: true };
       case "chart":
-        return { chartType: "bar", dataSource: "jobs", groupBy: "status" };
+        return { chartType: "bar", dataSource: "productionOrders", groupBy: "status" };
       case "alerts":
         return { severity: ["critical", "warning"], autoRefresh: true };
       case "schedule":
@@ -1133,14 +1133,19 @@ export default function ProductionCockpit() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="jobs">Jobs & Orders</SelectItem>
-                          <SelectItem value="resources">Resources & Equipment</SelectItem>
-                          <SelectItem value="operations">Operations & Tasks</SelectItem>
-                          <SelectItem value="metrics">Production Metrics</SelectItem>
-                          <SelectItem value="alerts">Alerts & Issues</SelectItem>
-                          <SelectItem value="schedule">Schedule & Timeline</SelectItem>
-                          <SelectItem value="quality">Quality Metrics</SelectItem>
-                          <SelectItem value="capacity">Capacity & Utilization</SelectItem>
+                          <SelectItem value="productionOrders">Production Orders</SelectItem>
+                          <SelectItem value="operations">Operations</SelectItem>
+                          <SelectItem value="resources">Resources</SelectItem>
+                          <SelectItem value="customers">Customers</SelectItem>
+                          <SelectItem value="vendors">Vendors</SelectItem>
+                          <SelectItem value="plants">Plants</SelectItem>
+                          <SelectItem value="capabilities">Capabilities</SelectItem>
+                          <SelectItem value="recipes">Recipes</SelectItem>
+                          <SelectItem value="productionVersions">Production Versions</SelectItem>
+                          <SelectItem value="plannedOrders">Planned Orders</SelectItem>
+                          <SelectItem value="users">Users</SelectItem>
+                          <SelectItem value="metrics">Metrics</SelectItem>
+                          <SelectItem value="alerts">Alerts</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
