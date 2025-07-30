@@ -491,8 +491,7 @@ export default function ProductionCockpit() {
           <div className="flex items-center gap-2 min-w-0">
             <Monitor className="h-5 w-5 lg:h-6 lg:w-6 text-primary flex-shrink-0" />
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold truncate">
-              <span className="hidden sm:inline">Production Scheduler's Cockpit</span>
-              <span className="sm:hidden">Cockpit</span>
+              Cockpit
             </h1>
           </div>
           

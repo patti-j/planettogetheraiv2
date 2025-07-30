@@ -1,0 +1,399 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Settings, 
+  PlayCircle, 
+  Clock, 
+  TrendingUp,
+  BarChart3,
+  Target,
+  Activity,
+  Zap,
+  History,
+  AlertTriangle,
+  CheckCircle,
+  Loader2,
+  ChevronRight,
+  Calendar,
+  Timer
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface ScheduleOptimizationWidgetProps {
+  config?: {
+    showQuickActions?: boolean;
+    showHistory?: boolean;
+    showMetrics?: boolean;
+    maxHistoryItems?: number;
+    defaultView?: 'overview' | 'history' | 'algorithms';
+    showAlgorithmSelector?: boolean;
+    showProfileSelector?: boolean;
+  };
+  data?: any;
+  onAction?: (action: string, data: any) => void;
+}
+
+interface OptimizationHistory {
+  id: number;
+  algorithmName: string;
+  status: string;
+  executedAt: string;
+  executionTime: number;
+  operationsCount: number;
+  performanceScore: number;
+  summary: string;
+}
+
+interface Algorithm {
+  id: number;
+  name: string;
+  displayName: string;
+  status: string;
+  description: string;
+}
+
+interface Profile {
+  id: number;
+  name: string;
+  description: string;
+  isDefault: boolean;
+}
+
+export default function ScheduleOptimizationWidget({ 
+  config = {
+    showQuickActions: true,
+    showHistory: true,
+    showMetrics: true,
+    maxHistoryItems: 5,
+    defaultView: 'overview',
+    showAlgorithmSelector: true,
+    showProfileSelector: true
+  },
+  data,
+  onAction
+}: ScheduleOptimizationWidgetProps) {
+  const [currentView, setCurrentView] = useState(config.defaultView || 'overview');
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [optimizationDialog, setOptimizationDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch algorithms
+  const { data: algorithms = [] } = useQuery({
+    queryKey: ["/api/optimization/algorithms"],
+    queryFn: async () => {
+      const response = await fetch("/api/optimization/algorithms");
+      return await response.json();
+    }
+  });
+
+  // Fetch profiles
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["/api/optimization/profiles"],
+    queryFn: async () => {
+      const response = await fetch("/api/optimization/profiles");
+      return await response.json();
+    }
+  });
+
+  // Fetch optimization history
+  const { data: schedulingHistory = [] } = useQuery({
+    queryKey: ["/api/optimization/scheduling-history"],
+    queryFn: async () => {
+      const response = await fetch("/api/optimization/scheduling-history");
+      return await response.json();
+    }
+  });
+
+  // Run optimization mutation
+  const optimizationMutation = useMutation({
+    mutationFn: async (data: { algorithmId: number; profileId: number; parameters?: any }) => {
+      const response = await apiRequest("POST", "/api/optimization/execute", data);
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Optimization Started",
+        description: `${selectedAlgorithm?.displayName || 'Algorithm'} is now running...`
+      });
+      setOptimizationDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/optimization/scheduling-history"] });
+      onAction?.('optimization_started', result);
+    },
+    onError: (error) => {
+      toast({
+        title: "Optimization Failed",
+        description: "Unable to start optimization. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed": return "default";
+      case "running": return "blue";
+      case "failed": return "destructive";
+      case "cancelled": return "secondary";
+      default: return "outline";
+    }
+  };
+
+  const formatExecutionTime = (ms: number) => {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+    return `${(ms / 60000).toFixed(1)}m`;
+  };
+
+  const recentOptimizations = schedulingHistory.slice(0, config.maxHistoryItems || 5);
+  const lastOptimization = schedulingHistory[0];
+  const runningOptimizations = schedulingHistory.filter((h: OptimizationHistory) => h.status === 'running');
+
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Target className="h-4 w-4 text-primary" />
+            Schedule Optimization
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            {config.showQuickActions && (
+              <Dialog open={optimizationDialog} onOpenChange={setOptimizationDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-7 px-2">
+                    <PlayCircle className="h-3 w-3 mr-1" />
+                    Run
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-blue-500" />
+                      Run Optimization
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {config.showAlgorithmSelector && (
+                      <div>
+                        <Label>Algorithm</Label>
+                        <Select
+                          value={selectedAlgorithm?.id?.toString()}
+                          onValueChange={(value) => {
+                            const algorithm = algorithms.find((a: Algorithm) => a.id === parseInt(value));
+                            setSelectedAlgorithm(algorithm);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose algorithm..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {algorithms.filter((a: Algorithm) => a.status === 'approved').map((algorithm: Algorithm) => (
+                              <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
+                                {algorithm.displayName || algorithm.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {config.showProfileSelector && (
+                      <div>
+                        <Label>Profile</Label>
+                        <Select
+                          value={selectedProfile?.id?.toString()}
+                          onValueChange={(value) => {
+                            const profile = profiles.find((p: Profile) => p.id === parseInt(value));
+                            setSelectedProfile(profile);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose profile..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {profiles.map((profile: Profile) => (
+                              <SelectItem key={profile.id} value={profile.id.toString()}>
+                                <div className="flex items-center gap-2">
+                                  {profile.name}
+                                  {profile.isDefault && (
+                                    <Badge variant="secondary" className="text-xs">Default</Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <Button 
+                      onClick={() => {
+                        if (selectedAlgorithm && selectedProfile) {
+                          optimizationMutation.mutate({
+                            algorithmId: selectedAlgorithm.id,
+                            profileId: selectedProfile.id
+                          });
+                        }
+                      }}
+                      disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
+                      className="w-full"
+                    >
+                      {optimizationMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Starting...
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          Run Optimization
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 w-7 p-0"
+              onClick={() => setCurrentView(currentView === 'overview' ? 'history' : 'overview')}
+            >
+              {currentView === 'overview' ? <History className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        {currentView === 'overview' && (
+          <div className="space-y-4">
+            {/* Status Overview */}
+            {runningOptimizations.length > 0 && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    {runningOptimizations.length} optimization{runningOptimizations.length > 1 ? 's' : ''} running
+                  </span>
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  {runningOptimizations[0].algorithmName}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Metrics */}
+            {config.showMetrics && lastOptimization && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-2 bg-muted/50 rounded">
+                  <div className="text-lg font-semibold">
+                    {lastOptimization.performanceScore || 'N/A'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Performance Score</div>
+                </div>
+                <div className="text-center p-2 bg-muted/50 rounded">
+                  <div className="text-lg font-semibold">
+                    {formatExecutionTime(lastOptimization.executionTime)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Last Runtime</div>
+                </div>
+              </div>
+            )}
+
+            {/* Recent History */}
+            {config.showHistory && recentOptimizations.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <Clock className="h-3 w-3" />
+                  Recent Optimizations
+                </div>
+                <ScrollArea className="h-32">
+                  <div className="space-y-2">
+                    {recentOptimizations.map((optimization: OptimizationHistory) => (
+                      <div key={optimization.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <Badge variant={getStatusColor(optimization.status)} className="text-xs px-1 py-0">
+                            {optimization.status}
+                          </Badge>
+                          <span className="truncate font-medium">
+                            {optimization.algorithmName}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {new Date(optimization.executedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentView === 'history' && (
+          <div className="space-y-3">
+            <div className="text-sm font-medium flex items-center gap-2">
+              <History className="h-3 w-3" />
+              Optimization History
+            </div>
+            <ScrollArea className="h-40">
+              {schedulingHistory.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No optimization history</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {schedulingHistory.map((optimization: OptimizationHistory) => (
+                    <div key={optimization.id} className="p-3 border rounded-lg bg-card">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={getStatusColor(optimization.status)} className="text-xs">
+                            {optimization.status}
+                          </Badge>
+                          <span className="font-medium text-sm">{optimization.algorithmName}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(optimization.executedAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <div className="flex justify-between">
+                          <span>Operations: {optimization.operationsCount || 0}</span>
+                          <span>Runtime: {formatExecutionTime(optimization.executionTime)}</span>
+                        </div>
+                        {optimization.performanceScore && (
+                          <div>Score: {optimization.performanceScore}</div>
+                        )}
+                        {optimization.summary && (
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {optimization.summary}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
