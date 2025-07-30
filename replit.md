@@ -21,6 +21,18 @@
 
 ## Recent Changes (July 30, 2025)
 
+✓ **Max AI Function Communication Issue Resolution (July 30, 2025)**:
+- **COMMUNICATION ISSUE FIXED**: Resolved critical issue where Max showed job listings instead of API functions when users asked about his capabilities
+- **ENHANCED SYSTEM PROMPT**: Updated AI system prompt with clearer distinction between API documentation requests ("list functions you can perform") vs data requests ("list jobs")
+- **IMPROVED WELCOME MESSAGE**: Updated Max's welcome message to showcase new widget and feedback API capabilities with clear formatting and usage examples
+- **API DOCUMENTATION UPDATED**: Enhanced LIST_AVAILABLE_APIS action to highlight new widget management and algorithm feedback API functions with "🔥 NEW" indicators
+- **BETTER USER GUIDANCE**: Added specific examples like "what functions can you perform", "show me your functions", "list your functions" to trigger API documentation display
+- **WIDGET API PROMINENCE**: Positioned new canvas widget management APIs (CREATE_CANVAS_WIDGET, UPDATE_CANVAS_WIDGET, DELETE_CANVAS_WIDGET, LIST_CANVAS_WIDGETS) at top of API documentation
+- **FEEDBACK SYSTEM VISIBILITY**: Featured algorithm feedback APIs (SUBMIT_ALGORITHM_FEEDBACK, LIST_ALGORITHM_FEEDBACK) prominently in Max's capability display
+- **CLEAR CAPABILITY COMMUNICATION**: Max now properly shows his API functions including interactive widget creation, KPI dashboards, algorithm feedback submission, and manufacturing operations management
+- **ENHANCED USER EXPERIENCE**: Users asking about Max's capabilities now receive comprehensive API documentation instead of confusion with job listings
+- Fixed Max's capability communication ensuring users can easily discover widget creation, feedback submission, and all available manufacturing AI assistant functions
+
 ✓ **Complete Max Canvas Widget System Implementation & API Integration (July 30, 2025)**:
 - **COMPREHENSIVE WIDGET API ENDPOINTS**: Successfully implemented 11 complete widget management endpoints including creation, retrieval, updates, position management, visibility control, and bulk operations for Max AI canvas widgets
 - **MAX AI AUTHENTICATION BYPASS**: Created dedicated `/api/max/canvas/widgets` endpoint allowing Max AI to create widgets without authentication while regular users require proper authentication for widget management

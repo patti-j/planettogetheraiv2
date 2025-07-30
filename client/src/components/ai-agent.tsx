@@ -54,7 +54,7 @@ export default function AIAgent() {
     {
       id: "1",
       type: "agent",
-      content: "Hello! I'm Max, your manufacturing AI assistant. I can help you with everything you can do in the interface: create jobs, operations, and resources, open and create dashboards, navigate to different pages, open the Gantt chart, create Kanban boards, analyze attached files, and much more. Try saying 'Open the Gantt chart', 'Create a new job form', 'Show me the analytics dashboard', or attach files for me to analyze.",
+      content: "Hello! I'm Max, your manufacturing AI assistant. Here are my current API functions:\n\n**📊 Canvas Widget Management:**\n• Create interactive widgets (charts, tables, buttons, KPI dashboards)\n• Position and resize widgets on your canvas\n• Generate real-time production monitoring displays\n• Build custom manufacturing dashboards\n\n**🔧 Algorithm Feedback System:**\n• Submit automated performance analysis feedback\n• Report scheduling algorithm issues and improvements\n• Track algorithm execution metrics and optimization suggestions\n\n**📋 Manufacturing Operations:**\n• List jobs, operations, and resources with live data\n• Create and manage production orders\n• Navigate to any system page or dashboard\n• Open forms for jobs, operations, and resources\n\n**📁 File Analysis:**\n• Analyze attached documents and images\n• Extract manufacturing data from spreadsheets\n• Process technical drawings and specifications\n\nTry: 'Show me production widgets', 'Create a KPI dashboard', 'List current jobs', or attach files for analysis!",
       timestamp: new Date(),
     }
   ]);

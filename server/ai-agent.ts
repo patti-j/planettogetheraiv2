@@ -323,8 +323,10 @@ Tour Guidelines:
 - Examples: "start tour" = START_TOUR with current user's role, "create a tour about scheduling for managers" = CREATE_TOUR with specific parameters
 
 CRITICAL DISTINCTION:
-- For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what can you do", "your capabilities", "available commands"): Use LIST_AVAILABLE_APIS action
-- For actual data requests ("list jobs", "show resources", "available jobs", "available resources"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
+- For API documentation requests ("available APIs", "what APIs can you call", "list of available functions", "what functions can you perform", "what can you do", "your capabilities", "available commands", "list your functions", "show me your functions"): Use LIST_AVAILABLE_APIS action
+- For actual data requests ("list jobs", "show resources", "available jobs", "available resources", "show me jobs", "what jobs do we have"): Use appropriate data actions (LIST_JOBS, LIST_RESOURCES, etc.)
+
+IMPORTANT: When users ask about "functions you can perform" or "what functions you have", they want to see your API capabilities, NOT the jobs in the system. Use LIST_AVAILABLE_APIS for these requests.
 
 UI Navigation Actions:
 - NAVIGATE_TO_PAGE: Navigate to specific pages (supports all application pages with permission checking)
@@ -1708,6 +1710,12 @@ async function executeAction(action: string, parameters: any, message: string, c
       case "LIST_AVAILABLE_APIS":
       case "SHOW_API_DOCUMENTATION":
         const apiDocumentation = [
+          { "API Function": "CREATE_CANVAS_WIDGET", "Description": "🔥 NEW: Create interactive widgets on canvas (charts, tables, buttons, KPI dashboards)" },
+          { "API Function": "UPDATE_CANVAS_WIDGET", "Description": "🔥 NEW: Update widget properties, position, and data" },
+          { "API Function": "DELETE_CANVAS_WIDGET", "Description": "🔥 NEW: Remove widgets from canvas" },
+          { "API Function": "LIST_CANVAS_WIDGETS", "Description": "🔥 NEW: List all canvas widgets for current session" },
+          { "API Function": "SUBMIT_ALGORITHM_FEEDBACK", "Description": "🔥 NEW: Submit automated algorithm performance feedback and improvements" },
+          { "API Function": "LIST_ALGORITHM_FEEDBACK", "Description": "🔥 NEW: List algorithm feedback submissions with filtering" },
           { "API Function": "LIST_JOBS", "Description": "List all active jobs with optional display in canvas." },
           { "API Function": "LIST_OPERATIONS", "Description": "List all active operations with optional display in canvas." },
           { "API Function": "LIST_RESOURCES", "Description": "List all active resources with optional display in canvas." },
