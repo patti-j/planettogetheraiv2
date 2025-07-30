@@ -1789,9 +1789,10 @@ async function executeAction(action: string, parameters: any, message: string, c
           { "API Function": "CREATE_TOUR", "Description": "Create a new custom tour based on user description and target roles." }
         ];
 
+        const timestamp = new Date().toISOString();
         return {
           success: true,
-          message: message || "Hello! I'm Max, your AI manufacturing assistant. Here are the functions I can perform to help with your manufacturing operations:",
+          message: message || `Hello! I'm Max, your AI manufacturing assistant. Here are the functions I can perform to help with your manufacturing operations: [Generated at ${timestamp}]`,
           data: apiDocumentation,
           canvasAction: {
             type: "ADD_CANVAS_CONTENT",

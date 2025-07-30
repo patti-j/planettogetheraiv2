@@ -2870,10 +2870,14 @@ Provide the response as a JSON object with the following structure:
       const agentResponse = await processAICommand(message, []);
       
       // Debug the AI response to track the issue
+      const responseId = Date.now();
       console.log('=== AI RESPONSE DEBUG ===');
-      console.log('AI Response Message:', agentResponse.message);
+      console.log('Response ID:', responseId);
+      console.log('User Message:', message);
+      console.log('AI Response Message Length:', agentResponse.message.length);
+      console.log('AI Response Message Preview:', agentResponse.message.substring(0, 200) + '...');
       console.log('AI Response Actions:', agentResponse.actions);
-      console.log('AI Response Data:', agentResponse.data);
+      console.log('AI Response Data Keys:', Object.keys(agentResponse.data || {}));
       console.log('=========================');
 
       // Store this interaction in memory for learning

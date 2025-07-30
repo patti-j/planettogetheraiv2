@@ -295,6 +295,14 @@ export function MaxSidebar() {
       return await response.json();
     },
     onSuccess: (response: any) => {
+      // Debug the response to track the issue
+      console.log('=== FRONTEND MESSAGE DEBUG ===');
+      console.log('Response message preview:', response.message.substring(0, 200));
+      console.log('Response actions:', response.actions);
+      console.log('Message contains API table:', response.message.includes('API Function'));
+      console.log('Message contains job listing:', response.message.includes('Job ID') || response.message.includes('job name'));
+      console.log('================================');
+      
       const assistantMessage: Message = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
