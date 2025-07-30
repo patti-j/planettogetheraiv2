@@ -142,7 +142,7 @@ const MarketingHome: React.FC = () => {
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              The most advanced AI-powered ERP platform for pharmaceutical, chemical, and industrial manufacturing. 
+              The most advanced AI First Factory Optimization Platform for pharmaceutical, chemical, and industrial manufacturing. 
               Optimize production, reduce costs, and accelerate growth with intelligent automation.
             </p>
             
@@ -228,7 +228,7 @@ const MarketingHome: React.FC = () => {
             </Badge>
             <h2 className="text-4xl font-bold mb-4">Everything You Need for Manufacturing Excellence</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive manufacturing ERP with AI-powered insights, real-time monitoring, and intelligent optimization.
+              Comprehensive AI First Factory Optimization Platform with AI-powered insights, real-time monitoring, and intelligent optimization.
             </p>
           </div>
 
@@ -330,7 +330,7 @@ const MarketingHome: React.FC = () => {
           <div className="max-w-3xl mx-auto text-white">
             <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Manufacturing?</h2>
             <p className="text-xl mb-8 opacity-90">
-              Join the manufacturing revolution with AI-powered ERP. Start your free trial today and see results in weeks.
+              Join the manufacturing revolution with our AI First Factory Optimization Platform. Start your free trial today and see results in weeks.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

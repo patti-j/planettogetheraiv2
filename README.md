@@ -1,4 +1,4 @@
-# PlanetTogether - Manufacturing ERP System
+# PlanetTogether - AI First Factory Optimization Platform
 
 An advanced AI-powered industrial management platform that provides intelligent data management and optimization tools for manufacturing workflows, with enhanced schema visualization and layout algorithms.
 
@@ -55,11 +55,8 @@ An advanced AI-powered industrial management platform that provides intelligent 
 
 4. **Set up the database**
    ```bash
-   # Create database and run migrations
+   # Create database and push schema
    npm run db:push
-   
-   # Seed the database with sample data
-   npm run db:seed
    ```
 
 5. **Start the development server**

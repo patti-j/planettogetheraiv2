@@ -468,7 +468,7 @@ export default function Pricing() {
               Choose the Perfect Plan for Your Manufacturing Operation
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-6">
-              From essential production scheduling to advanced AI-powered optimization, we deliver complete manufacturing management solutions with Max AI Assistant, multi-plant operations, and comprehensive role-based access control.
+              From essential production scheduling to advanced AI-powered optimization, our AI First Factory Optimization Platform delivers complete manufacturing solutions with Max AI Assistant, multi-plant operations, and comprehensive role-based access control.
             </p>
             
             {/* Login and Demo Tour Buttons */}
