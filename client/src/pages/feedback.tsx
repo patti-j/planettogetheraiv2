@@ -58,7 +58,9 @@ interface FeedbackItem {
   title: string;
   description: string;
   submittedBy: string;
+  submitterName?: string;
   submittedDate: string;
+  createdAt?: string;
   status: "new" | "under_review" | "in_progress" | "completed" | "rejected" | "duplicate";
   priority: "low" | "medium" | "high" | "critical";
   votes: number;
@@ -89,6 +91,37 @@ interface FeedbackStats {
   recentActivity: number;
 }
 
+interface AlgorithmFeedback {
+  id: number;
+  schedulingHistoryId?: number;
+  algorithmPerformanceId?: number;
+  optimizationRunId?: number;
+  algorithmName: string;
+  algorithmVersion: string;
+  executionId?: string;
+  submittedBy: number;
+  feedbackType: "improvement_suggestion" | "bug_report" | "performance_issue" | "positive_feedback";
+  severity: "low" | "medium" | "high" | "critical";
+  category: "scheduling_accuracy" | "resource_utilization" | "performance" | "usability" | "results_quality";
+  title: string;
+  description: string;
+  expectedResult?: string;
+  actualResult?: string;
+  suggestedImprovement?: string;
+  plantId?: number;
+  status: "open" | "in_progress" | "resolved";
+  priority: "low" | "medium" | "high" | "critical";
+  assignedTo?: number;
+  resolvedBy?: number;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  implementationStatus?: "not_started" | "in_development" | "testing" | "deployed";
+  implementationNotes?: string;
+  implementationVersion?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Feedback() {
   const { isMaxOpen } = useMaxDock();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -103,6 +136,17 @@ export default function Feedback() {
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
   const [newComment, setNewComment] = useState("");
   const [currentUser] = useState("Current User"); // In real app, this would come from auth
+  
+  // Algorithm feedback specific state
+  const [algorithmFeedbackDialogOpen, setAlgorithmFeedbackDialogOpen] = useState(false);
+  const [selectedAlgorithmContext, setSelectedAlgorithmContext] = useState<{
+    algorithmName?: string;
+    algorithmVersion?: string;
+    executionId?: string;
+    schedulingHistoryId?: number;
+    algorithmPerformanceId?: number;
+    optimizationRunId?: number;
+  } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -130,6 +174,11 @@ export default function Feedback() {
   // Fetch feedback stats from API  
   const { data: feedbackStats = mockStats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/feedback/stats"],
+  });
+
+  // Fetch algorithm feedback data from API
+  const { data: algorithmFeedbackData = [], isLoading: algorithmFeedbackLoading } = useQuery({
+    queryKey: ["/api/algorithm-feedback"],
   });
 
   // Mock feedback data (to be removed after API integration)
@@ -315,6 +364,49 @@ export default function Feedback() {
     },
   });
 
+  // Submit algorithm feedback mutation
+  const submitAlgorithmFeedbackMutation = useMutation({
+    mutationFn: async (feedback: Partial<AlgorithmFeedback>) => {
+      return apiRequest("POST", "/api/algorithm-feedback", feedback);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Algorithm Feedback Submitted",
+        description: "Thank you for your algorithm feedback! This helps improve our optimization algorithms.",
+      });
+      setAlgorithmFeedbackDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/algorithm-feedback"] });
+    },
+    onError: () => {
+      toast({
+        title: "Submission Failed",
+        description: "Failed to submit algorithm feedback. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Vote on algorithm feedback mutation
+  const voteAlgorithmFeedbackMutation = useMutation({
+    mutationFn: async ({ id, vote }: { id: number; vote: "upvote" | "downvote" }) => {
+      return apiRequest("POST", `/api/algorithm-feedback/${id}/vote`, { voteType: vote });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Vote Recorded",
+        description: "Your vote on algorithm feedback has been recorded.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/algorithm-feedback"] });
+    },
+    onError: () => {
+      toast({
+        title: "Vote Failed",
+        description: "Failed to record your vote. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -352,6 +444,36 @@ export default function Feedback() {
     }
   };
 
+  // Algorithm feedback utility functions
+  const getAlgorithmFeedbackTypeColor = (type: string) => {
+    switch (type) {
+      case "improvement_suggestion": return "bg-blue-100 text-blue-800";
+      case "bug_report": return "bg-red-100 text-red-800";
+      case "performance_issue": return "bg-orange-100 text-orange-800";
+      case "positive_feedback": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getAlgorithmSeverityColor = (severity: string) => {
+    switch (severity) {
+      case "critical": return "bg-red-500";
+      case "high": return "bg-orange-500";
+      case "medium": return "bg-yellow-500";
+      case "low": return "bg-green-500";
+      default: return "bg-gray-500";
+    }
+  };
+
+  const getAlgorithmStatusColor = (status: string) => {
+    switch (status) {
+      case "open": return "bg-blue-100 text-blue-800";
+      case "in_progress": return "bg-yellow-100 text-yellow-800";
+      case "resolved": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
   // Filter feedback
   const currentFeedback: FeedbackItem[] = feedbackLoading ? [] : (feedbackData as FeedbackItem[]);
   
@@ -372,9 +494,9 @@ export default function Feedback() {
   const sortedFeedback = [...filteredFeedback].sort((a: FeedbackItem, b: FeedbackItem) => {
     switch (sortBy) {
       case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.createdAt || b.submittedDate).getTime() - new Date(a.createdAt || a.submittedDate).getTime();
       case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return new Date(a.createdAt || a.submittedDate).getTime() - new Date(b.createdAt || b.submittedDate).getTime();
       case "most_votes":
         return b.votes - a.votes;
       case "least_votes":
@@ -383,6 +505,247 @@ export default function Feedback() {
         return 0;
     }
   });
+
+  // Algorithm Feedback Content Component
+  const AlgorithmFeedbackContent = () => {
+    const [algorithmSearchTerm, setAlgorithmSearchTerm] = useState("");
+    const [algorithmTypeFilter, setAlgorithmTypeFilter] = useState<string>("all");
+    const [algorithmStatusFilter, setAlgorithmStatusFilter] = useState<string>("all");
+    const [algorithmCategoryFilter, setAlgorithmCategoryFilter] = useState<string>("all");
+    const [algorithmSortBy, setAlgorithmSortBy] = useState<string>("newest");
+
+    const currentAlgorithmFeedback: AlgorithmFeedback[] = algorithmFeedbackLoading ? [] : (algorithmFeedbackData as AlgorithmFeedback[]);
+    
+    const filteredAlgorithmFeedback = currentAlgorithmFeedback.filter((item: AlgorithmFeedback) => {
+      const matchesSearch = algorithmSearchTerm === "" || 
+        item.title.toLowerCase().includes(algorithmSearchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(algorithmSearchTerm.toLowerCase()) ||
+        item.algorithmName.toLowerCase().includes(algorithmSearchTerm.toLowerCase());
+      
+      const matchesType = algorithmTypeFilter === "all" || item.feedbackType === algorithmTypeFilter;
+      const matchesStatus = algorithmStatusFilter === "all" || item.status === algorithmStatusFilter;
+      const matchesCategory = algorithmCategoryFilter === "all" || item.category === algorithmCategoryFilter;
+      
+      return matchesSearch && matchesType && matchesStatus && matchesCategory;
+    });
+
+    const sortedAlgorithmFeedback = [...filteredAlgorithmFeedback].sort((a: AlgorithmFeedback, b: AlgorithmFeedback) => {
+      switch (algorithmSortBy) {
+        case "newest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "severity":
+          const severityOrder = { "critical": 4, "high": 3, "medium": 2, "low": 1 };
+          return (severityOrder[b.severity as keyof typeof severityOrder] || 0) - (severityOrder[a.severity as keyof typeof severityOrder] || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return (
+      <div className="space-y-6">
+        {/* Algorithm Feedback Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Algorithm Feedback</h2>
+            <p className="text-gray-600">Submit feedback on scheduling and optimization algorithm performance</p>
+          </div>
+          <Button 
+            onClick={() => setAlgorithmFeedbackDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Submit Algorithm Feedback
+          </Button>
+        </div>
+
+        {/* Algorithm Feedback Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search algorithm feedback..."
+              className="pl-10"
+              value={algorithmSearchTerm}
+              onChange={(e) => setAlgorithmSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Select value={algorithmTypeFilter} onValueChange={setAlgorithmTypeFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="improvement_suggestion">Improvement Suggestion</SelectItem>
+              <SelectItem value="bug_report">Bug Report</SelectItem>
+              <SelectItem value="performance_issue">Performance Issue</SelectItem>
+              <SelectItem value="positive_feedback">Positive Feedback</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={algorithmStatusFilter} onValueChange={setAlgorithmStatusFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={algorithmCategoryFilter} onValueChange={setAlgorithmCategoryFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="scheduling_accuracy">Scheduling Accuracy</SelectItem>
+              <SelectItem value="resource_utilization">Resource Utilization</SelectItem>
+              <SelectItem value="performance">Performance</SelectItem>
+              <SelectItem value="usability">Usability</SelectItem>
+              <SelectItem value="results_quality">Results Quality</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={algorithmSortBy} onValueChange={setAlgorithmSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="severity">By Severity</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Algorithm Feedback List */}
+        <div className="space-y-4">
+          {algorithmFeedbackLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-500 mt-2">Loading algorithm feedback...</p>
+            </div>
+          ) : sortedAlgorithmFeedback.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Algorithm Feedback Yet</h3>
+                <p className="text-gray-600 mb-4">Be the first to provide feedback on algorithm performance</p>
+                <Button onClick={() => setAlgorithmFeedbackDialogOpen(true)}>
+                  Submit Algorithm Feedback
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            sortedAlgorithmFeedback.map((item) => (
+              <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-3 h-3 rounded-full ${getAlgorithmSeverityColor(item.severity)}`}></div>
+                        <h3 className="font-semibold text-lg">{item.title}</h3>
+                        <Badge className={getAlgorithmFeedbackTypeColor(item.feedbackType)}>
+                          {item.feedbackType.replace("_", " ")}
+                        </Badge>
+                        <Badge className={getAlgorithmStatusColor(item.status)}>
+                          {item.status.replace("_", " ")}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {item.algorithmName} v{item.algorithmVersion}
+                        </Badge>
+                      </div>
+                      <p className="text-gray-600 mb-2">{item.description}</p>
+                      
+                      {/* Show expected vs actual results if available */}
+                      {(item.expectedResult || item.actualResult) && (
+                        <div className="bg-gray-50 p-3 rounded-lg mb-3 space-y-2">
+                          {item.expectedResult && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Expected Result:</span>
+                              <p className="text-sm text-gray-600">{item.expectedResult}</p>
+                            </div>
+                          )}
+                          {item.actualResult && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Actual Result:</span>
+                              <p className="text-sm text-gray-600">{item.actualResult}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Show suggested improvement if available */}
+                      {item.suggestedImprovement && (
+                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                          <span className="text-sm font-medium text-blue-800">Suggested Improvement:</span>
+                          <p className="text-sm text-blue-700">{item.suggestedImprovement}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <User className="w-4 h-4" />
+                          User #{item.submittedBy}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(item.createdAt).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-4 h-4" />
+                          {item.category.replace("_", " ")}
+                        </span>
+                        {item.executionId && (
+                          <span className="flex items-center gap-1">
+                            <Zap className="w-4 h-4" />
+                            Run #{item.executionId}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resolution details */}
+                  {item.status === "resolved" && item.resolutionNotes && (
+                    <div className="bg-green-50 p-3 rounded-lg mb-3">
+                      <p className="text-sm font-medium text-green-800">Resolution</p>
+                      <p className="text-green-700">{item.resolutionNotes}</p>
+                      {item.implementationVersion && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Implemented in version {item.implementationVersion}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Implementation status */}
+                  {item.implementationStatus && item.implementationStatus !== "not_started" && (
+                    <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                      <p className="text-sm font-medium text-blue-800">Implementation Status</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {item.implementationStatus.replace("_", " ")}
+                        </Badge>
+                        {item.implementationNotes && (
+                          <span className="text-sm text-blue-700">{item.implementationNotes}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const PageContent = () => (
     <div className="space-y-6">
@@ -820,9 +1183,10 @@ export default function Feedback() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
             <TabsTrigger value="view">View Feedback</TabsTrigger>
+            <TabsTrigger value="algorithm">Algorithm Feedback</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
           
@@ -832,6 +1196,10 @@ export default function Feedback() {
           
           <TabsContent value="view" className="mt-6">
             <PageContent />
+          </TabsContent>
+          
+          <TabsContent value="algorithm" className="mt-6">
+            <AlgorithmFeedbackContent />
           </TabsContent>
           
           <TabsContent value="analytics" className="mt-6">
@@ -894,6 +1262,214 @@ export default function Feedback() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Algorithm Feedback Submission Dialog */}
+      <Dialog open={algorithmFeedbackDialogOpen} onOpenChange={setAlgorithmFeedbackDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Submit Algorithm Feedback</DialogTitle>
+          </DialogHeader>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const feedbackData = {
+                algorithmName: formData.get('algorithmName') as string,
+                algorithmVersion: formData.get('algorithmVersion') as string,
+                feedbackType: formData.get('feedbackType') as "improvement_suggestion" | "bug_report" | "performance_issue" | "positive_feedback",
+                severity: formData.get('severity') as "low" | "medium" | "high" | "critical",
+                category: formData.get('category') as "scheduling_accuracy" | "resource_utilization" | "performance" | "usability" | "results_quality",
+                title: formData.get('title') as string,
+                description: formData.get('description') as string,
+                expectedResult: (formData.get('expectedResult') as string) || undefined,
+                actualResult: (formData.get('actualResult') as string) || undefined,
+                suggestedImprovement: (formData.get('suggestedImprovement') as string) || undefined,
+                executionId: selectedAlgorithmContext?.executionId,
+                schedulingHistoryId: selectedAlgorithmContext?.schedulingHistoryId,
+                algorithmPerformanceId: selectedAlgorithmContext?.algorithmPerformanceId,
+                optimizationRunId: selectedAlgorithmContext?.optimizationRunId,
+                submittedBy: 1, // This would come from auth context
+                status: 'open' as const,
+                priority: formData.get('severity') as "low" | "medium" | "high" | "critical", // Use severity as priority
+              };
+              submitAlgorithmFeedbackMutation.mutate(feedbackData);
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Algorithm Name *
+                </label>
+                <Input 
+                  name="algorithmName"
+                  defaultValue={selectedAlgorithmContext?.algorithmName || ""}
+                  placeholder="e.g., backwards-scheduling, forward-scheduling"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Algorithm Version *
+                </label>
+                <Input 
+                  name="algorithmVersion"
+                  defaultValue={selectedAlgorithmContext?.algorithmVersion || "1.0.0"}
+                  placeholder="e.g., 1.0.0, 2.1.3"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Feedback Type *
+                </label>
+                <Select name="feedbackType" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select feedback type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="improvement_suggestion">Improvement Suggestion</SelectItem>
+                    <SelectItem value="bug_report">Bug Report</SelectItem>
+                    <SelectItem value="performance_issue">Performance Issue</SelectItem>
+                    <SelectItem value="positive_feedback">Positive Feedback</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Severity *
+                </label>
+                <Select name="severity" defaultValue="medium" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Category *
+              </label>
+              <Select name="category" required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduling_accuracy">Scheduling Accuracy</SelectItem>
+                  <SelectItem value="resource_utilization">Resource Utilization</SelectItem>
+                  <SelectItem value="performance">Performance</SelectItem>
+                  <SelectItem value="usability">Usability</SelectItem>
+                  <SelectItem value="results_quality">Results Quality</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Title *
+              </label>
+              <Input 
+                name="title"
+                placeholder="Brief summary of your feedback"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Description *
+              </label>
+              <Textarea 
+                name="description"
+                placeholder="Detailed description of your feedback, observations, or issues"
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Expected Result
+                </label>
+                <Textarea 
+                  name="expectedResult"
+                  placeholder="What did you expect the algorithm to do?"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Actual Result
+                </label>
+                <Textarea 
+                  name="actualResult"
+                  placeholder="What actually happened?"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Suggested Improvement
+              </label>
+              <Textarea 
+                name="suggestedImprovement"
+                placeholder="How do you think this could be improved?"
+                rows={3}
+              />
+            </div>
+
+            {selectedAlgorithmContext?.executionId && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  This feedback will be linked to execution run #{selectedAlgorithmContext.executionId}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setAlgorithmFeedbackDialogOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={submitAlgorithmFeedbackMutation.isPending}
+              >
+                {submitAlgorithmFeedbackMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Submit Feedback
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

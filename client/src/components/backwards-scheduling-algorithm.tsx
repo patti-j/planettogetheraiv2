@@ -22,6 +22,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { OptimizationSummaryDialog } from "./optimization-summary-dialog";
+import { AlgorithmFeedbackButton } from "./algorithm-feedback-button";
 import { addDays, format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -453,23 +454,33 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
             </p>
           </div>
         </div>
-        <Button 
-          onClick={handleRunScheduling}
-          disabled={isRunning || runSchedulingMutation.isPending}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isRunning ? (
-            <>
-              <Zap className="w-4 h-4 mr-2 animate-pulse" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4 mr-2" />
-              Generate Schedule
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRunScheduling}
+            disabled={isRunning || runSchedulingMutation.isPending}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isRunning ? (
+              <>
+                <Zap className="w-4 h-4 mr-2 animate-pulse" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Generate Schedule
+              </>
+            )}
+          </Button>
+          <AlgorithmFeedbackButton
+            algorithmName="backwards-scheduling"
+            algorithmVersion="2.1.0"
+            triggerContext="algorithm-configuration"
+            variant="outline"
+            size="default"
+            buttonText="Algorithm Feedback"
+          />
+        </div>
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">

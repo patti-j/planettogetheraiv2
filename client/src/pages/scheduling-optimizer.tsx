@@ -55,6 +55,7 @@ import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { AlgorithmFeedbackButton } from '@/components/algorithm-feedback-button';
 
 interface SchedulingOption {
   id: string;
@@ -1155,6 +1156,23 @@ const SchedulingOptimizer: React.FC = () => {
             <span className="sm:hidden">Evaluate</span>
           </Button>
           
+          <AlgorithmFeedbackButton
+            algorithmName="scheduling-optimizer"
+            algorithmVersion="2.1.0"
+            triggerContext="optimization-results"
+            variant="outline"
+            size="sm"
+            className="text-xs md:text-sm hidden sm:inline-flex"
+          />
+          <AlgorithmFeedbackButton
+            algorithmName="scheduling-optimizer"
+            algorithmVersion="2.1.0"
+            triggerContext="optimization-results"
+            variant="outline"
+            size="sm"
+            className="text-xs md:text-sm sm:hidden"
+            buttonText="Feedback"
+          />
 
         </div>
       </div>

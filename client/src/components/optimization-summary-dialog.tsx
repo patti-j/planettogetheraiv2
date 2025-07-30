@@ -21,6 +21,7 @@ import {
   X
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { AlgorithmFeedbackButton } from '@/components/algorithm-feedback-button';
 
 interface OptimizationResult {
   operationId: number;
@@ -374,13 +375,23 @@ export const OptimizationSummaryDialog: React.FC<OptimizationSummaryDialogProps>
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
-            </Button>
-            <Button onClick={() => onOpenChange(false)}>
-              Apply Changes
-            </Button>
+          <div className="flex justify-between items-center">
+            <AlgorithmFeedbackButton
+              algorithmName={summary.algorithmName}
+              algorithmVersion="2.1.0"
+              triggerContext="optimization-complete"
+              variant="outline"
+              size="default"
+              buttonText="Provide Algorithm Feedback"
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+              <Button onClick={() => onOpenChange(false)}>
+                Apply Changes
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
