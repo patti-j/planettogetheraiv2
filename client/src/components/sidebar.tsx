@@ -116,6 +116,7 @@ export default function Sidebar() {
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
     { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
+    { icon: Grid3X3, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
@@ -202,7 +203,8 @@ export default function Sidebar() {
       "/customer-service": "Handle customer orders, issues, and support requests",
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
-      "/feedback": "Submit feedback and suggestions to help improve the system"
+      "/feedback": "Submit feedback and suggestions to help improve the system",
+      "/widgets": "Create, manage, and deploy widgets across dashboard systems with design studio and library access"
     };
     return tooltips[href] || "Navigate to this page";
   };
