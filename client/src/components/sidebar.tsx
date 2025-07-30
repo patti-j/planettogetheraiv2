@@ -147,8 +147,23 @@ export default function Sidebar() {
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
     
-    // Debug logging for specific menu items
-    if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio" || item.label === "Widgets") {
+    // Enhanced debug logging for Widgets menu item
+    if (item.label === "Widgets") {
+      console.log(`🔍 WIDGETS MENU DEBUG:`, {
+        label: item.label,
+        href: item.href,
+        feature: item.feature,
+        action: item.action,
+        hasPermissionForItem,
+        isAlwaysVisible,
+        shouldShow: isAlwaysVisible || hasPermissionForItem,
+        permissionCheck: `hasPermission("${item.feature}", "${item.action}")`,
+        userInfo: 'Check usePermissions hook output'
+      });
+    }
+    
+    // Debug logging for other specific menu items
+    if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio") {
       console.log(`Menu filter check for ${item.label}:`, {
         label: item.label,
         href: item.href,
