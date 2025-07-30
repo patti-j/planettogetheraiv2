@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
   Search, 
@@ -170,10 +170,12 @@ export default function WidgetsPage() {
   // AI Widget Creation Mutation
   const aiWidgetMutation = useMutation({
     mutationFn: async (data: typeof aiWidgetData) => {
-      return apiRequest('/api/ai/generate-widget', {
+      const response = await fetch('/api/ai/generate-widget', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -216,7 +218,8 @@ export default function WidgetsPage() {
           break;
       }
 
-      return apiRequest(endpoint, { method: 'DELETE' });
+      const response = await fetch(endpoint, { method: 'DELETE' });
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -254,7 +257,7 @@ export default function WidgetsPage() {
 
   const getWidgetIcon = (type: string) => {
     const typeConfig = widgetTypes.find(t => t.value === type);
-    return typeConfig?.icon || Widget;
+    return typeConfig?.icon || Grid;
   };
 
   return (
@@ -263,7 +266,7 @@ export default function WidgetsPage() {
       <div className="border-b bg-card px-4 py-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Widget className="h-6 w-6 text-primary" />
+            <Grid className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">Widget Management</h1>
             <Badge variant="outline">{metrics.total} widgets</Badge>
           </div>
@@ -413,7 +416,7 @@ export default function WidgetsPage() {
               </div>
             ) : filteredWidgets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <Widget className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <Grid className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No widgets found matching your criteria</p>
               </div>
             ) : (
@@ -482,7 +485,8 @@ export default function WidgetsPage() {
           </DialogHeader>
           <div className="flex-1 overflow-auto">
             <WidgetDesignStudio
-              targetSystems={['cockpit', 'canvas', 'dashboard']}
+              open={showStudio}
+              onOpenChange={setShowStudio}
               onWidgetCreate={handleWidgetCreate}
             />
           </div>
