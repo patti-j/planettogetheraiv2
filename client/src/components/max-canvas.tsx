@@ -696,12 +696,21 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
 };
 
 const TableWidget: React.FC<{ data: any }> = ({ data }) => {
-  const sampleData = data?.rows || [
+  console.log('TableWidget received data:', data);
+  
+  // Handle the API function data structure - use the direct array or fallback to rows
+  const tableData = Array.isArray(data) ? data : (data?.rows || data?.data || []);
+  
+  // If no data provided, use fallback sample data
+  const sampleData = tableData.length > 0 ? tableData : [
     { id: 1, name: 'Job #1234', status: 'In Progress', progress: 75 },
     { id: 2, name: 'Job #1235', status: 'Completed', progress: 100 },
     { id: 3, name: 'Job #1236', status: 'Pending', progress: 0 },
   ];
 
+  // Detect if this is API functions data vs regular job data
+  const isApiFunctionsTable = tableData.length > 0 && tableData[0]?.['API Function'];
+  
   return (
     <div className="bg-white rounded-lg border">
       <div className="p-4 border-b">
@@ -711,26 +720,44 @@ const TableWidget: React.FC<{ data: any }> = ({ data }) => {
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Status</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Progress</th>
+              {isApiFunctionsTable ? (
+                <>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">API Function</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Description</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Name</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Status</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Progress</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sampleData.map((row: any) => (
-              <tr key={row.id}>
-                <td className="px-4 py-2 text-sm text-gray-900">{row.name}</td>
-                <td className="px-4 py-2">
-                  <Badge variant={row.status === 'Completed' ? 'default' : row.status === 'In Progress' ? 'secondary' : 'outline'}>
-                    {row.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <Progress value={row.progress} className="w-16 h-2" />
-                    <span className="text-sm text-gray-600">{row.progress}%</span>
-                  </div>
-                </td>
+            {sampleData.map((row: any, index: number) => (
+              <tr key={row.id || index}>
+                {isApiFunctionsTable ? (
+                  <>
+                    <td className="px-4 py-2 text-sm font-medium text-gray-900">{row['API Function']}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">{row.Description}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-4 py-2 text-sm text-gray-900">{row.name}</td>
+                    <td className="px-4 py-2">
+                      <Badge variant={row.status === 'Completed' ? 'default' : row.status === 'In Progress' ? 'secondary' : 'outline'}>
+                        {row.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <Progress value={row.progress} className="w-16 h-2" />
+                        <span className="text-sm text-gray-600">{row.progress}%</span>
+                      </div>
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>
