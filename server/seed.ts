@@ -98,7 +98,7 @@ export async function seedDatabase() {
       // Insert operations
       const operationData = [
         {
-          jobId: 1,
+          productionOrderId: 1,
           name: "CNC Machining",
           description: "Machine widget base components",
           duration: 4,
@@ -107,7 +107,7 @@ export async function seedDatabase() {
           order: 1
         },
         {
-          jobId: 1,
+          productionOrderId: 1,
           name: "Welding",
           description: "Weld component joints",
           duration: 2,
@@ -116,7 +116,7 @@ export async function seedDatabase() {
           order: 2
         },
         {
-          jobId: 1,
+          productionOrderId: 1,
           name: "Assembly",
           description: "Final widget assembly",
           duration: 3,
@@ -125,7 +125,7 @@ export async function seedDatabase() {
           order: 3
         },
         {
-          jobId: 2,
+          productionOrderId: 2,
           name: "Housing Machining",
           description: "Machine motor housing",
           duration: 6,
@@ -134,7 +134,7 @@ export async function seedDatabase() {
           order: 1
         },
         {
-          jobId: 2,
+          productionOrderId: 2,
           name: "Quality Check",
           description: "Inspect housing dimensions",
           duration: 1,
@@ -1258,16 +1258,16 @@ export async function seedDatabase() {
         type: "summary",
         isDefault: true,
         configuration: {
-          fields: ["jobId", "jobName", "status", "priority", "customer", "dueDate", "progress"],
+          fields: ["productionOrderId", "orderNumber", "name", "status", "priority", "customer", "dueDate", "progress"],
           filters: { status: "all" },
           sorting: { field: "dueDate", direction: "asc" as const },
           chartType: "summary" as const,
           widgets: [
             {
-              id: "jobs-overview",
-              title: "Jobs Overview",
+              id: "production-orders-overview",
+              title: "Production Orders Overview",
               type: "metric",
-              data: { value: 2, label: "Active Jobs", icon: "Briefcase", trend: "+1 from yesterday" },
+              data: { value: 2, label: "Active Production Orders", icon: "Briefcase", trend: "+1 from yesterday" },
               visible: true,
               position: { x: 20, y: 20 },
               size: { width: 200, height: 120 },
@@ -1291,14 +1291,14 @@ export async function seedDatabase() {
               config: { showLegend: true, showValues: true }
             },
             {
-              id: "jobs-table",
-              title: "Active Jobs Details",
+              id: "production-orders-table",
+              title: "Active Production Orders Details",
               type: "table",
               data: {
-                columns: ["Job Name", "Customer", "Priority", "Due Date", "Status"],
+                columns: ["Order Number", "Product Name", "Customer", "Priority", "Due Date", "Status"],
                 rows: [
-                  ["Widget Assembly - Batch A", "Acme Corp", "High", "2025-01-30", "Active"],
-                  ["Component Manufacturing", "TechCorp", "Medium", "2025-02-05", "Active"]
+                  ["PO-001", "Widget Assembly - Batch A", "Acme Corp", "High", "2025-01-30", "Active"],
+                  ["PO-002", "Component Manufacturing", "TechCorp", "Medium", "2025-02-05", "Active"]
                 ]
               },
               visible: true,

@@ -25,7 +25,7 @@ export interface WidgetConfig {
   type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text';
   title: string;
   subtitle?: string;
-  dataSource: 'jobs' | 'operations' | 'resources' | 'metrics' | 'alerts' | 'plants' | 'users';
+  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts';
   chartType?: 'bar' | 'line' | 'pie' | 'doughnut' | 'number' | 'gauge' | 'progress';
   aggregation?: 'count' | 'sum' | 'avg' | 'min' | 'max';
   groupBy?: string;
@@ -56,14 +56,19 @@ export interface WidgetTemplate {
 }
 
 export interface SystemData {
-  jobs?: any[];
+  productionOrders?: any[];
   operations?: any[];
   resources?: any[];
+  customers?: any[];
+  vendors?: any[];
+  plants?: any[];
   capabilities?: any[];
+  recipes?: any[];
+  productionVersions?: any[];
+  plannedOrders?: any[];
+  users?: any[];
   metrics?: Record<string, any>;
   alerts?: any[];
-  plants?: any[];
-  users?: any[];
 }
 
 export interface ProcessedWidgetData {
@@ -121,20 +126,32 @@ export class WidgetDataProcessor {
 
   private getSourceData(dataSource: string) {
     switch (dataSource) {
-      case 'jobs':
-        return this.systemData.jobs || [];
+      case 'productionOrders':
+        return this.systemData.productionOrders || [];
       case 'operations':
         return this.systemData.operations || [];
       case 'resources':
         return this.systemData.resources || [];
+      case 'customers':
+        return this.systemData.customers || [];
+      case 'vendors':
+        return this.systemData.vendors || [];
+      case 'plants':
+        return this.systemData.plants || [];
+      case 'capabilities':
+        return this.systemData.capabilities || [];
+      case 'recipes':
+        return this.systemData.recipes || [];
+      case 'productionVersions':
+        return this.systemData.productionVersions || [];
+      case 'plannedOrders':
+        return this.systemData.plannedOrders || [];
+      case 'users':
+        return this.systemData.users || [];
       case 'metrics':
         return this.systemData.metrics || {};
       case 'alerts':
         return this.systemData.alerts || [];
-      case 'plants':
-        return this.systemData.plants || [];
-      case 'users':
-        return this.systemData.users || [];
       default:
         return [];
     }
@@ -160,7 +177,7 @@ export class WidgetDataProcessor {
       return {
         value: metricValue,
         label: config.title,
-        items: Array.isArray(this.systemData.jobs) ? this.systemData.jobs.slice(0, 3) : []
+        items: Array.isArray(this.systemData.productionOrders) ? this.systemData.productionOrders.slice(0, 3) : []
       };
     }
 
@@ -412,7 +429,7 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     icon: TrendingUp,
     defaultConfig: {
       type: 'kpi',
-      dataSource: 'jobs',
+      dataSource: 'productionOrders',
       aggregation: 'count',
       chartType: 'number',
       size: { width: 300, height: 200 }
@@ -421,15 +438,15 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     complexity: 'basic'
   },
   {
-    id: 'active-jobs-kpi',
-    name: 'Active Jobs Counter',
-    description: 'Shows number of currently active jobs',
+    id: 'active-production-orders-kpi',
+    name: 'Active Production Orders Counter',
+    description: 'Shows number of currently active production orders',
     category: 'operations',
     type: 'kpi',
     icon: Factory,
     defaultConfig: {
       type: 'kpi',
-      dataSource: 'jobs',
+      dataSource: 'productionOrders',
       aggregation: 'count',
       chartType: 'number',
       filters: { status: ['active'] },
@@ -503,7 +520,7 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     defaultConfig: {
       type: 'chart',
       chartType: 'pie',
-      dataSource: 'jobs',
+      dataSource: 'productionOrders',
       groupBy: 'status',
       aggregation: 'count',
       size: { width: 350, height: 300 }
@@ -632,7 +649,7 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     icon: CheckCircle,
     defaultConfig: {
       type: 'progress',
-      dataSource: 'jobs',
+      dataSource: 'productionOrders',
       aggregation: 'avg',
       groupBy: 'completion_percentage',
       size: { width: 350, height: 200 }
@@ -650,7 +667,7 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     icon: Calendar,
     defaultConfig: {
       type: 'timeline',
-      dataSource: 'jobs',
+      dataSource: 'productionOrders',
       groupBy: 'scheduled_date',
       filters: { status: ['scheduled', 'active'] },
       size: { width: 600, height: 300 }
@@ -779,7 +796,7 @@ export function convertCockpitWidgetToUniversal(cockpitWidget: any): WidgetConfi
     type: mapCockpitTypeToUniversalType(cockpitWidget.type),
     title: cockpitWidget.title,
     subtitle: cockpitWidget.sub_title,
-    dataSource: cockpitWidget.configuration?.dataSource || 'jobs',
+    dataSource: cockpitWidget.configuration?.dataSource || 'productionOrders',
     chartType: cockpitWidget.configuration?.chartType || 'bar',
     aggregation: cockpitWidget.configuration?.aggregation || 'count',
     groupBy: cockpitWidget.configuration?.groupBy,

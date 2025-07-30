@@ -58,13 +58,19 @@ interface WidgetDesignStudioProps {
 // Widget templates are imported from the unified widget library
 
 const DATA_SOURCES = [
-  { value: 'jobs', label: 'Jobs' },
+  { value: 'productionOrders', label: 'Production Orders' },
   { value: 'operations', label: 'Operations' },
   { value: 'resources', label: 'Resources' },
-  { value: 'metrics', label: 'Metrics' },
-  { value: 'alerts', label: 'Alerts' },
+  { value: 'customers', label: 'Customers' },
+  { value: 'vendors', label: 'Vendors' },
   { value: 'plants', label: 'Plants' },
-  { value: 'users', label: 'Users' }
+  { value: 'capabilities', label: 'Capabilities' },
+  { value: 'recipes', label: 'Recipes' },
+  { value: 'productionVersions', label: 'Production Versions' },
+  { value: 'plannedOrders', label: 'Planned Orders' },
+  { value: 'users', label: 'Users' },
+  { value: 'metrics', label: 'Metrics' },
+  { value: 'alerts', label: 'Alerts' }
 ];
 
 const CHART_TYPES = [
@@ -113,7 +119,7 @@ export default function WidgetDesignStudio({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   // Load system data for preview
-  const { data: jobs = [] } = useQuery({ queryKey: ["/api/jobs"] });
+  const { data: productionOrders = [] } = useQuery({ queryKey: ["/api/production-orders"] });
   const { data: operations = [] } = useQuery({ queryKey: ["/api/operations"] });
   const { data: resources = [] } = useQuery({ queryKey: ["/api/resources"] });
   const { data: metrics } = useQuery({ queryKey: ["/api/metrics"] });
@@ -121,12 +127,12 @@ export default function WidgetDesignStudio({
   // Initialize preview data
   useEffect(() => {
     setPreviewData({
-      jobs: Array.isArray(jobs) ? jobs : [],
+      productionOrders: Array.isArray(productionOrders) ? productionOrders : [],
       operations: Array.isArray(operations) ? operations : [],
       resources: Array.isArray(resources) ? resources : [],
       metrics: metrics || {}
     });
-  }, [jobs, operations, resources, metrics]);
+  }, [productionOrders, operations, resources, metrics]);
 
   // Initialize editing mode
   useEffect(() => {
@@ -186,7 +192,7 @@ export default function WidgetDesignStudio({
       type: selectedTemplate.type,
       title: widgetConfig.title,
       subtitle: widgetConfig.subtitle,
-      dataSource: widgetConfig.dataSource || selectedTemplate.defaultConfig.dataSource || 'jobs',
+      dataSource: widgetConfig.dataSource || selectedTemplate.defaultConfig.dataSource || 'productionOrders',
       chartType: widgetConfig.chartType || selectedTemplate.defaultConfig.chartType || 'bar',
       aggregation: widgetConfig.aggregation || selectedTemplate.defaultConfig.aggregation || 'count',
       groupBy: widgetConfig.groupBy || selectedTemplate.defaultConfig.groupBy,
