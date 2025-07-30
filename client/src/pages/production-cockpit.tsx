@@ -47,8 +47,8 @@ import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import UniversalWidget from "@/components/universal-widget";
 import WidgetDesignStudio from "@/components/widget-design-studio";
-import WidgetStudioButton from "@/components/widget-studio-button";
-import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
+
+import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
 
 interface CockpitLayout {
@@ -157,9 +157,6 @@ export default function ProductionCockpit() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [newLayoutDialog, setNewLayoutDialog] = useState(false);
-  const [newWidgetDialog, setNewWidgetDialog] = useState(false);
-  const [widgetCreationMode, setWidgetCreationMode] = useState<'basic' | 'template'>('basic');
-  const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
   const [aiLayoutDialog, setAiLayoutDialog] = useState(false);
   const [aiWidgetDialog, setAiWidgetDialog] = useState(false);
   const [newLayoutData, setNewLayoutData] = useState({
@@ -169,12 +166,7 @@ export default function ProductionCockpit() {
     auto_refresh: true,
     refresh_interval: 30
   });
-  const [newWidgetData, setNewWidgetData] = useState({
-    type: "metrics",
-    title: "",
-    sub_title: "",
-    position: { x: 0, y: 0, w: 4, h: 3 }
-  });
+
   const [aiLayoutData, setAiLayoutData] = useState({
     description: "",
     role: "Production Scheduler",
@@ -449,55 +441,11 @@ export default function ProductionCockpit() {
     });
   };
 
-  const handleCreateWidget = () => {
-    if (!selectedLayout) return;
-    
-    if (widgetCreationMode === 'template' && selectedTemplate) {
-      // Create widget from template
-      const widget: WidgetConfig = {
-        id: `widget-${Date.now()}`,
-        ...selectedTemplate.defaultConfig,
-        title: selectedTemplate.name,
-        subtitle: selectedTemplate.description,
-        position: { x: 0, y: 0 }
-      };
-      
-      const cockpitWidget = convertUniversalToCockpitWidget(widget, selectedLayout);
-      createWidgetMutation.mutate(cockpitWidget);
-    } else {
-      // Create basic widget
-      createWidgetMutation.mutate({
-        ...newWidgetData,
-        layout_id: selectedLayout,
-        configuration: getDefaultWidgetConfig(newWidgetData.type)
-      });
-    }
-  };
 
 
 
-  const getDefaultWidgetConfig = (type: string) => {
-    switch (type) {
-      case "metrics":
-        return { metrics: ["activeJobs", "utilization", "efficiency"], showTrends: true };
-      case "chart":
-        return { chartType: "bar", dataSource: "productionOrders", groupBy: "status" };
-      case "alerts":
-        return { severity: ["critical", "warning"], autoRefresh: true };
-      case "schedule":
-        return { view: "week", showResources: true };
-      case "resources":
-        return { showUtilization: true, groupBy: "type" };
-      case "production":
-        return { showTargets: true, periodView: "daily" };
-      case "kpi":
-        return { kpis: ["oee", "throughput", "quality"], layout: "grid" };
-      case "activity":
-        return { sources: ["system", "users"], limit: 20 };
-      default:
-        return {};
-    }
-  };
+
+
 
   const handleWidgetCreate = (widget: WidgetConfig, targetSystems: string[]) => {
     if (!selectedLayout) {
@@ -532,10 +480,7 @@ export default function ProductionCockpit() {
 
   const currentLayout = layouts?.find((layout: CockpitLayout) => layout?.id === selectedLayout);
 
-  // Get widget templates that target cockpit
-  const cockpitTemplates = WIDGET_TEMPLATES.filter(template => 
-    template.targetSystems.includes('cockpit')
-  );
+
 
   return (
     <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
@@ -706,18 +651,7 @@ export default function ProductionCockpit() {
               </DialogContent>
             </Dialog>
 
-            {/* Widget Studio Button */}
-            <WidgetStudioButton
-              variant="outline"
-              size="sm"
-              className="text-xs sm:text-sm"
-              targetSystems={['cockpit']}
-              onWidgetCreate={handleWidgetCreate}
-            >
-              <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Create Widget</span>
-              <span className="sm:hidden">Widget</span>
-            </WidgetStudioButton>
+
 
             {/* Optimization Dialog */}
             <Dialog open={optimizationDialog} onOpenChange={setOptimizationDialog}>
@@ -1055,264 +989,9 @@ export default function ProductionCockpit() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={newWidgetDialog} onOpenChange={(open) => {
-              setNewWidgetDialog(open);
-              if (!open) {
-                setWidgetCreationMode('basic');
-                setSelectedTemplate(null);
-                setNewWidgetData({ type: "metrics", title: "", sub_title: "", position: { x: 0, y: 0, w: 4, h: 3 } });
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={!selectedLayout} className="text-xs sm:text-sm">
-                  <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Add Widget</span>
-                  <span className="sm:hidden">Widget</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-                <DialogHeader>
-                  <DialogTitle>Add Widget</DialogTitle>
-                </DialogHeader>
-                
-                {/* Mode Selection */}
-                <div className="flex gap-2">
-                  <Button 
-                    variant={widgetCreationMode === 'basic' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setWidgetCreationMode('basic');
-                      setSelectedTemplate(null);
-                    }}
-                  >
-                    Basic Widgets
-                  </Button>
-                  <Button 
-                    variant={widgetCreationMode === 'template' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setWidgetCreationMode('template')}
-                  >
-                    Widget Library ({cockpitTemplates.length})
-                  </Button>
-                </div>
 
-                <div className="space-y-4 overflow-y-auto max-h-[60vh]">
-                  {widgetCreationMode === 'basic' ? (
-                    // Basic Widget Creation
-                    <>
-                      <div>
-                        <Label htmlFor="widget-type">Widget Type</Label>
-                        <Select
-                          value={newWidgetData.type}
-                          onValueChange={(value) => setNewWidgetData({ ...newWidgetData, type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {widgetTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                <div className="flex items-center gap-2">
-                                  <type.icon className="h-4 w-4" />
-                                  {type.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="widget-title">Widget Title</Label>
-                        <Input
-                          id="widget-title"
-                          value={newWidgetData.title}
-                          onChange={(e) => setNewWidgetData({ ...newWidgetData, title: e.target.value })}
-                          placeholder="Enter widget title..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="widget-subtitle">Subtitle (Optional)</Label>
-                        <Input
-                          id="widget-subtitle"
-                          value={newWidgetData.sub_title}
-                          onChange={(e) => setNewWidgetData({ ...newWidgetData, sub_title: e.target.value })}
-                          placeholder="Enter subtitle..."
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    // Widget Library Templates
-                    <>
-                      <div>
-                        <Label>Choose from Widget Library</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                          {cockpitTemplates.map((template) => (
-                            <div
-                              key={template.id}
-                              className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                                selectedTemplate?.id === template.id
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-border hover:border-primary/50'
-                              }`}
-                              onClick={() => setSelectedTemplate(template)}
-                            >
-                              <div className="flex items-start gap-3">
-                                <template.icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium text-sm">{template.name}</div>
-                                  <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                    {template.description}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <Badge variant="secondary" className="text-xs">
-                                      {template.category}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs">
-                                      {template.complexity}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {selectedTemplate && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <selectedTemplate.icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-medium">{selectedTemplate.name}</div>
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {selectedTemplate.description}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-2">
-                                Data Source: {selectedTemplate.defaultConfig.dataSource} | 
-                                Type: {selectedTemplate.defaultConfig.type}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
 
-                <Button 
-                  onClick={handleCreateWidget} 
-                  className="w-full"
-                  disabled={
-                    widgetCreationMode === 'basic' 
-                      ? !newWidgetData.type || !newWidgetData.title
-                      : !selectedTemplate
-                  }
-                >
-                  {widgetCreationMode === 'basic' ? 'Add Widget' : 'Add from Library'}
-                </Button>
-              </DialogContent>
-            </Dialog>
 
-            {/* AI Widget Generation Dialog */}
-            <Dialog open={aiWidgetDialog} onOpenChange={setAiWidgetDialog}>
-              <DialogTrigger asChild>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  disabled={!selectedLayout}
-                  className="border-blue-500 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm"
-                >
-                  <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">AI Widget</span>
-                  <span className="sm:hidden">AI+</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-blue-500" />
-                    AI-Powered Widget Creation
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="ai-widget-description">Describe the widget you need</Label>
-                    <Textarea
-                      id="ai-widget-description"
-                      value={aiWidgetData.description}
-                      onChange={(e) => setAiWidgetData({ ...aiWidgetData, description: e.target.value })}
-                      placeholder="e.g., A real-time chart showing resource utilization by department, or a KPI dashboard tracking production targets vs actuals..."
-                      rows={3}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="ai-data-source">Primary Data Source</Label>
-                      <Select
-                        value={aiWidgetData.dataSource}
-                        onValueChange={(value) => setAiWidgetData({ ...aiWidgetData, dataSource: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="productionOrders">Production Orders</SelectItem>
-                          <SelectItem value="operations">Operations</SelectItem>
-                          <SelectItem value="resources">Resources</SelectItem>
-                          <SelectItem value="customers">Customers</SelectItem>
-                          <SelectItem value="vendors">Vendors</SelectItem>
-                          <SelectItem value="plants">Plants</SelectItem>
-                          <SelectItem value="capabilities">Capabilities</SelectItem>
-                          <SelectItem value="recipes">Recipes</SelectItem>
-                          <SelectItem value="productionVersions">Production Versions</SelectItem>
-                          <SelectItem value="plannedOrders">Planned Orders</SelectItem>
-                          <SelectItem value="users">Users</SelectItem>
-                          <SelectItem value="metrics">Metrics</SelectItem>
-                          <SelectItem value="alerts">Alerts</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="ai-visualization">Visualization Type</Label>
-                      <Select
-                        value={aiWidgetData.visualizationType}
-                        onValueChange={(value) => setAiWidgetData({ ...aiWidgetData, visualizationType: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="chart">Chart (Bar/Line/Pie)</SelectItem>
-                          <SelectItem value="metrics">KPI Metrics</SelectItem>
-                          <SelectItem value="table">Data Table</SelectItem>
-                          <SelectItem value="gauge">Gauge/Progress</SelectItem>
-                          <SelectItem value="timeline">Timeline View</SelectItem>
-                          <SelectItem value="map">Resource Map</SelectItem>
-                          <SelectItem value="alerts">Alert Panel</SelectItem>
-                          <SelectItem value="activity">Activity Feed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => aiWidgetMutation.mutate(aiWidgetData)} 
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                    disabled={aiWidgetMutation.isPending || !aiWidgetData.description}
-                  >
-                    {aiWidgetMutation.isPending ? (
-                      <>
-                        <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                        Generating AI Widget...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        Generate AI Widget
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
 
             {/* Widget Design Studio */}
             <Button 
