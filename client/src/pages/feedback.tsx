@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -203,6 +203,31 @@ export default function Feedback() {
   const { data: algorithmFeedbackData = [], isLoading: algorithmFeedbackLoading } = useQuery({
     queryKey: ["/api/algorithm-feedback"],
   });
+
+  // Combine and normalize feedback data for unified viewing
+  const combinedFeedback = useMemo(() => {
+    const regularFeedback = (feedbackData || []).map((item: any) => ({
+      ...item,
+      feedbackSource: 'regular',
+      algorithmName: null,
+      algorithmVersion: null,
+      executionId: null
+    }));
+
+    const algorithmFeedback = (algorithmFeedbackData || []).map((item: any) => ({
+      ...item,
+      feedbackSource: 'algorithm',
+      type: item.feedbackType, // Map feedbackType to type for consistency
+      submittedBy: `User #${item.submittedBy}`,
+      submittedDate: item.createdAt,
+      votes: 0, // Algorithm feedback doesn't have votes yet
+      userVote: null,
+      comments: [],
+      tags: [item.algorithmName, `v${item.algorithmVersion}`, item.category]
+    }));
+
+    return [...regularFeedback, ...algorithmFeedback];
+  }, [feedbackData, algorithmFeedbackData]);
 
   // Mock feedback data (to be removed after API integration)
   const mockFeedback: FeedbackItem[] = [
@@ -497,33 +522,32 @@ export default function Feedback() {
     }
   };
 
-  // Filter feedback
-  const currentFeedback: FeedbackItem[] = feedbackLoading ? [] : (feedbackData as FeedbackItem[]);
-  
-  const filteredFeedback = currentFeedback.filter((item: FeedbackItem) => {
+  // Filter combined feedback (regular + algorithm)
+  const filteredFeedback = combinedFeedback.filter((item: any) => {
     const matchesSearch = searchTerm === "" || 
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.submittedBy.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.submittedBy || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.algorithmName || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesType = typeFilter === "all" || item.type === typeFilter;
+    const matchesType = typeFilter === "all" || item.type === typeFilter || item.feedbackType === typeFilter;
     const matchesStatus = statusFilter === "all" || item.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
     
     return matchesSearch && matchesType && matchesStatus && matchesCategory;
   });
 
-  // Sort feedback
-  const sortedFeedback = [...filteredFeedback].sort((a: FeedbackItem, b: FeedbackItem) => {
+  // Sort combined feedback
+  const sortedFeedback = [...filteredFeedback].sort((a: any, b: any) => {
     switch (sortBy) {
       case "newest":
         return new Date(b.createdAt || b.submittedDate).getTime() - new Date(a.createdAt || a.submittedDate).getTime();
       case "oldest":
         return new Date(a.createdAt || a.submittedDate).getTime() - new Date(b.createdAt || b.submittedDate).getTime();
       case "most_votes":
-        return b.votes - a.votes;
+        return (b.votes || 0) - (a.votes || 0);
       case "least_votes":
-        return a.votes - b.votes;
+        return (a.votes || 0) - (b.votes || 0);
       default:
         return 0;
     }
@@ -937,6 +961,10 @@ export default function Feedback() {
                 <SelectItem value="bug">Bug Report</SelectItem>
                 <SelectItem value="feature_request">Feature Request</SelectItem>
                 <SelectItem value="improvement">Improvement</SelectItem>
+                <SelectItem value="improvement_suggestion">Algorithm Improvement</SelectItem>
+                <SelectItem value="bug_report">Algorithm Bug</SelectItem>
+                <SelectItem value="performance_issue">Performance Issue</SelectItem>
+                <SelectItem value="positive_feedback">Positive Feedback</SelectItem>
                 <SelectItem value="complaint">Complaint</SelectItem>
                 <SelectItem value="praise">Praise</SelectItem>
               </SelectContent>
@@ -948,9 +976,11 @@ export default function Feedback() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
                 <SelectItem value="under_review">Under Review</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
@@ -975,16 +1005,48 @@ export default function Feedback() {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-3 h-3 rounded-full ${getPriorityColor(item.priority)}`}></div>
+                        <div className={`w-3 h-3 rounded-full ${item.feedbackSource === 'algorithm' ? getAlgorithmSeverityColor(item.severity) : getPriorityColor(item.priority)}`}></div>
                         <h3 className="font-semibold text-lg">{item.title}</h3>
-                        <Badge className={getTypeColor(item.type)}>
-                          {item.type.replace("_", " ")}
+                        <Badge className={item.feedbackSource === 'algorithm' ? getAlgorithmFeedbackTypeColor(item.feedbackType) : getTypeColor(item.type)}>
+                          {(item.feedbackType || item.type).replace("_", " ")}
                         </Badge>
-                        <Badge className={getStatusColor(item.status)}>
+                        <Badge className={item.feedbackSource === 'algorithm' ? getAlgorithmStatusColor(item.status) : getStatusColor(item.status)}>
                           {item.status.replace("_", " ")}
                         </Badge>
+                        {item.feedbackSource === 'algorithm' && (
+                          <Badge variant="outline" className="text-xs">
+                            {item.algorithmName} v{item.algorithmVersion}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-gray-600 mb-2">{item.description}</p>
+                      
+                      {/* Algorithm-specific information */}
+                      {item.feedbackSource === 'algorithm' && (item.expectedResult || item.actualResult) && (
+                        <div className="bg-gray-50 p-3 rounded-lg mb-3 space-y-2">
+                          {item.expectedResult && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Expected Result:</span>
+                              <p className="text-sm text-gray-600">{item.expectedResult}</p>
+                            </div>
+                          )}
+                          {item.actualResult && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Actual Result:</span>
+                              <p className="text-sm text-gray-600">{item.actualResult}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Algorithm suggested improvement */}
+                      {item.feedbackSource === 'algorithm' && item.suggestedImprovement && (
+                        <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                          <span className="text-sm font-medium text-blue-800">Suggested Improvement:</span>
+                          <p className="text-sm text-blue-700">{item.suggestedImprovement}</p>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <User className="w-4 h-4" />
@@ -998,27 +1060,40 @@ export default function Feedback() {
                           <Tag className="w-4 h-4" />
                           {item.category}
                         </span>
+                        {item.feedbackSource === 'algorithm' && item.executionId && (
+                          <span className="flex items-center gap-1">
+                            <Zap className="w-4 h-4" />
+                            Run #{item.executionId}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {item.feedbackSource === 'algorithm' ? 'Algorithm' : 'General'}
+                          </Badge>
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant={item.userVote === "up" ? "default" : "outline"}
-                          onClick={() => voteFeedbackMutation.mutate({ id: item.id, vote: "up" })}
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                        </Button>
-                        <span className="text-sm font-medium">{item.votes}</span>
-                        <Button
-                          size="sm"
-                          variant={item.userVote === "down" ? "default" : "outline"}
-                          onClick={() => voteFeedbackMutation.mutate({ id: item.id, vote: "down" })}
-                        >
-                          <ArrowDown className="w-4 h-4" />
-                        </Button>
+                    {item.feedbackSource !== 'algorithm' && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant={item.userVote === "up" ? "default" : "outline"}
+                            onClick={() => voteFeedbackMutation.mutate({ id: item.id, vote: "up" })}
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <span className="text-sm font-medium">{item.votes || 0}</span>
+                          <Button
+                            size="sm"
+                            variant={item.userVote === "down" ? "default" : "outline"}
+                            onClick={() => voteFeedbackMutation.mutate({ id: item.id, vote: "down" })}
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   
                   {/* Tags */}
@@ -1033,15 +1108,30 @@ export default function Feedback() {
                   )}
                   
                   {/* Resolution */}
-                  {item.status === "completed" && item.resolution && (
+                  {(item.status === "completed" || item.status === "resolved") && (item.resolution || item.resolutionNotes) && (
                     <div className="bg-green-50 p-3 rounded-lg mb-3">
                       <p className="text-sm font-medium text-green-800">Resolution</p>
-                      <p className="text-green-700">{item.resolution}</p>
+                      <p className="text-green-700">{item.resolution || item.resolutionNotes}</p>
                       {item.implementationVersion && (
                         <p className="text-xs text-green-600 mt-1">
                           Implemented in version {item.implementationVersion}
                         </p>
                       )}
+                    </div>
+                  )}
+
+                  {/* Implementation status for algorithm feedback */}
+                  {item.feedbackSource === 'algorithm' && item.implementationStatus && item.implementationStatus !== "not_started" && (
+                    <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                      <p className="text-sm font-medium text-blue-800">Implementation Status</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {item.implementationStatus.replace("_", " ")}
+                        </Badge>
+                        {item.implementationNotes && (
+                          <span className="text-sm text-blue-700">{item.implementationNotes}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                   
