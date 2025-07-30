@@ -18677,8 +18677,11 @@ Response must be valid JSON:
 
   // Field Comments API
   app.get("/api/field-comments", createSafeHandler(async (req, res) => {
+    console.log("=== FIELD COMMENTS API CALLED ===");
     const tableName = req.query.tableName as string;
+    console.log("Table name filter:", tableName);
     const comments = await storage.getFieldComments(tableName);
+    console.log("Comments retrieved:", comments.length);
     res.json(comments);
   }));
 
