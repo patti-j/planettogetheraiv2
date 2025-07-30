@@ -267,6 +267,15 @@ Focus on practical, implementable assignments that can be created immediately.`;
 
 export async function processAICommand(command: string, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
+    // Add detailed logging for debugging the API issue
+    console.log('=== AI REQUEST DEBUG ===');
+    console.log('User command:', command);
+    console.log('Command contains "api":', command.toLowerCase().includes('api'));
+    console.log('Command contains "function":', command.toLowerCase().includes('function'));
+    console.log('Command contains "capabilit":', command.toLowerCase().includes('capabilit'));
+    console.log('Command contains "help":', command.toLowerCase().includes('help'));
+    console.log('========================');
+    
     // Get current system context
     const context = await getSystemContext();
     
