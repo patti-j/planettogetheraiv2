@@ -7723,6 +7723,7 @@ export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
 
 export const customersRelations = relations(customers, ({ many }) => ({
   salesOrders: many(salesOrders),
+  productionOrders: many(productionOrders),
 }));
 
 export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
@@ -7932,6 +7933,10 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
   plant: one(plants, {
     fields: [productionOrders.plantId],
     references: [plants.id],
+  }),
+  customer: one(customers, {
+    fields: [productionOrders.customerId],
+    references: [customers.id],
   }),
   productionVersion: one(productionVersions, {
     fields: [productionOrders.productionVersionId],
