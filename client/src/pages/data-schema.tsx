@@ -2725,7 +2725,12 @@ function DataSchemaViewContent() {
           fitView
           fitViewOptions={{ padding: 0.2 }}
         >
-          <Background />
+          <Background 
+            variant="dots" 
+            gap={20} 
+            size={1}
+            style={{ backgroundColor: 'transparent' }}
+          />
           <Controls />
           
           {/* Full Screen Exit Button - Only visible in full screen mode */}
