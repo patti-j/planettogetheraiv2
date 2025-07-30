@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, FileSearch } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, FileSearch, Puzzle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -116,7 +116,7 @@ export default function Sidebar() {
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
     { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
-    { icon: Grid3X3, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
+    { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
@@ -148,7 +148,7 @@ export default function Sidebar() {
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
     
     // Debug logging for specific menu items
-    if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio") {
+    if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio" || item.label === "Widgets") {
       console.log(`Menu filter check for ${item.label}:`, {
         label: item.label,
         href: item.href,
