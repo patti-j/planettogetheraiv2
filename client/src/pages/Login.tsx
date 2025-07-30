@@ -101,42 +101,36 @@ export default function Login() {
   const demoAccounts = [
     { 
       username: "director", 
-      password: "password123", 
       role: "Director", 
       name: "Sarah Johnson",
       access: "Business Goals, Strategic Planning, Reports" 
     },
     { 
       username: "plant_manager", 
-      password: "password123", 
       role: "Plant Manager", 
       name: "Mike Chen",
       access: "Capacity Planning, Plant Operations, Manufacturing" 
     },
     { 
       username: "scheduler", 
-      password: "password123", 
       role: "Production Scheduler", 
       name: "Emily Rodriguez",
       access: "Production Scheduling, Order Optimization, Resource Management" 
     },
     { 
       username: "admin", 
-      password: "password123", 
       role: "Administrator", 
       name: "David Kim",
       access: "User Management, System Administration, Full Access" 
     },
     { 
       username: "sysmanager", 
-      password: "password123", 
       role: "System Manager", 
       name: "Alex Thompson",
       access: "IT Systems, Infrastructure, Technical Management" 
     },
     { 
       username: "trainer", 
-      password: "password123", 
       role: "Trainer", 
       name: "Morgan Williams",
       access: "Training System, Role Demonstrations, All Module Views" 
@@ -192,7 +186,7 @@ export default function Login() {
                             </div>
                             <div className="text-right">
                               <div className="text-xs text-gray-500 mb-1">Password:</div>
-                              <span className="text-sm font-mono text-gray-800 bg-white px-2 py-1 rounded border">{account.password}</span>
+                              <span className="text-sm font-mono text-gray-800 bg-white px-2 py-1 rounded border">••••••••</span>
                             </div>
                           </div>
                           <div className="mt-3">
@@ -205,7 +199,7 @@ export default function Login() {
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
                         <strong>Note:</strong> Each account provides access to different features of the manufacturing production scheduling system. 
-                        The Trainer account has comprehensive view access to all modules for demonstration purposes.
+                        All demo accounts use the same secure password. The Trainer account has comprehensive view access to all modules for demonstration purposes.
                       </p>
                     </div>
                   </div>

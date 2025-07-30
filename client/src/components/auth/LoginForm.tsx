@@ -63,14 +63,15 @@ export function LoginForm() {
             </Button>
           </form>
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-sm text-blue-900 mb-2">Demo Accounts:</h3>
+            <h3 className="font-semibold text-sm text-blue-900 mb-2">Demo Accounts Available:</h3>
             <div className="text-xs text-blue-700 space-y-1">
-              <div><strong>director</strong> / password123 (Business Goals)</div>
-              <div><strong>plant_manager</strong> / password123 (Capacity Planning)</div>
-              <div><strong>scheduler</strong> / password123 (Production Scheduling)</div>
-              <div><strong>admin</strong> / password123 (User Management)</div>
-              <div><strong>sysmanager</strong> / password123 (Systems Management)</div>
+              <div><strong>director</strong> (Business Goals & Analytics)</div>
+              <div><strong>plant_manager</strong> (Capacity Planning)</div>
+              <div><strong>scheduler</strong> (Production Scheduling)</div>
+              <div><strong>admin</strong> (User Management)</div>
+              <div><strong>sysmanager</strong> (Systems Management)</div>
             </div>
+            <p className="text-xs text-blue-600 mt-2 italic">All demo accounts use the same secure password.</p>
           </div>
         </CardContent>
       </Card>
