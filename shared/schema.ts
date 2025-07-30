@@ -8533,5 +8533,39 @@ export const insertProductionVersionPhaseFormulationDetailSchema = createInsertS
 export type ProductionVersionPhaseFormulationDetail = typeof productionVersionPhaseFormulationDetails.$inferSelect;
 export type InsertProductionVersionPhaseFormulationDetail = z.infer<typeof insertProductionVersionPhaseFormulationDetailSchema>;
 
+// Canvas widgets that Max can display on the canvas at user request
+export const canvasWidgets = pgTable("canvas_widgets", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  widgetType: text("widget_type").notNull(), // 'chart', 'table', 'metric', 'alert', 'list', 'custom'
+  widgetSubtype: text("widget_subtype"), // 'bar', 'pie', 'line', 'gauge', etc.
+  data: jsonb("data").$type<Record<string, any>>().notNull(), // Widget data content
+  configuration: jsonb("configuration").$type<Record<string, any>>().default({}), // Widget display configuration
+  position: jsonb("position").$type<{ x: number; y: number; width: number; height: number }>(), // Canvas position
+  isVisible: boolean("is_visible").default(true),
+  createdByMax: boolean("created_by_max").default(false), // True if created by Max AI
+  sessionId: text("session_id"), // Session identifier for grouping widgets
+  userId: integer("user_id").references(() => users.id), // User who requested the widget
+  plantId: integer("plant_id").references(() => plants.id), // Plant context if applicable
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}), // Additional metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("canvas_widgets_user_idx").on(table.userId),
+  sessionIdIdx: index("canvas_widgets_session_idx").on(table.sessionId),
+  visibleIdx: index("canvas_widgets_visible_idx").on(table.isVisible),
+  createdByMaxIdx: index("canvas_widgets_max_idx").on(table.createdByMax),
+}));
+
+// Canvas widgets insert schema and types
+export const insertCanvasWidgetSchema = createInsertSchema(canvasWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CanvasWidget = typeof canvasWidgets.$inferSelect;
+export type InsertCanvasWidget = z.infer<typeof insertCanvasWidgetSchema>;
+
 
 

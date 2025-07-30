@@ -138,3 +138,195 @@ Max's feedback automatically appears in the Algorithm Development tab in Optimiz
 - Invalid data returns 400 with validation details
 - Server errors return 500 with error message
 - All errors include helpful messages for debugging
+
+## Canvas Widget Management API
+
+Max can create and manage interactive widgets on the user's canvas for data visualization, controls, and real-time monitoring.
+
+### Widget Types
+
+- `chart` - Data visualization widgets (bar, line, pie charts)
+- `table` - Tabular data display widgets
+- `text` - Text displays and markdown content
+- `image` - Image displays and visual content
+- `button` - Interactive control buttons
+- `custom` - Custom HTML/React components
+
+### Create Widget for User (Max AI)
+
+**POST** `/api/max/canvas/widgets`
+
+No authentication required for Max AI systems.
+
+```json
+{
+  "sessionId": "session_123",
+  "userId": 6,
+  "widgetType": "chart",
+  "title": "Production Efficiency Trends",
+  "config": {
+    "chartType": "line",
+    "dataSource": "production_orders",
+    "xAxis": "date",
+    "yAxis": "efficiency",
+    "filters": {
+      "plant": "Plant A",
+      "dateRange": "last_30_days"
+    }
+  },
+  "position": {
+    "x": 100,
+    "y": 200,
+    "width": 400,
+    "height": 300
+  },
+  "data": {
+    "labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+    "datasets": [{
+      "label": "Efficiency %",
+      "data": [85, 88, 92, 89],
+      "borderColor": "rgb(75, 192, 192)"
+    }]
+  },
+  "interactionSettings": {
+    "clickAction": "drill_down",
+    "hoverTooltips": true,
+    "zoomEnabled": true
+  },
+  "refreshInterval": 30000,
+  "autoUpdate": true
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": 123,
+  "sessionId": "session_123",
+  "userId": 6,
+  "widgetType": "chart",
+  "title": "Production Efficiency Trends",
+  "createdByMax": true,
+  "isVisible": true,
+  "position": {
+    "x": 100,
+    "y": 200,
+    "width": 400,
+    "height": 300
+  },
+  "createdAt": "2025-07-30T14:30:00Z",
+  "updatedAt": "2025-07-30T14:30:00Z"
+}
+```
+
+### Get Canvas Widgets
+
+**GET** `/api/canvas/widgets?sessionId=session_123&userId=6`
+
+No authentication required for read operations.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": 123,
+    "sessionId": "session_123",
+    "userId": 6,
+    "widgetType": "chart",
+    "title": "Production Efficiency Trends",
+    "createdByMax": true,
+    "isVisible": true,
+    "position": {
+      "x": 100,
+      "y": 200,
+      "width": 400,
+      "height": 300
+    },
+    "config": {
+      "chartType": "line",
+      "dataSource": "production_orders"
+    },
+    "createdAt": "2025-07-30T14:30:00Z"
+  }
+]
+```
+
+### Update Widget Position
+
+**PUT** `/api/canvas/widgets/{id}/position`
+
+```json
+{
+  "x": 150,
+  "y": 250,
+  "width": 450,
+  "height": 350
+}
+```
+
+### Clear All Widgets
+
+**DELETE** `/api/canvas/widgets?sessionId=session_123&userId=6`
+
+Removes all widgets for the specified session/user.
+
+### Example Widget Configurations
+
+#### Production KPI Dashboard
+```json
+{
+  "widgetType": "chart",
+  "title": "Real-time Production KPIs",
+  "config": {
+    "chartType": "gauge",
+    "metrics": ["oee", "throughput", "quality"],
+    "thresholds": {
+      "oee": { "good": 85, "warning": 70 },
+      "throughput": { "good": 100, "warning": 80 },
+      "quality": { "good": 99, "warning": 95 }
+    }
+  },
+  "refreshInterval": 10000,
+  "autoUpdate": true
+}
+```
+
+#### Resource Utilization Table
+```json
+{
+  "widgetType": "table",
+  "title": "Resource Utilization",
+  "config": {
+    "columns": ["resource", "utilization", "status", "next_maintenance"],
+    "sortable": true,
+    "filterable": true,
+    "pageSize": 10
+  },
+  "data": {
+    "rows": [
+      {"resource": "Line A", "utilization": "89%", "status": "Running", "next_maintenance": "2025-08-15"},
+      {"resource": "Line B", "utilization": "76%", "status": "Running", "next_maintenance": "2025-08-20"}
+    ]
+  }
+}
+```
+
+#### Alert Button
+```json
+{
+  "widgetType": "button",
+  "title": "Schedule Emergency Stop",
+  "config": {
+    "buttonText": "EMERGENCY STOP",
+    "buttonStyle": "danger",
+    "confirmationRequired": true,
+    "confirmationMessage": "Are you sure you want to initiate emergency stop?",
+    "action": "emergency_stop",
+    "targetSystems": ["line_a", "line_b"]
+  },
+  "interactionSettings": {
+    "requiresConfirmation": true,
+    "logAction": true
+  }
+}
+```

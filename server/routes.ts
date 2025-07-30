@@ -34,7 +34,7 @@ import {
   insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
   insertWorkflowMonitoringSchema,
   insertTourPromptTemplateSchema, insertTourPromptTemplateUsageSchema,
-  insertCanvasContentSchema, insertCanvasSettingsSchema,
+  insertCanvasContentSchema, insertCanvasSettingsSchema, insertCanvasWidgetSchema,
   insertErrorLogSchema, insertErrorReportSchema,
   insertPresentationSchema, insertPresentationSlideSchema, insertPresentationTourIntegrationSchema,
   insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema,
@@ -4127,6 +4127,192 @@ Manufacturing Context Available:
     } catch (error) {
       console.error("Error fetching algorithm feedback vote counts:", error);
       res.status(500).json({ error: "Failed to fetch vote counts" });
+    }
+  });
+
+  // Canvas Widget Management API - for Max AI to display interactive widgets
+  app.get("/api/canvas/widgets", async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string;
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+
+      const widgets = await storage.getCanvasWidgets(sessionId, userId);
+      res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching canvas widgets:", error);
+      res.status(500).json({ error: "Failed to fetch widgets" });
+    }
+  });
+
+  app.get("/api/canvas/widgets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const widget = await storage.getCanvasWidget(id);
+      if (!widget) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json(widget);
+    } catch (error) {
+      console.error("Error fetching canvas widget:", error);
+      res.status(500).json({ error: "Failed to fetch widget" });
+    }
+  });
+
+  // Max AI endpoint for creating widgets (no auth required for AI systems)
+  app.post("/api/max/canvas/widgets", async (req, res) => {
+    try {
+      console.log("=== MAX WIDGET CREATION ===");
+      console.log("Widget data:", JSON.stringify(req.body, null, 2));
+
+      const widgetData = {
+        ...req.body,
+        createdByMax: true,
+        isVisible: true
+      };
+
+      const validatedData = insertCanvasWidgetSchema.parse(widgetData);
+      const widget = await storage.createCanvasWidget(validatedData);
+      
+      console.log("Widget created successfully with ID:", widget.id);
+      res.status(201).json(widget);
+    } catch (error) {
+      console.error("Error creating Max widget:", error);
+      if (error.name === 'ZodError') {
+        console.error("Validation errors:", error.errors);
+        return res.status(400).json({ 
+          error: "Invalid widget data", 
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ 
+        error: "Failed to create widget",
+        message: "Internal server error while creating Max widget"
+      });
+    }
+  });
+
+  app.post("/api/canvas/widgets", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const widgetData = {
+        ...req.body,
+        userId,
+        createdByMax: false
+      };
+
+      const validatedData = insertCanvasWidgetSchema.parse(widgetData);
+      const widget = await storage.createCanvasWidget(validatedData);
+      res.status(201).json(widget);
+    } catch (error) {
+      console.error("Error creating canvas widget:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid widget data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create widget" });
+    }
+  });
+
+  app.put("/api/canvas/widgets/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const widget = await storage.updateCanvasWidget(id, req.body);
+      if (!widget) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json(widget);
+    } catch (error) {
+      console.error("Error updating canvas widget:", error);
+      res.status(500).json({ error: "Failed to update widget" });
+    }
+  });
+
+  app.delete("/api/canvas/widgets/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const deleted = await storage.deleteCanvasWidget(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting canvas widget:", error);
+      res.status(500).json({ error: "Failed to delete widget" });
+    }
+  });
+
+  app.delete("/api/canvas/widgets", async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string;
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+
+      const cleared = await storage.clearCanvasWidgets(sessionId, userId);
+      res.json({ success: cleared });
+    } catch (error) {
+      console.error("Error clearing canvas widgets:", error);
+      res.status(500).json({ error: "Failed to clear widgets" });
+    }
+  });
+
+  app.put("/api/canvas/widgets/:id/visibility", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const { visible } = req.body;
+      const result = visible ? 
+        await storage.showCanvasWidget(id) : 
+        await storage.hideCanvasWidget(id);
+
+      if (!result) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating widget visibility:", error);
+      res.status(500).json({ error: "Failed to update widget visibility" });
+    }
+  });
+
+  app.put("/api/canvas/widgets/:id/position", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const { x, y, width, height } = req.body;
+      if (typeof x !== 'number' || typeof y !== 'number' || typeof width !== 'number' || typeof height !== 'number') {
+        return res.status(400).json({ error: "Position must include x, y, width, height as numbers" });
+      }
+
+      const result = await storage.updateWidgetPosition(id, { x, y, width, height });
+      if (!result) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating widget position:", error);
+      res.status(500).json({ error: "Failed to update widget position" });
     }
   });
 

@@ -51,9 +51,9 @@ import {
   workflows, workflowTriggers, workflowActions, workflowActionMappings, workflowExecutions, workflowActionExecutions, workflowMonitoring,
   type Workflow, type WorkflowTrigger, type WorkflowAction, type WorkflowActionMapping, type WorkflowExecution, type WorkflowActionExecution, type WorkflowMonitoring,
   type InsertWorkflow, type InsertWorkflowTrigger, type InsertWorkflowAction, type InsertWorkflowActionMapping, type InsertWorkflowExecution, type InsertWorkflowActionExecution, type InsertWorkflowMonitoring,
-  canvasContent, canvasSettings,
-  type CanvasContent, type CanvasSettings,
-  type InsertCanvasContent, type InsertCanvasSettings,
+  canvasContent, canvasSettings, canvasWidgets,
+  type CanvasContent, type CanvasSettings, type CanvasWidget,
+  type InsertCanvasContent, type InsertCanvasSettings, type InsertCanvasWidget,
   aiMemories, aiMemoryTags, aiConversationContext,
   type AIMemory, type AIMemoryTag, type AIConversationContext,
   type InsertAIMemory, type InsertAIMemoryTag, type InsertAIConversationContext,
@@ -662,6 +662,17 @@ export interface IStorage {
   deleteCanvasContent(id: number): Promise<boolean>;
   reorderCanvasContent(contentIds: number[]): Promise<boolean>;
   cleanupExpiredCanvasContent(): Promise<boolean>;
+
+  // Canvas Widget Management - for Max AI to display interactive widgets
+  getCanvasWidgets(sessionId?: string, userId?: number): Promise<CanvasWidget[]>;
+  getCanvasWidget(id: number): Promise<CanvasWidget | undefined>;
+  createCanvasWidget(widget: InsertCanvasWidget): Promise<CanvasWidget>;
+  updateCanvasWidget(id: number, updates: Partial<InsertCanvasWidget>): Promise<CanvasWidget | undefined>;
+  deleteCanvasWidget(id: number): Promise<boolean>;
+  clearCanvasWidgets(sessionId?: string, userId?: number): Promise<boolean>;
+  hideCanvasWidget(id: number): Promise<boolean>;
+  showCanvasWidget(id: number): Promise<boolean>;
+  updateWidgetPosition(id: number, position: { x: number; y: number; width: number; height: number }): Promise<boolean>;
   
   // Canvas Settings Management
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
@@ -7048,6 +7059,105 @@ export class DatabaseStorage implements IStorage {
       ))
       .returning();
     return updatedSettings;
+  }
+
+  // Canvas Widget Management - for Max AI to display interactive widgets
+  async getCanvasWidgets(sessionId?: string, userId?: number): Promise<CanvasWidget[]> {
+    let query = db.select().from(canvasWidgets).where(eq(canvasWidgets.isVisible, true));
+    
+    if (sessionId) {
+      query = query.where(eq(canvasWidgets.sessionId, sessionId));
+    }
+    if (userId) {
+      query = query.where(eq(canvasWidgets.userId, userId));
+    }
+    
+    return await query.orderBy(desc(canvasWidgets.createdAt));
+  }
+
+  async getCanvasWidget(id: number): Promise<CanvasWidget | undefined> {
+    const [widget] = await db
+      .select()
+      .from(canvasWidgets)
+      .where(eq(canvasWidgets.id, id));
+    return widget;
+  }
+
+  async createCanvasWidget(widget: InsertCanvasWidget): Promise<CanvasWidget> {
+    const [newWidget] = await db
+      .insert(canvasWidgets)
+      .values({
+        ...widget,
+        updatedAt: new Date()
+      })
+      .returning();
+    return newWidget;
+  }
+
+  async updateCanvasWidget(id: number, updates: Partial<InsertCanvasWidget>): Promise<CanvasWidget | undefined> {
+    const [updatedWidget] = await db
+      .update(canvasWidgets)
+      .set({ 
+        ...updates, 
+        updatedAt: new Date() 
+      })
+      .where(eq(canvasWidgets.id, id))
+      .returning();
+    return updatedWidget;
+  }
+
+  async deleteCanvasWidget(id: number): Promise<boolean> {
+    const result = await db.delete(canvasWidgets).where(eq(canvasWidgets.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async clearCanvasWidgets(sessionId?: string, userId?: number): Promise<boolean> {
+    let whereConditions = [];
+    
+    if (sessionId) {
+      whereConditions.push(eq(canvasWidgets.sessionId, sessionId));
+    }
+    if (userId) {
+      whereConditions.push(eq(canvasWidgets.userId, userId));
+    }
+    
+    if (whereConditions.length === 0) {
+      return false; // Prevent clearing all widgets without criteria
+    }
+    
+    const result = await db
+      .update(canvasWidgets)
+      .set({ isVisible: false, updatedAt: new Date() })
+      .where(and(...whereConditions));
+    
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async hideCanvasWidget(id: number): Promise<boolean> {
+    const result = await db
+      .update(canvasWidgets)
+      .set({ isVisible: false, updatedAt: new Date() })
+      .where(eq(canvasWidgets.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async showCanvasWidget(id: number): Promise<boolean> {
+    const result = await db
+      .update(canvasWidgets)
+      .set({ isVisible: true, updatedAt: new Date() })
+      .where(eq(canvasWidgets.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async updateWidgetPosition(id: number, position: { x: number; y: number; width: number; height: number }): Promise<boolean> {
+    const result = await db
+      .update(canvasWidgets)
+      .set({ 
+        position: position,
+        updatedAt: new Date() 
+      })
+      .where(eq(canvasWidgets.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 
   // Error Logging and Monitoring Implementation
