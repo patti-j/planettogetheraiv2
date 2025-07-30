@@ -17,7 +17,10 @@ const app = express();
 // CORS middleware for session cookies - simplified
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5000');
+  const origin = process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || req.headers.origin 
+    : 'http://localhost:5000';
+  res.header('Access-Control-Allow-Origin', origin);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
   
@@ -44,11 +47,11 @@ app.use(session({
   saveUninitialized: false,
   name: 'sessionId', // Change cookie name to avoid conflicts
   cookie: {
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: false, 
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: 'lax',
-    domain: 'localhost' // Explicitly set domain
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
   }
 }));
 
