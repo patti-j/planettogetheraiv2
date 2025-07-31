@@ -2120,6 +2120,40 @@ export async function seedDatabase() {
     { name: "reports-edit", feature: "reports", action: "edit", description: "Edit report configurations" },
     { name: "reports-delete", feature: "reports", action: "delete", description: "Delete custom reports" },
     
+    // Shop Floor Operations (Shop Floor Supervisors, Operators)
+    { name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor monitoring and resource status" },
+    { name: "shop-floor-edit", feature: "shop-floor", action: "edit", description: "Update shop floor configurations and status" },
+    { name: "shop-floor-create", feature: "shop-floor", action: "create", description: "Create shop floor events and notifications" },
+    { name: "shop-floor-delete", feature: "shop-floor", action: "delete", description: "Remove shop floor events and configurations" },
+    
+    // Operator Dashboard (Operators)
+    { name: "operator-dashboard-view", feature: "operator-dashboard", action: "view", description: "View operator-specific dashboard and tasks" },
+    { name: "operator-dashboard-edit", feature: "operator-dashboard", action: "edit", description: "Update operator task status and reports" },
+    
+    // Maintenance Management (Maintenance Technicians, Supervisors)
+    { name: "maintenance-view", feature: "maintenance", action: "view", description: "View maintenance schedules and work orders" },
+    { name: "maintenance-create", feature: "maintenance", action: "create", description: "Create maintenance work orders and schedules" },
+    { name: "maintenance-edit", feature: "maintenance", action: "edit", description: "Update maintenance tasks and completion status" },
+    { name: "maintenance-delete", feature: "maintenance", action: "delete", description: "Remove maintenance work orders" },
+    
+    // Customer Service (Customer Service Agents, Sales)
+    { name: "customer-service-view", feature: "customer-service", action: "view", description: "View customer orders, issues, and service records" },
+    { name: "customer-service-create", feature: "customer-service", action: "create", description: "Create customer service cases and follow-ups" },
+    { name: "customer-service-edit", feature: "customer-service", action: "edit", description: "Update customer information and service status" },
+    { name: "customer-service-delete", feature: "customer-service", action: "delete", description: "Remove customer service records" },
+    
+    // Sales Management (Sales Representatives)
+    { name: "sales-view", feature: "sales", action: "view", description: "View sales orders and customer relationships" },
+    { name: "sales-create", feature: "sales", action: "create", description: "Create sales orders and customer accounts" },
+    { name: "sales-edit", feature: "sales", action: "edit", description: "Update sales information and order status" },
+    { name: "sales-delete", feature: "sales", action: "delete", description: "Remove sales records and orders" },
+    
+    // Training System (Trainers)
+    { name: "training-view", feature: "training", action: "view", description: "View training modules and role demonstrations" },
+    { name: "training-create", feature: "training", action: "create", description: "Create training content and tour configurations" },
+    { name: "training-edit", feature: "training", action: "edit", description: "Update training materials and demo settings" },
+    { name: "training-delete", feature: "training", action: "delete", description: "Remove training content" },
+    
     // Presentation System (Directors, Plant Managers, Trainers)
     { name: "presentation-system-view", feature: "presentation-system", action: "view", description: "View presentations and presentation library" },
     { name: "presentation-system-create", feature: "presentation-system", action: "create", description: "Create presentations with AI generation" },
