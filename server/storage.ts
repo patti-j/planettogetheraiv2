@@ -10433,7 +10433,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       return await query
-        .orderBy(desc(schedulingHistory.executionStartTime))
+        .orderBy(desc(schedulingHistory.startTime))
         .limit(limit);
     } catch (error) {
       console.error('Error getting scheduling history:', error);

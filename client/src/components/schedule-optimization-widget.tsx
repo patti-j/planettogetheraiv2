@@ -112,7 +112,9 @@ export default function ScheduleOptimizationWidget({
     queryKey: ["/api/optimization/scheduling-history"],
     queryFn: async () => {
       const response = await fetch("/api/optimization/scheduling-history");
-      return await response.json();
+      const data = await response.json();
+      // Ensure we always return an array
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -156,9 +158,11 @@ export default function ScheduleOptimizationWidget({
     return `${(ms / 60000).toFixed(1)}m`;
   };
 
-  const recentOptimizations = schedulingHistory.slice(0, config.maxHistoryItems || 5);
-  const lastOptimization = schedulingHistory[0];
-  const runningOptimizations = schedulingHistory.filter((h: OptimizationHistory) => h.status === 'running');
+  // Ensure schedulingHistory is always an array before using array methods
+  const safeSchedulingHistory = Array.isArray(schedulingHistory) ? schedulingHistory : [];
+  const recentOptimizations = safeSchedulingHistory.slice(0, config.maxHistoryItems || 5);
+  const lastOptimization = safeSchedulingHistory[0];
+  const runningOptimizations = safeSchedulingHistory.filter((h: OptimizationHistory) => h.status === 'running');
 
   return (
     <Card className="h-full">
