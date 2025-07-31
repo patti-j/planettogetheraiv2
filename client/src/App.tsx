@@ -45,6 +45,7 @@ import VisualFactory from "@/pages/visual-factory";
 import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
 import UserRoleAssignments from "@/pages/user-role-assignments";
+import UserAccessManagement from "@/pages/user-access-management";
 import Training from "@/pages/training";
 
 import DemoTour from "@/pages/demo-tour";
@@ -343,14 +344,19 @@ function Router() {
               <BusinessGoals />
             </ProtectedRoute>
           </Route>
+          <Route path="/user-access-management">
+            <ProtectedRoute feature="user-management" action="view">
+              <UserAccessManagement />
+            </ProtectedRoute>
+          </Route>
           <Route path="/role-management">
             <ProtectedRoute feature="user-management" action="view">
-              <RoleManagement />
+              <UserAccessManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/user-role-assignments-page">
             <ProtectedRoute feature="user-management" action="view">
-              <UserRoleAssignments />
+              <UserAccessManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/disruption-management">
