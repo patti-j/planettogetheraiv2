@@ -330,45 +330,49 @@ export default function WidgetsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background pt-16 pb-8 md:pb-16">
       {/* Header */}
-      <div className="border-b bg-card px-4 py-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 lg:ml-6">
-            <Grid className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Widgets</h1>
-            <Badge variant="outline">{metrics.total} widgets</Badge>
+      <div className="border-b bg-card px-3 sm:px-4 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 lg:ml-6">
+            <Grid className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold">Widgets</h1>
+            <Badge variant="outline" className="text-xs">{metrics.total} widgets</Badge>
           </div>
           
           <div className="flex items-center gap-2">
             <Button 
               onClick={() => setShowStudio(true)} 
               variant="outline"
-              className="gap-2"
+              className="gap-1 sm:gap-2 text-sm"
+              size={isMobile ? "sm" : "default"}
             >
-              <Plus className="h-4 w-4" />
-              New Widget
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">New Widget</span>
+              <span className="sm:hidden">New</span>
             </Button>
             <Button 
               onClick={() => setShowAIDialog(true)} 
-              className={`gap-2 ${aiTheme.gradient} text-white border-0`}
+              className={`gap-1 sm:gap-2 text-sm ${aiTheme.gradient} text-white border-0`}
+              size={isMobile ? "sm" : "default"}
             >
-              <Sparkles className="h-4 w-4" />
-              New Widget AI
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">New Widget AI</span>
+              <span className="sm:hidden">AI</span>
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Widgets</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Widgets</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.total}</div>
+            <CardContent className="pt-1 sm:pt-2">
+              <div className="text-lg sm:text-2xl font-bold">{metrics.total}</div>
               <p className="text-xs text-muted-foreground">
                 {metrics.active} active
               </p>
@@ -376,31 +380,31 @@ export default function WidgetsPage() {
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Cockpit Widgets</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Cockpit Widgets</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{metrics.bySystem.cockpit}</div>
+            <CardContent className="pt-1 sm:pt-2">
+              <div className="text-lg sm:text-2xl font-bold text-blue-600">{metrics.bySystem.cockpit}</div>
               <p className="text-xs text-muted-foreground">Production focused</p>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Canvas Widgets</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Canvas Widgets</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{metrics.bySystem.canvas}</div>
+            <CardContent className="pt-1 sm:pt-2">
+              <div className="text-lg sm:text-2xl font-bold text-green-600">{metrics.bySystem.canvas}</div>
               <p className="text-xs text-muted-foreground">Custom layouts</p>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Dashboard Configs</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Dashboard Configs</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{metrics.bySystem.dashboard}</div>
+            <CardContent className="pt-1 sm:pt-2">
+              <div className="text-lg sm:text-2xl font-bold text-purple-600">{metrics.bySystem.dashboard}</div>
               <p className="text-xs text-muted-foreground">Analytics dashboards</p>
             </CardContent>
           </Card>
@@ -408,28 +412,29 @@ export default function WidgetsPage() {
 
         {/* Search and Filters */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               Search & Filter Widgets
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="search">Search</Label>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              <div className="sm:col-span-2">
+                <Label htmlFor="search" className="text-sm">Search</Label>
                 <Input
                   id="search"
                   placeholder="Search widgets..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="text-sm"
                 />
               </div>
               
               <div>
-                <Label htmlFor="type-filter">Type</Label>
+                <Label htmlFor="type-filter" className="text-sm">Type</Label>
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -444,9 +449,9 @@ export default function WidgetsPage() {
               </div>
               
               <div>
-                <Label htmlFor="system-filter">System</Label>
+                <Label htmlFor="system-filter" className="text-sm">System</Label>
                 <Select value={filterSystem} onValueChange={setFilterSystem}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -459,9 +464,9 @@ export default function WidgetsPage() {
               </div>
               
               <div>
-                <Label htmlFor="status-filter">Status</Label>
+                <Label htmlFor="status-filter" className="text-sm">Status</Label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -477,11 +482,11 @@ export default function WidgetsPage() {
         </Card>
 
         {/* Widget List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Widgets ({filteredWidgets.length})</CardTitle>
+        <Card className="mb-4 sm:mb-8">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">Widgets ({filteredWidgets.length})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -489,41 +494,41 @@ export default function WidgetsPage() {
             ) : filteredWidgets.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Grid className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No widgets found matching your criteria</p>
+                <p className="text-sm">No widgets found matching your criteria</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {filteredWidgets.map((widget) => {
                   const IconComponent = getWidgetIcon(widget.type);
                   return (
                     <Card key={widget.id} className="hover:shadow-md transition-shadow">
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="h-4 w-4 text-primary" />
-                            <h3 className="font-semibold truncate">{widget.title}</h3>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                            <h3 className="font-semibold truncate text-sm sm:text-base">{widget.title}</h3>
                           </div>
-                          <Badge className={`text-xs ${getSystemBadgeColor(widget.system)}`}>
+                          <Badge className={`text-xs flex-shrink-0 ${getSystemBadgeColor(widget.system)}`}>
                             {widget.system}
                           </Badge>
                         </div>
                         {widget.description && (
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                             {widget.description}
                           </p>
                         )}
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-1">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs text-muted-foreground">
-                            <p>Type: {widget.type}</p>
-                            <p>Modified: {new Date(widget.lastModified).toLocaleDateString()}</p>
+                          <div className="text-xs text-muted-foreground min-w-0 flex-1">
+                            <p className="truncate">Type: {widget.type}</p>
+                            <p className="truncate">Modified: {new Date(widget.lastModified).toLocaleDateString()}</p>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 w-7 p-0 hover:bg-blue-100"
+                              className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-blue-100"
                               onClick={() => handleViewWidget(widget)}
                               title="Preview widget"
                             >
@@ -532,7 +537,7 @@ export default function WidgetsPage() {
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 w-7 p-0 hover:bg-green-100"
+                              className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-green-100"
                               onClick={() => handleEditWidget(widget)}
                               title="Edit widget"
                             >
@@ -541,7 +546,7 @@ export default function WidgetsPage() {
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 w-7 p-0 hover:bg-purple-100"
+                              className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-purple-100"
                               onClick={() => handleCopyWidget(widget)}
                               title="Copy widget configuration"
                             >
@@ -550,7 +555,7 @@ export default function WidgetsPage() {
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                              className="h-6 w-6 sm:h-7 sm:w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
                               onClick={() => handleDeleteWidget(widget)}
                               title="Delete widget"
                             >
