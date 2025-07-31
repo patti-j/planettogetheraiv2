@@ -116,9 +116,9 @@ export default function UserAccessManagementPage() {
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
 
-  // Fetch users
+  // Fetch users with roles
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users-with-roles"],
   });
 
   // Fetch roles
@@ -172,7 +172,7 @@ export default function UserAccessManagementPage() {
         password: '',
         roleIds: []
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: any) => {
       toast({
@@ -194,7 +194,7 @@ export default function UserAccessManagementPage() {
         description: "User has been updated successfully",
       });
       setEditUserDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: any) => {
       toast({
@@ -264,7 +264,7 @@ export default function UserAccessManagementPage() {
       });
       setDeleteUserDialog(false);
       setSelectedUser(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: any) => {
       toast({
