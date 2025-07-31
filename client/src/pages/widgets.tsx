@@ -319,7 +319,7 @@ export default function WidgetsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16">
       {/* Header */}
       <div className="border-b bg-card px-4 py-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
