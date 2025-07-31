@@ -33,9 +33,7 @@ import {
   Wand2,
   Zap,
   Layout,
-  Settings,
-  Star,
-  StarOff
+  Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
@@ -217,26 +215,7 @@ export default function DashboardsPage() {
     },
   });
 
-  // Set default dashboard mutation
-  const setDefaultMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("POST", `/api/dashboard-configs/${id}/set-default`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Default dashboard set",
-        description: "Dashboard has been set as default",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to set default dashboard",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const resetForm = () => {
     setNewDashboard({
@@ -295,10 +274,6 @@ export default function DashboardsPage() {
     if (confirm("Are you sure you want to delete this dashboard?")) {
       deleteDashboardMutation.mutate(id);
     }
-  };
-
-  const handleSetDefault = (id: number) => {
-    setDefaultMutation.mutate(id);
   };
 
   // Filter dashboards
@@ -445,18 +420,6 @@ export default function DashboardsPage() {
                         <Eye className="w-3 h-3" />
                         View
                       </Button>
-                      
-                      {!dashboard.isDefault && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSetDefault(dashboard.id)}
-                          className="flex items-center gap-1"
-                        >
-                          <Star className="w-3 h-3" />
-                          Set Default
-                        </Button>
-                      )}
                       
                       <Button
                         size="sm"
