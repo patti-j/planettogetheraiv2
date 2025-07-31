@@ -57,6 +57,7 @@ export interface WidgetTemplate {
 
 export interface SystemData {
   productionOrders?: any[];
+  jobs?: any[]; // Alias for productionOrders for compatibility
   operations?: any[];
   resources?: any[];
   customers?: any[];
@@ -128,6 +129,8 @@ export class WidgetDataProcessor {
     switch (dataSource) {
       case 'productionOrders':
         return this.systemData.productionOrders || [];
+      case 'jobs':
+        return this.systemData.jobs || this.systemData.productionOrders || [];
       case 'operations':
         return this.systemData.operations || [];
       case 'resources':

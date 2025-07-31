@@ -197,7 +197,8 @@ export default function DashboardsPage() {
 
   // Prepare system data for universal widgets
   const systemData: SystemData = {
-    jobs: Array.isArray(productionOrders) ? productionOrders : [],
+    productionOrders: Array.isArray(productionOrders) ? productionOrders : [],
+    jobs: Array.isArray(productionOrders) ? productionOrders : [], // Also map productionOrders to jobs for compatibility
     operations: Array.isArray(operations) ? operations : [],
     resources: Array.isArray(resources) ? resources : [],
     metrics: metrics && typeof metrics === 'object' ? metrics : {},
@@ -1113,13 +1114,40 @@ export default function DashboardsPage() {
                     >
                       {viewDashboard.configuration.customWidgets.map((widget: any) => {
                         // Convert dashboard widget to UniversalWidget config
+                        // Map dashboard widget types to UniversalWidget types
+                        const mapWidgetType = (dashboardType: string): WidgetConfig['type'] => {
+                          switch (dashboardType) {
+                            case 'metric':
+                            case 'kpi':
+                              return 'kpi';
+                            case 'chart':
+                            case 'bar':
+                            case 'line':
+                            case 'pie':
+                            case 'doughnut':
+                              return 'chart';
+                            case 'table':
+                            case 'list':
+                              return 'table';
+                            case 'alert':
+                            case 'notification':
+                              return 'alert';
+                            case 'progress':
+                              return 'progress';
+                            case 'gauge':
+                              return 'gauge';
+                            default:
+                              return 'kpi'; // Default fallback
+                          }
+                        };
+
                         // Ensure we have valid configuration from the widget
                         const widgetConfig: WidgetConfig = {
                           id: widget.id || `widget-${Math.random()}`,
-                          type: widget.type || 'kpi',
+                          type: mapWidgetType(widget.type || 'kpi'),
                           title: widget.title || 'Widget',
                           subtitle: widget.description,
-                          dataSource: widget.dataSource || widget.config?.dataSource || 'productionOrders',
+                          dataSource: widget.dataSource || widget.config?.dataSource || 'jobs',
                           chartType: widget.chartType || widget.config?.chartType || 'bar',
                           aggregation: widget.aggregation || widget.config?.aggregation || 'count',
                           groupBy: widget.groupBy || widget.config?.groupBy,
@@ -1140,6 +1168,14 @@ export default function DashboardsPage() {
                           drillDownTarget: widget.drillDownTarget || widget.config?.drillDownTarget,
                           drillDownParams: widget.drillDownParams || widget.config?.drillDownParams
                         };
+
+                        console.log('Dashboard widget:', {
+                          originalType: widget.type,
+                          mappedType: widgetConfig.type,
+                          title: widget.title,
+                          data: widget.data,
+                          config: widget.config
+                        });
 
                         return (
                           <div
