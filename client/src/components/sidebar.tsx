@@ -85,8 +85,8 @@ export default function Sidebar() {
     }
   };
 
-  // CRITICAL DEBUG: Check if this code is even running
-  console.log("🚨 SIDEBAR RENDER: Starting navigationItems creation");
+  // CRITICAL DEBUG: Check if this code is even running - REFRESHED
+  console.log("🚨 SIDEBAR RENDER: Starting navigationItems creation - WIDGETS CHECK");
 
   const navigationItems: Array<{
     icon: any;
