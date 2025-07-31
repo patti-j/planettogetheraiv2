@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest } from "@/lib/queryClient";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,7 +41,6 @@ import { useMobile } from "@/hooks/use-mobile";
 import WidgetDesignStudio from "@/components/widget-design-studio";
 import UniversalWidget from "@/components/universal-widget";
 import { WidgetConfig, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
-import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 
 interface WidgetItem {
@@ -230,7 +230,7 @@ export default function WidgetsPage() {
           break;
       }
 
-      const response = await fetch(endpoint, { method: 'DELETE' });
+      const response = await apiRequest('DELETE', endpoint);
       return response.json();
     },
     onMutate: async (widget) => {
