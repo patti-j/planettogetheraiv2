@@ -96,6 +96,11 @@ export default function UserAccessManagementPage() {
     description: "",
     permissions: [] as number[]
   });
+  
+  // Permission management states
+  const [editPermissionDialog, setEditPermissionDialog] = useState(false);
+  const [selectedPermission, setSelectedPermission] = useState<Permission | null>(null);
+  const [permissionRoleIds, setPermissionRoleIds] = useState<number[]>([]);
 
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
@@ -294,6 +299,55 @@ export default function UserAccessManagementPage() {
       permissions: []
     }));
   };
+  
+  const handleEditPermissionRoles = (permission: Permission, rolesWithPermission: Role[]) => {
+    setSelectedPermission(permission);
+    setPermissionRoleIds(rolesWithPermission.map(r => r.id));
+    setEditPermissionDialog(true);
+  };
+  
+  const updatePermissionRolesMutation = useMutation({
+    mutationFn: async (data: { permissionId: number, roleIds: number[] }) => {
+      // Update each role's permissions
+      const updatePromises = roles.map(async (role) => {
+        const shouldHavePermission = data.roleIds.includes(role.id);
+        const hasPermission = role.permissions.some(p => p.id === data.permissionId);
+        
+        if (shouldHavePermission && !hasPermission) {
+          // Add permission to role
+          const updatedPermissions = [...role.permissions.map(p => p.id), data.permissionId];
+          const response = await apiRequest("PATCH", `/api/roles-management/${role.id}`, {
+            permissions: updatedPermissions
+          });
+          return response.json();
+        } else if (!shouldHavePermission && hasPermission) {
+          // Remove permission from role
+          const updatedPermissions = role.permissions.filter(p => p.id !== data.permissionId).map(p => p.id);
+          const response = await apiRequest("PATCH", `/api/roles-management/${role.id}`, {
+            permissions: updatedPermissions
+          });
+          return response.json();
+        }
+      });
+      
+      await Promise.all(updatePromises.filter(Boolean));
+    },
+    onSuccess: () => {
+      toast({
+        title: "Permissions Updated",
+        description: "Role assignments have been updated successfully",
+      });
+      setEditPermissionDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role assignments",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
@@ -788,22 +842,56 @@ export default function UserAccessManagementPage() {
                                 <TableHead>Permission</TableHead>
                                 <TableHead>Action</TableHead>
                                 <TableHead>Description</TableHead>
+                                <TableHead>Roles with this Permission</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {featureGroup.permissions.map((permission) => (
-                                <TableRow key={permission.id}>
-                                  <TableCell className="font-medium">{permission.name}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline" className="text-xs">
-                                      {permission.action}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-sm text-gray-600">
-                                    {permission.description}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
+                              {featureGroup.permissions.map((permission) => {
+                                // Find which roles have this permission
+                                const rolesWithPermission = roles.filter(role => 
+                                  role.permissions.some(p => p.id === permission.id)
+                                );
+                                
+                                return (
+                                  <TableRow key={permission.id}>
+                                    <TableCell className="font-medium">{permission.name}</TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline" className="text-xs">
+                                        {permission.action}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-gray-600">
+                                      {permission.description}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap gap-1">
+                                          {rolesWithPermission.map(role => (
+                                            <Badge 
+                                              key={role.id} 
+                                              variant={role.isSystemRole ? "secondary" : "outline"}
+                                              className="text-xs"
+                                            >
+                                              {role.name}
+                                            </Badge>
+                                          ))}
+                                          {rolesWithPermission.length === 0 && (
+                                            <span className="text-xs text-gray-400">No roles assigned</span>
+                                          )}
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleEditPermissionRoles(permission, rolesWithPermission)}
+                                          title="Edit role assignments"
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                         </div>
@@ -1059,6 +1147,76 @@ export default function UserAccessManagementPage() {
               }
             }}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Permission Roles Dialog */}
+      <Dialog open={editPermissionDialog} onOpenChange={setEditPermissionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Role Assignments</DialogTitle>
+            <DialogDescription>
+              Choose which roles should have the "{selectedPermission?.name}" permission
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPermission && (
+            <div className="space-y-4">
+              <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <p className="font-medium text-sm">{selectedPermission.name}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {selectedPermission.feature} - {selectedPermission.action}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  {selectedPermission.description}
+                </p>
+              </div>
+              <div>
+                <Label>Assign to Roles</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-64 overflow-y-auto">
+                  {roles.map((role) => (
+                    <label key={role.id} className="flex items-center space-x-2 cursor-pointer">
+                      <Checkbox
+                        checked={permissionRoleIds.includes(role.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setPermissionRoleIds([...permissionRoleIds, role.id]);
+                          } else {
+                            setPermissionRoleIds(permissionRoleIds.filter(id => id !== role.id));
+                          }
+                        }}
+                        disabled={role.isSystemRole}
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">{role.name}</span>
+                        {role.isSystemRole && (
+                          <span className="text-xs text-gray-500 ml-2">(System Role)</span>
+                        )}
+                        <p className="text-xs text-gray-600">{role.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPermissionDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedPermission) {
+                  updatePermissionRolesMutation.mutate({
+                    permissionId: selectedPermission.id,
+                    roleIds: permissionRoleIds
+                  });
+                }
+              }}
+              disabled={updatePermissionRolesMutation.isPending}
+            >
+              {updatePermissionRolesMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
