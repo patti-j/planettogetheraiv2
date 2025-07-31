@@ -5,7 +5,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 export interface CanvasItem {
   id: string;
-  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom';
+  type: 'dashboard' | 'chart' | 'table' | 'image' | 'interactive' | 'custom' | 'widget';
   title: string;
   content: any;
   width?: string;

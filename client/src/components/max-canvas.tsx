@@ -58,6 +58,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
 
 interface MaxCanvasProps {
   isVisible: boolean;
@@ -113,6 +114,39 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         return <InteractiveWidget data={item.content} />;
       case 'custom':
         return <CustomWidget data={item.content} />;
+      case 'widget':
+        // Check if it's an optimization widget
+        if (item.content?.widgetName?.toLowerCase().includes('optimization') || 
+            item.title?.toLowerCase().includes('optimization')) {
+          return (
+            <ScheduleOptimizationWidget 
+              config={{
+                showQuickActions: true,
+                showHistory: true,
+                showMetrics: true,
+                maxHistoryItems: 10,
+                defaultView: 'overview',
+                showAlgorithmSelector: true,
+                showProfileSelector: true
+              }}
+              data={item.content}
+              onAction={(action, data) => {
+                console.log('Optimization widget action:', action, data);
+                toast({
+                  title: "Optimization Action",
+                  description: `Action "${action}" triggered`
+                });
+              }}
+            />
+          );
+        }
+        // Default widget rendering
+        return (
+          <div className="bg-white rounded-lg border p-4">
+            <h4 className="font-medium mb-2">{item.title || 'Widget'}</h4>
+            <p className="text-gray-600">{item.content?.description || 'Widget content'}</p>
+          </div>
+        );
       default:
         return <div className="p-4 text-gray-500">Unknown content type</div>;
     }
