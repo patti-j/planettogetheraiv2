@@ -201,17 +201,38 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // Smaller, more compact cards for desktop
+  // Responsive card sizes for better visibility
   const getCardSize = (priority: string) => {
-    return "w-full aspect-square min-h-[100px] h-[100px] min-w-[100px]"; // Smaller for more compact layout
+    switch (priority) {
+      case "high":
+        return "w-full aspect-square min-h-[160px] h-[160px] sm:min-h-[140px] sm:h-[140px] md:min-h-[120px] md:h-[120px]";
+      case "medium":
+        return "w-full aspect-square min-h-[150px] h-[150px] sm:min-h-[130px] sm:h-[130px] md:min-h-[110px] md:h-[110px]";
+      default:
+        return "w-full aspect-square min-h-[140px] h-[140px] sm:min-h-[120px] sm:h-[120px] md:min-h-[100px] md:h-[100px]";
+    }
   };
 
   const getIconSize = (priority: string) => {
-    return "w-4 h-4"; // Smaller icons for compact design
+    switch (priority) {
+      case "high":
+        return "w-6 h-6 sm:w-5 sm:h-5";
+      case "medium":
+        return "w-5 h-5 sm:w-4 sm:h-4";
+      default:
+        return "w-4 h-4";
+    }
   };
 
   const getTextSize = (priority: string) => {
-    return "text-xs font-medium"; // Smaller text to fit compact cards
+    switch (priority) {
+      case "high":
+        return "text-sm sm:text-xs font-semibold";
+      case "medium":
+        return "text-xs font-medium";
+      default:
+        return "text-xs font-medium";
+    }
   };
 
   return (
@@ -381,17 +402,17 @@ export default function TopMenu() {
             </div>
 
             {/* Menu Content */}
-            <div className="p-6 space-y-8">
+            <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 max-w-[1400px] mx-auto">
               {/* Homepage Button */}
-              <div className="mb-4">
+              <div className="mb-6">
                 <Link href="/">
                   <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-xl text-lg font-semibold py-6"
                     size="lg"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Home className="w-5 h-5 mr-2" />
-                    Go to Homepage
+                    <Home className="w-6 h-6 mr-3" />
+                    Go to Homepage - View Dashboard Improvements
                   </Button>
                 </Link>
               </div>
@@ -422,7 +443,7 @@ export default function TopMenu() {
                     maxVisibleCardsDesktop={4}
                     showMoreText="Show More Favorites"
                     showLessText="Show Less"
-                    gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
+                    gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr"
                     cards={recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
@@ -504,12 +525,12 @@ export default function TopMenu() {
               )}
               
               {/* Single column on mobile, two-column layout on desktop */}
-              <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
+              <div className="lg:grid lg:grid-cols-2 lg:gap-12 space-y-8 lg:space-y-0">
                 {/* Left Column - All groups on mobile, first half on desktop */}
-                <div className="space-y-6">
+                <div className="space-y-8">
                   {getVisibleGroups().slice(0, Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                    <div key={groupIndex} className="space-y-3">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                    <div key={groupIndex} className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
                         {group.title}
                       </h3>
                       <DashboardCardContainer
@@ -518,7 +539,7 @@ export default function TopMenu() {
                         maxVisibleCardsDesktop={4}
                         showMoreText={`Show More ${group.title}`}
                         showLessText="Show Less"
-                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
+                        gridClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6"
                         cards={group.features.map((feature, featureIndex) => {
                           // Set priority based on group priority and feature characteristics
                           let priority = 5; // default
@@ -566,10 +587,10 @@ export default function TopMenu() {
                   ))}
                   
                   {/* Show remaining groups on mobile in same column */}
-                  <div className="md:hidden space-y-6">
+                  <div className="md:hidden space-y-8">
                     {getVisibleGroups().slice(Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                      <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-3">
-                        <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                      <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
                           {group.title}
                         </h3>
                         <DashboardCardContainer
@@ -578,7 +599,7 @@ export default function TopMenu() {
                           maxVisibleCardsDesktop={4}
                           showMoreText={`Show More ${group.title}`}
                           showLessText="Show Less"
-                          gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-4 auto-rows-fr"
+                          gridClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6"
                           cards={group.features.map((feature, featureIndex) => {
                             // Set priority based on group priority and feature characteristics
                             let priority = 5; // default
@@ -628,10 +649,10 @@ export default function TopMenu() {
                 </div>
                 
                 {/* Right Column - only visible on desktop */}
-                <div className="hidden md:block space-y-6">
+                <div className="hidden lg:block space-y-8">
                   {getVisibleGroups().slice(Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                    <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-3">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                    <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
                         {group.title}
                       </h3>
                       <DashboardCardContainer
@@ -640,7 +661,7 @@ export default function TopMenu() {
                         maxVisibleCardsDesktop={4}
                         showMoreText={`Show More ${group.title}`}
                         showLessText="Show Less"
-                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
+                        gridClassName="grid grid-cols-2 gap-6"
                         cards={group.features.map((feature, featureIndex) => {
                           // Set priority based on group priority and feature characteristics
                           let priority = 5; // default
