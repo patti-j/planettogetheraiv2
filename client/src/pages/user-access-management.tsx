@@ -68,6 +68,7 @@ export default function UserAccessManagementPage() {
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [editUserDialog, setEditUserDialog] = useState(false);
   const [viewUserDialog, setViewUserDialog] = useState(false);
+  const [deleteUserDialog, setDeleteUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUserData, setNewUserData] = useState({
     username: '',
@@ -90,6 +91,7 @@ export default function UserAccessManagementPage() {
   // Role management states
   const [newRoleDialog, setNewRoleDialog] = useState(false);
   const [editRoleDialog, setEditRoleDialog] = useState(false);
+  const [deleteRoleDialog, setDeleteRoleDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleForm, setRoleForm] = useState({
     name: "",
@@ -98,9 +100,18 @@ export default function UserAccessManagementPage() {
   });
   
   // Permission management states
+  const [newPermissionDialog, setNewPermissionDialog] = useState(false);
   const [editPermissionDialog, setEditPermissionDialog] = useState(false);
+  const [editPermissionDetailsDialog, setEditPermissionDetailsDialog] = useState(false);
+  const [deletePermissionDialog, setDeletePermissionDialog] = useState(false);
   const [selectedPermission, setSelectedPermission] = useState<Permission | null>(null);
   const [permissionRoleIds, setPermissionRoleIds] = useState<number[]>([]);
+  const [permissionForm, setPermissionForm] = useState({
+    name: '',
+    feature: '',
+    action: '',
+    description: ''
+  });
 
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
@@ -240,6 +251,124 @@ export default function UserAccessManagementPage() {
     },
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest("DELETE", `/api/users/${userId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "User has been deleted successfully",
+      });
+      setDeleteUserDialog(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete role mutation
+  const deleteRoleMutation = useMutation({
+    mutationFn: async (roleId: number) => {
+      const response = await apiRequest("DELETE", `/api/roles-management/${roleId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Role Deleted",
+        description: "Role has been deleted successfully",
+      });
+      setDeleteRoleDialog(false);
+      setSelectedRole(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Permission mutations
+  const createPermissionMutation = useMutation({
+    mutationFn: async (data: typeof permissionForm) => {
+      const response = await apiRequest("POST", "/api/permissions", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Permission Created",
+        description: "New permission has been created successfully",
+      });
+      setNewPermissionDialog(false);
+      setPermissionForm({ name: '', feature: '', action: '', description: '' });
+      queryClient.invalidateQueries({ queryKey: ["/api/permissions/grouped"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create permission",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePermissionMutation = useMutation({
+    mutationFn: async (data: { id: number } & typeof permissionForm) => {
+      const response = await apiRequest("PUT", `/api/permissions/${data.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Permission Updated",
+        description: "Permission has been updated successfully",
+      });
+      setEditPermissionDetailsDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/permissions/grouped"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update permission",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePermissionMutation = useMutation({
+    mutationFn: async (permissionId: number) => {
+      const response = await apiRequest("DELETE", `/api/permissions/${permissionId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Permission Deleted",
+        description: "Permission has been deleted successfully",
+      });
+      setDeletePermissionDialog(false);
+      setSelectedPermission(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/permissions/grouped"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete permission",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Helper functions
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
@@ -267,6 +396,50 @@ export default function UserAccessManagementPage() {
       permissions: role.permissions.map(p => p.id)
     });
     setEditRoleDialog(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user);
+    setDeleteUserDialog(true);
+  };
+
+  const handleDeleteRole = (role: Role) => {
+    if (role.isSystemRole) {
+      toast({
+        title: "Cannot Delete",
+        description: "System roles cannot be deleted",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (role.userCount && role.userCount > 0) {
+      toast({
+        title: "Cannot Delete",
+        description: `Role is assigned to ${role.userCount} users. Remove users from this role first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedRole(role);
+    setDeleteRoleDialog(true);
+  };
+
+  const handleEditPermissionDetails = (permission: Permission) => {
+    setSelectedPermission(permission);
+    setPermissionForm({
+      name: permission.name,
+      feature: permission.feature,
+      action: permission.action,
+      description: permission.description
+    });
+    setEditPermissionDetailsDialog(true);
+  };
+
+  const handleDeletePermission = (permission: Permission) => {
+    setSelectedPermission(permission);
+    setDeletePermissionDialog(true);
   };
 
   const toggleFeatureExpansion = (feature: string) => {
@@ -570,6 +743,15 @@ export default function UserAccessManagementPage() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleDeleteUser(user)}
+                                title="Delete User"
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -734,6 +916,15 @@ export default function UserAccessManagementPage() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteRole(role)}
+                              title="Delete Role"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                         <CardDescription>{role.description}</CardDescription>
@@ -793,19 +984,98 @@ export default function UserAccessManagementPage() {
                   <CardTitle>System Permissions</CardTitle>
                   <CardDescription>View all available permissions grouped by feature</CardDescription>
                 </div>
-                <Select value={selectedFeature} onValueChange={setSelectedFeature}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by feature" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Features</SelectItem>
-                    {features.map((feature) => (
-                      <SelectItem key={feature} value={feature}>
-                        {feature}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Dialog open={newPermissionDialog} onOpenChange={setNewPermissionDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className={aiTheme ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" : ""}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Permission
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create New Permission</DialogTitle>
+                        <DialogDescription>Define a new permission for the system</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="permissionName">Permission Name</Label>
+                          <Input
+                            id="permissionName"
+                            value={permissionForm.name}
+                            onChange={(e) => setPermissionForm({...permissionForm, name: e.target.value})}
+                            placeholder="e.g., View Production Reports"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="permissionFeature">Feature</Label>
+                          <Input
+                            id="permissionFeature"
+                            value={permissionForm.feature}
+                            onChange={(e) => setPermissionForm({...permissionForm, feature: e.target.value})}
+                            placeholder="e.g., production-reports"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="permissionAction">Action</Label>
+                          <Select value={permissionForm.action} onValueChange={(value) => setPermissionForm({...permissionForm, action: value})}>
+                            <SelectTrigger id="permissionAction">
+                              <SelectValue placeholder="Select action" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="view">View</SelectItem>
+                              <SelectItem value="create">Create</SelectItem>
+                              <SelectItem value="edit">Edit</SelectItem>
+                              <SelectItem value="delete">Delete</SelectItem>
+                              <SelectItem value="manage">Manage</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="permissionDescription">Description</Label>
+                          <Textarea
+                            id="permissionDescription"
+                            value={permissionForm.description}
+                            onChange={(e) => setPermissionForm({...permissionForm, description: e.target.value})}
+                            placeholder="Describe what this permission allows..."
+                            rows={3}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setNewPermissionDialog(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => {
+                          if (permissionForm.name && permissionForm.feature && permissionForm.action && permissionForm.description) {
+                            createPermissionMutation.mutate(permissionForm);
+                          } else {
+                            toast({
+                              title: "Error",
+                              description: "Please fill in all fields",
+                              variant: "destructive"
+                            });
+                          }
+                        }}>
+                          Create Permission
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Select value={selectedFeature} onValueChange={setSelectedFeature}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by feature" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Features</SelectItem>
+                      {features.map((feature) => (
+                        <SelectItem key={feature} value={feature}>
+                          {feature}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -841,6 +1111,7 @@ export default function UserAccessManagementPage() {
                                 <TableHead>Action</TableHead>
                                 <TableHead>Description</TableHead>
                                 <TableHead>Roles with this Permission</TableHead>
+                                <TableHead>Actions</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -884,6 +1155,27 @@ export default function UserAccessManagementPage() {
                                           title="Edit role assignments"
                                         >
                                           <Edit className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleEditPermissionDetails(permission)}
+                                          title="Edit permission details"
+                                        >
+                                          <Settings className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDeletePermission(permission)}
+                                          title="Delete permission"
+                                          className="text-red-600 hover:text-red-700"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
                                         </Button>
                                       </div>
                                     </TableCell>
@@ -1214,6 +1506,192 @@ export default function UserAccessManagementPage() {
               disabled={updatePermissionRolesMutation.isPending}
             >
               {updatePermissionRolesMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteUserDialog} onOpenChange={setDeleteUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="font-medium">{selectedUser.username}</p>
+              <p className="text-sm text-gray-600">{selectedUser.email}</p>
+              {selectedUser.firstName && (
+                <p className="text-sm text-gray-600">{selectedUser.firstName} {selectedUser.lastName}</p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteUserDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (selectedUser) {
+                  deleteUserMutation.mutate(selectedUser.id);
+                }
+              }}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Role Dialog */}
+      <Dialog open={deleteRoleDialog} onOpenChange={setDeleteRoleDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Role</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this role? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRole && (
+            <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="font-medium">{selectedRole.name}</p>
+              <p className="text-sm text-gray-600">{selectedRole.description}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                This role has {selectedRole.permissions.length} permissions assigned.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteRoleDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (selectedRole) {
+                  deleteRoleMutation.mutate(selectedRole.id);
+                }
+              }}
+              disabled={deleteRoleMutation.isPending}
+            >
+              {deleteRoleMutation.isPending ? "Deleting..." : "Delete Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Permission Details Dialog */}
+      <Dialog open={editPermissionDetailsDialog} onOpenChange={setEditPermissionDetailsDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Permission</DialogTitle>
+            <DialogDescription>Update the permission details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editPermissionName">Permission Name</Label>
+              <Input
+                id="editPermissionName"
+                value={permissionForm.name}
+                onChange={(e) => setPermissionForm({...permissionForm, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editPermissionFeature">Feature</Label>
+              <Input
+                id="editPermissionFeature"
+                value={permissionForm.feature}
+                onChange={(e) => setPermissionForm({...permissionForm, feature: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label htmlFor="editPermissionAction">Action</Label>
+              <Select value={permissionForm.action} onValueChange={(value) => setPermissionForm({...permissionForm, action: value})}>
+                <SelectTrigger id="editPermissionAction">
+                  <SelectValue placeholder="Select action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="view">View</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="edit">Edit</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                  <SelectItem value="manage">Manage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editPermissionDescription">Description</Label>
+              <Textarea
+                id="editPermissionDescription"
+                value={permissionForm.description}
+                onChange={(e) => setPermissionForm({...permissionForm, description: e.target.value})}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPermissionDetailsDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (selectedPermission && permissionForm.name && permissionForm.feature && permissionForm.action && permissionForm.description) {
+                updatePermissionMutation.mutate({
+                  id: selectedPermission.id,
+                  ...permissionForm
+                });
+              } else {
+                toast({
+                  title: "Error",
+                  description: "Please fill in all fields",
+                  variant: "destructive"
+                });
+              }
+            }}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Permission Dialog */}
+      <Dialog open={deletePermissionDialog} onOpenChange={setDeletePermissionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Permission</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this permission? This will remove it from all roles.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPermission && (
+            <div className="space-y-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="font-medium">{selectedPermission.name}</p>
+              <p className="text-sm text-gray-600">{selectedPermission.feature} - {selectedPermission.action}</p>
+              <p className="text-sm text-gray-500 mt-2">{selectedPermission.description}</p>
+              <AlertCircle className="h-4 w-4 text-amber-500 inline mr-2 mt-2" />
+              <p className="text-sm text-amber-600 dark:text-amber-400 inline">
+                This permission will be removed from all roles that currently have it.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletePermissionDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (selectedPermission) {
+                  deletePermissionMutation.mutate(selectedPermission.id);
+                }
+              }}
+              disabled={deletePermissionMutation.isPending}
+            >
+              {deletePermissionMutation.isPending ? "Deleting..." : "Delete Permission"}
             </Button>
           </DialogFooter>
         </DialogContent>
