@@ -132,7 +132,7 @@ export default function DashboardsPage() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDashboardManager, setShowDashboardManager] = useState(false);
-  const [showEnhancedDashboardManager, setShowEnhancedDashboardManager] = useState(false);
+
   const [showAiDashboardDialog, setShowAiDashboardDialog] = useState(false);
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
@@ -333,10 +333,7 @@ export default function DashboardsPage() {
         
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
-            onClick={() => {
-              setSelectedDashboard(null);
-              setShowEnhancedDashboardManager(true);
-            }}
+            onClick={() => setShowCreateDialog(true)}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -637,38 +634,6 @@ export default function DashboardsPage() {
         customWidgets={[]}
       />
 
-      {/* Enhanced Dashboard Manager for New Dashboard Creation */}
-      <EnhancedDashboardManager
-        open={showEnhancedDashboardManager}
-        onOpenChange={setShowEnhancedDashboardManager}
-        dashboards={dashboards}
-        currentDashboard={null}
-        onDashboardSelect={() => {}}
-        onDashboardCreate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard created",
-            description: "New dashboard has been created successfully",
-          });
-          setShowEnhancedDashboardManager(false);
-        }}
-        onDashboardUpdate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard updated",
-            description: "Dashboard has been updated successfully",
-          });
-        }}
-        onDashboardDelete={(dashboardId) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard deleted",
-            description: "Dashboard has been deleted successfully",
-          });
-        }}
-        standardWidgets={[]}
-        customWidgets={[]}
-      />
 
       {/* AI Dashboard Generation Dialog */}
       <Dialog open={showAiDashboardDialog} onOpenChange={setShowAiDashboardDialog}>
