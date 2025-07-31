@@ -29,6 +29,9 @@ const featureGroups = [
   {
     title: "Planning & Scheduling",
     priority: "high", // large cards
+    color: "blue",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
     features: [
       { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
@@ -42,6 +45,9 @@ const featureGroups = [
   {
     title: "AI & Optimization", 
     priority: "high",
+    color: "purple",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
     features: [
       { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
@@ -53,6 +59,9 @@ const featureGroups = [
   {
     title: "Operations",
     priority: "medium", 
+    color: "orange",
+    bgColor: "bg-orange-50",
+    borderColor: "border-orange-200",
     features: [
       { icon: Factory, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
       { icon: Settings, label: "Operator Dashboard", href: "/operator-dashboard", feature: "operator-dashboard", action: "view", color: "bg-gray-500" },
@@ -64,8 +73,10 @@ const featureGroups = [
   {
     title: "Management",
     priority: "medium",
+    color: "green",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
     features: [
-
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
@@ -74,6 +85,9 @@ const featureGroups = [
   {
     title: "System Administration",
     priority: "low",
+    color: "gray",
+    bgColor: "bg-gray-50",
+    borderColor: "border-gray-200",
     features: [
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
@@ -96,6 +110,9 @@ const featureGroups = [
   {
     title: "Communication & Collaboration",
     priority: "low",
+    color: "teal",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-200",
     features: [
       { icon: Eye, label: "Visual Factory", href: "/visual-factory", feature: "visual-factory", action: "view", color: "bg-indigo-500" },
       { icon: MessageCircle, label: "Chat", href: "/chat", feature: "chat", action: "view", color: "bg-green-600" },
@@ -106,6 +123,9 @@ const featureGroups = [
   {
     title: "Training & Support",
     priority: "low", 
+    color: "indigo",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
@@ -201,37 +221,37 @@ export default function TopMenu() {
     setMenuOpen(false);
   };
 
-  // Responsive card sizes for better visibility
+  // Compact card sizes for 3-column layout without scrolling
   const getCardSize = (priority: string) => {
     switch (priority) {
       case "high":
-        return "w-full aspect-square min-h-[160px] h-[160px] sm:min-h-[140px] sm:h-[140px] md:min-h-[120px] md:h-[120px]";
+        return "w-full min-h-[60px] h-[60px] sm:min-h-[65px] sm:h-[65px] md:min-h-[70px] md:h-[70px]";
       case "medium":
-        return "w-full aspect-square min-h-[150px] h-[150px] sm:min-h-[130px] sm:h-[130px] md:min-h-[110px] md:h-[110px]";
+        return "w-full min-h-[55px] h-[55px] sm:min-h-[60px] sm:h-[60px] md:min-h-[65px] md:h-[65px]";
       default:
-        return "w-full aspect-square min-h-[140px] h-[140px] sm:min-h-[120px] sm:h-[120px] md:min-h-[100px] md:h-[100px]";
+        return "w-full min-h-[50px] h-[50px] sm:min-h-[55px] sm:h-[55px] md:min-h-[60px] md:h-[60px]";
     }
   };
 
   const getIconSize = (priority: string) => {
     switch (priority) {
       case "high":
-        return "w-6 h-6 sm:w-5 sm:h-5";
-      case "medium":
-        return "w-5 h-5 sm:w-4 sm:h-4";
-      default:
         return "w-4 h-4";
+      case "medium":
+        return "w-3.5 h-3.5";
+      default:
+        return "w-3 h-3";
     }
   };
 
   const getTextSize = (priority: string) => {
     switch (priority) {
       case "high":
-        return "text-sm sm:text-xs font-semibold";
+        return "text-[11px] font-semibold";
       case "medium":
-        return "text-xs font-medium";
+        return "text-[10px] font-medium";
       default:
-        return "text-xs font-medium";
+        return "text-[10px] font-normal";
     }
   };
 
@@ -271,7 +291,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="bg-white border-b border-gray-200 shadow-lg min-h-[50vh] max-h-[80vh] overflow-y-auto"
+            className="bg-gradient-to-b from-gray-50 to-white shadow-2xl h-screen overflow-y-auto"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
@@ -284,19 +304,19 @@ export default function TopMenu() {
             }}
           >
             {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 bg-white shadow-sm">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Close Button - moved to left side */}
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={() => setMenuOpen(false)}
-                  className="p-2 hover:bg-gray-200 flex-shrink-0"
+                  className="p-1.5 hover:bg-gray-100 flex-shrink-0 rounded-lg"
                 >
-                  <ChevronDown className="w-5 h-5" />
+                  <X className="w-5 h-5" />
                 </Button>
-                <Factory className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 flex-shrink-0" />
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">PlanetTogether</h1>
+                <Factory className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 flex-shrink-0" />
+                <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">PlanetTogether</h1>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
@@ -402,17 +422,17 @@ export default function TopMenu() {
             </div>
 
             {/* Menu Content */}
-            <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 max-w-[1400px] mx-auto">
+            <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
               {/* Homepage Button */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <Link href="/">
                   <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-xl text-lg font-semibold py-6"
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg text-base font-semibold py-4"
                     size="lg"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <Home className="w-6 h-6 mr-3" />
-                    Go to Homepage - View Dashboard Improvements
+                    <Home className="w-5 h-5 mr-2" />
+                    Go to Homepage
                   </Button>
                 </Link>
               </div>
@@ -524,190 +544,48 @@ export default function TopMenu() {
                 </div>
               )}
               
-              {/* Single column on mobile, two-column layout on desktop */}
-              <div className="lg:grid lg:grid-cols-2 lg:gap-12 space-y-8 lg:space-y-0">
-                {/* Left Column - All groups on mobile, first half on desktop */}
-                <div className="space-y-8">
-                  {getVisibleGroups().slice(0, Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                    <div key={groupIndex} className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
+              {/* Full width grid layout - 3 columns on desktop for better space usage */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                  {getVisibleGroups().map((group, groupIndex) => (
+                    <div key={groupIndex} className={`${group.bgColor} rounded-xl border ${group.borderColor} p-4 shadow-sm`}>
+                      <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center uppercase tracking-wide">
+                        <div className={`w-1 h-4 bg-${group.color}-500 mr-2.5 rounded-full`} />
                         {group.title}
                       </h3>
-                      <DashboardCardContainer
-                        maxVisibleCardsMobile={2}
-                        maxVisibleCardsTablet={3}
-                        maxVisibleCardsDesktop={4}
-                        showMoreText={`Show More ${group.title}`}
-                        showLessText="Show Less"
-                        gridClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6"
-                        cards={group.features.map((feature, featureIndex) => {
-                          // Set priority based on group priority and feature characteristics
-                          let priority = 5; // default
-                          if (group.priority === "high") priority = feature.isAI ? 1 : 2;
-                          else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
-                          else priority = feature.isAI ? 5 : 6;
-                          
-                          return {
-                            id: `${group.title}-${feature.href}-${featureIndex}`,
-                            priority,
-                            content: (
-                              <Link 
-                                key={featureIndex} 
-                                href={feature.href === "#max" ? "#" : feature.href}
-                                onClick={() => handleFeatureClick(feature)}
-                              >
-                                <div className={`
-                                  ${getCardSize(group.priority)}
-                                  bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                                  rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                                  flex flex-col items-center justify-center text-center space-y-1
-                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                                  ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                                `}>
-                                  <div className={`
-                                    ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                    p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                  `}>
-                                    <feature.icon 
-                                      className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                      strokeWidth={1.5} 
-                                      fill="none"
-                                    />
-                                  </div>
-                                  <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                    {feature.label}
-                                  </span>
-                                </div>
-                              </Link>
-                            )
-                          };
-                        })}
-                      />
-                    </div>
-                  ))}
-                  
-                  {/* Show remaining groups on mobile in same column */}
-                  <div className="md:hidden space-y-8">
-                    {getVisibleGroups().slice(Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                      <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
-                          {group.title}
-                        </h3>
-                        <DashboardCardContainer
-                          maxVisibleCardsMobile={2}
-                          maxVisibleCardsTablet={3}
-                          maxVisibleCardsDesktop={4}
-                          showMoreText={`Show More ${group.title}`}
-                          showLessText="Show Less"
-                          gridClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6"
-                          cards={group.features.map((feature, featureIndex) => {
-                            // Set priority based on group priority and feature characteristics
-                            let priority = 5; // default
-                            if (group.priority === "high") priority = feature.isAI ? 1 : 2;
-                            else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
-                            else priority = feature.isAI ? 5 : 6;
-                            
-                            return {
-                              id: `mobile-${group.title}-${feature.href}-${featureIndex}`,
-                              priority,
-                              content: (
-                                <Link 
-                                  key={featureIndex} 
-                                  href={feature.href === "#max" ? "#" : feature.href}
-                                  onClick={() => handleFeatureClick(feature)}
-                                >
-                                  <div className={`
-                                    ${getCardSize(group.priority)}
-                                    bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                                    rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                                    flex flex-col items-center justify-center text-center space-y-1
-                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                                    ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                                  `}>
-                                    <div className={`
-                                      ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                      p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                    `}>
-                                      <feature.icon 
-                                        className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                        strokeWidth={1.5} 
-                                        fill="none"
-                                      />
-                                    </div>
-                                    <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                      {feature.label}
-                                    </span>
-                                  </div>
-                                </Link>
-                              )
-                            };
-                          })}
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.features.map((feature, featureIndex) => (
+                          <Link 
+                            key={featureIndex} 
+                            href={feature.href === "#max" ? "#" : feature.href}
+                            onClick={() => handleFeatureClick(feature)}
+                          >
+                            <div className={`
+                              ${getCardSize(group.priority)}
+                              bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm
+                              rounded-lg p-2 cursor-pointer transition-all duration-150
+                              flex flex-col items-center justify-center text-center gap-1
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                            `}>
+                              <div className={`
+                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
+                                p-1.5 rounded-md flex items-center justify-center flex-shrink-0
+                              `}>
+                                <feature.icon 
+                                  className={`${getIconSize(group.priority)} text-white`} 
+                                  strokeWidth={1.5} 
+                                  fill="none"
+                                />
+                              </div>
+                              <span className={`${getTextSize(group.priority)} text-gray-700 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                {feature.label}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Right Column - only visible on desktop */}
-                <div className="hidden lg:block space-y-8">
-                  {getVisibleGroups().slice(Math.ceil(getVisibleGroups().length / 2)).map((group, groupIndex) => (
-                    <div key={groupIndex + Math.ceil(getVisibleGroups().length / 2)} className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-800 border-b-2 border-gray-200 pb-3">
-                        {group.title}
-                      </h3>
-                      <DashboardCardContainer
-                        maxVisibleCardsMobile={2}
-                        maxVisibleCardsTablet={3}
-                        maxVisibleCardsDesktop={4}
-                        showMoreText={`Show More ${group.title}`}
-                        showLessText="Show Less"
-                        gridClassName="grid grid-cols-2 gap-6"
-                        cards={group.features.map((feature, featureIndex) => {
-                          // Set priority based on group priority and feature characteristics
-                          let priority = 5; // default
-                          if (group.priority === "high") priority = feature.isAI ? 1 : 2;
-                          else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
-                          else priority = feature.isAI ? 5 : 6;
-                          
-                          return {
-                            id: `desktop-${group.title}-${feature.href}-${featureIndex}`,
-                            priority,
-                            content: (
-                              <Link 
-                                key={featureIndex} 
-                                href={feature.href === "#max" ? "#" : feature.href}
-                                onClick={() => handleFeatureClick(feature)}
-                              >
-                                <div className={`
-                                  ${getCardSize(group.priority)}
-                                  bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                                  rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                                  flex flex-col items-center justify-center text-center space-y-1
-                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                                  ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                                `}>
-                                  <div className={`
-                                    ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                    p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                  `}>
-                                    <feature.icon 
-                                      className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                      strokeWidth={1.5} 
-                                      fill="none"
-                                    />
-                                  </div>
-                                  <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                    {feature.label}
-                                  </span>
-                                </div>
-                              </Link>
-                            )
-                          };
-                        })}
-                      />
                     </div>
                   ))}
-                </div>
               </div>
             </div>
           </div>
