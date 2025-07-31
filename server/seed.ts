@@ -2071,6 +2071,10 @@ export async function seedDatabase() {
     {
       name: "Systems Manager",
       description: "IT systems oversight, security management, and infrastructure monitoring"
+    },
+    {
+      name: "Trainer",
+      description: "Training oversight with comprehensive view access to all system modules for demonstration purposes"
     }
   ];
 
@@ -2215,7 +2219,19 @@ export async function seedDatabase() {
     { roleId: insertedRoles[4].id, permissionId: insertedPermissions.find(p => p.feature === "systems-management" && p.action === "create")!.id },
     { roleId: insertedRoles[4].id, permissionId: insertedPermissions.find(p => p.feature === "systems-management" && p.action === "edit")!.id },
     { roleId: insertedRoles[4].id, permissionId: insertedPermissions.find(p => p.feature === "systems-management" && p.action === "delete")!.id },
-    { roleId: insertedRoles[4].id, permissionId: insertedPermissions.find(p => p.feature === "reports" && p.action === "view")!.id }
+    { roleId: insertedRoles[4].id, permissionId: insertedPermissions.find(p => p.feature === "reports" && p.action === "view")!.id },
+    
+    // Trainer permissions (Training + Systems Management View + Analytics + Business Goals View)
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "training" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "training" && p.action === "create")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "training" && p.action === "edit")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "training" && p.action === "delete")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "systems-management" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "analytics" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "business-goals" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "reports" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "production-scheduling" && p.action === "view")!.id },
+    { roleId: insertedRoles[5].id, permissionId: insertedPermissions.find(p => p.feature === "shop-floor" && p.action === "view")!.id }
   ];
 
   await db.insert(rolePermissions).values(rolePermissionData).onConflictDoNothing();
@@ -2292,7 +2308,7 @@ export async function seedDatabase() {
     { userId: insertedUsers[2].id, roleId: insertedRoles[2].id }, // Production Scheduler
     { userId: insertedUsers[3].id, roleId: insertedRoles[3].id }, // IT Administrator
     { userId: insertedUsers[4].id, roleId: insertedRoles[4].id }, // Systems Manager
-    { userId: insertedUsers[5].id, roleId: insertedRoles[4].id }, // Trainer (using Systems Manager role for now)
+    { userId: insertedUsers[5].id, roleId: insertedRoles[5].id }, // Trainer
   ];
 
   await db.insert(userRoles).values(userRoleData).onConflictDoNothing();
@@ -2333,21 +2349,21 @@ async function seedDefaultRoles() {
       name: "Director",
       description: "Strategic oversight with access to business goals, reporting, and scheduling",
       permissions: allPermissions
-        .filter(p => ['business-goals', 'reports', 'schedule', 'analytics'].includes(p.feature))
+        .filter(p => ['business-goals', 'reports', 'schedule', 'analytics', 'systems-management', 'presentation-system'].includes(p.feature))
         .map(p => p.id)
     },
     {
       name: "Plant Manager", 
       description: "Plant operations management with capacity planning and systems oversight",
       permissions: allPermissions
-        .filter(p => ['plant-manager', 'capacity-planning', 'schedule', 'boards', 'reports', 'analytics'].includes(p.feature))
+        .filter(p => ['plant-manager', 'capacity-planning', 'schedule', 'boards', 'reports', 'analytics', 'production-scheduling'].includes(p.feature))
         .map(p => p.id)
     },
     {
       name: "Production Scheduler",
       description: "Production scheduling and optimization with order management",
       permissions: allPermissions
-        .filter(p => ['schedule', 'scheduling-optimizer', 'boards', 'erp-import', 'analytics'].includes(p.feature))
+        .filter(p => ['schedule', 'scheduling-optimizer', 'boards', 'erp-import', 'analytics', 'production-scheduling', 'shop-floor'].includes(p.feature))
         .map(p => p.id)
     },
     {
