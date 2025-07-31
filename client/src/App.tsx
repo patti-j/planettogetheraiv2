@@ -171,15 +171,30 @@ function useSessionPersistence() {
 function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
   const { isActive: isTourActive } = useTour();
-  const [location, setLocation] = useLocation();
+  const [location, originalSetLocation] = useLocation();
+  
+  // Wrap setLocation to track all navigation calls
+  const setLocation = (newLocation: string) => {
+    console.error('🚨 NAVIGATION DETECTED! Moving to:', newLocation);
+    console.error('🚨 Stack trace:', new Error().stack);
+    console.error('🚨 Current location:', location);
+    console.error('🚨 Browser pathname:', window.location.pathname);
+    originalSetLocation(newLocation);
+  };
   
   // Debug logging to understand initial route and any changes
   useEffect(() => {
-    console.log('App Router - Location changed to:', location);
-    console.log('App Router - Current URL:', window.location.href);
-    console.log('App Router - Window location pathname:', window.location.pathname);
-    console.log('App Router - User authenticated:', isAuthenticated);
-    console.log('App Router - User loading:', isLoading);
+    console.log('🔍 App Router - Location changed to:', location);
+    console.log('🔍 App Router - Current URL:', window.location.href);
+    console.log('🔍 App Router - Window location pathname:', window.location.pathname);
+    console.log('🔍 App Router - User authenticated:', isAuthenticated);
+    console.log('🔍 App Router - User loading:', isLoading);
+    console.log('🔍 App Router - Browser history length:', window.history.length);
+    console.log('🔍 App Router - Document referrer:', document.referrer);
+    
+    // Check for any stored navigation state
+    console.log('🔍 SessionStorage navigation keys:', Object.keys(sessionStorage).filter(k => k.includes('nav') || k.includes('route') || k.includes('location')));
+    console.log('🔍 LocalStorage navigation keys:', Object.keys(localStorage).filter(k => k.includes('nav') || k.includes('route') || k.includes('location')));
   }, [location, isAuthenticated, isLoading]);
   
   // Use session persistence for authenticated users
