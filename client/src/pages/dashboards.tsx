@@ -39,7 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
-import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
+
 
 interface DashboardItem {
   id: number;
@@ -131,7 +131,7 @@ export default function DashboardsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDashboardManager, setShowDashboardManager] = useState(false);
+
 
   const [showAiDashboardDialog, setShowAiDashboardDialog] = useState(false);
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
@@ -598,41 +598,6 @@ export default function DashboardsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Enhanced Dashboard Manager */}
-      <EnhancedDashboardManager
-        open={showDashboardManager}
-        onOpenChange={setShowDashboardManager}
-        dashboards={dashboards}
-        currentDashboard={selectedDashboard}
-        onDashboardSelect={(dashboard) => {
-          setSelectedDashboard(dashboard);
-          // Optional: Navigate to analytics view
-          // window.open(`/analytics?dashboard=${dashboard.id}`, '_blank');
-        }}
-        onDashboardCreate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard created",
-            description: "New dashboard has been created successfully",
-          });
-        }}
-        onDashboardUpdate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard updated",
-            description: "Dashboard has been updated successfully",
-          });
-        }}
-        onDashboardDelete={(dashboardId) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard deleted",
-            description: "Dashboard has been deleted successfully",
-          });
-        }}
-        standardWidgets={[]}
-        customWidgets={[]}
-      />
 
 
       {/* AI Dashboard Generation Dialog */}
