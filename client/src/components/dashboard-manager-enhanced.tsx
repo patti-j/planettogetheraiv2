@@ -676,18 +676,20 @@ export function EnhancedDashboardManager({
                                 </Button>
                               </div>
                             </div>
-                            <div 
-                              className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-hidden"
-                              style={{ 
-                                width: canvasWidth, 
-                                height: canvasHeight, 
-                                minHeight: '300px',
-                                backgroundImage: `
-                                  linear-gradient(to right, #e5e7eb 1px, transparent 1px),
-                                  linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
-                                `,
-                                backgroundSize: '20px 20px'
-                              }}
+                            {/* Canvas Container with proper scrolling */}
+                            <div className="border rounded-lg overflow-auto max-h-[600px]" style={{ maxWidth: '100%' }}>
+                              <div 
+                                className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-hidden"
+                                style={{ 
+                                  width: canvasWidth, 
+                                  height: canvasHeight, 
+                                  minHeight: '300px',
+                                  backgroundImage: `
+                                    linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                                    linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                                  `,
+                                  backgroundSize: '20px 20px'
+                                }}
                               onDragOver={(e) => {
                                 e.preventDefault();
                                 e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
@@ -926,6 +928,7 @@ export function EnhancedDashboardManager({
                                   </div>
                                 </div>
                               )}
+                              </div>
                             </div>
                           </div>
                         </div>
