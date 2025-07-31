@@ -295,8 +295,8 @@ export default function DashboardsPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             onClick={() => {
-              setCreationMode('custom');
-              setShowCreateDialog(true);
+              setSelectedDashboard(null);
+              setShowDashboardManager(true);
             }}
             className="flex items-center gap-2"
           >
