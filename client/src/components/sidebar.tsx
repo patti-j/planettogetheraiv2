@@ -154,9 +154,9 @@ export default function Sidebar() {
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
     
-    // Enhanced debug logging for Widgets menu item
-    if (item.label === "Widgets") {
-      console.log(`🔍 WIDGETS MENU DEBUG:`, {
+    // Enhanced debug logging for specific menu items
+    if (item.label === "Widgets" || item.label === "User & Access Management") {
+      console.log(`🔍 ${item.label.toUpperCase()} MENU DEBUG:`, {
         label: item.label,
         href: item.href,
         feature: item.feature,
@@ -167,9 +167,9 @@ export default function Sidebar() {
         permissionCheck: `hasPermission("${item.feature}", "${item.action}")`,
         userInfo: 'Check usePermissions hook output'
       });
-      console.log(`🚨 WIDGETS: hasPermission result:`, hasPermissionForItem);
-      console.log(`🚨 WIDGETS: isAlwaysVisible result:`, isAlwaysVisible);
-      console.log(`🚨 WIDGETS: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
+      console.log(`🚨 ${item.label}: hasPermission result:`, hasPermissionForItem);
+      console.log(`🚨 ${item.label}: isAlwaysVisible result:`, isAlwaysVisible);
+      console.log(`🚨 ${item.label}: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
     }
     
     // Debug logging for Constraints Management menu item
