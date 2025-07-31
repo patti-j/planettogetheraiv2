@@ -37,7 +37,7 @@ Preferred communication style: Simple, everyday language.
 - **Master Data Management**: Unified interface for importing, entering, and templating all master data types. Includes AI-powered modification and data validation.
 - **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms (backwards, planned order generator) with configurable profiles, trade-off analysis, and resource requirements.
 - **Dashboarding & Analytics**: Universal widget design studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views.
-- **Role-Based Access Control**: Granular permission system for all features and routes, integrated with demo roles and training mode.
+- **Role-Based Access Control**: Granular permission system for all features and routes, integrated with demo roles and training mode. System roles can be edited (as of July 31, 2025).
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, and comprehensive error handling.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.
 - **Mobile Responsiveness**: Mobile-first design for all pages and components, ensuring optimal experience on various devices.

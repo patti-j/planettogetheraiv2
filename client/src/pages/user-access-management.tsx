@@ -727,15 +727,13 @@ export default function UserAccessManagementPage() {
                             <Badge variant="outline">
                               {role.userCount || 0} users
                             </Badge>
-                            {!role.isSystemRole && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditRole(role)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditRole(role)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                         <CardDescription>{role.description}</CardDescription>
@@ -1186,7 +1184,6 @@ export default function UserAccessManagementPage() {
                             setPermissionRoleIds(permissionRoleIds.filter(id => id !== role.id));
                           }
                         }}
-                        disabled={role.isSystemRole}
                       />
                       <div className="flex-1">
                         <span className="text-sm font-medium">{role.name}</span>
