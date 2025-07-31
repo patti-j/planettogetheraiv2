@@ -99,7 +99,7 @@ export default function Homepage() {
   // System Administration section
   const systemItems: FeatureCard[] = [
     { title: "Data Management", description: "Import and manage master data", icon: Database, route: "/data-management", priority: 1 },
-    { title: "Role Management", description: "User roles and permissions", icon: Shield, route: "/role-management", priority: 2 },
+    { title: "User & Access Management", description: "Users, roles and permissions", icon: Shield, route: "/user-access-management", priority: 2 },
     { title: "System Settings", description: "Application configuration", icon: Settings, route: "/settings", priority: 3 },
     { title: "Data Schema", description: "Database structure visualization", icon: Database, route: "/data-schema", priority: 4 },
   ];
