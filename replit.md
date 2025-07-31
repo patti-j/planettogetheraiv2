@@ -88,6 +88,13 @@
 
 ## Recent Changes (July 31, 2025)
 
+✓ **AI Button Theme Standardization Complete (July 31, 2025)**:
+- **PROPER AI THEME APPLIED**: Updated "New Widget AI" button in widgets page to use full AI gradient theme (`${getThemeClasses().gradient} text-white border-0`) matching standard AI button styling like "Evaluate Schedules"
+- **DASHBOARD AI GENERATE FIXED**: Updated "AI Generate" button in dashboards page to use proper full AI gradient theme instead of outline styling
+- **CONSISTENT AI BRANDING**: All AI-powered buttons now use standardized full gradient background with white text and no border, following established AI theme pattern
+- **THEME COMPLIANCE**: AI buttons now match the visual standard established by other AI features like schedule evaluation, maintaining consistent user experience across all AI-powered functionality
+- Enhanced AI feature recognition by providing consistent visual branding across all AI-powered buttons and features throughout the application
+
 ✓ **Dashboard Creation Widget Library Integration Complete (July 31, 2025)**:
 - **REAL WIDGET LIBRARY**: Replaced hardcoded placeholder widgets with actual widgets from cockpit, canvas, and dashboard systems enabling users to add existing functional widgets to new dashboards
 - **MULTI-SYSTEM WIDGET FETCHING**: Implemented comprehensive widget queries fetching from `/api/cockpit/widgets`, `/api/canvas/widgets`, and existing dashboard configurations for complete widget library coverage

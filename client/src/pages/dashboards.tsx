@@ -397,7 +397,7 @@ export default function DashboardsPage() {
 
           <Button
             onClick={() => setShowAiDashboardDialog(true)}
-            className={`flex items-center gap-2 ${getThemeClasses()} border-0`}
+            className={`flex items-center gap-2 ${getThemeClasses().gradient} text-white border-0`}
           >
             <Sparkles className="w-4 h-4" />
             AI Generate
