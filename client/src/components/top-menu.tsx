@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft, Puzzle, Layout
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft, Puzzle, Layout, Home
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -382,6 +382,20 @@ export default function TopMenu() {
 
             {/* Menu Content */}
             <div className="p-6 space-y-8">
+              {/* Homepage Button */}
+              <div className="mb-4">
+                <Link href="/">
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+                    size="lg"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Home className="w-5 h-5 mr-2" />
+                    Go to Homepage
+                  </Button>
+                </Link>
+              </div>
+
               {/* Recent & Favorites Section */}
               {recentPages.filter(page => {
                 if (!searchFilter.trim()) return true;

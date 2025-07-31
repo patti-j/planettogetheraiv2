@@ -209,29 +209,33 @@ const TableNode = ({ data }: { data: any }) => {
   return (
     <Card 
       className={getCardClassName()} 
-      style={getCardStyle()}
+      style={{...getCardStyle(), minWidth: '250px'}}
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
         <CardTitle className="flex items-start gap-2 text-sm pr-8 leading-tight">
           <Table className="w-4 h-4 flex-shrink-0 mt-0.5" />
-          <span className="break-words hyphens-auto leading-tight font-medium">{table.name}</span>
+          <span className="break-words hyphens-auto leading-tight font-medium overflow-hidden">{table.name}</span>
         </CardTitle>
         
         {/* Positioned controls container to prevent overflow */}
-        <div className="absolute top-2 right-2 flex items-start gap-1 flex-wrap max-w-[120px] justify-end">
-          {isFocused && <Badge variant="default" className="text-xs bg-blue-500 text-white whitespace-nowrap">FOCUS</Badge>}
-          {isSelected && <Badge variant="default" className="text-xs bg-green-500 text-white whitespace-nowrap">SELECTED</Badge>}
+        <div className="absolute top-1 right-1 flex flex-col items-end gap-1">
+          {(isFocused || isSelected) && (
+            <div className="flex gap-1">
+              {isFocused && <Badge variant="default" className="text-[10px] px-1 py-0 bg-blue-500 text-white">FOCUS</Badge>}
+              {isSelected && <Badge variant="default" className="text-[10px] px-1 py-0 bg-green-500 text-white">SELECTED</Badge>}
+            </div>
+          )}
           <Button
             variant="ghost"
             size="sm"
-            className={`h-6 w-6 p-0 flex-shrink-0 ${isSelected ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`h-5 w-5 p-0 flex-shrink-0 ${isSelected ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
             onClick={(e) => {
               e.stopPropagation();
               onSelect?.(table.name);
             }}
           >
-            <Flag className={`w-4 h-4 ${isSelected ? 'fill-current' : ''}`} />
+            <Flag className={`w-3 h-3 ${isSelected ? 'fill-current' : ''}`} />
           </Button>
         </div>
         
@@ -263,7 +267,7 @@ const TableNode = ({ data }: { data: any }) => {
                   {!column.nullable && <span className="text-red-500 ml-1">*</span>}
                 </div>
                 {column.comment && (
-                  <div className="mt-1 pl-4 text-xs text-gray-500 italic leading-relaxed">
+                  <div className="mt-1 pl-4 text-xs text-gray-500 italic leading-relaxed break-words max-w-full">
                     {column.comment}
                   </div>
                 )}
