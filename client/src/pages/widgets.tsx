@@ -59,7 +59,7 @@ export default function WidgetsPage() {
   const { toast } = useToast();
   const isMobile = useMobile();
   const queryClient = useQueryClient();
-  const { getThemeClasses } = useAITheme();
+  const { aiTheme } = useAITheme();
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -342,7 +342,7 @@ export default function WidgetsPage() {
             </Button>
             <Button 
               onClick={() => setShowAIDialog(true)} 
-              className={`gap-2 ${getThemeClasses().gradient} text-white border-0`}
+              className={`gap-2 ${aiTheme.gradient} text-white border-0`}
             >
               <Sparkles className="h-4 w-4" />
               New Widget AI
