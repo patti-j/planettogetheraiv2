@@ -144,11 +144,12 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
-    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed)
+    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and temporarily Constraints Management
     const isAlwaysVisible = item.href === "#" || 
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
-      item.href === "#max";
+      item.href === "#max" ||
+      item.href === "/constraints"; // TEMPORARY: Always show constraints for debugging
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
@@ -173,7 +174,7 @@ export default function Sidebar() {
     
     // Debug logging for Constraints Management menu item
     if (item.label === "Constraints Management") {
-      console.log(`🔍 CONSTRAINTS MENU DEBUG:`, {
+      console.log(`🔍 CONSTRAINTS MENU DEBUG (ENHANCED):`, {
         label: item.label,
         href: item.href,
         feature: item.feature,
@@ -182,11 +183,13 @@ export default function Sidebar() {
         isAlwaysVisible,
         shouldShow: isAlwaysVisible || hasPermissionForItem,
         permissionCheck: `hasPermission("${item.feature}", "${item.action}")`,
-        userInfo: 'Check usePermissions hook output'
+        userInfo: 'Check usePermissions hook output',
+        FORCING_VISIBLE: true
       });
       console.log(`🚨 CONSTRAINTS: hasPermission result:`, hasPermissionForItem);
       console.log(`🚨 CONSTRAINTS: isAlwaysVisible result:`, isAlwaysVisible);
       console.log(`🚨 CONSTRAINTS: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
+      console.log(`🚨 CONSTRAINTS: SHOULD BE VISIBLE NOW!`);
     }
     
     // Debug logging for other specific menu items
