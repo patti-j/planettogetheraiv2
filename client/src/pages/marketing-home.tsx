@@ -352,7 +352,7 @@ const MarketingHome: React.FC = () => {
                 size="lg" 
                 variant="default"
                 onClick={handleGetStarted}
-                className="px-8 py-6 text-lg font-semibold bg-white text-primary hover:bg-gray-100"
+                className="px-8 py-6 text-lg font-semibold bg-white text-blue-600 hover:bg-gray-100 hover:text-blue-700"
               >
                 Start Free Trial
                 <Rocket className="ml-2 w-5 h-5" />
