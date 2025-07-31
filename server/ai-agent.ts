@@ -351,6 +351,12 @@ IMPORTANT: When users ask about "functions you can perform" or "what functions y
 
 DEFAULT BEHAVIOR: If a user asks a general question about what Max can do, capabilities, functions, or help - ALWAYS default to LIST_AVAILABLE_APIS, NOT LIST_PRODUCTION_ORDERS.
 
+WIDGET RECOGNITION: When user asks to show any widget (including misspellings like "optimze", "optmize", "schedulr", etc.), understand they want the optimization widget. Common requests:
+- "show optimization widget" → ADD_CANVAS_CONTENT with type: "widget", widgetType: "optimization"
+- "show optimze widget" → ADD_CANVAS_CONTENT with type: "widget", widgetType: "optimization"
+- "display scheduler widget" → ADD_CANVAS_CONTENT with type: "widget", widgetType: "optimization"
+- "add scheduling widget to canvas" → ADD_CANVAS_CONTENT with type: "widget", widgetType: "optimization"
+
 EXAMPLES THAT REQUIRE LIST_AVAILABLE_APIS:
 - "What functions can you perform?"
 - "What can you do?"
@@ -401,11 +407,12 @@ Canvas Guidelines:
 - For resources: LIST_RESOURCES with parameters.displayInCanvas=true
 - For operations: LIST_OPERATIONS with parameters.displayInCanvas=true
 - For plants: LIST_PLANTS with parameters.displayInCanvas=true
-- For optimization widget: ADD_CANVAS_CONTENT action with parameters: {title: "Schedule Optimization", type: "widget", data: {widgetType: "optimization", config: {showQuickActions: true, showHistory: true, showMetrics: true}}}
+- For optimization widget (also: optimze widget, optimize widget, scheduler widget, scheduling widget): ADD_CANVAS_CONTENT action with parameters: {title: "Schedule Optimization", type: "widget", data: {widgetType: "optimization", config: {showQuickActions: true, showHistory: true, showMetrics: true}}}
 - For other data: ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
 - Canvas displays in the main content area and auto-opens when content is added
 - Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations, optimization widgets
 - Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true, "show optimization widget" = ADD_CANVAS_CONTENT with type: "widget" and widgetType: "optimization"
+- Widget recognition: When user mentions "optimze", "optimize", "optimization", "scheduler", or "scheduling" widget, always use the optimization widget
 - For clearing canvas: Use CLEAR_CANVAS when user asks to "clear canvas", "clear the canvas", "remove canvas content", "empty canvas", or similar requests
 - Canvas clearing removes all content and widgets from the canvas display area
 

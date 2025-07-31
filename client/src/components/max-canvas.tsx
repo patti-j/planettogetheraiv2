@@ -613,7 +613,7 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {chartData.map((entry, index) => (
+                {chartData.map((entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -669,7 +669,7 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
       case 'gantt':
         return (
           <div className="space-y-2 max-h-full overflow-y-auto">
-            {chartData.map((item, index) => (
+            {chartData.map((item: any, index: number) => (
               <div key={item.id} className="border rounded p-3 bg-gray-50">
                 <div className="flex justify-between items-center mb-2">
                   <h5 className="font-medium text-sm">{item.name}</h5>
