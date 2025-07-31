@@ -376,6 +376,7 @@ export default function UniversalWidget({
   };
 
   const renderWidgetContent = () => {
+    console.log('UniversalWidget rendering type:', config.type, 'for widget:', config.title);
     switch (config.type) {
       case 'kpi':
         return renderKPIWidget();
@@ -394,7 +395,8 @@ export default function UniversalWidget({
       case 'schedule-optimization':
         return renderScheduleOptimizationWidget();
       default:
-        return <div className="text-center text-muted-foreground">Unknown widget type</div>;
+        console.log('Unknown widget type encountered:', config.type, 'Full config:', config);
+        return <div className="text-center text-muted-foreground">Unknown widget type: {config.type}</div>;
     }
   };
 
