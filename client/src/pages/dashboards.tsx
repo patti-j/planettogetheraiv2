@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
+import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
@@ -120,6 +121,7 @@ const DASHBOARD_TEMPLATES = [
 export default function DashboardsPage() {
   const { toast } = useToast();
   const isMobile = useMobile();
+  const { getThemeClasses } = useAITheme();
   const queryClient = useQueryClient();
 
   // State management
@@ -338,15 +340,15 @@ export default function DashboardsPage() {
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            New Dashboard
+            Create Custom
           </Button>
 
           <Button
             onClick={() => setShowAiDashboardDialog(true)}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
+            className={`flex items-center gap-2 ${getThemeClasses()} border-0`}
           >
             <Sparkles className="w-4 h-4" />
-            AI Generate
+            New Dashboard
           </Button>
       
           <Button
@@ -639,7 +641,7 @@ export default function DashboardsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
+              <Sparkles className="w-5 h-5 ai-gradient-text" />
               Generate Dashboard with AI
             </DialogTitle>
             <div className="text-sm text-gray-600">
@@ -680,7 +682,7 @@ export default function DashboardsPage() {
                 }
               }}
               disabled={!aiDashboardPrompt.trim() || generateAiDashboardMutation.isPending}
-              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+              className={`flex items-center gap-2 ${getThemeClasses()} border-0`}
             >
               {generateAiDashboardMutation.isPending ? (
                 <>
