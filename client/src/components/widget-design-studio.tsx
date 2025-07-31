@@ -444,10 +444,10 @@ export default function WidgetDesignStudio({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 min-h-0">
           {/* Configuration Panel */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
               <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm flex-shrink-0">
                 <TabsTrigger value="template" className="px-2 py-1 sm:px-3 sm:py-2">
                   <span className="hidden sm:inline">1. Template</span>
@@ -463,7 +463,7 @@ export default function WidgetDesignStudio({
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 overflow-hidden">
+              <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 min-h-0">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-shrink-0">
                   <Label className="text-sm font-medium">Category:</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -480,7 +480,7 @@ export default function WidgetDesignStudio({
                   </Select>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto overscroll-contain">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-4">
                     {filteredTemplates.map(template => (
                       <Card 
@@ -524,8 +524,8 @@ export default function WidgetDesignStudio({
                 </div>
               </TabsContent>
               
-              <TabsContent value="configure" className="flex-1 flex flex-col overflow-hidden">
-                <ScrollArea className="flex-1 pr-4">
+              <TabsContent value="configure" className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto overscroll-contain pr-2">
                   <div className="space-y-3 sm:space-y-4 pb-4">
                     {/* Basic Configuration */}
                     <Card>
@@ -652,7 +652,7 @@ export default function WidgetDesignStudio({
                       </CardContent>
                     </Card>
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
               
               <TabsContent value="style" className="flex-1 overflow-y-auto">
