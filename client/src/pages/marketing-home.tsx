@@ -134,7 +134,7 @@ const MarketingHome: React.FC = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
         <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="relative container mx-auto px-4 py-24">
+        <div className="relative container mx-auto px-4 pt-24 pb-12">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="secondary" className="mb-6 px-4 py-2">
               <Sparkles className="w-4 h-4 mr-2" />
@@ -150,7 +150,7 @@ const MarketingHome: React.FC = () => {
               Optimize production, reduce costs, and accelerate growth with intelligent automation.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
