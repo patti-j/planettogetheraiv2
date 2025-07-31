@@ -143,13 +143,11 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
-    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and WIDGETS for testing
+    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed)
     const isAlwaysVisible = item.href === "#" || 
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
-      item.href === "#max" ||
-      item.href === "/widgets" || // TEMPORARY: Force Widgets to always show
-      item.href === "/dashboards"; // TEMPORARY: Force Dashboards to always show
+      item.href === "#max";
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");

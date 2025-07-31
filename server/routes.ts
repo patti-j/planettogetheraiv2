@@ -1356,7 +1356,7 @@ Rules:
             isDemo: true,
             role: 'Director',
             activeRole: { id: 'demo_director_role', name: 'Director' },
-            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view', 'presentation-system-view'],
+            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view', 'presentation-system-view'],
             roles: [{ id: 'demo_director_role', name: 'Director' }]
           },
           'demo_plant': { 
@@ -1369,7 +1369,7 @@ Rules:
             isDemo: true,
             role: 'Plant Manager',
             activeRole: { id: 'demo_plant_role', name: 'Plant Manager' },
-            permissions: ['production-cockpit-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['production-cockpit-view', 'production-scheduling-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
           },
           'demo_scheduler': { 
@@ -1382,7 +1382,7 @@ Rules:
             isDemo: true,
             role: 'Production Scheduler',
             activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
-            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['production-scheduling-view', 'schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
           },
           'demo_it_admin': { 
@@ -1479,7 +1479,7 @@ Rules:
             lastName: 'Director',
             isActive: true,
             activeRole: { id: 'demo_director_role', name: 'Director' },
-            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['business-goals-view', 'analytics-view', 'reports-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_director_role', name: 'Director' }]
           },
           'demo_prod': { 
@@ -1490,7 +1490,7 @@ Rules:
             lastName: 'Scheduler',
             isActive: true,
             activeRole: { id: 'demo_scheduler_role', name: 'Production Scheduler' },
-            permissions: ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['production-scheduling-view', 'schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_scheduler_role', name: 'Production Scheduler' }]
           },
           'demo_it': { 
