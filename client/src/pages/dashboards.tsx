@@ -160,6 +160,56 @@ export default function DashboardsPage() {
     queryKey: ["/api/dashboard-configs"],
   });
 
+  // Fetch existing widgets from all systems for the widget library
+  const { data: cockpitWidgets = [] } = useQuery({
+    queryKey: ['/api/cockpit/widgets'],
+    select: (data: any[]) => data.map(widget => ({
+      id: `cockpit-${widget.id}`,
+      title: widget.title || `${widget.type} Widget`,
+      type: widget.type,
+      system: 'cockpit',
+      configuration: widget.configuration,
+      description: widget.sub_title
+    }))
+  });
+
+  const { data: canvasWidgets = [] } = useQuery({
+    queryKey: ['/api/canvas/widgets'],
+    select: (data: any[]) => data.map(widget => ({
+      id: `canvas-${widget.id}`,
+      title: widget.title || `${widget.type} Widget`,
+      type: widget.type,
+      system: 'canvas',
+      configuration: widget.config,
+      description: widget.description
+    }))
+  });
+
+  const { data: dashboardWidgets = [] } = useQuery({
+    queryKey: ['/api/dashboard-configs'],
+    select: (data: any[]) => {
+      const widgets: any[] = [];
+      data.forEach(dashboard => {
+        if (dashboard.configuration?.customWidgets) {
+          dashboard.configuration.customWidgets.forEach((widget: any) => {
+            widgets.push({
+              id: `dashboard-${dashboard.id}-${widget.id}`,
+              title: widget.title || `${widget.type} Widget`,
+              type: widget.type,
+              system: 'dashboard',
+              configuration: widget.config,
+              description: `From ${dashboard.name} dashboard`
+            });
+          });
+        }
+      });
+      return widgets;
+    }
+  });
+
+  // Combine all widgets for the library
+  const allAvailableWidgets = [...cockpitWidgets, ...canvasWidgets, ...dashboardWidgets];
+
   // Create dashboard mutation
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
@@ -638,28 +688,55 @@ export default function DashboardsPage() {
                 <Label>Dashboard Layout</Label>
                 <div className="border rounded-lg p-4 bg-gray-50 h-full min-h-[500px]">
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium mb-2">Widget Library</h4>
-                    <div className="grid grid-cols-4 gap-2">
-                      {['metric', 'chart', 'table', 'progress'].map((type) => (
-                        <div
-                          key={type}
-                          className="p-2 bg-white border rounded cursor-pointer hover:bg-gray-100 text-center text-sm capitalize"
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('text/plain', JSON.stringify({
-                              type: 'widget',
-                              widgetType: type,
-                              title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`
-                            }));
-                          }}
-                        >
-                          {type === 'metric' && <BarChart3 className="w-4 h-4 mx-auto mb-1" />}
-                          {type === 'chart' && <TrendingUp className="w-4 h-4 mx-auto mb-1" />}
-                          {type === 'table' && <Grid className="w-4 h-4 mx-auto mb-1" />}
-                          {type === 'progress' && <Target className="w-4 h-4 mx-auto mb-1" />}
-                          {type}
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium">Widget Library</h4>
+                      <Badge variant="outline">{allAvailableWidgets.length} widgets</Badge>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto">
+                      {allAvailableWidgets.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {allAvailableWidgets.map((widget) => (
+                            <div
+                              key={widget.id}
+                              className="p-2 bg-white border rounded cursor-pointer hover:bg-gray-100 text-left text-xs"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', JSON.stringify({
+                                  type: 'existing-widget',
+                                  widget: widget
+                                }));
+                              }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{widget.title}</div>
+                                  <div className="text-gray-500 capitalize">{widget.type}</div>
+                                  {widget.description && (
+                                    <div className="text-gray-400 text-xs truncate mt-1">{widget.description}</div>
+                                  )}
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`ml-2 text-xs ${
+                                    widget.system === 'cockpit' ? 'bg-blue-50 text-blue-600' :
+                                    widget.system === 'canvas' ? 'bg-green-50 text-green-600' :
+                                    'bg-purple-50 text-purple-600'
+                                  }`}
+                                >
+                                  {widget.system === 'cockpit' ? 'Cockpit' : 
+                                   widget.system === 'canvas' ? 'Canvas' : 'Dashboard'}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Grid className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">No existing widgets found</p>
+                          <p className="text-xs text-gray-400">Create widgets first to add them to dashboards</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -721,16 +798,19 @@ export default function DashboardsPage() {
                         
                         try {
                           const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                          if (data.type === 'widget') {
+                          if (data.type === 'existing-widget') {
                             const newWidget = {
-                              id: `widget-${Date.now()}`,
-                              title: data.title,
-                              type: data.widgetType,
+                              id: `dashboard-widget-${Date.now()}`,
+                              title: data.widget.title,
+                              type: data.widget.type,
                               position: { x, y },
-                              size: { width: 200, height: 150 },
+                              size: { width: 250, height: 180 },
                               visible: true,
                               data: {},
-                              config: {}
+                              config: data.widget.configuration || {},
+                              sourceSystem: data.widget.system,
+                              sourceId: data.widget.id,
+                              description: data.widget.description
                             };
                             
                             setTempDashboardWidgets([...tempDashboardWidgets, newWidget]);
@@ -782,7 +862,22 @@ export default function DashboardsPage() {
                           }}
                         >
                           <div className="widget-header flex items-center justify-between mb-1 p-2 cursor-move">
-                            <span className="text-xs font-medium truncate">{widget.title}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate">{widget.title}</div>
+                              {widget.sourceSystem && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs mt-1 ${
+                                    widget.sourceSystem === 'cockpit' ? 'bg-blue-50 text-blue-600' :
+                                    widget.sourceSystem === 'canvas' ? 'bg-green-50 text-green-600' :
+                                    'bg-purple-50 text-purple-600'
+                                  }`}
+                                >
+                                  {widget.sourceSystem === 'cockpit' ? 'Cockpit' : 
+                                   widget.sourceSystem === 'canvas' ? 'Canvas' : 'Dashboard'}
+                                </Badge>
+                              )}
+                            </div>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -796,7 +891,10 @@ export default function DashboardsPage() {
                             </Button>
                           </div>
                           <div className="widget-content px-2 pb-2 cursor-move">
-                            <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                            <div className="text-xs text-gray-500 capitalize mb-1">{widget.type}</div>
+                            {widget.description && (
+                              <div className="text-xs text-gray-400 truncate">{widget.description}</div>
+                            )}
                           </div>
                           
                           {/* Resize Handles */}
