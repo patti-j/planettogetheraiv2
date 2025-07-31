@@ -84,9 +84,9 @@ export default function SystemsManagementPage() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // System Users Data
-  const { data: systemUsers = [], isLoading: usersLoading } = useQuery<SystemUser[]>({
-    queryKey: ["/api/system/users"],
+  // System Users Data - fetch real users from API
+  const { data: systemUsers = [], isLoading: usersLoading } = useQuery<any[]>({
+    queryKey: ["/api/users"],
   });
 
   // System Environments Data
@@ -153,44 +153,7 @@ export default function SystemsManagementPage() {
     }
   ];
 
-  const mockUsers: SystemUser[] = [
-    {
-      id: 1,
-      username: "admin",
-      email: "admin@company.com",
-      role: 'admin',
-      status: 'active',
-      lastLogin: "2025-07-20T10:30:00Z",
-      createdAt: "2024-01-15T09:00:00Z"
-    },
-    {
-      id: 2,
-      username: "john.smith",
-      email: "john.smith@company.com",
-      role: 'user',
-      status: 'active',
-      lastLogin: "2025-07-20T08:45:00Z",
-      createdAt: "2024-03-22T10:15:00Z"
-    },
-    {
-      id: 3,
-      username: "sarah.jones",
-      email: "sarah.jones@company.com",
-      role: 'user',
-      status: 'active',
-      lastLogin: "2025-07-19T16:20:00Z",
-      createdAt: "2024-05-10T14:30:00Z"
-    },
-    {
-      id: 4,
-      username: "mike.temp",
-      email: "mike.temp@company.com",
-      role: 'viewer',
-      status: 'suspended',
-      lastLogin: "2025-07-15T12:00:00Z",
-      createdAt: "2024-07-01T11:00:00Z"
-    }
-  ];
+
 
   const mockEnvironments: SystemEnvironment[] = [
     {
@@ -621,16 +584,18 @@ export default function SystemsManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockUsers.map((user) => (
+                  {systemUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{user.role}</Badge>
+                        <Badge variant="outline">
+                          {user.activeRole?.name || user.roles?.[0]?.name || 'No Role'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(user.status)}>
-                          {user.status}
+                        <Badge className={getStatusColor(user.isActive ? 'active' : 'inactive')}>
+                          {user.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
