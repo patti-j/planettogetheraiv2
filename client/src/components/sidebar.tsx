@@ -416,15 +416,13 @@ export default function Sidebar() {
                   <Link href={item.href}>
                     <a
                       className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
-                        item.label === "Widgets" 
-                          ? "bg-red-500 text-white border-4 border-yellow-400" // Make widgets super obvious
-                          : item.isAI
-                            ? item.active
-                              ? `text-white ${getThemeClasses(false)} border-l-4 border-purple-600`
-                              : `text-gray-600 hover:text-white ${getThemeClasses(true)}`
-                            : item.active
-                              ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
-                              : "text-gray-600 hover:bg-gray-100"
+                        item.isAI
+                          ? item.active
+                            ? `text-white ${getThemeClasses(false)} border-l-4 border-purple-600`
+                            : `text-gray-600 hover:text-white ${getThemeClasses(true)}`
+                          : item.active
+                            ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                            : "text-gray-600 hover:bg-gray-100"
                       }`}
                       onClick={onNavigate}
                     >

@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
+import { useTour } from "@/contexts/TourContext";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
@@ -210,6 +211,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { startTour } = useTour();
 
   // Check if company already has onboarding in progress
   const { data: existingOnboarding, isLoading: onboardingLoading } = useQuery<CompanyOnboarding | null>({
@@ -226,6 +228,41 @@ export default function OnboardingPage() {
       console.log('Loaded selected features from database:', existingOnboarding.selectedFeatures);
     }
   }, [existingOnboarding]);
+
+  // Handle starting tour for a specific feature
+  const handleStartTour = async (module: FeatureModule) => {
+    try {
+      // Map feature modules to role IDs that best represent their functionality
+      const featureToRoleMap: { [key: string]: number } = {
+        'production-scheduling': 1, // Production Scheduler role
+        'capacity-planning': 1,     // Production Scheduler role  
+        'ai-optimization': 1,       // Production Scheduler role
+        'supply-chain': 2,          // Supply Chain Manager role
+        'maintenance-management': 6, // Maintenance Manager role
+        'quality-control': 7,       // Quality Manager role
+        'shop-floor': 5,            // Shop Floor Operator role
+      };
+
+      const roleId = featureToRoleMap[module.id] || 1; // Default to Production Scheduler
+      
+      console.log(`Starting tour for feature "${module.name}" with role ID: ${roleId}`);
+      
+      await startTour(roleId, false, 'training');
+      
+      toast({
+        title: "Tour Started!",
+        description: `Starting interactive tour for ${module.name}`,
+      });
+      
+    } catch (error) {
+      console.error('Error starting tour:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start tour. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch available industry templates
   const { data: industryTemplates = [] } = useQuery<any[]>({
@@ -984,7 +1021,12 @@ export default function OnboardingPage() {
                       <h3 className="font-semibold">{module.name}</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-4">{module.description}</p>
-                    <Button variant="outline" size="sm" className="w-full">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleStartTour(module)}
+                    >
                       <PlayCircle className="w-4 h-4 mr-2" />
                       Start Tour
                     </Button>

@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Resource, Operation } from "@shared/schema";
+import { Resource } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 
 interface OnboardingStep {
@@ -117,7 +117,7 @@ export default function OnboardingWizard() {
     queryKey: ["/api/resources"],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<any[]>({
     queryKey: ["/api/operations"],
   });
 
