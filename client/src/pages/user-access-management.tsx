@@ -92,12 +92,14 @@ export default function UserAccessManagementPage() {
   const [newRoleDialog, setNewRoleDialog] = useState(false);
   const [editRoleDialog, setEditRoleDialog] = useState(false);
   const [deleteRoleDialog, setDeleteRoleDialog] = useState(false);
+  const [viewRoleUsersDialog, setViewRoleUsersDialog] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleForm, setRoleForm] = useState({
     name: "",
     description: "",
     permissions: [] as number[]
   });
+  const [roleUserIds, setRoleUserIds] = useState<number[]>([]);
   
   // Permission management states
   const [newPermissionDialog, setNewPermissionDialog] = useState(false);
@@ -478,7 +480,64 @@ export default function UserAccessManagementPage() {
     setPermissionRoleIds(rolesWithPermission.map(r => r.id));
     setEditPermissionDialog(true);
   };
+
+  const handleViewRoleUsers = (role: Role) => {
+    setSelectedRole(role);
+    // Get all users with this role
+    const usersWithRole = users.filter(user => 
+      user.roles?.some(userRole => userRole.id === role.id)
+    );
+    setRoleUserIds(usersWithRole.map(u => u.id));
+    setViewRoleUsersDialog(true);
+  };
   
+  const updateRoleUsersMutation = useMutation({
+    mutationFn: async (data: { roleId: number, userIds: number[] }) => {
+      // Update each user's roles
+      const updatePromises = users.map(async (user) => {
+        const shouldHaveRole = data.userIds.includes(user.id);
+        const hasRole = user.roles?.some(r => r.id === data.roleId);
+        
+        if (shouldHaveRole && !hasRole) {
+          // Add role to user
+          const updatedRoleIds = [...(user.roles?.map(r => r.id) || []), data.roleId];
+          const response = await apiRequest("PUT", `/api/users/${user.id}`, {
+            ...user,
+            roleIds: updatedRoleIds
+          });
+          return response.json();
+        } else if (!shouldHaveRole && hasRole) {
+          // Remove role from user
+          const updatedRoleIds = (user.roles || []).filter(r => r.id !== data.roleId).map(r => r.id);
+          const response = await apiRequest("PUT", `/api/users/${user.id}`, {
+            ...user,
+            roleIds: updatedRoleIds
+          });
+          return response.json();
+        }
+      });
+      
+      await Promise.all(updatePromises);
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Role Users Updated",
+        description: "Users for this role have been updated successfully",
+      });
+      setViewRoleUsersDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update role users",
+        variant: "destructive",
+      });
+    },
+  });
+
   const updatePermissionRolesMutation = useMutation({
     mutationFn: async (data: { permissionId: number, roleIds: number[] }) => {
       // Update each role's permissions
@@ -906,9 +965,15 @@ export default function UserAccessManagementPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewRoleUsers(role)}
+                              className="text-xs"
+                            >
+                              <Users className="h-3 w-3 mr-1" />
                               {role.userCount || 0} users
-                            </Badge>
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1692,6 +1757,88 @@ export default function UserAccessManagementPage() {
               disabled={deletePermissionMutation.isPending}
             >
               {deletePermissionMutation.isPending ? "Deleting..." : "Delete Permission"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Role Users Dialog */}
+      <Dialog open={viewRoleUsersDialog} onOpenChange={setViewRoleUsersDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Users for {selectedRole?.name}</DialogTitle>
+            <DialogDescription>
+              Add or remove users from this role
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRole && (
+            <div className="space-y-4">
+              <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800">
+                <p className="font-medium text-sm">{selectedRole.name}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {selectedRole.description}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Currently has {roleUserIds.length} user{roleUserIds.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              
+              <div>
+                <Label>Assign Users to this Role</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-96 overflow-y-auto">
+                  {users.map((user) => (
+                    <label key={user.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                      <Checkbox
+                        checked={roleUserIds.includes(user.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setRoleUserIds([...roleUserIds, user.id]);
+                          } else {
+                            setRoleUserIds(roleUserIds.filter(id => id !== user.id));
+                          }
+                        }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{user.username}</span>
+                          <span className="text-xs text-gray-500">({user.email})</span>
+                        </div>
+                        {user.firstName && (
+                          <p className="text-xs text-gray-600">{user.firstName} {user.lastName}</p>
+                        )}
+                        <div className="flex gap-1 mt-1">
+                          {user.roles?.map((role) => (
+                            <Badge key={role.id} variant="outline" className="text-xs">
+                              {role.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <Badge className={user.isActive ? 'bg-green-500' : 'bg-gray-500'}>
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewRoleUsersDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedRole) {
+                  updateRoleUsersMutation.mutate({
+                    roleId: selectedRole.id,
+                    userIds: roleUserIds
+                  });
+                }
+              }}
+              disabled={updateRoleUsersMutation.isPending}
+            >
+              {updateRoleUsersMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
