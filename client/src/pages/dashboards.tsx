@@ -1101,7 +1101,7 @@ export default function DashboardsPage() {
 
                 {/* Live Dashboard Content */}
                 <div className="border rounded-lg bg-gray-50 p-4">
-                  {console.log('Dashboard widgets count:', viewDashboard.configuration.customWidgets.length)}
+
                   {viewDashboard.configuration.customWidgets.length > 0 ? (
                     <div 
                       className="relative bg-white rounded border min-h-[400px] overflow-hidden"

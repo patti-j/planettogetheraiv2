@@ -677,6 +677,10 @@ export interface IStorage {
   hideCanvasWidget(id: number): Promise<boolean>;
   showCanvasWidget(id: number): Promise<boolean>;
   updateWidgetPosition(id: number, position: { x: number; y: number; width: number; height: number }): Promise<boolean>;
+
+  // Analytics Widget Management - for universal widget creation
+  createAnalyticsWidget(widget: any): Promise<any>;
+  createDashboardWidget(widget: any): Promise<any>;
   
   // Canvas Settings Management
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
@@ -9689,6 +9693,32 @@ export class DatabaseStorage implements IStorage {
       query = query.where(eq(cockpitAlerts.widgetId, widgetId));
     }
     return await query.orderBy(desc(cockpitAlerts.createdAt));
+  }
+
+  async createAnalyticsWidget(widget: any): Promise<any> {
+    // For analytics widgets, we'll store them in canvas_widgets with a special type
+    const canvasWidget = {
+      ...widget,
+      sessionId: 'analytics',
+      type: widget.type || 'analytics',
+      userId: widget.userId || 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return await this.createCanvasWidget(canvasWidget);
+  }
+
+  async createDashboardWidget(widget: any): Promise<any> {
+    // For dashboard widgets, we'll store them in canvas_widgets with a special type
+    const canvasWidget = {
+      ...widget,
+      sessionId: 'dashboard',
+      type: widget.type || 'dashboard',
+      userId: widget.userId || 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    return await this.createCanvasWidget(canvasWidget);
   }
 
   async createCockpitAlert(alert: any): Promise<any> {

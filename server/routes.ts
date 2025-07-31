@@ -18972,6 +18972,143 @@ Response must be valid JSON:
     }
   });
 
+  // AI Widget Generation endpoint (main universal widget generator)
+  app.post("/api/ai/generate-widget", requireAuth, async (req, res) => {
+    try {
+      const { prompt, targetSystems = ['analytics'] } = req.body;
+
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const systemPrompt = `You are an expert manufacturing dashboard widget designer. Generate a widget configuration based on the user's request.
+
+Widget Types Available:
+- kpi: Key performance indicators with metrics
+- chart: Charts (bar, line, pie, doughnut, gauge)
+- table: Data tables with columns and rows
+- alert: Notifications and alerts
+- progress: Progress bars and trackers
+- text: Text displays and labels
+
+Manufacturing Data Sources:
+- production_orders: Production order data
+- resources: Manufacturing resources and equipment
+- operations: Manufacturing operations
+- jobs: Production jobs (legacy)
+- metrics: System metrics and KPIs
+
+Chart Types for "chart" widgets:
+- bar, line, pie, doughnut, gauge
+
+Response must be valid JSON with this structure:
+{
+  "title": "Widget Title",
+  "type": "kpi|chart|table|alert|progress|text",
+  "description": "Brief description",
+  "configuration": {
+    "dataSource": "production_orders|resources|operations|jobs|metrics",
+    "chartType": "bar|line|pie|doughnut|gauge", // only for chart widgets
+    "metrics": ["field1", "field2"], // fields to display/aggregate
+    "aggregation": "count|sum|avg|min|max",
+    "refreshRate": 30,
+    "limit": 10,
+    "colors": ["#3b82f6", "#10b981", "#f59e0b"]
+  }
+}
+
+CRITICAL: Do NOT include an "id" field in your response - the database will auto-generate the ID.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 1000
+      });
+
+      const widgetConfig = JSON.parse(response.choices[0].message.content || '{}');
+      console.log('Original AI response:', widgetConfig);
+
+      // Add default positioning and convert to canvas widget format
+      const widget = {
+        title: widgetConfig.title || 'AI Generated Widget',
+        widgetType: widgetConfig.type || 'chart',
+        widgetSubtype: widgetConfig.configuration?.chartType || 'bar',
+        data: {
+          source: widgetConfig.configuration?.dataSource || 'production_orders',
+          metrics: widgetConfig.configuration?.metrics || [],
+          aggregation: widgetConfig.configuration?.aggregation || 'count'
+        },
+        configuration: widgetConfig.configuration || {},
+        position: { x: 0, y: 0, width: 4, height: 3 },
+        userId: req.user?.id,
+        createdByMax: true,
+        sessionId: 'ai-generated',
+        metadata: { 
+          originalPrompt: prompt,
+          generatedAt: new Date().toISOString(),
+          aiGenerated: true
+        }
+      };
+
+      // Deploy to target systems
+      const deploymentResults = [];
+      for (const system of targetSystems) {
+        try {
+          let deployedWidget;
+          switch (system) {
+            case 'cockpit':
+              deployedWidget = await storage.createCockpitWidget(widget);
+              break;
+            case 'analytics':
+              deployedWidget = await storage.createAnalyticsWidget(widget);
+              break;
+            case 'canvas':
+              deployedWidget = await storage.createCanvasWidget(widget);
+              break;
+            case 'dashboard':
+              deployedWidget = await storage.createDashboardWidget(widget);
+              break;
+            default:
+              deployedWidget = await storage.createAnalyticsWidget(widget);
+          }
+          deploymentResults.push({ system, success: true, widget: deployedWidget });
+        } catch (error) {
+          console.error(`Failed to deploy widget to ${system}:`, error);
+          deploymentResults.push({ system, success: false, error: error.message });
+        }
+      }
+
+      // Return the original widgetConfig without custom ID for response  
+      const { id, ...widgetConfigWithoutId } = widgetConfig;
+      const responseWidget = {
+        ...widgetConfigWithoutId,
+        position: { x: 0, y: 0, w: 4, h: 3 },
+        userId: req.user?.id,
+        createdAt: new Date().toISOString()
+      };
+
+      res.json({
+        widget: responseWidget,
+        deployments: deploymentResults,
+        success: true
+      });
+    } catch (error) {
+      console.error("AI widget generation error:", error);
+      res.status(500).json({ error: "Failed to generate AI widget" });
+    }
+  });
+
   // Optimization Widget API Route Aliases
   // Alias for optimization profiles to match widget expectations
   app.get("/api/optimization/profiles", async (req, res) => {
