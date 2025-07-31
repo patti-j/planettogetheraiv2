@@ -336,7 +336,7 @@ export default function WidgetsPage() {
             <Button 
               onClick={() => setShowAIDialog(true)} 
               variant="outline"
-              className="gap-2 border-blue-500 text-blue-600 hover:bg-blue-50"
+              className="gap-2 border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600"
             >
               <Brain className="h-4 w-4" />
               AI Generate
