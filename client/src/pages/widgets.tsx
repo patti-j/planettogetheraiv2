@@ -733,11 +733,11 @@ export default function WidgetsPage() {
           setSelectedWidget(null); // Clear selection when dialog closes
         }
       }}>
-        <DialogContent className="max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden p-0 sm:p-6">
-          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-0">
+        <DialogContent className="max-w-6xl h-[95vh] sm:h-[90vh] overflow-hidden p-0 sm:p-6 flex flex-col">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-0 flex-shrink-0">
             <DialogTitle className="text-lg sm:text-xl">Widget Design Studio</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto px-4 sm:px-0 pb-4 sm:pb-0">
+          <div className="flex-1 min-h-0 px-4 sm:px-0 pb-4 sm:pb-0">
             <WidgetDesignStudio
               open={showStudio}
               onOpenChange={setShowStudio}

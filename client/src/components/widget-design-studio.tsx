@@ -383,8 +383,8 @@ export default function WidgetDesignStudio({
                 </Select>
               </div>
               
-              <div className="flex-1 overflow-y-auto overscroll-contain min-h-[200px] sm:min-h-[300px]">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 pb-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain h-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 pb-4 min-h-full">
                   {filteredTemplates.map(template => (
                     <Card 
                       key={template.id}
