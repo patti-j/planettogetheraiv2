@@ -43,6 +43,7 @@ import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
 import UniversalWidget from "@/components/universal-widget";
+import { SystemData, WidgetConfig } from "@/lib/widget-library";
 
 
 interface DashboardItem {
@@ -162,6 +163,46 @@ export default function DashboardsPage() {
   const { data: dashboards = [], isLoading: isDashboardsLoading, refetch: refetchDashboards } = useQuery<DashboardItem[]>({
     queryKey: ["/api/dashboard-configs"],
   });
+
+  // Fetch data for widget rendering
+  const { data: productionOrders = [] } = useQuery({
+    queryKey: ["/api/jobs"],
+    enabled: showViewDialog && viewDashboard !== null,
+    refetchInterval: 30000,
+  });
+
+  const { data: operations = [] } = useQuery({
+    queryKey: ["/api/operations"],
+    enabled: showViewDialog && viewDashboard !== null,
+    refetchInterval: 30000,
+  });
+
+  const { data: resources = [] } = useQuery({
+    queryKey: ["/api/resources"],
+    enabled: showViewDialog && viewDashboard !== null,
+    refetchInterval: 30000,
+  });
+
+  const { data: metrics } = useQuery({
+    queryKey: ["/api/metrics"],
+    enabled: showViewDialog && viewDashboard !== null,
+    refetchInterval: 30000,
+  });
+
+  const { data: alerts = [] } = useQuery({
+    queryKey: ["/api/cockpit/alerts"],
+    enabled: showViewDialog && viewDashboard !== null,
+    refetchInterval: 30000,
+  });
+
+  // Prepare system data for universal widgets
+  const systemData: SystemData = {
+    jobs: productionOrders,
+    operations,
+    resources,
+    metrics,
+    alerts
+  };
 
   // Fetch existing widgets from all systems for the widget library
   const { data: cockpitWidgets = [] } = useQuery({
@@ -1057,11 +1098,11 @@ export default function DashboardsPage() {
                   )}
                 </div>
 
-                {/* Dashboard Content */}
+                {/* Live Dashboard Content */}
                 <div className="border rounded-lg bg-gray-50 p-4">
                   {viewDashboard.configuration.customWidgets.length > 0 ? (
                     <div 
-                      className="relative bg-white rounded border min-h-[400px]"
+                      className="relative bg-white rounded border min-h-[400px] overflow-hidden"
                       style={{
                         backgroundImage: `
                           linear-gradient(to right, #f3f4f6 1px, transparent 1px),
@@ -1070,45 +1111,74 @@ export default function DashboardsPage() {
                         backgroundSize: '20px 20px'
                       }}
                     >
-                      {viewDashboard.configuration.customWidgets.map((widget: any) => (
-                        <div
-                          key={widget.id}
-                          className="absolute bg-white border rounded-lg shadow-sm"
-                          style={{
-                            left: widget.position?.x || 0,
-                            top: widget.position?.y || 0,
-                            width: widget.size?.width || 200,
-                            height: widget.size?.height || 120
-                          }}
-                        >
-                          <div className="p-2 border-b bg-gray-50 rounded-t-lg">
-                            <div className="text-sm font-medium truncate">{widget.title}</div>
-                            {widget.sourceSystem && (
-                              <Badge 
-                                variant="outline" 
-                                className={`text-xs mt-1 ${
-                                  widget.sourceSystem === 'cockpit' ? 'bg-blue-50 text-blue-600' :
-                                  widget.sourceSystem === 'canvas' ? 'bg-green-50 text-green-600' :
-                                  'bg-purple-50 text-purple-600'
-                                }`}
-                              >
-                                {widget.sourceSystem === 'cockpit' ? 'Cockpit' : 
-                                 widget.sourceSystem === 'canvas' ? 'Canvas' : 'Dashboard'}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="p-2">
-                            <div className="text-xs text-gray-500 capitalize mb-1">{widget.type}</div>
-                            {widget.description && (
-                              <div className="text-xs text-gray-400 truncate">{widget.description}</div>
-                            )}
-                            {/* Try to render actual widget if possible */}
-                            <div className="mt-2 text-xs text-gray-300 text-center">
-                              Preview available in edit mode
+                      {viewDashboard.configuration.customWidgets.map((widget: any) => {
+                        // Convert dashboard widget to UniversalWidget config
+                        const widgetConfig: WidgetConfig = {
+                          id: widget.id,
+                          type: widget.type || 'kpi',
+                          title: widget.title || 'Widget',
+                          subtitle: widget.description,
+                          dataSource: widget.dataSource || 'productionOrders',
+                          chartType: widget.chartType || 'bar',
+                          aggregation: widget.aggregation || 'count',
+                          groupBy: widget.groupBy,
+                          sortBy: widget.sortBy,
+                          filters: widget.filters,
+                          colors: widget.colors,
+                          thresholds: widget.thresholds,
+                          limit: widget.limit || 10,
+                          size: { 
+                            width: widget.size?.width || 300, 
+                            height: widget.size?.height || 200 
+                          },
+                          position: { 
+                            x: widget.position?.x || 0, 
+                            y: widget.position?.y || 0 
+                          },
+                          refreshInterval: widget.refreshInterval,
+                          drillDownTarget: widget.drillDownTarget,
+                          drillDownParams: widget.drillDownParams
+                        };
+
+                        return (
+                          <div
+                            key={widget.id}
+                            className="absolute bg-white border rounded-lg shadow-sm overflow-hidden"
+                            style={{
+                              left: widget.position?.x || 0,
+                              top: widget.position?.y || 0,
+                              width: widget.size?.width || 300,
+                              height: widget.size?.height || 200
+                            }}
+                          >
+                            <div className="p-2 border-b bg-gray-50 rounded-t-lg">
+                              <div className="text-sm font-medium truncate">{widget.title}</div>
+                              {widget.sourceSystem && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs mt-1 ${
+                                    widget.sourceSystem === 'cockpit' ? 'bg-blue-50 text-blue-600' :
+                                    widget.sourceSystem === 'canvas' ? 'bg-green-50 text-green-600' :
+                                    'bg-purple-50 text-purple-600'
+                                  }`}
+                                >
+                                  {widget.sourceSystem === 'cockpit' ? 'Cockpit' : 
+                                   widget.sourceSystem === 'canvas' ? 'Canvas' : 'Dashboard'}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="p-2 h-full">
+                              <UniversalWidget
+                                config={widgetConfig}
+                                data={systemData}
+                                readOnly={true}
+                                showControls={false}
+                                className="h-full"
+                              />
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-40 text-gray-400">
