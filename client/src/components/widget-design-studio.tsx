@@ -287,26 +287,22 @@ export default function WidgetDesignStudio({
           case 'cockpit':
             // Deploy to cockpit dashboard
             deploymentPromises.push(
-              fetch('/api/cockpit/widgets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: finalWidget.title,
-                  sub_title: finalWidget.subtitle,
-                  type: finalWidget.type,
-                  layout_id: 1, // Default layout
-                  position: finalWidget.position,
-                  configuration: {
-                    dataSource: finalWidget.dataSource,
-                    chartType: finalWidget.chartType,
-                    aggregation: finalWidget.aggregation,
-                    groupBy: finalWidget.groupBy,
-                    filters: finalWidget.filters,
-                    colors: finalWidget.colors,
-                    thresholds: finalWidget.thresholds,
-                    limit: finalWidget.limit
-                  }
-                })
+              apiRequest('POST', '/api/cockpit/widgets', {
+                title: finalWidget.title,
+                sub_title: finalWidget.subtitle,
+                type: finalWidget.type,
+                layout_id: 1, // Default layout
+                position: finalWidget.position,
+                configuration: {
+                  dataSource: finalWidget.dataSource,
+                  chartType: finalWidget.chartType,
+                  aggregation: finalWidget.aggregation,
+                  groupBy: finalWidget.groupBy,
+                  filters: finalWidget.filters,
+                  colors: finalWidget.colors,
+                  thresholds: finalWidget.thresholds,
+                  limit: finalWidget.limit
+                }
               })
             );
             break;
@@ -314,24 +310,20 @@ export default function WidgetDesignStudio({
           case 'analytics':
             // Deploy to analytics dashboard configuration
             deploymentPromises.push(
-              fetch('/api/analytics/widgets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: finalWidget.title,
-                  type: finalWidget.type,
-                  config: {
-                    dataSource: finalWidget.dataSource,
-                    chartType: finalWidget.chartType,
-                    aggregation: finalWidget.aggregation,
-                    groupBy: finalWidget.groupBy,
-                    filters: finalWidget.filters,
-                    colors: finalWidget.colors,
-                    thresholds: finalWidget.thresholds,
-                    limit: finalWidget.limit,
-                    size: finalWidget.size
-                  }
-                })
+              apiRequest('POST', '/api/analytics/widgets', {
+                name: finalWidget.title,
+                type: finalWidget.type,
+                config: {
+                  dataSource: finalWidget.dataSource,
+                  chartType: finalWidget.chartType,
+                  aggregation: finalWidget.aggregation,
+                  groupBy: finalWidget.groupBy,
+                  filters: finalWidget.filters,
+                  colors: finalWidget.colors,
+                  thresholds: finalWidget.thresholds,
+                  limit: finalWidget.limit,
+                  size: finalWidget.size
+                }
               })
             );
             break;
@@ -339,28 +331,24 @@ export default function WidgetDesignStudio({
           case 'canvas':
             // Deploy to Max AI canvas widgets
             deploymentPromises.push(
-              fetch('/api/max/canvas/widgets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: finalWidget.title,
-                  subtitle: finalWidget.subtitle,
-                  type: finalWidget.type,
-                  size: finalWidget.size,
-                  position: finalWidget.position,
-                  config: {
-                    dataSource: finalWidget.dataSource,
-                    chartType: finalWidget.chartType,
-                    aggregation: finalWidget.aggregation,
-                    groupBy: finalWidget.groupBy,
-                    filters: finalWidget.filters,
-                    colors: finalWidget.colors,
-                    thresholds: finalWidget.thresholds,
-                    limit: finalWidget.limit,
-                    action: finalWidget.action,
-                    content: finalWidget.content
-                  }
-                })
+              apiRequest('POST', '/api/max/canvas/widgets', {
+                title: finalWidget.title,
+                subtitle: finalWidget.subtitle,
+                type: finalWidget.type,
+                size: finalWidget.size,
+                position: finalWidget.position,
+                config: {
+                  dataSource: finalWidget.dataSource,
+                  chartType: finalWidget.chartType,
+                  aggregation: finalWidget.aggregation,
+                  groupBy: finalWidget.groupBy,
+                  filters: finalWidget.filters,
+                  colors: finalWidget.colors,
+                  thresholds: finalWidget.thresholds,
+                  limit: finalWidget.limit,
+                  action: finalWidget.action,
+                  content: finalWidget.content
+                }
               })
             );
             break;
@@ -368,11 +356,7 @@ export default function WidgetDesignStudio({
           case 'dashboard':
             // Deploy to custom dashboard system
             deploymentPromises.push(
-              fetch('/api/dashboard/widgets', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(finalWidget)
-              })
+              apiRequest('POST', '/api/dashboard-configs', finalWidget)
             );
             break;
         }
@@ -407,7 +391,9 @@ export default function WidgetDesignStudio({
             } else if (system === 'analytics') {
               queryClient.invalidateQueries({ queryKey: ['/api/analytics/widgets'] });
             } else if (system === 'canvas') {
-              queryClient.invalidateQueries({ queryKey: ['/api/max/canvas/widgets'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+            } else if (system === 'dashboard') {
+              queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
             }
           }
         }
