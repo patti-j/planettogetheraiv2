@@ -56,35 +56,35 @@ export default function WidgetStudio() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
-              <Sparkles className="h-8 w-8 text-white" />
+        <div className="text-center space-y-3 md:space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <div className="text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Universal Widget Studio
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-2 sm:px-0">
                 Create widgets for Cockpit, Analytics, Max AI Canvas, and Custom Dashboards
               </p>
             </div>
           </div>
           
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
             <Button 
               onClick={() => setDesignStudioOpen(true)}
               size="lg"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Create New Widget
             </Button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Zap className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+              <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>{WIDGET_TEMPLATES.length} Templates Available</span>
             </div>
           </div>
@@ -92,10 +92,15 @@ export default function WidgetStudio() {
 
         {/* Category Tabs */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1">
             {categories.map(category => (
-              <TabsTrigger key={category.value} value={category.value} className="flex items-center gap-2">
-                {category.label}
+              <TabsTrigger 
+                key={category.value} 
+                value={category.value} 
+                className="flex items-center gap-1 text-xs md:text-sm p-2 md:p-3"
+              >
+                <span className="hidden sm:inline">{category.label}</span>
+                <span className="sm:hidden">{category.label.split(' ')[0]}</span>
                 <Badge variant="secondary" className="text-xs">
                   {category.count}
                 </Badge>
@@ -103,37 +108,37 @@ export default function WidgetStudio() {
             ))}
           </TabsList>
 
-          <TabsContent value={selectedCategory} className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <TabsContent value={selectedCategory} className="mt-4 md:mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
               {filteredTemplates.map(template => (
                 <Card 
                   key={template.id} 
                   className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-200"
                   onClick={() => setDesignStudioOpen(true)}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="p-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                        <template.icon className="h-6 w-6 text-blue-600" />
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="p-1.5 sm:p-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                        <template.icon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                       </div>
                       <Badge 
                         variant="secondary" 
-                        className={complexityColors[template.complexity]}
+                        className={`text-xs ${complexityColors[template.complexity]}`}
                       >
                         {template.complexity}
                       </Badge>
                     </div>
-                    <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
+                    <CardTitle className="text-base sm:text-lg group-hover:text-blue-600 transition-colors line-clamp-2">
                       {template.name}
                     </CardTitle>
-                    <CardDescription className="text-sm">
+                    <CardDescription className="text-xs sm:text-sm line-clamp-3">
                       {template.description}
                     </CardDescription>
                   </CardHeader>
                   
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-2 sm:space-y-3">
                     <div className="flex flex-wrap gap-1">
-                      {template.targetSystems.map(system => (
+                      {template.targetSystems.slice(0, 3).map(system => (
                         <Badge 
                           key={system}
                           variant="outline" 
@@ -142,10 +147,15 @@ export default function WidgetStudio() {
                           {system}
                         </Badge>
                       ))}
+                      {template.targetSystems.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{template.targetSystems.length - 3}
+                        </Badge>
+                      )}
                     </div>
                     
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Type: {template.type}</span>
+                      <span className="truncate">Type: {template.type}</span>
                       <span className="capitalize">{template.category}</span>
                     </div>
                   </CardContent>
@@ -157,17 +167,17 @@ export default function WidgetStudio() {
 
         {/* System Integration Info */}
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
               Cross-System Integration
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Create widgets once and deploy them across multiple systems
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Factory className="h-5 w-5 text-blue-600" />
