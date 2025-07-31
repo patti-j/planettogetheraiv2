@@ -119,6 +119,22 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return pages;
   };
 
+  // Helper function to replace old routes with new ones
+  const replaceOldRoutes = (pages: RecentPage[]): RecentPage[] => {
+    return pages.map(page => {
+      // Replace old role-management route with new user-access-management route
+      if (page.path === '/role-management') {
+        return {
+          ...page,
+          path: '/user-access-management',
+          label: pageMapping['/user-access-management']?.label || 'User & Access Management',
+          icon: pageMapping['/user-access-management']?.icon || 'Shield'
+        };
+      }
+      return page;
+    });
+  };
+
   // Load recent pages from user preferences (database only) - FIXED to prevent infinite loop
   useEffect(() => {
     const loadRecentPages = async () => {
@@ -152,9 +168,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
               saveRecentPages(processedPages);
             }
           } else {
-            const processedPages = ensureGettingStartedPinned(savedRecentPages.slice(0, MAX_RECENT_PAGES));
+            // First replace old routes, then ensure Getting Started is pinned
+            const updatedRoutes = replaceOldRoutes(savedRecentPages);
+            const processedPages = ensureGettingStartedPinned(updatedRoutes.slice(0, MAX_RECENT_PAGES));
             setRecentPages(processedPages);
-            // Only save if auto-pinning changed something
+            // Only save if auto-pinning or route replacement changed something
             if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, MAX_RECENT_PAGES))) {
               saveRecentPages(processedPages);
             }
@@ -235,6 +253,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   // Remove unused trackMenuClick function that was causing TypeScript errors
 
   const addRecentPage = (path: string, label: string, icon?: string) => {
+    // Replace old routes with new ones
+    if (path === '/role-management') {
+      path = '/user-access-management';
+      label = pageMapping['/user-access-management']?.label || 'User & Access Management';
+      icon = pageMapping['/user-access-management']?.icon || 'Shield';
+    }
+    
     setRecentPages(current => {
       // Check if the page already exists in the recent list
       const existingIndex = current.findIndex(page => page.path === path);
