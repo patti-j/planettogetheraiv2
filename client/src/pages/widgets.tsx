@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
@@ -67,6 +68,10 @@ export default function WidgetsPage() {
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
   const [creationMode, setCreationMode] = useState<'studio' | 'template' | 'ai'>('studio');
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewWidget, setPreviewWidget] = useState<WidgetItem | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [widgetToDelete, setWidgetToDelete] = useState<WidgetItem | null>(null);
 
   // AI Widget Creation State
   const [aiWidgetData, setAiWidgetData] = useState({
@@ -260,6 +265,58 @@ export default function WidgetsPage() {
     return typeConfig?.icon || Grid;
   };
 
+  // Widget action handlers
+  const handleViewWidget = (widget: WidgetItem) => {
+    setPreviewWidget(widget);
+    setShowPreviewDialog(true);
+  };
+
+  const handleEditWidget = (widget: WidgetItem) => {
+    // TODO: Implement edit functionality - could open widget studio with existing config
+    toast({
+      title: "Edit Widget",
+      description: `Edit functionality for ${widget.title} coming soon!`,
+    });
+  };
+
+  const handleCopyWidget = async (widget: WidgetItem) => {
+    try {
+      // Create a copy of the widget configuration
+      const copiedConfig = {
+        ...widget.configuration,
+        title: `${widget.title} (Copy)`,
+        id: undefined // Let system generate new ID
+      };
+
+      // Copy to clipboard as JSON for now
+      await navigator.clipboard.writeText(JSON.stringify(copiedConfig, null, 2));
+      
+      toast({
+        title: "Widget Copied",
+        description: `${widget.title} configuration copied to clipboard`,
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy widget configuration",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteWidget = (widget: WidgetItem) => {
+    setWidgetToDelete(widget);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteWidget = () => {
+    if (widgetToDelete) {
+      deleteWidgetMutation.mutate(widgetToDelete);
+      setShowDeleteDialog(false);
+      setWidgetToDelete(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -448,20 +505,39 @@ export default function WidgetsPage() {
                             <p>Modified: {new Date(widget.lastModified).toLocaleDateString()}</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0 hover:bg-blue-100"
+                              onClick={() => handleViewWidget(widget)}
+                              title="Preview widget"
+                            >
                               <Eye className="h-3 w-3" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0 hover:bg-green-100"
+                              onClick={() => handleEditWidget(widget)}
+                              title="Edit widget"
+                            >
                               <Edit className="h-3 w-3" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 w-7 p-0 hover:bg-purple-100"
+                              onClick={() => handleCopyWidget(widget)}
+                              title="Copy widget configuration"
+                            >
                               <Copy className="h-3 w-3" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="ghost" 
-                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                              onClick={() => deleteWidgetMutation.mutate(widget)}
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                              onClick={() => handleDeleteWidget(widget)}
+                              title="Delete widget"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -476,6 +552,97 @@ export default function WidgetsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Widget Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Widget Preview: {previewWidget?.title}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto p-4 bg-gray-50 rounded-lg">
+            {previewWidget && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Type:</span> {previewWidget.type}
+                  </div>
+                  <div>
+                    <span className="font-medium">System:</span> 
+                    <Badge className={`ml-2 ${getSystemBadgeColor(previewWidget.system)}`}>
+                      {previewWidget.system}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="font-medium">Created:</span> {new Date(previewWidget.created).toLocaleString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Modified:</span> {new Date(previewWidget.lastModified).toLocaleString()}
+                  </div>
+                </div>
+                
+                {previewWidget.description && (
+                  <div>
+                    <span className="font-medium">Description:</span>
+                    <p className="mt-1 text-sm text-muted-foreground">{previewWidget.description}</p>
+                  </div>
+                )}
+                
+                {previewWidget.configuration && (
+                  <div>
+                    <span className="font-medium">Configuration:</span>
+                    <pre className="mt-2 p-4 bg-gray-100 rounded-lg text-xs overflow-auto max-h-40">
+                      {JSON.stringify(previewWidget.configuration, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* Live Widget Preview */}
+                <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                  <div className="text-sm font-medium mb-2">Live Preview:</div>
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    <UniversalWidget 
+                      config={{
+                        id: previewWidget.id,
+                        title: previewWidget.title,
+                        type: previewWidget.type as any,
+                        ...previewWidget.configuration
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-500" />
+              Delete Widget
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{widgetToDelete?.title}"? This action cannot be undone.
+              The widget will be permanently removed from the {widgetToDelete?.system} system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteWidget}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete Widget
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Widget Design Studio Dialog */}
       <Dialog open={showStudio} onOpenChange={setShowStudio}>
