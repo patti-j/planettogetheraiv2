@@ -645,47 +645,128 @@ export default function RoleManagementPage() {
         </div>
         </div>
 
-        {/* Roles Overview - still in fixed header */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{roles.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {roles.filter(r => r.isSystemRole).length} system, {roles.filter(r => !r.isSystemRole).length} custom
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Permissions</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{allPermissions.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Across {features.length} features
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Users Assigned</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Total role assignments
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Roles Overview with Dashboard Card Container */}
+        <DashboardCardContainer 
+          className=""
+          gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          maxVisibleCardsMobile={2}
+          maxVisibleCardsTablet={3}
+          maxVisibleCardsDesktop={4}
+          showMoreText="Show More Stats"
+          showLessText="Show Less"
+          cards={[
+            {
+              id: 'total-roles',
+              priority: 1, // Highest priority
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{roles.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {roles.filter(r => r.isSystemRole).length} system, {roles.filter(r => !r.isSystemRole).length} custom
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            },
+            {
+              id: 'total-permissions',
+              priority: 2, // Second priority
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Permissions</CardTitle>
+                    <UserCheck className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{allPermissions.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Across {features.length} features
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            },
+            {
+              id: 'users-assigned',
+              priority: 3, // Third priority
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Users Assigned</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {roles.reduce((sum, role) => sum + (role.userCount || 0), 0)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Total role assignments
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            },
+            {
+              id: 'selected-roles',
+              priority: 4, // Fourth priority
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Selected Roles</CardTitle>
+                    <Check className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{selectedRoles.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Ready for bulk operations
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            },
+            {
+              id: 'system-roles',
+              priority: 5, // Fifth priority - lower importance
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">System Roles</CardTitle>
+                    <Shield className="h-4 w-4 text-blue-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{roles.filter(r => r.isSystemRole).length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Protected core roles
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            },
+            {
+              id: 'features-covered',
+              priority: 6, // Sixth priority - additional info
+              content: (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Features</CardTitle>
+                    <Settings className="h-4 w-4 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{features.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Available feature categories
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            }
+          ]}
+        />
       </div>
 
       {/* Scrollable Content Area */}

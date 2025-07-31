@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface DashboardCard {
   id: string;
@@ -20,6 +20,7 @@ export function useDashboardOptimization(
   config: DashboardOptimizationConfig = {}
 ) {
   const [showAll, setShowAll] = useState(false);
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   
   const {
     maxVisibleCards = 3,
@@ -35,15 +36,45 @@ export function useDashboardOptimization(
     return [...cards].sort((a, b) => a.priority - b.priority);
   }, [cards]);
 
-  // Determine how many cards to show based on screen size
+  // Handle responsive behavior with resize listener
+  useEffect(() => {
+    const updateScreenSize = () => {
+      if (typeof window !== 'undefined') {
+        const width = window.innerWidth;
+        if (width < 640) {
+          setScreenSize('mobile');
+        } else if (width < 1024) {
+          setScreenSize('tablet');
+        } else {
+          setScreenSize('desktop');
+        }
+      }
+    };
+
+    // Set initial screen size
+    updateScreenSize();
+
+    // Add resize listener
+    window.addEventListener('resize', updateScreenSize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', updateScreenSize);
+    };
+  }, []);
+
+  // Determine how many cards to show based on current screen size
   const getMaxCards = () => {
-    if (typeof window !== 'undefined') {
-      const width = window.innerWidth;
-      if (width < 640) return maxVisibleCardsMobile; // mobile
-      if (width < 1024) return maxVisibleCardsTablet; // tablet
-      return maxVisibleCardsDesktop; // desktop
+    switch (screenSize) {
+      case 'mobile':
+        return maxVisibleCardsMobile;
+      case 'tablet':
+        return maxVisibleCardsTablet;
+      case 'desktop':
+        return maxVisibleCardsDesktop;
+      default:
+        return maxVisibleCards;
     }
-    return maxVisibleCards;
   };
 
   const maxCards = getMaxCards();

@@ -1031,8 +1031,10 @@ export default function Training() {
         className="mb-6"
         gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
         maxVisibleCardsMobile={2}
-        maxVisibleCardsTablet={2}
-        maxVisibleCardsDesktop={3}
+        maxVisibleCardsTablet={3}
+        maxVisibleCardsDesktop={4}
+        showMoreText="Show More Stats"
+        showLessText="Show Less"
         cards={[
           {
             id: 'training-modules',
@@ -1096,6 +1098,44 @@ export default function Training() {
                     <div>
                       <div className="text-xl sm:text-2xl font-bold">{allRoles.length}</div>
                       <div className="text-xs text-gray-500">Available Roles</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          },
+          {
+            id: 'completion-rate',
+            priority: 5, // Additional metric
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold">
+                        {trainingModules.length > 0 ? 
+                          Math.round((trainingModules.filter(m => m.completed).length / trainingModules.length) * 100) 
+                          : 0}%
+                      </div>
+                      <div className="text-xs text-gray-500">Completion Rate</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          },
+          {
+            id: 'voice-enabled-tours',
+            priority: 6, // Additional information
+            content: (
+              <Card>
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center">
+                    <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600 mr-2 sm:mr-3" />
+                    <div>
+                      <div className="text-xl sm:text-2xl font-bold">{toursArray?.filter((t: any) => t.hasVoice).length || 0}</div>
+                      <div className="text-xs text-gray-500">Voice Tours</div>
                     </div>
                   </div>
                 </CardContent>
