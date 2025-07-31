@@ -294,7 +294,19 @@ export default function DashboardsPage() {
         
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
+            onClick={() => {
+              setSelectedDashboard(null);
+              setShowDashboardManager(true);
+            }}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Dashboard
+          </Button>
+      
+          <Button
             onClick={() => setShowTemplateDialog(true)}
+            variant="outline"
             className="flex items-center gap-2"
           >
             <Layout className="w-4 h-4" />
