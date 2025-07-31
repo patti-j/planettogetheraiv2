@@ -2,6 +2,17 @@
 
 ## Latest Fixes (July 31, 2025)
 
+✓ **Enhanced Database Referential Integrity with Foreign Key Relationships (July 31, 2025)**:
+- **PRODUCTION ORDER SCHEMA IMPROVEMENTS**: Converted text fields to proper foreign key references for better data integrity and query performance
+- **SALES ORDER RELATIONSHIPS**: Updated production_orders and planned_orders tables to use salesOrderId foreign keys instead of salesOrderNumber text fields, enabling proper joins to sales_orders table with customer information
+- **OPERATION TRACKING FOREIGN KEYS**: Converted lastOperationCompleted and nextOperationDue from text to foreign key references (lastOperationCompletedId, nextOperationDueId) linking to discrete_operations table
+- **RESOURCE REFERENCE NORMALIZATION**: Updated bottleneckResource from text field to bottleneckResourceId foreign key reference to resources table for consistent resource tracking
+- **ENHANCED JOB FORM UI**: Updated job creation form with customer and sales order dropdown selectors using proper foreign key relationships instead of freeform text entry
+- **DATABASE CONSTRAINTS**: Added proper referential integrity constraints preventing orphaned references and enabling cascade operations
+- **IMPROVED ANALYTICS CAPABILITY**: Foreign key relationships enable rich joins for comprehensive reporting across orders, operations, customers, and resources
+- **TYPE SAFETY ENHANCEMENT**: Eliminated text field inconsistencies and typos by enforcing foreign key constraints at database level
+- Enhanced manufacturing ERP system with normalized database relationships providing better data integrity, query performance, and analytical capabilities through proper foreign key constraint implementation
+
 ✓ **Complete Role-Based Navigation Permissions Audit & Fix (July 31, 2025)**:
 - **DEMO USER PERMISSION FIXES**: Updated demo user permissions in routes.ts to ensure proper navigation access - added 'systems-management-view' to demo_director and demo_exec, 'production-scheduling-view' to demo_plant and demo_scheduler for consistent widget/dashboard access
 - **DATABASE ROLE PERMISSION ENHANCEMENTS**: Enhanced database seed role definitions to include missing navigation permissions - Director role now includes systems-management and presentation-system features, Plant Manager includes production-scheduling, Production Scheduler includes production-scheduling and shop-floor features

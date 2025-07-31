@@ -108,9 +108,9 @@ export const productionOrders: any = pgTable("production_orders", {
   
   // Production tracking
   completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
-  lastOperationCompleted: text("last_operation_completed"),
-  nextOperationDue: text("next_operation_due"),
-  bottleneckResource: text("bottleneck_resource"),
+  lastOperationCompletedId: integer("last_operation_completed_id").references(() => discreteOperations.id),
+  nextOperationDueId: integer("next_operation_due_id").references(() => discreteOperations.id),
+  bottleneckResourceId: integer("bottleneck_resource_id").references(() => resources.id), // Also converting bottleneck from text to FK
   downtimeMinutes: numeric("downtime_minutes", { precision: 8, scale: 2 }).default("0"),
   efficiencyPercentage: numeric("efficiency_percentage", { precision: 5, scale: 2 }).default("100"),
   oeePercentage: numeric("oee_percentage", { precision: 5, scale: 2 }).default("0"), // Overall Equipment Effectiveness
