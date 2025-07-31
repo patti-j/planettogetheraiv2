@@ -233,18 +233,60 @@ export default function WidgetsPage() {
       const response = await fetch(endpoint, { method: 'DELETE' });
       return response.json();
     },
-    onMutate: () => {
+    onMutate: async (widget) => {
       // Store current scroll position before mutation
       savedScrollPosition.current = window.scrollY;
+      
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["/api/cockpit/widgets"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/canvas/widgets"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/dashboard-configs"] });
+
+      // Snapshot previous values for rollback
+      const previousCockpitWidgets = queryClient.getQueryData(["/api/cockpit/widgets"]);
+      const previousCanvasWidgets = queryClient.getQueryData(["/api/canvas/widgets"]);
+      const previousDashboardConfigs = queryClient.getQueryData(["/api/dashboard-configs"]);
+
+      // Optimistically remove the widget from the UI
+      const [system, id] = widget.id.split('-');
+      
+      if (system === 'cockpit') {
+        queryClient.setQueryData(["/api/cockpit/widgets"], (old: any) => 
+          old ? old.filter((w: any) => w.id !== parseInt(id)) : []
+        );
+      } else if (system === 'canvas') {
+        queryClient.setQueryData(["/api/canvas/widgets"], (old: any) => 
+          old ? old.filter((w: any) => w.id !== parseInt(id)) : []
+        );
+      } else if (system === 'dashboard') {
+        queryClient.setQueryData(["/api/dashboard-configs"], (old: any) => 
+          old ? old.filter((w: any) => w.id !== parseInt(id)) : []
+        );
+      }
+
+      // Return context for rollback on error
+      return {
+        previousCockpitWidgets,
+        previousCanvasWidgets,
+        previousDashboardConfigs
+      };
     },
     onSuccess: () => {
       toast({
         title: "Widget Deleted",
         description: "Widget has been successfully deleted.",
       });
-      queryClient.invalidateQueries();
+      // Don't invalidate queries here since we're using optimistic updates
+      // The widget should already be removed from UI immediately
     },
-    onError: () => {
+    onError: (error, widget, context) => {
+      // Rollback optimistic updates on error
+      if (context) {
+        queryClient.setQueryData(["/api/cockpit/widgets"], context.previousCockpitWidgets);
+        queryClient.setQueryData(["/api/canvas/widgets"], context.previousCanvasWidgets);
+        queryClient.setQueryData(["/api/dashboard-configs"], context.previousDashboardConfigs);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to delete widget.",
@@ -252,15 +294,15 @@ export default function WidgetsPage() {
       });
     },
     onSettled: () => {
-      // Restore scroll position after mutation completes
+      // Restore scroll position after mutation completes and DOM updates
+      // Use multiple frames to ensure DOM is fully updated
       requestAnimationFrame(() => {
-        if (savedScrollPosition.current > 0) {
-          window.scrollTo({
-            top: savedScrollPosition.current,
-            behavior: 'instant'
-          });
-          savedScrollPosition.current = 0;
-        }
+        requestAnimationFrame(() => {
+          if (savedScrollPosition.current > 0) {
+            window.scrollTo(0, savedScrollPosition.current);
+            savedScrollPosition.current = 0;
+          }
+        });
       });
     }
   });
