@@ -64,6 +64,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/data-relationships': { label: 'Data Relationships', icon: 'Database' },
   '/data-map': { label: 'Data Relationship Map', icon: 'Network' },
   '/table-field-viewer': { label: 'Table Field Documentation', icon: 'FileText' },
+  '/constraints': { label: 'Constraints Management', icon: 'AlertTriangle' },
   '/widgets': { label: 'Widgets', icon: 'Grid' },
   '/dashboards': { label: 'Dashboards', icon: 'Layout' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
