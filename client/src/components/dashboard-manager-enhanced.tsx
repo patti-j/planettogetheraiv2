@@ -183,24 +183,38 @@ export function EnhancedDashboardManager({
   // AI Widget Creation Mutation
   const aiWidgetMutation = useMutation({
     mutationFn: async (prompt: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent", {
-        command: `CREATE_ANALYTICS_WIDGETS: ${prompt}`,
+      const response = await apiRequest("POST", "/api/ai/generate-widget", {
+        prompt: prompt,
+        targetSystems: ["analytics", "dashboard"]
       });
       return await response.json();
     },
     onSuccess: (data) => {
       if (data.success) {
-        toast({
-          title: "Success",
-          description: "AI Widgets created successfully",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-        setAiWidgetPrompt("");
-        setIsEditDialogOpen(false);
+        const successfulDeployments = data.deployments?.filter(d => d.success) || [];
+        const failedDeployments = data.deployments?.filter(d => !d.success) || [];
+        
+        if (successfulDeployments.length > 0) {
+          toast({
+            title: "Success",
+            description: `AI widget created and deployed to ${successfulDeployments.map(d => d.system).join(', ')}`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/canvas/widgets"] });
+          setAiWidgetPrompt("");
+          setIsEditDialogOpen(false);
+        } else if (failedDeployments.length > 0) {
+          toast({
+            title: "Partial Success",
+            description: `Widget created but deployment failed: ${failedDeployments[0]?.error || 'Unknown error'}`,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Error",
-          description: data.message || "Failed to create AI widgets",
+          description: data.message || "Failed to create AI widget",
           variant: "destructive",
         });
       }
