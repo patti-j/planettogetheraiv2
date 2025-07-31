@@ -130,6 +130,8 @@ export default function DashboardsPage() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDashboardManager, setShowDashboardManager] = useState(false);
+  const [showAiDashboardDialog, setShowAiDashboardDialog] = useState(false);
+  const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
 
   // Dashboard creation state
@@ -215,7 +217,41 @@ export default function DashboardsPage() {
     },
   });
 
-
+  // AI Dashboard Generation mutation
+  const generateAiDashboardMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai/generate-dashboard", { prompt });
+      return response;
+    },
+    onSuccess: (dashboardConfig) => {
+      // Create the dashboard using the AI-generated configuration
+      const dashboardData = {
+        name: dashboardConfig.name,
+        description: dashboardConfig.description || "AI-generated dashboard",
+        configuration: {
+          standardWidgets: [],
+          customWidgets: dashboardConfig.widgets || []
+        }
+      };
+      
+      createDashboardMutation.mutate(dashboardData);
+      setShowAiDashboardDialog(false);
+      setAiDashboardPrompt("");
+    },
+    onError: (error: any) => {
+      const isQuotaError = error?.quotaExceeded || 
+                          error?.message?.includes('quota') || 
+                          error?.message?.includes('limit');
+      
+      toast({
+        title: isQuotaError ? "OpenAI Quota Exceeded" : "AI Generation Failed",
+        description: isQuotaError 
+          ? "The OpenAI API quota has been exceeded. Please try again later or contact support."
+          : error?.message || "Failed to generate dashboard with AI",
+        variant: "destructive",
+      });
+    },
+  });
 
   const resetForm = () => {
     setNewDashboard({
@@ -298,10 +334,19 @@ export default function DashboardsPage() {
               setSelectedDashboard(null);
               setShowDashboardManager(true);
             }}
+            variant="outline"
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             New Dashboard
+          </Button>
+
+          <Button
+            onClick={() => setShowAiDashboardDialog(true)}
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI Generate
           </Button>
       
           <Button
@@ -588,6 +633,70 @@ export default function DashboardsPage() {
         standardWidgets={[]}
         customWidgets={[]}
       />
+
+      {/* AI Dashboard Generation Dialog */}
+      <Dialog open={showAiDashboardDialog} onOpenChange={setShowAiDashboardDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Generate Dashboard with AI
+            </DialogTitle>
+            <div className="text-sm text-gray-600">
+              Describe the type of dashboard you want to create, and AI will generate it for you with appropriate widgets and layout.
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-dashboard-prompt" className="text-sm font-medium">
+                Dashboard Description
+              </Label>
+              <Textarea
+                id="ai-dashboard-prompt"
+                placeholder="Example: Create a production monitoring dashboard with KPI metrics for efficiency, quality, and throughput. Include charts showing production trends and alerts for any issues."
+                value={aiDashboardPrompt}
+                onChange={(e) => setAiDashboardPrompt(e.target.value)}
+                className="mt-1 min-h-[120px] resize-none"
+                rows={5}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Be specific about the metrics, charts, and widgets you want to include.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAiDashboardDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (aiDashboardPrompt.trim()) {
+                  generateAiDashboardMutation.mutate(aiDashboardPrompt.trim());
+                }
+              }}
+              disabled={!aiDashboardPrompt.trim() || generateAiDashboardMutation.isPending}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {generateAiDashboardMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Generate Dashboard
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
