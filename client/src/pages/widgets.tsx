@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,10 @@ export default function WidgetsPage() {
   const isMobile = useMobile();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  
+  // Scroll position management
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const savedScrollPosition = useRef<number>(0);
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,6 +233,10 @@ export default function WidgetsPage() {
       const response = await fetch(endpoint, { method: 'DELETE' });
       return response.json();
     },
+    onMutate: () => {
+      // Store current scroll position before mutation
+      savedScrollPosition.current = window.scrollY;
+    },
     onSuccess: () => {
       toast({
         title: "Widget Deleted",
@@ -241,6 +249,18 @@ export default function WidgetsPage() {
         title: "Error",
         description: "Failed to delete widget.",
         variant: "destructive"
+      });
+    },
+    onSettled: () => {
+      // Restore scroll position after mutation completes
+      requestAnimationFrame(() => {
+        if (savedScrollPosition.current > 0) {
+          window.scrollTo({
+            top: savedScrollPosition.current,
+            behavior: 'instant'
+          });
+          savedScrollPosition.current = 0;
+        }
       });
     }
   });
