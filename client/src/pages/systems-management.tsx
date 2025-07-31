@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -411,8 +411,8 @@ export default function SystemsManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUsers.filter(u => u.status === 'active').length}</div>
-            <p className="text-xs text-muted-foreground">of {mockUsers.length} total users</p>
+            <div className="text-2xl font-bold">{systemUsers.filter((u: any) => u.isActive).length}</div>
+            <p className="text-xs text-muted-foreground">of {systemUsers.length} total users</p>
           </CardContent>
         </Card>
 
@@ -424,7 +424,7 @@ export default function SystemsManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockEnvironments.filter(e => e.status === 'active').length}</div>
+            <div className="text-2xl font-bold">{environments.filter(e => e.status === 'active').length}</div>
             <p className="text-xs text-muted-foreground">environments online</p>
           </CardContent>
         </Card>
@@ -437,7 +437,7 @@ export default function SystemsManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUpgrades.filter(u => u.status === 'completed').length}</div>
+            <div className="text-2xl font-bold">{upgrades.filter(u => u.status === 'completed').length}</div>
             <p className="text-xs text-muted-foreground">completed this week</p>
           </CardContent>
         </Card>
