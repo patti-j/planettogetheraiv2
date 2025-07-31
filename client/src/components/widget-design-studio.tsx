@@ -133,7 +133,12 @@ export default function WidgetDesignStudio({
       metrics: metrics || {}
     };
     setPreviewData(newPreviewData);
-  }, [productionOrders?.length, operations?.length, resources?.length, metrics]);
+  }, [
+    Array.isArray(productionOrders) ? productionOrders.length : 0, 
+    Array.isArray(operations) ? operations.length : 0, 
+    Array.isArray(resources) ? resources.length : 0, 
+    metrics
+  ]);
 
   // Initialize editing mode
   useEffect(() => {
@@ -549,18 +554,18 @@ export default function WidgetDesignStudio({
                     
                     {/* Data Processing */}
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Data Processing</CardTitle>
+                      <CardHeader className="pb-2 sm:pb-4">
+                        <CardTitle className="text-base sm:text-lg">Data Processing</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                      <CardContent className="space-y-3 sm:space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
-                            <Label htmlFor="aggregation">Aggregation</Label>
+                            <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
                             <Select 
                               value={widgetConfig.aggregation || 'count'} 
                               onValueChange={(value) => updateWidgetConfig('aggregation', value)}
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="text-sm">
                                 <SelectValue placeholder="Select aggregation" />
                               </SelectTrigger>
                               <SelectContent>
@@ -574,24 +579,26 @@ export default function WidgetDesignStudio({
                           </div>
                           
                           <div>
-                            <Label htmlFor="groupBy">Group By (Optional)</Label>
+                            <Label htmlFor="groupBy" className="text-sm">Group By (Optional)</Label>
                             <Input
                               id="groupBy"
                               value={widgetConfig.groupBy || ''}
                               onChange={(e) => updateWidgetConfig('groupBy', e.target.value)}
                               placeholder="e.g., status, priority"
+                              className="text-sm"
                             />
                           </div>
                         </div>
                         
                         <div>
-                          <Label htmlFor="limit">Limit Records</Label>
+                          <Label htmlFor="limit" className="text-sm">Limit Records</Label>
                           <Input
                             id="limit"
                             type="number"
                             value={widgetConfig.limit || ''}
                             onChange={(e) => updateWidgetConfig('limit', parseInt(e.target.value) || undefined)}
                             placeholder="Maximum records to show"
+                            className="text-sm"
                           />
                         </div>
                       </CardContent>
@@ -600,57 +607,59 @@ export default function WidgetDesignStudio({
                 </ScrollArea>
               </TabsContent>
               
-              <TabsContent value="style" className="flex-1 space-y-4">
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Deployment Targets</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {TARGET_SYSTEMS.map(system => (
-                          <div key={system.value} className="flex items-center space-x-2">
-                            <Switch
-                              id={system.value}
-                              checked={targetSystems.includes(system.value)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setTargetSystems(prev => [...prev, system.value]);
-                                } else {
-                                  setTargetSystems(prev => prev.filter(s => s !== system.value));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={system.value}>{system.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button onClick={handleSaveWidget} className="flex-1">
-                      <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      <span className="text-sm">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
-                    </Button>
-                    <Button variant="outline" onClick={resetForm} className="sm:w-auto">
-                      <span className="text-sm">Reset</span>
-                    </Button>
+              <TabsContent value="style" className="flex-1 space-y-3 sm:space-y-4">
+                <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px]">
+                  <div className="space-y-3 sm:space-y-4 pr-2">
+                    <Card>
+                      <CardHeader className="pb-2 sm:pb-4">
+                        <CardTitle className="text-base sm:text-lg">Deployment Targets</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 sm:space-y-3">
+                          {TARGET_SYSTEMS.map(system => (
+                            <div key={system.value} className="flex items-center space-x-2 sm:space-x-3">
+                              <Switch
+                                id={system.value}
+                                checked={targetSystems.includes(system.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setTargetSystems(prev => [...prev, system.value]);
+                                  } else {
+                                    setTargetSystems(prev => prev.filter(s => s !== system.value));
+                                  }
+                                }}
+                              />
+                              <Label htmlFor={system.value} className="text-sm sm:text-base">{system.label}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                      <Button onClick={handleSaveWidget} className="flex-1">
+                        <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                        <span className="text-sm">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
+                      </Button>
+                      <Button variant="outline" onClick={resetForm} className="sm:w-auto">
+                        <span className="text-sm">Reset</span>
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           </div>
           
           {/* Preview Panel */}
-          <div className="lg:w-80 xl:w-96 lg:border-l lg:pl-4 xl:pl-6 order-first lg:order-last">
+          <div className="w-full lg:w-80 xl:w-96 lg:border-l lg:pl-4 xl:pl-6 order-first lg:order-last">
             <div className="space-y-3 sm:space-y-4 h-full flex flex-col">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm sm:text-base">Live Preview</h3>
                 <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </div>
               
-              <div className="flex-1 border rounded-lg p-2 sm:p-3 lg:p-4 bg-gray-50 min-h-[200px] sm:min-h-[250px] lg:min-h-[300px]">
+              <div className="flex-1 border rounded-lg p-2 sm:p-3 lg:p-4 bg-gray-50 min-h-[150px] sm:min-h-[200px] lg:min-h-[300px]">
                 {previewWidget ? (
                   <div className="h-full">
                     {previewWidget}
@@ -658,7 +667,7 @@ export default function WidgetDesignStudio({
                 ) : (
                   <div className="h-full flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
-                      <Layout className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 mx-auto mb-2 opacity-50" />
+                      <Layout className="h-6 w-6 sm:h-8 sm:w-8 lg:h-12 lg:w-12 mx-auto mb-2 opacity-50" />
                       <p className="text-xs sm:text-sm">Select a template to see preview</p>
                     </div>
                   </div>
@@ -666,11 +675,11 @@ export default function WidgetDesignStudio({
               </div>
               
               {widgetConfig.title && (
-                <div className="text-xs text-muted-foreground space-y-1 hidden lg:block">
-                  <p><strong>Type:</strong> {widgetConfig.type}</p>
-                  <p><strong>Data Source:</strong> {widgetConfig.dataSource}</p>
+                <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0">
+                  <p className="line-clamp-1"><strong>Type:</strong> {widgetConfig.type}</p>
+                  <p className="line-clamp-1"><strong>Data Source:</strong> {widgetConfig.dataSource}</p>
                   {widgetConfig.chartType && (
-                    <p><strong>Chart Type:</strong> {widgetConfig.chartType}</p>
+                    <p className="line-clamp-1"><strong>Chart Type:</strong> {widgetConfig.chartType}</p>
                   )}
                 </div>
               )}
