@@ -55,7 +55,7 @@ export const productionOrders: any = pgTable("production_orders", {
   orderCategory: text("order_category").notNull().default("normal"), // normal, rework, prototype, sample
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled
-  quantity: integer("quantity").notNull().default(1),
+  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull().default("1"),
   dueDate: timestamp("due_date"),
   scheduledStartDate: timestamp("scheduled_start_date"),
   scheduledEndDate: timestamp("scheduled_end_date"),
@@ -134,7 +134,7 @@ export const plannedOrders = pgTable("planned_orders", {
   id: serial("id").primaryKey(),
   plannedOrderNumber: text("planned_order_number").notNull().unique(), // e.g., "PLN-2025-001"
   itemNumber: text("item_number").notNull(), // What to produce
-  quantity: integer("quantity").notNull(),
+  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull(),
   requiredDate: timestamp("required_date").notNull(), // When needed
   plannedStartDate: timestamp("planned_start_date"),
   plannedEndDate: timestamp("planned_end_date"),
@@ -156,8 +156,8 @@ export const plannedOrderProductionOrders = pgTable("planned_order_production_or
   plannedOrderId: integer("planned_order_id").references(() => plannedOrders.id).notNull(),
   productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
   conversionType: text("conversion_type").notNull(), // "consolidation", "split", "one_to_one"
-  plannedQuantity: integer("planned_quantity").notNull(), // Quantity from planned order allocated to this production order
-  convertedQuantity: integer("converted_quantity").notNull(), // Actual quantity converted
+  plannedQuantity: numeric("planned_quantity", { precision: 15, scale: 5 }).notNull(), // Quantity from planned order allocated to this production order
+  convertedQuantity: numeric("converted_quantity", { precision: 15, scale: 5 }).notNull(), // Actual quantity converted
   conversionRatio: numeric("conversion_ratio", { precision: 8, scale: 4 }).notNull().default("1.0000"), // plannedQuantity/totalPlannedQuantity for this production order
   notes: text("notes"), // Reason for consolidation/split
   convertedAt: timestamp("converted_at").defaultNow(),
@@ -177,7 +177,7 @@ export const recipes = pgTable("recipes", {
   recipeVersion: text("recipe_version").notNull().default("1.0"),
   recipeType: text("recipe_type").notNull().default("master"), // master, pilot, trial, development
   status: text("status").notNull().default("created"), // created, released_for_planning, released_for_execution, obsolete
-  batchSize: integer("batch_size"), // Standard batch size the recipe is designed for
+  batchSize: numeric("batch_size", { precision: 15, scale: 5 }), // Standard batch size the recipe is designed for
   batchUnit: text("batch_unit"), // Base unit of measure
   effectiveDate: timestamp("effective_date"), // When recipe becomes valid
   endDate: timestamp("end_date"), // When recipe expires (null = unlimited)
@@ -611,7 +611,7 @@ export const recipeFormulas = pgTable("recipe_formulas", {
   phaseId: integer("phase_id").references(() => recipePhases.id), // which phase uses this ingredient
   itemNumber: text("item_number").notNull(), // what material/ingredient
   itemDescription: text("item_description"),
-  quantity: integer("quantity").notNull(), // quantity needed (stored as integer for precision)
+  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull(), // quantity needed - supports fractional amounts for process manufacturing
   unit: text("unit").notNull(), // kg, lbs, liters, gallons, etc.
   percentageByWeight: integer("percentage_by_weight"), // percentage * 100 (e.g., 2.5% = 250)
   materialType: text("material_type").notNull(), // raw_material, intermediate, catalyst, solvent, etc.
