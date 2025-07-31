@@ -374,7 +374,7 @@ export function EnhancedDashboardManager({
         <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <div>
-              <DialogTitle>Dashboard Manager</DialogTitle>
+              <DialogTitle>Dashboard Manager OLD</DialogTitle>
               <DialogDescription>
                 Manage your dashboards and widgets
               </DialogDescription>
