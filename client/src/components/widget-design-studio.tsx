@@ -352,12 +352,12 @@ export default function WidgetDesignStudio({
   ) : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 min-h-0">
+    <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
         {/* Configuration Panel */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 h-full">
-            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm flex-shrink-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm flex-shrink-0 mb-3">
               <TabsTrigger value="template" className="px-2 py-1 sm:px-3 sm:py-2">
                 <span className="hidden sm:inline">1. Template</span>
                 <span className="sm:hidden">Template</span>
@@ -372,7 +372,7 @@ export default function WidgetDesignStudio({
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 min-h-0 h-full mt-2">
+            <TabsContent value="template" className="flex-1 flex flex-col space-y-3 min-h-0 overflow-hidden mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-shrink-0">
                 <Label className="text-sm font-medium">Category:</Label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -389,8 +389,8 @@ export default function WidgetDesignStudio({
                 </Select>
               </div>
               
-              <div className="flex-1 overflow-y-auto overscroll-contain h-full">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 pb-4 min-h-full">
+              <div className="flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 pb-2">
                   {filteredTemplates.map(template => (
                     <Card 
                       key={template.id}
@@ -433,15 +433,15 @@ export default function WidgetDesignStudio({
               </div>
             </TabsContent>
             
-            <TabsContent value="configure" className="flex-1 flex flex-col min-h-0 h-full mt-2">
-              <div className="flex-1 overflow-y-auto overscroll-contain pr-2">
-                <div className="space-y-3 pb-4">
+            <TabsContent value="configure" className="flex-1 flex flex-col min-h-0 overflow-hidden mt-0">
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="space-y-2 pb-2">
                   {/* Basic Configuration */}
                   <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-1">
                       <CardTitle className="text-base">Basic Configuration</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2 pb-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label htmlFor="title" className="text-sm">Widget Title</Label>
@@ -583,10 +583,10 @@ export default function WidgetDesignStudio({
                     </Card>
                   ) : (
                     <Card>
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-1">
                         <CardTitle className="text-base">Data Processing</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
+                      <CardContent className="space-y-2 pb-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div>
                             <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
@@ -637,42 +637,44 @@ export default function WidgetDesignStudio({
               </div>
             </TabsContent>
             
-            <TabsContent value="style" className="flex-1 flex flex-col min-h-0 h-full overflow-y-auto mt-2">
-              <div className="space-y-3 pb-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Deploy to Systems</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {TARGET_SYSTEMS.map(system => (
-                        <div key={system.value} className="flex items-center space-x-2">
-                          <Switch
-                            id={system.value}
-                            checked={targetSystems.includes(system.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setTargetSystems(prev => [...prev, system.value]);
-                              } else {
-                                setTargetSystems(prev => prev.filter(s => s !== system.value));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={system.value} className="text-sm sm:text-base">{system.label}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button onClick={handleSaveWidget} className="flex-1">
-                    <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                    <span className="text-sm">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
-                  </Button>
-                  <Button variant="outline" onClick={resetForm} className="sm:w-auto">
-                    <span className="text-sm">Reset</span>
-                  </Button>
+            <TabsContent value="style" className="flex-1 flex flex-col min-h-0 overflow-hidden mt-0">
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="space-y-2 pb-2">
+                  <Card>
+                    <CardHeader className="pb-1">
+                      <CardTitle className="text-base">Deploy to Systems</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {TARGET_SYSTEMS.map(system => (
+                          <div key={system.value} className="flex items-center space-x-2">
+                            <Switch
+                              id={system.value}
+                              checked={targetSystems.includes(system.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setTargetSystems(prev => [...prev, system.value]);
+                                } else {
+                                  setTargetSystems(prev => prev.filter(s => s !== system.value));
+                                }
+                              }}
+                            />
+                            <Label htmlFor={system.value} className="text-sm sm:text-base">{system.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <Button onClick={handleSaveWidget} className="flex-1">
+                      <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                      <span className="text-sm">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
+                    </Button>
+                    <Button variant="outline" onClick={resetForm} className="sm:w-auto">
+                      <span className="text-sm">Reset</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -681,13 +683,13 @@ export default function WidgetDesignStudio({
         
         {/* Preview Panel */}
         <div className="w-full lg:w-80 xl:w-96 lg:border-l lg:pl-4 xl:pl-6 order-first lg:order-last">
-          <div className="space-y-3 sm:space-y-4 h-full flex flex-col">
-            <div className="flex items-center justify-between">
+          <div className="space-y-3 h-full flex flex-col">
+            <div className="flex items-center justify-between flex-shrink-0">
               <h3 className="font-semibold text-sm sm:text-base">Live Preview</h3>
               <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </div>
             
-            <div className="flex-1 border rounded-lg p-2 sm:p-3 lg:p-4 bg-gray-50 min-h-[150px] sm:min-h-[200px] lg:min-h-[300px]">
+            <div className="flex-1 border rounded-lg p-3 bg-gray-50 min-h-[200px] max-h-[300px] overflow-hidden">
               {previewWidget ? (
                 <div className="h-full">
                   {previewWidget}
@@ -695,7 +697,7 @@ export default function WidgetDesignStudio({
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
-                    <Layout className="h-6 w-6 sm:h-8 sm:w-8 lg:h-12 lg:w-12 mx-auto mb-2 opacity-50" />
+                    <Layout className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-xs sm:text-sm">Select a template to see preview</p>
                   </div>
                 </div>
@@ -703,7 +705,7 @@ export default function WidgetDesignStudio({
             </div>
             
             {widgetConfig.title && (
-              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0">
+              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0 flex-shrink-0">
                 <p className="line-clamp-1"><strong>Type:</strong> {widgetConfig.type}</p>
                 <p className="line-clamp-1"><strong>Data Source:</strong> {widgetConfig.dataSource}</p>
                 {widgetConfig.chartType && (
