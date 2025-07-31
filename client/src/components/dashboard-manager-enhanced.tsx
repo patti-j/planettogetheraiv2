@@ -79,6 +79,7 @@ export function EnhancedDashboardManager({
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [aiWidgetPrompt, setAiWidgetPrompt] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAiDashboardDialogOpen, setIsAiDashboardDialogOpen] = useState(false);
   const [isEditDialogMaximized, setIsEditDialogMaximized] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dashboardToDelete, setDashboardToDelete] = useState<DashboardConfig | null>(null);
@@ -118,11 +119,40 @@ export function EnhancedDashboardManager({
       setNewDashboardDescription("");
       setAiDashboardPrompt("");
       setIsEditDialogOpen(false);
+      setIsAiDashboardDialogOpen(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: "Failed to create dashboard",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // AI Dashboard Generation Mutation
+  const generateAiDashboardMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await apiRequest("POST", "/api/ai/generate-dashboard", { prompt });
+      return await response.json();
+    },
+    onSuccess: (aiGeneratedConfig) => {
+      // Create dashboard with AI-generated configuration
+      const dashboardData = {
+        name: aiGeneratedConfig.name || "AI Generated Dashboard",
+        description: aiGeneratedConfig.description || "Dashboard created by AI",
+        isDefault: false,
+        configuration: {
+          standardWidgets: [],
+          customWidgets: aiGeneratedConfig.widgets || []
+        }
+      };
+      createDashboardMutation.mutate(dashboardData);
+    },
+    onError: (error) => {
+      toast({
+        title: "AI Generation Failed",
+        description: "Failed to generate dashboard with AI. Please try again.",
         variant: "destructive",
       });
     },
@@ -382,21 +412,34 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Dashboards</h3>
-                    <Button
-                      onClick={() => {
-                        setEditingDashboard(null);
-                        setEditingWidget(null);
-                        setNewDashboardName("");
-                        setNewDashboardDescription("");
-                        setAiDashboardPrompt("");
-                        setEditMode("manual");
-                        setIsEditDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Dashboard
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          setEditingDashboard(null);
+                          setEditingWidget(null);
+                          setNewDashboardName("");
+                          setNewDashboardDescription("");
+                          setAiDashboardPrompt("");
+                          setEditMode("manual");
+                          setIsEditDialogOpen(true);
+                        }}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New Dashboard
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setAiDashboardPrompt("");
+                          setIsAiDashboardDialogOpen(true);
+                        }}
+                        className={`flex items-center gap-2 ${aiTheme.button}`}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        AI Generate
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1276,6 +1319,70 @@ export function EnhancedDashboardManager({
                 </Button>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Dashboard Generation Dialog */}
+      <Dialog open={isAiDashboardDialogOpen} onOpenChange={setIsAiDashboardDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              Generate Dashboard with AI
+            </DialogTitle>
+            <DialogDescription>
+              Describe the type of dashboard you want to create, and AI will generate it for you with appropriate widgets and layout.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-dashboard-prompt" className="text-sm font-medium">
+                Dashboard Description
+              </Label>
+              <Textarea
+                id="ai-dashboard-prompt"
+                placeholder="Example: Create a production monitoring dashboard with KPI metrics for efficiency, quality, and throughput. Include charts showing production trends and alerts for any issues."
+                value={aiDashboardPrompt}
+                onChange={(e) => setAiDashboardPrompt(e.target.value)}
+                className="mt-1 min-h-[120px] resize-none"
+                rows={5}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Be specific about the metrics, charts, and widgets you want to include.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAiDashboardDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (aiDashboardPrompt.trim()) {
+                  generateAiDashboardMutation.mutate(aiDashboardPrompt.trim());
+                }
+              }}
+              disabled={!aiDashboardPrompt.trim() || generateAiDashboardMutation.isPending}
+              className={`flex items-center gap-2 ${aiTheme.button}`}
+            >
+              {generateAiDashboardMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Generate Dashboard
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

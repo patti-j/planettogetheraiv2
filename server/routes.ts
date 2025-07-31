@@ -2643,6 +2643,113 @@ Provide the response as a JSON object with the following structure:
     }
   });
 
+  // AI Dashboard Generation endpoint
+  app.post("/api/ai/generate-dashboard", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt || typeof prompt !== "string") {
+        return res.status(400).json({ message: "Prompt is required" });
+      }
+      
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const systemPrompt = `You are an expert in manufacturing dashboard design. Generate a comprehensive dashboard configuration based on the user's requirements.
+
+Create a realistic manufacturing dashboard with appropriate widgets, layouts, and data visualizations. Include different widget types such as:
+- KPI metrics (production efficiency, quality rates, throughput)
+- Charts (bar, line, pie, gauge)
+- Tables (production orders, resource status)
+- Progress bars (completion status)
+- Alerts (quality issues, maintenance needs)
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "name": "Dashboard Name",
+  "description": "Dashboard description",
+  "widgets": [
+    {
+      "id": "widget-1",
+      "title": "Widget Title",
+      "type": "metric|chart|table|progress",
+      "data": {"value": 85, "label": "Efficiency %"},
+      "visible": true,
+      "position": {"x": 0, "y": 0},
+      "size": {"width": 200, "height": 120},
+      "config": {"color": "blue", "showTrend": true}
+    }
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Create a manufacturing dashboard: ${prompt}` }
+        ],
+        max_tokens: 2000,
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      });
+
+      let generatedContent = response.choices[0].message.content || '';
+      
+      let dashboardConfig;
+      try {
+        dashboardConfig = JSON.parse(generatedContent);
+        
+        // Ensure the response has the required structure
+        if (!dashboardConfig.name || !dashboardConfig.widgets || !Array.isArray(dashboardConfig.widgets)) {
+          throw new Error("Invalid dashboard configuration structure");
+        }
+        
+        // Add position and size defaults for widgets if missing
+        dashboardConfig.widgets = dashboardConfig.widgets.map((widget, index) => ({
+          ...widget,
+          id: widget.id || `widget-${index + 1}`,
+          position: widget.position || { x: (index % 3) * 220, y: Math.floor(index / 3) * 140 },
+          size: widget.size || { width: 200, height: 120 },
+          visible: widget.visible !== false
+        }));
+        
+        console.log("AI generated dashboard config:", JSON.stringify(dashboardConfig, null, 2));
+        res.json(dashboardConfig);
+        
+      } catch (parseError) {
+        console.error("Failed to parse AI dashboard response:", parseError);
+        return res.status(500).json({ 
+          message: "Failed to generate valid dashboard configuration",
+          error: parseError.message
+        });
+      }
+      
+    } catch (error) {
+      console.error("AI Dashboard generation error:", error);
+      
+      const errorMessage = error.message || "Unknown error";
+      const isQuotaError = errorMessage.includes('quota') || 
+                          errorMessage.includes('limit') || 
+                          errorMessage.includes('exceeded') ||
+                          errorMessage.includes('insufficient_quota') ||
+                          errorMessage.includes('rate_limit');
+      
+      if (isQuotaError) {
+        res.status(429).json({ 
+          message: "OpenAI quota exceeded",
+          error: errorMessage,
+          quotaExceeded: true
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to generate dashboard with AI",
+          error: errorMessage
+        });
+      }
+    }
+  });
+
   // AI Agent routes
   const upload = multer();
 
