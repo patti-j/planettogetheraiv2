@@ -401,10 +401,11 @@ Canvas Guidelines:
 - For resources: LIST_RESOURCES with parameters.displayInCanvas=true
 - For operations: LIST_OPERATIONS with parameters.displayInCanvas=true
 - For plants: LIST_PLANTS with parameters.displayInCanvas=true
+- For optimization widget: ADD_CANVAS_CONTENT action with parameters: {title: "Schedule Optimization", type: "widget", data: {widgetType: "optimization", config: {showQuickActions: true, showHistory: true, showMetrics: true}}}
 - For other data: ADD_CANVAS_CONTENT action with parameters: {title: "descriptive title", type: "table", data: structured_data}
 - Canvas displays in the main content area and auto-opens when content is added
-- Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations
-- Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true
+- Perfect for: job lists, resource lists, operation tables, performance metrics, data visualizations, optimization widgets
+- Examples: "show jobs" = LIST_JOBS with displayInCanvas=true, "list resources" = LIST_RESOURCES with displayInCanvas=true, "show optimization widget" = ADD_CANVAS_CONTENT with type: "widget" and widgetType: "optimization"
 - For clearing canvas: Use CLEAR_CANVAS when user asks to "clear canvas", "clear the canvas", "remove canvas content", "empty canvas", or similar requests
 - Canvas clearing removes all content and widgets from the canvas display area
 
