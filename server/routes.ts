@@ -6304,13 +6304,39 @@ Manufacturing Context Available:
 
   app.post("/api/users", async (req, res) => {
     try {
-      const validation = insertUserSchema.safeParse(req.body);
+      // Extract password and other data separately
+      const { password, roleIds, ...userData } = req.body;
+      
+      // Validate user data (excluding password for now)
+      const validation = insertUserSchema.omit({ passwordHash: true }).safeParse(userData);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid user data", details: validation.error.errors });
       }
 
-      const user = await storage.createUser(validation.data);
-      res.status(201).json(user);
+      // Check if password is provided
+      if (!password || password.trim().length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+
+      // Hash the password
+      const passwordHash = await bcrypt.hash(password, 12);
+      
+      // Create user with hashed password
+      const user = await storage.createUser({
+        ...validation.data,
+        passwordHash
+      });
+
+      // Assign roles if provided
+      if (roleIds && roleIds.length > 0) {
+        for (const roleId of roleIds) {
+          await storage.assignUserRole({ userId: user.id, roleId });
+        }
+      }
+
+      // Return user with roles
+      const userWithRoles = await storage.getUserWithRoles(user.id);
+      res.status(201).json(userWithRoles);
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({ error: "Failed to create user" });
