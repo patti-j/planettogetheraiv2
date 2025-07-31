@@ -334,7 +334,7 @@ export default function DashboardsPage() {
           <Button
             onClick={() => {
               setSelectedDashboard(null);
-              setShowDashboardManager(true);
+              setShowEnhancedDashboardManager(true);
             }}
             variant="outline"
             className="flex items-center gap-2"
