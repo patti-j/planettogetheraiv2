@@ -5,6 +5,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix tooltip z-index issues in data schema */
+.react-flow__node {
+  z-index: 10 !important;
+}
+
+/* Ensure tooltips appear above everything */
+[role="tooltip"] {
+  z-index: 9999 !important;
+}
+
+/* Fix ReactFlow tooltips */
+.react-flow__attribution {
+  display: none;
+}
+
 /* Mobile-friendly line clamping utilities */
 @layer utilities {
   .line-clamp-1 {

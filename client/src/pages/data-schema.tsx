@@ -2233,9 +2233,9 @@ function DataSchemaViewContent() {
     <div className="h-screen flex flex-col">
       {/* Header - Mobile Optimized with proper hamburger menu spacing */}
       {!isFullScreen && (
-        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-10">
-        {/* Title Row - Compact on Mobile with hamburger menu clearance */}
-        <div className="flex items-center justify-between mb-2 sm:mb-4 ml-12">
+        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-20">
+        {/* Title Row - Compact on Mobile with proper spacing */}
+        <div className="flex items-center justify-between mb-2 sm:mb-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
@@ -2245,18 +2245,18 @@ function DataSchemaViewContent() {
           </div>
           
           {/* Top Right Controls */}
-          <div className="flex items-center gap-2">
-            {/* Homepage Navigation Button */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Homepage Navigation Button - More prominent */}
             <Button 
               onClick={() => {
                 console.log('🏠 Navigating to homepage...');
                 setLocation('/');
               }}
-              variant="outline"
+              variant="default"
               size="sm"
-              className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <span>Go to Homepage</span>
+              <span>← Homepage</span>
             </Button>
             
             {/* Manual Refresh Button */}
@@ -2727,6 +2727,22 @@ function DataSchemaViewContent() {
         </div>
       )}
 
+      {/* Floating Homepage Button - Always Visible */}
+      {!isFullScreen && (
+        <div className="fixed top-4 right-4 z-[100]">
+          <Button 
+            onClick={() => {
+              console.log('🏠 Navigating to homepage...');
+              setLocation('/');
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl border-2 border-blue-700"
+            size="lg"
+          >
+            <span className="font-semibold">← Go to Homepage</span>
+          </Button>
+        </div>
+      )}
+      
       {/* Schema Diagram */}
       <div className={`${isFullScreen ? 'h-screen' : 'flex-1'} relative`}>
         <ReactFlow
@@ -2911,8 +2927,8 @@ function DataSchemaViewContent() {
           )}
           
           {showLegend && (
-            <Panel position="bottom-right">
-              <Card className="bg-white/90 backdrop-blur-sm">
+            <Panel position="bottom-right" className="z-50">
+              <Card className="bg-white/95 backdrop-blur-sm shadow-lg border-gray-200">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold flex items-center gap-2">
