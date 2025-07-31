@@ -197,11 +197,11 @@ export default function DashboardsPage() {
 
   // Prepare system data for universal widgets
   const systemData: SystemData = {
-    jobs: productionOrders,
-    operations,
-    resources,
-    metrics,
-    alerts
+    jobs: Array.isArray(productionOrders) ? productionOrders : [],
+    operations: Array.isArray(operations) ? operations : [],
+    resources: Array.isArray(resources) ? resources : [],
+    metrics: metrics && typeof metrics === 'object' ? metrics : {},
+    alerts: Array.isArray(alerts) ? alerts : []
   };
 
   // Fetch existing widgets from all systems for the widget library
@@ -1113,20 +1113,21 @@ export default function DashboardsPage() {
                     >
                       {viewDashboard.configuration.customWidgets.map((widget: any) => {
                         // Convert dashboard widget to UniversalWidget config
+                        // Ensure we have valid configuration from the widget
                         const widgetConfig: WidgetConfig = {
-                          id: widget.id,
+                          id: widget.id || `widget-${Math.random()}`,
                           type: widget.type || 'kpi',
                           title: widget.title || 'Widget',
                           subtitle: widget.description,
-                          dataSource: widget.dataSource || 'productionOrders',
-                          chartType: widget.chartType || 'bar',
-                          aggregation: widget.aggregation || 'count',
-                          groupBy: widget.groupBy,
-                          sortBy: widget.sortBy,
-                          filters: widget.filters,
-                          colors: widget.colors,
-                          thresholds: widget.thresholds,
-                          limit: widget.limit || 10,
+                          dataSource: widget.dataSource || widget.config?.dataSource || 'productionOrders',
+                          chartType: widget.chartType || widget.config?.chartType || 'bar',
+                          aggregation: widget.aggregation || widget.config?.aggregation || 'count',
+                          groupBy: widget.groupBy || widget.config?.groupBy,
+                          sortBy: widget.sortBy || widget.config?.sortBy,
+                          filters: widget.filters || widget.config?.filters,
+                          colors: widget.colors || widget.config?.colors,
+                          thresholds: widget.thresholds || widget.config?.thresholds,
+                          limit: widget.limit || widget.config?.limit || 10,
                           size: { 
                             width: widget.size?.width || 300, 
                             height: widget.size?.height || 200 
@@ -1135,9 +1136,9 @@ export default function DashboardsPage() {
                             x: widget.position?.x || 0, 
                             y: widget.position?.y || 0 
                           },
-                          refreshInterval: widget.refreshInterval,
-                          drillDownTarget: widget.drillDownTarget,
-                          drillDownParams: widget.drillDownParams
+                          refreshInterval: widget.refreshInterval || widget.config?.refreshInterval,
+                          drillDownTarget: widget.drillDownTarget || widget.config?.drillDownTarget,
+                          drillDownParams: widget.drillDownParams || widget.config?.drillDownParams
                         };
 
                         return (
@@ -1168,13 +1169,30 @@ export default function DashboardsPage() {
                               )}
                             </div>
                             <div className="p-2 h-full">
-                              <UniversalWidget
-                                config={widgetConfig}
-                                data={systemData}
-                                readOnly={true}
-                                showControls={false}
-                                className="h-full"
-                              />
+                              {(() => {
+                                try {
+                                  return (
+                                    <UniversalWidget
+                                      config={widgetConfig}
+                                      data={systemData}
+                                      readOnly={true}
+                                      showControls={false}
+                                      className="h-full"
+                                    />
+                                  );
+                                } catch (error) {
+                                  console.error('Widget rendering error:', error);
+                                  return (
+                                    <div className="flex items-center justify-center h-full text-gray-400">
+                                      <div className="text-center">
+                                        <Layout className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-xs">Widget unavailable</p>
+                                        <p className="text-xs opacity-75">Data loading or configuration error</p>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                              })()}
                             </div>
                           </div>
                         );

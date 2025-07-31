@@ -200,30 +200,40 @@ export class WidgetDataProcessor {
       return this.getEmptyStateData(config);
     }
 
-    const filteredData = this.applyFilters(data, config.filters);
-    const groupedData = this.groupData(filteredData, config.groupBy);
-    
-    const labels = Object.keys(groupedData);
-    const values = labels.map(label => 
-      this.calculateAggregation(groupedData[label], config.aggregation)
-    );
+    try {
+      const filteredData = this.applyFilters(data, config.filters);
+      const groupedData = this.groupData(filteredData, config.groupBy);
+      
+      const labels = Object.keys(groupedData);
+      const values = labels.map(label => 
+        this.calculateAggregation(groupedData[label], config.aggregation)
+      );
 
-    const chartData = {
-      labels,
-      datasets: [{
-        label: config.title,
-        data: values,
-        backgroundColor: config.colors || [
-          '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
-        ],
-        borderColor: config.colors || [
-          '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'
-        ],
-        borderWidth: 1
-      }]
-    };
+      // Ensure we have valid data for the chart
+      if (labels.length === 0 || values.length === 0) {
+        return this.getEmptyStateData(config);
+      }
 
-    return { chartData };
+      const chartData = {
+        labels,
+        datasets: [{
+          label: config.title || 'Data',
+          data: values,
+          backgroundColor: config.colors || [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+          ],
+          borderColor: config.colors || [
+            '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'
+          ],
+          borderWidth: 1
+        }]
+      };
+
+      return { chartData };
+    } catch (error) {
+      console.error('Error processing chart data:', error);
+      return this.getEmptyStateData(config);
+    }
   }
 
   private processTableData(config: WidgetConfig, data: any[]): ProcessedWidgetData {
