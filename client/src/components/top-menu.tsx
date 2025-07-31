@@ -414,7 +414,7 @@ export default function TopMenu() {
                           if (feature) return { 
                             icon: feature.icon, 
                             color: feature.color, 
-                            isAI: feature.isAI || false 
+                            isAI: (feature as any).isAI || false 
                           };
                         }
                         // Default fallback
@@ -443,7 +443,7 @@ export default function TopMenu() {
                               ${isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
                             `}>
                               <div className={`
-                                ${isAI ? getThemeClasses().primary : 'bg-gray-100'} 
+                                ${isAI ? getThemeClasses(false) : 'bg-gray-100'} 
                                 p-1.5 rounded-full flex items-center justify-center flex-shrink-0
                               `}>
                                 <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
