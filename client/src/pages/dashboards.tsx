@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
+import UniversalWidget from "@/components/universal-widget";
 
 
 interface DashboardItem {
@@ -139,6 +140,8 @@ export default function DashboardsPage() {
   const [showAiDashboardDialog, setShowAiDashboardDialog] = useState(false);
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
   const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [viewDashboard, setViewDashboard] = useState<DashboardItem | null>(null);
 
   // Dashboard creation state
   const [newDashboard, setNewDashboard] = useState({
@@ -358,7 +361,10 @@ export default function DashboardsPage() {
     setShowEnhancedDashboardManager(true);
   };
 
-
+  const handleView = (dashboard: DashboardItem) => {
+    setViewDashboard(dashboard);
+    setShowViewDialog(true);
+  };
 
   const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this dashboard?")) {
@@ -513,7 +519,7 @@ export default function DashboardsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(`/analytics?dashboard=${dashboard.id}`, '_blank')}
+                        onClick={() => handleView(dashboard)}
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />
@@ -999,7 +1005,7 @@ export default function DashboardsPage() {
                 }
               }}
               disabled={!aiDashboardPrompt.trim() || generateAiDashboardMutation.isPending}
-              className={`flex items-center gap-2 ${getThemeClasses()} border-0`}
+              className={`flex items-center gap-2 ${getThemeClasses().gradient} text-white border-0`}
             >
               {generateAiDashboardMutation.isPending ? (
                 <>
@@ -1013,6 +1019,131 @@ export default function DashboardsPage() {
                 </>
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dashboard View Modal */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layout className="w-5 h-5" />
+              {viewDashboard?.name || "Dashboard View"}
+            </DialogTitle>
+            <div className="text-sm text-gray-600">
+              {viewDashboard?.description || "Dashboard preview"}
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {viewDashboard && (
+              <>
+                {/* Dashboard Stats */}
+                <div className="flex items-center gap-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-1">
+                    <Grid className="w-4 h-4" />
+                    {(viewDashboard.configuration.standardWidgets.length + viewDashboard.configuration.customWidgets.length)} widgets
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Last updated: {new Date(viewDashboard.updatedAt).toLocaleDateString()}
+                  </div>
+                  {viewDashboard.isDefault && (
+                    <Badge variant="secondary" className="ml-auto">
+                      <Layout className="w-3 h-3 mr-1" />
+                      Default Dashboard
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Dashboard Content */}
+                <div className="border rounded-lg bg-gray-50 p-4">
+                  {viewDashboard.configuration.customWidgets.length > 0 ? (
+                    <div 
+                      className="relative bg-white rounded border min-h-[400px]"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(to right, #f3f4f6 1px, transparent 1px),
+                          linear-gradient(to bottom, #f3f4f6 1px, transparent 1px)
+                        `,
+                        backgroundSize: '20px 20px'
+                      }}
+                    >
+                      {viewDashboard.configuration.customWidgets.map((widget: any) => (
+                        <div
+                          key={widget.id}
+                          className="absolute bg-white border rounded-lg shadow-sm"
+                          style={{
+                            left: widget.position?.x || 0,
+                            top: widget.position?.y || 0,
+                            width: widget.size?.width || 200,
+                            height: widget.size?.height || 120
+                          }}
+                        >
+                          <div className="p-2 border-b bg-gray-50 rounded-t-lg">
+                            <div className="text-sm font-medium truncate">{widget.title}</div>
+                            {widget.sourceSystem && (
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs mt-1 ${
+                                  widget.sourceSystem === 'cockpit' ? 'bg-blue-50 text-blue-600' :
+                                  widget.sourceSystem === 'canvas' ? 'bg-green-50 text-green-600' :
+                                  'bg-purple-50 text-purple-600'
+                                }`}
+                              >
+                                {widget.sourceSystem === 'cockpit' ? 'Cockpit' : 
+                                 widget.sourceSystem === 'canvas' ? 'Canvas' : 'Dashboard'}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="p-2">
+                            <div className="text-xs text-gray-500 capitalize mb-1">{widget.type}</div>
+                            {widget.description && (
+                              <div className="text-xs text-gray-400 truncate">{widget.description}</div>
+                            )}
+                            {/* Try to render actual widget if possible */}
+                            <div className="mt-2 text-xs text-gray-300 text-center">
+                              Preview available in edit mode
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-40 text-gray-400">
+                      <div className="text-center">
+                        <Layout className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm">This dashboard has no widgets yet</p>
+                        <p className="text-xs mt-1">Use the Edit button to add widgets</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewDialog(false);
+                      setTimeout(() => handleEdit(viewDashboard), 100);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Dashboard
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowViewDialog(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

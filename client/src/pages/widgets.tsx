@@ -41,6 +41,7 @@ import WidgetDesignStudio from "@/components/widget-design-studio";
 import UniversalWidget from "@/components/universal-widget";
 import { WidgetConfig, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
+import { useAITheme } from "@/hooks/use-ai-theme";
 
 interface WidgetItem {
   id: string;
@@ -58,6 +59,7 @@ export default function WidgetsPage() {
   const { toast } = useToast();
   const isMobile = useMobile();
   const queryClient = useQueryClient();
+  const { getThemeClasses } = useAITheme();
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
