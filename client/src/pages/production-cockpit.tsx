@@ -48,7 +48,7 @@ import { useMobile } from "@/hooks/use-mobile";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import UniversalWidget from "@/components/universal-widget";
-import WidgetDesignStudio from "@/components/widget-design-studio";
+
 
 import { WidgetConfig, WidgetDataProcessor, SystemData, convertUniversalToCockpitWidget, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { apiRequest } from "@/lib/queryClient";
@@ -311,7 +311,7 @@ export default function ProductionCockpit() {
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [algorithmParameters, setAlgorithmParameters] = useState<any>({});
-  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
+
   const [widgetLibraryDialog, setWidgetLibraryDialog] = useState(false);
   const [dashboardLibraryDialog, setDashboardLibraryDialog] = useState(false);
 
@@ -1291,17 +1291,7 @@ export default function ProductionCockpit() {
 
 
 
-            {/* Widget Design Studio */}
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setWidgetStudioOpen(true)}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50 text-xs sm:text-sm"
-            >
-              <Wand2 className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Widget Studio</span>
-              <span className="sm:hidden">Studio</span>
-            </Button>
+
           </div>
 
           {/* Quick Status */}
@@ -1556,12 +1546,7 @@ export default function ProductionCockpit() {
         )}
       </div>
 
-      {/* Widget Design Studio */}
-      <WidgetDesignStudio
-        open={widgetStudioOpen}
-        onOpenChange={setWidgetStudioOpen}
-        onWidgetCreate={handleWidgetCreate}
-      />
+
     </div>
   );
 }
