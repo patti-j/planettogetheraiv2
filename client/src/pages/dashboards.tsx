@@ -34,7 +34,9 @@ import {
   Zap,
   Layout,
   Settings,
-  Save
+  Save,
+  RotateCcw,
+  Grid3x3
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
@@ -742,7 +744,7 @@ export default function DashboardsPage() {
                       {tempDashboardWidgets.map((widget: any) => (
                         <div
                           key={widget.id}
-                          className="absolute border border-gray-300 rounded-lg bg-white shadow cursor-move group hover:border-blue-500"
+                          className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                           style={{
                             left: widget.position.x,
                             top: widget.position.y,
@@ -750,27 +752,33 @@ export default function DashboardsPage() {
                             height: widget.size.height
                           }}
                           onMouseDown={(e) => {
-                            const startX = e.clientX;
-                            const startY = e.clientY;
-                            const startPosX = widget.position.x;
-                            const startPosY = widget.position.y;
-                            
-                            const handleMouseMove = (e: MouseEvent) => {
-                              const newX = Math.max(0, startPosX + (e.clientX - startX));
-                              const newY = Math.max(0, startPosY + (e.clientY - startY));
+                            if (e.target === e.currentTarget || e.target.closest('.widget-header') || e.target.closest('.widget-content')) {
+                              // Handle widget dragging
+                              const startX = e.clientX - widget.position.x;
+                              const startY = e.clientY - widget.position.y;
                               
-                              setTempDashboardWidgets(widgets => 
-                                widgets.map(w => w.id === widget.id ? { ...w, position: { x: newX, y: newY } } : w)
-                              );
-                            };
-                            
-                            const handleMouseUp = () => {
-                              document.removeEventListener('mousemove', handleMouseMove);
-                              document.removeEventListener('mouseup', handleMouseUp);
-                            };
-                            
-                            document.addEventListener('mousemove', handleMouseMove);
-                            document.addEventListener('mouseup', handleMouseUp);
+                              const handleMouseMove = (e: MouseEvent) => {
+                                const snapSize = 20; // Grid size for snapping
+                                const rawX = Math.max(0, Math.min(760, e.clientX - startX)); // Canvas boundaries
+                                const rawY = Math.max(0, Math.min(360, e.clientY - startY)); // Canvas boundaries
+                                
+                                // Snap to grid
+                                const newX = Math.round(rawX / snapSize) * snapSize;
+                                const newY = Math.round(rawY / snapSize) * snapSize;
+                                
+                                setTempDashboardWidgets(prev => prev.map((w: any) => 
+                                  w.id === widget.id ? { ...w, position: { x: newX, y: newY } } : w
+                                ));
+                              };
+                              
+                              const handleMouseUp = () => {
+                                document.removeEventListener('mousemove', handleMouseMove);
+                                document.removeEventListener('mouseup', handleMouseUp);
+                              };
+                              
+                              document.addEventListener('mousemove', handleMouseMove);
+                              document.addEventListener('mouseup', handleMouseUp);
+                            }
                           }}
                         >
                           <div className="widget-header flex items-center justify-between mb-1 p-2 cursor-move">
@@ -781,7 +789,7 @@ export default function DashboardsPage() {
                               className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setTempDashboardWidgets(widgets => widgets.filter(w => w.id !== widget.id));
+                                setTempDashboardWidgets(prev => prev.filter((w: any) => w.id !== widget.id));
                               }}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -789,6 +797,43 @@ export default function DashboardsPage() {
                           </div>
                           <div className="widget-content px-2 pb-2 cursor-move">
                             <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                          </div>
+                          
+                          {/* Resize Handles */}
+                          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            {/* Corner resize handle */}
+                            <div 
+                              className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 rounded-full cursor-nw-resize pointer-events-auto"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                const startX = e.clientX;
+                                const startY = e.clientY;
+                                const startWidth = widget.size.width;
+                                const startHeight = widget.size.height;
+                                
+                                const handleMouseMove = (e: MouseEvent) => {
+                                  const snapSize = 20; // Grid size for snapping
+                                  const rawWidth = Math.max(100, Math.min(800 - widget.position.x, startWidth + (e.clientX - startX)));
+                                  const rawHeight = Math.max(80, Math.min(600 - widget.position.y, startHeight + (e.clientY - startY)));
+                                  
+                                  // Snap to grid
+                                  const newWidth = Math.round(rawWidth / snapSize) * snapSize;
+                                  const newHeight = Math.round(rawHeight / snapSize) * snapSize;
+                                  
+                                  setTempDashboardWidgets(prev => prev.map((w: any) => 
+                                    w.id === widget.id ? { ...w, size: { width: newWidth, height: newHeight } } : w
+                                  ));
+                                };
+                                
+                                const handleMouseUp = () => {
+                                  document.removeEventListener('mousemove', handleMouseMove);
+                                  document.removeEventListener('mouseup', handleMouseUp);
+                                };
+                                
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
+                              }}
+                            />
                           </div>
                         </div>
                       ))}
