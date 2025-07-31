@@ -215,11 +215,16 @@ export default function WidgetDesignStudio({
           case 'cockpit':
             deploymentPromises.push(
               apiRequest('POST', '/api/cockpit/widgets', {
-                title: finalWidget.title,
-                sub_title: finalWidget.subtitle,
+                layoutId: 1, // Use camelCase to match Drizzle schema
                 type: finalWidget.type,
-                layout_id: 1,
-                position: finalWidget.position,
+                title: finalWidget.title,
+                subTitle: finalWidget.subtitle, // Use camelCase to match Drizzle schema
+                position: {
+                  x: finalWidget.position.x,
+                  y: finalWidget.position.y,
+                  w: Math.floor(finalWidget.size.width / 100), // Convert to grid units
+                  h: Math.floor(finalWidget.size.height / 100)  // Convert to grid units
+                },
                 configuration: {
                   dataSource: finalWidget.dataSource,
                   chartType: finalWidget.chartType,
@@ -228,8 +233,15 @@ export default function WidgetDesignStudio({
                   filters: finalWidget.filters,
                   colors: finalWidget.colors,
                   thresholds: finalWidget.thresholds,
-                  limit: finalWidget.limit
-                }
+                  limit: finalWidget.limit,
+                  algorithm: finalWidget.algorithm,
+                  objective: finalWidget.objective,
+                  timeHorizon: finalWidget.timeHorizon,
+                  maxIterations: finalWidget.maxIterations,
+                  action: finalWidget.action,
+                  content: finalWidget.content
+                },
+                isVisible: true
               })
             );
             break;
