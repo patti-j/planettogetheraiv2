@@ -33,6 +33,9 @@ interface FeatureCard {
 }
 
 export default function Homepage() {
+  // Log when homepage renders
+  console.log('🏠 Homepage component is rendering!');
+  
   // Convert feature cards to dashboard cards
   const createDashboardCards = (items: FeatureCard[], colorClass: string) => {
     return items.map((item, index) => ({

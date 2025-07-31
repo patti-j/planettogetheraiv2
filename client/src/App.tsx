@@ -93,6 +93,8 @@ function DashboardWithAutoTour() {
   const { startTour } = useTour();
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
+  
+  console.log('🎯 DashboardWithAutoTour rendering, current location:', location);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);

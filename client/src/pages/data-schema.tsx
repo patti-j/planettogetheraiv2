@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from 'wouter';
 import ReactFlow, {
   Node,
   Edge,
@@ -762,6 +763,9 @@ const layoutAlgorithms = {
 };
 
 function DataSchemaViewContent() {
+  // Get navigation function
+  const [, setLocation] = useLocation();
+  
   // Initialize all filter states with localStorage persistence
   const [searchTerm, setSearchTerm] = useState(() => {
     try {
@@ -2242,6 +2246,19 @@ function DataSchemaViewContent() {
           
           {/* Top Right Controls */}
           <div className="flex items-center gap-2">
+            {/* Homepage Navigation Button */}
+            <Button 
+              onClick={() => {
+                console.log('🏠 Navigating to homepage...');
+                setLocation('/');
+              }}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
+            >
+              <span>Go to Homepage</span>
+            </Button>
+            
             {/* Manual Refresh Button */}
             <TooltipProvider>
               <Tooltip>
@@ -2979,6 +2996,20 @@ function DataSchemaViewContent() {
 }
 
 export default function DataSchemaView() {
+  // Temporary redirect to test homepage access
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    console.log('📊 Data Schema page loaded - checking if we should redirect to homepage...');
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldRedirect = urlParams.get('redirect_home');
+    
+    if (shouldRedirect === 'true') {
+      console.log('🏠 Redirecting to homepage...');
+      setLocation('/');
+    }
+  }, [setLocation]);
+  
   return (
     <ReactFlowProvider>
       <DataSchemaViewContent />
