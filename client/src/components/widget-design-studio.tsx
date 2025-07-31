@@ -538,8 +538,9 @@ export default function WidgetDesignStudio({
                 </div>
               </TabsContent>
               
-              <TabsContent value="configure" className="flex-1 overflow-y-auto">
-                <div className="space-y-3 sm:space-y-4 pb-4">
+              <TabsContent value="configure" className="flex-1 flex flex-col overflow-hidden">
+                <ScrollArea className="flex-1 pr-4">
+                  <div className="space-y-3 sm:space-y-4 pb-4">
                     {/* Basic Configuration */}
                     <Card>
                       <CardHeader className="pb-2 sm:pb-4">
@@ -664,7 +665,8 @@ export default function WidgetDesignStudio({
                         </div>
                       </CardContent>
                     </Card>
-                </div>
+                  </div>
+                </ScrollArea>
               </TabsContent>
               
               <TabsContent value="style" className="flex-1 overflow-y-auto">
