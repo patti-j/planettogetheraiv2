@@ -332,11 +332,23 @@ export default function DashboardsPage() {
         
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
+            onClick={() => {
+              setSelectedDashboard(null);
+              setShowDashboardManager(true);
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New Dashboard
+          </Button>
+
+          <Button
             onClick={() => setShowAiDashboardDialog(true)}
             className={`flex items-center gap-2 ${getThemeClasses()} border-0`}
           >
             <Sparkles className="w-4 h-4" />
-            New Dashboard
+            AI Generate
           </Button>
       
           <Button

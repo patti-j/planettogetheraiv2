@@ -502,9 +502,8 @@ export default function DashboardManager({
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="browse">Browse</TabsTrigger>
-              <TabsTrigger value="create">Create New</TabsTrigger>
               <TabsTrigger value="editor">Visual Editor</TabsTrigger>
               <TabsTrigger value="templates">Widget Library</TabsTrigger>
             </TabsList>
@@ -587,43 +586,7 @@ export default function DashboardManager({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="create" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="dashboard-name">Dashboard Name</Label>
-                <Input
-                  id="dashboard-name"
-                  placeholder="Enter dashboard name"
-                  value={newDashboard.name}
-                  onChange={(e) => setNewDashboard(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="dashboard-description">Description</Label>
-                <Textarea
-                  id="dashboard-description"
-                  placeholder="Enter dashboard description"
-                  value={newDashboard.description}
-                  onChange={(e) => setNewDashboard(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium mb-2">Current Layout Preview</p>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>Standard widgets: {standardWidgets.length}</span>
-                  <span>Custom widgets: {customWidgets.length}</span>
-                  <span>Total widgets: {standardWidgets.length + customWidgets.length}</span>
-                </div>
-              </div>
-              <Button
-                onClick={handleCreateDashboard}
-                disabled={createDashboardMutation.isPending}
-                className="w-full"
-              >
-                {createDashboardMutation.isPending ? "Creating..." : "Create Dashboard"}
-              </Button>
-            </div>
-          </TabsContent>
+
 
           <TabsContent value="current" className="space-y-4">
             <div className="space-y-4">
