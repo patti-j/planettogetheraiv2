@@ -10,6 +10,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -527,20 +528,22 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <DndProvider backend={HTML5Backend}>
-          <TooltipProvider>
-            <NavigationProvider>
-              <TourProvider>
-                <MaxDockProvider>
-                <Router />
-                <OnboardingWizard />
-                <ResumeTourButton />
-                <Toaster />
-                </MaxDockProvider>
-              </TourProvider>
-            </NavigationProvider>
-          </TooltipProvider>
-        </DndProvider>
+        <ThemeProvider>
+          <DndProvider backend={HTML5Backend}>
+            <TooltipProvider>
+              <NavigationProvider>
+                <TourProvider>
+                  <MaxDockProvider>
+                  <Router />
+                  <OnboardingWizard />
+                  <ResumeTourButton />
+                  <Toaster />
+                  </MaxDockProvider>
+                </TourProvider>
+              </NavigationProvider>
+            </TooltipProvider>
+          </DndProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

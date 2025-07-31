@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
 import { UserProfileDialog } from "./user-profile";
+import { ThemeToggle } from "./theme-toggle";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
@@ -347,6 +348,7 @@ export default function TopMenu() {
                         open={userProfileOpen}
                         onOpenChange={setUserProfileOpen}
                       />
+                      <ThemeToggle />
                       <Button
                         variant="ghost"
                         size="sm"
