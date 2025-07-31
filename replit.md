@@ -88,6 +88,10 @@
 
 ## Recent Changes (July 31, 2025)
 
+✓ **Dashboard View Modal & AI Button Text Updates Complete (July 31, 2025)**:
+- **AI BUTTON TEXT STANDARDIZATION**: Updated "AI Generate" button to "New Dashboard AI" for consistent naming convention matching widget creation pattern
+- **THEME IMPORT ERRORS RESOLVED**: Fixed critical runtime errors by updating widgets page to use proper `aiTheme.gradient` from useAITheme hook instead of incorrect `getThemeClasses` import
+
 ✓ **Dashboard View Modal Implementation Complete (July 31, 2025)**:
 - **IN-CONTEXT DASHBOARD VIEWING**: Replaced window.open behavior with comprehensive dashboard view modal providing better user experience within the application
 - **COMPREHENSIVE DASHBOARD PREVIEW**: Modal displays dashboard stats, widget count, last updated date, default status badge, and visual widget layout preview
