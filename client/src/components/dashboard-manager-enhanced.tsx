@@ -1194,7 +1194,7 @@ export function EnhancedDashboardManager({
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex-shrink-0 p-4 border-t flex items-center justify-end gap-2">
+            <div className="flex-shrink-0 p-4 pr-12 border-t flex items-center justify-end gap-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
