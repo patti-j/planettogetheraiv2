@@ -62,7 +62,8 @@ const DATA_SOURCES = [
   { value: 'plannedOrders', label: 'Planned Orders' },
   { value: 'users', label: 'Users' },
   { value: 'metrics', label: 'Metrics' },
-  { value: 'alerts', label: 'Alerts' }
+  { value: 'alerts', label: 'Alerts' },
+  { value: 'optimization', label: 'Optimization Engine' }
 ];
 
 const CHART_TYPES = [
@@ -197,6 +198,11 @@ export default function WidgetDesignStudio({
       drillDownTarget: widgetConfig.drillDownTarget || selectedTemplate.defaultConfig.drillDownTarget,
       drillDownParams: widgetConfig.drillDownParams || selectedTemplate.defaultConfig.drillDownParams,
       action: widgetConfig.action || selectedTemplate.defaultConfig.action,
+      // Optimization-specific properties
+      algorithm: widgetConfig.algorithm,
+      objective: widgetConfig.objective,
+      timeHorizon: widgetConfig.timeHorizon,
+      maxIterations: widgetConfig.maxIterations,
       content: widgetConfig.content || selectedTemplate.defaultConfig.content
     };
 
@@ -463,7 +469,7 @@ export default function WidgetDesignStudio({
                         <div>
                           <Label htmlFor="dataSource" className="text-sm">Data Source</Label>
                           <Select 
-                            value={widgetConfig.dataSource || 'productionOrders'} 
+                            value={widgetConfig.dataSource || (selectedTemplate?.type === 'schedule-optimization' ? 'optimization' : 'productionOrders')} 
                             onValueChange={(value) => updateWidgetConfig('dataSource', value)}
                           >
                             <SelectTrigger>
@@ -503,57 +509,130 @@ export default function WidgetDesignStudio({
                     </CardContent>
                   </Card>
                   
-                  {/* Data Processing */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Data Processing</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
-                          <Select 
-                            value={widgetConfig.aggregation || 'count'} 
-                            onValueChange={(value) => updateWidgetConfig('aggregation', value)}
-                          >
-                            <SelectTrigger className="text-sm">
-                              <SelectValue placeholder="Select aggregation" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {AGGREGATION_TYPES.map(type => (
-                                <SelectItem key={type.value} value={type.value}>
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                  {/* Context-sensitive Configuration */}
+                  {selectedTemplate?.type === 'schedule-optimization' ? (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Optimization Settings</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div>
+                            <Label htmlFor="algorithm" className="text-sm">Algorithm</Label>
+                            <Select 
+                              value={widgetConfig.algorithm || 'backwards-scheduling'} 
+                              onValueChange={(value) => updateWidgetConfig('algorithm', value)}
+                            >
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="Select algorithm" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="backwards-scheduling">Backwards Scheduling</SelectItem>
+                                <SelectItem value="finite-capacity">Finite Capacity</SelectItem>
+                                <SelectItem value="genetic-algorithm">Genetic Algorithm</SelectItem>
+                                <SelectItem value="simulated-annealing">Simulated Annealing</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="objective" className="text-sm">Primary Objective</Label>
+                            <Select 
+                              value={widgetConfig.objective || 'minimize-makespan'} 
+                              onValueChange={(value) => updateWidgetConfig('objective', value)}
+                            >
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="Select objective" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="minimize-makespan">Minimize Makespan</SelectItem>
+                                <SelectItem value="maximize-throughput">Maximize Throughput</SelectItem>
+                                <SelectItem value="minimize-lateness">Minimize Lateness</SelectItem>
+                                <SelectItem value="balance-workload">Balance Workload</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div>
+                            <Label htmlFor="timeHorizon" className="text-sm">Time Horizon (days)</Label>
+                            <Input
+                              id="timeHorizon"
+                              type="number"
+                              value={widgetConfig.timeHorizon || '7'}
+                              onChange={(e) => updateWidgetConfig('timeHorizon', parseInt(e.target.value) || 7)}
+                              placeholder="7"
+                              className="text-sm"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="maxIterations" className="text-sm">Max Iterations</Label>
+                            <Input
+                              id="maxIterations"
+                              type="number"
+                              value={widgetConfig.maxIterations || '1000'}
+                              onChange={(e) => updateWidgetConfig('maxIterations', parseInt(e.target.value) || 1000)}
+                              placeholder="1000"
+                              className="text-sm"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Data Processing</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div>
+                            <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
+                            <Select 
+                              value={widgetConfig.aggregation || 'count'} 
+                              onValueChange={(value) => updateWidgetConfig('aggregation', value)}
+                            >
+                              <SelectTrigger className="text-sm">
+                                <SelectValue placeholder="Select aggregation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {AGGREGATION_TYPES.map(type => (
+                                  <SelectItem key={type.value} value={type.value}>
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="groupBy" className="text-sm">Group By (Optional)</Label>
+                            <Input
+                              id="groupBy"
+                              value={widgetConfig.groupBy || ''}
+                              onChange={(e) => updateWidgetConfig('groupBy', e.target.value)}
+                              placeholder="e.g., status, priority"
+                              className="text-sm"
+                            />
+                          </div>
                         </div>
                         
                         <div>
-                          <Label htmlFor="groupBy" className="text-sm">Group By (Optional)</Label>
+                          <Label htmlFor="limit" className="text-sm">Limit Records</Label>
                           <Input
-                            id="groupBy"
-                            value={widgetConfig.groupBy || ''}
-                            onChange={(e) => updateWidgetConfig('groupBy', e.target.value)}
-                            placeholder="e.g., status, priority"
+                            id="limit"
+                            type="number"
+                            value={widgetConfig.limit || ''}
+                            onChange={(e) => updateWidgetConfig('limit', parseInt(e.target.value) || undefined)}
+                            placeholder="Maximum records to show"
                             className="text-sm"
                           />
                         </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="limit" className="text-sm">Limit Records</Label>
-                        <Input
-                          id="limit"
-                          type="number"
-                          value={widgetConfig.limit || ''}
-                          onChange={(e) => updateWidgetConfig('limit', parseInt(e.target.value) || undefined)}
-                          placeholder="Maximum records to show"
-                          className="text-sm"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </div>
             </TabsContent>
