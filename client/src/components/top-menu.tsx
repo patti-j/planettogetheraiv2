@@ -403,12 +403,12 @@ export default function TopMenu() {
                     </Button>
                   </div>
                   <DashboardCardContainer
-                    maxVisibleCardsMobile={4}
-                    maxVisibleCardsTablet={6}
-                    maxVisibleCardsDesktop={8}
+                    maxVisibleCardsMobile={2}
+                    maxVisibleCardsTablet={3}
+                    maxVisibleCardsDesktop={4}
                     showMoreText="Show More Favorites"
                     showLessText="Show Less"
-                    gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
+                    gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
                     cards={recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
@@ -499,12 +499,12 @@ export default function TopMenu() {
                         {group.title}
                       </h3>
                       <DashboardCardContainer
-                        maxVisibleCardsMobile={3}
-                        maxVisibleCardsTablet={4}
-                        maxVisibleCardsDesktop={6}
+                        maxVisibleCardsMobile={2}
+                        maxVisibleCardsTablet={3}
+                        maxVisibleCardsDesktop={4}
                         showMoreText={`Show More ${group.title}`}
                         showLessText="Show Less"
-                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr"
+                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
                         cards={group.features.map((feature, featureIndex) => {
                           // Set priority based on group priority and feature characteristics
                           let priority = 5; // default
@@ -559,12 +559,12 @@ export default function TopMenu() {
                           {group.title}
                         </h3>
                         <DashboardCardContainer
-                          maxVisibleCardsMobile={3}
-                          maxVisibleCardsTablet={4}
-                          maxVisibleCardsDesktop={6}
+                          maxVisibleCardsMobile={2}
+                          maxVisibleCardsTablet={3}
+                          maxVisibleCardsDesktop={4}
                           showMoreText={`Show More ${group.title}`}
                           showLessText="Show Less"
-                          gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-fr"
+                          gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-4 auto-rows-fr"
                           cards={group.features.map((feature, featureIndex) => {
                             // Set priority based on group priority and feature characteristics
                             let priority = 5; // default
@@ -621,12 +621,12 @@ export default function TopMenu() {
                         {group.title}
                       </h3>
                       <DashboardCardContainer
-                        maxVisibleCardsMobile={3}
-                        maxVisibleCardsTablet={4}
-                        maxVisibleCardsDesktop={6}
+                        maxVisibleCardsMobile={2}
+                        maxVisibleCardsTablet={3}
+                        maxVisibleCardsDesktop={4}
                         showMoreText={`Show More ${group.title}`}
                         showLessText="Show Less"
-                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr"
+                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 auto-rows-fr"
                         cards={group.features.map((feature, featureIndex) => {
                           // Set priority based on group priority and feature characteristics
                           let priority = 5; // default
