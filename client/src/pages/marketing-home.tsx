@@ -136,16 +136,16 @@ const MarketingHome: React.FC = () => {
         <div className="absolute inset-0 bg-grid-white/10" />
         <div className="relative container mx-auto px-4 pt-24 pb-12">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-6 px-4 py-2">
+            <Badge variant="secondary" className="mb-4 px-4 py-2">
               <Sparkles className="w-4 h-4 mr-2" />
               AI-Powered Manufacturing Excellence
             </Badge>
             
-            <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-4">
               Transform Your Manufacturing Operations
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto leading-relaxed">
               The most advanced AI First Factory Optimization Platform for pharmaceutical, chemical, and industrial manufacturing. 
               Optimize production, reduce costs, and accelerate growth with intelligent automation.
             </p>
@@ -205,7 +205,7 @@ const MarketingHome: React.FC = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-secondary/30">
+      <section className="py-12 bg-secondary/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <StatCard 
@@ -233,9 +233,9 @@ const MarketingHome: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24">
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">
               <Cpu className="w-4 h-4 mr-2" />
               Advanced Features
@@ -261,7 +261,7 @@ const MarketingHome: React.FC = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-24 bg-gradient-to-r from-primary/5 to-secondary/10">
+      <section className="py-16 bg-gradient-to-r from-primary/5 to-secondary/10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -311,9 +311,9 @@ const MarketingHome: React.FC = () => {
       </section>
 
       {/* Industries Section */}
-      <section className="py-24">
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">
               <Building2 className="w-4 h-4 mr-2" />
               Industry Solutions
@@ -339,7 +339,7 @@ const MarketingHome: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-r from-primary to-primary/80">
+      <section className="py-16 bg-gradient-to-r from-primary to-primary/80">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto text-white">
             <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Manufacturing?</h2>
