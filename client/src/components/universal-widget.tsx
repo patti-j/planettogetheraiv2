@@ -117,9 +117,28 @@ export default function UniversalWidget({
 
     // Ensure chartData has proper structure for Chart.js
     const { chartData } = widgetData;
-    if (!chartData || !chartData.datasets || !Array.isArray(chartData.datasets)) {
+    if (!chartData || !chartData.datasets || !Array.isArray(chartData.datasets) || chartData.datasets.length === 0) {
       return <div className="text-center text-muted-foreground">Invalid chart data structure</div>;
     }
+
+    // Validate each dataset has required properties
+    const validDatasets = chartData.datasets.filter(dataset => 
+      dataset && 
+      typeof dataset === 'object' && 
+      Array.isArray(dataset.data) && 
+      dataset.data.length > 0
+    );
+
+    if (validDatasets.length === 0) {
+      return <div className="text-center text-muted-foreground">No valid chart datasets</div>;
+    }
+
+    // Create safe chart data with validated datasets
+    const safeChartData = {
+      ...chartData,
+      datasets: validDatasets,
+      labels: chartData.labels || []
+    };
 
     const chartOptions = {
       responsive: true,
@@ -168,15 +187,15 @@ export default function UniversalWidget({
     try {
       return (
         <div style={{ height: chartHeight }}>
-          {config.chartType === 'pie' && <Pie data={chartData} options={chartOptions} />}
-          {config.chartType === 'doughnut' && <Doughnut data={chartData} options={chartOptions} />}
-          {config.chartType === 'bar' && <Bar data={chartData} options={chartOptions} />}
-          {(config.chartType === 'line' || config.chartType === 'area') && <Line data={chartData} options={chartOptions} />}
-          {!config.chartType && <Bar data={chartData} options={chartOptions} />}
+          {config.chartType === 'pie' && <Pie data={safeChartData} options={chartOptions} />}
+          {config.chartType === 'doughnut' && <Doughnut data={safeChartData} options={chartOptions} />}
+          {config.chartType === 'bar' && <Bar data={safeChartData} options={chartOptions} />}
+          {(config.chartType === 'line' || config.chartType === 'area') && <Line data={safeChartData} options={chartOptions} />}
+          {!config.chartType && <Bar data={safeChartData} options={chartOptions} />}
         </div>
       );
     } catch (error) {
-      console.error('Chart rendering error:', error);
+      console.error('Chart rendering error:', error, 'Chart data:', safeChartData);
       return (
         <div className="text-center text-muted-foreground">
           <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
