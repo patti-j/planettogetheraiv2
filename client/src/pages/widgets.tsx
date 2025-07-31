@@ -247,10 +247,11 @@ export default function WidgetsPage() {
 
   const handleWidgetCreate = (widget: WidgetConfig, targetSystems: string[]) => {
     toast({
-      title: "Widget Created",
-      description: `${widget.title} has been added to ${targetSystems.join(', ')}`,
+      title: selectedWidget ? "Widget Updated" : "Widget Created",
+      description: `${widget.title} has been ${selectedWidget ? 'updated in' : 'added to'} ${targetSystems.join(', ')}`,
     });
     setShowStudio(false);
+    setSelectedWidget(null); // Clear selection after create/edit
     queryClient.invalidateQueries();
   };
 
@@ -275,11 +276,19 @@ export default function WidgetsPage() {
   };
 
   const handleEditWidget = (widget: WidgetItem) => {
-    // TODO: Implement edit functionality - could open widget studio with existing config
-    toast({
-      title: "Edit Widget",
-      description: `Edit functionality for ${widget.title} coming soon!`,
-    });
+    // Convert widget data to WidgetConfig format for editing
+    const editConfig: WidgetConfig = {
+      id: widget.id,
+      title: widget.title,
+      type: widget.type as any,
+      subtitle: widget.description || '',
+      ...widget.configuration
+    };
+    
+    // Open Widget Design Studio in edit mode
+    setSelectedWidget(widget);
+    setShowStudio(true);
+    setCreationMode('studio');
   };
 
   const handleCopyWidget = async (widget: WidgetItem) => {
@@ -651,7 +660,12 @@ export default function WidgetsPage() {
       </AlertDialog>
 
       {/* Widget Design Studio Dialog */}
-      <Dialog open={showStudio} onOpenChange={setShowStudio}>
+      <Dialog open={showStudio} onOpenChange={(open) => {
+        setShowStudio(open);
+        if (!open) {
+          setSelectedWidget(null); // Clear selection when dialog closes
+        }
+      }}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Widget Design Studio</DialogTitle>
@@ -661,6 +675,14 @@ export default function WidgetsPage() {
               open={showStudio}
               onOpenChange={setShowStudio}
               onWidgetCreate={handleWidgetCreate}
+              editingWidget={selectedWidget ? {
+                id: selectedWidget.id,
+                title: selectedWidget.title,
+                type: selectedWidget.type as any,
+                subtitle: selectedWidget.description || '',
+                ...selectedWidget.configuration
+              } : undefined}
+              mode={selectedWidget ? 'edit' : 'create'}
             />
           </div>
         </DialogContent>
