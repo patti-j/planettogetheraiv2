@@ -350,9 +350,9 @@ const MarketingHome: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                variant="secondary"
+                variant="default"
                 onClick={handleGetStarted}
-                className="px-8 py-6 text-lg font-semibold"
+                className="px-8 py-6 text-lg font-semibold bg-white text-primary hover:bg-gray-100"
               >
                 Start Free Trial
                 <Rocket className="ml-2 w-5 h-5" />
