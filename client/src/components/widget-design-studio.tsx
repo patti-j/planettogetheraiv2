@@ -282,7 +282,36 @@ export default function WidgetDesignStudio({
 
           case 'dashboard':
             deploymentPromises.push(
-              apiRequest('POST', '/api/dashboard-configs', finalWidget)
+              apiRequest('POST', '/api/dashboard-configs', {
+                name: finalWidget.title,
+                description: finalWidget.subtitle,
+                type: 'grid',
+                config: {
+                  widgets: [{
+                    id: `widget-${Date.now()}`,
+                    type: finalWidget.type,
+                    title: finalWidget.title,
+                    config: {
+                      dataSource: finalWidget.dataSource,
+                      chartType: finalWidget.chartType,
+                      aggregation: finalWidget.aggregation,
+                      groupBy: finalWidget.groupBy,
+                      filters: finalWidget.filters,
+                      colors: finalWidget.colors,
+                      thresholds: finalWidget.thresholds,
+                      limit: finalWidget.limit,
+                      algorithm: finalWidget.algorithm,
+                      objective: finalWidget.objective,
+                      timeHorizon: finalWidget.timeHorizon,
+                      maxIterations: finalWidget.maxIterations,
+                      action: finalWidget.action,
+                      content: finalWidget.content
+                    },
+                    position: finalWidget.position,
+                    size: finalWidget.size
+                  }]
+                }
+              })
             );
             break;
         }
