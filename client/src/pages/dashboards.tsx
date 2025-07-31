@@ -1207,6 +1207,30 @@ export default function DashboardsPage() {
                             <div className="p-2 h-full">
                               {(() => {
                                 try {
+                                  // For dashboard widgets with pre-existing data, render directly
+                                  if (widget.data && widget.type === 'metric') {
+                                    return (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-2xl font-bold text-blue-600">
+                                            {widget.data.value}
+                                          </span>
+                                          <div className="text-right">
+                                            <div className="text-xs text-gray-500 capitalize">
+                                              {widget.data.label}
+                                            </div>
+                                            {widget.data.trend && (
+                                              <div className="text-xs text-green-600">
+                                                {widget.data.trend}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  // Fallback to UniversalWidget for dynamic widgets
                                   return (
                                     <UniversalWidget
                                       config={widgetConfig}
