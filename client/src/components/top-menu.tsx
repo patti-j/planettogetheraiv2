@@ -9,7 +9,7 @@ import {
   Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
-  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft
+  Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft, Puzzle, Layout
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
@@ -78,6 +78,8 @@ const featureGroups = [
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
       { icon: Shield, label: "Role Management", href: "/role-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
+      { icon: Puzzle, label: "Widgets", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
+      { icon: Layout, label: "Dashboards", href: "/dashboards", feature: "systems-management", action: "view", color: "bg-green-500" },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" },
       { icon: Layers, label: "Product Development", href: "/product-development", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
