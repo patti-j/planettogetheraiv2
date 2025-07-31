@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,7 +79,7 @@ export default function WidgetsPage() {
     description: "",
     dataSource: "productionOrders",
     visualizationType: "chart",
-    targetSystem: "dashboard"
+    targetSystems: ["dashboard"] as string[]
   });
 
   // Template Selection State
@@ -185,14 +186,14 @@ export default function WidgetsPage() {
     onSuccess: (data) => {
       toast({
         title: "AI Widget Created",
-        description: `${data.title} has been generated and added to ${aiWidgetData.targetSystem}`,
+        description: `${data.title} has been generated and added to ${aiWidgetData.targetSystems.join(', ')}`,
       });
       setShowAIDialog(false);
       setAiWidgetData({
         description: "",
         dataSource: "productionOrders",
         visualizationType: "chart",
-        targetSystem: "dashboard"
+        targetSystems: ["dashboard"]
       });
       queryClient.invalidateQueries();
     },
@@ -727,25 +728,42 @@ export default function WidgetsPage() {
               </div>
             </div>
             <div>
-              <Label htmlFor="target-system">Target System</Label>
-              <Select
-                value={aiWidgetData.targetSystem}
-                onValueChange={(value) => setAiWidgetData({ ...aiWidgetData, targetSystem: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cockpit">Production Cockpit</SelectItem>
-                  <SelectItem value="canvas">Canvas Dashboard</SelectItem>
-                  <SelectItem value="dashboard">Analytics Dashboard</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="target-systems">Target Systems</Label>
+              <div className="border rounded-md p-3 space-y-2">
+                {[
+                  { value: 'cockpit', label: 'Production Cockpit' },
+                  { value: 'canvas', label: 'Canvas Dashboard' },
+                  { value: 'dashboard', label: 'Analytics Dashboard' }
+                ].map(system => (
+                  <div key={system.value} className="flex items-center space-x-2">
+                    <Switch
+                      id={`ai-${system.value}`}
+                      checked={aiWidgetData.targetSystems.includes(system.value)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setAiWidgetData({
+                            ...aiWidgetData,
+                            targetSystems: [...aiWidgetData.targetSystems, system.value]
+                          });
+                        } else {
+                          setAiWidgetData({
+                            ...aiWidgetData,
+                            targetSystems: aiWidgetData.targetSystems.filter(s => s !== system.value)
+                          });
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`ai-${system.value}`} className="text-sm font-normal">
+                      {system.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
             <Button 
               onClick={() => aiWidgetMutation.mutate(aiWidgetData)} 
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              disabled={aiWidgetMutation.isPending || !aiWidgetData.description}
+              disabled={aiWidgetMutation.isPending || !aiWidgetData.description || aiWidgetData.targetSystems.length === 0}
             >
               {aiWidgetMutation.isPending ? (
                 <>
