@@ -126,6 +126,7 @@ export default function Sidebar() {
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
     { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
+    { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", active: location === "/constraints", feature: "systems-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
@@ -287,7 +288,8 @@ export default function Sidebar() {
       "/reports": "Generate detailed production reports and insights",
       "/feedback": "Submit feedback and suggestions to help improve the system",
       "/widgets": "Create, manage, and deploy widgets across dashboard systems with design studio and library access",
-      "/dashboards": "Create, manage, and configure manufacturing dashboards with custom layouts and widget configurations"
+      "/dashboards": "Create, manage, and configure manufacturing dashboards with custom layouts and widget configurations",
+      "/constraints": "Manage production constraints, violations, and compliance requirements to optimize manufacturing efficiency"
     };
     return tooltips[href] || "Navigate to this page";
   };

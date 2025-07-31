@@ -79,6 +79,7 @@ import DataMapView from "@/pages/data-map";
 import DataSchemaView from "@/pages/data-schema";
 import TableFieldViewer from "@/pages/table-field-viewer";
 import DataRelationships from "@/pages/data-relationships";
+import ConstraintsPage from "@/pages/constraints";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -416,6 +417,11 @@ function Router() {
           <Route path="/data-relationships">
             <ProtectedRoute feature="systems-management" action="view">
               <DataRelationships />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/constraints">
+            <ProtectedRoute feature="systems-management" action="view">
+              <ConstraintsPage />
             </ProtectedRoute>
           </Route>
 

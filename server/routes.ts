@@ -54,7 +54,9 @@ import {
   insertUserSecretSchema,
   insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
   insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
-  insertFieldCommentSchema
+  insertFieldCommentSchema,
+  // Constraints Management Schemas
+  insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -19149,6 +19151,118 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     } catch (error) {
       console.error("Error fetching optimization algorithms:", error);
       res.status(500).json({ error: "Failed to fetch optimization algorithms" });
+    }
+  });
+
+  // ==================== CONSTRAINTS MANAGEMENT API ENDPOINTS ====================
+
+  // Constraint Categories API
+  app.get("/api/constraint-categories", async (req, res) => {
+    try {
+      const categories = await storage.getConstraintCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching constraint categories:", error);
+      res.status(500).json({ error: "Failed to fetch constraint categories" });
+    }
+  });
+
+  app.post("/api/constraint-categories", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertConstraintCategorySchema.parse(req.body);
+      const category = await storage.createConstraintCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating constraint category:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid category data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create constraint category" });
+    }
+  });
+
+  // Constraints API
+  app.get("/api/constraints", async (req, res) => {
+    try {
+      const { categoryId, scope, isActive } = req.query;
+      const constraints = await storage.getConstraints(
+        categoryId ? parseInt(categoryId as string) : undefined,
+        scope as string,
+        isActive !== undefined ? isActive === 'true' : undefined
+      );
+      res.json(constraints);
+    } catch (error) {
+      console.error("Error fetching constraints:", error);
+      res.status(500).json({ error: "Failed to fetch constraints" });
+    }
+  });
+
+  app.post("/api/constraints", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertConstraintSchema.parse(req.body);
+      const constraint = await storage.createConstraint(validatedData);
+      res.status(201).json(constraint);
+    } catch (error) {
+      console.error("Error creating constraint:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid constraint data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create constraint" });
+    }
+  });
+
+  // Constraint Violations API
+  app.get("/api/constraint-violations", async (req, res) => {
+    try {
+      const { constraintId, status } = req.query;
+      const violations = await storage.getConstraintViolations(
+        constraintId ? parseInt(constraintId as string) : undefined,
+        status as string
+      );
+      res.json(violations);
+    } catch (error) {
+      console.error("Error fetching constraint violations:", error);
+      res.status(500).json({ error: "Failed to fetch constraint violations" });
+    }
+  });
+
+  app.post("/api/constraint-violations", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertConstraintViolationSchema.parse(req.body);
+      const violation = await storage.createConstraintViolation(validatedData);
+      res.status(201).json(violation);
+    } catch (error) {
+      console.error("Error creating constraint violation:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid violation data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create constraint violation" });
+    }
+  });
+
+  app.get("/api/constraint-violations/summary", async (req, res) => {
+    try {
+      const summary = await storage.getConstraintViolationsSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching constraint violations summary:", error);
+      res.status(500).json({ error: "Failed to fetch violations summary" });
+    }
+  });
+
+  // Constraint Evaluation API
+  app.post("/api/constraints/evaluate", requireAuth, async (req, res) => {
+    try {
+      const { entityType, entityId, data } = req.body;
+      if (!entityType || !entityId || !data) {
+        return res.status(400).json({ error: "entityType, entityId, and data are required" });
+      }
+      
+      const violations = await storage.evaluateConstraints(entityType, entityId, data);
+      res.json(violations);
+    } catch (error) {
+      console.error("Error evaluating constraints:", error);
+      res.status(500).json({ error: "Failed to evaluate constraints" });
     }
   });
 

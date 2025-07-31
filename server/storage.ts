@@ -71,6 +71,10 @@ import {
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
 
+  // Constraints Management System
+  constraintCategories, constraints, constraintViolations, constraintExceptions,
+  type ConstraintCategory, type Constraint, type ConstraintViolation, type ConstraintException,
+  type InsertConstraintCategory, type InsertConstraint, type InsertConstraintViolation, type InsertConstraintException,
 
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
@@ -681,6 +685,49 @@ export interface IStorage {
   // Analytics Widget Management - for universal widget creation
   createAnalyticsWidget(widget: any): Promise<any>;
   createDashboardWidget(widget: any): Promise<any>;
+
+  // Constraints Management System
+  // Constraint Categories
+  getConstraintCategories(): Promise<ConstraintCategory[]>;
+  getConstraintCategory(id: number): Promise<ConstraintCategory | undefined>;
+  createConstraintCategory(category: InsertConstraintCategory): Promise<ConstraintCategory>;
+  updateConstraintCategory(id: number, category: Partial<InsertConstraintCategory>): Promise<ConstraintCategory | undefined>;
+  deleteConstraintCategory(id: number): Promise<boolean>;
+
+  // Constraints
+  getConstraints(categoryId?: number, scope?: string, isActive?: boolean): Promise<Constraint[]>;
+  getConstraint(id: number): Promise<Constraint | undefined>;
+  getConstraintsByEntity(entityType: string, entityId: number): Promise<Constraint[]>;
+  createConstraint(constraint: InsertConstraint): Promise<Constraint>;
+  updateConstraint(id: number, constraint: Partial<InsertConstraint>): Promise<Constraint | undefined>;
+  deleteConstraint(id: number): Promise<boolean>;
+  
+  // Constraint Violations
+  getConstraintViolations(constraintId?: number, status?: string): Promise<ConstraintViolation[]>;
+  getConstraintViolation(id: number): Promise<ConstraintViolation | undefined>;
+  getViolationsByEntity(entityType: string, entityId: number): Promise<ConstraintViolation[]>;
+  createConstraintViolation(violation: InsertConstraintViolation): Promise<ConstraintViolation>;
+  updateConstraintViolation(id: number, violation: Partial<InsertConstraintViolation>): Promise<ConstraintViolation | undefined>;
+  resolveConstraintViolation(id: number, resolution: string, resolvedBy: number): Promise<ConstraintViolation | undefined>;
+  waiveConstraintViolation(id: number, reason: string, approvedBy: number): Promise<ConstraintViolation | undefined>;
+  
+  // Constraint Exceptions
+  getConstraintExceptions(constraintId?: number, isActive?: boolean): Promise<ConstraintException[]>;
+  getConstraintException(id: number): Promise<ConstraintException | undefined>;
+  createConstraintException(exception: InsertConstraintException): Promise<ConstraintException>;
+  updateConstraintException(id: number, exception: Partial<InsertConstraintException>): Promise<ConstraintException | undefined>;
+  deleteConstraintException(id: number): Promise<boolean>;
+  
+  // Constraint Monitoring and Evaluation
+  evaluateConstraints(entityType: string, entityId: number, data: any): Promise<ConstraintViolation[]>;
+  getConstraintViolationsSummary(): Promise<{
+    total: number;
+    critical: number;
+    major: number;
+    minor: number;
+    open: number;
+    resolved: number;
+  }>;
   
   // Canvas Settings Management
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
@@ -12208,6 +12255,347 @@ export class DatabaseStorage implements IStorage {
         eq(fieldComments.columnName, columnName)
       ));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // ==================== CONSTRAINTS MANAGEMENT IMPLEMENTATION ====================
+
+  // Constraint Categories
+  async getConstraintCategories(): Promise<ConstraintCategory[]> {
+    return await db.select().from(constraintCategories)
+      .where(eq(constraintCategories.isActive, true))
+      .orderBy(constraintCategories.name);
+  }
+
+  async getConstraintCategory(id: number): Promise<ConstraintCategory | undefined> {
+    const [category] = await db.select().from(constraintCategories)
+      .where(eq(constraintCategories.id, id));
+    return category || undefined;
+  }
+
+  async createConstraintCategory(category: InsertConstraintCategory): Promise<ConstraintCategory> {
+    const [newCategory] = await db.insert(constraintCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateConstraintCategory(id: number, category: Partial<InsertConstraintCategory>): Promise<ConstraintCategory | undefined> {
+    const [updated] = await db.update(constraintCategories)
+      .set(category)
+      .where(eq(constraintCategories.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteConstraintCategory(id: number): Promise<boolean> {
+    const result = await db.delete(constraintCategories).where(eq(constraintCategories.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Constraints
+  async getConstraints(categoryId?: number, scope?: string, isActive?: boolean): Promise<Constraint[]> {
+    let query = db.select().from(constraints);
+    
+    const conditions: any[] = [];
+    if (categoryId !== undefined) conditions.push(eq(constraints.categoryId, categoryId));
+    if (scope !== undefined) conditions.push(eq(constraints.scope, scope));
+    if (isActive !== undefined) conditions.push(eq(constraints.isActive, isActive));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(constraints.priority, constraints.name);
+  }
+
+  async getConstraint(id: number): Promise<Constraint | undefined> {
+    const [constraint] = await db.select().from(constraints)
+      .where(eq(constraints.id, id));
+    return constraint || undefined;
+  }
+
+  async getConstraintsByEntity(entityType: string, entityId: number): Promise<Constraint[]> {
+    const conditions: any[] = [eq(constraints.isActive, true)];
+    
+    // Add entity-specific conditions based on scope
+    if (entityType === 'plant') {
+      conditions.push(
+        or(
+          eq(constraints.scope, 'global'),
+          eq(constraints.scope, 'plant'),
+          eq(constraints.applicableToPlantId, entityId)
+        )
+      );
+    } else if (entityType === 'resource') {
+      conditions.push(
+        or(
+          eq(constraints.scope, 'global'),
+          eq(constraints.scope, 'resource'),
+          eq(constraints.applicableToResourceId, entityId)
+        )
+      );
+    } else if (entityType === 'item') {
+      conditions.push(
+        or(
+          eq(constraints.scope, 'global'),
+          eq(constraints.scope, 'item'),
+          eq(constraints.applicableToItemId, entityId)
+        )
+      );
+    }
+    
+    return await db.select().from(constraints)
+      .where(and(...conditions))
+      .orderBy(constraints.severityLevel, constraints.priority);
+  }
+
+  async createConstraint(constraint: InsertConstraint): Promise<Constraint> {
+    const [newConstraint] = await db.insert(constraints).values(constraint).returning();
+    return newConstraint;
+  }
+
+  async updateConstraint(id: number, constraint: Partial<InsertConstraint>): Promise<Constraint | undefined> {
+    const [updated] = await db.update(constraints)
+      .set({
+        ...constraint,
+        updatedAt: new Date(),
+      })
+      .where(eq(constraints.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteConstraint(id: number): Promise<boolean> {
+    const result = await db.delete(constraints).where(eq(constraints.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Constraint Violations
+  async getConstraintViolations(constraintId?: number, status?: string): Promise<ConstraintViolation[]> {
+    let query = db.select().from(constraintViolations);
+    
+    const conditions: any[] = [];
+    if (constraintId !== undefined) conditions.push(eq(constraintViolations.constraintId, constraintId));
+    if (status !== undefined) conditions.push(eq(constraintViolations.status, status));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(constraintViolations.violationTimestamp));
+  }
+
+  async getConstraintViolation(id: number): Promise<ConstraintViolation | undefined> {
+    const [violation] = await db.select().from(constraintViolations)
+      .where(eq(constraintViolations.id, id));
+    return violation || undefined;
+  }
+
+  async getViolationsByEntity(entityType: string, entityId: number): Promise<ConstraintViolation[]> {
+    return await db.select().from(constraintViolations)
+      .where(
+        and(
+          eq(constraintViolations.violationEntityType, entityType),
+          eq(constraintViolations.violationEntityId, entityId)
+        )
+      )
+      .orderBy(desc(constraintViolations.violationTimestamp));
+  }
+
+  async createConstraintViolation(violation: InsertConstraintViolation): Promise<ConstraintViolation> {
+    const [newViolation] = await db.insert(constraintViolations).values(violation).returning();
+    return newViolation;
+  }
+
+  async updateConstraintViolation(id: number, violation: Partial<InsertConstraintViolation>): Promise<ConstraintViolation | undefined> {
+    const [updated] = await db.update(constraintViolations)
+      .set({
+        ...violation,
+        updatedAt: new Date(),
+      })
+      .where(eq(constraintViolations.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async resolveConstraintViolation(id: number, resolution: string, resolvedBy: number): Promise<ConstraintViolation | undefined> {
+    const [updated] = await db.update(constraintViolations)
+      .set({
+        status: 'resolved',
+        resolution,
+        resolvedBy,
+        resolvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(constraintViolations.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async waiveConstraintViolation(id: number, reason: string, approvedBy: number): Promise<ConstraintViolation | undefined> {
+    const [updated] = await db.update(constraintViolations)
+      .set({
+        status: 'waived',
+        waiverReason: reason,
+        waiverApprovedBy: approvedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(constraintViolations.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  // Constraint Exceptions
+  async getConstraintExceptions(constraintId?: number, isActive?: boolean): Promise<ConstraintException[]> {
+    let query = db.select().from(constraintExceptions);
+    
+    const conditions: any[] = [];
+    if (constraintId !== undefined) conditions.push(eq(constraintExceptions.constraintId, constraintId));
+    if (isActive !== undefined) conditions.push(eq(constraintExceptions.isActive, isActive));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(constraintExceptions.createdAt));
+  }
+
+  async getConstraintException(id: number): Promise<ConstraintException | undefined> {
+    const [exception] = await db.select().from(constraintExceptions)
+      .where(eq(constraintExceptions.id, id));
+    return exception || undefined;
+  }
+
+  async createConstraintException(exception: InsertConstraintException): Promise<ConstraintException> {
+    const [newException] = await db.insert(constraintExceptions).values(exception).returning();
+    return newException;
+  }
+
+  async updateConstraintException(id: number, exception: Partial<InsertConstraintException>): Promise<ConstraintException | undefined> {
+    const [updated] = await db.update(constraintExceptions)
+      .set(exception)
+      .where(eq(constraintExceptions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteConstraintException(id: number): Promise<boolean> {
+    const result = await db.delete(constraintExceptions).where(eq(constraintExceptions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Constraint Monitoring and Evaluation
+  async evaluateConstraints(entityType: string, entityId: number, data: any): Promise<ConstraintViolation[]> {
+    // Get applicable constraints for the entity
+    const applicableConstraints = await this.getConstraintsByEntity(entityType, entityId);
+    const violations: ConstraintViolation[] = [];
+
+    // Evaluate each constraint against the provided data
+    for (const constraint of applicableConstraints) {
+      const rule = constraint.constraintRule;
+      if (!rule) continue;
+
+      let violated = false;
+      let violationValue: any;
+      let expectedValue: any = rule.value;
+
+      // Extract the field value from data
+      const fieldValue = this.extractFieldValue(data, rule.field);
+      violationValue = fieldValue;
+
+      // Evaluate based on operator
+      switch (rule.operator) {
+        case '=':
+          violated = fieldValue != rule.value;
+          break;
+        case '!=':
+          violated = fieldValue == rule.value;
+          break;
+        case '<':
+          violated = fieldValue >= rule.value;
+          break;
+        case '>':
+          violated = fieldValue <= rule.value;
+          break;
+        case '<=':
+          violated = fieldValue > rule.value;
+          break;
+        case '>=':
+          violated = fieldValue < rule.value;
+          break;
+        case 'between':
+          if (Array.isArray(rule.value) && rule.value.length === 2) {
+            violated = fieldValue < rule.value[0] || fieldValue > rule.value[1];
+          }
+          break;
+        case 'in':
+          if (Array.isArray(rule.value)) {
+            violated = !rule.value.includes(fieldValue);
+          }
+          break;
+        case 'not_in':
+          if (Array.isArray(rule.value)) {
+            violated = rule.value.includes(fieldValue);
+          }
+          break;
+      }
+
+      // If constraint is violated, create violation record
+      if (violated) {
+        const severity = constraint.severityLevel === 'hard' ? 'critical' : 
+                        constraint.priority === 'high' ? 'major' : 'minor';
+
+        const violation = await this.createConstraintViolation({
+          constraintId: constraint.id,
+          violationEntityType: entityType,
+          violationEntityId: entityId,
+          violationValue,
+          expectedValue,
+          violationSeverity: severity,
+          impactDescription: `Constraint "${constraint.name}" violated: ${rule.field} ${rule.operator} ${expectedValue}, actual value: ${violationValue}`,
+        });
+
+        violations.push(violation);
+      }
+    }
+
+    return violations;
+  }
+
+  private extractFieldValue(data: any, field: string): any {
+    // Handle nested field paths like "resource.capacity" or "schedule.duration"
+    const fieldPath = field.split('.');
+    let value = data;
+    
+    for (const key of fieldPath) {
+      if (value && typeof value === 'object') {
+        value = value[key];
+      } else {
+        return undefined;
+      }
+    }
+    
+    return value;
+  }
+
+  async getConstraintViolationsSummary(): Promise<{
+    total: number;
+    critical: number;
+    major: number;
+    minor: number;
+    open: number;
+    resolved: number;
+  }> {
+    const allViolations = await db.select().from(constraintViolations);
+    
+    const summary = {
+      total: allViolations.length,
+      critical: allViolations.filter(v => v.violationSeverity === 'critical').length,
+      major: allViolations.filter(v => v.violationSeverity === 'major').length,
+      minor: allViolations.filter(v => v.violationSeverity === 'minor').length,
+      open: allViolations.filter(v => v.status === 'open').length,
+      resolved: allViolations.filter(v => v.status === 'resolved').length,
+    };
+
+    return summary;
   }
 }
 

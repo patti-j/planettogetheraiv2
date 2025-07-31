@@ -8668,5 +8668,180 @@ export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments
 export type InsertWidgetDeployment = z.infer<typeof insertWidgetDeploymentSchema>;
 export type WidgetDeployment = typeof widgetDeployments.$inferSelect;
 
+// ==================== CONSTRAINTS MANAGEMENT SYSTEM ====================
+
+// Manufacturing Constraints Management System
+export const constraintCategories = pgTable("constraint_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // e.g., "Equipment", "Material", "Policy", "Quality"
+  description: text("description"),
+  color: text("color").default("#6366f1"), // For UI display
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const constraints = pgTable("constraints", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  categoryId: integer("category_id").references(() => constraintCategories.id),
+  
+  // Constraint classification
+  constraintType: text("constraint_type").notNull(), // "physical", "policy"
+  severityLevel: text("severity_level").notNull(), // "hard", "soft"
+  priority: text("priority").notNull().default("medium"), // "high", "medium", "low"
+  
+  // Scope and applicability
+  scope: text("scope").notNull(), // "global", "plant", "resource", "operation", "item"
+  applicableToPlantId: integer("applicable_to_plant_id").references(() => plants.id),
+  applicableToResourceId: integer("applicable_to_resource_id").references(() => resources.id),
+  applicableToItemId: integer("applicable_to_item_id").references(() => items.id),
+  applicableToWorkCenterId: integer("applicable_to_work_center_id").references(() => workCenters.id),
+  
+  // Constraint definition
+  constraintRule: jsonb("constraint_rule").$type<{
+    type: "capacity" | "time" | "sequence" | "resource" | "quality" | "custom";
+    operator: "=" | "!=" | "<" | ">" | "<=" | ">=" | "between" | "in" | "not_in";
+    field: string; // The field being constrained (e.g., "quantity", "duration", "startTime")
+    value: any; // The constraint value(s)
+    unit?: string; // Unit of measurement if applicable
+    conditions?: Array<{
+      field: string;
+      operator: string;
+      value: any;
+    }>; // Additional conditions for complex constraints
+  }>(),
+  
+  // Violation handling
+  violationAction: text("violation_action").notNull().default("warn"), // "block", "warn", "log"
+  violationMessage: text("violation_message"),
+  violationPenalty: numeric("violation_penalty", { precision: 10, scale: 2 }), // Cost penalty for soft constraints
+  
+  // Temporal aspects
+  effectiveFromDate: timestamp("effective_from_date"),
+  effectiveToDate: timestamp("effective_to_date"),
+  isActive: boolean("is_active").default(true),
+  
+  // Metadata
+  businessJustification: text("business_justification"),
+  regulatoryBasis: text("regulatory_basis"),
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  nameIdx: index("constraints_name_idx").on(table.name),
+  categoryIdx: index("constraints_category_idx").on(table.categoryId),
+  scopeIdx: index("constraints_scope_idx").on(table.scope),
+  typeIdx: index("constraints_type_idx").on(table.constraintType),
+  severityIdx: index("constraints_severity_idx").on(table.severityLevel),
+  activeIdx: index("constraints_active_idx").on(table.isActive),
+}));
+
+export const constraintViolations = pgTable("constraint_violations", {
+  id: serial("id").primaryKey(),
+  constraintId: integer("constraint_id").references(() => constraints.id).notNull(),
+  
+  // Reference to what violated the constraint
+  violationEntityType: text("violation_entity_type").notNull(), // "production_order", "operation", "resource_allocation"
+  violationEntityId: integer("violation_entity_id").notNull(),
+  
+  // Violation details
+  violationTimestamp: timestamp("violation_timestamp").defaultNow(),
+  violationValue: jsonb("violation_value").$type<any>(), // The actual value that violated the constraint
+  expectedValue: jsonb("expected_value").$type<any>(), // The expected/allowed value
+  violationSeverity: text("violation_severity").notNull(), // "critical", "major", "minor", "warning"
+  
+  // Impact assessment
+  impactDescription: text("impact_description"),
+  estimatedCost: numeric("estimated_cost", { precision: 15, scale: 2 }),
+  estimatedDelay: integer("estimated_delay_minutes"),
+  affectedCustomers: jsonb("affected_customers").$type<number[]>().default([]),
+  
+  // Resolution tracking
+  status: text("status").notNull().default("open"), // "open", "acknowledged", "resolved", "waived"
+  resolution: text("resolution"), // Description of how the violation was resolved
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  waiverReason: text("waiver_reason"), // If violation was waived, why?
+  waiverApprovedBy: integer("waiver_approved_by").references(() => users.id),
+  
+  // Prevention measures
+  preventiveMeasures: text("preventive_measures"),
+  rootCauseAnalysis: text("root_cause_analysis"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  constraintIdx: index("violations_constraint_idx").on(table.constraintId),
+  entityIdx: index("violations_entity_idx").on(table.violationEntityType, table.violationEntityId),
+  timestampIdx: index("violations_timestamp_idx").on(table.violationTimestamp),
+  statusIdx: index("violations_status_idx").on(table.status),
+  severityIdx: index("violations_severity_idx").on(table.violationSeverity),
+}));
+
+export const constraintExceptions = pgTable("constraint_exceptions", {
+  id: serial("id").primaryKey(),
+  constraintId: integer("constraint_id").references(() => constraints.id).notNull(),
+  
+  // Exception details
+  exceptionName: text("exception_name").notNull(),
+  exceptionDescription: text("exception_description"),
+  exceptionType: text("exception_type").notNull(), // "temporary", "permanent", "conditional"
+  
+  // Scope of exception
+  applicableToEntityType: text("applicable_to_entity_type"), // "production_order", "customer", "item"
+  applicableToEntityId: integer("applicable_to_entity_id"),
+  
+  // Temporal aspects
+  validFromDate: timestamp("valid_from_date"),
+  validToDate: timestamp("valid_to_date"),
+  
+  // Approval workflow
+  requestedBy: integer("requested_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: timestamp("approval_date"),
+  businessJustification: text("business_justification").notNull(),
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  constraintIdx: index("exceptions_constraint_idx").on(table.constraintId),
+  entityIdx: index("exceptions_entity_idx").on(table.applicableToEntityType, table.applicableToEntityId),
+  validityIdx: index("exceptions_validity_idx").on(table.validFromDate, table.validToDate),
+  activeIdx: index("exceptions_active_idx").on(table.isActive),
+}));
+
+// Constraints insert schemas and types
+export const insertConstraintCategorySchema = createInsertSchema(constraintCategories).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertConstraintCategory = z.infer<typeof insertConstraintCategorySchema>;
+export type ConstraintCategory = typeof constraintCategories.$inferSelect;
+
+export const insertConstraintSchema = createInsertSchema(constraints).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertConstraint = z.infer<typeof insertConstraintSchema>;
+export type Constraint = typeof constraints.$inferSelect;
+
+export const insertConstraintViolationSchema = createInsertSchema(constraintViolations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertConstraintViolation = z.infer<typeof insertConstraintViolationSchema>;
+export type ConstraintViolation = typeof constraintViolations.$inferSelect;
+
+export const insertConstraintExceptionSchema = createInsertSchema(constraintExceptions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertConstraintException = z.infer<typeof insertConstraintExceptionSchema>;
+export type ConstraintException = typeof constraintExceptions.$inferSelect;
+
 
 
