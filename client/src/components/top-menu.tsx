@@ -22,6 +22,7 @@ import { useNavigation } from "@/contexts/NavigationContext";
 import { useTour } from "@/contexts/TourContext";
 import { TourSelectionDialog } from "./tour-selection-dialog";
 import { Input } from "@/components/ui/input";
+import { DashboardCardContainer } from "./dashboard-card-container";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -401,9 +402,14 @@ export default function TopMenu() {
                       Clear
                     </Button>
                   </div>
-                  {/* Mobile: 3 columns, Desktop: 6 columns for more compact layout */}
-                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3 auto-rows-fr">
-                    {recentPages.filter(page => {
+                  <DashboardCardContainer
+                    maxVisibleCardsMobile={4}
+                    maxVisibleCardsTablet={6}
+                    maxVisibleCardsDesktop={8}
+                    showMoreText="Show More Favorites"
+                    showLessText="Show Less"
+                    gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 auto-rows-fr"
+                    cards={recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
                       return page.label.toLowerCase().includes(searchTerm);
@@ -426,56 +432,60 @@ export default function TopMenu() {
                       const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
                       const iconColorClass = isAI ? 'text-white' : color.replace('bg-', 'text-').replace('-500', '-600');
                       
-                      return (
-                        <div key={`${page.path}-${index}`} className="relative group">
-                          <Link 
-                            href={page.path === "#max" ? "#" : page.path}
-                            onClick={() => {
-                              if (page.path === "#max") {
-                                toggleMaxAI();
-                              }
-                              setMenuOpen(false);
-                            }}
-                          >
-                            <div className={`
-                              w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
-                              bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
-                              flex flex-col items-center justify-center text-center space-y-1 relative
-                              ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
-                              ${isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                            `}>
+                      return {
+                        id: `recent-${page.path}-${index}`,
+                        priority: page.isPinned ? 1 : 5, // Pinned items get highest priority
+                        content: (
+                          <div key={`${page.path}-${index}`} className="relative group">
+                            <Link 
+                              href={page.path === "#max" ? "#" : page.path}
+                              onClick={() => {
+                                if (page.path === "#max") {
+                                  toggleMaxAI();
+                                }
+                                setMenuOpen(false);
+                              }}
+                            >
                               <div className={`
-                                ${isAI ? getThemeClasses(false) : 'bg-gray-100'} 
-                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
+                                bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                                flex flex-col items-center justify-center text-center space-y-1 relative
+                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
+                                ${isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
                               `}>
-                                <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                                <div className={`
+                                  ${isAI ? getThemeClasses(false) : 'bg-gray-100'} 
+                                  p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                `}>
+                                  <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                                </div>
+                                <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                  {page.label}
+                                </span>
+                                {/* Pin/Unpin Button - Bottom Right Corner */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    togglePinPage(page.path);
+                                  }}
+                                  className={`
+                                    absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
+                                    ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
+                                  `}
+                                  title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                                >
+                                  {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
+                                </Button>
                               </div>
-                              <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
-                                {page.label}
-                              </span>
-                              {/* Pin/Unpin Button - Bottom Right Corner */}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  togglePinPage(page.path);
-                                }}
-                                className={`
-                                  absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
-                                  ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
-                                `}
-                                title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-                              >
-                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
-                              </Button>
-                            </div>
-                          </Link>
-                        </div>
-                      );
+                            </Link>
+                          </div>
+                        )
+                      };
                     })}
-                  </div>
+                  />
                 </div>
               )}
               
@@ -488,39 +498,56 @@ export default function TopMenu() {
                       <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                         {group.title}
                       </h3>
-                      {/* Mobile: 3 columns, Desktop: 4 columns for compact layout */}
-                      <div className="grid grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr">
-                        {group.features.map((feature, featureIndex) => (
-                          <Link 
-                            key={featureIndex} 
-                            href={feature.href === "#max" ? "#" : feature.href}
-                            onClick={() => handleFeatureClick(feature)}
-                          >
-                            <div className={`
-                              ${getCardSize(group.priority)}
-                              bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                              rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                              flex flex-col items-center justify-center text-center space-y-1
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                            `}>
-                              <div className={`
-                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                              `}>
-                                <feature.icon 
-                                  className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                  strokeWidth={1.5} 
-                                  fill="none"
-                                />
-                              </div>
-                              <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                {feature.label}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
+                      <DashboardCardContainer
+                        maxVisibleCardsMobile={3}
+                        maxVisibleCardsTablet={4}
+                        maxVisibleCardsDesktop={6}
+                        showMoreText={`Show More ${group.title}`}
+                        showLessText="Show Less"
+                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr"
+                        cards={group.features.map((feature, featureIndex) => {
+                          // Set priority based on group priority and feature characteristics
+                          let priority = 5; // default
+                          if (group.priority === "high") priority = feature.isAI ? 1 : 2;
+                          else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
+                          else priority = feature.isAI ? 5 : 6;
+                          
+                          return {
+                            id: `${group.title}-${feature.href}-${featureIndex}`,
+                            priority,
+                            content: (
+                              <Link 
+                                key={featureIndex} 
+                                href={feature.href === "#max" ? "#" : feature.href}
+                                onClick={() => handleFeatureClick(feature)}
+                              >
+                                <div className={`
+                                  ${getCardSize(group.priority)}
+                                  bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                                  rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                                  flex flex-col items-center justify-center text-center space-y-1
+                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                                  ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                `}>
+                                  <div className={`
+                                    ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                                    p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                  `}>
+                                    <feature.icon 
+                                      className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                                      strokeWidth={1.5} 
+                                      fill="none"
+                                    />
+                                  </div>
+                                  <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                    {feature.label}
+                                  </span>
+                                </div>
+                              </Link>
+                            )
+                          };
+                        })}
+                      />
                     </div>
                   ))}
                   
@@ -531,38 +558,56 @@ export default function TopMenu() {
                         <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                           {group.title}
                         </h3>
-                        <div className="grid grid-cols-3 gap-3 auto-rows-fr">
-                          {group.features.map((feature, featureIndex) => (
-                            <Link 
-                              key={featureIndex} 
-                              href={feature.href === "#max" ? "#" : feature.href}
-                              onClick={() => handleFeatureClick(feature)}
-                            >
-                              <div className={`
-                                ${getCardSize(group.priority)}
-                                bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                                rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                                flex flex-col items-center justify-center text-center space-y-1
-                                ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                                ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                              `}>
-                                <div className={`
-                                  ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                  p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                `}>
-                                  <feature.icon 
-                                    className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                    strokeWidth={1.5} 
-                                    fill="none"
-                                  />
-                                </div>
-                                <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                  {feature.label}
-                                </span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
+                        <DashboardCardContainer
+                          maxVisibleCardsMobile={3}
+                          maxVisibleCardsTablet={4}
+                          maxVisibleCardsDesktop={6}
+                          showMoreText={`Show More ${group.title}`}
+                          showLessText="Show Less"
+                          gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-3 auto-rows-fr"
+                          cards={group.features.map((feature, featureIndex) => {
+                            // Set priority based on group priority and feature characteristics
+                            let priority = 5; // default
+                            if (group.priority === "high") priority = feature.isAI ? 1 : 2;
+                            else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
+                            else priority = feature.isAI ? 5 : 6;
+                            
+                            return {
+                              id: `mobile-${group.title}-${feature.href}-${featureIndex}`,
+                              priority,
+                              content: (
+                                <Link 
+                                  key={featureIndex} 
+                                  href={feature.href === "#max" ? "#" : feature.href}
+                                  onClick={() => handleFeatureClick(feature)}
+                                >
+                                  <div className={`
+                                    ${getCardSize(group.priority)}
+                                    bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                                    rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                                    flex flex-col items-center justify-center text-center space-y-1
+                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                                    ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                  `}>
+                                    <div className={`
+                                      ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                                      p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                    `}>
+                                      <feature.icon 
+                                        className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                                        strokeWidth={1.5} 
+                                        fill="none"
+                                      />
+                                    </div>
+                                    <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                      {feature.label}
+                                    </span>
+                                  </div>
+                                </Link>
+                              )
+                            };
+                          })}
+                        />
                       </div>
                     ))}
                   </div>
@@ -575,38 +620,56 @@ export default function TopMenu() {
                       <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
                         {group.title}
                       </h3>
-                      <div className="grid grid-cols-4 gap-3 auto-rows-fr">
-                        {group.features.map((feature, featureIndex) => (
-                          <Link 
-                            key={featureIndex} 
-                            href={feature.href === "#max" ? "#" : feature.href}
-                            onClick={() => handleFeatureClick(feature)}
-                          >
-                            <div className={`
-                              ${getCardSize(group.priority)}
-                              bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
-                              rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                              flex flex-col items-center justify-center text-center space-y-1
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
-                            `}>
-                              <div className={`
-                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
-                                p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                              `}>
-                                <feature.icon 
-                                  className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
-                                  strokeWidth={1.5} 
-                                  fill="none"
-                                />
-                              </div>
-                              <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                {feature.label}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
+                      <DashboardCardContainer
+                        maxVisibleCardsMobile={3}
+                        maxVisibleCardsTablet={4}
+                        maxVisibleCardsDesktop={6}
+                        showMoreText={`Show More ${group.title}`}
+                        showLessText="Show Less"
+                        gridClassName="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 auto-rows-fr"
+                        cards={group.features.map((feature, featureIndex) => {
+                          // Set priority based on group priority and feature characteristics
+                          let priority = 5; // default
+                          if (group.priority === "high") priority = feature.isAI ? 1 : 2;
+                          else if (group.priority === "medium") priority = feature.isAI ? 3 : 4;
+                          else priority = feature.isAI ? 5 : 6;
+                          
+                          return {
+                            id: `desktop-${group.title}-${feature.href}-${featureIndex}`,
+                            priority,
+                            content: (
+                              <Link 
+                                key={featureIndex} 
+                                href={feature.href === "#max" ? "#" : feature.href}
+                                onClick={() => handleFeatureClick(feature)}
+                              >
+                                <div className={`
+                                  ${getCardSize(group.priority)}
+                                  bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md
+                                  rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                                  flex flex-col items-center justify-center text-center space-y-1
+                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                                  ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                `}>
+                                  <div className={`
+                                    ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : 'bg-gray-100'}
+                                    p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                  `}>
+                                    <feature.icon 
+                                      className={`${getIconSize(group.priority)} ${feature.isAI ? 'text-white' : feature.color.replace('bg-', 'text-').replace('-500', '-600')}`} 
+                                      strokeWidth={1.5} 
+                                      fill="none"
+                                    />
+                                  </div>
+                                  <span className={`${getTextSize(group.priority)} text-gray-800 font-medium leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                                    {feature.label}
+                                  </span>
+                                </div>
+                              </Link>
+                            )
+                          };
+                        })}
+                      />
                     </div>
                   ))}
                 </div>
