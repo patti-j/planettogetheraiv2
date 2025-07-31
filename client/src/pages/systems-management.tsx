@@ -67,6 +67,9 @@ export default function SystemsManagementPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState('all');
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUpgradeDialog, setNewUpgradeDialog] = useState(false);
+  const [viewUserDialog, setViewUserDialog] = useState(false);
+  const [editUserDialog, setEditUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('health');
   const [newUserData, setNewUserData] = useState({
     username: '',
@@ -75,6 +78,14 @@ export default function SystemsManagementPage() {
     lastName: '',
     password: '',
     role: ''
+  });
+  const [editUserData, setEditUserData] = useState({
+    id: 0,
+    username: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    isActive: true
   });
   const { toast } = useToast();
 
@@ -283,6 +294,46 @@ export default function SystemsManagementPage() {
       });
     }
   });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      const response = await apiRequest("PATCH", `/api/users/${userData.id}`, userData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "User Updated",
+        description: "User has been successfully updated."
+      });
+      setEditUserDialog(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update user.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleViewUser = (user: any) => {
+    setSelectedUser(user);
+    setViewUserDialog(true);
+  };
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setEditUserData({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      isActive: user.isActive
+    });
+    setEditUserDialog(true);
+  };
 
   const createUpgradeMutation = useMutation({
     mutationFn: async (upgradeData: any) => {
@@ -568,6 +619,136 @@ export default function SystemsManagementPage() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* View User Dialog */}
+            <Dialog open={viewUserDialog} onOpenChange={setViewUserDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>User Details</DialogTitle>
+                  <DialogDescription>
+                    View detailed information about this user.
+                  </DialogDescription>
+                </DialogHeader>
+                {selectedUser && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Username</Label>
+                        <p className="font-medium">{selectedUser.username}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Status</Label>
+                        <Badge className={getStatusColor(selectedUser.isActive ? 'active' : 'inactive')}>
+                          {selectedUser.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Email</Label>
+                      <p className="font-medium">{selectedUser.email}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">First Name</Label>
+                        <p className="font-medium">{selectedUser.firstName || 'Not set'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Last Name</Label>
+                        <p className="font-medium">{selectedUser.lastName || 'Not set'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Role</Label>
+                      <p className="font-medium">{selectedUser.activeRole?.name || selectedUser.roles?.[0]?.name || 'No Role'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Last Login</Label>
+                      <p className="font-medium">{selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleString() : 'Never'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Created</Label>
+                      <p className="font-medium">{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}</p>
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setViewUserDialog(false)}>
+                    Close
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit User Dialog */}
+            <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit User</DialogTitle>
+                  <DialogDescription>
+                    Update user information.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-username">Username</Label>
+                    <Input
+                      id="edit-username"
+                      value={editUserData.username}
+                      onChange={(e) => setEditUserData({...editUserData, username: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editUserData.email}
+                      onChange={(e) => setEditUserData({...editUserData, email: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-firstName">First Name</Label>
+                      <Input
+                        id="edit-firstName"
+                        value={editUserData.firstName}
+                        onChange={(e) => setEditUserData({...editUserData, firstName: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-lastName">Last Name</Label>
+                      <Input
+                        id="edit-lastName"
+                        value={editUserData.lastName}
+                        onChange={(e) => setEditUserData({...editUserData, lastName: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-status">Status</Label>
+                    <Select value={editUserData.isActive ? 'active' : 'inactive'} onValueChange={(value) => setEditUserData({...editUserData, isActive: value === 'active'})}>
+                      <SelectTrigger id="edit-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditUserDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => {
+                    updateUserMutation.mutate(editUserData);
+                  }}>
+                    Save Changes
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <Card>
@@ -603,10 +784,20 @@ export default function SystemsManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleViewUser(user)}
+                            title="View User Details"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditUser(user)}
+                            title="Edit User"
+                          >
                             <Settings className="h-4 w-4" />
                           </Button>
                         </div>
