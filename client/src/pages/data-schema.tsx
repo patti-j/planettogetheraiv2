@@ -54,6 +54,7 @@ import {
   Square,
   Settings,
   Plus,
+  Home,
   Minus,
   RefreshCw,
   Flag,
@@ -247,20 +248,22 @@ const TableNode = ({ data }: { data: any }) => {
       </CardHeader>
       {showColumns && (
         <CardContent className="pt-0">
-          <div className="space-y-1 max-h-[200px] overflow-y-auto">
+          <div className="space-y-2 max-h-[200px] overflow-y-auto">
             {table.columns.slice(0, 10).map((column: SchemaColumn, idx: number) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex items-center gap-2 text-xs">
-                  {column.primaryKey && <Key className="w-3 h-3 text-yellow-500" />}
-                  {column.foreignKey && <Link2 className="w-3 h-3 text-blue-500" />}
-                  <span className={column.primaryKey ? "font-bold" : ""}>{column.name}</span>
-                  <Badge variant="secondary" className="text-xs px-1 py-0">
+              <div key={idx} className="pb-2 border-b border-gray-100 last:border-0">
+                <div className="flex items-start flex-wrap gap-1 text-xs">
+                  <div className="flex items-center gap-1 min-w-0">
+                    {column.primaryKey && <Key className="w-3 h-3 text-yellow-500 flex-shrink-0" />}
+                    {column.foreignKey && <Link2 className="w-3 h-3 text-blue-500 flex-shrink-0" />}
+                    <span className={`${column.primaryKey ? "font-bold" : ""} break-words`}>{column.name}</span>
+                  </div>
+                  <Badge variant="secondary" className="text-xs px-1 py-0 ml-auto">
                     {column.type}
                   </Badge>
-                  {!column.nullable && <span className="text-red-500">*</span>}
+                  {!column.nullable && <span className="text-red-500 ml-1">*</span>}
                 </div>
                 {column.comment && (
-                  <div className="ml-6 text-xs text-gray-500 italic leading-snug">
+                  <div className="mt-1 pl-4 text-xs text-gray-500 italic leading-relaxed">
                     {column.comment}
                   </div>
                 )}
@@ -2727,18 +2730,19 @@ function DataSchemaViewContent() {
         </div>
       )}
 
-      {/* Floating Homepage Button - Positioned to avoid hamburger menu */}
+      {/* Floating Homepage Button - Bottom right corner for visibility */}
       {!isFullScreen && (
-        <div className="fixed top-20 left-4 z-[100]">
+        <div className="fixed bottom-8 right-8 z-[100]">
           <Button 
             onClick={() => {
               console.log('🏠 Navigating to homepage...');
               setLocation('/');
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-xl border-2 border-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 text-white shadow-2xl border-2 border-white"
             size="lg"
           >
-            <span className="font-semibold">← Go to Homepage</span>
+            <Home className="w-5 h-5 mr-2" />
+            <span className="font-semibold">Go to Homepage</span>
           </Button>
         </div>
       )}
