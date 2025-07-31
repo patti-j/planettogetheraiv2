@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,12 +50,35 @@ interface CanvasItem {
   position?: { x: number; y: number };
 }
 
+interface CanvasWidget {
+  id: number;
+  title: string;
+  type: string;
+  config: any;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  isVisible: boolean;
+  createdByMax: boolean;
+}
+
 export default function CanvasPage() {
   const { aiTheme } = useAITheme();
   const [items, setItems] = useState<CanvasItem[]>([]);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
-  // Load canvas items from localStorage on mount
+  // Fetch canvas widgets from API (created by Max AI)
+  const { data: canvasWidgets, isLoading } = useQuery({
+    queryKey: ['/api/canvas/widgets'],
+    queryFn: async () => {
+      const response = await fetch('/api/canvas/widgets');
+      if (!response.ok) {
+        throw new Error('Failed to fetch canvas widgets');
+      }
+      return response.json();
+    }
+  });
+
+  // Load canvas items from localStorage on mount (legacy items)
   useEffect(() => {
     const savedItems = localStorage.getItem('max-canvas-items');
     if (savedItems) {
@@ -70,6 +94,25 @@ export default function CanvasPage() {
   useEffect(() => {
     localStorage.setItem('max-canvas-items', JSON.stringify(items));
   }, [items]);
+
+  // Convert API widgets to canvas items format
+  const convertWidgetToCanvasItem = (widget: CanvasWidget): CanvasItem => {
+    return {
+      id: widget.id.toString(),
+      type: widget.type as any,
+      title: widget.title,
+      content: widget.config?.data || widget.config,
+      width: widget.size?.width ? `${widget.size.width}px` : undefined,
+      height: widget.size?.height ? `${widget.size.height}px` : undefined,
+      position: widget.position
+    };
+  };
+
+  // Combine localStorage items with API widgets
+  const allItems = [
+    ...items,
+    ...(canvasWidgets?.filter((w: CanvasWidget) => w.isVisible).map(convertWidgetToCanvasItem) || [])
+  ];
 
   const renderCanvasItem = (item: CanvasItem) => {
     switch (item.type) {
@@ -103,7 +146,7 @@ export default function CanvasPage() {
 
   const handleCopyToClipboard = async () => {
     try {
-      const canvasText = items
+      const canvasText = allItems
         .map(item => `${item.title}: ${JSON.stringify(item.content, null, 2)}`)
         .join('\n\n---\n\n');
       
@@ -125,10 +168,10 @@ export default function CanvasPage() {
     try {
       const canvasData = {
         timestamp: new Date().toISOString(),
-        items: items,
+        items: allItems,
         metadata: {
           version: "1.0",
-          itemCount: items.length
+          itemCount: allItems.length
         }
       };
       const blob = new Blob([JSON.stringify(canvasData, null, 2)], { type: 'application/json' });
@@ -163,7 +206,7 @@ export default function CanvasPage() {
 
   const handleShare = async () => {
     try {
-      const shareText = `Max Canvas Content (${items.length} items)\n\n${items
+      const shareText = `Max Canvas Content (${allItems.length} items)\n\n${allItems
         .map(item => `${item.title}: ${JSON.stringify(item.content)}`)
         .join('\n\n---\n\n')}`;
 
@@ -217,7 +260,7 @@ export default function CanvasPage() {
           </div>
           
           <div className="flex items-center gap-2 lg:flex-shrink-0">
-            {items.length > 0 && (
+            {allItems.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -259,7 +302,7 @@ export default function CanvasPage() {
 
       {/* Canvas Content Area */}
       <div className="flex-1 overflow-auto p-6">
-        {items.length === 0 ? (
+        {allItems.length === 0 && !isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -272,9 +315,16 @@ export default function CanvasPage() {
               </div>
             </div>
           </div>
+        ) : isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading canvas content...</p>
+            </div>
+          </div>
         ) : (
           <div className="grid gap-6 auto-fit-minmax-400">
-            {items.map((item) => (
+            {allItems.map((item) => (
               <Card key={item.id} className="shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">{item.title}</CardTitle>

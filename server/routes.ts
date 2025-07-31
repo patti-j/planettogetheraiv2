@@ -4317,6 +4317,107 @@ Manufacturing Context Available:
     }
   });
 
+  // Max AI endpoint for creating dashboards on Canvas (no auth required for AI systems)
+  app.post("/api/max/canvas/dashboards", async (req, res) => {
+    try {
+      console.log("=== MAX DASHBOARD CREATION ===");
+      console.log("Dashboard data:", JSON.stringify(req.body, null, 2));
+
+      // Create a dashboard-type canvas widget
+      const dashboardData = {
+        title: req.body.title || 'Dashboard',
+        subtitle: req.body.subtitle,
+        type: 'dashboard',
+        userId: req.body.userId || null, // Allow anonymous dashboards for Max
+        sessionId: req.body.sessionId || 'max_session',
+        isVisible: true,
+        createdByMax: true,
+        position: req.body.position || { x: 0, y: 0 },
+        size: req.body.size || { width: 800, height: 600 },
+        config: {
+          type: 'dashboard',
+          dashboardType: req.body.dashboardType || 'production',
+          data: req.body.data || {},
+          metrics: req.body.metrics || [],
+          charts: req.body.charts || [],
+          widgets: req.body.widgets || [],
+          ...req.body.config
+        }
+      };
+
+      const validatedData = insertCanvasWidgetSchema.parse(dashboardData);
+      const dashboard = await storage.createCanvasWidget(validatedData);
+      
+      console.log("Dashboard created successfully with ID:", dashboard.id);
+      res.status(201).json(dashboard);
+    } catch (error) {
+      console.error("Error creating Max dashboard:", error);
+      if (error.name === 'ZodError') {
+        console.error("Validation errors:", error.errors);
+        return res.status(400).json({ 
+          error: "Invalid dashboard data", 
+          details: error.errors 
+        });
+      }
+      res.status(500).json({ 
+        error: "Failed to create dashboard",
+        message: "Internal server error"
+      });
+    }
+  });
+
+  // Max AI endpoint for showing existing dashboards on demand
+  app.post("/api/max/canvas/show-dashboard", async (req, res) => {
+    try {
+      const { dashboardId, sessionId, position } = req.body;
+
+      if (dashboardId) {
+        // Show existing dashboard by ID
+        await storage.showCanvasWidget(dashboardId);
+        
+        // Update position if provided
+        if (position) {
+          await storage.updateWidgetPosition(dashboardId, position);
+        }
+        
+        const dashboard = await storage.getCanvasWidget(dashboardId);
+        res.json(dashboard);
+      } else {
+        // Create and show a new dashboard with default production metrics
+        const defaultDashboard = {
+          title: 'Production Overview',
+          subtitle: 'Real-time manufacturing metrics',
+          type: 'dashboard',
+          sessionId: sessionId || 'max_session',
+          isVisible: true,
+          createdByMax: true,
+          position: position || { x: 0, y: 0 },
+          size: { width: 800, height: 600 },
+          config: {
+            type: 'dashboard',
+            dashboardType: 'production',
+            data: {
+              activeJobs: 12,
+              efficiency: 94,
+              pending: 8,
+              issues: 2
+            }
+          }
+        };
+
+        const validatedData = insertCanvasWidgetSchema.parse(defaultDashboard);
+        const dashboard = await storage.createCanvasWidget(validatedData);
+        res.status(201).json(dashboard);
+      }
+    } catch (error) {
+      console.error("Error showing Max dashboard:", error);
+      res.status(500).json({ 
+        error: "Failed to show dashboard",
+        message: "Internal server error"
+      });
+    }
+  });
+
   app.post("/api/canvas/widgets", requireAuth, async (req, res) => {
     try {
       const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;

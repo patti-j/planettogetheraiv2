@@ -150,7 +150,80 @@ Max can create and manage interactive widgets on the user's canvas for data visu
 - `text` - Text displays and markdown content
 - `image` - Image displays and visual content
 - `button` - Interactive control buttons
+- `dashboard` - Complete dashboard with multiple metrics and widgets
 - `custom` - Custom HTML/React components
+
+### Canvas Dashboard Management API
+
+Max can create and display comprehensive dashboards with multiple metrics, charts, and widgets on the Canvas.
+
+#### Create Dashboard
+
+**POST** `/api/max/canvas/dashboards`
+
+Creates a new dashboard widget on the Canvas.
+
+```json
+{
+  "title": "Production Overview",
+  "subtitle": "Real-time manufacturing metrics",
+  "dashboardType": "production",
+  "data": {
+    "activeJobs": 12,
+    "efficiency": 94,
+    "pending": 8,
+    "issues": 2
+  },
+  "metrics": [
+    {
+      "name": "Active Jobs",
+      "value": 12,
+      "type": "number",
+      "color": "blue"
+    }
+  ],
+  "charts": [
+    {
+      "type": "line",
+      "title": "Production Trend",
+      "data": []
+    }
+  ],
+  "position": { "x": 0, "y": 0 },
+  "size": { "width": 800, "height": 600 }
+}
+```
+
+#### Show Dashboard On Demand
+
+**POST** `/api/max/canvas/show-dashboard`
+
+Shows an existing dashboard or creates a new one with default production metrics.
+
+```json
+{
+  "dashboardId": 123,
+  "sessionId": "max_session",
+  "position": { "x": 0, "y": 0 }
+}
+```
+
+For new dashboard:
+```json
+{
+  "sessionId": "max_session",
+  "position": { "x": 0, "y": 0 }
+}
+```
+
+### Dashboard Types
+
+- `production` - Manufacturing production metrics
+- `quality` - Quality control and inspection metrics
+- `maintenance` - Equipment maintenance and status
+- `inventory` - Stock levels and material tracking
+- `efficiency` - Overall equipment effectiveness (OEE)
+- `custom` - User-defined dashboard configuration
 
 ### Create Widget for User (Max AI)
 

@@ -41,6 +41,19 @@ export interface WidgetConfig {
   drillDownParams?: Record<string, any>;
   action?: string;
   content?: string;
+  // Optimization-specific properties
+  algorithm?: string;
+  objective?: string;
+  timeHorizon?: number;
+  maxIterations?: number;
+  // Additional widget properties
+  showQuickActions?: boolean;
+  showHistory?: boolean;
+  showMetrics?: boolean;
+  maxHistoryItems?: number;
+  defaultView?: string;
+  showAlgorithmSelector?: boolean;
+  showProfileSelector?: boolean;
 }
 
 export interface WidgetTemplate {
@@ -83,6 +96,7 @@ export interface ProcessedWidgetData {
   alertData?: any[];
   progressValue?: number;
   gaugeValue?: number;
+  action?: string;
 }
 
 export class WidgetDataProcessor {
