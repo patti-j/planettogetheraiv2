@@ -40,6 +40,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { apiRequest } from "@/lib/queryClient";
+import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
 interface DashboardItem {
   id: number;
@@ -130,6 +131,7 @@ export default function DashboardsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDashboardManager, setShowDashboardManager] = useState(false);
   const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
 
   // Dashboard creation state
@@ -284,25 +286,10 @@ export default function DashboardsPage() {
 
   const handleEdit = (dashboard: DashboardItem) => {
     setSelectedDashboard(dashboard);
-    setNewDashboard({
-      name: dashboard.name,
-      description: dashboard.description || "",
-      category: "operations",
-      template: ""
-    });
-    setShowEditDialog(true);
+    setShowDashboardManager(true);
   };
 
-  const handleUpdate = () => {
-    if (!selectedDashboard) return;
-    
-    const updateData = {
-      name: newDashboard.name,
-      description: newDashboard.description
-    };
-    
-    updateDashboardMutation.mutate({ id: selectedDashboard.id, data: updateData });
-  };
+
 
   const handleDelete = (id: number) => {
     if (confirm("Are you sure you want to delete this dashboard?")) {
@@ -603,54 +590,41 @@ export default function DashboardsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dashboard Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Dashboard</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="edit-name">Dashboard Name</Label>
-              <Input
-                id="edit-name"
-                value={newDashboard.name}
-                onChange={(e) => setNewDashboard(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter dashboard name"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                value={newDashboard.description}
-                onChange={(e) => setNewDashboard(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter dashboard description"
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleUpdate}
-                disabled={!newDashboard.name || updateDashboardMutation.isPending}
-                className="flex-1"
-              >
-                {updateDashboardMutation.isPending ? "Updating..." : "Update Dashboard"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Dashboard Manager */}
+      <EnhancedDashboardManager
+        open={showDashboardManager}
+        onOpenChange={setShowDashboardManager}
+        dashboards={dashboards}
+        currentDashboard={selectedDashboard}
+        onDashboardSelect={(dashboard) => {
+          setSelectedDashboard(dashboard);
+          // Optional: Navigate to analytics view
+          // window.open(`/analytics?dashboard=${dashboard.id}`, '_blank');
+        }}
+        onDashboardCreate={(dashboard) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard created",
+            description: "New dashboard has been created successfully",
+          });
+        }}
+        onDashboardUpdate={(dashboard) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard updated",
+            description: "Dashboard has been updated successfully",
+          });
+        }}
+        onDashboardDelete={(dashboardId) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard deleted",
+            description: "Dashboard has been deleted successfully",
+          });
+        }}
+        standardWidgets={[]}
+        customWidgets={[]}
+      />
     </div>
   );
 }
