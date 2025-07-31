@@ -513,7 +513,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
-          <Route path="/" component={HomepageWithTourSupport} />
+          <Route path="/" component={Homepage} />
           <Route component={NotFound} />
         </Switch>
         </OnboardingGate>
