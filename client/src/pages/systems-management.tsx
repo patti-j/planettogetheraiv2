@@ -68,6 +68,14 @@ export default function SystemsManagementPage() {
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUpgradeDialog, setNewUpgradeDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('health');
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    password: '',
+    role: ''
+  });
   const { toast } = useToast();
 
   // System Health Data
@@ -292,10 +300,11 @@ export default function SystemsManagementPage() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: any) => {
-      const response = await apiRequest("POST", "/api/system/users", userData);
+      const response = await apiRequest("POST", "/api/users", userData);
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/system/users"] });
       toast({
         title: "User Created",
@@ -492,17 +501,61 @@ export default function SystemsManagementPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input 
+                        id="firstName" 
+                        placeholder="John"
+                        value={newUserData.firstName}
+                        onChange={(e) => setNewUserData({...newUserData, firstName: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input 
+                        id="lastName" 
+                        placeholder="Doe"
+                        value={newUserData.lastName}
+                        onChange={(e) => setNewUserData({...newUserData, lastName: e.target.value})}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <Label htmlFor="username">Username</Label>
-                    <Input id="username" placeholder="Enter username" />
+                    <Input 
+                      id="username" 
+                      placeholder="Enter username"
+                      value={newUserData.username}
+                      onChange={(e) => setNewUserData({...newUserData, username: e.target.value})}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="user@company.com" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="user@company.com"
+                      value={newUserData.email}
+                      onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      placeholder="••••••••"
+                      value={newUserData.password}
+                      onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select>
+                    <Select 
+                      value={newUserData.role}
+                      onValueChange={(value) => setNewUserData({...newUserData, role: value})}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
@@ -518,11 +571,33 @@ export default function SystemsManagementPage() {
                       Cancel
                     </Button>
                     <Button onClick={() => {
-                      toast({
-                        title: "User Created",
-                        description: "New user has been successfully created."
-                      });
-                      setNewUserDialog(false);
+                      if (newUserData.username && newUserData.email && newUserData.firstName && 
+                          newUserData.lastName && newUserData.password && newUserData.role) {
+                        // Send user data with password (backend will handle hashing)
+                        createUserMutation.mutate({
+                          username: newUserData.username,
+                          email: newUserData.email,
+                          firstName: newUserData.firstName,
+                          lastName: newUserData.lastName,
+                          password: newUserData.password,
+                          isActive: true
+                        });
+                        // Reset form data
+                        setNewUserData({
+                          username: '',
+                          email: '',
+                          firstName: '',
+                          lastName: '',
+                          password: '',
+                          role: ''
+                        });
+                      } else {
+                        toast({
+                          title: "Error",
+                          description: "Please fill in all fields.",
+                          variant: "destructive"
+                        });
+                      }
                     }}>
                       Create User
                     </Button>
