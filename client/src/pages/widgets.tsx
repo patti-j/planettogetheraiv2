@@ -42,6 +42,7 @@ import WidgetDesignStudio from "@/components/widget-design-studio";
 import UniversalWidget from "@/components/universal-widget";
 import { WidgetConfig, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { useAITheme } from "@/hooks/use-ai-theme";
+import MaxAICard from "@/components/max-ai-card";
 
 interface WidgetItem {
   id: string;
@@ -64,6 +65,7 @@ export default function WidgetsPage() {
   // Scroll position management
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const savedScrollPosition = useRef<number>(0);
+  const maxAICardRef = useRef<HTMLDivElement>(null);
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,6 +92,20 @@ export default function WidgetsPage() {
 
   // Template Selection State
   const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
+
+  // Handle anchor navigation
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === '#max' && maxAICardRef.current) {
+      // Small delay to ensure the page has rendered
+      setTimeout(() => {
+        maxAICardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
+    }
+  }, []);
 
   // Fetch widgets from all systems
   const { data: cockpitWidgets = [], isLoading: cockpitLoading } = useQuery({
@@ -470,6 +486,20 @@ export default function WidgetsPage() {
               <p className="text-xs text-muted-foreground">Analytics dashboards</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Max AI Card - Featured Widget */}
+        <div id="max" ref={maxAICardRef} className="scroll-mt-4">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="h-5 w-5 text-purple-600" />
+              <h2 className="text-lg font-semibold">Featured AI Widget</h2>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                New
+              </Badge>
+            </div>
+            <MaxAICard showDemo={true} />
+          </div>
         </div>
 
         {/* Search and Filters */}
