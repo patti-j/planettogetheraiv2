@@ -512,14 +512,6 @@ export default function DashboardManager({
           <TabsContent value="browse" className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Saved Dashboards</h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveTab("create")}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Dashboard
-              </Button>
             </div>
 
             <ScrollArea className="h-80">
