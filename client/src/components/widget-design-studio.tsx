@@ -388,19 +388,19 @@ export default function WidgetDesignStudio({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-6xl h-[95vh] sm:h-[90vh] flex flex-col p-2 sm:p-6">
-        <DialogHeader className="pb-2 sm:pb-4">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-6xl max-h-[95vh] flex flex-col p-2 sm:p-6">
+        <DialogHeader className="pb-2 sm:pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
             {mode === 'edit' ? 'Edit Widget' : 'Widget Design Studio'}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 min-h-0">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden">
           {/* Configuration Panel */}
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+              <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm flex-shrink-0">
                 <TabsTrigger value="template" className="px-2 py-1 sm:px-3 sm:py-2">
                   <span className="hidden sm:inline">1. Template</span>
                   <span className="sm:hidden">Template</span>
@@ -415,8 +415,8 @@ export default function WidgetDesignStudio({
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="template" className="flex-1 space-y-3 sm:space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-shrink-0">
                   <Label className="text-sm font-medium">Category:</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-full sm:w-48">
@@ -432,8 +432,8 @@ export default function WidgetDesignStudio({
                   </Select>
                 </div>
                 
-                <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px]">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pr-2">
+                <div className="flex-1 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-4">
                     {filteredTemplates.map(template => (
                       <Card 
                         key={template.id}
@@ -473,12 +473,11 @@ export default function WidgetDesignStudio({
                       </Card>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
               
-              <TabsContent value="configure" className="flex-1 space-y-3 sm:space-y-4">
-                <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px] space-y-3 sm:space-y-4">
-                  <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4">
+              <TabsContent value="configure" className="flex-1 overflow-y-auto">
+                <div className="space-y-3 sm:space-y-4 pb-4">
                     {/* Basic Configuration */}
                     <Card>
                       <CardHeader className="pb-2 sm:pb-4">
@@ -603,13 +602,11 @@ export default function WidgetDesignStudio({
                         </div>
                       </CardContent>
                     </Card>
-                  </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
               
-              <TabsContent value="style" className="flex-1 space-y-3 sm:space-y-4">
-                <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px]">
-                  <div className="space-y-3 sm:space-y-4 pr-2">
+              <TabsContent value="style" className="flex-1 overflow-y-auto">
+                <div className="space-y-3 sm:space-y-4 pb-4">
                     <Card>
                       <CardHeader className="pb-2 sm:pb-4">
                         <CardTitle className="text-base sm:text-lg">Deployment Targets</CardTitle>
@@ -645,8 +642,7 @@ export default function WidgetDesignStudio({
                         <span className="text-sm">Reset</span>
                       </Button>
                     </div>
-                  </div>
-                </ScrollArea>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
