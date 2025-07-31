@@ -80,6 +80,7 @@ import DataSchemaView from "@/pages/data-schema";
 import TableFieldViewer from "@/pages/table-field-viewer";
 import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
+import Homepage from "@/pages/homepage";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -149,7 +150,7 @@ function DashboardWithAutoTour() {
     }
   }, [user, startTour]);
 
-  return <Dashboard />;
+  return <Homepage />;
 }
 
 // MainContentArea is now replaced by SplitPaneLayout
