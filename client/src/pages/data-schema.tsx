@@ -2727,9 +2727,9 @@ function DataSchemaViewContent() {
         </div>
       )}
 
-      {/* Floating Homepage Button - Always Visible */}
+      {/* Floating Homepage Button - Positioned to avoid hamburger menu */}
       {!isFullScreen && (
-        <div className="fixed top-4 right-4 z-[100]">
+        <div className="fixed top-20 left-4 z-[100]">
           <Button 
             onClick={() => {
               console.log('🏠 Navigating to homepage...');
