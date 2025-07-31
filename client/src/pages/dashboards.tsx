@@ -146,6 +146,13 @@ export default function DashboardsPage() {
     template: ""
   });
 
+  // Canvas editor state
+  const [newDashboardName, setNewDashboardName] = useState("");
+  const [newDashboardDescription, setNewDashboardDescription] = useState("");
+  const [tempDashboardWidgets, setTempDashboardWidgets] = useState<any[]>([]);
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(600);
+
   // Fetch dashboards
   const { data: dashboards = [], isLoading: isDashboardsLoading, refetch: refetchDashboards } = useQuery<DashboardItem[]>({
     queryKey: ["/api/dashboard-configs"],
@@ -293,6 +300,9 @@ export default function DashboardsPage() {
 
   const handleEdit = (dashboard: DashboardItem) => {
     setSelectedDashboard(dashboard);
+    setNewDashboardName(dashboard.name);
+    setNewDashboardDescription(dashboard.description || "");
+    setTempDashboardWidgets(dashboard.configuration?.customWidgets || []);
     setShowEnhancedDashboardManager(true);
   };
 
@@ -547,31 +557,251 @@ export default function DashboardsPage() {
 
       {/* New Dashboard Canvas Dialog */}
       <Dialog open={showEnhancedDashboardManager} onOpenChange={setShowEnhancedDashboardManager}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              {selectedDashboard ? "Edit Dashboard" : "Create New Dashboard"}
-            </DialogTitle>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  {selectedDashboard ? "Edit Dashboard" : "Create New Dashboard"}
+                </DialogTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    if (selectedDashboard) {
+                      // Update existing dashboard
+                      const dashboardData = {
+                        name: newDashboardName || selectedDashboard.name,
+                        description: newDashboardDescription || selectedDashboard.description,
+                        configuration: {
+                          standardWidgets: [],
+                          customWidgets: tempDashboardWidgets
+                        }
+                      };
+                      updateDashboardMutation.mutate({ id: selectedDashboard.id, data: dashboardData });
+                    } else {
+                      // Create new dashboard
+                      const dashboardData = {
+                        name: newDashboardName || "Untitled Dashboard",
+                        description: newDashboardDescription || "Dashboard created with canvas editor",
+                        configuration: {
+                          standardWidgets: [],
+                          customWidgets: tempDashboardWidgets
+                        }
+                      };
+                      createDashboardMutation.mutate(dashboardData);
+                    }
+                    setShowEnhancedDashboardManager(false);
+                    setNewDashboardName("");
+                    setNewDashboardDescription("");
+                    setTempDashboardWidgets([]);
+                  }}
+                  disabled={createDashboardMutation.isPending || updateDashboardMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {selectedDashboard ? "Update Dashboard" : "Save Dashboard"}
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
           
-          <div className="h-[calc(90vh-120px)] overflow-hidden">
-            {/* Dashboard Canvas Creation Interface will go here */}
-            <div className="flex flex-col h-full">
-              <div className="flex-1 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
-                <div className="text-center">
-                  <Layout className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Canvas</h3>
-                  <p className="text-gray-600 mb-6">Drag and drop widgets to create your dashboard</p>
-                  <div className="flex gap-3 justify-center">
-                    <Button variant="outline">
-                      <Grid className="w-4 h-4 mr-2" />
-                      Add Widget
-                    </Button>
-                    <Button>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Dashboard
-                    </Button>
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full space-y-6 p-6">
+              {/* Dashboard Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dashboard-name">Dashboard Name</Label>
+                  <Input
+                    id="dashboard-name"
+                    value={newDashboardName}
+                    onChange={(e) => setNewDashboardName(e.target.value)}
+                    placeholder={selectedDashboard?.name || "Enter dashboard name"}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dashboard-description">Description</Label>
+                  <Input
+                    id="dashboard-description"
+                    value={newDashboardDescription}
+                    onChange={(e) => setNewDashboardDescription(e.target.value)}
+                    placeholder={selectedDashboard?.description || "Enter dashboard description"}
+                  />
+                </div>
+              </div>
+              
+              {/* Visual Dashboard Editor */}
+              <div className="space-y-2 flex-1">
+                <Label>Dashboard Layout</Label>
+                <div className="border rounded-lg p-4 bg-gray-50 h-full min-h-[500px]">
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium mb-2">Widget Library</h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      {['metric', 'chart', 'table', 'progress'].map((type) => (
+                        <div
+                          key={type}
+                          className="p-2 bg-white border rounded cursor-pointer hover:bg-gray-100 text-center text-sm capitalize"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', JSON.stringify({
+                              type: 'widget',
+                              widgetType: type,
+                              title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`
+                            }));
+                          }}
+                        >
+                          {type === 'metric' && <BarChart3 className="w-4 h-4 mx-auto mb-1" />}
+                          {type === 'chart' && <TrendingUp className="w-4 h-4 mx-auto mb-1" />}
+                          {type === 'table' && <Grid className="w-4 h-4 mx-auto mb-1" />}
+                          {type === 'progress' && <Target className="w-4 h-4 mx-auto mb-1" />}
+                          {type}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">Dashboard Canvas</h4>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (tempDashboardWidgets.length > 0) {
+                              const maxX = Math.max(...tempDashboardWidgets.map((w: any) => w.position.x + w.size.width));
+                              const maxY = Math.max(...tempDashboardWidgets.map((w: any) => w.position.y + w.size.height));
+                              const padding = 40;
+                              setCanvasWidth(Math.max(400, maxX + padding));
+                              setCanvasHeight(Math.max(300, maxY + padding));
+                            }
+                          }}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Auto-size
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setCanvasWidth(800); setCanvasHeight(600); }}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Reset
+                        </Button>
+                      </div>
+                    </div>
+                    <div 
+                      className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-auto"
+                      style={{ 
+                        width: '100%', 
+                        height: '400px',
+                        backgroundImage: `
+                          linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                          linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                        `,
+                        backgroundSize: '20px 20px'
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                        
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        try {
+                          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                          if (data.type === 'widget') {
+                            const newWidget = {
+                              id: `widget-${Date.now()}`,
+                              title: data.title,
+                              type: data.widgetType,
+                              position: { x, y },
+                              size: { width: 200, height: 150 },
+                              visible: true,
+                              data: {},
+                              config: {}
+                            };
+                            
+                            setTempDashboardWidgets([...tempDashboardWidgets, newWidget]);
+                          }
+                        } catch (err) {
+                          console.error('Failed to parse drag data:', err);
+                        }
+                      }}
+                    >
+                      {/* Render Widgets */}
+                      {tempDashboardWidgets.map((widget: any) => (
+                        <div
+                          key={widget.id}
+                          className="absolute border border-gray-300 rounded-lg bg-white shadow cursor-move group hover:border-blue-500"
+                          style={{
+                            left: widget.position.x,
+                            top: widget.position.y,
+                            width: widget.size.width,
+                            height: widget.size.height
+                          }}
+                          onMouseDown={(e) => {
+                            const startX = e.clientX;
+                            const startY = e.clientY;
+                            const startPosX = widget.position.x;
+                            const startPosY = widget.position.y;
+                            
+                            const handleMouseMove = (e: MouseEvent) => {
+                              const newX = Math.max(0, startPosX + (e.clientX - startX));
+                              const newY = Math.max(0, startPosY + (e.clientY - startY));
+                              
+                              setTempDashboardWidgets(widgets => 
+                                widgets.map(w => w.id === widget.id ? { ...w, position: { x: newX, y: newY } } : w)
+                              );
+                            };
+                            
+                            const handleMouseUp = () => {
+                              document.removeEventListener('mousemove', handleMouseMove);
+                              document.removeEventListener('mouseup', handleMouseUp);
+                            };
+                            
+                            document.addEventListener('mousemove', handleMouseMove);
+                            document.addEventListener('mouseup', handleMouseUp);
+                          }}
+                        >
+                          <div className="widget-header flex items-center justify-between mb-1 p-2 cursor-move">
+                            <span className="text-xs font-medium truncate">{widget.title}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTempDashboardWidgets(widgets => widgets.filter(w => w.id !== widget.id));
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="widget-content px-2 pb-2 cursor-move">
+                            <div className="text-xs text-gray-500 capitalize">{widget.type}</div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {tempDashboardWidgets.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                          <div className="text-center">
+                            <Grid className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-sm">Drag widgets here to build your dashboard</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
