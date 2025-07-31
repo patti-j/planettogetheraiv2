@@ -634,7 +634,7 @@ export default function WidgetDesignStudio({
             </TabsContent>
             
             <TabsContent value="style" className="space-y-4 mt-0">
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                   <Card>
                     <CardHeader className="pb-1">
                       <CardTitle className="text-base">Deploy to Systems</CardTitle>
