@@ -15,13 +15,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Plus, Edit, Trash2, MoreHorizontal, Settings, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertProductionOrderSchema, type ProductionOrder, type Operation, type Capability, type Resource } from "@shared/schema";
+import { insertProductionOrderSchema, type ProductionOrder, type DiscreteOperation, type Capability, type Resource, type Customer } from "@shared/schema";
 import OperationForm from "./operation-form";
 
-const jobFormSchema = insertProductionOrderSchema.extend({
+const jobFormSchema = insertProductionOrderSchema.omit({
+  plantId: true, // Will be set programmatically
+  createdAt: true,
+}).extend({
   dueDate: z.string().optional(),
   scheduledStartDate: z.string().optional(),
   scheduledEndDate: z.string().optional(),
+  customerId: z.number().optional(),
+  salesOrderId: z.number().optional(),
 });
 
 type JobFormData = z.infer<typeof jobFormSchema>;
@@ -35,17 +40,18 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
-  const [editingOperation, setEditingOperation] = useState<Operation | null>(null);
+  const [editingOperation, setEditingOperation] = useState<DiscreteOperation | null>(null);
 
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
       name: job?.name || "",
       description: job?.description || "",
-      customer: job?.customer || "",
+      customerId: job?.customerId || undefined,
+      salesOrderId: job?.salesOrderId || undefined,
       priority: job?.priority || "medium",
-      status: job?.status || "planned",
-      quantity: job?.quantity || 1,
+      status: job?.status || "released",
+      quantity: job?.quantity || "1",
       dueDate: job?.dueDate ? new Date(job.dueDate).toISOString().split('T')[0] : "",
       scheduledStartDate: job?.scheduledStartDate ? new Date(job.scheduledStartDate).toISOString().slice(0, 16) : "",
       scheduledEndDate: job?.scheduledEndDate ? new Date(job.scheduledEndDate).toISOString().slice(0, 16) : "",
@@ -53,7 +59,7 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
   });
 
   // Fetch operations for this job if editing
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<DiscreteOperation[]>({
     queryKey: ["/api/jobs", job?.id, "operations"],
     queryFn: async () => {
       if (!job?.id) return [];
@@ -73,10 +79,26 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
     queryKey: ["/api/resources"],
   });
 
+  // Fetch customers for dropdown
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+  });
+
+  // Fetch sales orders for dropdown
+  const { data: salesOrders = [] } = useQuery({
+    queryKey: ["/api/sales-orders"],
+    queryFn: async () => {
+      const response = await fetch("/api/sales-orders");
+      if (!response.ok) throw new Error("Failed to fetch sales orders");
+      return response.json();
+    },
+  });
+
   const createJobMutation = useMutation({
     mutationFn: async (data: JobFormData) => {
       const jobData = {
         ...data,
+        plantId: 1, // Default plant - should be selected by user in a real app
         scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
         scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
@@ -166,13 +188,51 @@ export default function JobForm({ job, onSuccess }: JobFormProps) {
 
         <FormField
           control={form.control}
-          name="customer"
+          name="customerId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter customer name" {...field} />
-              </FormControl>
+              <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString() || ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">No Customer</SelectItem>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.customerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="salesOrderId"  
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sales Order</FormLabel>
+              <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value?.toString() || ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a sales order" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">No Sales Order</SelectItem>
+                  {salesOrders.map((order: any) => (
+                    <SelectItem key={order.id} value={order.id.toString()}>
+                      {order.orderNumber} - {order.totalAmount ? `$${(order.totalAmount / 100).toFixed(2)}` : 'N/A'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

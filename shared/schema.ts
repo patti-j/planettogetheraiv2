@@ -62,7 +62,7 @@ export const productionOrders: any = pgTable("production_orders", {
   actualStartDate: timestamp("actual_start_date"),
   actualEndDate: timestamp("actual_end_date"),
   itemNumber: text("item_number"), // Reference to items table
-  salesOrderNumber: text("sales_order_number"), // Reference to sales order
+  salesOrderId: integer("sales_order_id").references(() => salesOrders.id), // Foreign key to sales_orders table
   productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
   plantId: integer("plant_id").references(() => plants.id).notNull(),
   
@@ -143,7 +143,7 @@ export const plannedOrders = pgTable("planned_orders", {
   status: text("status").notNull().default("firm"), // firm, released_to_production, cancelled
   priority: text("priority").notNull().default("medium"),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
-  salesOrderNumber: text("sales_order_number"), // Originating sales order if applicable
+  salesOrderId: integer("sales_order_id").references(() => salesOrders.id), // Foreign key to originating sales order if applicable
   productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
   createdAt: timestamp("created_at").defaultNow(),
   // Removed productionOrderId foreign key - now handled via many-to-many junction table
