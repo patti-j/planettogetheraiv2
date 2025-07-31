@@ -232,6 +232,14 @@ export default function Training() {
     enabled: !!user?.id && canAccessTraining,
     staleTime: 0, // Always refetch to ensure fresh data
   });
+
+  // Fetch tours from database for dashboard cards
+  const { data: toursFromAPI = [] } = useQuery({
+    queryKey: ["/api/tours"],
+    enabled: canAccessTraining,
+  });
+  const toursArray = Array.isArray(toursFromAPI) ? toursFromAPI : [];
+
   const startTrainingMutation = useMutation({
     mutationFn: async (moduleId: string) => {
       // This would start a training session for the specific module
@@ -1134,7 +1142,7 @@ export default function Training() {
                   <div className="flex items-center">
                     <Volume2 className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600 mr-2 sm:mr-3" />
                     <div>
-                      <div className="text-xl sm:text-2xl font-bold">{toursArray?.filter((t: any) => t.hasVoice).length || 0}</div>
+                      <div className="text-xl sm:text-2xl font-bold">{toursArray.filter((t: any) => t.hasVoice).length || 0}</div>
                       <div className="text-xs text-gray-500">Voice Tours</div>
                     </div>
                   </div>
