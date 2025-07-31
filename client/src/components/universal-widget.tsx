@@ -111,7 +111,15 @@ export default function UniversalWidget({
   };
 
   const renderChartWidget = () => {
-    if (!widgetData) return <div className="text-center text-muted-foreground">No data available</div>;
+    if (!widgetData || !widgetData.chartData) {
+      return <div className="text-center text-muted-foreground">No chart data available</div>;
+    }
+
+    // Ensure chartData has proper structure for Chart.js
+    const { chartData } = widgetData;
+    if (!chartData || !chartData.datasets || !Array.isArray(chartData.datasets)) {
+      return <div className="text-center text-muted-foreground">Invalid chart data structure</div>;
+    }
 
     const chartOptions = {
       responsive: true,
@@ -157,15 +165,25 @@ export default function UniversalWidget({
 
     const chartHeight = "200px";
 
-    return (
-      <div style={{ height: chartHeight }}>
-        {config.chartType === 'pie' && <Pie data={widgetData} options={chartOptions} />}
-        {config.chartType === 'doughnut' && <Doughnut data={widgetData} options={chartOptions} />}
-        {config.chartType === 'bar' && <Bar data={widgetData} options={chartOptions} />}
-        {(config.chartType === 'line' || config.chartType === 'area') && <Line data={widgetData} options={chartOptions} />}
-        {!config.chartType && <Bar data={widgetData} options={chartOptions} />}
-      </div>
-    );
+    try {
+      return (
+        <div style={{ height: chartHeight }}>
+          {config.chartType === 'pie' && <Pie data={chartData} options={chartOptions} />}
+          {config.chartType === 'doughnut' && <Doughnut data={chartData} options={chartOptions} />}
+          {config.chartType === 'bar' && <Bar data={chartData} options={chartOptions} />}
+          {(config.chartType === 'line' || config.chartType === 'area') && <Line data={chartData} options={chartOptions} />}
+          {!config.chartType && <Bar data={chartData} options={chartOptions} />}
+        </div>
+      );
+    } catch (error) {
+      console.error('Chart rendering error:', error);
+      return (
+        <div className="text-center text-muted-foreground">
+          <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-xs">Chart unavailable</p>
+        </div>
+      );
+    }
   };
 
   const renderTableWidget = () => {
