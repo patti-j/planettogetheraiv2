@@ -436,7 +436,7 @@ export default function WidgetDesignStudio({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-4xl lg:max-w-6xl max-h-[95vh] flex flex-col p-2 sm:p-6">
+      <DialogContent className="max-w-[98vw] max-h-[98vh] flex flex-col p-2 sm:p-6">
         <DialogHeader className="pb-2 sm:pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -481,7 +481,7 @@ export default function WidgetDesignStudio({
                 </div>
                 
                 <div className="flex-1 overflow-y-auto overscroll-contain">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-4">
                     {filteredTemplates.map(template => (
                       <Card 
                         key={template.id}
@@ -490,19 +490,19 @@ export default function WidgetDesignStudio({
                         }`}
                         onClick={() => handleTemplateSelect(template)}
                       >
-                        <CardHeader className="pb-2 sm:pb-3">
+                        <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
-                            <template.icon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                            <template.icon className="h-5 w-5 text-blue-600" />
                             <Badge variant={template.complexity === 'basic' ? 'default' : 
                                            template.complexity === 'intermediate' ? 'secondary' : 'destructive'}
                                    className="text-xs">
                               {template.complexity}
                             </Badge>
                           </div>
-                          <CardTitle className="text-sm sm:text-base lg:text-lg line-clamp-2">{template.name}</CardTitle>
+                          <CardTitle className="text-sm font-medium line-clamp-2 leading-tight">{template.name}</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-3">
+                        <CardContent className="pt-0">
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2 leading-relaxed">
                             {template.description}
                           </p>
                           <div className="flex flex-wrap gap-1">
