@@ -67,6 +67,7 @@ export default function SystemsManagementPage() {
   const [selectedEnvironment, setSelectedEnvironment] = useState('all');
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUpgradeDialog, setNewUpgradeDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('health');
   const { toast } = useToast();
 
   // System Health Data
@@ -419,7 +420,7 @@ export default function SystemsManagementPage() {
         </Card>
       </div>
 
-      <Tabs defaultValue="health" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="overflow-x-auto">
           <TabsList className="grid w-full grid-cols-5 min-w-max">
             <TabsTrigger value="health" className="text-xs sm:text-sm whitespace-nowrap">Health</TabsTrigger>
