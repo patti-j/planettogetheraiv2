@@ -165,6 +165,9 @@ export default function Sidebar() {
         permissionCheck: `hasPermission("${item.feature}", "${item.action}")`,
         userInfo: 'Check usePermissions hook output'
       });
+      console.log(`🚨 WIDGETS: hasPermission result:`, hasPermissionForItem);
+      console.log(`🚨 WIDGETS: isAlwaysVisible result:`, isAlwaysVisible);
+      console.log(`🚨 WIDGETS: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
     }
     
     // Debug logging for other specific menu items
@@ -232,14 +235,17 @@ export default function Sidebar() {
   ];
   
   console.log(`🚨 TOTAL NAVIGATION ITEMS: ${navigationItems.length}`);
-  navigationItems.forEach((item, index) => {
-    if (item.label === "Widgets" || item.label === "Systems Management" || item.label === "Canvas") {
-      console.log(`🔍 ITEM ${index}: ${item.label} -> ${item.href}`);
-    }
-  });
+  console.log(`🚨 ALL NAVIGATION ITEMS:`, navigationItems.map(item => `${item.label} (${item.href})`));
   
   const widgetsInFiltered = navigationItems.find(item => item.label === "Widgets");
   console.log(`🚨 WIDGETS IN FINAL ARRAY:`, widgetsInFiltered);
+  
+  // Add explicit console log for Widgets rendering
+  if (widgetsInFiltered) {
+    console.log(`🚨 WIDGETS ITEM WILL BE RENDERED!`);
+  } else {
+    console.log(`🚨 WIDGETS ITEM NOT FOUND IN FINAL ARRAY!`);
+  }
 
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {
