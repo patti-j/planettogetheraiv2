@@ -511,7 +511,7 @@ function Router() {
               <ShiftManagement />
             </ProtectedRoute>
           </Route>
-          <Route path="/" component={DashboardWithAutoTour} />
+          <Route path="/" component={HomepageWithTourSupport} />
           <Route component={NotFound} />
         </Switch>
         </OnboardingGate>
