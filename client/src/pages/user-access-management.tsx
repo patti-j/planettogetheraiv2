@@ -169,7 +169,7 @@ export default function UserAccessManagementPage() {
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: typeof editUserData) => {
-      const response = await apiRequest("PATCH", `/api/users/${data.id}`, data);
+      const response = await apiRequest("PUT", `/api/users/${data.id}`, data);
       return response.json();
     },
     onSuccess: () => {
