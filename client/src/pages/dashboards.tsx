@@ -330,18 +330,6 @@ export default function DashboardsPage() {
         
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
-            onClick={() => {
-              setSelectedDashboard(null);
-              setShowDashboardManager(true);
-            }}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            New Dashboard
-          </Button>
-
-          <Button
             onClick={() => setShowAiDashboardDialog(true)}
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
           >
