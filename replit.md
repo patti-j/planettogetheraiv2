@@ -95,7 +95,8 @@
 - **AI GENERATE BUTTON REBRANDED**: Changed "AI Generate" button text to "New Dashboard" with proper AI gradient theming using useAITheme hook
 - **MANUAL CREATION BUTTON RENAMED**: Updated manual creation button from "New Dashboard" to "Create Custom" to differentiate from AI-powered creation
 - **AI DIALOG THEME CONSISTENCY**: Applied AI gradient theming to dialog elements including Sparkles icons and Generate Dashboard button
-- **COMPREHENSIVE CREATION OPTIONS**: Dashboard page now features three distinct creation methods - "Create Custom" (visual editor), "New Dashboard" (AI-powered), and "Create from Template"
+- **STREAMLINED CREATION OPTIONS**: Dashboard page now features two primary creation methods - "New Dashboard" (AI-powered) and "Create from Template"
+- **CREATE CUSTOM BUTTON REMOVED**: Removed "Create Custom" button to simplify interface and focus on AI-first dashboard creation workflow
 - **DASHBOARD MANAGER OLD CLEANED**: Removed redundant "New Dashboard" button from old popup dashboard manager to eliminate duplicate functionality
 - **USER INTERFACE IMPROVEMENT**: Page headers now display "Dashboards" and "Widgets" instead of "Dashboard Manager" and "Widget Manager" making navigation clear and intuitive
 - **NAVIGATION CONSISTENCY**: Page titles now match the navigation menu items for consistent user experience across all management pages
