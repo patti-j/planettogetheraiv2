@@ -127,11 +127,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
           
-          // Load last visited route but DON'T automatically redirect
+          // DISABLED: Load last visited route to prevent automatic navigation to stored routes
           const savedLastVisitedRoute = preferences?.dashboardLayout?.lastVisitedRoute;
-          if (savedLastVisitedRoute) {
-            setLastVisitedRouteState(savedLastVisitedRoute);
-          }
+          console.log('NavigationContext - Saved last visited route (not applying):', savedLastVisitedRoute);
+          // Commented out to prevent automatic navigation
+          // if (savedLastVisitedRoute) {
+          //   setLastVisitedRouteState(savedLastVisitedRoute);
+          // }
           
           // If no recent pages exist, initialize with default pinned "Getting Started"
           if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {

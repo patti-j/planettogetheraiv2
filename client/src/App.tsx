@@ -173,12 +173,14 @@ function Router() {
   const { isActive: isTourActive } = useTour();
   const [location, setLocation] = useLocation();
   
-  // Debug logging to understand initial route
+  // Debug logging to understand initial route and any changes
   useEffect(() => {
-    console.log('App Router - Current location on load:', location);
+    console.log('App Router - Location changed to:', location);
     console.log('App Router - Current URL:', window.location.href);
     console.log('App Router - Window location pathname:', window.location.pathname);
-  }, [location]);
+    console.log('App Router - User authenticated:', isAuthenticated);
+    console.log('App Router - User loading:', isLoading);
+  }, [location, isAuthenticated, isLoading]);
   
   // Use session persistence for authenticated users
   useSessionPersistence();
