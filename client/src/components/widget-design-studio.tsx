@@ -259,20 +259,22 @@ export default function WidgetDesignStudio({
               apiRequest('POST', '/api/max/canvas/widgets', {
                 title: finalWidget.title,
                 subtitle: finalWidget.subtitle,
-                type: finalWidget.type,
+                widgetType: finalWidget.type,
                 size: finalWidget.size,
                 position: finalWidget.position,
-                config: {
-                  dataSource: finalWidget.dataSource,
-                  chartType: finalWidget.chartType,
-                  aggregation: finalWidget.aggregation,
-                  groupBy: finalWidget.groupBy,
-                  filters: finalWidget.filters,
-                  colors: finalWidget.colors,
-                  thresholds: finalWidget.thresholds,
-                  limit: finalWidget.limit,
-                  action: finalWidget.action,
-                  content: finalWidget.content
+                data: {
+                  config: {
+                    dataSource: finalWidget.dataSource,
+                    chartType: finalWidget.chartType,
+                    aggregation: finalWidget.aggregation,
+                    groupBy: finalWidget.groupBy,
+                    filters: finalWidget.filters,
+                    colors: finalWidget.colors,
+                    thresholds: finalWidget.thresholds,
+                    limit: finalWidget.limit,
+                    action: finalWidget.action,
+                    content: finalWidget.content
+                  }
                 }
               })
             );
