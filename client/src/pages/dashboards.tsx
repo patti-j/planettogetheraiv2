@@ -545,6 +545,39 @@ export default function DashboardsPage() {
 
 
 
+      {/* Enhanced Dashboard Manager for New Dashboard Creation */}
+      <EnhancedDashboardManager
+        open={showEnhancedDashboardManager}
+        onOpenChange={setShowEnhancedDashboardManager}
+        dashboards={dashboards}
+        currentDashboard={selectedDashboard}
+        onDashboardSelect={() => {}}
+        onDashboardCreate={(dashboard) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard created",
+            description: "New dashboard has been created successfully",
+          });
+          setShowEnhancedDashboardManager(false);
+        }}
+        onDashboardUpdate={(dashboard) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard updated",
+            description: "Dashboard has been updated successfully",
+          });
+        }}
+        onDashboardDelete={(dashboardId) => {
+          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
+          toast({
+            title: "Dashboard deleted",
+            description: "Dashboard has been deleted successfully",
+          });
+        }}
+        standardWidgets={[]}
+        customWidgets={[]}
+      />
+
       {/* AI Dashboard Generation Dialog */}
       <Dialog open={showAiDashboardDialog} onOpenChange={setShowAiDashboardDialog}>
         <DialogContent className="max-w-2xl">
