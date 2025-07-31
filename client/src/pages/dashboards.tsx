@@ -33,13 +33,13 @@ import {
   Wand2,
   Zap,
   Layout,
-  Settings
+  Settings,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
-import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
 
 interface DashboardItem {
@@ -545,38 +545,40 @@ export default function DashboardsPage() {
 
 
 
-      {/* Enhanced Dashboard Manager for New Dashboard Creation */}
-      <EnhancedDashboardManager
-        open={showEnhancedDashboardManager}
-        onOpenChange={setShowEnhancedDashboardManager}
-        dashboards={dashboards}
-        currentDashboard={selectedDashboard}
-        onDashboardSelect={() => {}}
-        onDashboardCreate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard created",
-            description: "New dashboard has been created successfully",
-          });
-          setShowEnhancedDashboardManager(false);
-        }}
-        onDashboardUpdate={(dashboard) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard updated",
-            description: "Dashboard has been updated successfully",
-          });
-        }}
-        onDashboardDelete={(dashboardId) => {
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-          toast({
-            title: "Dashboard deleted",
-            description: "Dashboard has been deleted successfully",
-          });
-        }}
-        standardWidgets={[]}
-        customWidgets={[]}
-      />
+      {/* New Dashboard Canvas Dialog */}
+      <Dialog open={showEnhancedDashboardManager} onOpenChange={setShowEnhancedDashboardManager}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              {selectedDashboard ? "Edit Dashboard" : "Create New Dashboard"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="h-[calc(90vh-120px)] overflow-hidden">
+            {/* Dashboard Canvas Creation Interface will go here */}
+            <div className="flex flex-col h-full">
+              <div className="flex-1 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center">
+                <div className="text-center">
+                  <Layout className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Canvas</h3>
+                  <p className="text-gray-600 mb-6">Drag and drop widgets to create your dashboard</p>
+                  <div className="flex gap-3 justify-center">
+                    <Button variant="outline">
+                      <Grid className="w-4 h-4 mr-2" />
+                      Add Widget
+                    </Button>
+                    <Button>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Dashboard
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* AI Dashboard Generation Dialog */}
       <Dialog open={showAiDashboardDialog} onOpenChange={setShowAiDashboardDialog}>
