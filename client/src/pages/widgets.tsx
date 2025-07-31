@@ -330,8 +330,12 @@ export default function WidgetsPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button onClick={() => setShowStudio(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button 
+              onClick={() => setShowStudio(true)} 
+              variant="outline"
+              className="gap-2 border-purple-500 text-purple-600 hover:bg-purple-50 hover:border-purple-600"
+            >
+              <Brain className="h-4 w-4" />
               New Widget
             </Button>
             <Button 
