@@ -125,7 +125,7 @@ const DASHBOARD_TEMPLATES = [
 export default function DashboardsPage() {
   const { toast } = useToast();
   const isMobile = useMobile();
-  const { getThemeClasses } = useAITheme();
+  const { aiTheme } = useAITheme();
   const queryClient = useQueryClient();
 
   // State management
@@ -403,7 +403,7 @@ export default function DashboardsPage() {
 
           <Button
             onClick={() => setShowAiDashboardDialog(true)}
-            className={`flex items-center gap-2 ${getThemeClasses().gradient} text-white border-0`}
+            className={`flex items-center gap-2 ${aiTheme.gradient} text-white border-0`}
           >
             <Sparkles className="w-4 h-4" />
             New Dashboard AI
@@ -1005,7 +1005,7 @@ export default function DashboardsPage() {
                 }
               }}
               disabled={!aiDashboardPrompt.trim() || generateAiDashboardMutation.isPending}
-              className={`flex items-center gap-2 ${getThemeClasses().gradient} text-white border-0`}
+              className={`flex items-center gap-2 ${aiTheme.gradient} text-white border-0`}
             >
               {generateAiDashboardMutation.isPending ? (
                 <>
