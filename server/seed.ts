@@ -2172,13 +2172,14 @@ export async function seedDatabase() {
 
   // Assign permissions to roles
   const rolePermissionData = [
-    // Director permissions (Business Goals + Reports)
+    // Director permissions (Business Goals + Reports + Systems Management View)
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "business-goals" && p.action === "view")!.id },
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "business-goals" && p.action === "create")!.id },
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "business-goals" && p.action === "edit")!.id },
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "business-goals" && p.action === "delete")!.id },
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "reports" && p.action === "view")!.id },
     { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "reports" && p.action === "create")!.id },
+    { roleId: insertedRoles[0].id, permissionId: insertedPermissions.find(p => p.feature === "systems-management" && p.action === "view")!.id },
     
     // Plant Manager permissions (Capacity Planning + Production Scheduling + Reports)
     { roleId: insertedRoles[1].id, permissionId: insertedPermissions.find(p => p.feature === "capacity-planning" && p.action === "view")!.id },
