@@ -692,6 +692,7 @@ export default function WidgetsPage() {
                         type: previewWidget.type as any,
                         ...previewWidget.configuration
                       }}
+                      data={null}
                     />
                   </div>
                 </div>

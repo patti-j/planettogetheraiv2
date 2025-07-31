@@ -366,7 +366,7 @@ export default function WidgetDesignStudio({
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 min-h-0 h-full">
+            <TabsContent value="template" className="flex-1 flex flex-col space-y-3 sm:space-y-4 min-h-0 h-full mt-2">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-shrink-0">
                 <Label className="text-sm font-medium">Category:</Label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -427,15 +427,15 @@ export default function WidgetDesignStudio({
               </div>
             </TabsContent>
             
-            <TabsContent value="configure" className="flex-1 flex flex-col min-h-0 h-full">
+            <TabsContent value="configure" className="flex-1 flex flex-col min-h-0 h-full mt-2">
               <div className="flex-1 overflow-y-auto overscroll-contain pr-2">
-                <div className="space-y-3 sm:space-y-4 pb-4">
+                <div className="space-y-3 pb-4">
                   {/* Basic Configuration */}
                   <Card>
-                    <CardHeader className="pb-2 sm:pb-4">
-                      <CardTitle className="text-base sm:text-lg">Basic Configuration</CardTitle>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Basic Configuration</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3 sm:space-y-4">
+                    <CardContent className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label htmlFor="title" className="text-sm">Widget Title</Label>
@@ -505,10 +505,10 @@ export default function WidgetDesignStudio({
                   
                   {/* Data Processing */}
                   <Card>
-                    <CardHeader className="pb-2 sm:pb-4">
-                      <CardTitle className="text-base sm:text-lg">Data Processing</CardTitle>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Data Processing</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3 sm:space-y-4">
+                    <CardContent className="space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
@@ -558,11 +558,11 @@ export default function WidgetDesignStudio({
               </div>
             </TabsContent>
             
-            <TabsContent value="style" className="flex-1 flex flex-col min-h-0 h-full overflow-y-auto">
-              <div className="space-y-3 sm:space-y-4 pb-4">
+            <TabsContent value="style" className="flex-1 flex flex-col min-h-0 h-full overflow-y-auto mt-2">
+              <div className="space-y-3 pb-4">
                 <Card>
-                  <CardHeader className="pb-2 sm:pb-4">
-                    <CardTitle className="text-base sm:text-lg">Deploy to Systems</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Deploy to Systems</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
