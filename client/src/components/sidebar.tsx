@@ -171,6 +171,24 @@ export default function Sidebar() {
       console.log(`🚨 WIDGETS: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
     }
     
+    // Debug logging for Constraints Management menu item
+    if (item.label === "Constraints Management") {
+      console.log(`🔍 CONSTRAINTS MENU DEBUG:`, {
+        label: item.label,
+        href: item.href,
+        feature: item.feature,
+        action: item.action,
+        hasPermissionForItem,
+        isAlwaysVisible,
+        shouldShow: isAlwaysVisible || hasPermissionForItem,
+        permissionCheck: `hasPermission("${item.feature}", "${item.action}")`,
+        userInfo: 'Check usePermissions hook output'
+      });
+      console.log(`🚨 CONSTRAINTS: hasPermission result:`, hasPermissionForItem);
+      console.log(`🚨 CONSTRAINTS: isAlwaysVisible result:`, isAlwaysVisible);
+      console.log(`🚨 CONSTRAINTS: Final filter result:`, isAlwaysVisible || hasPermissionForItem);
+    }
+    
     // Debug logging for other specific menu items
     if (item.label === "Logs" || item.label === "Systems Management" || item.label === "Extension Studio") {
       console.log(`Menu filter check for ${item.label}:`, {
