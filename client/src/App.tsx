@@ -81,6 +81,7 @@ import TableFieldViewer from "@/pages/table-field-viewer";
 import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
 import Homepage from "@/pages/homepage";
+import ClearNavigation from "@/pages/clear-navigation";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -511,6 +512,7 @@ function Router() {
               <ShiftManagement />
             </ProtectedRoute>
           </Route>
+          <Route path="/clear-nav" component={ClearNavigation} />
           <Route path="/" component={HomepageWithTourSupport} />
           <Route component={NotFound} />
         </Switch>

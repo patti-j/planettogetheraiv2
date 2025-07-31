@@ -1,6 +1,7 @@
 import React from 'react';
 import { DashboardCardContainer } from '@/components/dashboard-card-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'wouter';
 import { 
   Calendar, 
   Users, 
@@ -42,19 +43,21 @@ export default function Homepage() {
       id: `${item.route}-${index}`,
       priority: item.priority,
       content: (
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 ${colorClass} rounded-lg`}>
-                <item.icon className="w-5 h-5" />
+        <Link href={item.route}>
+          <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 ${colorClass} rounded-lg`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <CardTitle className="text-base">{item.title}</CardTitle>
               </div>
-              <CardTitle className="text-base">{item.title}</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-gray-600">{item.description}</p>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-gray-600">{item.description}</p>
+            </CardContent>
+          </Card>
+        </Link>
       )
     }));
   };
