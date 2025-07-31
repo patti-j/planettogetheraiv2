@@ -373,7 +373,7 @@ export default function DashboardsPage() {
                         {dashboard.name}
                         {dashboard.isDefault && (
                           <Badge variant="secondary" className="ml-2">
-                            <Star className="w-3 h-3 mr-1" />
+                            <Layout className="w-3 h-3 mr-1" />
                             Default
                           </Badge>
                         )}
