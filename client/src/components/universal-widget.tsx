@@ -394,9 +394,46 @@ export default function UniversalWidget({
     );
   };
 
+  const renderSimpleWidget = (type: string) => {
+    switch (type) {
+      case 'text':
+        return (
+          <div className="space-y-2">
+            <p className="text-sm">{config.description || 'Text widget'}</p>
+            {widgetData && widgetData.content && (
+              <div className="text-xs text-muted-foreground">{widgetData.content}</div>
+            )}
+          </div>
+        );
+      case 'button':
+        return (
+          <div className="text-center">
+            <Button variant="default" className="w-full">
+              {config.description || 'Action Button'}
+            </Button>
+          </div>
+        );
+      case 'image':
+        return (
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 mx-auto bg-gray-200 rounded flex items-center justify-center">
+              <BarChart3 className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-xs text-muted-foreground">{config.description || 'Image widget'}</p>
+          </div>
+        );
+      default:
+        return <div className="text-center text-muted-foreground">Simple widget: {type}</div>;
+    }
+  };
+
   const renderWidgetContent = () => {
     console.log('UniversalWidget rendering type:', config.type, 'for widget:', config.title);
-    switch (config.type) {
+    
+    // Handle null or undefined types by defaulting to KPI widget
+    const widgetType = config.type || 'kpi';
+    
+    switch (widgetType) {
       case 'kpi':
         return renderKPIWidget();
       case 'chart':
@@ -413,9 +450,18 @@ export default function UniversalWidget({
         return renderListWidget();
       case 'schedule-optimization':
         return renderScheduleOptimizationWidget();
+      case 'dashboard':
+        // Dashboard widgets are composite widgets - render as KPI for now
+        return renderKPIWidget();
+      case 'text':
+      case 'button':
+      case 'image':
+        // Handle simple widget types
+        return renderSimpleWidget(widgetType);
       default:
         console.log('Unknown widget type encountered:', config.type, 'Full config:', config);
-        return <div className="text-center text-muted-foreground">Unknown widget type: {config.type}</div>;
+        // Default to KPI widget instead of showing error
+        return renderKPIWidget();
     }
   };
 
