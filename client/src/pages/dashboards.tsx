@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
+import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
 
 interface DashboardItem {
@@ -128,7 +129,7 @@ export default function DashboardsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [selectedDashboard, setSelectedDashboard] = useState<DashboardItem | null>(null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEnhancedDashboardManager, setShowEnhancedDashboardManager] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -162,7 +163,7 @@ export default function DashboardsPage() {
         description: "Your new dashboard has been created successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-      setShowCreateDialog(false);
+
       setShowTemplateDialog(false);
       resetForm();
     },
@@ -288,23 +289,11 @@ export default function DashboardsPage() {
     createDashboardMutation.mutate(dashboardData);
   };
 
-  const handleCreateCustom = () => {
-    const dashboardData = {
-      name: newDashboard.name,
-      description: newDashboard.description,
-      isDefault: false,
-      configuration: {
-        standardWidgets: [],
-        customWidgets: []
-      }
-    };
-    
-    createDashboardMutation.mutate(dashboardData);
-  };
+
 
   const handleEdit = (dashboard: DashboardItem) => {
     setSelectedDashboard(dashboard);
-    setShowDashboardManager(true);
+    setShowEnhancedDashboardManager(true);
   };
 
 
@@ -333,7 +322,10 @@ export default function DashboardsPage() {
         
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
-            onClick={() => setShowCreateDialog(true)}
+            onClick={() => {
+              setSelectedDashboard(null);
+              setShowEnhancedDashboardManager(true);
+            }}
             variant="outline"
             className="flex items-center gap-2"
           >
@@ -549,54 +541,7 @@ export default function DashboardsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Custom Dashboard Creation Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Custom Dashboard</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="name">Dashboard Name</Label>
-              <Input
-                id="name"
-                value={newDashboard.name}
-                onChange={(e) => setNewDashboard(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter dashboard name"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={newDashboard.description}
-                onChange={(e) => setNewDashboard(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter dashboard description"
-                rows={3}
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleCreateCustom}
-                disabled={!newDashboard.name || createDashboardMutation.isPending}
-                className="flex-1"
-              >
-                {createDashboardMutation.isPending ? "Creating..." : "Create Dashboard"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateDialog(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
 
 
