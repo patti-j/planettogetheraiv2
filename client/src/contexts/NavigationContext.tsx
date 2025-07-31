@@ -49,6 +49,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/systems-management-dashboard': { label: 'Systems Management', icon: 'Server' },
   '/systems-integration': { label: 'System Integration', icon: 'Database' },
   '/role-management': { label: 'Role Management', icon: 'Shield' },
+  '/user-role-assignments-page': { label: 'User Role Assignments', icon: 'UserCheck' },
   '/extension-studio': { label: 'Extension Studio', icon: 'Code' },
   '/industry-templates': { label: 'Industry Templates', icon: 'Building' },
   '/error-logs': { label: 'Logs', icon: 'FileX' },
