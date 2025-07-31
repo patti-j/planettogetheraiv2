@@ -70,6 +70,7 @@ import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import WidgetStudio from "@/pages/widget-studio";
 import WidgetsPage from "@/pages/widgets";
+import DashboardsPage from "@/pages/dashboards";
 import DataImportPage from "@/pages/data-import";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
@@ -459,6 +460,11 @@ function Router() {
           <Route path="/widgets">
             <ProtectedRoute feature="systems-management" action="view">
               <WidgetsPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/dashboards">
+            <ProtectedRoute feature="systems-management" action="view">
+              <DashboardsPage />
             </ProtectedRoute>
           </Route>
           <Route path="/product-development">

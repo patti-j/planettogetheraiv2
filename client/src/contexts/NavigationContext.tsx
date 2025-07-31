@@ -65,6 +65,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/data-map': { label: 'Data Relationship Map', icon: 'Network' },
   '/table-field-viewer': { label: 'Table Field Documentation', icon: 'FileText' },
   '/widgets': { label: 'Widgets', icon: 'Grid' },
+  '/dashboards': { label: 'Dashboards', icon: 'Layout' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }

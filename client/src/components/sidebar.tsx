@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, FileSearch, Puzzle } from "lucide-react";
+import { Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, FileSearch, Puzzle, Layout } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
@@ -121,6 +121,7 @@ export default function Sidebar() {
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
     { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
     { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
+    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
@@ -147,7 +148,8 @@ export default function Sidebar() {
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
       item.href === "#max" ||
-      item.href === "/widgets"; // TEMPORARY: Force Widgets to always show
+      item.href === "/widgets" || // TEMPORARY: Force Widgets to always show
+      item.href === "/dashboards"; // TEMPORARY: Force Dashboards to always show
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
@@ -214,6 +216,7 @@ export default function Sidebar() {
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
     { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
     { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
+    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
@@ -285,7 +288,8 @@ export default function Sidebar() {
       "/analytics": "View production metrics and performance analytics",
       "/reports": "Generate detailed production reports and insights",
       "/feedback": "Submit feedback and suggestions to help improve the system",
-      "/widgets": "Create, manage, and deploy widgets across dashboard systems with design studio and library access"
+      "/widgets": "Create, manage, and deploy widgets across dashboard systems with design studio and library access",
+      "/dashboards": "Create, manage, and configure manufacturing dashboards with custom layouts and widget configurations"
     };
     return tooltips[href] || "Navigate to this page";
   };
