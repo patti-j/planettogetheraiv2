@@ -28,6 +28,11 @@ export function ProtectedRoute({
   } else if (feature && action) {
     hasAccess = hasPermission(feature, action);
     console.log(`ProtectedRoute check: feature=${feature}, action=${action}, hasAccess=${hasAccess}`);
+    
+    // Special debug logging for training page
+    if (feature === 'training' && action === 'view') {
+      console.log(`TRAINING PAGE ACCESS CHECK: hasAccess=${hasAccess}`);
+    }
   } else {
     // No restrictions, allow access
     hasAccess = true;

@@ -89,6 +89,7 @@ export function useAuth() {
     retryOnMount: false,
     staleTime: 0, // Always refetch to get fresh role data
     refetchOnWindowFocus: true,
+    refetchInterval: 10000, // Refetch every 10 seconds to ensure fresh permissions
   });
 
   const loginMutation = useMutation({
@@ -168,7 +169,8 @@ export function usePermissions() {
         role: (user as any).role, 
         permissions: (user as any).permissions,
         roles: user.roles ? user.roles.length : 'undefined',
-        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles'
+        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles',
+        fullUserObject: user // Log the complete user object to debug
       } 
     });
 
