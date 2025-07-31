@@ -1454,7 +1454,7 @@ Rules:
             activeRole: { id: 'demo_trainer_role', name: 'Trainer' },
             permissions: [
               'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
-              'schedule-view', 'business-goals-view', 'visual-factory-view', 
+              'schedule-view', 'business-goals-view', 'visual-factory-view', 'systems-management-view',
               'ai-assistant-view', 'feedback-view'
             ],
             roles: [{ id: 'demo_trainer_role', name: 'Trainer' }]
@@ -6639,7 +6639,7 @@ Manufacturing Context Available:
           'demo_admin': ['role-management-view', 'user-management-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view'],
           'demo_shop_floor': ['shop-floor-view', 'operator-dashboard-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_analyst': ['analytics-view', 'reports-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
-          'demo_trainer': ['training-view', 'role-switching-permissions', 'analytics-view', 'reports-view', 'schedule-view', 'business-goals-view', 'visual-factory-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_trainer': ['training-view', 'role-switching-permissions', 'analytics-view', 'reports-view', 'schedule-view', 'business-goals-view', 'visual-factory-view', 'systems-management-view', 'ai-assistant-view', 'feedback-view'],
           'demo_it_systems': ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
           'demo_sales': ['sales-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_customer_service': ['customer-service-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
