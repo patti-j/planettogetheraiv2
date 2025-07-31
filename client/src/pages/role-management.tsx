@@ -1038,7 +1038,28 @@ export default function RoleManagementPage() {
             </div>
             
             <div className="space-y-4">
-              <Label className="text-base font-medium">Feature Permissions</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-medium">Feature Permissions</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      const allPermissionIds = permissionsByFeature.flatMap(fp => fp.permissions).map(p => p.id);
+                      setRoleForm(prev => ({ ...prev, permissions: allPermissionIds }));
+                    }}
+                  >
+                    Select All
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setRoleForm(prev => ({ ...prev, permissions: [] }))}
+                  >
+                    Unselect All
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-4 max-h-96 overflow-y-auto border rounded-lg p-4">
                 {permissionsByFeature.map(({ feature, permissions }) => (
                   <div key={feature} className="space-y-2">
