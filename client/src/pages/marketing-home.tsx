@@ -362,7 +362,7 @@ const MarketingHome: React.FC = () => {
                 size="lg" 
                 variant="outline"
                 onClick={handleWatchDemo}
-                className="px-8 py-6 text-lg font-semibold border-white/20 text-white hover:bg-white/10"
+                className="px-8 py-6 text-lg font-semibold bg-white/10 border-white text-white hover:bg-white/20"
               >
                 Schedule Demo
                 <Calendar className="ml-2 w-5 h-5" />
