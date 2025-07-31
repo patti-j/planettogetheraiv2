@@ -126,7 +126,7 @@ export default function Sidebar() {
     { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
     { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
     { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
-    { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", active: location === "/constraints", feature: "systems-management", action: "view" },
+    { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", active: location === "/constraints", feature: "constraints-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "Role Management", href: "/role-management", active: location === "/role-management", feature: "user-management", action: "view" },
     { icon: UserCheck, label: "User Role Assignments", href: "/user-role-assignments-page", active: location === "/user-role-assignments-page", feature: "user-management", action: "view" },
