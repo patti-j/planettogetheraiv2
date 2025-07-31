@@ -352,12 +352,12 @@ export default function WidgetDesignStudio({
   ) : null;
 
   return (
-    <div className="flex flex-col h-full max-h-[90vh] overflow-hidden">
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Configuration Panel */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm flex-shrink-0 mb-3">
+        <div className="flex-1">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
               <TabsTrigger value="template" className="px-2 py-1 sm:px-3 sm:py-2">
                 <span className="hidden sm:inline">1. Template</span>
                 <span className="sm:hidden">Template</span>
@@ -372,8 +372,8 @@ export default function WidgetDesignStudio({
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="template" className="flex-1 flex flex-col space-y-3 min-h-0 overflow-hidden mt-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-shrink-0">
+            <TabsContent value="template" className="space-y-4 mt-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <Label className="text-sm font-medium">Category:</Label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full sm:w-48">
@@ -389,8 +389,7 @@ export default function WidgetDesignStudio({
                 </Select>
               </div>
               
-              <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 pb-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 max-h-[60vh] overflow-y-auto pr-2">
                   {filteredTemplates.map(template => (
                     <Card 
                       key={template.id}
@@ -429,13 +428,11 @@ export default function WidgetDesignStudio({
                       </CardContent>
                     </Card>
                   ))}
-                </div>
               </div>
             </TabsContent>
             
-            <TabsContent value="configure" className="flex-1 flex flex-col min-h-0 overflow-hidden mt-0">
-              <div className="flex-1 overflow-y-auto pr-2">
-                <div className="space-y-2 pb-2">
+            <TabsContent value="configure" className="space-y-4 mt-0">
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                   {/* Basic Configuration */}
                   <Card>
                     <CardHeader className="pb-1">
@@ -634,12 +631,10 @@ export default function WidgetDesignStudio({
                     </Card>
                   )}
                 </div>
-              </div>
             </TabsContent>
             
-            <TabsContent value="style" className="flex-1 flex flex-col min-h-0 overflow-hidden mt-0">
-              <div className="flex-1 overflow-y-auto pr-2">
-                <div className="space-y-2 pb-2">
+            <TabsContent value="style" className="space-y-4 mt-0">
+              <div className="space-y-4">
                   <Card>
                     <CardHeader className="pb-1">
                       <CardTitle className="text-base">Deploy to Systems</CardTitle>
@@ -676,20 +671,19 @@ export default function WidgetDesignStudio({
                     </Button>
                   </div>
                 </div>
-              </div>
             </TabsContent>
           </Tabs>
         </div>
         
         {/* Preview Panel */}
         <div className="w-full lg:w-80 xl:w-96 lg:border-l lg:pl-4 xl:pl-6 order-first lg:order-last">
-          <div className="space-y-3 h-full flex flex-col">
-            <div className="flex items-center justify-between flex-shrink-0">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm sm:text-base">Live Preview</h3>
               <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </div>
             
-            <div className="flex-1 border rounded-lg p-3 bg-gray-50 min-h-[200px] max-h-[300px] overflow-hidden">
+            <div className="border rounded-lg p-3 bg-gray-50 h-[300px] overflow-hidden">
               {previewWidget ? (
                 <div className="h-full">
                   {previewWidget}
@@ -705,7 +699,7 @@ export default function WidgetDesignStudio({
             </div>
             
             {widgetConfig.title && (
-              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0 flex-shrink-0">
+              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0">
                 <p className="line-clamp-1"><strong>Type:</strong> {widgetConfig.type}</p>
                 <p className="line-clamp-1"><strong>Data Source:</strong> {widgetConfig.dataSource}</p>
                 {widgetConfig.chartType && (
