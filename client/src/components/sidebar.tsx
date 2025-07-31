@@ -35,6 +35,7 @@ export default function Sidebar() {
   const { addRecentPage } = useNavigation();
   
   console.log("Sidebar component loading, location:", location);
+  console.log("🚨 WIDGETS DEBUG: Sidebar component is rendering");
 
 
 
@@ -230,11 +231,15 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
   ];
   
-  const widgetsInOriginal = originalItems.find(item => item.label === "Widgets");
-  console.log(`🔍 WIDGETS SEARCH: Found in original array:`, widgetsInOriginal);
+  console.log(`🚨 TOTAL NAVIGATION ITEMS: ${navigationItems.length}`);
+  navigationItems.forEach((item, index) => {
+    if (item.label === "Widgets" || item.label === "Systems Management" || item.label === "Canvas") {
+      console.log(`🔍 ITEM ${index}: ${item.label} -> ${item.href}`);
+    }
+  });
   
   const widgetsInFiltered = navigationItems.find(item => item.label === "Widgets");
-  console.log(`🔍 WIDGETS SEARCH: Found in filtered array:`, widgetsInFiltered);
+  console.log(`🚨 WIDGETS IN FINAL ARRAY:`, widgetsInFiltered);
 
   const getNavigationTooltip = (href: string) => {
     const tooltips: Record<string, string> = {

@@ -457,7 +457,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/widgets">
-            <ProtectedRoute feature="analytics" action="view">
+            <ProtectedRoute feature="systems-management" action="view">
               <WidgetsPage />
             </ProtectedRoute>
           </Route>
