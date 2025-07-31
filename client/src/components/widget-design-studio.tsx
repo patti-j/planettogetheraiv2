@@ -126,11 +126,73 @@ export default function WidgetDesignStudio({
 
   // Initialize preview data with memoization to prevent infinite re-renders
   useEffect(() => {
+    // Use real data if available, otherwise provide meaningful mock data for preview
+    const mockProductionOrders = [
+      { id: 1, orderNumber: 'PO-2025-001', name: 'Paracetamol 500mg', status: 'in_progress', quantity: 5000, progress: 75 },
+      { id: 2, orderNumber: 'PO-2025-002', name: 'Ibuprofen 200mg', status: 'planned', quantity: 3000, progress: 0 },
+      { id: 3, orderNumber: 'PO-2025-003', name: 'Aspirin 100mg', status: 'completed', quantity: 2000, progress: 100 }
+    ];
+
+    const mockOperations = [
+      { id: 1, operationName: 'Mixing', status: 'active', progress: 85, estimatedTime: 120 },
+      { id: 2, operationName: 'Tablet Pressing', status: 'queued', progress: 0, estimatedTime: 180 },
+      { id: 3, operationName: 'Coating', status: 'completed', progress: 100, estimatedTime: 90 }
+    ];
+
+    const mockResources = [
+      { id: 1, name: 'Reactor 1', type: 'Equipment', status: 'active', utilization: 85 },
+      { id: 2, name: 'Tablet Press A', type: 'Equipment', status: 'idle', utilization: 0 },
+      { id: 3, name: 'Packaging Line 1', type: 'Equipment', status: 'maintenance', utilization: 0 }
+    ];
+
     const newPreviewData = {
-      productionOrders: Array.isArray(productionOrders) ? productionOrders : [],
-      operations: Array.isArray(operations) ? operations : [],
-      resources: Array.isArray(resources) ? resources : [],
-      metrics: metrics || {}
+      productionOrders: Array.isArray(productionOrders) && productionOrders.length > 0 ? productionOrders : mockProductionOrders,
+      operations: Array.isArray(operations) && operations.length > 0 ? operations : mockOperations,
+      resources: Array.isArray(resources) && resources.length > 0 ? resources : mockResources,
+      metrics: metrics && Object.keys(metrics).length > 0 ? metrics : {
+        totalOrders: 15,
+        completedOrders: 8,
+        activeOperations: 5,
+        equipmentUtilization: 72,
+        dailyOutput: 12500
+      },
+      jobs: Array.isArray(productionOrders) && productionOrders.length > 0 ? productionOrders : mockProductionOrders,
+      alerts: [
+        { id: 1, title: 'Equipment Maintenance', severity: 'warning', message: 'Reactor 2 requires scheduled maintenance' },
+        { id: 2, title: 'Production Delay', severity: 'info', message: 'PO-2025-004 delayed by 2 hours' }
+      ],
+      customers: [
+        { id: 1, name: 'PharmaCorp Ltd', status: 'active', orders: 5 },
+        { id: 2, name: 'MediSupply Inc', status: 'active', orders: 3 }
+      ],
+      vendors: [
+        { id: 1, name: 'ChemSource LLC', category: 'Raw Materials', rating: 4.8 },
+        { id: 2, name: 'PackPro Solutions', category: 'Packaging', rating: 4.5 }
+      ],
+      plants: [
+        { id: 1, name: 'Plant A - Pharmaceuticals', location: 'New Jersey', status: 'operational' },
+        { id: 2, name: 'Plant B - Generics', location: 'Texas', status: 'operational' }
+      ],
+      capabilities: [
+        { id: 1, name: 'Tablet Manufacturing', capacity: 10000, utilizationRate: 75 },
+        { id: 2, name: 'Liquid Formulation', capacity: 5000, utilizationRate: 60 }
+      ],
+      recipes: [
+        { id: 1, recipeName: 'Paracetamol 500mg', version: '1.2', status: 'approved' },
+        { id: 2, recipeName: 'Ibuprofen 200mg', version: '2.0', status: 'under_review' }
+      ],
+      productionVersions: [
+        { id: 1, versionName: 'Standard Production v1.0', efficiency: 95 },
+        { id: 2, versionName: 'High Speed v2.1', efficiency: 88 }
+      ],
+      plannedOrders: [
+        { id: 1, orderNumber: 'PLN-001', plannedDate: '2025-08-01', quantity: 7500 },
+        { id: 2, orderNumber: 'PLN-002', plannedDate: '2025-08-03', quantity: 4200 }
+      ],
+      users: [
+        { id: 1, name: 'John Smith', role: 'Production Manager', status: 'active' },
+        { id: 2, name: 'Sarah Johnson', role: 'Quality Inspector', status: 'active' }
+      ]
     };
     setPreviewData(newPreviewData);
   }, [

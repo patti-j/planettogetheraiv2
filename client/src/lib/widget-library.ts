@@ -161,9 +161,10 @@ export class WidgetDataProcessor {
   }
 
   private getEmptyStateData(config: WidgetConfig): ProcessedWidgetData {
+    const dataSourceLabel = config.dataSource || 'data';
     return {
       value: 0,
-      label: `No ${config.dataSource} data available`,
+      label: `No ${dataSourceLabel} available`,
       items: [],
       chartData: null,
       tableData: [],
