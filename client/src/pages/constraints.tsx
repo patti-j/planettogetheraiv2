@@ -867,8 +867,8 @@ export default function ConstraintsManagement() {
                         <FormItem>
                           <FormLabel>Resource (Optional)</FormLabel>
                           <Select
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
-                            value={field.value?.toString()}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -876,7 +876,7 @@ export default function ConstraintsManagement() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {resources.map((resource: any) => (
                                 <SelectItem key={resource.id} value={resource.id.toString()}>
                                   {resource.name}
@@ -895,8 +895,8 @@ export default function ConstraintsManagement() {
                         <FormItem>
                           <FormLabel>Item (Optional)</FormLabel>
                           <Select
-                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
-                            value={field.value?.toString()}
+                            onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))}
+                            value={field.value?.toString() || "none"}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -904,7 +904,7 @@ export default function ConstraintsManagement() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {items.map((item: any) => (
                                 <SelectItem key={item.id} value={item.id.toString()}>
                                   {item.name}
