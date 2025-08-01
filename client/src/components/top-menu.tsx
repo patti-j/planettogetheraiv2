@@ -595,7 +595,7 @@ export default function TopMenu() {
                                 w-full aspect-square min-h-[60px] h-[60px] min-w-[60px] md:min-h-[70px] md:h-[70px] md:min-w-[70px] 
                                 border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                                 flex flex-col items-center justify-center text-center space-y-1 relative
-                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400 bg-red-500'}
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                                 hamburger-menu-card
                               `}>
