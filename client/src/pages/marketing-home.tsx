@@ -156,18 +156,17 @@ const MarketingHome: React.FC = () => {
                 onClick={handleGetStarted}
                 className="px-8 py-6 text-lg font-semibold"
               >
-                Get Started Free
-                <ArrowRight className="ml-2 w-5 h-5" />
+                Start Free Trial
+                <Rocket className="ml-2 w-5 h-5" />
               </Button>
               
               <Button 
-                variant="outline" 
                 size="lg"
                 onClick={handleWatchDemo}
                 className="px-8 py-6 text-lg font-semibold"
               >
                 <Play className="mr-2 w-5 h-5" />
-                Watch Demo
+                Schedule Demo
               </Button>
 
               <Button 
