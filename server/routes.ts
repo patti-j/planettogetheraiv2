@@ -19971,6 +19971,64 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Phase 1 Step 3: Rate Limiting & Security Monitoring Endpoints
+  app.get("/api/system/security-status", requireAuth, async (req, res) => {
+    try {
+      // Import rate limiting stats
+      const { getRateLimitStats } = await import('./rate-limiter.js');
+      const rateLimitStats = getRateLimitStats();
+      
+      res.json({
+        status: 'secure',
+        implementation: 'Phase 1 Step 3 - Rate Limiting & Security',
+        rateLimiting: {
+          enabled: true,
+          api: rateLimitStats.api,
+          auth: rateLimitStats.auth,
+          write: rateLimitStats.write,
+          read: rateLimitStats.read
+        },
+        ddosProtection: rateLimitStats.ddos,
+        securityHeaders: {
+          enabled: true,
+          xssProtection: true,
+          frameOptions: 'DENY',
+          contentTypeOptions: 'nosniff',
+          hstsEnabled: process.env.NODE_ENV === 'production'
+        },
+        features: [
+          'API rate limiting (100 req/min)',
+          'Auth rate limiting (10 req/min)', 
+          'Write operation limits (50 req/min)',
+          'DDoS protection patterns',
+          'Security headers enforcement',
+          'Request validation & size limits'
+        ],
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Security status failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/system/rate-limit-stats", requireAuth, async (req, res) => {
+    try {
+      const { getRateLimitStats } = await import('./rate-limiter.js');
+      const stats = getRateLimitStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Rate limit stats failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

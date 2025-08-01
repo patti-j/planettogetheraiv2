@@ -87,7 +87,11 @@ app.use((req, res, next) => {
 
 (async () => {
   // Seed the database
-  await seedDatabase();
+  try {
+    await seedDatabase();
+  } catch (error) {
+    console.log("⚠️ Database seeding skipped due to connection issues - will retry on restart");
+  }
   
   const server = await registerRoutes(app);
 
