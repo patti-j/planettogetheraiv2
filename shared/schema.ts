@@ -55,7 +55,7 @@ export const productionOrders: any = pgTable("production_orders", {
   orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
   name: text("name").notNull(),
   description: text("description"),
-  customerId: integer("customer_id").references(() => customers.id), // Changed from text to foreign key
+  customerId: integer("customer_id"), // Will be converted to foreign key later when customers table is defined
   parentOrderId: integer("parent_order_id").references(() => productionOrders.id), // For order splitting/consolidation
   orderCategory: text("order_category").notNull().default("normal"), // normal, rework, prototype, sample
   priority: text("priority").notNull().default("medium"),
@@ -67,8 +67,8 @@ export const productionOrders: any = pgTable("production_orders", {
   actualStartDate: timestamp("actual_start_date"),
   actualEndDate: timestamp("actual_end_date"),
   itemNumber: text("item_number"), // Reference to items table
-  salesOrderId: integer("sales_order_id").references(() => salesOrders.id), // Foreign key to sales_orders table
-  productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
+  salesOrderId: integer("sales_order_id"), // Will be converted to foreign key later when salesOrders table is defined
+  productionVersionId: integer("production_version_id"), // Will be converted to foreign key later when productionVersions table is defined
   plantId: integer("plant_id").references(() => plants.id).notNull(),
   
   // WIP tracking and actual cost capture
@@ -138,7 +138,7 @@ export const productionOrders: any = pgTable("production_orders", {
 export const plannedOrders = pgTable("planned_orders", {
   id: serial("id").primaryKey(),
   plannedOrderNumber: text("planned_order_number").notNull().unique(), // e.g., "PLN-2025-001"
-  itemId: integer("item_id").references(() => items.id).notNull(), // Foreign key to items table
+  itemId: integer("item_id").notNull(), // Will be converted to foreign key later when items table is defined
   quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull(),
   requiredDate: timestamp("required_date").notNull(), // When needed
   plannedStartDate: timestamp("planned_start_date"),
@@ -148,8 +148,8 @@ export const plannedOrders = pgTable("planned_orders", {
   status: text("status").notNull().default("firm"), // firm, released_to_production, cancelled
   priority: text("priority").notNull().default("medium"),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
-  salesOrderId: integer("sales_order_id").references(() => salesOrders.id), // Foreign key to originating sales order if applicable
-  productionVersionId: integer("production_version_id").references(() => productionVersions.id), // Links to production version which defines how to produce this item
+  salesOrderId: integer("sales_order_id"), // Will be converted to foreign key later when salesOrders table is defined
+  productionVersionId: integer("production_version_id"), // Will be converted to foreign key later when productionVersions table is defined
   createdAt: timestamp("created_at").defaultNow(),
   // Removed productionOrderId foreign key - now handled via many-to-many junction table
 });

@@ -233,9 +233,9 @@ export default function TopMenu() {
 
   // Convert to RoleSwitcher-compatible format with required description
   const currentRoleForSwitcher = currentRole ? {
-    id: currentRole.id,
-    name: currentRole.name,
-    description: currentRole.description || ''
+    id: (currentRole as any)?.id || '',
+    name: (currentRole as any)?.name || '',
+    description: (currentRole as any)?.description || ''
   } : null;
 
   // Function to toggle Max AI Assistant
@@ -445,7 +445,7 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{currentRole?.name || 'No Role'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
@@ -707,7 +707,7 @@ export default function TopMenu() {
                             <div className="flex items-center space-x-3">
                               {(() => {
                                 const FirstIcon = group.features[0]?.icon;
-                                const colorMap = {
+                                const colorMap: Record<string, string> = {
                                   'blue': 'bg-blue-500 dark:bg-blue-600',
                                   'purple': 'bg-purple-500 dark:bg-purple-600',
                                   'orange': 'bg-orange-500 dark:bg-orange-600',
@@ -788,7 +788,7 @@ export default function TopMenu() {
                       <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center uppercase tracking-wide">
                         {(() => {
                           const FirstIcon = group.features[0]?.icon;
-                          const colorMap = {
+                          const colorMap: Record<string, string> = {
                             'blue': 'bg-blue-500',
                             'purple': 'bg-purple-500',
                             'orange': 'bg-orange-500',
