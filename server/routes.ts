@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               results.push(resource);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const job = await processWithRetry(() => storage.createProductionOrder(insertJob));
               results.push(job);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const capability = await processWithRetry(() => storage.createCapability(insertCapability));
               results.push(capability);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -375,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const plant = await processWithRetry(() => storage.createPlant(insertPlant));
               results.push(plant);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -399,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const user = await processWithRetry(() => storage.createUser(insertUser));
               results.push({ ...user, passwordHash: undefined }); // Don't return password hash
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -422,7 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const order = await processWithRetry(() => storage.createProductionOrder(insertOrder));
               results.push(order);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -445,7 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const plannedOrder = await processWithRetry(() => storage.createPlannedOrder(insertPlannedOrder));
               results.push(plannedOrder);
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -493,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 results.push(customer);
               }
             } catch (itemError) {
-              errors.push({ index: i, item: data[i], error: itemError.message });
+              errors.push({ index: i, item: data[i], error: String(itemError) });
             }
           }
           break;
@@ -561,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('Error deleting existing master data:', deleteError);
           return res.status(500).json({ 
             error: 'Failed to delete existing master data', 
-            details: deleteError.message 
+            details: String(deleteError) 
           });
         }
       }
@@ -790,7 +790,7 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
         generatedData = JSON.parse(rawContent);
       } catch (parseError) {
         console.error('JSON parse error. Raw content:', rawContent);
-        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+        throw new Error(`Failed to parse OpenAI response: ${String(parseError)}`);
       }
       
       // Validate and potentially supplement generated data to meet minimum requirements
@@ -1023,7 +1023,7 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
               type: dataType,
               count: 0,
               status: 'error',
-              error: importError.message
+              error: String(importError)
             });
           }
         }
@@ -1278,7 +1278,7 @@ Rules:
             count: 0,
             description: modification.description,
             status: 'error',
-            error: modError.message
+            error: String(modError)
           });
         }
       }
@@ -2792,7 +2792,7 @@ Return ONLY a valid JSON object with this exact structure:
         console.error("Failed to parse AI dashboard response:", parseError);
         return res.status(500).json({ 
           message: "Failed to generate valid dashboard configuration",
-          error: parseError.message
+          error: String(parseError)
         });
       }
       
@@ -9346,7 +9346,7 @@ Return JSON format with each role as a top-level key containing tourSteps array.
         console.log("Successfully parsed AI tour data:", Object.keys(tourData));
         console.log("Tour data structure:", JSON.stringify(tourData, null, 2));
       } catch (parseError) {
-        console.error("Failed to parse AI response as JSON:", parseError.message);
+        console.error("Failed to parse AI response as JSON:", String(parseError));
         console.error("Content to parse:", generatedContent);
         console.error("Content length:", generatedContent.length);
         console.error("First 500 chars:", generatedContent.substring(0, 500));
