@@ -51,11 +51,7 @@
   }
 }
 
-/* Hamburger menu card styles */
-.hamburger-menu-card:not(.bg-emerald-50):not(.bg-blue-50):not(.bg-gradient-to-br) {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-}
+
 
 :root {
   /* AI Theme CSS Variables - Default to blue-indigo for better UX */
