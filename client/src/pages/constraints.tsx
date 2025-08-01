@@ -136,26 +136,26 @@ export default function ConstraintsManagement() {
   const { toast } = useToast();
 
   // Queries
-  const { data: drums = [], isLoading: drumsLoading } = useQuery({
+  const { data: drums = [], isLoading: drumsLoading } = useQuery<DrumResource[]>({
     queryKey: ["/api/toc/drums"],
     enabled: selectedTab === "drums"
   });
 
-  const { data: drumHistory = [], isLoading: historyLoading } = useQuery({
+  const { data: drumHistory = [], isLoading: historyLoading } = useQuery<DrumAnalysisHistory[]>({
     queryKey: ["/api/toc/drums/history"],
     enabled: selectedTab === "drums"
   });
 
-  const { data: buffers = [], isLoading: buffersLoading } = useQuery({
+  const { data: buffers = [], isLoading: buffersLoading } = useQuery<Buffer[]>({
     queryKey: ["/api/toc/buffers"],
     enabled: selectedTab === "buffers"
   });
 
-  const { data: resources = [] } = useQuery({
+  const { data: resources = [] } = useQuery<any[]>({
     queryKey: ["/api/resources"]
   });
 
-  const { data: items = [] } = useQuery({
+  const { data: items = [] } = useQuery<any[]>({
     queryKey: ["/api/items"]
   });
 
@@ -292,12 +292,12 @@ export default function ConstraintsManagement() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Theory of Constraints Management</h1>
-          <p className="text-gray-500 mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Theory of Constraints Management</h1>
+          <p className="text-gray-500 mt-2 text-sm sm:text-base">
             Manage drums, buffers, and optimize your production constraints
           </p>
         </div>
@@ -306,13 +306,16 @@ export default function ConstraintsManagement() {
             onClick={() => drumAnalysisMutation.mutate()}
             disabled={drumAnalysisMutation.isPending}
             variant="outline"
+            size="sm"
+            className="flex-1 sm:flex-none"
           >
             {drumAnalysisMutation.isPending ? (
               <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
             ) : (
               <Activity className="w-4 h-4 mr-2" />
             )}
-            Run Drum Analysis
+            <span className="hidden sm:inline">Run Drum Analysis</span>
+            <span className="sm:hidden">Analyze</span>
           </Button>
         </div>
       </div>
@@ -320,9 +323,18 @@ export default function ConstraintsManagement() {
       {/* Main Content */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="drums">Drum Management</TabsTrigger>
-          <TabsTrigger value="buffers">Buffer Management</TabsTrigger>
-          <TabsTrigger value="analytics">TOC Analytics</TabsTrigger>
+          <TabsTrigger value="drums" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Drum Management</span>
+            <span className="sm:hidden">Drums</span>
+          </TabsTrigger>
+          <TabsTrigger value="buffers" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Buffer Management</span>
+            <span className="sm:hidden">Buffers</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">TOC Analytics</span>
+            <span className="sm:hidden">Analytics</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Drums Tab */}
@@ -330,13 +342,14 @@ export default function ConstraintsManagement() {
           <div className="grid gap-4">
             {/* Current Drums */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Current Drum Resources</CardTitle>
                 <Dialog open={isDrumDialogOpen} onOpenChange={setIsDrumDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm">
+                    <Button size="sm" className="w-full sm:w-auto">
                       <Plus className="w-4 h-4 mr-2" />
-                      Designate Drum
+                      <span className="hidden sm:inline">Designate Drum</span>
+                      <span className="sm:hidden">Add Drum</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -433,13 +446,13 @@ export default function ConstraintsManagement() {
                 ) : (
                   <div className="space-y-3">
                     {drums.map((drum: DrumResource) => (
-                      <div key={drum.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <Factory className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium">{drum.resourceName}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge className={getDrumTypeColor(drum.drumType)}>
+                      <div key={drum.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-3">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <Factory className="w-5 h-5 text-gray-600 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{drum.resourceName}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <Badge className={`${getDrumTypeColor(drum.drumType)} text-white`}>
                                 {drum.drumType}
                               </Badge>
                               {drum.isManual && (
@@ -447,14 +460,15 @@ export default function ConstraintsManagement() {
                               )}
                               {drum.utilization && (
                                 <span className="text-sm text-gray-500">
-                                  {drum.utilization.toFixed(1)}% utilization
+                                  {drum.utilization.toFixed(1)}% util
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          Designated {format(new Date(drum.designatedAt), 'MMM d, yyyy')}
+                        <div className="text-sm text-gray-500 sm:text-right">
+                          <span className="sm:hidden">Designated: </span>
+                          {format(new Date(drum.designatedAt), 'MMM d, yyyy')}
                         </div>
                       </div>
                     ))}
@@ -479,44 +493,84 @@ export default function ConstraintsManagement() {
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Resource</TableHead>
-                        <TableHead>Bottleneck Score</TableHead>
-                        <TableHead>Utilization</TableHead>
-                        <TableHead>Operations</TableHead>
-                        <TableHead>Type</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <div className="space-y-3">
+                    {/* Mobile-friendly cards for small screens, table for larger screens */}
+                    <div className="hidden sm:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Resource</TableHead>
+                            <TableHead>Bottleneck Score</TableHead>
+                            <TableHead>Utilization</TableHead>
+                            <TableHead>Operations</TableHead>
+                            <TableHead>Type</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {drumHistory.map((history: DrumAnalysisHistory) => (
+                            <TableRow key={history.id}>
+                              <TableCell>
+                                {format(new Date(history.analysisDate), 'MMM d, yyyy HH:mm')}
+                              </TableCell>
+                              <TableCell>{history.resourceName || 'N/A'}</TableCell>
+                              <TableCell>
+                                {history.bottleneckScore ? (
+                                  <Badge variant={history.bottleneckScore > 80 ? "destructive" : "default"}>
+                                    {history.bottleneckScore.toFixed(1)}
+                                  </Badge>
+                                ) : 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                {history.utilizationPercent ? `${history.utilizationPercent.toFixed(1)}%` : 'N/A'}
+                              </TableCell>
+                              <TableCell>{history.operationCount || 'N/A'}</TableCell>
+                              <TableCell>
+                                <Badge variant={history.analysisType === 'automated' ? "default" : "outline"}>
+                                  {history.analysisType}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Mobile card view */}
+                    <div className="sm:hidden space-y-3">
                       {drumHistory.map((history: DrumAnalysisHistory) => (
-                        <TableRow key={history.id}>
-                          <TableCell>
-                            {format(new Date(history.analysisDate), 'MMM d, yyyy HH:mm')}
-                          </TableCell>
-                          <TableCell>{history.resourceName || 'N/A'}</TableCell>
-                          <TableCell>
-                            {history.bottleneckScore ? (
-                              <Badge variant={history.bottleneckScore > 80 ? "destructive" : "default"}>
-                                {history.bottleneckScore.toFixed(1)}
-                              </Badge>
-                            ) : 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            {history.utilizationPercent ? `${history.utilizationPercent.toFixed(1)}%` : 'N/A'}
-                          </TableCell>
-                          <TableCell>{history.operationCount || 'N/A'}</TableCell>
-                          <TableCell>
+                        <div key={history.id} className="border rounded-lg p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="font-medium">{history.resourceName || 'N/A'}</div>
                             <Badge variant={history.analysisType === 'automated' ? "default" : "outline"}>
                               {history.analysisType}
                             </Badge>
-                          </TableCell>
-                        </TableRow>
+                          </div>
+                          <div className="text-sm text-gray-600 mb-2">
+                            {format(new Date(history.analysisDate), 'MMM d, yyyy HH:mm')}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-gray-500">Score: </span>
+                              {history.bottleneckScore ? (
+                                <Badge variant={history.bottleneckScore > 80 ? "destructive" : "default"}>
+                                  {history.bottleneckScore.toFixed(1)}
+                                </Badge>
+                              ) : 'N/A'}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Util: </span>
+                              {history.utilizationPercent ? `${history.utilizationPercent.toFixed(1)}%` : 'N/A'}
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Ops: </span>
+                              {history.operationCount || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -526,12 +580,12 @@ export default function ConstraintsManagement() {
         {/* Buffers Tab */}
         <TabsContent value="buffers" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Buffer Management</CardTitle>
               <Button size="sm" onClick={() => {
                 setEditingBuffer(null);
                 setIsBufferDialogOpen(true);
-              }}>
+              }} className="w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Buffer
               </Button>
@@ -547,22 +601,22 @@ export default function ConstraintsManagement() {
                   </AlertDescription>
                 </Alert>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {buffers.map((buffer: Buffer) => (
                     <Card key={buffer.id} className="relative">
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-semibold">{buffer.name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline">
+                      <CardContent className="pt-4 sm:pt-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold truncate">{buffer.name}</h3>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
                                 {buffer.type === 'time' ? <Clock className="w-3 h-3 mr-1" /> : <Package className="w-3 h-3 mr-1" />}
                                 {buffer.type}
                               </Badge>
-                              <Badge variant="outline">{buffer.category}</Badge>
+                              <Badge variant="outline" className="text-xs">{buffer.category}</Badge>
                             </div>
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-shrink-0 sm:flex-col">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -570,6 +624,7 @@ export default function ConstraintsManagement() {
                                 setEditingBuffer(buffer);
                                 setIsBufferDialogOpen(true);
                               }}
+                              className="p-2"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -577,6 +632,7 @@ export default function ConstraintsManagement() {
                               size="sm"
                               variant="ghost"
                               onClick={() => deleteBufferMutation.mutate(buffer.id)}
+                              className="p-2"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -671,7 +727,7 @@ export default function ConstraintsManagement() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={bufferForm.control}
                       name="category"
@@ -712,7 +768,7 @@ export default function ConstraintsManagement() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={bufferForm.control}
                       name="targetSize"
@@ -749,7 +805,7 @@ export default function ConstraintsManagement() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <FormField
                       control={bufferForm.control}
                       name="greenZone"
@@ -895,7 +951,7 @@ export default function ConstraintsManagement() {
 
         {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Drums</CardTitle>
@@ -974,14 +1030,17 @@ export default function ConstraintsManagement() {
                   <div className="space-y-2">
                     <h3 className="font-semibold">Current Constraints</h3>
                     {drums.map((drum: DrumResource) => (
-                      <div key={drum.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span>{drum.resourceName}</span>
+                      <div key={drum.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="font-medium">{drum.resourceName}</span>
                         <div className="flex items-center gap-2">
-                          <Badge className={getDrumTypeColor(drum.drumType)}>
+                          <Badge className={`${getDrumTypeColor(drum.drumType)} text-white`}>
                             {drum.drumType}
                           </Badge>
                           {drum.utilization && (
-                            <Progress value={drum.utilization} className="w-24" />
+                            <div className="flex items-center gap-2">
+                              <Progress value={drum.utilization} className="w-20 sm:w-24" />
+                              <span className="text-sm text-gray-600">{drum.utilization.toFixed(1)}%</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -995,8 +1054,8 @@ export default function ConstraintsManagement() {
                     {buffers
                       .filter((b: Buffer) => b.zone === 'red' || b.zone === 'yellow')
                       .map((buffer: Buffer) => (
-                        <div key={buffer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span>{buffer.name}</span>
+                        <div key={buffer.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="font-medium">{buffer.name}</span>
                           <Badge className={getZoneColor(buffer.zone!)}>
                             {buffer.zone!.toUpperCase()} - {buffer.penetration?.toFixed(1)}%
                           </Badge>
