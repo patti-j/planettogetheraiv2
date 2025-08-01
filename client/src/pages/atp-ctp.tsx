@@ -313,14 +313,14 @@ export default function AtpCtpPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-gray-600" />
                           <span className="font-medium">Requested Date</span>
                         </div>
                         <span>{format(parseISO(searchResults.requestedDate), 'MMM dd, yyyy')}</span>
                       </div>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <div className="flex items-center gap-2">
                           <Truck className="w-4 h-4 text-gray-600" />
                           <span className="font-medium">Earliest Delivery</span>
@@ -394,7 +394,7 @@ export default function AtpCtpPage() {
                   <TabsContent value="recommendations" className="space-y-4">
                     <div className="space-y-3">
                       {searchResults.recommendations.map((rec, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <p className="text-sm">{rec}</p>
                         </div>
                       ))}

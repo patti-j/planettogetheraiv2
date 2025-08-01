@@ -245,7 +245,7 @@ export default function CanvasPage() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Canvas Header */}
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -459,7 +459,7 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   return (
     <div className="h-64 bg-white rounded-lg border p-4">
       <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
-      <div className="h-48 bg-gray-50 rounded flex items-center justify-center">
+      <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
         <div className="text-center">
           <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
           <p className="text-sm text-gray-500">Chart visualization would appear here</p>
@@ -483,7 +483,7 @@ const TableWidget: React.FC<{ data: any }> = ({ data }) => {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Name</th>
               <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Status</th>

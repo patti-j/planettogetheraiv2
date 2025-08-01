@@ -19,6 +19,7 @@ The platform's vision is to transform traditional ERP functionality into an AI-f
 - Fixed hamburger menu mobile layout with proper card sizing and inline "Show More" buttons (Patti)
 - Restored homepage to show marketing landing page instead of dashboard for authenticated users (Patti)
 - **Database Schema Update**: Changed planned_orders table to use item_id (foreign key to items table) instead of item_number text field for proper relational integrity
+- **Comprehensive Dark Mode Fixes**: Applied systematic dark mode support across 20+ components and pages including inventory-optimization, dashboard-manager-enhanced, billing, analytics, capacity-planning, data-import, ai-agent, guided-tour, integrated-ai-assistant, kanban-board, assigned-role-switcher, atp-ctp, boards, canvas, and analytics-new. Applied consistent patterns: bg-white → dark:bg-gray-800, text-gray-900 → dark:text-white, bg-gray-50 → dark:bg-gray-900, and colored backgrounds with appropriate dark variants
 
 ## User Preferences
 

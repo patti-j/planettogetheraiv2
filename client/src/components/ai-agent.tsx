@@ -747,7 +747,7 @@ export default function AIAgent() {
                   <div className={`rounded-lg p-3 ${
                     message.type === "user" 
                       ? "bg-blue-500 text-white" 
-                      : "bg-gray-100 text-gray-900"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                   }`}>
                     <p className="text-sm">{message.content}</p>
                     
@@ -800,7 +800,7 @@ export default function AIAgent() {
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${aiTheme.gradient}`}>
                     <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="rounded-lg p-3 bg-gray-100 text-gray-900">
+                  <div className="rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
                     <p className="text-sm">Processing your command...</p>
                   </div>
                 </div>
@@ -910,7 +910,7 @@ export default function AIAgent() {
                         </Button>
                       </div>
                     ) : (
-                      <p className="truncate text-gray-900">{queuedMsg.content}</p>
+                      <p className="truncate text-gray-900 dark:text-white">{queuedMsg.content}</p>
                     )}
                     
                     {queuedMsg.attachments.length > 0 && (

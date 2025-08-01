@@ -196,7 +196,7 @@ function DraggableDashboardCard({
         <CardContent className="flex-1 p-3 overflow-hidden">
           {dashboard.configuration?.customWidgets?.length > 0 ? (
             <div 
-              className="relative w-full bg-gray-50 overflow-auto border border-gray-100 rounded-lg" 
+              className="relative w-full bg-gray-50 dark:bg-gray-900 overflow-auto border border-gray-100 dark:border-gray-700 rounded-lg" 
               style={{ height: Math.max(300, size.height - 160) }}
             >
               {dashboard.configuration.customWidgets.map((widget: AnalyticsWidget) => (

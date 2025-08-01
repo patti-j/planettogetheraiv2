@@ -70,7 +70,7 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
       overlay.id = 'role-switch-overlay';
       overlay.className = 'fixed inset-0 bg-gradient-to-br from-blue-50 to-white z-[9999] flex items-center justify-center';
       overlay.innerHTML = `
-        <div class="text-center space-y-6 max-w-md mx-auto p-8 bg-white/90 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-xl">
+        <div class="text-center space-y-6 max-w-md mx-auto p-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl border border-blue-200 dark:border-gray-700 shadow-xl">
           <div class="relative">
             <div class="role-switch-spinner rounded-full h-16 w-16 border-4 mx-auto"></div>
             <div class="absolute inset-0 flex items-center justify-center">
@@ -78,7 +78,7 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
             </div>
           </div>
           <div class="space-y-2">
-            <div class="text-xl font-semibold text-gray-900">Switching to ${variables.targetRole || 'new role'}</div>
+            <div class="text-xl font-semibold text-gray-900 dark:text-white">Switching to ${variables.targetRole || 'new role'}</div>
             <div class="text-sm text-gray-600">Updating interface and permissions...</div>
           </div>
           <div class="flex items-center justify-center space-x-1">

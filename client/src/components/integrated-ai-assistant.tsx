@@ -662,7 +662,7 @@ export default function IntegratedAIAssistant() {
       }}
     >
       <Card 
-        className={`bg-white shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''} ${isDocked ? 'border-2 border-blue-400 shadow-none' : ''}`} 
+        className={`bg-white dark:bg-gray-800 shadow-2xl transition-all duration-300 relative ${isDragging ? 'cursor-grabbing' : ''} ${isResizing ? 'select-none' : ''} ${isDocked ? 'border-2 border-blue-400 shadow-none' : ''}`} 
         style={{ width: '100%', height: '100%' }}
       >
         <CardHeader 
@@ -746,7 +746,7 @@ export default function IntegratedAIAssistant() {
           <CardContent className="p-0 flex flex-col relative" style={{ height: `${size.height - 80}px`, overflow: 'hidden' }}>
             {/* Voice Settings Panel */}
             {showVoiceSettings && (
-              <div className="p-3 bg-gray-50 border-b">
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">Voice Settings</span>
                   <Button
@@ -791,7 +791,7 @@ export default function IntegratedAIAssistant() {
 
             {/* Memory & Training Settings Panel */}
             {showMemorySettings && (
-              <div className="p-3 bg-gray-50 border-b max-h-64 overflow-y-auto">
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b max-h-64 overflow-y-auto">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-gray-700">Memory & Training</span>
                   <Button
@@ -816,7 +816,7 @@ export default function IntegratedAIAssistant() {
                         <p className="text-xs text-gray-500 italic">No memories recorded yet</p>
                       ) : (
                         memoryData.map((memory, index) => (
-                          <div key={index} className="p-2 bg-white rounded border text-xs">
+                          <div key={index} className="p-2 bg-white dark:bg-gray-700 rounded border text-xs">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
                                 <p className="font-medium text-gray-700">{memory.type}</p>
@@ -871,7 +871,7 @@ export default function IntegratedAIAssistant() {
                         <p className="text-xs text-gray-500 italic">No conversation context available</p>
                       ) : (
                         trainingData.map((training, index) => (
-                          <div key={index} className="p-2 bg-white rounded border text-xs">
+                          <div key={index} className="p-2 bg-white dark:bg-gray-700 rounded border text-xs">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
                                 <p className="font-medium text-gray-700">{training.category}</p>
@@ -923,7 +923,7 @@ export default function IntegratedAIAssistant() {
             
             {/* Current Insights */}
             {currentInsights.length > 0 && (
-              <div className="p-3 bg-gray-50 border-b">
+              <div className="p-3 bg-gray-50 dark:bg-gray-900 border-b">
                 <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
                   <Zap className="h-3 w-3" />
                   Smart Insights
@@ -932,7 +932,7 @@ export default function IntegratedAIAssistant() {
                   {currentInsights.map((insight, index) => (
                     <div 
                       key={index}
-                      className="text-xs bg-white p-2 rounded border cursor-pointer hover:bg-gray-50"
+                      className="text-xs bg-white dark:bg-gray-700 p-2 rounded border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
                       onClick={() => handleInsightAction(insight)}
                     >
                       <div className="flex items-center gap-1 mb-1">
@@ -973,7 +973,7 @@ export default function IntegratedAIAssistant() {
                       className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg text-sm ${
                         message.type === 'user'
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-900'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       {message.content}

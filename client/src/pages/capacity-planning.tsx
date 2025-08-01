@@ -714,7 +714,7 @@ export default function CapacityPlanning() {
                       <h6 className="font-medium text-gray-900 mb-2">Shift Schedule</h6>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {resource.shifts.map((shift, index) => (
-                          <div key={index} className="bg-gray-50 p-3 rounded">
+                          <div key={index} className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="font-medium text-sm">{shift.name}</div>

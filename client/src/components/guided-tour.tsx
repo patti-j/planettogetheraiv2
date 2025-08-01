@@ -1166,7 +1166,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                     )}
                   </Button>
                   {showVolumeSlider && (
-                    <div className="absolute top-full right-0 mt-1 bg-white border rounded-lg shadow-lg p-3 z-50 min-w-[140px]">
+                    <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-3 z-50 min-w-[140px]">
                       <div className="flex items-center gap-2">
                         <VolumeX className="h-3 w-3 text-gray-500" />
                         <input
@@ -1252,7 +1252,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
               
               {currentStepData.benefits && currentStepData.benefits.length > 0 && windowDimensions.height >= 250 && (
                 <div className="space-y-2 hidden sm:block">
-                  <h4 className="text-sm font-medium text-gray-900">Key Benefits:</h4>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">Key Benefits:</h4>
                   <ul className="space-y-1">
                     {currentStepData.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-start gap-2 text-sm text-gray-600">

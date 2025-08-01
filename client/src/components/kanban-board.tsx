@@ -88,12 +88,12 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
   return (
     <div
       ref={drag}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow relative ${
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow relative ${
         isDragging ? "opacity-50 rotate-3" : ""
       }`}
     >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium text-gray-900 text-sm flex-1 pr-8">{job.name}</h4>
+        <h4 className="font-medium text-gray-900 dark:text-white text-sm flex-1 pr-8">{job.name}</h4>
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -211,12 +211,12 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
   return (
     <div
       ref={drag}
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow relative ${
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2 sm:p-3 mb-2 sm:mb-3 cursor-move hover:shadow-md transition-shadow relative ${
         isDragging ? "opacity-50 rotate-3" : ""
       }`}
     >
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium text-gray-900 text-sm flex-1 pr-8">{operation.name}</h4>
+        <h4 className="font-medium text-gray-900 dark:text-white text-sm flex-1 pr-8">{operation.name}</h4>
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

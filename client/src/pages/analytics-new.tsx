@@ -640,7 +640,7 @@ export default function Analytics() {
           />
         </div>
       ) : (
-        <div className="h-screen bg-gray-50">
+        <div className="h-screen bg-gray-50 dark:bg-gray-900">
           <PageContent />
         </div>
       )}
