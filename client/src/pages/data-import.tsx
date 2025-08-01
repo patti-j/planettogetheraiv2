@@ -1094,11 +1094,11 @@ function DataImport() {
     queryKey: ['/api/onboarding/status'],
     enabled: !!user,
     retry: 1,
-    staleTime: 0, // Force fresh data
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Calculate recommended data types based on selected features
-  const calculateRecommendedDataTypes = (features: string[]) => {
+  const calculateRecommendedDataTypes = useCallback((features: string[]) => {
     const recommendedTypes = new Set<string>();
     features.forEach((feature: string) => {
       const requirements = featureDataRequirements[feature as keyof typeof featureDataRequirements];
@@ -1107,7 +1107,7 @@ function DataImport() {
       }
     });
     setRecommendedDataTypes(Array.from(recommendedTypes));
-  };
+  }, []);
 
   // Transform data function for import processing
   const transformData = (jsonData: any[], dataType: string) => {
@@ -1139,7 +1139,7 @@ function DataImport() {
       calculateRecommendedDataTypes(features);
       console.log('Recommended data types based on features:', features);
     }
-  }, [onboardingData]);
+  }, [onboardingData, calculateRecommendedDataTypes]);
 
   const handleGenerateAISampleData = () => {
     const companyInfo = (userPreferences as any)?.companyInfo || null;
