@@ -32,6 +32,14 @@ interface TableColumn {
 interface TableInfo {
   name: string;
   columns: TableColumn[];
+  relationships?: {
+    type: string;
+    fromTable: string;
+    fromColumn: string;
+    toTable: string;
+    toColumn: string;
+    description: string;
+  }[];
   comment?: string;
 }
 
@@ -568,24 +576,56 @@ export default function TableFieldViewer() {
                   <TabsContent value="relationships" className="space-y-3 sm:space-y-4">
                     <h3 className="text-base sm:text-lg font-semibold">Table Relationships</h3>
                     <div className="space-y-2 sm:space-y-3">
+                      {/* Foreign Key Columns */}
                       {selectedTableData.columns
-                        .filter(col => col.isForeignKey && col.references)
+                        .filter(col => col.foreignKey)
                         .map((column: TableColumn) => (
-                          <Card key={column.name} className="p-3 sm:p-4">
+                          <Card key={`fk-${column.name}`} className="p-3 sm:p-4">
                             <div className="flex items-start gap-2 sm:gap-3">
                               <Key className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 mt-1 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="font-medium text-sm sm:text-base truncate">{column.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-sm sm:text-base truncate">{column.name}</p>
+                                  <Badge variant="outline" className="text-xs">many-to-one</Badge>
+                                </div>
                                 <p className="text-xs sm:text-sm text-gray-500 break-all">
-                                  References: <span className="font-mono text-blue-600">{column.references}</span>
+                                  References: <span className="font-mono text-blue-600">{column.foreignKey.table}.{column.foreignKey.column}</span>
                                 </p>
                               </div>
                             </div>
                           </Card>
                         ))}
-                      {selectedTableData.columns.filter(col => col.isForeignKey).length === 0 && (
+                      
+                      {/* Additional Relationships from Schema */}
+                      {selectedTableData.relationships?.map((rel, index) => (
+                        <Card key={`rel-${index}`} className="p-3 sm:p-4">
+                          <div className="flex items-start gap-2 sm:gap-3">
+                            <Key className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm sm:text-base truncate">
+                                  {rel.fromTable === selectedTableData.name ? rel.fromColumn : rel.toColumn}
+                                </p>
+                                <Badge variant="outline" className="text-xs">{rel.type}</Badge>
+                              </div>
+                              <p className="text-xs sm:text-sm text-gray-500 break-all">
+                                {rel.description}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {rel.fromTable === selectedTableData.name 
+                                  ? `→ ${rel.toTable}.${rel.toColumn}`
+                                  : `← ${rel.fromTable}.${rel.fromColumn}`
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                      
+                      {(selectedTableData.columns.filter(col => col.foreignKey).length === 0 && 
+                        (!selectedTableData.relationships || selectedTableData.relationships.length === 0)) && (
                         <p className="text-gray-500 text-center py-6 sm:py-8 text-sm sm:text-base">
-                          No foreign key relationships found in this table.
+                          No relationships found for this table.
                         </p>
                       )}
                     </div>
