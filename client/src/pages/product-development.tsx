@@ -501,8 +501,84 @@ export default function ProductDevelopment() {
                 </Card>
               ))}
               {(!Array.isArray(strategyDocuments) || strategyDocuments.length === 0) && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  No strategy documents found. Create your first one above.
+                <div className="space-y-4">
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                        Scaling Strategy Framework
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-700 dark:text-gray-300 mb-4">
+                        Strategic approach to scale the manufacturing ERP system from single-tenant to enterprise-grade multi-tenant architecture.
+                      </p>
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Current Architecture Assessment</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Single shared PostgreSQL database, session-based authentication, Express.js server on port 5000, React frontend served by same server.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Target Architecture</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Database-Per-Tenant architecture with complete data isolation, independent scaling per customer, and enterprise-grade compliance.
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Key Benefits</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-700 dark:text-gray-300">Complete data isolation & security</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-700 dark:text-gray-300">Independent customer scaling</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-700 dark:text-gray-300">Customizable schema per tenant</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span className="text-gray-700 dark:text-gray-300">Enhanced compliance capabilities</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                        <FileText className="w-5 h-5 text-purple-500" />
+                        Implementation Strategy
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-green-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q1 2025)</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Connection pooling, Redis caching, rate limiting, query optimization</p>
+                        </div>
+                        <div className="border-l-4 border-blue-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q2 2025)</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Load balancing, CDN, background processing, monitoring systems</p>
+                        </div>
+                        <div className="border-l-4 border-purple-500 pl-4">
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q3-Q4 2025)</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Database-per-tenant, automated provisioning, isolated backups</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                    Create custom strategy documents above to track additional strategic initiatives.
+                  </div>
                 </div>
               )}
             </div>
@@ -716,12 +792,123 @@ export default function ProductDevelopment() {
                 {/* Phase Connection Line */}
                 {index < roadmapPhases.length - 1 && (
                   <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-                    <div className="w-1 h-6 bg-gray-300"></div>
-                    <div className="w-3 h-3 bg-gray-300 rounded-full -ml-1"></div>
+                    <div className="w-1 h-6 bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full -ml-1"></div>
                   </div>
                 )}
               </Card>
             ))}
+
+            {/* Scaling Implementation Roadmap */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-2 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Network className="w-6 h-6 text-blue-500" />
+                  Scaling Implementation Roadmap
+                </CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">
+                  Strategic phased approach to scale the manufacturing ERP system using Database-Per-Tenant architecture
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Phase 1 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+                      <div className="w-1 h-16 bg-green-200 dark:bg-green-800"></div>
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q1 2025)</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Immediate performance improvements and infrastructure preparation</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Database connection pooling</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Redis caching implementation</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Rate limiting & security</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Query optimization & indexing</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phase 2 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                      <div className="w-1 h-16 bg-blue-200 dark:bg-blue-800"></div>
+                    </div>
+                    <div className="flex-1 pb-6">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q2 2025)</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Horizontal scaling and infrastructure improvements</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Load balancer deployment</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">CDN for static assets</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Background job processing</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Monitoring & observability</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phase 3 */}
+                  <div className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q3-Q4 2025)</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Database-per-tenant architecture implementation</p>
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Dynamic database routing by domain/company</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Automated tenant provisioning system</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Per-tenant schema migration management</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                          <span className="text-gray-700 dark:text-gray-300">Isolated backup & recovery systems</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <p className="text-sm font-medium text-purple-800 dark:text-purple-200">Expected Outcomes:</p>
+                        <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                          Complete data isolation, independent scaling per customer, customizable schema per tenant, and enterprise-grade compliance capabilities.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -875,6 +1062,122 @@ export default function ProductDevelopment() {
                 </Card>
               </div>
             )}
+
+            {/* Scaling Strategy Section */}
+            <div className="mt-8 space-y-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">3-Level Scaling Strategy</h3>
+              
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <Database className="w-5 h-5 text-green-500" />
+                    Level 1: Immediate Improvements (Low Impact)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">Quick wins to improve performance and prepare for scaling without major architectural changes.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Add database connection pooling</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Implement Redis caching layer</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Add rate limiting protection</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Optimize database queries & indexes</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <Layers className="w-5 h-5 text-blue-500" />
+                    Level 2: Infrastructure Changes (Medium Impact)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">Infrastructure improvements to support multiple server instances and better resource management.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Deploy behind load balancer (nginx)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Separate static asset serving (CDN)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Background job processing</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Add monitoring & observability</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <Network className="w-5 h-5 text-purple-500" />
+                    Level 3: Database-Per-Tenant Architecture (High Impact)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">Complete multi-tenancy with separate databases per company/domain for maximum isolation and performance.</p>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5"></div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Dynamic Database Selection</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Route connections based on user's domain/company during authentication</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5"></div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Automated Tenant Provisioning</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Automatic database creation and schema setup for new customers</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5"></div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Per-Tenant Migration Management</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Independent schema updates and data migrations per customer</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5"></div>
+                      <div>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">Isolated Backup & Recovery</span>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Customer-specific backup strategies and point-in-time recovery</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <p className="text-sm text-purple-800 dark:text-purple-200 font-medium">Benefits of Database-Per-Tenant:</p>
+                    <ul className="text-xs text-purple-700 dark:text-purple-300 mt-1 space-y-1">
+                      <li>• Complete data isolation and security</li>
+                      <li>• Independent scaling per customer</li>
+                      <li>• Customizable schema per tenant needs</li>
+                      <li>• Better compliance and audit capabilities</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
