@@ -150,7 +150,8 @@ export default function ProductDevelopment() {
     defaultValues: {
       title: "",
       content: "",
-      category: "architecture" as const
+      category: "architecture" as const,
+      status: "draft" as const
     }
   });
 
@@ -164,7 +165,8 @@ export default function ProductDevelopment() {
       phase: "",
       estimatedHours: 8,
       assignedTo: "",
-      dependencies: []
+      dependencies: [],
+      dueDate: undefined
     }
   });
 
@@ -174,7 +176,8 @@ export default function ProductDevelopment() {
       name: "",
       description: "",
       type: "unit" as const,
-      status: "draft" as const
+      status: "draft" as const,
+      framework: ""
     }
   });
 

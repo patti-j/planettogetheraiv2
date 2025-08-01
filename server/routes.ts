@@ -415,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 customer: item.customer,
                 priority: item.priority || 'medium',
                 status: item.status || 'released',
-                quantity: parseInt(item.quantity) || 1,
+                quantity: String(parseInt(item.quantity) || 1),
                 dueDate: item.dueDate ? new Date(item.dueDate) : null,
                 plantId: 1 // Default to first plant for import
               };
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const insertPlannedOrder = {
                 plannedOrderNumber: item.plannedOrderNumber || `PLN-${uniqueCounter + i}-${Math.floor(Math.random() * 100)}`,
                 itemNumber: item.itemNumber || item.name || 'ITEM-001',
-                quantity: parseInt(item.quantity) || 1,
+                quantity: String(parseInt(item.quantity) || 1),
                 requiredDate: item.requiredDate ? new Date(item.requiredDate) : new Date(),
                 orderType: item.orderType || 'production',
                 source: item.source || 'manual',
@@ -1822,8 +1822,9 @@ Rules:
       }
       res.json(updatedResource);
     } catch (error) {
+      const id = req.params.id;
       console.error(`[PUT /api/resources/${id}] Error:`, error);
-      res.status(400).json({ message: "Invalid resource data", error: error.message });
+      res.status(400).json({ message: "Invalid resource data", error: error instanceof Error ? error.message : String(error) });
     }
   });
 

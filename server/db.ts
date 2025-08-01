@@ -16,10 +16,10 @@ if (!process.env.DATABASE_URL) {
 const poolConfig = {
   connectionString: process.env.DATABASE_URL,
   // Connection pool settings - reduced for stability
-  max: parseInt(process.env.DB_POOL_MAX || '5'), // Maximum connections in pool
-  min: parseInt(process.env.DB_POOL_MIN || '1'),  // Minimum connections to maintain
-  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '20000'), // 20 seconds
-  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '10000'), // 10 seconds
+  max: parseInt(process.env.DB_POOL_MAX || '2'), // Maximum connections in pool - reduced
+  min: parseInt(process.env.DB_POOL_MIN || '0'),  // Minimum connections to maintain - reduced
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'), // 30 seconds
+  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '15000'), // 15 seconds
   // Performance monitoring
   log: process.env.NODE_ENV === 'development' ? undefined : undefined, // Disable logging
 };

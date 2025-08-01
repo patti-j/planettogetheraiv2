@@ -79,7 +79,7 @@ export async function seedDatabase() {
           priority: "high", 
           dueDate: new Date("2024-12-31"), 
           status: "active",
-          quantity: 100
+          quantity: "100"
         },
         { 
           orderNumber: "PO-002",
@@ -89,7 +89,7 @@ export async function seedDatabase() {
           priority: "medium", 
           dueDate: new Date("2024-12-25"), 
           status: "active",
-          quantity: 250
+          quantity: "250"
         }
       ];
 
