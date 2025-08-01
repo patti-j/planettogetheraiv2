@@ -89,7 +89,7 @@ export function useAuth() {
     retryOnMount: false,
     staleTime: 0, // Always refetch to get fresh role data
     refetchOnWindowFocus: true,
-    refetchInterval: 10000, // Refetch every 10 seconds to ensure fresh permissions
+    refetchInterval: false, // Disable auto-refetch to prevent login page issues
   });
 
   const loginMutation = useMutation({
