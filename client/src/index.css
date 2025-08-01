@@ -466,6 +466,23 @@ div[data-radix-tooltip-content] {
   .border-error {
     border-color: var(--error);
   }
+
+  /* Force menu cards to have correct dark mode styling */
+  .dark .bg-white {
+    background-color: rgb(55 65 81) !important; /* gray-700 */
+  }
+  
+  .dark .hover\:bg-gray-50:hover {
+    background-color: rgb(75 85 99) !important; /* gray-600 */
+  }
+  
+  .dark .border-gray-200 {
+    border-color: rgb(107 114 128) !important; /* gray-500 */
+  }
+  
+  .dark .hover\:border-gray-300:hover {
+    border-color: rgb(156 163 175) !important; /* gray-400 */
+  }
 }
 
 /* Hybrid drag-and-scroll styles for Gantt chart */
