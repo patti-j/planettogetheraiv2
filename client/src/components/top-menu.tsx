@@ -540,7 +540,7 @@ export default function TopMenu() {
                       variant="ghost"
                       size="sm"
                       onClick={clearRecentPages}
-                      className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 h-auto"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
                     >
                       Clear
                     </Button>
@@ -591,10 +591,10 @@ export default function TopMenu() {
                             >
                               <div className={`
                                 w-full aspect-square min-h-[60px] h-[60px] min-w-[60px] md:min-h-[70px] md:h-[70px] md:min-w-[70px] 
-                                bg-white dark:bg-gray-700 border hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                                bg-white dark:bg-gray-800 border hover:border-gray-300 dark:hover:border-gray-400 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                                 flex flex-col items-center justify-center text-center space-y-1 relative
-                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-600' : 'border-gray-200 dark:border-gray-600'}
-                                ${isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
+                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-800/30 dark:border-emerald-500' : 'border-gray-200 dark:border-gray-600'}
+                                ${isAI ? 'border-purple-200 dark:border-purple-500 hover:border-purple-300 dark:hover:border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-800/20 dark:to-pink-800/20' : ''}
                               `}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100'} 
@@ -602,7 +602,7 @@ export default function TopMenu() {
                                 `}>
                                   <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                                 </div>
-                                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                <span className="text-xs font-medium text-gray-800 dark:text-gray-100 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                                   {page.label}
                                 </span>
                                 {/* Pin/Unpin Button - Bottom Right Corner */}
@@ -746,11 +746,11 @@ export default function TopMenu() {
                                   onClick={() => handleFeatureClick(feature)}
                                 >
                                   <div className={`
-                                    h-[50px] bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
+                                    h-[50px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
                                     rounded-lg p-2 cursor-pointer transition-all duration-150
                                     flex items-center space-x-2
-                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                                    ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-800/30' : ''}
+                                    ${feature.isAI ? 'border-purple-200 dark:border-purple-600 hover:border-purple-300 dark:hover:border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-800/20 dark:to-pink-800/20' : ''}
                                   `}>
                                     <div className={`
                                       ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
@@ -758,7 +758,7 @@ export default function TopMenu() {
                                     `}>
                                       <feature.icon className="w-3 h-3 text-white" strokeWidth={1.5} fill="none" />
                                     </div>
-                                    <span className="text-xs text-gray-700 dark:text-gray-200 leading-tight line-clamp-2 overflow-hidden">
+                                    <span className="text-xs text-gray-700 dark:text-gray-100 leading-tight line-clamp-2 overflow-hidden">
                                       {feature.label}
                                     </span>
                                   </div>
@@ -809,11 +809,11 @@ export default function TopMenu() {
                           >
                             <div className={`
                               ${getCardSize(group.priority)}
-                              bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
+                              bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
                               rounded-lg p-2 cursor-pointer transition-all duration-150
                               flex flex-col items-center justify-center text-center gap-1
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
-                              ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-800/30' : ''}
+                              ${feature.isAI ? 'border-purple-200 dark:border-purple-600 hover:border-purple-300 dark:hover:border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-800/20 dark:to-pink-800/20' : ''}
                             `}>
                               <div className={`
                                 ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
@@ -825,7 +825,7 @@ export default function TopMenu() {
                                   fill="none"
                                 />
                               </div>
-                              <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                              <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-gray-100 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
                                 {feature.label}
                               </span>
                             </div>
