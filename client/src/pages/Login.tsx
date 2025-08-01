@@ -27,7 +27,10 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🚀 Form submitted with:", { username, password: password ? "***" : "empty" });
+    alert("Form submitted!"); // Basic test
+    console.log("FORM SUBMIT TRIGGERED");
+    console.log("Username:", username);
+    console.log("Password:", password);
     setError("");
     setLoading(true);
 
