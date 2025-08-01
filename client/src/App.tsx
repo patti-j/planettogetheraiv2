@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -20,40 +20,7 @@ import OnboardingWizard from "@/components/onboarding-wizard";
 import Login from "@/pages/Login";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-// Component to handle login for authenticated users
-function LoginRedirect() {
-  const { logout, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      // Logout current user and redirect to login page
-      logout();
-      // Wait a moment for logout to complete then redirect
-      setTimeout(() => {
-        setLocation("/login");
-      }, 100);
-    } else {
-      // User is already logged out, show login page
-      return;
-    }
-  }, [isAuthenticated, logout, setLocation]);
-
-  // Show login page for unauthenticated users
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  // Show loading while logout is processing
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Logging out...</p>
-      </div>
-    </div>
-  );
-}
 import Dashboard from "@/pages/dashboard";
 import Analytics from "@/pages/analytics";
 import Reports from "@/pages/reports";
@@ -556,9 +523,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
-          <Route path="/login">
-            <LoginRedirect />
-          </Route>
+          <Route path="/login" component={Login} />
           <Route path="/" component={MarketingHome} />
           <Route component={NotFound} />
         </Switch>

@@ -28,6 +28,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 interface FeatureCardProps {
   icon: React.ReactNode;
@@ -66,6 +67,7 @@ const StatCard: React.FC<StatCardProps> = ({ value, label, description }) => (
 
 const MarketingHome: React.FC = () => {
   const [, setLocation] = useLocation();
+  const { logout, isAuthenticated } = useAuth();
 
   const handleGetStarted = () => {
     setLocation("/pricing");
