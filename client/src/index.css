@@ -51,13 +51,10 @@
   }
 }
 
-/* Fix for hamburger menu cards in dark mode */
-.dark [data-theme="dark"] {
-  background-color: rgb(55, 65, 81) !important;
-}
-
-[data-theme="light"] {
-  background-color: rgb(255, 255, 255) !important;
+/* Hamburger menu card styles */
+.hamburger-menu-card:not(.bg-emerald-50):not(.bg-blue-50):not(.bg-gradient-to-br) {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
 }
 
 :root {

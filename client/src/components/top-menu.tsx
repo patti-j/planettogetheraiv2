@@ -597,12 +597,8 @@ export default function TopMenu() {
                                 flex flex-col items-center justify-center text-center space-y-1 relative
                                 ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                              `}
-                              style={{ 
-                                backgroundColor: page.isPinned ? undefined : (isAI ? undefined : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)')),
-                                color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
-                              }} 
-                              data-theme={resolvedTheme}>
+                                hamburger-menu-card
+                              `}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
                                   p-1.5 rounded-full flex items-center justify-center flex-shrink-0
@@ -767,12 +763,8 @@ export default function TopMenu() {
                                     flex items-center space-x-2
                                     ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                     ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                                  `}
-                                  style={{ 
-                                    backgroundColor: (location === feature.href || feature.isAI) ? undefined : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)'),
-                                    color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
-                                  }}
-                                  data-theme={resolvedTheme}>
+                                    hamburger-menu-card
+                                  `}>
                                     <div className={`
                                       ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
                                       p-1 rounded-md flex items-center justify-center flex-shrink-0
@@ -835,12 +827,8 @@ export default function TopMenu() {
                               flex flex-col items-center justify-center text-center gap-1
                               ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                               ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                            `}
-                            style={{ 
-                              backgroundColor: (location === feature.href || feature.isAI) ? undefined : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)'),
-                              color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
-                            }}
-                            data-theme={resolvedTheme}>
+                              hamburger-menu-card
+                            `}>
                               <div className={`
                                 ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
                                 p-1.5 rounded-md flex items-center justify-center flex-shrink-0
