@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
+import { AssignedRoleSwitcher } from "./assigned-role-switcher";
 import { TrainingModeExit } from "./training-mode-exit";
 import { UserProfileDialog } from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
@@ -325,7 +326,10 @@ export default function TopMenu() {
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
                     <TrainingModeExit />
-                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                    <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                    {hasPermission('training', 'view') && (
+                      <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Avatar 
@@ -392,7 +396,10 @@ export default function TopMenu() {
                 {/* Role switching controls on the right */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <TrainingModeExit />
-                  <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                  <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                  {hasPermission('training', 'view') && (
+                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
+                  )}
                 </div>
               </div>
             </div>
