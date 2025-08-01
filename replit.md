@@ -6,17 +6,16 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 The platform's vision is to transform traditional ERP functionality into an AI-first approach, leveraging artificial intelligence for core differentiators like optimized production planning, dynamic resource allocation, and intelligent dashboarding. It supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration.
 
-## Recent Changes (January 1, 2025)
-- Enhanced Theory of Constraints (TOC) implementation with comprehensive drum management functionality
-- Added ability to manually designate resources as drums or run automated analysis to identify bottlenecks
-- Implemented drum_analysis_history table to track all drum designation changes and analysis results
-- Created API endpoints for drum management: manual designation, analysis history, and automated analysis
-- Drum analysis uses resource utilization metrics (operation count, duration) to calculate bottleneck scores
-- Added complete TOC buffer management system with time and stock buffer capabilities
-- Implemented four buffer tables: buffer_definitions, buffer_consumption, buffer_management_history, buffer_policies
-- Created comprehensive buffer management API endpoints for CRUD operations, consumption tracking, and analysis
-- Buffer system supports red/yellow/green zone management with automatic alert generation
-- Integrated buffer consumption tracking with real-time zone calculations and penetration monitoring
+## Recent Changes (August 1, 2025)
+- Comprehensively updated data-import UI to align with current database schema after structural changes
+- Added new data types to import system: plannedOrders, discreteOperations, processOperations, plantResources
+- Added quality management data types: qualityTests, inspectionPlans, certificates
+- Updated all import functionality including API endpoints, sheet name mappings, field definitions, and template configurations
+- Enhanced operation types to support both discrete manufacturing and process industries
+- Integrated production planning with planned orders capability for MRP functionality
+- Updated feature-to-data-type mappings to reflect new manufacturing planning capabilities
+- Aligned record counting system with new table structures and naming conventions
+- Maintained backward compatibility while adding comprehensive new functionality
 
 ## User Preferences
 

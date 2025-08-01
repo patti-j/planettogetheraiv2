@@ -86,20 +86,22 @@ function DataImport() {
 
   // Feature to data requirements mapping
   const featureDataRequirements = {
-    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations', 'workCenters', 'routings'],
-    'theory-of-constraints': ['resources', 'operations', 'productionOrders'],
-    'resource-management': ['plants', 'resources', 'capabilities', 'workCenters', 'employees'],
-    'job-management': ['productionOrders', 'resources', 'plants', 'operations', 'workCenters'],
-    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations', 'workCenters', 'forecasts'],
-    'inventory-management': ['items', 'storageLocations', 'inventory', 'inventoryLots', 'plants'],
-    'quality-management': ['resources', 'plants', 'productionOrders', 'operations', 'employees'],
-    'maintenance-scheduling': ['resources', 'plants', 'users', 'employees', 'workCenters'],
+    'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'discreteOperations', 'processOperations', 'workCenters', 'routings'],
+    'theory-of-constraints': ['resources', 'discreteOperations', 'processOperations', 'productionOrders'],
+    'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'plannedOrders', 'discreteOperations', 'processOperations', 'workCenters', 'forecasts'],
+    'inventory-optimization': ['items', 'storageLocations', 'inventory', 'inventoryLots', 'plants'],
+    'production-planning': ['productionOrders', 'plannedOrders', 'resources', 'plants', 'discreteOperations', 'processOperations', 'workCenters'],
+    'maintenance-management': ['resources', 'plants', 'users', 'employees', 'workCenters'],
+    'ai-optimization': ['productionOrders', 'plannedOrders', 'resources', 'discreteOperations', 'processOperations', 'capabilities'],
+    'resource-management': ['plants', 'resources', 'capabilities', 'workCenters', 'employees', 'plantResources'],
+    'job-management': ['productionOrders', 'plannedOrders', 'resources', 'plants', 'discreteOperations', 'processOperations', 'workCenters'],
+    'quality-management': ['resources', 'plants', 'productionOrders', 'discreteOperations', 'processOperations', 'employees', 'qualityTests', 'inspectionPlans', 'certificates'],
     'procurement': ['vendors', 'purchaseOrders', 'items', 'plants', 'storageLocations'],
     'sales-orders': ['customers', 'salesOrders', 'items', 'plants'],
     'user-management': ['users', 'employees', 'departments'],
-    'analytics-reporting': ['plants', 'resources', 'productionOrders', 'operations', 'forecasts'],
-    'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings', 'recipes'],
-    'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders'],
+    'analytics-reporting': ['plants', 'resources', 'productionOrders', 'plannedOrders', 'discreteOperations', 'processOperations', 'forecasts'],
+    'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings', 'recipes', 'productionVersions'],
+    'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders', 'plannedOrders'],
     'transfer-management': ['transferOrders', 'storageLocations', 'inventory', 'items']
   };
 
@@ -238,7 +240,10 @@ function DataImport() {
       resources: 'resources', 
       capabilities: 'capabilities',
       productionOrders: 'production-orders',
-      operations: 'operations',
+      plannedOrders: 'planned-orders',
+      discreteOperations: 'discrete-operations',
+      processOperations: 'process-operations',
+      plantResources: 'plant-resources',
       departments: 'departments',
       workCenters: 'work-centers',
       employees: 'employees',
@@ -255,7 +260,11 @@ function DataImport() {
       billsOfMaterial: 'bills-of-material',
       routings: 'routings',
       recipes: 'recipes',
-      forecasts: 'forecasts'
+      productionVersions: 'production-versions',
+      forecasts: 'forecasts',
+      qualityTests: 'quality-tests',
+      inspectionPlans: 'inspection-plans',
+      certificates: 'certificates'
     };
     return endpoints[dataType] || dataType;
   };
@@ -488,7 +497,10 @@ function DataImport() {
       'Resources': 'resources',
       'Capabilities': 'capabilities',
       'Production Orders': 'productionOrders',
-      'Operations': 'operations',
+      'Planned Orders': 'plannedOrders',
+      'Discrete Operations': 'discreteOperations',
+      'Process Operations': 'processOperations',
+      'Plant Resources': 'plantResources',
       'Departments': 'departments',
       'Work Centers': 'workCenters',
       'Employees': 'employees',
@@ -505,7 +517,11 @@ function DataImport() {
       'Bills of Material': 'billsOfMaterial',
       'Routings': 'routings',
       'Recipes': 'recipes',
-      'Forecasts': 'forecasts'
+      'Production Versions': 'productionVersions',
+      'Forecasts': 'forecasts',
+      'Quality Tests': 'qualityTests',
+      'Inspection Plans': 'inspectionPlans',
+      'Certificates': 'certificates'
     };
     return mapping[sheetName] || null;
   };
@@ -537,12 +553,68 @@ function DataImport() {
       case 'productionOrders':
         return [
           { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
-          { key: 'productName', label: 'Product Name', type: 'text', required: true },
+          { key: 'name', label: 'Order Name', type: 'text', required: true },
           { key: 'quantity', label: 'Quantity', type: 'number', required: true },
-          { key: 'priority', label: 'Priority', type: 'select', options: ['Low', 'Medium', 'High', 'Critical'] },
-          { key: 'status', label: 'Status', type: 'select', options: ['Pending', 'In Progress', 'Completed', 'On Hold'] },
+          { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+          { key: 'itemNumber', label: 'Item Number', type: 'text' },
+          { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
+          { key: 'status', label: 'Status', type: 'select', options: ['released', 'in_progress', 'completed', 'cancelled'] },
           { key: 'dueDate', label: 'Due Date', type: 'date' },
           { key: 'description', label: 'Description', type: 'text' }
+        ];
+      case 'plannedOrders':
+        return [
+          { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
+          { key: 'name', label: 'Order Name', type: 'text', required: true },
+          { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
+          { key: 'quantity', label: 'Quantity', type: 'number', required: true },
+          { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+          { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
+          { key: 'status', label: 'Status', type: 'select', options: ['planned', 'firmed', 'converted', 'cancelled'] },
+          { key: 'dueDate', label: 'Due Date', type: 'date' },
+          { key: 'plannedStartDate', label: 'Planned Start Date', type: 'date' },
+          { key: 'plannedEndDate', label: 'Planned End Date', type: 'date' }
+        ];
+      case 'discreteOperations':
+        return [
+          { key: 'operationName', label: 'Operation Name', type: 'text', required: true },
+          { key: 'productionOrderId', label: 'Production Order ID', type: 'number', required: true },
+          { key: 'operationNumber', label: 'Operation Number', type: 'text', required: true },
+          { key: 'workCenterId', label: 'Work Center ID', type: 'number' },
+          { key: 'standardRunTime', label: 'Standard Run Time (min)', type: 'number' },
+          { key: 'standardSetupTime', label: 'Standard Setup Time (min)', type: 'number' },
+          { key: 'status', label: 'Status', type: 'select', options: ['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled'] },
+          { key: 'order', label: 'Order Sequence', type: 'number' }
+        ];
+      case 'processOperations':
+        return [
+          { key: 'operationName', label: 'Operation Name', type: 'text', required: true },
+          { key: 'productionOrderId', label: 'Production Order ID', type: 'number', required: true },
+          { key: 'phaseNumber', label: 'Phase Number', type: 'text', required: true },
+          { key: 'standardDuration', label: 'Standard Duration (min)', type: 'number' },
+          { key: 'temperature', label: 'Temperature (°C)', type: 'number' },
+          { key: 'pressure', label: 'Pressure (bar)', type: 'number' },
+          { key: 'status', label: 'Status', type: 'select', options: ['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled'] },
+          { key: 'order', label: 'Order Sequence', type: 'number' }
+        ];
+      case 'plantResources':
+        return [
+          { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+          { key: 'resourceId', label: 'Resource ID', type: 'number', required: true },
+          { key: 'isPrimary', label: 'Primary Plant', type: 'select', options: ['true', 'false'] }
+        ];
+      case 'productionVersions':
+        return [
+          { key: 'versionNumber', label: 'Version Number', type: 'text', required: true },
+          { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
+          { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
+          { key: 'validPlants', label: 'Valid Plants (comma-separated IDs)', type: 'text', required: true },
+          { key: 'mrpRelevant', label: 'MRP Relevant', type: 'select', options: ['true', 'false'], required: true },
+          { key: 'validFrom', label: 'Valid From', type: 'date', required: true },
+          { key: 'validTo', label: 'Valid To', type: 'date' },
+          { key: 'lotSizeMin', label: 'Minimum Lot Size', type: 'number', required: true },
+          { key: 'lotSizeMax', label: 'Maximum Lot Size', type: 'number', required: true },
+          { key: 'standardLotSize', label: 'Standard Lot Size', type: 'number', required: true }
         ];
       default:
         return [
@@ -621,6 +693,20 @@ function DataImport() {
           return { recipeNumber: '', productCode: '', version: '', batchSize: '', yield: '' };
         case 'productionVersions':
           return { versionNumber: '', itemNumber: '', plantId: '', validPlants: '', mrpRelevant: 'true', validFrom: '', validTo: '', lotSizeMin: '1', lotSizeMax: '1000', standardLotSize: '100', description: '' };
+        case 'plannedOrders':
+          return { orderNumber: '', name: '', itemNumber: '', quantity: '', plantId: '', priority: 'medium', status: 'planned', dueDate: '', plannedStartDate: '', plannedEndDate: '' };
+        case 'discreteOperations':
+          return { operationName: '', productionOrderId: '', routingId: '', operationNumber: '', workCenterId: '', standardRunTime: '', standardSetupTime: '', status: 'not_started', order: '' };
+        case 'processOperations':
+          return { operationName: '', productionOrderId: '', recipeId: '', phaseNumber: '', standardDuration: '', temperature: '', pressure: '', status: 'not_started', order: '' };
+        case 'plantResources':
+          return { plantId: '', resourceId: '', isPrimary: 'true' };
+        case 'qualityTests':
+          return { testName: '', testType: 'chemical', description: '', procedure: '', acceptanceCriteria: '' };
+        case 'inspectionPlans':
+          return { planName: '', itemNumber: '', inspectionType: 'incoming', sampleSize: '', frequency: '' };
+        case 'certificates':
+          return { certificateNumber: '', certificateType: 'quality', issuedBy: '', validFrom: '', validTo: '', description: '' };
         default:
           return { name: '', description: '' };
       }
@@ -792,6 +878,31 @@ function DataImport() {
             { key: 'actualDemand', label: 'Actual Demand', type: 'number' },
             { key: 'accuracy', label: 'Accuracy %', type: 'number' }
           ];
+        case 'qualityTests':
+          return [
+            { key: 'testName', label: 'Test Name', type: 'text', required: true },
+            { key: 'testType', label: 'Test Type', type: 'select', options: ['chemical', 'physical', 'microbiological', 'sensory'] },
+            { key: 'description', label: 'Description', type: 'text' },
+            { key: 'procedure', label: 'Test Procedure', type: 'text' },
+            { key: 'acceptanceCriteria', label: 'Acceptance Criteria', type: 'text' }
+          ];
+        case 'inspectionPlans':
+          return [
+            { key: 'planName', label: 'Plan Name', type: 'text', required: true },
+            { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
+            { key: 'inspectionType', label: 'Inspection Type', type: 'select', options: ['incoming', 'in_process', 'final', 'patrol'] },
+            { key: 'sampleSize', label: 'Sample Size', type: 'number' },
+            { key: 'frequency', label: 'Frequency', type: 'text' }
+          ];
+        case 'certificates':
+          return [
+            { key: 'certificateNumber', label: 'Certificate Number', type: 'text', required: true },
+            { key: 'certificateType', label: 'Type', type: 'select', options: ['quality', 'compliance', 'safety', 'environmental'] },
+            { key: 'issuedBy', label: 'Issued By', type: 'text', required: true },
+            { key: 'validFrom', label: 'Valid From', type: 'date' },
+            { key: 'validTo', label: 'Valid To', type: 'date' },
+            { key: 'description', label: 'Description', type: 'text' }
+          ];
         case 'recipes':
           return [
             { key: 'recipeNumber', label: 'Recipe Number', type: 'text', required: true },
@@ -799,25 +910,6 @@ function DataImport() {
             { key: 'version', label: 'Version', type: 'text', required: true },
             { key: 'batchSize', label: 'Batch Size', type: 'number', required: true },
             { key: 'yield', label: 'Expected Yield %', type: 'number' },
-            { key: 'description', label: 'Description', type: 'text' }
-          ];
-        case 'productionVersions':
-          return [
-            { key: 'versionNumber', label: 'Version Number', type: 'text', required: true },
-            { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
-            { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
-            { key: 'validPlants', label: 'Valid Plants (comma-separated IDs)', type: 'text', required: true },
-            { key: 'mrpRelevant', label: 'MRP Relevant', type: 'select', options: ['true', 'false'], required: true },
-            { key: 'validFrom', label: 'Valid From', type: 'date', required: true },
-            { key: 'validTo', label: 'Valid To', type: 'date' },
-            { key: 'lotSizeMin', label: 'Minimum Lot Size', type: 'number', required: true },
-            { key: 'lotSizeMax', label: 'Maximum Lot Size', type: 'number', required: true },
-            { key: 'standardLotSize', label: 'Standard Lot Size', type: 'number', required: true },
-            { key: 'bomId', label: 'BOM ID', type: 'number' },
-            { key: 'recipeId', label: 'Recipe ID', type: 'number' },
-            { key: 'planningStrategy', label: 'Planning Strategy', type: 'select', options: ['make_to_stock', 'make_to_order', 'assemble_to_order'] },
-            { key: 'leadTime', label: 'Lead Time (days)', type: 'number' },
-            { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive', 'planned', 'obsolete'] },
             { key: 'description', label: 'Description', type: 'text' }
           ];
         default:
@@ -1307,7 +1399,9 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'plants', label: 'Plants', icon: Building, description: 'Manufacturing facilities and locations', category: 'Core Manufacturing' },
     { key: 'resources', label: 'Resources', icon: Wrench, description: 'Equipment, machinery, and personnel', category: 'Core Manufacturing' },
     { key: 'capabilities', label: 'Capabilities', icon: Database, description: 'Skills and machine capabilities', category: 'Core Manufacturing' },
-    { key: 'operations', label: 'Operations', icon: Cog, description: 'Manufacturing process steps and tasks', category: 'Core Manufacturing' },
+    { key: 'discreteOperations', label: 'Discrete Operations', icon: Cog, description: 'Manufacturing operations for discrete products', category: 'Core Manufacturing' },
+    { key: 'processOperations', label: 'Process Operations', icon: Beaker, description: 'Manufacturing operations for process industries', category: 'Core Manufacturing' },
+    { key: 'plantResources', label: 'Plant-Resource Links', icon: ArrowRightLeft, description: 'Links between plants and resources', category: 'Core Manufacturing' },
     
     // Organization
     { key: 'departments', label: 'Departments', icon: Building2, description: 'Organizational departments and divisions', category: 'Organization' },
@@ -1325,18 +1419,24 @@ Create authentic manufacturing data that reflects this company's operations.`;
     { key: 'vendors', label: 'Vendors', icon: Building2, description: 'Suppliers and vendor information', category: 'Business Partners' },
     { key: 'customers', label: 'Customers', icon: Users, description: 'Customer accounts and information', category: 'Business Partners' },
     
-    // Sales & Orders
-    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Active production work orders', category: 'Sales & Orders' },
-    { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer sales orders and requests', category: 'Sales & Orders' },
-    { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders', category: 'Sales & Orders' },
-    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-location transfer orders', category: 'Sales & Orders' },
+    // Production & Orders
+    { key: 'productionOrders', label: 'Production Orders', icon: Briefcase, description: 'Firm production orders for manufacturing', category: 'Production & Orders' },
+    { key: 'plannedOrders', label: 'Planned Orders', icon: Calendar, description: 'Future production suggestions from MRP', category: 'Production & Orders' },
+    { key: 'salesOrders', label: 'Sales Orders', icon: ShoppingCart, description: 'Customer sales orders and requests', category: 'Production & Orders' },
+    { key: 'purchaseOrders', label: 'Purchase Orders', icon: FileText, description: 'Supplier purchase orders', category: 'Production & Orders' },
+    { key: 'transferOrders', label: 'Transfer Orders', icon: ArrowLeftRight, description: 'Inter-location transfer orders', category: 'Production & Orders' },
     
     // Manufacturing Planning
     { key: 'billsOfMaterial', label: 'Bills of Material', icon: List, description: 'Product structure and component lists', category: 'Manufacturing Planning' },
     { key: 'routings', label: 'Routings', icon: Route, description: 'Manufacturing process routings', category: 'Manufacturing Planning' },
     { key: 'recipes', label: 'Recipes', icon: Beaker, description: 'Process manufacturing recipes and formulations', category: 'Manufacturing Planning' },
     { key: 'productionVersions', label: 'Production Versions', icon: Settings, description: 'Links BOMs/recipes with routings and defines material consumption per operation', category: 'Manufacturing Planning' },
-    { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand forecasts and planning data', category: 'Manufacturing Planning' }
+    { key: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Demand forecasts and planning data', category: 'Manufacturing Planning' },
+    
+    // Quality & Compliance
+    { key: 'qualityTests', label: 'Quality Tests', icon: CheckCircle, description: 'Quality control tests and procedures', category: 'Quality & Compliance' },
+    { key: 'inspectionPlans', label: 'Inspection Plans', icon: ClipboardList, description: 'Quality inspection procedures', category: 'Quality & Compliance' },
+    { key: 'certificates', label: 'Certificates', icon: Shield, description: 'Quality certificates and compliance documents', category: 'Quality & Compliance' }
   ];
 
   // Record counts state
@@ -1366,7 +1466,10 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.resources = recordCountsData.resources || 0;
       mappedCounts.capabilities = recordCountsData.capabilities || 0;
       mappedCounts.productionOrders = recordCountsData.production_orders || 0;
-      mappedCounts.operations = recordCountsData.operations || 0;
+      mappedCounts.plannedOrders = recordCountsData.planned_orders || 0;
+      mappedCounts.discreteOperations = recordCountsData.discrete_operations || 0;
+      mappedCounts.processOperations = recordCountsData.process_operations || 0;
+      mappedCounts.plantResources = recordCountsData.plant_resources || 0;
       mappedCounts.departments = recordCountsData.departments || 0;
       mappedCounts.workCenters = recordCountsData.work_centers || 0;
       mappedCounts.employees = recordCountsData.employees || 0;
@@ -1383,7 +1486,11 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.billsOfMaterial = recordCountsData.bills_of_material || 0;
       mappedCounts.routings = recordCountsData.routings || 0;
       mappedCounts.recipes = recordCountsData.recipes || 0;
+      mappedCounts.productionVersions = recordCountsData.production_versions || 0;
       mappedCounts.forecasts = recordCountsData.forecasts || 0;
+      mappedCounts.qualityTests = recordCountsData.quality_tests || 0;
+      mappedCounts.inspectionPlans = recordCountsData.inspection_plans || 0;
+      mappedCounts.certificates = recordCountsData.certificates || 0;
       setRecordCounts(mappedCounts);
     }
   }, [recordCountsData]);
