@@ -395,29 +395,29 @@ export default function WidgetDesignStudio({
   ) : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col lg:flex-row gap-6">
+    <div className="space-y-2 sm:space-y-4">
+      <div className="flex flex-col xl:flex-row gap-3 sm:gap-6">
         {/* Configuration Panel */}
-        <div className="flex-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
-              <TabsTrigger value="template" className="px-2 py-1 sm:px-3 sm:py-2">
+        <div className="flex-1 min-w-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-2 sm:space-y-4">
+            <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm h-8 sm:h-10">
+              <TabsTrigger value="template" className="px-1 py-1 sm:px-3 sm:py-2">
                 <span className="hidden sm:inline">1. Template</span>
-                <span className="sm:hidden">Template</span>
+                <span className="sm:hidden">1. Template</span>
               </TabsTrigger>
-              <TabsTrigger value="configure" className="px-2 py-1 sm:px-3 sm:py-2">
+              <TabsTrigger value="configure" className="px-1 py-1 sm:px-3 sm:py-2">
                 <span className="hidden sm:inline">2. Configure</span>
-                <span className="sm:hidden">Configure</span>
+                <span className="sm:hidden">2. Config</span>
               </TabsTrigger>
-              <TabsTrigger value="style" className="px-2 py-1 sm:px-3 sm:py-2">
+              <TabsTrigger value="style" className="px-1 py-1 sm:px-3 sm:py-2">
                 <span className="hidden sm:inline">3. Style & Deploy</span>
-                <span className="sm:hidden">Deploy</span>
+                <span className="sm:hidden">3. Deploy</span>
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="template" className="space-y-4 mt-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <Label className="text-sm font-medium">Category:</Label>
+            <TabsContent value="template" className="space-y-3 sm:space-y-4 mt-0">
+              <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:gap-4">
+                <Label className="text-sm font-medium shrink-0">Category:</Label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full sm:w-48">
                     <SelectValue placeholder="All categories" />
@@ -432,7 +432,7 @@ export default function WidgetDesignStudio({
                 </Select>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 sm:gap-3 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
                   {filteredTemplates.map(template => (
                     <Card 
                       key={template.id}
@@ -474,15 +474,15 @@ export default function WidgetDesignStudio({
               </div>
             </TabsContent>
             
-            <TabsContent value="configure" className="space-y-4 mt-0">
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <TabsContent value="configure" className="space-y-3 sm:space-y-4 mt-0">
+              <div className="space-y-3 sm:space-y-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
                   {/* Basic Configuration */}
                   <Card>
-                    <CardHeader className="pb-1">
-                      <CardTitle className="text-base">Basic Configuration</CardTitle>
+                    <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                      <CardTitle className="text-sm sm:text-base">Basic Configuration</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-2 pb-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+                      <div className="space-y-3 sm:space-y-4">
                         <div>
                           <Label htmlFor="title" className="text-sm">Widget Title</Label>
                           <Input
@@ -490,7 +490,7 @@ export default function WidgetDesignStudio({
                             value={widgetConfig.title || ''}
                             onChange={(e) => updateWidgetConfig('title', e.target.value)}
                             placeholder="Enter widget title"
-                            className="text-sm"
+                            className="text-sm mt-1"
                           />
                         </div>
                         <div>
@@ -500,7 +500,7 @@ export default function WidgetDesignStudio({
                             value={widgetConfig.subtitle || ''}
                             onChange={(e) => updateWidgetConfig('subtitle', e.target.value)}
                             placeholder="Enter subtitle"
-                            className="text-sm"
+                            className="text-sm mt-1"
                           />
                         </div>
                       </div>
@@ -552,11 +552,11 @@ export default function WidgetDesignStudio({
                   {/* Context-sensitive Configuration */}
                   {selectedTemplate?.type === 'schedule-optimization' ? (
                     <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Optimization Settings</CardTitle>
+                      <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                        <CardTitle className="text-sm sm:text-base">Optimization Settings</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+                        <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
                           <div>
                             <Label htmlFor="algorithm" className="text-sm">Algorithm</Label>
                             <Select 
@@ -623,18 +623,18 @@ export default function WidgetDesignStudio({
                     </Card>
                   ) : (
                     <Card>
-                      <CardHeader className="pb-1">
-                        <CardTitle className="text-base">Data Processing</CardTitle>
+                      <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                        <CardTitle className="text-sm sm:text-base">Data Processing</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2 pb-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pb-3 sm:pb-6">
+                        <div className="space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
                           <div>
                             <Label htmlFor="aggregation" className="text-sm">Aggregation</Label>
                             <Select 
                               value={widgetConfig.aggregation || 'count'} 
                               onValueChange={(value) => updateWidgetConfig('aggregation', value)}
                             >
-                              <SelectTrigger className="text-sm">
+                              <SelectTrigger className="text-sm mt-1">
                                 <SelectValue placeholder="Select aggregation" />
                               </SelectTrigger>
                               <SelectContent>
@@ -654,7 +654,7 @@ export default function WidgetDesignStudio({
                               value={widgetConfig.groupBy || ''}
                               onChange={(e) => updateWidgetConfig('groupBy', e.target.value)}
                               placeholder="e.g., status, priority"
-                              className="text-sm"
+                              className="text-sm mt-1"
                             />
                           </div>
                         </div>
@@ -667,7 +667,7 @@ export default function WidgetDesignStudio({
                             value={widgetConfig.limit || ''}
                             onChange={(e) => updateWidgetConfig('limit', parseInt(e.target.value) || undefined)}
                             placeholder="Maximum records to show"
-                            className="text-sm"
+                            className="text-sm mt-1"
                           />
                         </div>
                       </CardContent>
@@ -676,16 +676,16 @@ export default function WidgetDesignStudio({
                 </div>
             </TabsContent>
             
-            <TabsContent value="style" className="space-y-4 mt-0">
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <TabsContent value="style" className="space-y-3 sm:space-y-4 mt-0">
+              <div className="space-y-3 sm:space-y-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
                   <Card>
-                    <CardHeader className="pb-1">
-                      <CardTitle className="text-base">Deploy to Systems</CardTitle>
+                    <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+                      <CardTitle className="text-sm sm:text-base">Deploy to Systems</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                       <div className="space-y-3">
                         {TARGET_SYSTEMS.map(system => (
-                          <div key={system.value} className="flex items-center space-x-2">
+                          <div key={system.value} className="flex items-center space-x-3">
                             <Switch
                               id={system.value}
                               checked={targetSystems.includes(system.value)}
@@ -697,20 +697,20 @@ export default function WidgetDesignStudio({
                                 }
                               }}
                             />
-                            <Label htmlFor={system.value} className="text-sm sm:text-base">{system.label}</Label>
+                            <Label htmlFor={system.value} className="text-sm leading-5">{system.label}</Label>
                           </div>
                         ))}
                       </div>
                     </CardContent>
                   </Card>
                   
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <Button onClick={handleSaveWidget} className="flex-1">
-                      <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                      <span className="text-sm">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
+                  <div className="flex flex-col gap-2 px-1 sm:px-0">
+                    <Button onClick={handleSaveWidget} className="w-full h-10 sm:h-9">
+                      <Save className="h-4 w-4 mr-2" />
+                      <span className="text-sm font-medium">{mode === 'edit' ? 'Update Widget' : 'Create Widget'}</span>
                     </Button>
-                    <Button variant="outline" onClick={resetForm} className="sm:w-auto">
-                      <span className="text-sm">Reset</span>
+                    <Button variant="outline" onClick={resetForm} className="w-full h-9 sm:h-8">
+                      <span className="text-sm">Reset Form</span>
                     </Button>
                   </div>
                 </div>
@@ -718,15 +718,17 @@ export default function WidgetDesignStudio({
           </Tabs>
         </div>
         
-        {/* Preview Panel */}
-        <div className="w-full lg:w-80 xl:w-96 lg:border-l lg:pl-4 xl:pl-6 order-first lg:order-last">
-          <div className="space-y-4">
+        {/* Preview Panel - Hidden on mobile in create/configure tabs, shown only in style tab */}
+        <div className={`w-full xl:w-80 2xl:w-96 xl:border-l xl:pl-6 order-first xl:order-last ${
+          activeTab === 'style' ? 'block' : 'hidden xl:block'
+        }`}>
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm sm:text-base">Live Preview</h3>
-              <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              <h3 className="font-medium text-sm sm:text-base">Live Preview</h3>
+              <Eye className="h-4 w-4 text-muted-foreground" />
             </div>
             
-            <div className="border rounded-lg p-3 bg-gray-50 h-[300px] overflow-hidden">
+            <div className="border rounded-lg p-2 sm:p-3 bg-gray-50 dark:bg-gray-900 h-[200px] sm:h-[250px] xl:h-[300px] overflow-hidden">
               {previewWidget ? (
                 <div className="h-full">
                   {previewWidget}
@@ -734,19 +736,19 @@ export default function WidgetDesignStudio({
               ) : (
                 <div className="h-full flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
-                    <Layout className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs sm:text-sm">Select a template to see preview</p>
+                    <Layout className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-xs sm:text-sm">Select template and configure to see preview</p>
                   </div>
                 </div>
               )}
             </div>
             
             {widgetConfig.title && (
-              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 p-2 rounded lg:bg-transparent lg:p-0">
+              <div className="text-xs text-muted-foreground space-y-1 bg-gray-50 dark:bg-gray-900 p-2 rounded xl:bg-transparent xl:dark:bg-transparent xl:p-0">
                 <p className="line-clamp-1"><strong>Type:</strong> {widgetConfig.type}</p>
-                <p className="line-clamp-1"><strong>Data Source:</strong> {widgetConfig.dataSource}</p>
+                <p className="line-clamp-1"><strong>Source:</strong> {widgetConfig.dataSource}</p>
                 {widgetConfig.chartType && (
-                  <p className="line-clamp-1"><strong>Chart Type:</strong> {widgetConfig.chartType}</p>
+                  <p className="line-clamp-1"><strong>Chart:</strong> {widgetConfig.chartType}</p>
                 )}
               </div>
             )}
