@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuIte
 import { 
   Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, 
   DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, 
-  Truck, ChevronDown, Target, Database, Building, Server, TrendingUp, 
+  Truck, ChevronDown, ChevronRight, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft, Puzzle, Layout, Home
@@ -142,6 +142,9 @@ export default function TopMenu() {
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [useCardLayout, setUseCardLayout] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const menuContentRef = React.useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
@@ -172,6 +175,42 @@ export default function TopMenu() {
     onboardingData.companyName?.trim() && 
     onboardingData.selectedFeatures && 
     onboardingData.selectedFeatures.length > 0;
+
+  // Effect to detect if content overflows viewport
+  React.useEffect(() => {
+    if (!menuOpen || !menuContentRef.current) return;
+
+    const checkOverflow = () => {
+      const contentHeight = menuContentRef.current?.scrollHeight || 0;
+      const viewportHeight = window.innerHeight;
+      const headerHeight = 180; // Approximate header and search area height
+      const padding = 100; // Additional padding for comfort
+      
+      // Use card layout if content would overflow with some margin
+      setUseCardLayout(contentHeight + headerHeight + padding > viewportHeight);
+    };
+
+    // Check on mount and window resize
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    
+    return () => {
+      window.removeEventListener('resize', checkOverflow);
+    };
+  }, [menuOpen, searchFilter]);
+
+  // Toggle category expansion in card layout
+  const toggleCategory = (categoryTitle: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryTitle)) {
+        newSet.delete(categoryTitle);
+      } else {
+        newSet.add(categoryTitle);
+      }
+      return newSet;
+    });
+  };
 
   // Use fetched current role or derive from user data
   const currentRole = currentRoleData || user?.currentRole || (user?.activeRoleId && user?.roles ? 
@@ -435,7 +474,7 @@ export default function TopMenu() {
             </div>
 
             {/* Menu Content */}
-            <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
+            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
               {/* Recent & Favorites Section */}
               {recentPages.filter(page => {
                 if (!searchFilter.trim()) return true;
@@ -543,8 +582,74 @@ export default function TopMenu() {
                 </div>
               )}
               
-              {/* Full width grid layout - 3 columns on desktop for better space usage */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+              {/* Card Layout (when content overflows) or Expanded Layout (when content fits) */}
+              {useCardLayout ? (
+                // Card layout for when content exceeds viewport
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {getVisibleGroups().map((group, groupIndex) => {
+                    const isExpanded = expandedCategories.has(group.title);
+                    const Icon = isExpanded ? ChevronDown : ChevronRight;
+                    
+                    return (
+                      <div key={groupIndex} className={`${group.bgColor} rounded-xl border ${group.borderColor} overflow-hidden shadow-sm`}>
+                        <div 
+                          className="p-4 cursor-pointer hover:bg-opacity-70 transition-colors"
+                          onClick={() => toggleCategory(group.title)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-1 h-6 bg-${group.color}-500 rounded-full`} />
+                              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                                {group.title}
+                              </h3>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded-full">
+                                {group.features.length}
+                              </span>
+                              <Icon className="w-4 h-4 text-gray-600" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 p-3 bg-white bg-opacity-50">
+                            <div className="grid grid-cols-2 gap-2">
+                              {group.features.map((feature, featureIndex) => (
+                                <Link 
+                                  key={featureIndex} 
+                                  href={feature.href === "#max" ? "#" : feature.href}
+                                  onClick={() => handleFeatureClick(feature)}
+                                >
+                                  <div className={`
+                                    h-[50px] bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm
+                                    rounded-lg p-2 cursor-pointer transition-all duration-150
+                                    flex items-center space-x-2
+                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
+                                    ${feature.isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                  `}>
+                                    <div className={`
+                                      ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
+                                      p-1 rounded-md flex items-center justify-center flex-shrink-0
+                                    `}>
+                                      <feature.icon className="w-3 h-3 text-white" strokeWidth={1.5} fill="none" />
+                                    </div>
+                                    <span className="text-xs text-gray-700 leading-tight line-clamp-2 overflow-hidden">
+                                      {feature.label}
+                                    </span>
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                // Expanded layout when content fits comfortably
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                   {getVisibleGroups().map((group, groupIndex) => (
                     <div key={groupIndex} className={`${group.bgColor} rounded-xl border ${group.borderColor} p-4 shadow-sm`}>
                       <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center uppercase tracking-wide">
@@ -585,7 +690,8 @@ export default function TopMenu() {
                       </div>
                     </div>
                   ))}
-              </div>
+                </div>
+              )}
             </div>
           </div>
           
