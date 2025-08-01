@@ -27,14 +27,19 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🚀 Form submitted with:", { username, password: password ? "***" : "empty" });
     setError("");
     setLoading(true);
 
     try {
-      await login({ username, password });
+      console.log("🚀 Calling login function...");
+      const result = await login({ username, password });
+      console.log("🚀 Login function returned:", result);
+      console.log("🚀 Redirecting to home...");
       setLocation("/");
     } catch (error: any) {
-      console.error("Login form error:", error);
+      console.error("🚀 Login form error:", error);
+      console.error("🚀 Error details:", JSON.stringify(error, null, 2));
       // Extract error message from the API response
       let errorMessage = "Invalid username or password";
       

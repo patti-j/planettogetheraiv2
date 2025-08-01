@@ -94,22 +94,34 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
+      console.log("🔐 Login mutation starting for:", credentials.username);
       const response = await apiRequest("POST", "/api/auth/login", credentials);
+      console.log("🔐 Response status:", response.status);
+      console.log("🔐 Response headers:", response.headers);
+      
       const userData = await response.json();
+      console.log("🔐 Parsed response data:", userData);
       
       // Store token in localStorage if provided
       if (userData.token) {
         localStorage.setItem('authToken', userData.token);
+        console.log("🔐 Token stored successfully");
+      } else {
+        console.log("🔐 No token in response");
       }
       
       return userData;
     },
-    onSuccess: () => {
-      console.log("Login successful, invalidating auth queries");
+    onSuccess: (data) => {
+      console.log("🔐 Login mutation SUCCESS:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: (error) => {
-      console.error("Login error:", error);
+      console.error("🔐 Login mutation ERROR:", error);
+      console.error("🔐 Error type:", typeof error);
+      console.error("🔐 Error constructor:", error?.constructor?.name);
+      console.error("🔐 Error message:", error?.message);
+      console.error("🔐 Error stack:", error?.stack);
       // Clear any stored auth token on login failure
       localStorage.removeItem('authToken');
     }
