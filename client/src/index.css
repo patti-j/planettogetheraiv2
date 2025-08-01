@@ -51,6 +51,15 @@
   }
 }
 
+/* Fix for hamburger menu cards in dark mode */
+.dark [data-theme="dark"] {
+  background-color: rgb(55, 65, 81) !important;
+}
+
+[data-theme="light"] {
+  background-color: rgb(255, 255, 255) !important;
+}
+
 :root {
   /* AI Theme CSS Variables - Default to blue-indigo for better UX */
   --ai-gradient-from: 213 94% 68%; /* blue-400 */
