@@ -112,9 +112,14 @@ import {
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
   type CockpitLayout, type CockpitWidget, type CockpitAlert, type CockpitTemplate,
   type InsertCockpitLayout, type InsertCockpitWidget, type InsertCockpitAlert, type InsertCockpitTemplate,
-  // accountInfo, billingHistory, usageMetrics,
-  // type AccountInfo, type BillingHistory, type UsageMetrics,
-  // type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics
+  
+  // Missing table types that are referenced in the interface
+  accountInfo, billingHistory, usageMetrics, integrationDataFlow, integrationExecutionLog, integrationDataMapping, integrationWebhook,
+  shiftCoverage, shiftUtilization, recipeEquipment,
+  type AccountInfo, type BillingHistory, type UsageMetrics, type IntegrationDataFlow, type IntegrationExecutionLog, type IntegrationDataMapping, type IntegrationWebhook,
+  type ShiftCoverage, type ShiftUtilization, type RecipeEquipment,
+  type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
+  type InsertShiftCoverage, type InsertShiftUtilization, type InsertRecipeEquipment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";

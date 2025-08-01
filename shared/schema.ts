@@ -9068,5 +9068,175 @@ export const insertBufferPolicySchema = createInsertSchema(bufferPolicies).omit(
 export type InsertBufferPolicy = z.infer<typeof insertBufferPolicySchema>;
 export type BufferPolicy = typeof bufferPolicies.$inferSelect;
 
+// Missing table definitions and types that are referenced in storage interface
+
+// Account Management Tables
+export const accountInfo = pgTable("account_info", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  accountType: text("account_type").notNull().default("free"),
+  subscriptionTier: text("subscription_tier").default("basic"),
+  billingEmail: text("billing_email"),
+  billingAddress: jsonb("billing_address"),
+  paymentMethodId: text("payment_method_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const billingHistory = pgTable("billing_history", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").notNull().default("USD"),
+  description: text("description"),
+  status: text("status").notNull().default("pending"),
+  billingDate: timestamp("billing_date").defaultNow(),
+  dueDate: timestamp("due_date"),
+  paidDate: timestamp("paid_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const usageMetrics = pgTable("usage_metrics", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => accountInfo.id).notNull(),
+  metricType: text("metric_type").notNull(),
+  value: numeric("value").notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Integration Data Flow Tables
+export const integrationDataFlow = pgTable("integration_data_flow", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  integrationId: integer("integration_id").references(() => systemIntegrations.id),
+  sourceSystem: text("source_system").notNull(),
+  targetSystem: text("target_system").notNull(),
+  dataFlowType: text("data_flow_type").notNull(),
+  isActive: boolean("is_active").default(true),
+  schedule: text("schedule"),
+  lastExecution: timestamp("last_execution"),
+  nextExecution: timestamp("next_execution"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const integrationExecutionLog = pgTable("integration_execution_log", {
+  id: serial("id").primaryKey(),
+  dataFlowId: integer("data_flow_id").references(() => integrationDataFlow.id),
+  executionId: text("execution_id").notNull(),
+  status: text("status").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  recordsProcessed: integer("records_processed").default(0),
+  errorCount: integer("error_count").default(0),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const integrationDataMapping = pgTable("integration_data_mapping", {
+  id: serial("id").primaryKey(),
+  dataFlowId: integer("data_flow_id").references(() => integrationDataFlow.id).notNull(),
+  sourceField: text("source_field").notNull(),
+  targetField: text("target_field").notNull(),
+  transformation: text("transformation"),
+  isRequired: boolean("is_required").default(false),
+  defaultValue: text("default_value"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const integrationWebhook = pgTable("integration_webhook", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").references(() => systemIntegrations.id),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  method: text("method").notNull().default("POST"),
+  headers: jsonb("headers"),
+  eventTypes: jsonb("event_types").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  secret: text("secret"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+
+
+// Recipe Equipment Junction Table
+export const recipeEquipment = pgTable("recipe_equipment", {
+  id: serial("id").primaryKey(),
+  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  isPrimary: boolean("is_primary").default(false),
+  utilizationPercentage: numeric("utilization_percentage").default("100"),
+  setupTime: integer("setup_time").default(0),
+  cleaningTime: integer("cleaning_time").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas and types for the missing tables
+export const insertAccountInfoSchema = createInsertSchema(accountInfo).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAccountInfo = z.infer<typeof insertAccountInfoSchema>;
+export type AccountInfo = typeof accountInfo.$inferSelect;
+
+export const insertBillingHistorySchema = createInsertSchema(billingHistory).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBillingHistory = z.infer<typeof insertBillingHistorySchema>;
+export type BillingHistory = typeof billingHistory.$inferSelect;
+
+export const insertUsageMetricsSchema = createInsertSchema(usageMetrics).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUsageMetrics = z.infer<typeof insertUsageMetricsSchema>;
+export type UsageMetrics = typeof usageMetrics.$inferSelect;
+
+export const insertIntegrationDataFlowSchema = createInsertSchema(integrationDataFlow).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertIntegrationDataFlow = z.infer<typeof insertIntegrationDataFlowSchema>;
+export type IntegrationDataFlow = typeof integrationDataFlow.$inferSelect;
+
+export const insertIntegrationExecutionLogSchema = createInsertSchema(integrationExecutionLog).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertIntegrationExecutionLog = z.infer<typeof insertIntegrationExecutionLogSchema>;
+export type IntegrationExecutionLog = typeof integrationExecutionLog.$inferSelect;
+
+export const insertIntegrationDataMappingSchema = createInsertSchema(integrationDataMapping).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertIntegrationDataMapping = z.infer<typeof insertIntegrationDataMappingSchema>;
+export type IntegrationDataMapping = typeof integrationDataMapping.$inferSelect;
+
+export const insertIntegrationWebhookSchema = createInsertSchema(integrationWebhook).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertIntegrationWebhook = z.infer<typeof insertIntegrationWebhookSchema>;
+export type IntegrationWebhook = typeof integrationWebhook.$inferSelect;
+
+
+
+export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
+export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
+
 
 
