@@ -186,37 +186,46 @@ function DataImport() {
     try {
       setIsImporting(true);
       const authToken = localStorage.getItem('authToken');
-      const endpoint = getImportApiEndpoint(dataType);
       
-      let successCount = 0;
-      let errorCount = 0;
-      
-      for (const record of data) {
-        try {
-          const response = await fetch(`/api/${endpoint}`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify(record)
-          });
-          
-          if (response.ok) {
-            successCount++;
-          } else {
-            errorCount++;
-          }
-        } catch (error) {
-          errorCount++;
-        }
+      // Validate data size
+      if (data.length > 50) {
+        toast({
+          title: "Import batch too large",
+          description: `Maximum 50 records per batch. Current: ${data.length}. Please split your data into smaller batches.`,
+          variant: "destructive"
+        });
+        return;
       }
       
-      toast({
-        title: "Import completed",
-        description: `Successfully imported ${successCount} records. ${errorCount > 0 ? `${errorCount} failed.` : ''}`,
-        variant: successCount > 0 ? "default" : "destructive"
+      // Use the bulk import endpoint instead of individual calls
+      const response = await fetch('/api/data-import/bulk', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          type: dataType,
+          data: data
+        })
       });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        toast({
+          title: "Import completed",
+          description: `Successfully imported ${result.imported} records.${result.errors > 0 ? ` ${result.errors} failed.` : ''}`,
+          variant: result.imported > 0 ? "default" : "destructive"
+        });
+        
+        // Show error details if any
+        if (result.importErrors && result.importErrors.length > 0) {
+          console.warn('Import errors:', result.importErrors);
+        }
+      } else {
+        throw new Error(result.message || 'Import failed');
+      }
       
       // Clear the file input
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
@@ -226,7 +235,7 @@ function DataImport() {
       console.error('Import error:', error);
       toast({
         title: "Import failed",
-        description: "Error importing data. Please try again.",
+        description: error instanceof Error ? error.message : "Error importing data. Please try again.",
         variant: "destructive"
       });
     } finally {

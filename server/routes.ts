@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Data import routes
+  // Data import routes - Enhanced with batching and error handling
   app.post('/api/data-import/bulk', requireAuth, async (req, res) => {
     try {
       const { type, data } = req.body;
@@ -256,184 +256,245 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid import data format' });
       }
 
+      // Limit batch size to prevent memory issues
+      const BATCH_SIZE = 50;
+      if (data.length > BATCH_SIZE) {
+        return res.status(400).json({ 
+          message: `Import batch too large. Maximum ${BATCH_SIZE} records per batch. Current: ${data.length}` 
+        });
+      }
+
       let results: any[] = [];
+      let errors: any[] = [];
+      let uniqueCounter = Math.floor(Date.now() / 1000); // Use seconds to prevent collisions
       
+      const processWithRetry = async (fn: () => Promise<any>, retries = 2) => {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            return await fn();
+          } catch (error) {
+            if (i === retries) throw error;
+            await new Promise(resolve => setTimeout(resolve, 100 * (i + 1))); // Progressive delay
+          }
+        }
+      };
+
       switch (type) {
         case 'resources':
-          for (const item of data) {
-            const insertResource = insertResourceSchema.parse({
-              name: item.name,
-              type: item.type || 'Equipment',
-              description: item.description || '',
-              status: item.status || 'active'
-            });
-            const resource = await storage.createResource(insertResource);
-            
-            // Handle capabilities if provided
-            if (item.capabilities) {
-              const capabilityNames = item.capabilities.split(',').map((c: string) => c.trim());
-              for (const capName of capabilityNames) {
-                // Find or create capability
-                let capability = await storage.getCapabilityByName(capName);
-                if (!capability) {
-                  const insertCap = insertCapabilitySchema.parse({
-                    name: capName,
-                    description: `Auto-created capability: ${capName}`,
-                    category: 'general'
-                  });
-                  capability = await storage.createCapability(insertCap);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertResource = insertResourceSchema.parse({
+                name: item.name,
+                type: item.type || 'Equipment',
+                description: item.description || '',
+                status: item.status || 'active'
+              });
+              
+              const resource = await processWithRetry(() => storage.createResource(insertResource));
+              
+              // Handle capabilities if provided
+              if (item.capabilities && resource) {
+                const capabilityNames = item.capabilities.split(',').map((c: string) => c.trim());
+                for (const capName of capabilityNames) {
+                  try {
+                    let capability = await storage.getCapabilityByName(capName);
+                    if (!capability) {
+                      const insertCap = insertCapabilitySchema.parse({
+                        name: capName,
+                        description: `Auto-created capability: ${capName}`,
+                        category: 'general'
+                      });
+                      capability = await processWithRetry(() => storage.createCapability(insertCap));
+                    }
+                    if (capability) {
+                      await processWithRetry(() => storage.addResourceCapability(resource.id, capability.id));
+                    }
+                  } catch (capError) {
+                    console.warn(`Failed to add capability ${capName} to resource ${resource.name}:`, capError);
+                  }
                 }
-                // Associate resource with capability
-                await storage.addResourceCapability(resource.id, capability.id);
               }
+              results.push(resource);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
             }
-            results.push(resource);
           }
           break;
           
         case 'jobs':
-          for (const item of data) {
-            const insertJob = insertProductionOrderSchema.parse({
-              orderNumber: `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-              name: item.name,
-              customer: item.customer || '',
-              priority: item.priority || 'medium',
-              status: 'released',
-              dueDate: item.dueDate ? new Date(item.dueDate) : null,
-              quantity: item.quantity || 1,
-              description: item.description || '',
-              plantId: 1 // Default plant
-            });
-            const job = await storage.createProductionOrder(insertJob);
-            results.push(job);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertJob = insertProductionOrderSchema.parse({
+                orderNumber: item.orderNumber || `PO-${uniqueCounter + i}-${Math.floor(Math.random() * 100)}`,
+                name: item.name,
+                customer: item.customer || '',
+                priority: item.priority || 'medium',
+                status: 'released',
+                dueDate: item.dueDate ? new Date(item.dueDate) : null,
+                quantity: item.quantity || 1,
+                description: item.description || '',
+                plantId: 1 // Default plant
+              });
+              const job = await processWithRetry(() => storage.createProductionOrder(insertJob));
+              results.push(job);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
           
         case 'capabilities':
-          for (const item of data) {
-            const insertCapability = insertCapabilitySchema.parse({
-              name: item.name,
-              description: item.description || '',
-              category: item.category || 'general'
-            });
-            const capability = await storage.createCapability(insertCapability);
-            results.push(capability);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertCapability = insertCapabilitySchema.parse({
+                name: item.name,
+                description: item.description || '',
+                category: item.category || 'general'
+              });
+              const capability = await processWithRetry(() => storage.createCapability(insertCapability));
+              results.push(capability);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
           
         case 'plants':
-          for (const item of data) {
-            const insertPlant = insertPlantSchema.parse({
-              name: item.name,
-              location: item.location || '',
-              address: item.address || '',
-              timezone: item.timezone || 'UTC'
-            });
-            const plant = await storage.createPlant(insertPlant);
-            results.push(plant);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertPlant = insertPlantSchema.parse({
+                name: item.name,
+                location: item.location || '',
+                address: item.address || '',
+                timezone: item.timezone || 'UTC'
+              });
+              const plant = await processWithRetry(() => storage.createPlant(insertPlant));
+              results.push(plant);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
           
         case 'users':
-          for (const item of data) {
-            // For user creation, we'll need to handle this differently since it involves authentication
-            // For now, we'll create a simplified version or require admin privileges
-            if (!req.user || req.user.id !== 6) { // Only trainer can create users for now
-              return res.status(403).json({ message: 'Insufficient permissions to create users' });
+          // Only trainer can create users for now
+          if (!req.user || req.user.id !== 6) {
+            return res.status(403).json({ message: 'Insufficient permissions to create users' });
+          }
+          
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertUser = insertUserSchema.parse({
+                username: item.username,
+                email: item.email || `${item.username}@company.com`,
+                firstName: item.firstName || '',
+                lastName: item.lastName || '',
+                passwordHash: await bcrypt.hash('temporary123', 10) // Default temporary password
+              });
+              const user = await processWithRetry(() => storage.createUser(insertUser));
+              results.push({ ...user, passwordHash: undefined }); // Don't return password hash
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
             }
-            
-            const insertUser = insertUserSchema.parse({
-              username: item.username,
-              email: item.email || `${item.username}@company.com`,
-              firstName: item.firstName || '',
-              lastName: item.lastName || '',
-              passwordHash: await bcrypt.hash('temporary123', 10) // Default temporary password
-            });
-            const user = await storage.createUser(insertUser);
-            results.push({ ...user, passwordHash: undefined }); // Don't return password hash
           }
           break;
           
         case 'productionOrders':
-          for (const item of data) {
-            // Convert production orders from simplified import format
-            const insertOrder = {
-              orderNumber: item.orderNumber || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-              name: item.name,
-              description: item.description || '',
-              customer: item.customer,
-              priority: item.priority || 'medium',
-              status: item.status || 'released',
-              quantity: parseInt(item.quantity) || 1,
-              dueDate: item.dueDate ? new Date(item.dueDate) : null,
-              plantId: 1 // Default to first plant for import
-            };
-            const order = await storage.createProductionOrder(insertOrder);
-            results.push(order);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertOrder = {
+                orderNumber: item.orderNumber || `PO-${uniqueCounter + i}-${Math.floor(Math.random() * 100)}`,
+                name: item.name,
+                description: item.description || '',
+                customer: item.customer,
+                priority: item.priority || 'medium',
+                status: item.status || 'released',
+                quantity: parseInt(item.quantity) || 1,
+                dueDate: item.dueDate ? new Date(item.dueDate) : null,
+                plantId: 1 // Default to first plant for import
+              };
+              const order = await processWithRetry(() => storage.createProductionOrder(insertOrder));
+              results.push(order);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
 
         case 'plannedOrders':
-          for (const item of data) {
-            // Convert planned orders from simplified import format
-            const insertPlannedOrder = {
-              plannedOrderNumber: item.plannedOrderNumber || `PLN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-              itemNumber: item.itemNumber || item.name || 'ITEM-001',
-              quantity: parseInt(item.quantity) || 1,
-              requiredDate: item.requiredDate ? new Date(item.requiredDate) : new Date(),
-              orderType: item.orderType || 'production',
-              source: item.source || 'manual',
-              status: item.status || 'firm',
-              priority: item.priority || 'medium',
-              plantId: 1 // Default to first plant for import
-            };
-            const plannedOrder = await storage.createPlannedOrder(insertPlannedOrder);
-            results.push(plannedOrder);
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              const insertPlannedOrder = {
+                plannedOrderNumber: item.plannedOrderNumber || `PLN-${uniqueCounter + i}-${Math.floor(Math.random() * 100)}`,
+                itemNumber: item.itemNumber || item.name || 'ITEM-001',
+                quantity: parseInt(item.quantity) || 1,
+                requiredDate: item.requiredDate ? new Date(item.requiredDate) : new Date(),
+                orderType: item.orderType || 'production',
+                source: item.source || 'manual',
+                status: item.status || 'firm',
+                priority: item.priority || 'medium',
+                plantId: 1 // Default to first plant for import
+              };
+              const plannedOrder = await processWithRetry(() => storage.createPlannedOrder(insertPlannedOrder));
+              results.push(plannedOrder);
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
 
         case 'vendors':
-          // Simple vendor storage for import (would need proper vendor table implementation)
-          for (const item of data) {
-            const vendor = {
-              id: Date.now() + Math.floor(Math.random() * 1000),
-              vendorNumber: item.vendorNumber || `V${Date.now()}`,
-              vendorName: item.vendorName,
-              vendorType: item.vendorType || 'supplier',
-              contactName: item.contactName || '',
-              contactEmail: item.contactEmail || '',
-              contactPhone: item.contactPhone || '',
-              address: item.address || '',
-              city: item.city || '',
-              state: item.state || '',
-              zipCode: item.zipCode || '',
-              country: item.country || 'US',
-              paymentTerms: item.paymentTerms || 'net30',
-              status: item.status || 'active'
-            };
-            results.push(vendor);
-          }
-          break;
-
         case 'customers':
-          // Simple customer storage for import (would need proper customer table implementation)
-          for (const item of data) {
-            const customer = {
-              id: Date.now() + Math.floor(Math.random() * 1000),
-              customerNumber: item.customerNumber || `C${Date.now()}`,
-              customerName: item.customerName,
-              contactName: item.contactName || '',
-              contactEmail: item.contactEmail || '',
-              contactPhone: item.contactPhone || '',
-              address: item.address || '',
-              city: item.city || '',
-              state: item.state || '',
-              zipCode: item.zipCode || '',
-              country: item.country || 'US',
-              customerTier: item.customerTier || 'standard',
-              status: item.status || 'active'
-            };
-            results.push(customer);
+          // These are just mock data storage - no actual database operations
+          for (let i = 0; i < data.length; i++) {
+            try {
+              const item = data[i];
+              if (type === 'vendors') {
+                const vendor = {
+                  id: uniqueCounter + i,
+                  vendorNumber: item.vendorNumber || `V${uniqueCounter + i}`,
+                  vendorName: item.vendorName,
+                  vendorType: item.vendorType || 'supplier',
+                  contactName: item.contactName || '',
+                  contactEmail: item.contactEmail || '',
+                  contactPhone: item.contactPhone || '',
+                  address: item.address || '',
+                  city: item.city || '',
+                  state: item.state || '',
+                  zipCode: item.zipCode || '',
+                  country: item.country || 'US',
+                  paymentTerms: item.paymentTerms || 'net30',
+                  status: item.status || 'active'
+                };
+                results.push(vendor);
+              } else {
+                const customer = {
+                  id: uniqueCounter + i,
+                  customerNumber: item.customerNumber || `C${uniqueCounter + i}`,
+                  customerName: item.customerName,
+                  contactName: item.contactName || '',
+                  contactEmail: item.contactEmail || '',
+                  contactPhone: item.contactPhone || '',
+                  address: item.address || '',
+                  city: item.city || '',
+                  state: item.state || '',
+                  zipCode: item.zipCode || '',
+                  country: item.country || 'US',
+                  customerTier: item.customerTier || 'standard',
+                  status: item.status || 'active'
+                };
+                results.push(customer);
+              }
+            } catch (itemError) {
+              errors.push({ index: i, item: data[i], error: itemError.message });
+            }
           }
           break;
 
@@ -445,11 +506,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         type,
         imported: results.length,
-        data: results
+        errors: errors.length,
+        data: results,
+        importErrors: errors.length > 0 ? errors : undefined
       });
     } catch (error) {
       console.error('Data import error:', error);
-      res.status(500).json({ message: 'Failed to import data', error: error instanceof Error ? error.message : 'Unknown error' });
+      res.status(500).json({ 
+        message: 'Failed to import data', 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        success: false
+      });
     }
   });
 
