@@ -50,13 +50,13 @@ export const plantResources = pgTable("plant_resources", {
 }));
 
 // Production Orders (formerly jobs) - firm manufacturing orders ready for execution
-export const productionOrders: any = pgTable("production_orders", {
+export const productionOrders = pgTable("production_orders", {
   id: serial("id").primaryKey(),
   orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
   name: text("name").notNull(),
   description: text("description"),
   customerId: integer("customer_id"), // Will be converted to foreign key later when customers table is defined
-  parentOrderId: integer("parent_order_id").references(() => productionOrders.id), // For order splitting/consolidation
+  parentOrderId: integer("parent_order_id"), // Will be converted to foreign key later to avoid circular reference
   orderCategory: text("order_category").notNull().default("normal"), // normal, rework, prototype, sample
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled

@@ -104,7 +104,8 @@ export async function seedDatabase() {
           duration: 4,
           status: "active",
           requiredCapabilities: [1],
-          order: 1
+          order: 1,
+          jobId: 1 // Added required field
         },
         {
           productionOrderId: 1,
@@ -113,7 +114,8 @@ export async function seedDatabase() {
           duration: 2,
           status: "pending",
           requiredCapabilities: [2],
-          order: 2
+          order: 2,
+          jobId: 1 // Added required field
         },
         {
           productionOrderId: 1,
@@ -122,7 +124,8 @@ export async function seedDatabase() {
           duration: 3,
           status: "pending",
           requiredCapabilities: [3],
-          order: 3
+          order: 3,
+          jobId: 1 // Added required field
         },
         {
           productionOrderId: 2,
@@ -131,7 +134,8 @@ export async function seedDatabase() {
           duration: 6,
           status: "active",
           requiredCapabilities: [1],
-          order: 1
+          order: 1,
+          jobId: 2 // Added required field
         },
         {
           productionOrderId: 2,
@@ -140,7 +144,8 @@ export async function seedDatabase() {
           duration: 1,
           status: "pending",
           requiredCapabilities: [4],
-          order: 2
+          order: 2,
+          jobId: 2 // Added required field
         }
       ];
 

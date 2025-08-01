@@ -71,6 +71,11 @@ import {
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
 
+  // Extension Studio
+  extensions, extensionFiles, extensionInstallations, extensionMarketplace, extensionReviews, extensionData,
+  type Extension, type ExtensionFile, type ExtensionInstallation, type ExtensionMarketplace, type ExtensionReview, type ExtensionData,
+  type InsertExtension, type InsertExtensionFile, type InsertExtensionInstallation, type InsertExtensionMarketplace, type InsertExtensionReview, type InsertExtensionData,
+
   // Constraints Management System
   constraintCategories, constraints, constraintViolations, constraintExceptions,
   type ConstraintCategory, type Constraint, type ConstraintViolation, type ConstraintException,
