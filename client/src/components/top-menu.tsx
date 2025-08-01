@@ -24,6 +24,7 @@ import { useTour } from "@/contexts/TourContext";
 import { TourSelectionDialog } from "./tour-selection-dialog";
 import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -152,6 +153,7 @@ export default function TopMenu() {
   const { aiTheme, getThemeClasses } = useAITheme();
   const { recentPages, clearRecentPages, togglePinPage, addRecentPage } = useNavigation();
   const { startTour } = useTour();
+  const { resolvedTheme } = useTheme();
 
   // Helper function to get dark mode compatible background colors
   const getDarkModeColor = (lightColor: string, darkColor?: string) => {
@@ -597,8 +599,8 @@ export default function TopMenu() {
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
                               `}
                               style={{ 
-                                backgroundColor: page.isPinned ? '' : (isAI ? '' : 'var(--background)'),
-                                color: 'var(--foreground)'
+                                backgroundColor: page.isPinned ? '' : (isAI ? '' : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)')),
+                                color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
                               }}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
@@ -757,8 +759,8 @@ export default function TopMenu() {
                                     ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
                                   `}
                                   style={{ 
-                                    backgroundColor: (location === feature.href || feature.isAI) ? '' : 'var(--background)',
-                                    color: 'var(--foreground)'
+                                    backgroundColor: (location === feature.href || feature.isAI) ? '' : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)'),
+                                    color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
                                   }}>
                                     <div className={`
                                       ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
@@ -824,8 +826,8 @@ export default function TopMenu() {
                               ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
                             `}
                             style={{ 
-                              backgroundColor: (location === feature.href || feature.isAI) ? '' : 'var(--background)',
-                              color: 'var(--foreground)'
+                              backgroundColor: (location === feature.href || feature.isAI) ? '' : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(255, 255, 255)'),
+                              color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
                             }}>
                               <div className={`
                                 ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
