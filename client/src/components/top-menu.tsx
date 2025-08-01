@@ -597,7 +597,6 @@ export default function TopMenu() {
                                 flex flex-col items-center justify-center text-center space-y-1 relative
                                 ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                                hamburger-menu-card
                               `}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
@@ -759,7 +758,6 @@ export default function TopMenu() {
                                     flex items-center space-x-2
                                     ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                     ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                                    hamburger-menu-card
                                   `}>
                                     <div className={`
                                       ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
@@ -823,7 +821,6 @@ export default function TopMenu() {
                               flex flex-col items-center justify-center text-center gap-1
                               ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                               ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                              hamburger-menu-card
                             `}>
                               <div className={`
                                 ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
