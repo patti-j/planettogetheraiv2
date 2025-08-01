@@ -91,15 +91,15 @@ export default function ConstraintsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="bottlenecks">Bottlenecks</TabsTrigger>
-          <TabsTrigger value="buffers">Buffers</TabsTrigger>
-          <TabsTrigger value="dbr">DBR Schedule</TabsTrigger>
-          <TabsTrigger value="throughput">Throughput</TabsTrigger>
-          <TabsTrigger value="constraints">Constraints</TabsTrigger>
-          <TabsTrigger value="violations">Violations</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+        <TabsList className="w-full flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+          <TabsTrigger value="bottlenecks" className="whitespace-nowrap">Bottlenecks</TabsTrigger>
+          <TabsTrigger value="buffers" className="whitespace-nowrap">Buffers</TabsTrigger>
+          <TabsTrigger value="dbr" className="whitespace-nowrap">DBR Schedule</TabsTrigger>
+          <TabsTrigger value="throughput" className="whitespace-nowrap">Throughput</TabsTrigger>
+          <TabsTrigger value="constraints" className="whitespace-nowrap">Constraints</TabsTrigger>
+          <TabsTrigger value="violations" className="whitespace-nowrap">Violations</TabsTrigger>
+          <TabsTrigger value="monitoring" className="whitespace-nowrap">Monitoring</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
