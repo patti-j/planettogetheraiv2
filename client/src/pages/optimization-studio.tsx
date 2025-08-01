@@ -660,12 +660,27 @@ export default function OptimizationStudio() {
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-5 lg:grid-cols-5">
-              <TabsTrigger value="algorithms">Algorithms</TabsTrigger>
-              <TabsTrigger value="development">Development</TabsTrigger>
-              <TabsTrigger value="testing">Testing</TabsTrigger>
-              <TabsTrigger value="deployments">Deployments</TabsTrigger>
-              <TabsTrigger value="extensions">Extensions</TabsTrigger>
+            <TabsList className="grid w-full sm:w-auto grid-cols-5 text-xs sm:text-sm">
+              <TabsTrigger value="algorithms" className="px-2 sm:px-4">
+                <span className="hidden sm:inline">Algorithms</span>
+                <span className="sm:hidden">Algo</span>
+              </TabsTrigger>
+              <TabsTrigger value="development" className="px-2 sm:px-4">
+                <span className="hidden sm:inline">Development</span>
+                <span className="sm:hidden">Dev</span>
+              </TabsTrigger>
+              <TabsTrigger value="testing" className="px-2 sm:px-4">
+                <span className="hidden sm:inline">Testing</span>
+                <span className="sm:hidden">Test</span>
+              </TabsTrigger>
+              <TabsTrigger value="deployments" className="px-2 sm:px-4">
+                <span className="hidden sm:inline">Deployments</span>
+                <span className="sm:hidden">Deploy</span>
+              </TabsTrigger>
+              <TabsTrigger value="extensions" className="px-2 sm:px-4">
+                <span className="hidden sm:inline">Extensions</span>
+                <span className="sm:hidden">Ext</span>
+              </TabsTrigger>
             </TabsList>
             
             {selectedTab === "algorithms" && (
