@@ -269,6 +269,38 @@ export default function TopMenu() {
     })).filter(group => group.features.length > 0);
   };
 
+  // Flatten all menu items for individual search results
+  const getAllSearchableItems = () => {
+    const allItems: Array<{
+      feature: any;
+      groupTitle: string;
+      groupColor: string;
+    }> = [];
+    
+    featureGroups.forEach(group => {
+      const visibleFeatures = getVisibleFeatures(group.features);
+      visibleFeatures.forEach(feature => {
+        allItems.push({
+          feature,
+          groupTitle: group.title,
+          groupColor: group.color
+        });
+      });
+    });
+    
+    return allItems;
+  };
+
+  // Get search results for individual menu items
+  const getSearchResults = () => {
+    if (!searchFilter.trim()) return [];
+    
+    const searchTerm = searchFilter.toLowerCase();
+    return getAllSearchableItems().filter(item => 
+      item.feature.label.toLowerCase().includes(searchTerm)
+    );
+  };
+
   const handleFeatureClick = (feature: any) => {
     if (feature.href === "#max") {
       // Add Max AI to recent pages
@@ -599,9 +631,55 @@ export default function TopMenu() {
                   />
                 </div>
               )}
+
+              {/* Search Results Section - Show individual menu items when searching */}
+              {searchFilter.trim() && getSearchResults().length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
+                      Search Results ({getSearchResults().length})
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {getSearchResults().map((item, index) => (
+                      <Link 
+                        key={`search-${index}`}
+                        href={item.feature.href === "#max" ? "#" : item.feature.href}
+                        onClick={() => handleFeatureClick(item.feature)}
+                      >
+                        <div className={`
+                          w-full min-h-[80px] h-[80px] 
+                          bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 
+                          border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 
+                          hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                          flex flex-col items-center justify-center text-center space-y-2
+                          ${location === item.feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}
+                          ${item.feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
+                        `}>
+                          <div className={`
+                            ${item.feature.isAI ? getThemeClasses(false) : item.feature.color} 
+                            p-2 rounded-lg flex items-center justify-center flex-shrink-0
+                          `}>
+                            <item.feature.icon className="w-4 h-4 text-white" strokeWidth={1.5} fill="none" />
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                              {item.feature.label}
+                            </span>
+                            <span className={`text-xs text-${item.groupColor}-600 dark:text-${item.groupColor}-400 font-normal`}>
+                              {item.groupTitle}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Card Layout (when content overflows) or Expanded Layout (when content fits) */}
-              {useCardLayout ? (
+              {!searchFilter.trim() && (
+                useCardLayout ? (
                 // Card layout for when content exceeds viewport
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {getVisibleGroups().map((group, groupIndex) => {
@@ -709,6 +787,7 @@ export default function TopMenu() {
                     </div>
                   ))}
                 </div>
+                )
               )}
             </div>
           </div>
