@@ -1139,7 +1139,7 @@ function DataImport() {
       calculateRecommendedDataTypes(features);
       console.log('Recommended data types based on features:', features);
     }
-  }, [onboardingData, calculateRecommendedDataTypes]);
+  }, [onboardingData]);
 
   const handleGenerateAISampleData = () => {
     const companyInfo = (userPreferences as any)?.companyInfo || null;
