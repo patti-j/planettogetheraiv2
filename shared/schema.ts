@@ -4890,7 +4890,7 @@ export const algorithmFeedback = pgTable("algorithm_feedback", {
 export const algorithmFeedbackComments = pgTable("algorithm_feedback_comments", {
   id: serial("id").primaryKey(),
   feedbackId: integer("feedback_id").references(() => algorithmFeedback.id, { onDelete: "cascade" }).notNull(),
-  parentCommentId: integer("parent_comment_id").references(() => algorithmFeedbackComments.id), // For nested comments
+  parentCommentId: integer("parent_comment_id"), // For nested comments - self-reference
   authorId: integer("author_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
   commentType: text("comment_type").notNull().default("comment"), // comment, status_update, resolution, implementation_update
