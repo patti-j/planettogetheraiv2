@@ -520,6 +520,10 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
+          <Route path="/login">
+            {/* Redirect authenticated users to homepage */}
+            <Homepage />
+          </Route>
           <Route path="/" component={Homepage} />
           <Route component={NotFound} />
         </Switch>
