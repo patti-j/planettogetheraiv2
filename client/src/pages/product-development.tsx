@@ -401,7 +401,7 @@ export default function ProductDevelopment() {
   ];
 
   return (
-    <div className="space-y-6 p-6 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="space-y-6 p-6 pl-16 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
