@@ -32,8 +32,8 @@ const featureGroups = [
     title: "Planning & Scheduling",
     priority: "high", // large cards
     color: "blue",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
     features: [
       { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
@@ -49,8 +49,8 @@ const featureGroups = [
     title: "AI & Optimization", 
     priority: "high",
     color: "purple",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
+    bgColor: "bg-purple-50 dark:bg-purple-950/20",
+    borderColor: "border-purple-200 dark:border-purple-800",
     features: [
       { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
@@ -63,8 +63,8 @@ const featureGroups = [
     title: "Operations",
     priority: "medium", 
     color: "orange",
-    bgColor: "bg-orange-50",
-    borderColor: "border-orange-200",
+    bgColor: "bg-orange-50 dark:bg-orange-950/20",
+    borderColor: "border-orange-200 dark:border-orange-800",
     features: [
       { icon: Factory, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
       { icon: Settings, label: "Operator Dashboard", href: "/operator-dashboard", feature: "operator-dashboard", action: "view", color: "bg-gray-500" },
@@ -77,8 +77,8 @@ const featureGroups = [
     title: "Management",
     priority: "medium",
     color: "green",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
+    borderColor: "border-green-200 dark:border-green-800",
     features: [
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
@@ -89,8 +89,8 @@ const featureGroups = [
     title: "System Administration",
     priority: "low",
     color: "gray",
-    bgColor: "bg-gray-50",
-    borderColor: "border-gray-200",
+    bgColor: "bg-gray-50 dark:bg-gray-800",
+    borderColor: "border-gray-200 dark:border-gray-600",
     features: [
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
@@ -114,8 +114,8 @@ const featureGroups = [
     title: "Communication & Collaboration",
     priority: "low",
     color: "teal",
-    bgColor: "bg-teal-50",
-    borderColor: "border-teal-200",
+    bgColor: "bg-teal-50 dark:bg-teal-950/20",
+    borderColor: "border-teal-200 dark:border-teal-800",
     features: [
       { icon: Eye, label: "Visual Factory", href: "/visual-factory", feature: "visual-factory", action: "view", color: "bg-indigo-500" },
       { icon: MessageCircle, label: "Chat", href: "/chat", feature: "chat", action: "view", color: "bg-green-600" },
@@ -127,8 +127,8 @@ const featureGroups = [
     title: "Training & Support",
     priority: "low", 
     color: "indigo",
-    bgColor: "bg-indigo-50",
-    borderColor: "border-indigo-200",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+    borderColor: "border-indigo-200 dark:border-indigo-800",
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
@@ -157,12 +157,14 @@ export default function TopMenu() {
 
   // Helper function to get dark mode compatible background colors
   const getDarkModeColor = (lightColor: string, darkColor?: string) => {
-    return `${lightColor} ${darkColor || lightColor.replace('-50', '-950/20')}`;
+    // Now we include dark mode classes directly in the data, so just pass through
+    return lightColor;
   };
 
   // Helper function to get dark mode compatible border colors
   const getDarkModeBorder = (lightBorder: string, darkBorder?: string) => {
-    return `${lightBorder} ${darkBorder || lightBorder.replace('-200', '-800')}`;
+    // Now we include dark mode classes directly in the data, so just pass through
+    return lightBorder;
   };
 
   // Get onboarding status for menu filtering
