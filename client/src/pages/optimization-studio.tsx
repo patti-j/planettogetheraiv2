@@ -14,7 +14,7 @@ import {
   Code, TestTube, Rocket, BarChart3, Layers, Package,
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
   Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
-  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle
+  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle, Bot
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
