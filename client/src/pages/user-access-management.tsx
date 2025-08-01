@@ -850,22 +850,23 @@ export default function UserAccessManagementPage() {
                       Add Role
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Create New Role</DialogTitle>
                       <DialogDescription>Define a new role with specific permissions</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
                         <Label htmlFor="roleName">Role Name</Label>
                         <Input
                           id="roleName"
                           value={roleForm.name}
                           onChange={(e) => setRoleForm({...roleForm, name: e.target.value})}
                           placeholder="e.g., Sales Manager"
+                          className="w-full"
                         />
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="roleDescription">Description</Label>
                         <Textarea
                           id="roleDescription"
@@ -873,10 +874,11 @@ export default function UserAccessManagementPage() {
                           onChange={(e) => setRoleForm({...roleForm, description: e.target.value})}
                           placeholder="Describe the role's responsibilities..."
                           rows={3}
+                          className="w-full"
                         />
                       </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
+                      <div className="space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                           <Label>Permissions</Label>
                           <div className="flex gap-2">
                             <Button
@@ -884,6 +886,7 @@ export default function UserAccessManagementPage() {
                               size="sm"
                               variant="outline"
                               onClick={selectAllPermissions}
+                              className="text-xs"
                             >
                               Select All
                             </Button>
@@ -892,26 +895,28 @@ export default function UserAccessManagementPage() {
                               size="sm"
                               variant="outline"
                               onClick={unselectAllPermissions}
+                              className="text-xs"
                             >
                               Unselect All
                             </Button>
                           </div>
                         </div>
-                        <div className="border rounded-md p-3 space-y-3 max-h-96 overflow-y-auto">
+                        <div className="border rounded-md p-3 space-y-3 max-h-[40vh] sm:max-h-96 overflow-y-auto">
                           {permissionsByFeature.map((featureGroup) => (
                             <div key={featureGroup.feature} className="space-y-2">
-                              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-800 py-1">
                                 {featureGroup.feature}
                               </h4>
-                              <div className="space-y-1 pl-4">
+                              <div className="space-y-2 pl-2 sm:pl-4">
                                 {featureGroup.permissions.map((permission) => (
-                                  <label key={permission.id} className="flex items-center space-x-2 cursor-pointer py-1">
+                                  <label key={permission.id} className="flex items-start space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
                                     <Checkbox
                                       checked={roleForm.permissions.includes(permission.id)}
                                       onCheckedChange={() => togglePermission(permission.id)}
+                                      className="mt-0.5"
                                     />
-                                    <div className="flex-1">
-                                      <span className="text-sm font-medium">{permission.name}</span>
+                                    <div className="flex-1 space-y-0.5">
+                                      <span className="text-sm font-medium block">{permission.name}</span>
                                       <p className="text-xs text-gray-500">{permission.description}</p>
                                     </div>
                                   </label>
@@ -922,8 +927,8 @@ export default function UserAccessManagementPage() {
                         </div>
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setNewRoleDialog(false)}>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                      <Button variant="outline" onClick={() => setNewRoleDialog(false)} className="w-full sm:w-auto">
                         Cancel
                       </Button>
                       <Button onClick={() => {
@@ -965,45 +970,50 @@ export default function UserAccessManagementPage() {
                   filteredRoles.map((role) => (
                     <Card key={role.id} className={role.isSystemRole ? "border-gray-300 bg-gray-50" : ""}>
                       <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg">{role.name}</CardTitle>
-                            {role.isSystemRole && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Lock className="h-3 w-3 mr-1" />
-                                System Role
-                              </Badge>
-                            )}
+                        <div className="space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <CardTitle className="text-lg">{role.name}</CardTitle>
+                              {role.isSystemRole && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Lock className="h-3 w-3 mr-1" />
+                                  System Role
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewRoleUsers(role)}
+                                className="text-xs"
+                              >
+                                <Users className="h-3 w-3 mr-1" />
+                                {role.userCount || 0} users
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditRole(role)}
+                                title="Edit Role"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteRole(role)}
+                                title="Delete Role"
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewRoleUsers(role)}
-                              className="text-xs"
-                            >
-                              <Users className="h-3 w-3 mr-1" />
-                              {role.userCount || 0} users
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditRole(role)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteRole(role)}
-                              title="Delete Role"
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <CardDescription className="text-sm">{role.description}</CardDescription>
                         </div>
-                        <CardDescription>{role.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
@@ -1032,11 +1042,11 @@ export default function UserAccessManagementPage() {
                             </Button>
                           </div>
                           {selectedRoles.includes(role.id) && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 p-3 bg-gray-50 rounded-md">
                               {role.permissions.map((permission) => (
-                                <div key={permission.id} className="flex items-center gap-2 text-sm text-gray-600">
-                                  <CheckCircle className="h-3 w-3 text-green-500" />
-                                  <span>{permission.name}</span>
+                                <div key={permission.id} className="flex items-start gap-2 text-sm text-gray-600 p-1">
+                                  <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                  <span className="break-words">{permission.name}</span>
                                 </div>
                               ))}
                             </div>
@@ -1444,31 +1454,33 @@ export default function UserAccessManagementPage() {
 
       {/* Edit Role Dialog */}
       <Dialog open={editRoleDialog} onOpenChange={setEditRoleDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Role</DialogTitle>
             <DialogDescription>Update role information and permissions</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="edit-roleName">Role Name</Label>
               <Input
                 id="edit-roleName"
                 value={roleForm.name}
                 onChange={(e) => setRoleForm({...roleForm, name: e.target.value})}
+                className="w-full"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="edit-roleDescription">Description</Label>
               <Textarea
                 id="edit-roleDescription"
                 value={roleForm.description}
                 onChange={(e) => setRoleForm({...roleForm, description: e.target.value})}
                 rows={3}
+                className="w-full"
               />
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                 <Label>Permissions</Label>
                 <div className="flex gap-2">
                   <Button
@@ -1476,6 +1488,7 @@ export default function UserAccessManagementPage() {
                     size="sm"
                     variant="outline"
                     onClick={selectAllPermissions}
+                    className="text-xs"
                   >
                     Select All
                   </Button>
@@ -1484,26 +1497,28 @@ export default function UserAccessManagementPage() {
                     size="sm"
                     variant="outline"
                     onClick={unselectAllPermissions}
+                    className="text-xs"
                   >
                     Unselect All
                   </Button>
                 </div>
               </div>
-              <div className="border rounded-md p-3 space-y-3 max-h-96 overflow-y-auto">
+              <div className="border rounded-md p-3 space-y-3 max-h-[40vh] sm:max-h-96 overflow-y-auto">
                 {permissionsByFeature.map((featureGroup) => (
                   <div key={featureGroup.feature} className="space-y-2">
-                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wider sticky top-0 bg-white dark:bg-gray-800 py-1">
                       {featureGroup.feature}
                     </h4>
-                    <div className="space-y-1 pl-4">
+                    <div className="space-y-2 pl-2 sm:pl-4">
                       {featureGroup.permissions.map((permission) => (
-                        <label key={permission.id} className="flex items-center space-x-2 cursor-pointer py-1">
+                        <label key={permission.id} className="flex items-start space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
                           <Checkbox
                             checked={roleForm.permissions.includes(permission.id)}
                             onCheckedChange={() => togglePermission(permission.id)}
+                            className="mt-0.5"
                           />
-                          <div className="flex-1">
-                            <span className="text-sm font-medium">{permission.name}</span>
+                          <div className="flex-1 space-y-0.5">
+                            <span className="text-sm font-medium block">{permission.name}</span>
                             <p className="text-xs text-gray-500">{permission.description}</p>
                           </div>
                         </label>
@@ -1514,8 +1529,8 @@ export default function UserAccessManagementPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRoleDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setEditRoleDialog(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button onClick={() => {
@@ -1525,7 +1540,7 @@ export default function UserAccessManagementPage() {
                   ...roleForm
                 });
               }
-            }}>
+            }} className="w-full sm:w-auto">
               Save Changes
             </Button>
           </DialogFooter>
