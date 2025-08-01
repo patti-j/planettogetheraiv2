@@ -14,7 +14,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { AssignedRoleSwitcher } from "./assigned-role-switcher";
-import { TrainingModeExit } from "./training-mode-exit";
 import { UserProfileDialog } from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -407,7 +406,6 @@ export default function TopMenu() {
                 
                 {/* Role switching controls on the right */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
-                  <TrainingModeExit />
                   {/* Show assigned role switcher for users with multiple assigned roles */}
                   <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                 </div>
@@ -442,20 +440,6 @@ export default function TopMenu() {
 
             {/* Menu Content */}
             <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
-              {/* Homepage Button */}
-              <div className="mb-4">
-                <Link href="/">
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg text-base font-semibold py-4"
-                    size="lg"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <Home className="w-5 h-5 mr-2" />
-                    Go to Homepage
-                  </Button>
-                </Link>
-              </div>
-
               {/* Recent & Favorites Section */}
               {recentPages.filter(page => {
                 if (!searchFilter.trim()) return true;
