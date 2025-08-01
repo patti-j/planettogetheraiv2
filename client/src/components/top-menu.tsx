@@ -359,7 +359,7 @@ export default function TopMenu() {
             variant="outline" 
             size="sm"
             onClick={() => setMenuOpen(true)}
-            className="p-2 bg-white dark:bg-gray-800 shadow-lg border-2 border-gray-400 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-500 dark:hover:border-gray-500"
+            className="p-2 bg-white dark:bg-gray-700 shadow-lg border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-500 dark:hover:border-gray-400"
           >
             <Menu className="w-5 h-5 text-gray-800 dark:text-gray-200 stroke-2" />
           </Button>
@@ -663,7 +663,7 @@ export default function TopMenu() {
                             <item.feature.icon className="w-4 h-4 text-white" strokeWidth={1.5} fill="none" />
                           </div>
                           <div className="space-y-1">
-                            <span className="text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                            <span className="text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                               {item.feature.label}
                             </span>
                             <span className={`text-xs ${
@@ -737,7 +737,7 @@ export default function TopMenu() {
                         </div>
                         
                         {isExpanded && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-100">
+                          <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-700 bg-opacity-50 dark:bg-opacity-100">
                             <div className="grid grid-cols-2 gap-2">
                               {group.features.map((feature, featureIndex) => (
                                 <Link 
