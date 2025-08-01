@@ -49,25 +49,29 @@ export function DashboardCardContainer({
         ))}
       </div>
       
-      {hasOverflow && (
-        <div className="flex justify-center mt-4">
+      {hasOverflow && !showAll && (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleShowAll}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 h-auto"
+          >
+            <ChevronDown className="h-3 w-3" />
+            {showMoreText}
+          </Button>
+        </div>
+      )}
+      {hasOverflow && showAll && (
+        <div className="flex justify-center mt-2">
           <Button
             variant="outline"
             size="sm"
             onClick={toggleShowAll}
             className="flex items-center gap-2 text-sm"
           >
-            {showAll ? (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                {showLessText}
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                {showMoreText}
-              </>
-            )}
+            <ChevronUp className="h-4 w-4" />
+            {showLessText}
           </Button>
         </div>
       )}

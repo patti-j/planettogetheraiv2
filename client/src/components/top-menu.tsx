@@ -531,7 +531,7 @@ export default function TopMenu() {
                 const searchTerm = searchFilter.toLowerCase();
                 return page.label.toLowerCase().includes(searchTerm);
               }).length > 0 && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
                       Recent & Favorites
@@ -546,12 +546,12 @@ export default function TopMenu() {
                     </Button>
                   </div>
                   <DashboardCardContainer
-                    maxVisibleCardsMobile={2}
+                    maxVisibleCardsMobile={3}
                     maxVisibleCardsTablet={3}
-                    maxVisibleCardsDesktop={4}
-                    showMoreText="Show More Favorites"
+                    maxVisibleCardsDesktop={3}
+                    showMoreText="Show More"
                     showLessText="Show Less"
-                    gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-fr"
+                    gridClassName="grid grid-cols-3 gap-3 auto-rows-fr"
                     cards={recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
