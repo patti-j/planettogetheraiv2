@@ -12,7 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft, Brain, Target } from 'lucide-react';
+import { 
+  Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, 
+  Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, 
+  X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, 
+  ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, 
+  CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, 
+  Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, 
+  ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, 
+  Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, 
+  ArrowRightLeft, Brain, Target 
+} from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';

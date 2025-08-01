@@ -5408,6 +5408,12 @@ export const insertExtensionReviewSchema = createInsertSchema(extensionReviews).
   createdAt: true,
 });
 
+export const insertExtensionSchema = createInsertSchema(extensions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Extension Studio Types
 export type Extension = typeof extensions.$inferSelect;
 export type InsertExtension = z.infer<typeof insertExtensionSchema>;
