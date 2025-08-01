@@ -617,7 +617,7 @@ export function EnhancedDashboardManager({
                               {['metric', 'chart', 'table', 'progress'].map((type) => (
                                 <div
                                   key={type}
-                                  className="p-2 bg-white border rounded cursor-pointer hover:bg-gray-100 text-center text-sm capitalize"
+                                  className="p-2 bg-white dark:bg-gray-700 border rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 text-center text-sm capitalize"
                                   draggable
                                   onDragStart={(e) => {
                                     e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -693,7 +693,7 @@ export function EnhancedDashboardManager({
                             {/* Canvas Container with proper scrolling */}
                             <div className="border rounded-lg overflow-auto max-h-[600px]" style={{ maxWidth: '100%' }}>
                               <div 
-                                className="border-2 border-dashed border-gray-300 rounded-lg bg-white p-4 relative overflow-hidden"
+                                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 p-4 relative overflow-hidden"
                                 style={{ 
                                   width: canvasWidth, 
                                   height: canvasHeight, 
@@ -750,7 +750,7 @@ export function EnhancedDashboardManager({
                               {editingDashboard && editingDashboard.configuration.customWidgets?.map((widget: any) => (
                                 <div
                                   key={widget.id}
-                                  className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
+                                  className="absolute bg-white dark:bg-gray-700 border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                                   style={{
                                     left: widget.position.x,
                                     top: widget.position.y,

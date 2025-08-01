@@ -738,7 +738,7 @@ export default function CapacityPlanning() {
                             <div key={index} className="flex items-start gap-2 text-sm">
                               <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                               <div>
-                                <div className="text-gray-900">{issue}</div>
+                                <div className="text-gray-900 dark:text-white">{issue}</div>
                                 <div className="text-gray-600 text-xs mt-1">
                                   {issue.includes('High utilization') && 
                                     'Consider adding overtime shifts or redistributing workload to other resources.'
@@ -761,13 +761,13 @@ export default function CapacityPlanning() {
 
           {/* Week Timeline View */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Daily Schedule Overview</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white">Daily Schedule Overview</h4>
             <div className="grid grid-cols-7 gap-2">
               {currentWeek?.days.map((day, index) => (
                 <div key={index} className={`p-3 rounded-lg text-center ${
-                  day.isWeekend ? 'bg-gray-100 text-gray-500' : 
-                  day.isHoliday ? 'bg-red-100 text-red-600' : 
-                  'bg-blue-50 text-blue-900'
+                  day.isWeekend ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400' : 
+                  day.isHoliday ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300' : 
+                  'bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200'
                 }`}>
                   <div className="text-xs font-medium">
                     {format(day.date, 'EEE')}
@@ -788,7 +788,7 @@ export default function CapacityPlanning() {
 
           {/* Capacity Improvement Recommendations */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Capacity Optimization Opportunities</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white">Capacity Optimization Opportunities</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* High Utilization Alert */}
               {currentWeek?.resources.filter(r => r.utilization >= 90).length > 0 && (

@@ -165,12 +165,12 @@ export default function Billing() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Billing & Usage</h1>
-          <p className="text-gray-600">Monitor your usage, manage billing, and control costs</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Billing & Usage</h1>
+          <p className="text-gray-600 dark:text-gray-400">Monitor your usage, manage billing, and control costs</p>
         </div>
 
         <Tabs defaultValue="usage" className="space-y-6">
@@ -190,11 +190,11 @@ export default function Billing() {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className="p-2 rounded-lg bg-gray-100">
+                        <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
                           {metric.icon}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm text-gray-900">{metric.name}</h3>
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{metric.name}</h3>
                         </div>
                       </div>
                       <Button
@@ -395,7 +395,7 @@ export default function Billing() {
                 {currentUsage.map((metric) => (
                   <div key={metric.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-gray-100">
+                      <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
                         {metric.icon}
                       </div>
                       <div>

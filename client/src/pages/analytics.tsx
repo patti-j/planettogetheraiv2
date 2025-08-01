@@ -585,11 +585,11 @@ export default function Analytics() {
         <div className="p-3 sm:p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white flex items-center">
                 <BarChart3 className="w-6 h-6 mr-2" />
                 Analytics
               </h1>
-              <p className="text-sm md:text-base text-gray-600">Manage and view dashboard configurations</p>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage and view dashboard configurations</p>
             </div>
             
             {/* Live indicator in top right */}
@@ -598,7 +598,7 @@ export default function Analytics() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsLivePaused(!isLivePaused)}
-                className="flex items-center gap-2 hover:bg-gray-100 text-sm"
+                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm"
               >
                 {isLivePaused ? (
                   <>
@@ -739,7 +739,7 @@ export default function Analytics() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsLivePaused(!isLivePaused)}
-                    className="flex items-center gap-2 hover:bg-gray-100"
+                    className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
                     {isLivePaused ? (
                       <>
