@@ -393,7 +393,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-y-auto"
+            className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
@@ -524,7 +524,7 @@ export default function TopMenu() {
             </div>
 
             {/* Menu Content */}
-            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
+            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1 overflow-y-auto">
               {/* Recent & Favorites Section */}
               {recentPages.filter(page => {
                 if (!searchFilter.trim()) return true;
@@ -590,7 +590,7 @@ export default function TopMenu() {
                               }}
                             >
                               <div className={`
-                                w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
+                                w-full aspect-square min-h-[60px] h-[60px] min-w-[60px] md:min-h-[70px] md:h-[70px] md:min-w-[70px] 
                                 bg-white dark:bg-gray-700 border hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                                 flex flex-col items-center justify-center text-center space-y-1 relative
                                 ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-600' : 'border-gray-200 dark:border-gray-600'}
@@ -666,7 +666,15 @@ export default function TopMenu() {
                             <span className="text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                               {item.feature.label}
                             </span>
-                            <span className={`text-xs text-${item.groupColor}-600 dark:text-${item.groupColor}-400 font-normal`}>
+                            <span className={`text-xs ${
+                              item.groupColor === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                              item.groupColor === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+                              item.groupColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                              item.groupColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                              item.groupColor === 'gray' ? 'text-gray-600 dark:text-gray-400' :
+                              item.groupColor === 'teal' ? 'text-teal-600 dark:text-teal-400' :
+                              'text-gray-600 dark:text-gray-400'
+                            } font-normal`}>
                               {item.groupTitle}
                             </span>
                           </div>
@@ -693,11 +701,31 @@ export default function TopMenu() {
                           onClick={() => toggleCategory(group.title)}
                         >
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-1 h-6 bg-${group.color}-500 rounded-full`} />
-                              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
-                                {group.title}
-                              </h3>
+                            <div className="flex items-center space-x-3">
+                              {(() => {
+                                const FirstIcon = group.features[0]?.icon;
+                                const colorMap = {
+                                  'blue': 'bg-blue-500 dark:bg-blue-600',
+                                  'purple': 'bg-purple-500 dark:bg-purple-600',
+                                  'orange': 'bg-orange-500 dark:bg-orange-600',
+                                  'green': 'bg-green-500 dark:bg-green-600',
+                                  'gray': 'bg-gray-500 dark:bg-gray-600',
+                                  'teal': 'bg-teal-500 dark:bg-teal-600',
+                                  'amber': 'bg-amber-500 dark:bg-amber-600'
+                                };
+                                const bgColor = colorMap[group.color] || 'bg-gray-500 dark:bg-gray-600';
+                                
+                                return (
+                                  <>
+                                    <div className={`${bgColor} p-2 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                      {FirstIcon && <FirstIcon className="w-5 h-5 text-white" strokeWidth={1.5} />}
+                                    </div>
+                                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
+                                      {group.title}
+                                    </h3>
+                                  </>
+                                );
+                              })()}
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 px-2 py-1 rounded-full">
@@ -749,8 +777,28 @@ export default function TopMenu() {
                   {getVisibleGroups().map((group, groupIndex) => (
                     <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`}>
                       <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center uppercase tracking-wide">
-                        <div className={`w-1 h-4 bg-${group.color}-500 mr-2.5 rounded-full`} />
-                        {group.title}
+                        {(() => {
+                          const FirstIcon = group.features[0]?.icon;
+                          const colorMap = {
+                            'blue': 'bg-blue-500',
+                            'purple': 'bg-purple-500',
+                            'orange': 'bg-orange-500',
+                            'green': 'bg-green-500',
+                            'gray': 'bg-gray-500',
+                            'teal': 'bg-teal-500',
+                            'amber': 'bg-amber-500'
+                          };
+                          const bgColor = colorMap[group.color] || 'bg-gray-500';
+                          
+                          return (
+                            <>
+                              <div className={`${bgColor} p-1.5 rounded-md flex items-center justify-center flex-shrink-0 mr-2.5`}>
+                                {FirstIcon && <FirstIcon className="w-4 h-4 text-white" strokeWidth={1.5} />}
+                              </div>
+                              {group.title}
+                            </>
+                          );
+                        })()}
                       </h3>
                       <div className="grid grid-cols-2 gap-2">
                         {group.features.map((feature, featureIndex) => (
