@@ -410,11 +410,6 @@ export default function TopMenu() {
                   <TrainingModeExit />
                   {/* Show assigned role switcher for users with multiple assigned roles */}
                   <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
-                  {/* Show training role switcher only when in training mode and has training permissions */}
-                  {hasPermission('training', 'view') && assignedRoles && currentRoleData && 
-                   !assignedRoles.some((r: any) => r.id === currentRoleData.id) && (
-                    <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
-                  )}
                 </div>
               </div>
             </div>
