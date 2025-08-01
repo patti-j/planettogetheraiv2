@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft, Brain } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Database, Users, Building, Wrench, Briefcase, CheckCircle, AlertCircle, Plus, Trash2, Grid3X3, ChevronDown, X, MapPin, Building2, Factory, Package, Warehouse, Package2, Hash, ShoppingCart, FileText, ArrowLeftRight, List, Route, TrendingUp, UserCheck, CheckSquare, Square, Calendar, Lightbulb, Sparkles, ExternalLink, Loader2, Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, ArrowRightLeft, Brain, Target } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -76,6 +76,7 @@ function DataImport() {
   // Available features for selection - matches onboarding.tsx featureModules exactly
   const availableFeatures = [
     { id: 'production-scheduling', name: 'Schedule Optimization', icon: BarChart3, description: 'Plan and schedule your production operations with drag-and-drop Gantt charts' },
+    { id: 'theory-of-constraints', name: 'Theory of Constraints (TOC)', icon: Target, description: 'Identify and manage production bottlenecks with drum-buffer-rope methodology' },
     { id: 'capacity-planning', name: 'Capacity Optimization', icon: TrendingUp, description: 'Plan and forecast production capacity across your facilities and resources' },
     { id: 'inventory-optimization', name: 'Inventory Management', icon: Package, description: 'Track materials, optimize stock levels, and manage supply chain' },
     { id: 'production-planning', name: 'Production Plan Optimization', icon: ClipboardList, description: 'Create and manage production plans, targets, and milestones' },
@@ -86,6 +87,7 @@ function DataImport() {
   // Feature to data requirements mapping
   const featureDataRequirements = {
     'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations', 'workCenters', 'routings'],
+    'theory-of-constraints': ['resources', 'operations', 'productionOrders'],
     'resource-management': ['plants', 'resources', 'capabilities', 'workCenters', 'employees'],
     'job-management': ['productionOrders', 'resources', 'plants', 'operations', 'workCenters'],
     'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations', 'workCenters', 'forecasts'],

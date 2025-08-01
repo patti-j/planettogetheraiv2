@@ -52,6 +52,7 @@ function DataImport() {
   // Feature to data requirements mapping
   const featureDataRequirements = {
     'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'operations'],
+    'theory-of-constraints': ['resources', 'operations', 'productionOrders'],
     'resource-management': ['plants', 'resources', 'capabilities'],
     'job-management': ['productionOrders', 'resources', 'plants', 'operations'],
     'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'operations'],

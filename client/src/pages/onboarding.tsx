@@ -69,6 +69,18 @@ const featureModules: FeatureModule[] = [
     isSelected: false
   },
   {
+    id: 'theory-of-constraints',
+    name: 'Theory of Constraints (TOC)',
+    description: 'Identify and manage production bottlenecks with drum-buffer-rope methodology',
+    icon: Target,
+    complexity: 'beginner',
+    prerequisites: [],
+    estimatedSetupTime: '10-20 minutes',
+    dataRequirements: ['Resources', 'Operations', 'Production Orders'],
+    benefits: ['Bottleneck identification', 'Throughput optimization', 'Buffer management'],
+    isSelected: false
+  },
+  {
     id: 'capacity-planning',
     name: 'Capacity Optimization',
     description: 'Plan and forecast production capacity across your facilities and resources',
