@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
 import { AssignedRoleSwitcher } from "./assigned-role-switcher";
 import { UserProfileDialog } from "./user-profile";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle, ThemeToggleSimple } from "./theme-toggle";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
@@ -151,6 +151,16 @@ export default function TopMenu() {
   const { aiTheme, getThemeClasses } = useAITheme();
   const { recentPages, clearRecentPages, togglePinPage, addRecentPage } = useNavigation();
   const { startTour } = useTour();
+
+  // Helper function to get dark mode compatible background colors
+  const getDarkModeColor = (lightColor: string, darkColor?: string) => {
+    return `${lightColor} ${darkColor || lightColor.replace('-50', '-950/20')}`;
+  };
+
+  // Helper function to get dark mode compatible border colors
+  const getDarkModeBorder = (lightBorder: string, darkBorder?: string) => {
+    return `${lightBorder} ${darkBorder || lightBorder.replace('-200', '-800')}`;
+  };
 
   // Get onboarding status for menu filtering
   const { data: onboardingData } = useQuery({
@@ -316,10 +326,17 @@ export default function TopMenu() {
             variant="outline" 
             size="sm"
             onClick={() => setMenuOpen(true)}
-            className="p-2 bg-white shadow-lg border-2 border-gray-400 hover:bg-gray-50 hover:border-gray-500"
+            className="p-2 bg-white dark:bg-gray-800 shadow-lg border-2 border-gray-400 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-500 dark:hover:border-gray-500"
           >
-            <Menu className="w-5 h-5 text-gray-800 stroke-2" />
+            <Menu className="w-5 h-5 text-gray-800 dark:text-gray-200 stroke-2" />
           </Button>
+        </div>
+      )}
+      
+      {/* Persistent Theme Toggle - Always visible */}
+      {!menuOpen && (
+        <div className="fixed top-2 right-2 z-50">
+          <ThemeToggleSimple />
         </div>
       )}
 
@@ -343,7 +360,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="bg-gradient-to-b from-gray-50 to-white shadow-2xl h-screen overflow-y-auto"
+            className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-y-auto"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
@@ -356,7 +373,7 @@ export default function TopMenu() {
             }}
           >
             {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Close Button - moved to left side */}
                 <Button 
@@ -368,7 +385,7 @@ export default function TopMenu() {
                   <X className="w-5 h-5" />
                 </Button>
                 <Factory className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 flex-shrink-0" />
-                <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">PlanetTogether</h1>
+                <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
@@ -387,11 +404,11 @@ export default function TopMenu() {
                       </AvatarFallback>
                     </Avatar>
                     <div 
-                      className="hidden md:block text-left cursor-pointer hover:bg-gray-50 rounded-md px-2 py-1 transition-colors duration-200"
+                      className="hidden md:block text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors duration-200"
                       onClick={() => setUserProfileOpen(true)}
                     >
-                      <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                      <p className="text-xs text-gray-500">{currentRole?.name || 'No Role'}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{currentRole?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
@@ -415,7 +432,7 @@ export default function TopMenu() {
             </div>
 
             {/* Mobile-only user controls and search - combined on same level to save vertical space */}
-            <div className="sm:hidden px-4 py-3 border-b border-gray-200 bg-gray-25">
+            <div className="sm:hidden px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-25 dark:bg-gray-800">
               <div className="flex items-center justify-between space-x-3">
                 {/* Search on the left */}
                 <div className="relative flex-1">
@@ -425,14 +442,14 @@ export default function TopMenu() {
                     placeholder="Search"
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="pl-9 pr-8 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="pl-9 pr-8 py-2 w-full text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                   {searchFilter && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setSearchFilter("")}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <X className="w-3 h-3" />
                     </Button>
@@ -448,7 +465,7 @@ export default function TopMenu() {
             </div>
 
             {/* Desktop search filter - centered and constrained width */}
-            <div className="hidden sm:block px-6 pt-4 pb-2 border-b border-gray-100">
+            <div className="hidden sm:block px-6 pt-4 pb-2 border-b border-gray-100 dark:border-gray-700">
               <div className="flex justify-center">
                 <div className="relative w-full max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -457,14 +474,14 @@ export default function TopMenu() {
                     placeholder="Search menu items..."
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                    className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                   {searchFilter && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setSearchFilter("")}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <X className="w-3 h-3" />
                     </Button>
@@ -483,7 +500,7 @@ export default function TopMenu() {
               }).length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
                       Recent & Favorites
                     </h3>
                     <Button
@@ -541,10 +558,10 @@ export default function TopMenu() {
                             >
                               <div className={`
                                 w-full aspect-square min-h-[100px] h-[100px] min-w-[100px] md:min-h-[90px] md:h-[90px] md:min-w-[90px] 
-                                bg-white border hover:border-gray-300 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                                bg-white dark:bg-gray-700 border hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                                 flex flex-col items-center justify-center text-center space-y-1 relative
-                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50' : 'border-gray-200'}
-                                ${isAI ? 'border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' : ''}
+                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-600' : 'border-gray-200 dark:border-gray-600'}
+                                ${isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
                               `}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100'} 
@@ -552,7 +569,7 @@ export default function TopMenu() {
                                 `}>
                                   <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                                 </div>
-                                <span className="text-xs font-medium text-gray-800 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                <span className="text-xs font-medium text-gray-800 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                                   {page.label}
                                 </span>
                                 {/* Pin/Unpin Button - Bottom Right Corner */}
@@ -591,7 +608,7 @@ export default function TopMenu() {
                     const Icon = isExpanded ? ChevronDown : ChevronRight;
                     
                     return (
-                      <div key={groupIndex} className={`${group.bgColor} rounded-xl border ${group.borderColor} overflow-hidden shadow-sm`}>
+                      <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} overflow-hidden shadow-sm`}>
                         <div 
                           className="p-4 cursor-pointer hover:bg-opacity-70 transition-colors"
                           onClick={() => toggleCategory(group.title)}
@@ -599,21 +616,21 @@ export default function TopMenu() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               <div className={`w-1 h-6 bg-${group.color}-500 rounded-full`} />
-                              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
                                 {group.title}
                               </h3>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs text-gray-600 bg-white px-2 py-1 rounded-full">
+                              <span className="text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 px-2 py-1 rounded-full">
                                 {group.features.length}
                               </span>
-                              <Icon className="w-4 h-4 text-gray-600" />
+                              <Icon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                             </div>
                           </div>
                         </div>
                         
                         {isExpanded && (
-                          <div className="border-t border-gray-200 p-3 bg-white bg-opacity-50">
+                          <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-white dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-100">
                             <div className="grid grid-cols-2 gap-2">
                               {group.features.map((feature, featureIndex) => (
                                 <Link 
@@ -622,7 +639,7 @@ export default function TopMenu() {
                                   onClick={() => handleFeatureClick(feature)}
                                 >
                                   <div className={`
-                                    h-[50px] bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm
+                                    h-[50px] bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
                                     rounded-lg p-2 cursor-pointer transition-all duration-150
                                     flex items-center space-x-2
                                     ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
@@ -634,7 +651,7 @@ export default function TopMenu() {
                                     `}>
                                       <feature.icon className="w-3 h-3 text-white" strokeWidth={1.5} fill="none" />
                                     </div>
-                                    <span className="text-xs text-gray-700 leading-tight line-clamp-2 overflow-hidden">
+                                    <span className="text-xs text-gray-700 dark:text-gray-200 leading-tight line-clamp-2 overflow-hidden">
                                       {feature.label}
                                     </span>
                                   </div>
@@ -651,8 +668,8 @@ export default function TopMenu() {
                 // Expanded layout when content fits comfortably
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                   {getVisibleGroups().map((group, groupIndex) => (
-                    <div key={groupIndex} className={`${group.bgColor} rounded-xl border ${group.borderColor} p-4 shadow-sm`}>
-                      <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center uppercase tracking-wide">
+                    <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`}>
+                      <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center uppercase tracking-wide">
                         <div className={`w-1 h-4 bg-${group.color}-500 mr-2.5 rounded-full`} />
                         {group.title}
                       </h3>
@@ -665,7 +682,7 @@ export default function TopMenu() {
                           >
                             <div className={`
                               ${getCardSize(group.priority)}
-                              bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-sm
+                              bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm
                               rounded-lg p-2 cursor-pointer transition-all duration-150
                               flex flex-col items-center justify-center text-center gap-1
                               ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50' : ''}
@@ -681,7 +698,7 @@ export default function TopMenu() {
                                   fill="none"
                                 />
                               </div>
-                              <span className={`${getTextSize(group.priority)} text-gray-700 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
+                              <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-gray-200 leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
                                 {feature.label}
                               </span>
                             </div>
