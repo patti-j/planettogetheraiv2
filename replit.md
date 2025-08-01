@@ -10,6 +10,10 @@ The platform's vision is to transform traditional ERP functionality into an AI-f
 
 Preferred communication style: Simple, everyday language.
 
+Multiple users working on project:
+- JC = Jim
+- PJ = Patti
+
 ## System Architecture
 
 ### Frontend Architecture
