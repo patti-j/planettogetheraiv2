@@ -156,14 +156,26 @@ export default function TopMenu() {
     enabled: !!user
   }) as { data: any };
 
+  // Get user's assigned roles
+  const { data: assignedRoles = [] } = useQuery({
+    queryKey: [`/api/users/${user?.id}/assigned-roles`],
+    enabled: !!user?.id,
+  });
+
+  // Get user's current role
+  const { data: currentRoleData } = useQuery({
+    queryKey: [`/api/users/${user?.id}/current-role`],
+    enabled: !!user?.id,
+  });
+
   // Check if onboarding is complete
   const isOnboardingComplete = onboardingData && 
     onboardingData.companyName?.trim() && 
     onboardingData.selectedFeatures && 
     onboardingData.selectedFeatures.length > 0;
 
-  // Derive current role from user data if not provided
-  const currentRole = user?.currentRole || (user?.activeRoleId && user?.roles ? 
+  // Use fetched current role or derive from user data
+  const currentRole = currentRoleData || user?.currentRole || (user?.activeRoleId && user?.roles ? 
     user.roles.find(role => role.id === user.activeRoleId) : null);
 
   // Convert to RoleSwitcher-compatible format with required description
@@ -399,8 +411,8 @@ export default function TopMenu() {
                   {/* Show assigned role switcher for users with multiple assigned roles */}
                   <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   {/* Show training role switcher only when in training mode and has training permissions */}
-                  {hasPermission('training', 'view') && assignedRoles && currentRole && 
-                   !assignedRoles.some((r: any) => r.id === currentRole.id) && (
+                  {hasPermission('training', 'view') && assignedRoles && currentRoleData && 
+                   !assignedRoles.some((r: any) => r.id === currentRoleData.id) && (
                     <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   )}
                 </div>
