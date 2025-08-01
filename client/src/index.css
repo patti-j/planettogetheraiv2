@@ -53,7 +53,7 @@
 
 /* Hamburger menu card styles */
 .hamburger-menu-card:not(.bg-emerald-50):not(.bg-blue-50):not(.bg-gradient-to-br) {
-  background-color: red !important;
+  background-color: var(--card) !important;
   color: var(--card-foreground) !important;
 }
 

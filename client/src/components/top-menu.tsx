@@ -655,13 +655,9 @@ export default function TopMenu() {
                           border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 
                           hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
                           flex flex-col items-center justify-center text-center space-y-2
-                          ${location === item.feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''}
+                          ${location === item.feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700'}
                           ${item.feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
-                        `}
-                        style={{ 
-                          backgroundColor: (location === item.feature.href || item.feature.isAI) ? '' : (resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'red'),
-                          color: resolvedTheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(17, 24, 39)'
-                        }}>
+                        `}>
                           <div className={`
                             ${item.feature.isAI ? getThemeClasses(false) : item.feature.color} 
                             p-2 rounded-lg flex items-center justify-center flex-shrink-0
@@ -736,7 +732,7 @@ export default function TopMenu() {
                             <div className="flex items-center space-x-2">
                               <span className="text-xs text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full"
                                 style={{ 
-                                  backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'red'
+                                  backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(243, 244, 246)'
                                 }}>
                                 {group.features.length}
                               </span>
@@ -748,7 +744,7 @@ export default function TopMenu() {
                         {isExpanded && (
                           <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-opacity-50 dark:bg-opacity-100"
                             style={{ 
-                              backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgba(255, 0, 0, 0.5)'
+                              backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgba(243, 244, 246, 0.5)'
                             }}>
                             <div className="grid grid-cols-2 gap-2">
                               {group.features.map((feature, featureIndex) => (
