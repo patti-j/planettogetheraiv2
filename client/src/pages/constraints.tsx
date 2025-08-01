@@ -91,9 +91,12 @@ export default function ConstraintsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="bottlenecks">Bottlenecks</TabsTrigger>
+          <TabsTrigger value="buffers">Buffers</TabsTrigger>
+          <TabsTrigger value="dbr">DBR Schedule</TabsTrigger>
+          <TabsTrigger value="throughput">Throughput</TabsTrigger>
           <TabsTrigger value="constraints">Constraints</TabsTrigger>
           <TabsTrigger value="violations">Violations</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
@@ -107,12 +110,20 @@ export default function ConstraintsPage() {
           />
         </TabsContent>
 
-        <TabsContent value="categories">
-          <ConstraintCategories 
-            categories={constraintCategories}
-            queryClient={queryClient}
-            toast={toast}
-          />
+        <TabsContent value="bottlenecks">
+          <BottleneckAnalysis />
+        </TabsContent>
+
+        <TabsContent value="buffers">
+          <BufferManagement />
+        </TabsContent>
+
+        <TabsContent value="dbr">
+          <DrumBufferRopeSchedule />
+        </TabsContent>
+
+        <TabsContent value="throughput">
+          <ThroughputAccounting />
         </TabsContent>
 
         <TabsContent value="constraints">
@@ -582,6 +593,576 @@ function ConstraintsMonitoring() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// Bottleneck Analysis Component - Core TOC feature
+function BottleneckAnalysis() {
+  const { data: resources = [] } = useQuery({
+    queryKey: ["/api/resources"],
+  });
+
+  const { data: operations = [] } = useQuery({
+    queryKey: ["/api/operations"],
+  });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Bottleneck Analysis</h2>
+        <p className="text-muted-foreground">Identify and analyze production constraints using Theory of Constraints</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              Current Bottleneck
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">Reactor 1 - Mixing Station</h3>
+                <p className="text-sm text-muted-foreground">Capacity: 85% utilized</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Throughput Rate:</span>
+                  <span className="font-medium">120 units/hour</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Queue Time:</span>
+                  <span className="font-medium text-orange-600">4.5 hours</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Impact on Output:</span>
+                  <span className="font-medium text-red-600">-15%</span>
+                </div>
+              </div>
+              <Button size="sm" className="w-full">
+                View Exploitation Options
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Constraint Candidates</CardTitle>
+            <CardDescription>Resources approaching constraint status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Packaging Line A</span>
+                <Badge variant="outline" className="text-orange-600">78% utilized</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Quality Testing Lab</span>
+                <Badge variant="outline" className="text-yellow-600">72% utilized</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">Tablet Press 2</span>
+                <Badge variant="outline">65% utilized</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Constraint Elevation</CardTitle>
+            <CardDescription>Options to increase constraint capacity</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Shift Coverage
+              </Button>
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Settings className="h-4 w-4 mr-2" />
+                Optimize Changeovers
+              </Button>
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Reduce Quality Defects
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Resource Utilization Heat Map</CardTitle>
+          <CardDescription>Visual representation of resource constraints across the plant</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { name: "Reactor 1", util: 85, color: "bg-red-500" },
+              { name: "Reactor 2", util: 45, color: "bg-green-500" },
+              { name: "Packaging A", util: 78, color: "bg-orange-500" },
+              { name: "Packaging B", util: 52, color: "bg-green-500" },
+              { name: "QC Lab", util: 72, color: "bg-yellow-500" },
+              { name: "Tablet Press 1", util: 60, color: "bg-green-500" },
+              { name: "Tablet Press 2", util: 65, color: "bg-yellow-500" },
+              { name: "Warehouse", util: 40, color: "bg-green-500" }
+            ].map((resource) => (
+              <div key={resource.name} className="text-center">
+                <div className={`h-20 ${resource.color} bg-opacity-80 rounded flex items-center justify-center text-white font-medium`}>
+                  {resource.util}%
+                </div>
+                <p className="text-xs mt-1">{resource.name}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Buffer Management Component - Time and stock buffers before constraints
+function BufferManagement() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Buffer Management</h2>
+        <p className="text-muted-foreground">Manage time and stock buffers to protect constraints and ensure flow</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Time Buffers</CardTitle>
+            <CardDescription>Protective time before constraint operations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm">Constraint Buffer (Reactor 1)</span>
+                    <span className="text-sm font-medium">2.5 hours</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">60% consumed - Healthy</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm">Shipping Buffer</span>
+                    <span className="text-sm font-medium">4 hours</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">75% consumed - Monitor</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm">Assembly Buffer</span>
+                    <span className="text-sm font-medium">1.5 hours</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '90%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">90% consumed - Critical</p>
+                </div>
+              </div>
+
+              <Button size="sm" variant="outline" className="w-full">
+                Adjust Buffer Sizes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Stock Buffers</CardTitle>
+            <CardDescription>Strategic inventory to protect constraint</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium">Raw Material A</p>
+                    <p className="text-xs text-muted-foreground">Target: 500 kg</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">425 kg</p>
+                    <Badge variant="outline" className="text-xs">85% of target</Badge>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium">WIP Before Constraint</p>
+                    <p className="text-xs text-muted-foreground">Target: 200 units</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">180 units</p>
+                    <Badge variant="outline" className="text-xs">90% of target</Badge>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium">Finished Goods Buffer</p>
+                    <p className="text-xs text-muted-foreground">Target: 1000 units</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">650 units</p>
+                    <Badge variant="outline" className="text-xs text-orange-600">65% of target</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Button size="sm" className="w-full">
+                Configure Buffer Policies
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Buffer Penetration Alerts</CardTitle>
+          <CardDescription>Real-time monitoring of buffer consumption</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Assembly Buffer Critical</p>
+                <p className="text-xs text-muted-foreground">90% consumed - Expedite feeding operations</p>
+              </div>
+              <Button size="sm" variant="outline">Take Action</Button>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Shipping Buffer Warning</p>
+                <p className="text-xs text-muted-foreground">75% consumed - Review upstream delays</p>
+              </div>
+              <Button size="sm" variant="outline">Investigate</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Drum-Buffer-Rope Scheduling Component
+function DrumBufferRopeSchedule() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Drum-Buffer-Rope (DBR) Schedule</h2>
+        <p className="text-muted-foreground">Synchronize production flow with the constraint rhythm</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-2 border-red-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+              Drum (Constraint)
+            </CardTitle>
+            <CardDescription>Sets the pace for entire production</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium">Reactor 1 - Mixing Station</p>
+                <p className="text-xs text-muted-foreground">Current pace: 120 units/hour</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Daily Capacity:</span>
+                  <span className="font-medium">2,400 units</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Scheduled Today:</span>
+                  <span className="font-medium">2,350 units</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Utilization:</span>
+                  <span className="font-medium">97.9%</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-yellow-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-3 w-3 bg-yellow-500 rounded-full" />
+              Buffer
+            </CardTitle>
+            <CardDescription>Protection against variability</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Constraint Buffer:</span>
+                  <span className="font-medium">2.5 hours</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Shipping Buffer:</span>
+                  <span className="font-medium">4 hours</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Assembly Buffer:</span>
+                  <span className="font-medium">1.5 hours</span>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="w-full">
+                Optimize Buffer Sizes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-3 w-3 bg-green-500 rounded-full" />
+              Rope (Release)
+            </CardTitle>
+            <CardDescription>Material release schedule</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Release Time:</span>
+                  <span className="font-medium">Drum - 2.5h</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Next Release:</span>
+                  <span className="font-medium">14:30</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Release Quantity:</span>
+                  <span className="font-medium">150 units</span>
+                </div>
+              </div>
+              <Button size="sm" className="w-full">
+                View Release Schedule
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>DBR Production Flow</CardTitle>
+          <CardDescription>Visual representation of synchronized production flow</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative h-32">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t-2 border-dashed border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-between items-center h-full px-8">
+              <div className="bg-green-500 text-white px-4 py-2 rounded">
+                Material Release
+              </div>
+              <div className="bg-yellow-500 text-white px-4 py-2 rounded">
+                Buffer Zone
+              </div>
+              <div className="bg-red-500 text-white px-4 py-2 rounded">
+                Constraint (Drum)
+              </div>
+              <div className="bg-blue-500 text-white px-4 py-2 rounded">
+                Shipping
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-4 gap-4 text-center text-sm">
+            <div>
+              <p className="font-medium">T - 2.5h</p>
+              <p className="text-xs text-muted-foreground">Release materials</p>
+            </div>
+            <div>
+              <p className="font-medium">T - 1h to T</p>
+              <p className="text-xs text-muted-foreground">Buffer protection</p>
+            </div>
+            <div>
+              <p className="font-medium">T</p>
+              <p className="text-xs text-muted-foreground">Process at constraint</p>
+            </div>
+            <div>
+              <p className="font-medium">T + 4h</p>
+              <p className="text-xs text-muted-foreground">Ship to customer</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Throughput Accounting Component
+function ThroughputAccounting() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Throughput Accounting</h2>
+        <p className="text-muted-foreground">Financial metrics focused on constraint optimization</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Throughput ($T)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">$125,000</p>
+            <p className="text-xs text-muted-foreground">Sales - Truly Variable Costs</p>
+            <p className="text-xs text-green-600 mt-1">+12% vs last period</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Operating Expense ($OE)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">$85,000</p>
+            <p className="text-xs text-muted-foreground">Fixed + overhead costs</p>
+            <p className="text-xs text-red-600 mt-1">+3% vs last period</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Investment ($I)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">$450,000</p>
+            <p className="text-xs text-muted-foreground">Inventory + equipment</p>
+            <p className="text-xs text-orange-600 mt-1">-5% vs last period</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Net Profit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">$40,000</p>
+            <p className="text-xs text-muted-foreground">$T - $OE</p>
+            <p className="text-xs text-green-600 mt-1">+32% vs last period</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Throughput per Constraint Hour</CardTitle>
+            <CardDescription>Product profitability ranking</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium">Product A - Premium</p>
+                  <p className="text-xs text-muted-foreground">Constraint time: 0.5h/unit</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-green-600">$240/hour</p>
+                  <Badge variant="outline" className="text-xs">Priority 1</Badge>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium">Product C - Standard</p>
+                  <p className="text-xs text-muted-foreground">Constraint time: 0.3h/unit</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-green-600">$180/hour</p>
+                  <Badge variant="outline" className="text-xs">Priority 2</Badge>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-medium">Product B - Basic</p>
+                  <p className="text-xs text-muted-foreground">Constraint time: 0.8h/unit</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-orange-600">$95/hour</p>
+                  <Badge variant="outline" className="text-xs">Priority 3</Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Constraint Exploitation ROI</CardTitle>
+            <CardDescription>Investment options to increase throughput</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="p-3 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium">Add Weekend Shift</p>
+                  <Badge className="text-xs">320% ROI</Badge>
+                </div>
+                <div className="text-xs space-y-1">
+                  <p>Investment: $5,000/week</p>
+                  <p>Throughput gain: $16,000/week</p>
+                </div>
+              </div>
+
+              <div className="p-3 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium">Quick Changeover Kit</p>
+                  <Badge className="text-xs">185% ROI</Badge>
+                </div>
+                <div className="text-xs space-y-1">
+                  <p>Investment: $20,000 one-time</p>
+                  <p>Throughput gain: $3,000/week</p>
+                </div>
+              </div>
+
+              <div className="p-3 border rounded">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium">Quality Improvement</p>
+                  <Badge className="text-xs">150% ROI</Badge>
+                </div>
+                <div className="text-xs space-y-1">
+                  <p>Investment: $15,000</p>
+                  <p>Throughput gain: $2,250/week</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
