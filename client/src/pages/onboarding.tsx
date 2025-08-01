@@ -18,7 +18,7 @@ import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
   PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award, TrendingUp, ClipboardList,
-  Star, FileImage, Info, X
+  Star, FileImage, Info, X, Zap
 } from "lucide-react";
 
 interface OnboardingStep {
