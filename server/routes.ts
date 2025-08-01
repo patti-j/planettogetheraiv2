@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, checkDbHealth, getDbMetrics } from "./db";
 import * as schema from "@shared/schema";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -148,12 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         department: companyName
       });
 
-      // Create trial onboarding data
+      // Create trial onboarding data (removed primaryGoal field)
       await storage.createCompanyOnboarding({
         companyName: companyName,
         industry: "trial",
         size: "small",
-        primaryGoal: "trial-evaluation",
+        description: "Trial evaluation",
         features: ["production-scheduling"],
         completedSteps: ["welcome", "company", "features"],
         currentStep: "completed",
@@ -222,9 +222,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create demo session without database lookup
-      req.session.userId = demoUser.id;
-      req.session.isDemo = true;
-      req.session.demoRole = demoUser.role;
+      (req.session as any).userId = demoUser.id;
+      (req.session as any).isDemo = true;
+      (req.session as any).demoRole = demoUser.role;
       
       // Generate demo auth token
       const demoToken = `demo_${demoUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -19866,6 +19866,60 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     } catch (error) {
       console.error("Error fetching buffer alerts:", error);
       res.status(500).json({ error: "Failed to fetch buffer alerts" });
+    }
+  });
+
+  // Database monitoring and health endpoints
+  app.get("/api/system/db-health", requireAuth, async (req, res) => {
+    try {
+      const health = await checkDbHealth();
+      res.json(health);
+    } catch (error) {
+      console.error("DB health check error:", error);
+      res.status(500).json({ 
+        healthy: false, 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/system/db-metrics", requireAuth, async (req, res) => {
+    try {
+      const metrics = getDbMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("DB metrics error:", error);
+      res.status(500).json({ error: "Failed to fetch database metrics" });
+    }
+  });
+
+  // System performance monitoring endpoint
+  app.get("/api/system/performance", requireAuth, async (req, res) => {
+    try {
+      const memUsage = process.memoryUsage();
+      const cpuUsage = process.cpuUsage();
+      const uptime = process.uptime();
+      const dbHealth = await checkDbHealth();
+
+      res.json({
+        memory: {
+          rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB',
+          heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+          heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
+          external: Math.round(memUsage.external / 1024 / 1024) + ' MB',
+        },
+        cpu: {
+          user: cpuUsage.user,
+          system: cpuUsage.system,
+        },
+        uptime: Math.round(uptime),
+        database: dbHealth,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Performance monitoring error:", error);
+      res.status(500).json({ error: "Failed to fetch performance metrics" });
     }
   });
 
