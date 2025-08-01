@@ -301,72 +301,73 @@ export default function TableFieldViewer() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto p-6">
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
+      <div className="container mx-auto p-3 sm:p-6">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Database Table Field Viewer
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Database Schema Viewer
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Explore database table structures and manage field documentation for the manufacturing system.
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                Explore database table structures and manage field documentation.
               </p>
             </div>
             <Button
               onClick={handleDownloadExcel}
               disabled={tablesLoading || commentsLoading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
+              size="sm"
             >
               <Download className="h-4 w-4" />
-              Download Excel
+              <span className="sm:inline">Download Excel</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Table Selection Panel */}
           <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Database Tables ({filteredTables.length})
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Database className="h-4 w-4 sm:h-5 sm:w-5" />
+                Tables ({filteredTables.length})
               </CardTitle>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
                 Business tables available for Excel export: {getBusinessTables().length}
               </p>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search tables..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-9 sm:h-10 text-sm"
                   />
                 </div>
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-sm">
                     <SelectValue placeholder="Filter by category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Tables</SelectItem>
-                    <SelectItem value="production">Production & Operations</SelectItem>
-                    <SelectItem value="inventory">Inventory & Materials</SelectItem>
-                    <SelectItem value="quality">Quality & Testing</SelectItem>
+                    <SelectItem value="production">Production</SelectItem>
+                    <SelectItem value="inventory">Inventory</SelectItem>
+                    <SelectItem value="quality">Quality</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[600px]">
+            <CardContent className="pt-0">
+              <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px]">
                 <div className="space-y-2">
                   {tablesLoading ? (
-                    <div className="text-center py-4 text-gray-500">Loading tables...</div>
+                    <div className="text-center py-4 text-gray-500 text-sm">Loading tables...</div>
                   ) : (
                     filteredTables.map((table: TableInfo) => (
                       <div
                         key={table.name}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                        className={`p-2 sm:p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
                           selectedTable === table.name
                             ? "bg-blue-50 border-blue-200 dark:bg-blue-950"
                             : "bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700"
@@ -374,16 +375,16 @@ export default function TableFieldViewer() {
                         onClick={() => setSelectedTable(table.name)}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-900 dark:text-white text-sm sm:text-base truncate">
                               {table.name}
                             </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                               {table.columns.length} fields
                             </p>
                           </div>
                           {selectedTable === table.name && (
-                            <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 ml-2 flex-shrink-0" />
                           )}
                         </div>
                       </div>
@@ -396,75 +397,79 @@ export default function TableFieldViewer() {
 
           {/* Table Details Panel */}
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                {selectedTableData ? `Table: ${selectedTableData.name}` : "Select a table to view details"}
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="truncate">
+                  {selectedTableData ? `Table: ${selectedTableData.name}` : "Select a table to view details"}
+                </span>
               </CardTitle>
               {selectedTableData?.comment && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2">
                   {selectedTableData.comment}
                 </p>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {!selectedTableData ? (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Select a table from the left panel to view its field details</p>
+                <div className="text-center py-8 sm:py-12 text-gray-500 dark:text-gray-400">
+                  <Database className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm sm:text-base">Select a table from the left panel to view its field details</p>
                 </div>
               ) : (
                 <Tabs defaultValue="fields" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="fields">Field Details</TabsTrigger>
-                    <TabsTrigger value="relationships">Relationships</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10">
+                    <TabsTrigger value="fields" className="text-xs sm:text-sm">Field Details</TabsTrigger>
+                    <TabsTrigger value="relationships" className="text-xs sm:text-sm">Relationships</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="fields" className="space-y-4">
+                  <TabsContent value="fields" className="space-y-3 sm:space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-base sm:text-lg font-semibold">
                         Fields ({selectedTableData.columns.length})
                       </h3>
                     </div>
                     
-                    <ScrollArea className="h-[500px]">
-                      <div className="space-y-4">
+                    <ScrollArea className="h-[300px] sm:h-[400px] lg:h-[500px]">
+                      <div className="space-y-3 sm:space-y-4">
                         {selectedTableData.columns.map((column: TableColumn) => (
                           <Card key={column.name} className="border border-gray-200 dark:border-gray-700">
-                            <CardContent className="p-4">
-                              <div className="space-y-3">
+                            <CardContent className="p-3 sm:p-4">
+                              <div className="space-y-2 sm:space-y-3">
                                 {/* Field Header */}
-                                <div className="flex items-start justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1 sm:gap-2 mb-2">
                                       {column.isPrimaryKey && (
-                                        <Key className="h-4 w-4 text-yellow-600" title="Primary Key" />
+                                        <Key className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 flex-shrink-0" title="Primary Key" />
                                       )}
-                                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
                                         {column.name}
                                       </h4>
                                     </div>
-                                    <Badge className={getTypeBadgeColor(column.type)}>
-                                      {column.type}
-                                    </Badge>
-                                    {!column.nullable && (
-                                      <Badge variant="destructive" className="text-xs">
-                                        NOT NULL
+                                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                                      <Badge className={`${getTypeBadgeColor(column.type)} text-xs`}>
+                                        {column.type}
                                       </Badge>
-                                    )}
+                                      {!column.nullable && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          NOT NULL
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleEditComment(selectedTableData.name, column.name)}
-                                    className="h-8 w-8 p-0"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0 flex-shrink-0"
                                   >
-                                    <Edit3 className="h-4 w-4" />
+                                    <Edit3 className="h-3 w-3 sm:h-4 sm:w-4" />
                                   </Button>
                                 </div>
 
                                 {/* Field Details */}
-                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                                   <div>
                                     <span className="text-gray-500 dark:text-gray-400">Nullable:</span>
                                     <span className="ml-2 font-medium">
@@ -480,9 +485,9 @@ export default function TableFieldViewer() {
                                     </div>
                                   )}
                                   {column.isForeignKey && column.references && (
-                                    <div className="col-span-2">
+                                    <div className="sm:col-span-2">
                                       <span className="text-gray-500 dark:text-gray-400">References:</span>
-                                      <span className="ml-2 font-medium text-blue-600 dark:text-blue-400">
+                                      <span className="ml-2 font-medium text-blue-600 dark:text-blue-400 break-all">
                                         {column.references}
                                       </span>
                                     </div>
@@ -494,28 +499,29 @@ export default function TableFieldViewer() {
                                 {/* Field Comment */}
                                 <div>
                                   <div className="flex items-center gap-2 mb-2">
-                                    <Info className="h-4 w-4 text-gray-500" />
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <Info className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                                    <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                                       Field Description
                                     </span>
                                   </div>
                                   
                                   {editingField === `${selectedTableData.name}.${column.name}` ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2 sm:space-y-3">
                                       <Textarea
                                         value={editComment}
                                         onChange={(e) => setEditComment(e.target.value)}
                                         placeholder="Add a helpful description for this field..."
                                         rows={3}
-                                        className="resize-none"
+                                        className="resize-none text-sm"
                                       />
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                         <Button
                                           size="sm"
                                           onClick={handleSaveComment}
                                           disabled={updateCommentMutation.isPending}
+                                          className="w-full sm:w-auto"
                                         >
-                                          <Save className="h-4 w-4 mr-1" />
+                                          <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                           Save
                                         </Button>
                                         <Button
@@ -525,24 +531,25 @@ export default function TableFieldViewer() {
                                             setEditingField(null);
                                             setEditComment("");
                                           }}
+                                          className="w-full sm:w-auto"
                                         >
-                                          <X className="h-4 w-4 mr-1" />
+                                          <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                           Cancel
                                         </Button>
                                       </div>
                                     </div>
                                   ) : (
                                     <div
-                                      className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                      className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                       onClick={() => handleEditComment(selectedTableData.name, column.name)}
                                     >
                                       {getFieldComment(selectedTableData.name, column.name) ? (
-                                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                                        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                                           {getFieldComment(selectedTableData.name, column.name)}
                                         </p>
                                       ) : (
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                                          Click to add field description...
+                                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic">
+                                          Tap to add field description...
                                         </p>
                                       )}
                                     </div>
@@ -556,18 +563,18 @@ export default function TableFieldViewer() {
                     </ScrollArea>
                   </TabsContent>
                   
-                  <TabsContent value="relationships" className="space-y-4">
-                    <h3 className="text-lg font-semibold">Table Relationships</h3>
-                    <div className="space-y-3">
+                  <TabsContent value="relationships" className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-semibold">Table Relationships</h3>
+                    <div className="space-y-2 sm:space-y-3">
                       {selectedTableData.columns
                         .filter(col => col.isForeignKey && col.references)
                         .map((column: TableColumn) => (
-                          <Card key={column.name} className="p-4">
-                            <div className="flex items-center gap-3">
-                              <Key className="h-4 w-4 text-blue-600" />
-                              <div>
-                                <p className="font-medium">{column.name}</p>
-                                <p className="text-sm text-gray-500">
+                          <Card key={column.name} className="p-3 sm:p-4">
+                            <div className="flex items-start gap-2 sm:gap-3">
+                              <Key className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 mt-1 flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm sm:text-base truncate">{column.name}</p>
+                                <p className="text-xs sm:text-sm text-gray-500 break-all">
                                   References: <span className="font-mono text-blue-600">{column.references}</span>
                                 </p>
                               </div>
@@ -575,7 +582,7 @@ export default function TableFieldViewer() {
                           </Card>
                         ))}
                       {selectedTableData.columns.filter(col => col.isForeignKey).length === 0 && (
-                        <p className="text-gray-500 text-center py-8">
+                        <p className="text-gray-500 text-center py-6 sm:py-8 text-sm sm:text-base">
                           No foreign key relationships found in this table.
                         </p>
                       )}
