@@ -6295,26 +6295,6 @@ Manufacturing Context Available:
 
   // User Management API Routes
 
-  // Authentication
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      if (!username || !password) {
-        return res.status(400).json({ error: "Username and password are required" });
-      }
-
-      const user = await storage.authenticateUser(username, password);
-      if (!user) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      res.json(user);
-    } catch (error) {
-      console.error("Error during authentication:", error);
-      res.status(500).json({ error: "Failed to authenticate user" });
-    }
-  });
-
   // Users
   app.get("/api/users", async (req, res) => {
     try {
