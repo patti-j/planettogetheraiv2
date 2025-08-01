@@ -1560,7 +1560,7 @@ export interface IStorage {
   getAlgorithmFeedbackVoteCounts(feedbackId: number): Promise<{ upvotes: number; downvotes: number }>;
 }
 
-export class MemStorage implements IStorage {
+export class MemStorage implements Partial<IStorage> {
   private capabilities: Map<number, Capability> = new Map();
   private resources: Map<number, Resource> = new Map();
   private jobs: Map<number, ProductionOrder> = new Map();
@@ -1644,14 +1644,74 @@ export class MemStorage implements IStorage {
     ];
 
     sampleJobs.forEach(jobData => {
-      const job: Job = {
+      const job: ProductionOrder = {
         id: this.currentJobId++,
+        orderNumber: `PO-${Date.now()}`,
         name: jobData.name,
-        customer: jobData.customer,
         description: jobData.description,
+        customerId: null,
+        parentOrderId: null,
+        orderCategory: "normal",
         priority: jobData.priority,
         status: jobData.status,
+        quantity: "1",
         dueDate: jobData.dueDate,
+        scheduledStartDate: null,
+        scheduledEndDate: null,
+        actualStartDate: null,
+        actualEndDate: null,
+        itemNumber: null,
+        salesOrderId: null,
+        productionVersionId: null,
+        plantId: 1,
+        wipValue: "0",
+        actualLaborHours: "0",
+        actualMaterialCost: "0",
+        actualOverheadCost: "0",
+        standardCost: "0",
+        costVariance: "0",
+        laborRateVariance: "0",
+        materialPriceVariance: "0",
+        yieldQuantity: "0",
+        scrapQuantity: "0",
+        reworkQuantity: "0",
+        goodQuantity: "0",
+        yieldPercentage: "0",
+        scrapPercentage: "0",
+        reworkPercentage: "0",
+        qualityGrade: "A",
+        setupTimePlanned: "0",
+        setupTimeActual: "0",
+        runTimePlanned: "0",
+        runTimeActual: "0",
+        cleanupTimePlanned: "0",
+        cleanupTimeActual: "0",
+        totalTimePlanned: "0",
+        totalTimeActual: "0",
+        batchNumber: null,
+        lotNumber: null,
+        campaignNumber: null,
+        productionLine: null,
+        shiftNumber: null,
+        operatorId: null,
+        supervisorId: null,
+        equipmentUsed: [],
+        completionPercentage: "0",
+        lastOperationCompletedId: null,
+        nextOperationDueId: null,
+        bottleneckResourceId: null,
+        downtimeMinutes: "0",
+        efficiencyPercentage: "100",
+        oeePercentage: "0",
+        firstPassYield: "0",
+        inspectionStatus: "pending",
+        certificateOfAnalysis: {},
+        deviationReports: [],
+        correctiveActions: [],
+        batchRecordComplete: false,
+        releaseApproved: false,
+        releaseApprovedBy: null,
+        releaseDate: null,
         createdAt: new Date(),
       };
       this.jobs.set(job.id, job);

@@ -4782,6 +4782,8 @@ export const extensionReviews = pgTable("extension_reviews", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+
+
 // Algorithm Feedback System - User feedback on algorithm performance for continuous improvement
 export const algorithmFeedback = pgTable("algorithm_feedback", {
   id: serial("id").primaryKey(),
@@ -5356,14 +5358,7 @@ export const profileUsageHistory = pgTable("profile_usage_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Extension Studio Insert Schemas
-export const insertExtensionSchema = createInsertSchema(extensions).omit({
-  id: true,
-  installCount: true,
-  rating: true,
-  lastUpdated: true,
-  createdAt: true,
-});
+
 
 // Optimization Studio Insert Schemas
 export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms).omit({
