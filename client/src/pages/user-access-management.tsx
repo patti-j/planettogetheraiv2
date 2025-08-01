@@ -629,22 +629,23 @@ export default function UserAccessManagementPage() {
                       Add User
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Create New User</DialogTitle>
                       <DialogDescription>Add a new user to the system</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
                         <Label htmlFor="username">Username</Label>
                         <Input
                           id="username"
                           value={newUserData.username}
                           onChange={(e) => setNewUserData({...newUserData, username: e.target.value})}
                           placeholder="johndoe"
+                          className="w-full"
                         />
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
@@ -652,29 +653,32 @@ export default function UserAccessManagementPage() {
                           value={newUserData.email}
                           onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
                           placeholder="john@example.com"
+                          className="w-full"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
                           <Input
                             id="firstName"
                             value={newUserData.firstName}
                             onChange={(e) => setNewUserData({...newUserData, firstName: e.target.value})}
                             placeholder="John"
+                            className="w-full"
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="lastName">Last Name</Label>
                           <Input
                             id="lastName"
                             value={newUserData.lastName}
                             onChange={(e) => setNewUserData({...newUserData, lastName: e.target.value})}
                             placeholder="Doe"
+                            className="w-full"
                           />
                         </div>
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
                         <Input
                           id="password"
@@ -682,13 +686,14 @@ export default function UserAccessManagementPage() {
                           value={newUserData.password}
                           onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
                           placeholder="••••••••"
+                          className="w-full"
                         />
                       </div>
-                      <div>
+                      <div className="space-y-2">
                         <Label>Assign Roles</Label>
-                        <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+                        <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
                           {roles.map((role) => (
-                            <label key={role.id} className="flex items-center space-x-2 cursor-pointer">
+                            <label key={role.id} className="flex items-start space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
                               <Checkbox
                                 checked={newUserData.roleIds.includes(role.id)}
                                 onCheckedChange={(checked) => {
@@ -698,15 +703,21 @@ export default function UserAccessManagementPage() {
                                     setNewUserData({...newUserData, roleIds: newUserData.roleIds.filter(id => id !== role.id)});
                                   }
                                 }}
+                                className="mt-0.5"
                               />
-                              <span className="text-sm">{role.name}</span>
+                              <div className="flex-1">
+                                <span className="text-sm font-medium">{role.name}</span>
+                                {role.description && (
+                                  <p className="text-xs text-gray-500 mt-0.5">{role.description.slice(0, 50)}...</p>
+                                )}
+                              </div>
                             </label>
                           ))}
                         </div>
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setNewUserDialog(false)}>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                      <Button variant="outline" onClick={() => setNewUserDialog(false)} className="w-full sm:w-auto">
                         Cancel
                       </Button>
                       <Button onClick={() => {
@@ -719,7 +730,7 @@ export default function UserAccessManagementPage() {
                             variant: "destructive"
                           });
                         }
-                      }}>
+                      }} className="w-full sm:w-auto">
                         Create User
                       </Button>
                     </DialogFooter>
@@ -1262,42 +1273,44 @@ export default function UserAccessManagementPage() {
 
       {/* View User Dialog */}
       <Dialog open={viewUserDialog} onOpenChange={setViewUserDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>View detailed information about this user</DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
                   <Label className="text-sm text-muted-foreground">Username</Label>
                   <p className="font-medium">{selectedUser.username}</p>
                 </div>
-                <div>
+                <div className="space-y-1">
                   <Label className="text-sm text-muted-foreground">Status</Label>
-                  <Badge className={selectedUser.isActive ? 'bg-green-500' : 'bg-gray-500'}>
-                    {selectedUser.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  <div>
+                    <Badge className={selectedUser.isActive ? 'bg-green-500' : 'bg-gray-500'}>
+                      {selectedUser.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
                 </div>
               </div>
-              <div>
+              <div className="space-y-1">
                 <Label className="text-sm text-muted-foreground">Email</Label>
-                <p className="font-medium">{selectedUser.email}</p>
+                <p className="font-medium break-all">{selectedUser.email}</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
                   <Label className="text-sm text-muted-foreground">First Name</Label>
                   <p className="font-medium">{selectedUser.firstName || 'Not set'}</p>
                 </div>
-                <div>
+                <div className="space-y-1">
                   <Label className="text-sm text-muted-foreground">Last Name</Label>
                   <p className="font-medium">{selectedUser.lastName || 'Not set'}</p>
                 </div>
               </div>
-              <div>
+              <div className="space-y-1">
                 <Label className="text-sm text-muted-foreground">Roles</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-2 mt-1">
                   {selectedUser.roles?.map((role) => (
                     <Badge key={role.id} variant="outline">
                       {role.name}
@@ -1305,22 +1318,24 @@ export default function UserAccessManagementPage() {
                   )) || <span className="text-gray-400">No roles assigned</span>}
                 </div>
               </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Last Login</Label>
-                <p className="font-medium">
-                  {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleString() : 'Never'}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm text-muted-foreground">Created</Label>
-                <p className="font-medium">
-                  {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}
-                </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-sm text-muted-foreground">Last Login</Label>
+                  <p className="font-medium text-sm">
+                    {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleString() : 'Never'}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-sm text-muted-foreground">Created</Label>
+                  <p className="font-medium text-sm">
+                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewUserDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setViewUserDialog(false)} className="w-full sm:w-auto">
               Close
             </Button>
           </DialogFooter>
@@ -1329,54 +1344,58 @@ export default function UserAccessManagementPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserDialog} onOpenChange={setEditUserDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Update user information and role assignments</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
               <Label htmlFor="edit-username">Username</Label>
               <Input
                 id="edit-username"
                 value={editUserData.username}
                 onChange={(e) => setEditUserData({...editUserData, username: e.target.value})}
+                className="w-full"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="edit-email">Email</Label>
               <Input
                 id="edit-email"
                 type="email"
                 value={editUserData.email}
                 onChange={(e) => setEditUserData({...editUserData, email: e.target.value})}
+                className="w-full"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="edit-firstName">First Name</Label>
                 <Input
                   id="edit-firstName"
                   value={editUserData.firstName}
                   onChange={(e) => setEditUserData({...editUserData, firstName: e.target.value})}
+                  className="w-full"
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="edit-lastName">Last Name</Label>
                 <Input
                   id="edit-lastName"
                   value={editUserData.lastName}
                   onChange={(e) => setEditUserData({...editUserData, lastName: e.target.value})}
+                  className="w-full"
                 />
               </div>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="edit-status">Status</Label>
               <Select 
                 value={editUserData.isActive ? 'active' : 'inactive'} 
                 onValueChange={(value) => setEditUserData({...editUserData, isActive: value === 'active'})}
               >
-                <SelectTrigger id="edit-status">
+                <SelectTrigger id="edit-status" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1385,11 +1404,11 @@ export default function UserAccessManagementPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Assign Roles</Label>
-              <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+              <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
                 {roles.map((role) => (
-                  <label key={role.id} className="flex items-center space-x-2 cursor-pointer">
+                  <label key={role.id} className="flex items-start space-x-3 cursor-pointer p-2 hover:bg-gray-50 rounded">
                     <Checkbox
                       checked={editUserData.roleIds.includes(role.id)}
                       onCheckedChange={(checked) => {
@@ -1399,18 +1418,24 @@ export default function UserAccessManagementPage() {
                           setEditUserData({...editUserData, roleIds: editUserData.roleIds.filter(id => id !== role.id)});
                         }
                       }}
+                      className="mt-0.5"
                     />
-                    <span className="text-sm">{role.name}</span>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium">{role.name}</span>
+                      {role.description && (
+                        <p className="text-xs text-gray-500 mt-0.5">{role.description.slice(0, 50)}...</p>
+                      )}
+                    </div>
                   </label>
                 ))}
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditUserDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setEditUserDialog(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={() => updateUserMutation.mutate(editUserData)}>
+            <Button onClick={() => updateUserMutation.mutate(editUserData)} className="w-full sm:w-auto">
               Save Changes
             </Button>
           </DialogFooter>
