@@ -673,6 +673,41 @@ export default function OnboardingPage() {
               <CardDescription>
                 Tell us about your company so we can customize your experience
               </CardDescription>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4 border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={() => {
+                  // Fill in test data
+                  const testData = {
+                    name: 'Acme Manufacturing Corp',
+                    industry: 'pharmaceutical',
+                    size: '100-500',
+                    description: 'Leading pharmaceutical manufacturer specializing in generic drugs and innovative formulations',
+                    website: 'https://acme-pharma.com',
+                    numberOfPlants: '5',
+                    products: 'Tablets, Capsules, Injectables, Suspensions, APIs'
+                  };
+                  saveCompanyInfo(testData);
+                  
+                  // Pre-select features for testing
+                  setSelectedFeatures([
+                    'production-planning',
+                    'inventory-management',
+                    'quality-control',
+                    'supply-chain',
+                    'ai-optimization'
+                  ]);
+                  
+                  toast({
+                    title: "Test Data Filled",
+                    description: "Test company information has been populated. You can modify it as needed.",
+                  });
+                }}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Fill Test Data
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
