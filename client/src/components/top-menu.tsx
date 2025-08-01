@@ -336,11 +336,7 @@ export default function TopMenu() {
                 {/* User Profile Section */}
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
-                    <TrainingModeExit />
                     <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
-                    {hasPermission('training', 'view') && (
-                      <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
-                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Avatar 
