@@ -396,8 +396,11 @@ export default function TopMenu() {
                 {/* Role switching controls on the right */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
                   <TrainingModeExit />
+                  {/* Show assigned role switcher for users with multiple assigned roles */}
                   <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
-                  {hasPermission('training', 'view') && (
+                  {/* Show training role switcher only when in training mode and has training permissions */}
+                  {hasPermission('training', 'view') && assignedRoles && currentRole && 
+                   !assignedRoles.some((r: any) => r.id === currentRole.id) && (
                     <RoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   )}
                 </div>

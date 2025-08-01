@@ -85,12 +85,19 @@ export function TrainingModeExit() {
     return null;
   }
 
-  // Check if user is in training mode (has trainer/systems manager roles but is currently in a different role)
+  // Check if user is in training mode 
+  // Training mode = user has trainer/systems manager roles AND current role is NOT one of their assigned roles
   const isTrainer = Array.isArray(assignedRoles) && assignedRoles.some((role: any) => role.name === 'Trainer');
   const isSystemsManager = Array.isArray(assignedRoles) && assignedRoles.some((role: any) => role.name === 'Systems Manager');
-  const isInTrainingMode = (isTrainer || isSystemsManager) && 
-                          currentRole.name !== 'Trainer' && 
-                          currentRole.name !== 'Systems Manager';
+  
+  // Check if current role is one of user's assigned roles
+  const isInAssignedRole = Array.isArray(assignedRoles) && 
+                          assignedRoles.some((role: any) => role.id === currentRole.id);
+  
+  // Only in training mode if:
+  // 1. User has trainer/systems manager permissions AND
+  // 2. Current role is NOT one of their assigned roles (i.e., they're demonstrating another role)
+  const isInTrainingMode = (isTrainer || isSystemsManager) && !isInAssignedRole;
 
   // Only show if in training mode
   if (!isInTrainingMode) {
