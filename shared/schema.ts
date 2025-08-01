@@ -107,14 +107,14 @@ export const productionOrders = pgTable("production_orders", {
   campaignNumber: text("campaign_number"),
   productionLine: text("production_line"),
   shiftNumber: text("shift_number"),
-  operatorId: integer("operator_id").references(() => users.id),
-  supervisorId: integer("supervisor_id").references(() => users.id),
+  operatorId: integer("operator_id"), // Will be FK to users.id when users table is defined
+  supervisorId: integer("supervisor_id"), // Will be FK to users.id when users table is defined
   equipmentUsed: jsonb("equipment_used").$type<string[]>().default([]),
   
   // Production tracking
   completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
-  lastOperationCompletedId: integer("last_operation_completed_id").references(() => discreteOperations.id),
-  nextOperationDueId: integer("next_operation_due_id").references(() => discreteOperations.id),
+  lastOperationCompletedId: integer("last_operation_completed_id"), // Will be FK to discrete_operations.id when table is defined
+  nextOperationDueId: integer("next_operation_due_id"), // Will be FK to discrete_operations.id when table is defined
   bottleneckResourceId: integer("bottleneck_resource_id").references(() => resources.id), // Also converting bottleneck from text to FK
   downtimeMinutes: numeric("downtime_minutes", { precision: 8, scale: 2 }).default("0"),
   efficiencyPercentage: numeric("efficiency_percentage", { precision: 5, scale: 2 }).default("100"),
@@ -128,7 +128,7 @@ export const productionOrders = pgTable("production_orders", {
   correctiveActions: text("corrective_actions").array().default([]),
   batchRecordComplete: boolean("batch_record_complete").default(false),
   releaseApproved: boolean("release_approved").default(false),
-  releaseApprovedBy: integer("release_approved_by").references(() => users.id),
+  releaseApprovedBy: integer("release_approved_by"), // Will be FK to users.id when users table is defined
   releaseDate: timestamp("release_date"),
   
   createdAt: timestamp("created_at").defaultNow(),
