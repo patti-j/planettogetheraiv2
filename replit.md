@@ -39,7 +39,7 @@ Multiple users working on project:
 - **Manufacturing Hierarchy**: SAP-compliant production version architecture linking BOMs/Recipes to production orders through production versions.
 - **Inventory Management**: Stock-centric system where transfers, materials, production outputs, purchases, sales, and forecasting all track specific stock records.
 - **Master Data Management**: Unified interface for importing, entering, and templating all master data types. Includes AI-powered modification and data validation.
-- **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms (backwards, planned order generator) with configurable profiles, trade-off analysis, and resource requirements.
+- **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms (backwards, planned order generator) with configurable profiles, trade-off analysis, resource requirements, and constraints management (Theory of Constraints/TOC implementation).
 - **Dashboarding & Analytics**: Universal widget design studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views.
 - **Role-Based Access Control**: Granular permission system for all features and routes, integrated with demo roles and training mode. System roles can be edited (as of July 31, 2025).
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, and comprehensive error handling.

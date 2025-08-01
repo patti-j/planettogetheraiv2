@@ -40,7 +40,8 @@ const featureGroups = [
       { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" },
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
-      { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" }
+      { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" },
+      { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" }
     ]
   },
   {
@@ -105,7 +106,6 @@ const featureGroups = [
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: ArrowRightLeft, label: "Data Relationships", href: "/data-relationships", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", feature: "systems-management", action: "view", color: "bg-slate-600" },
-      { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "systems-management", action: "view", color: "bg-orange-600" },
       { icon: FileX, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" }
     ]
   },
