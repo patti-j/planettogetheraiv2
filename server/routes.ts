@@ -20029,6 +20029,91 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Phase 1 Step 4: Query Optimization & Performance Monitoring Endpoints
+  app.get("/api/system/query-performance", requireAuth, async (req, res) => {
+    try {
+      const { getQueryOptimizationStats } = await import('./query-optimizer.js');
+      const stats = getQueryOptimizationStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Query performance stats failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/system/database-indexes", requireAuth, async (req, res) => {
+    try {
+      const { IndexOptimizer } = await import('./query-optimizer.js');
+      const analysis = await IndexOptimizer.analyzeTablePerformance();
+      res.json({
+        status: 'optimized',
+        implementation: 'Phase 1 Step 4 - Database Indexing',
+        analysis,
+        features: [
+          'Strategic index creation',
+          'Table performance analysis',
+          'Index usage monitoring',
+          'Query optimization patterns'
+        ],
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Database indexes analysis failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/system/performance-benchmark", requireAuth, async (req, res) => {
+    try {
+      const { PerformanceBenchmark } = await import('./query-optimizer.js');
+      const benchmark = await PerformanceBenchmark.runBenchmark();
+      res.json({
+        status: 'benchmarked',
+        implementation: 'Phase 1 Step 4 - Performance Analysis',
+        benchmark,
+        features: [
+          'Connection performance testing',
+          'Index efficiency analysis',
+          'Query performance benchmarks',
+          'Overall system health metrics'
+        ],
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Performance benchmark failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.post("/api/system/optimize-indexes", requireAuth, async (req, res) => {
+    try {
+      const { IndexOptimizer } = await import('./query-optimizer.js');
+      const results = await IndexOptimizer.createOptimalIndexes();
+      res.json({
+        status: 'optimization-complete',
+        implementation: 'Phase 1 Step 4 - Index Optimization',
+        results,
+        message: `Created ${results.created.length} new indexes, ${results.skipped.length} already existed`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Index optimization failed:', error);
+      res.status(500).json({
+        error: String(error),
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
