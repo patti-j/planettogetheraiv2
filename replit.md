@@ -25,6 +25,12 @@ Multiple users working on project:
 - JC = Jim
 - PJ = Patti
 
+Note on concurrent work (August 1, 2025):
+- Jim and Patti work on different issues concurrently
+- Each conversation/thread is independent - I don't retain context between different sessions
+- Best practice: Start each request with your name/initials for clarity
+- If continuing previous work, briefly mention what was done before
+
 ## System Architecture
 
 ### Frontend Architecture
