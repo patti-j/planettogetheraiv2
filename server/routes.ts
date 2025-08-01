@@ -10833,8 +10833,8 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid user ID" });
       }
 
-      const { avatar, jobTitle, department, phoneNumber } = req.body;
-      const profile = { avatar, jobTitle, department, phoneNumber };
+      const { avatar, firstName, lastName, email, username, jobTitle, department, phoneNumber } = req.body;
+      const profile = { avatar, firstName, lastName, email, username, jobTitle, department, phoneNumber };
 
       const updatedUser = await storage.updateUserProfile(userId, profile);
       if (!updatedUser) {

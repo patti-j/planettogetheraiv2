@@ -567,6 +567,10 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
 
     const data = {
       avatar: avatarData,
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      username: formData.get('username') as string,
       jobTitle: formData.get('jobTitle') as string,
       department: formData.get('department') as string,
       phoneNumber: formData.get('phoneNumber') as string,
@@ -727,12 +731,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                           id="firstName"
                           name="firstName"
                           defaultValue={profile?.firstName}
-                          readOnly
-                          className="bg-gray-50"
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Contact your system administrator to change your name
-                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -741,8 +740,6 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                           id="lastName"
                           name="lastName"
                           defaultValue={profile?.lastName}
-                          readOnly
-                          className="bg-gray-50"
                         />
                       </div>
 
@@ -753,8 +750,6 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                           name="email"
                           type="email"
                           defaultValue={profile?.email}
-                          readOnly
-                          className="bg-gray-50"
                         />
                       </div>
 
@@ -764,8 +759,6 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                           id="username"
                           name="username"
                           defaultValue={profile?.username}
-                          readOnly
-                          className="bg-gray-50"
                         />
                       </div>
 

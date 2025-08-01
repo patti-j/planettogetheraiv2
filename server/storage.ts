@@ -5295,7 +5295,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Profile Operations
-  async updateUserProfile(userId: number, profile: { avatar?: string; jobTitle?: string; department?: string; phoneNumber?: string; }): Promise<User | undefined> {
+  async updateUserProfile(userId: number, profile: { 
+    avatar?: string; 
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    username?: string;
+    jobTitle?: string; 
+    department?: string; 
+    phoneNumber?: string; 
+  }): Promise<User | undefined> {
     const [updatedUser] = await db
       .update(users)
       .set({ 
