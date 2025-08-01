@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="#3B82F6" rx="4"/>
+  <path d="M8 24V12L12 8V12L16 10V14L20 12V16L24 14V24H8Z" fill="white"/>
+  <rect x="10" y="16" width="3" height="3" fill="#3B82F6"/>
+  <rect x="14.5" y="16" width="3" height="3" fill="#3B82F6"/>
+  <rect x="19" y="16" width="3" height="3" fill="#3B82F6"/>
+  <rect x="10" y="20" width="3" height="4" fill="#3B82F6"/>
+  <rect x="14.5" y="20" width="3" height="4" fill="#3B82F6"/>
+  <rect x="19" y="20" width="3" height="4" fill="#3B82F6"/>
+</svg>
