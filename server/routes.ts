@@ -19397,7 +19397,7 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
 
   // ==================== DRUM MANAGEMENT ENDPOINTS ====================
   
-  // Update resource drum designation
+  // Update resource drum designation (legacy endpoint)
   app.patch("/api/resources/:id/drum", requireAuth, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
@@ -19417,8 +19417,44 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // ==================== TOC ENDPOINTS ====================
+  
+  // Get current drums
+  app.get("/api/toc/drums", requireAuth, async (req, res) => {
+    try {
+      const drums = await storage.getDrumResources();
+      res.json(drums);
+    } catch (error) {
+      console.error("Error fetching drums:", error);
+      res.status(500).json({ error: "Failed to fetch drums" });
+    }
+  });
+
+  // Designate resource as drum
+  app.post("/api/toc/drums/designate", requireAuth, async (req, res) => {
+    try {
+      const { resourceId, drumType, reason } = req.body;
+      
+      if (!resourceId || !drumType) {
+        return res.status(400).json({ error: "resourceId and drumType are required" });
+      }
+      
+      const drum = await storage.designateResourceAsDrum(
+        resourceId, 
+        drumType, 
+        reason, 
+        req.user?.id || 1
+      );
+      
+      res.json(drum);
+    } catch (error) {
+      console.error("Error designating drum:", error);
+      res.status(500).json({ error: "Failed to designate drum" });
+    }
+  });
+
   // Get drum analysis history
-  app.get("/api/drum-analysis", requireAuth, async (req, res) => {
+  app.get("/api/toc/drums/history", requireAuth, async (req, res) => {
     try {
       const analysis = await storage.getDrumAnalysisHistory();
       res.json(analysis);
@@ -19429,6 +19465,101 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
   });
 
   // Run automated drum analysis
+  app.post("/api/toc/drums/analyze", requireAuth, async (req, res) => {
+    try {
+      const results = await storage.runDrumAnalysis();
+      res.json(results);
+    } catch (error) {
+      console.error("Error running drum analysis:", error);
+      res.status(500).json({ error: "Failed to run drum analysis" });
+    }
+  });
+
+  // ==================== TOC BUFFERS ====================
+  
+  // Get buffers
+  app.get("/api/toc/buffers", requireAuth, async (req, res) => {
+    try {
+      const { bufferType, bufferCategory, isActive } = req.query;
+      const buffers = await storage.getBufferDefinitions(
+        bufferType as string,
+        bufferCategory as string,
+        isActive !== undefined ? isActive === 'true' : undefined
+      );
+      res.json(buffers);
+    } catch (error) {
+      console.error("Error fetching buffers:", error);
+      res.status(500).json({ error: "Failed to fetch buffers" });
+    }
+  });
+
+  // Create buffer
+  app.post("/api/toc/buffers", requireAuth, async (req, res) => {
+    try {
+      const bufferData = {
+        ...req.body,
+        createdBy: req.user?.id || 1
+      };
+      const buffer = await storage.createBufferDefinition(bufferData);
+      res.status(201).json(buffer);
+    } catch (error) {
+      console.error("Error creating buffer:", error);
+      res.status(500).json({ error: "Failed to create buffer" });
+    }
+  });
+
+  // Update buffer
+  app.patch("/api/toc/buffers/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const bufferData = {
+        ...req.body,
+        updatedBy: req.user?.id || 1
+      };
+      const buffer = await storage.updateBufferDefinition(id, bufferData);
+      
+      if (!buffer) {
+        return res.status(404).json({ error: "Buffer not found" });
+      }
+      
+      res.json(buffer);
+    } catch (error) {
+      console.error("Error updating buffer:", error);
+      res.status(500).json({ error: "Failed to update buffer" });
+    }
+  });
+
+  // Delete buffer
+  app.delete("/api/toc/buffers/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteBufferDefinition(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Buffer not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buffer:", error);
+      res.status(500).json({ error: "Failed to delete buffer" });
+    }
+  });
+
+  // ==================== LEGACY DRUM ENDPOINTS ====================
+
+  // Get drum analysis history (legacy)
+  app.get("/api/drum-analysis", requireAuth, async (req, res) => {
+    try {
+      const analysis = await storage.getDrumAnalysisHistory();
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching drum analysis:", error);
+      res.status(500).json({ error: "Failed to fetch drum analysis" });
+    }
+  });
+
+  // Run automated drum analysis (legacy)
   app.post("/api/drum-analysis/run", requireAuth, async (req, res) => {
     try {
       const results = await storage.runDrumAnalysis();

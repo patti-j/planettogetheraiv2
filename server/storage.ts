@@ -748,6 +748,8 @@ export interface IStorage {
       recommendation: string;
     }>;
   }>;
+  getDrumResources(): Promise<any[]>;
+  designateResourceAsDrum(resourceId: number, drumType: string, reason?: string, userId?: number): Promise<any>;
   
   // TOC Buffer Management
   // Buffer Definitions
@@ -12858,6 +12860,79 @@ export class DatabaseStorage implements IStorage {
       identified: drumsIdentified,
       updated: drumsUpdated,
       recommendations: recommendations.sort((a, b) => b.score - a.score).slice(0, 10)
+    };
+  }
+
+  async getDrumResources(): Promise<any[]> {
+    // Get all resources that are designated as drums
+    const drumResources = await db
+      .select({
+        id: resources.id,
+        resourceId: resources.id,
+        resourceName: resources.name,
+        isDrum: resources.isDrum,
+        isManual: sql`true`.as('isManual'), // Assume manual unless specified otherwise
+        drumType: sql`'primary'`.as('drumType'), // Default type
+        designatedAt: resources.drumUpdatedAt,
+        designatedBy: sql`1`.as('designatedBy'), // Default user
+        reason: sql`'Manual designation'`.as('reason'),
+        utilization: sql`COALESCE(${resources.utilization}, 0)`.as('utilization')
+      })
+      .from(resources)
+      .where(eq(resources.isDrum, true));
+
+    return drumResources;
+  }
+
+  async designateResourceAsDrum(resourceId: number, drumType: string, reason?: string, userId?: number): Promise<any> {
+    // Update the resource as a drum
+    const [updatedResource] = await db
+      .update(resources)
+      .set({ 
+        isDrum: true,
+        drumUpdatedAt: new Date(),
+        drumUpdatedBy: 'User'
+      })
+      .where(eq(resources.id, resourceId))
+      .returning();
+
+    if (!updatedResource) {
+      throw new Error('Resource not found');
+    }
+
+    // Record the drum designation in history
+    await db.insert(drumAnalysisHistory).values({
+      analysisType: 'manual',
+      resourcesAnalyzed: 1,
+      drumsIdentified: 1,
+      drumsUpdated: 1,
+      analysisMetrics: {
+        resourceId,
+        resourceName: updatedResource.name,
+        drumType,
+        reason: reason || 'Manual designation',
+        designatedBy: userId || 1
+      },
+      recommendations: [{
+        resourceId,
+        resourceName: updatedResource.name,
+        score: 100,
+        recommendation: reason || `Manually designated as ${drumType} drum`
+      }],
+      performedBy: 'User',
+      analysisStatus: 'completed'
+    });
+
+    return {
+      id: updatedResource.id,
+      resourceId: updatedResource.id,
+      resourceName: updatedResource.name,
+      isDrum: true,
+      isManual: true,
+      drumType,
+      designatedAt: updatedResource.drumUpdatedAt,
+      designatedBy: userId || 1,
+      reason: reason || 'Manual designation'
     };
   }
 
