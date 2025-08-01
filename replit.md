@@ -18,6 +18,7 @@ The platform's vision is to transform traditional ERP functionality into an AI-f
 - Maintained backward compatibility while adding comprehensive new functionality
 - Fixed hamburger menu mobile layout with proper card sizing and inline "Show More" buttons (Patti)
 - Restored homepage to show marketing landing page instead of dashboard for authenticated users (Patti)
+- **Database Schema Update**: Changed planned_orders table to use item_id (foreign key to items table) instead of item_number text field for proper relational integrity
 
 ## User Preferences
 

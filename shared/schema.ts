@@ -138,7 +138,7 @@ export const productionOrders: any = pgTable("production_orders", {
 export const plannedOrders = pgTable("planned_orders", {
   id: serial("id").primaryKey(),
   plannedOrderNumber: text("planned_order_number").notNull().unique(), // e.g., "PLN-2025-001"
-  itemNumber: text("item_number").notNull(), // What to produce
+  itemId: integer("item_id").references(() => items.id).notNull(), // Foreign key to items table
   quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull(),
   requiredDate: timestamp("required_date").notNull(), // When needed
   plannedStartDate: timestamp("planned_start_date"),
@@ -7749,6 +7749,7 @@ export const itemsRelations = relations(items, ({ many }) => ({
   formulationDetails: many(formulationDetails), // Link to formulation details for standardized specifications
   routings: many(routings),
   forecasts: many(forecasts),
+  plannedOrders: many(plannedOrders), // Link to planned orders for this item
 }));
 
 export const storageLocationsRelations = relations(storageLocations, ({ one, many }) => ({
@@ -8047,6 +8048,10 @@ export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) =
   productionVersion: one(productionVersions, {
     fields: [plannedOrders.productionVersionId],
     references: [productionVersions.id],
+  }),
+  item: one(items, {
+    fields: [plannedOrders.itemId],
+    references: [items.id],
   }),
   // Many-to-many relationship with production orders via junction table
   productionOrderLinks: many(plannedOrderProductionOrders),

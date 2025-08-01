@@ -585,7 +585,7 @@ function DataImport() {
         return [
           { key: 'orderNumber', label: 'Order Number', type: 'text', required: true },
           { key: 'name', label: 'Order Name', type: 'text', required: true },
-          { key: 'itemNumber', label: 'Item Number', type: 'text', required: true },
+          { key: 'itemId', label: 'Item ID', type: 'number', required: true },
           { key: 'quantity', label: 'Quantity', type: 'number', required: true },
           { key: 'plantId', label: 'Plant ID', type: 'number', required: true },
           { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'] },
@@ -713,7 +713,7 @@ function DataImport() {
         case 'productionVersions':
           return { versionNumber: '', itemNumber: '', plantId: '', validPlants: '', mrpRelevant: 'true', validFrom: '', validTo: '', lotSizeMin: '1', lotSizeMax: '1000', standardLotSize: '100', description: '' };
         case 'plannedOrders':
-          return { orderNumber: '', name: '', itemNumber: '', quantity: '', plantId: '', priority: 'medium', status: 'planned', dueDate: '', plannedStartDate: '', plannedEndDate: '' };
+          return { orderNumber: '', name: '', itemId: '', quantity: '', plantId: '', priority: 'medium', status: 'planned', dueDate: '', plannedStartDate: '', plannedEndDate: '' };
         case 'discreteOperations':
           return { operationName: '', productionOrderId: '', routingId: '', operationNumber: '', workCenterId: '', standardRunTime: '', standardSetupTime: '', status: 'not_started', order: '' };
         case 'processOperations':
