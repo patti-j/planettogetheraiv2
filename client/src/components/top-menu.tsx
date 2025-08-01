@@ -393,7 +393,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
@@ -591,11 +591,15 @@ export default function TopMenu() {
                             >
                               <div className={`
                                 w-full aspect-square min-h-[60px] h-[60px] min-w-[60px] md:min-h-[70px] md:h-[70px] md:min-w-[70px] 
-                                bg-white dark:bg-gray-700 border hover:border-gray-300 dark:hover:border-gray-400 hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                                border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
                                 flex flex-col items-center justify-center text-center space-y-1 relative
-                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'border-gray-200 dark:border-gray-500'}
-                                ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                              `}>
+                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
+                              `}
+                              style={{ 
+                                backgroundColor: page.isPinned ? '' : (isAI ? '' : 'var(--background)'),
+                                color: 'var(--foreground)'
+                              }}>
                                 <div className={`
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
                                   p-1.5 rounded-full flex items-center justify-center flex-shrink-0
@@ -746,12 +750,16 @@ export default function TopMenu() {
                                   onClick={() => handleFeatureClick(feature)}
                                 >
                                   <div className={`
-                                    h-[50px] bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400 hover:shadow-sm
+                                    h-[50px] border hover:shadow-sm
                                     rounded-lg p-2 cursor-pointer transition-all duration-150
                                     flex items-center space-x-2
-                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : ''}
-                                    ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                                  `}>
+                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                    ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
+                                  `}
+                                  style={{ 
+                                    backgroundColor: (location === feature.href || feature.isAI) ? '' : 'var(--background)',
+                                    color: 'var(--foreground)'
+                                  }}>
                                     <div className={`
                                       ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
                                       p-1 rounded-md flex items-center justify-center flex-shrink-0
@@ -809,12 +817,16 @@ export default function TopMenu() {
                           >
                             <div className={`
                               ${getCardSize(group.priority)}
-                              bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400 hover:shadow-sm
+                              border hover:shadow-sm
                               rounded-lg p-2 cursor-pointer transition-all duration-150
                               flex flex-col items-center justify-center text-center gap-1
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : ''}
-                              ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                            `}>
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                              ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'}
+                            `}
+                            style={{ 
+                              backgroundColor: (location === feature.href || feature.isAI) ? '' : 'var(--background)',
+                              color: 'var(--foreground)'
+                            }}>
                               <div className={`
                                 ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
                                 p-1.5 rounded-md flex items-center justify-center flex-shrink-0
