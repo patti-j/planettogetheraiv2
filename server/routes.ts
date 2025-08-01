@@ -19393,6 +19393,50 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // ==================== DRUM MANAGEMENT ENDPOINTS ====================
+  
+  // Update resource drum designation
+  app.patch("/api/resources/:id/drum", requireAuth, async (req, res) => {
+    try {
+      const resourceId = parseInt(req.params.id);
+      const { isDrum, reason } = req.body;
+      
+      const resource = await storage.updateResourceDrumStatus(
+        resourceId, 
+        isDrum, 
+        reason, 
+        'manual'
+      );
+      
+      res.json(resource);
+    } catch (error) {
+      console.error("Error updating drum designation:", error);
+      res.status(500).json({ error: "Failed to update drum designation" });
+    }
+  });
+
+  // Get drum analysis history
+  app.get("/api/drum-analysis", requireAuth, async (req, res) => {
+    try {
+      const analysis = await storage.getDrumAnalysisHistory();
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching drum analysis:", error);
+      res.status(500).json({ error: "Failed to fetch drum analysis" });
+    }
+  });
+
+  // Run automated drum analysis
+  app.post("/api/drum-analysis/run", requireAuth, async (req, res) => {
+    try {
+      const results = await storage.runDrumAnalysis();
+      res.json(results);
+    } catch (error) {
+      console.error("Error running drum analysis:", error);
+      res.status(500).json({ error: "Failed to run drum analysis" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

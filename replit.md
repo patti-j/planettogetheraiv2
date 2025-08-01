@@ -6,6 +6,13 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 The platform's vision is to transform traditional ERP functionality into an AI-first approach, leveraging artificial intelligence for core differentiators like optimized production planning, dynamic resource allocation, and intelligent dashboarding. It supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration.
 
+## Recent Changes (January 1, 2025)
+- Enhanced Theory of Constraints (TOC) implementation with comprehensive drum management functionality
+- Added ability to manually designate resources as drums or run automated analysis to identify bottlenecks
+- Implemented drum_analysis_history table to track all drum designation changes and analysis results
+- Created API endpoints for drum management: manual designation, analysis history, and automated analysis
+- Drum analysis uses resource utilization metrics (operation count, duration) to calculate bottleneck scores
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

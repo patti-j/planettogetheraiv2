@@ -729,6 +729,21 @@ export interface IStorage {
     resolved: number;
   }>;
   
+  // TOC Drum Management
+  updateResourceDrumStatus(resourceId: number, isDrum: boolean, reason: string, method: 'manual' | 'automated'): Promise<Resource>;
+  getDrumAnalysisHistory(): Promise<any[]>;
+  runDrumAnalysis(): Promise<{
+    analyzed: number;
+    identified: number;
+    updated: number;
+    recommendations: Array<{
+      resourceId: number;
+      resourceName: string;
+      score: number;
+      recommendation: string;
+    }>;
+  }>;
+  
   // Canvas Settings Management
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
   upsertCanvasSettings(settings: InsertCanvasSettings): Promise<CanvasSettings>;
@@ -12602,6 +12617,201 @@ export class DatabaseStorage implements IStorage {
     };
 
     return summary;
+  }
+
+  // TOC Drum Management Implementation
+  async updateResourceDrumStatus(
+    resourceId: number, 
+    isDrum: boolean, 
+    reason: string, 
+    method: 'manual' | 'automated'
+  ): Promise<Resource> {
+    // Update the resource drum status
+    const [updatedResource] = await db
+      .update(resources)
+      .set({ 
+        isDrum,
+        drumUpdatedAt: new Date(),
+        drumUpdatedBy: method === 'manual' ? 'User' : 'System'
+      })
+      .where(eq(resources.id, resourceId))
+      .returning();
+
+    if (!updatedResource) {
+      throw new Error('Resource not found');
+    }
+
+    // Record the drum designation change in history
+    await db.insert(drumAnalysisHistory).values({
+      analysisType: method,
+      resourcesAnalyzed: 1,
+      drumsIdentified: isDrum ? 1 : 0,
+      drumsUpdated: 1,
+      analysisMetrics: {
+        resourceId,
+        resourceName: updatedResource.name,
+        isDrum,
+        reason,
+        method
+      },
+      recommendations: [{
+        resourceId,
+        resourceName: updatedResource.name,
+        score: isDrum ? 100 : 0,
+        recommendation: reason
+      }],
+      performedBy: method === 'manual' ? 'User' : 'System',
+      analysisStatus: 'completed'
+    });
+
+    return updatedResource;
+  }
+
+  async getDrumAnalysisHistory(): Promise<any[]> {
+    return await db
+      .select()
+      .from(drumAnalysisHistory)
+      .orderBy(desc(drumAnalysisHistory.createdAt))
+      .limit(100);
+  }
+
+  async runDrumAnalysis(): Promise<{
+    analyzed: number;
+    identified: number;
+    updated: number;
+    recommendations: Array<{
+      resourceId: number;
+      resourceName: string;
+      score: number;
+      recommendation: string;
+    }>;
+  }> {
+    // Get all resources
+    const allResources = await db.select().from(resources);
+    
+    // Get resource utilization data
+    const resourceUtilization = await db
+      .select({
+        resourceId: operations.resourceId,
+        operationCount: sql`count(*)`.as('operationCount'),
+        totalDuration: sql`sum(operations.duration)`.as('totalDuration'),
+        avgDuration: sql`avg(operations.duration)`.as('avgDuration')
+      })
+      .from(operations)
+      .where(isNotNull(operations.resourceId))
+      .groupBy(operations.resourceId);
+
+    // Map utilization data
+    const utilizationMap = new Map(
+      resourceUtilization.map(u => [u.resourceId, u])
+    );
+
+    // Analyze each resource
+    const recommendations: Array<{
+      resourceId: number;
+      resourceName: string;
+      score: number;
+      recommendation: string;
+    }> = [];
+
+    let drumsIdentified = 0;
+    let drumsUpdated = 0;
+
+    for (const resource of allResources) {
+      const utilization = utilizationMap.get(resource.id);
+      let score = 0;
+      let recommendation = '';
+
+      if (utilization) {
+        // Calculate bottleneck score based on utilization metrics
+        const opCount = Number(utilization.operationCount) || 0;
+        const totalDur = Number(utilization.totalDuration) || 0;
+        const avgDur = Number(utilization.avgDuration) || 0;
+
+        // High operation count indicates potential bottleneck
+        if (opCount > 50) score += 30;
+        else if (opCount > 20) score += 20;
+        else if (opCount > 10) score += 10;
+
+        // Long average duration indicates potential bottleneck
+        if (avgDur > 120) score += 40;
+        else if (avgDur > 60) score += 30;
+        else if (avgDur > 30) score += 20;
+
+        // Total duration utilization
+        if (totalDur > 1000) score += 30;
+        else if (totalDur > 500) score += 20;
+        else if (totalDur > 100) score += 10;
+
+        // Generate recommendation
+        if (score >= 70) {
+          recommendation = `High bottleneck score (${score}): ${opCount} operations, ${avgDur.toFixed(0)}min avg duration`;
+          drumsIdentified++;
+          
+          // Update resource as drum if score is high enough
+          if (!resource.isDrum && score >= 70) {
+            await db
+              .update(resources)
+              .set({ 
+                isDrum: true,
+                drumUpdatedAt: new Date(),
+                drumUpdatedBy: 'System'
+              })
+              .where(eq(resources.id, resource.id));
+            drumsUpdated++;
+          }
+        } else if (score >= 50) {
+          recommendation = `Moderate utilization (score: ${score}): Monitor for potential constraints`;
+        } else {
+          recommendation = `Low utilization (score: ${score}): Not a bottleneck`;
+          
+          // Remove drum designation if score is too low
+          if (resource.isDrum && score < 30) {
+            await db
+              .update(resources)
+              .set({ 
+                isDrum: false,
+                drumUpdatedAt: new Date(),
+                drumUpdatedBy: 'System'
+              })
+              .where(eq(resources.id, resource.id));
+            drumsUpdated++;
+          }
+        }
+      } else {
+        recommendation = 'No utilization data available';
+      }
+
+      recommendations.push({
+        resourceId: resource.id,
+        resourceName: resource.name,
+        score,
+        recommendation
+      });
+    }
+
+    // Record analysis in history
+    await db.insert(drumAnalysisHistory).values({
+      analysisType: 'automated',
+      resourcesAnalyzed: allResources.length,
+      drumsIdentified,
+      drumsUpdated,
+      analysisMetrics: {
+        utilizationThreshold: 70,
+        analysisMethod: 'utilization_based',
+        timestamp: new Date()
+      },
+      recommendations,
+      performedBy: 'System',
+      analysisStatus: 'completed'
+    });
+
+    return {
+      analyzed: allResources.length,
+      identified: drumsIdentified,
+      updated: drumsUpdated,
+      recommendations: recommendations.sort((a, b) => b.score - a.score).slice(0, 10)
+    };
   }
 }
 

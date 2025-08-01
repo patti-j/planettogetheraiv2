@@ -27,6 +27,11 @@ export const resources = pgTable("resources", {
   status: text("status").notNull().default("active"),
   capabilities: jsonb("capabilities").$type<number[]>().default([]),
   photo: text("photo"), // Base64 encoded photo data
+  // TOC Drum designation
+  isDrum: boolean("is_drum").default(false),
+  drumDesignationDate: timestamp("drum_designation_date"),
+  drumDesignationReason: text("drum_designation_reason"),
+  drumDesignationMethod: text("drum_designation_method"), // 'manual' or 'automated'
   // Removed plantId - now using many-to-many relationship via plantResources junction table
   // Removed isShared and sharedPlants - now handled by multiple entries in plantResources table
 });
@@ -8667,6 +8672,25 @@ export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments
 });
 export type InsertWidgetDeployment = z.infer<typeof insertWidgetDeploymentSchema>;
 export type WidgetDeployment = typeof widgetDeployments.$inferSelect;
+
+// ==================== TOC DRUM ANALYSIS ====================
+
+export const drumAnalysisHistory = pgTable("drum_analysis_history", {
+  id: serial("id").primaryKey(),
+  analysisDate: timestamp("analysis_date").defaultNow(),
+  analysisType: text("analysis_type").notNull(), // 'utilization', 'queue_time', 'throughput', 'composite'
+  resourceId: integer("resource_id").references(() => resources.id),
+  utilizationPercentage: numeric("utilization_percentage", { precision: 5, scale: 2 }),
+  avgQueueTimeHours: numeric("avg_queue_time_hours", { precision: 10, scale: 2 }),
+  throughputImpact: numeric("throughput_impact", { precision: 5, scale: 2 }),
+  bottleneckScore: numeric("bottleneck_score", { precision: 5, scale: 2 }), // Composite score 0-100
+  recommendation: text("recommendation"),
+  isCurrentBottleneck: boolean("is_current_bottleneck").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  resourceIdx: index("drum_analysis_resource_idx").on(table.resourceId),
+  dateIdx: index("drum_analysis_date_idx").on(table.analysisDate),
+}));
 
 // ==================== CONSTRAINTS MANAGEMENT SYSTEM ====================
 

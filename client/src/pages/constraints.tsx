@@ -599,6 +599,11 @@ function ConstraintsMonitoring() {
 
 // Bottleneck Analysis Component - Core TOC feature
 function BottleneckAnalysis() {
+  const [showDrumDialog, setShowDrumDialog] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: resources = [] } = useQuery({
     queryKey: ["/api/resources"],
   });
@@ -607,12 +612,140 @@ function BottleneckAnalysis() {
     queryKey: ["/api/operations"],
   });
 
+  const { data: drumAnalysis = [] } = useQuery({
+    queryKey: ["/api/drum-analysis"],
+  });
+
+  // Get current drums
+  const currentDrums = resources.filter(r => r.isDrum);
+
+  // Manual drum designation mutation
+  const designateDrumMutation = useMutation({
+    mutationFn: async ({ resourceId, isDrum, reason }: any) => {
+      return apiRequest(`/api/resources/${resourceId}/drum`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isDrum, reason }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+      toast({
+        title: "Success",
+        description: "Drum designation updated",
+      });
+      setShowDrumDialog(false);
+    },
+  });
+
+  // Run automated analysis mutation
+  const runAnalysisMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/drum-analysis/run', {
+        method: 'POST',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drum-analysis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
+      toast({
+        title: "Analysis Complete",
+        description: "Drum analysis has been completed and recommendations are available",
+      });
+    },
+  });
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Bottleneck Analysis</h2>
-        <p className="text-muted-foreground">Identify and analyze production constraints using Theory of Constraints</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Bottleneck Analysis & Drum Management</h2>
+          <p className="text-muted-foreground">Identify constraints and manage drum resources using Theory of Constraints</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => runAnalysisMutation.mutate()}
+            disabled={runAnalysisMutation.isPending}
+          >
+            {runAnalysisMutation.isPending ? "Analyzing..." : "Run Automated Analysis"}
+          </Button>
+        </div>
       </div>
+
+      {/* Current Drums Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+            Current Drum Resources
+          </CardTitle>
+          <CardDescription>Resources designated as production drums (constraints)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {currentDrums.length > 0 ? (
+            <div className="space-y-3">
+              {currentDrums.map((drum) => (
+                <div key={drum.id} className="flex justify-between items-center p-3 border rounded">
+                  <div>
+                    <p className="font-medium">{drum.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Designated: {drum.drumDesignationMethod} - {drum.drumDesignationReason}
+                    </p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      designateDrumMutation.mutate({ 
+                        resourceId: drum.id, 
+                        isDrum: false, 
+                        reason: "Manual removal" 
+                      });
+                    }}
+                  >
+                    Remove Drum Status
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No drums currently designated</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Analysis History */}
+      {drumAnalysis.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Drum Analysis</CardTitle>
+            <CardDescription>Historical bottleneck analysis results</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {drumAnalysis.slice(0, 5).map((analysis: any) => (
+                <div key={analysis.id} className="border rounded p-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{analysis.resourceName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Score: {analysis.bottleneckScore}/100 - {analysis.recommendation}
+                      </p>
+                    </div>
+                    <Badge variant={analysis.isCurrentBottleneck ? "destructive" : "secondary"}>
+                      {analysis.isCurrentBottleneck ? "Bottleneck" : "Clear"}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
+                    <div>Utilization: {analysis.utilizationPercentage}%</div>
+                    <div>Queue: {analysis.avgQueueTimeHours}h</div>
+                    <div>Impact: {analysis.throughputImpact}%</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -699,30 +832,93 @@ function BottleneckAnalysis() {
       <Card>
         <CardHeader>
           <CardTitle>Resource Utilization Heat Map</CardTitle>
-          <CardDescription>Visual representation of resource constraints across the plant</CardDescription>
+          <CardDescription>Click on any resource to designate it as a drum. Red indicates high utilization.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-4 gap-2">
-            {[
-              { name: "Reactor 1", util: 85, color: "bg-red-500" },
-              { name: "Reactor 2", util: 45, color: "bg-green-500" },
-              { name: "Packaging A", util: 78, color: "bg-orange-500" },
-              { name: "Packaging B", util: 52, color: "bg-green-500" },
-              { name: "QC Lab", util: 72, color: "bg-yellow-500" },
-              { name: "Tablet Press 1", util: 60, color: "bg-green-500" },
-              { name: "Tablet Press 2", util: 65, color: "bg-yellow-500" },
-              { name: "Warehouse", util: 40, color: "bg-green-500" }
-            ].map((resource) => (
-              <div key={resource.name} className="text-center">
-                <div className={`h-20 ${resource.color} bg-opacity-80 rounded flex items-center justify-center text-white font-medium`}>
-                  {resource.util}%
+            {resources.map((resource: any) => {
+              // Simulate utilization data - in production this would come from real metrics
+              const utilization = Math.floor(Math.random() * 60 + 40);
+              const color = utilization > 80 ? "bg-red-500" : 
+                           utilization > 70 ? "bg-orange-500" : 
+                           utilization > 60 ? "bg-yellow-500" : "bg-green-500";
+              
+              return (
+                <div 
+                  key={resource.id} 
+                  className="text-center cursor-pointer group"
+                  onClick={() => {
+                    setSelectedResource(resource);
+                    setShowDrumDialog(true);
+                  }}
+                >
+                  <div className={`h-20 ${color} bg-opacity-80 rounded flex items-center justify-center text-white font-medium relative transition-all group-hover:scale-105`}>
+                    {resource.isDrum && (
+                      <div className="absolute top-1 right-1">
+                        <div className="h-3 w-3 bg-white rounded-full animate-pulse" />
+                      </div>
+                    )}
+                    {utilization}%
+                  </div>
+                  <p className="text-xs mt-1">{resource.name}</p>
+                  {resource.isDrum && <Badge variant="destructive" className="text-xs mt-1">DRUM</Badge>}
                 </div>
-                <p className="text-xs mt-1">{resource.name}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
+
+      {/* Drum Designation Dialog */}
+      <Dialog open={showDrumDialog} onOpenChange={setShowDrumDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Designate Drum Resource</DialogTitle>
+            <DialogDescription>
+              Manually designate {selectedResource?.name} as a drum (constraint) resource
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...useForm({
+            defaultValues: {
+              reason: "",
+            },
+          })}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              designateDrumMutation.mutate({
+                resourceId: selectedResource?.id,
+                isDrum: true,
+                reason: formData.get("reason") as string,
+              });
+            }} className="space-y-4">
+              <FormField
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason for Designation</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field}
+                        placeholder="Explain why this resource is being designated as a drum..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setShowDrumDialog(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Designate as Drum
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
