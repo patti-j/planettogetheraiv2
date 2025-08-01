@@ -14,7 +14,7 @@ import {
   Code2, FileText, GitBranch, Target, Brain, CheckCircle2, 
   Clock, Users, Zap, BarChart3, Settings, Play, Plus,
   Archive, Network, TestTube, Bug, Lightbulb, Layers,
-  Sparkles, TrendingUp, Calendar, Database, Search, Edit, Trash2
+  Sparkles, TrendingUp, Calendar, Database, Search, Edit, Trash2, Shield
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -93,9 +93,23 @@ export default function ProductDevelopment() {
     queryFn: () => fetch('/api/architecture-components').then(res => res.json()) as Promise<ArchitectureComponent[]>
   });
 
+  const { data: testCases = [] } = useQuery({
+    queryKey: ['/api/test-cases'],
+    queryFn: () => fetch('/api/test-cases').then(res => res.json()) as Promise<TestCase[]>
+  });
+
+  // Group test cases by suite
+  const testCasesBySuite = testCases.reduce((acc: Record<number, TestCase[]>, testCase) => {
+    if (!acc[testCase.suiteId]) {
+      acc[testCase.suiteId] = [];
+    }
+    acc[testCase.suiteId].push(testCase);
+    return acc;
+  }, {});
+
   // Mutations
   const createStrategyMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/strategy-documents', { method: 'POST', body: data }),
+    mutationFn: (data: any) => apiRequest('/api/strategy-documents', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/strategy-documents'] });
       setShowStrategyDialog(false);
@@ -107,7 +121,7 @@ export default function ProductDevelopment() {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/development-tasks', { method: 'POST', body: data }),
+    mutationFn: (data: any) => apiRequest('/api/development-tasks', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/development-tasks'] });
       setShowTaskDialog(false);
@@ -119,7 +133,7 @@ export default function ProductDevelopment() {
   });
 
   const createTestSuiteMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/test-suites', { method: 'POST', body: data }),
+    mutationFn: (data: any) => apiRequest('/api/test-suites', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/test-suites'] });
       setShowTestDialog(false);
@@ -481,7 +495,7 @@ export default function ProductDevelopment() {
                             {strategy.category}
                           </Badge>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            Updated {new Date(strategy.updatedAt).toLocaleDateString()}
+                            Updated {strategy.updatedAt ? new Date(strategy.updatedAt).toLocaleDateString() : 'N/A'}
                           </span>
                         </div>
                       </div>
@@ -1511,7 +1525,7 @@ export default function ProductDevelopment() {
                             {suite.status}
                           </Badge>
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            Updated {new Date(suite.updatedAt).toLocaleDateString()}
+                            Updated {suite.updatedAt ? new Date(suite.updatedAt).toLocaleDateString() : 'N/A'}
                           </span>
                         </div>
                       </div>
