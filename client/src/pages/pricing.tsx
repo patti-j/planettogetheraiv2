@@ -148,6 +148,27 @@ const optimizationAddons: OptimizationAddon[] = [
     icon: <BarChart3 className="w-6 h-6" />,
     complexity: "premium",
     requiredModules: ["production-scheduling", "capacity-planning"]
+  },
+  {
+    id: "theory-of-constraints",
+    name: "Theory of Constraints (TOC)",
+    description: "Advanced constraint-based optimization with drum-buffer-rope scheduling and buffer management",
+    monthlyPrice: 45,
+    yearlyPrice: 450,
+    features: [
+      "Bottleneck (drum) identification & management",
+      "Automated drum analysis & recommendations",
+      "Time & stock buffer management",
+      "Red/yellow/green zone monitoring",
+      "Buffer consumption tracking & alerts",
+      "Constraint-based scheduling optimization",
+      "Drum-Buffer-Rope (DBR) methodology",
+      "Buffer penetration analytics",
+      "TOC performance dashboards"
+    ],
+    icon: <Shield className="w-6 h-6" />,
+    complexity: "premium",
+    requiredModules: ["production-scheduling", "capacity-planning"]
   }
 ];
 
@@ -247,6 +268,8 @@ export default function Pricing() {
         "Extension studio for customizations",
         "Training system with guided tours",
         "API access & webhook support",
+        "Theory of Constraints (TOC) fundamentals",
+        "Basic drum resource management",
         "Priority phone & email support"
       ],
       limits: {
@@ -276,6 +299,10 @@ export default function Pricing() {
         "White-label platform options",
         "Advanced security & compliance",
         "Custom workflow automation",
+        "Full Theory of Constraints (TOC) suite",
+        "Advanced buffer management system",
+        "Automated drum analysis & optimization",
+        "Real-time constraint monitoring",
         "Dedicated customer success manager",
         "Custom training & onboarding",
         "24/7 premium support with SLA",
