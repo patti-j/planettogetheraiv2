@@ -522,9 +522,9 @@ function Router() {
           <Route path="/clear-nav" component={ClearNavigation} />
           <Route path="/login">
             {/* Redirect authenticated users to homepage */}
-            <Homepage />
+            <MarketingHome />
           </Route>
-          <Route path="/" component={Homepage} />
+          <Route path="/" component={MarketingHome} />
           <Route component={NotFound} />
         </Switch>
         </OnboardingGate>

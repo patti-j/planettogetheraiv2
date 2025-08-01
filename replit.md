@@ -16,6 +16,8 @@ The platform's vision is to transform traditional ERP functionality into an AI-f
 - Updated feature-to-data-type mappings to reflect new manufacturing planning capabilities
 - Aligned record counting system with new table structures and naming conventions
 - Maintained backward compatibility while adding comprehensive new functionality
+- Fixed hamburger menu mobile layout with proper card sizing and inline "Show More" buttons (Patti)
+- Restored homepage to show marketing landing page instead of dashboard for authenticated users (Patti)
 
 ## User Preferences
 
