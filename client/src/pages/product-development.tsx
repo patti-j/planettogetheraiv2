@@ -561,15 +561,15 @@ export default function ProductDevelopment() {
                     <CardContent>
                       <div className="space-y-4">
                         <div className="border-l-4 border-green-500 pl-4">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q1 2025)</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q3 2025)</h4>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Connection pooling, Redis caching, rate limiting, query optimization</p>
                         </div>
                         <div className="border-l-4 border-blue-500 pl-4">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q2 2025)</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q4 2025)</h4>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Load balancing, CDN, background processing, monitoring systems</p>
                         </div>
                         <div className="border-l-4 border-purple-500 pl-4">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q3-Q4 2025)</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q1-Q2 2026)</h4>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Database-per-tenant, automated provisioning, isolated backups</p>
                         </div>
                       </div>
@@ -819,7 +819,7 @@ export default function ProductDevelopment() {
                       <div className="w-1 h-16 bg-green-200 dark:bg-green-800"></div>
                     </div>
                     <div className="flex-1 pb-6">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q1 2025)</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 1: Foundation (Q3 2025)</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Immediate performance improvements and infrastructure preparation</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center gap-2">
@@ -849,7 +849,7 @@ export default function ProductDevelopment() {
                       <div className="w-1 h-16 bg-blue-200 dark:bg-blue-800"></div>
                     </div>
                     <div className="flex-1 pb-6">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q2 2025)</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 2: Infrastructure (Q4 2025)</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Horizontal scaling and infrastructure improvements</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         <div className="flex items-center gap-2">
@@ -878,7 +878,7 @@ export default function ProductDevelopment() {
                       <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q3-Q4 2025)</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">Phase 3: Multi-Tenancy (Q1-Q2 2026)</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Database-per-tenant architecture implementation</p>
                       <div className="grid grid-cols-1 gap-2 text-sm">
                         <div className="flex items-center gap-2">
