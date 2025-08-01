@@ -1065,47 +1065,49 @@ export default function UserAccessManagementPage() {
         <TabsContent value="permissions" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                   <CardTitle>System Permissions</CardTitle>
                   <CardDescription>View all available permissions grouped by feature</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
                   <Dialog open={newPermissionDialog} onOpenChange={setNewPermissionDialog}>
                     <DialogTrigger asChild>
-                      <Button size="sm" className={aiTheme ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" : ""}>
+                      <Button size="sm" className={`${aiTheme ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" : ""} w-full sm:w-auto`}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add Permission
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md w-[95vw] sm:w-full">
                       <DialogHeader>
                         <DialogTitle>Create New Permission</DialogTitle>
                         <DialogDescription>Define a new permission for the system</DialogDescription>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
                           <Label htmlFor="permissionName">Permission Name</Label>
                           <Input
                             id="permissionName"
                             value={permissionForm.name}
                             onChange={(e) => setPermissionForm({...permissionForm, name: e.target.value})}
                             placeholder="e.g., View Production Reports"
+                            className="w-full"
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="permissionFeature">Feature</Label>
                           <Input
                             id="permissionFeature"
                             value={permissionForm.feature}
                             onChange={(e) => setPermissionForm({...permissionForm, feature: e.target.value})}
                             placeholder="e.g., production-reports"
+                            className="w-full"
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="permissionAction">Action</Label>
                           <Select value={permissionForm.action} onValueChange={(value) => setPermissionForm({...permissionForm, action: value})}>
-                            <SelectTrigger id="permissionAction">
+                            <SelectTrigger id="permissionAction" className="w-full">
                               <SelectValue placeholder="Select action" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1117,7 +1119,7 @@ export default function UserAccessManagementPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="permissionDescription">Description</Label>
                           <Textarea
                             id="permissionDescription"
@@ -1125,11 +1127,12 @@ export default function UserAccessManagementPage() {
                             onChange={(e) => setPermissionForm({...permissionForm, description: e.target.value})}
                             placeholder="Describe what this permission allows..."
                             rows={3}
+                            className="w-full"
                           />
                         </div>
                       </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setNewPermissionDialog(false)}>
+                      <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button variant="outline" onClick={() => setNewPermissionDialog(false)} className="w-full sm:w-auto">
                           Cancel
                         </Button>
                         <Button onClick={() => {
@@ -1142,14 +1145,14 @@ export default function UserAccessManagementPage() {
                               variant: "destructive"
                             });
                           }
-                        }}>
+                        }} className="w-full sm:w-auto">
                           Create Permission
                         </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
                   <Select value={selectedFeature} onValueChange={setSelectedFeature}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-full sm:w-48">
                       <SelectValue placeholder="Filter by feature" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1189,87 +1192,160 @@ export default function UserAccessManagementPage() {
                         )}
                       </button>
                       {expandedFeatures.includes(featureGroup.feature) && (
-                        <div className="px-4 pb-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Permission</TableHead>
-                                <TableHead>Action</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Roles with this Permission</TableHead>
-                                <TableHead>Actions</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {featureGroup.permissions.map((permission) => {
-                                // Find which roles have this permission
-                                const rolesWithPermission = roles.filter(role => 
-                                  role.permissions.some(p => p.id === permission.id)
-                                );
-                                
-                                return (
-                                  <TableRow key={permission.id}>
-                                    <TableCell className="font-medium">{permission.name}</TableCell>
-                                    <TableCell>
+                        <div className="px-2 sm:px-4 pb-4">
+                          {/* Mobile Card View */}
+                          <div className="block lg:hidden space-y-3">
+                            {featureGroup.permissions.map((permission) => {
+                              // Find which roles have this permission
+                              const rolesWithPermission = roles.filter(role => 
+                                role.permissions.some(p => p.id === permission.id)
+                              );
+                              
+                              return (
+                                <div key={permission.id} className="border rounded-md p-3 space-y-2 bg-gray-50 dark:bg-gray-800">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 space-y-1">
+                                      <div className="font-medium text-sm">{permission.name}</div>
                                       <Badge variant="outline" className="text-xs">
                                         {permission.action}
                                       </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-gray-600">
-                                      {permission.description}
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex items-center gap-2">
-                                        <div className="flex flex-wrap gap-1">
-                                          {rolesWithPermission.map(role => (
-                                            <Badge 
-                                              key={role.id} 
-                                              variant={role.isSystemRole ? "secondary" : "outline"}
-                                              className="text-xs"
-                                            >
-                                              {role.name}
-                                            </Badge>
-                                          ))}
-                                          {rolesWithPermission.length === 0 && (
-                                            <span className="text-xs text-gray-400">No roles assigned</span>
-                                          )}
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleEditPermissionDetails(permission)}
+                                        title="Edit permission details"
+                                      >
+                                        <Settings className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleDeletePermission(permission)}
+                                        title="Delete permission"
+                                        className="text-red-600 hover:text-red-700"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-gray-600">{permission.description}</p>
+                                  <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xs font-medium">Assigned to:</span>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleEditPermissionRoles(permission, rolesWithPermission)}
+                                        title="Edit role assignments"
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {rolesWithPermission.map(role => (
+                                        <Badge 
+                                          key={role.id} 
+                                          variant={role.isSystemRole ? "secondary" : "outline"}
+                                          className="text-xs"
+                                        >
+                                          {role.name}
+                                        </Badge>
+                                      ))}
+                                      {rolesWithPermission.length === 0 && (
+                                        <span className="text-xs text-gray-400">No roles assigned</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {/* Desktop Table View */}
+                          <div className="hidden lg:block overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Permission</TableHead>
+                                  <TableHead>Action</TableHead>
+                                  <TableHead>Description</TableHead>
+                                  <TableHead>Roles with this Permission</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {featureGroup.permissions.map((permission) => {
+                                  // Find which roles have this permission
+                                  const rolesWithPermission = roles.filter(role => 
+                                    role.permissions.some(p => p.id === permission.id)
+                                  );
+                                  
+                                  return (
+                                    <TableRow key={permission.id}>
+                                      <TableCell className="font-medium">{permission.name}</TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline" className="text-xs">
+                                          {permission.action}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-sm text-gray-600">
+                                        {permission.description}
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          <div className="flex flex-wrap gap-1">
+                                            {rolesWithPermission.map(role => (
+                                              <Badge 
+                                                key={role.id} 
+                                                variant={role.isSystemRole ? "secondary" : "outline"}
+                                                className="text-xs"
+                                              >
+                                                {role.name}
+                                              </Badge>
+                                            ))}
+                                            {rolesWithPermission.length === 0 && (
+                                              <span className="text-xs text-gray-400">No roles assigned</span>
+                                            )}
+                                          </div>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleEditPermissionRoles(permission, rolesWithPermission)}
+                                            title="Edit role assignments"
+                                          >
+                                            <Edit className="h-3 w-3" />
+                                          </Button>
                                         </div>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleEditPermissionRoles(permission, rolesWithPermission)}
-                                          title="Edit role assignments"
-                                        >
-                                          <Edit className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>
-                                      <div className="flex gap-1">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleEditPermissionDetails(permission)}
-                                          title="Edit permission details"
-                                        >
-                                          <Settings className="h-3 w-3" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleDeletePermission(permission)}
-                                          title="Delete permission"
-                                          className="text-red-600 hover:text-red-700"
-                                        >
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleEditPermissionDetails(permission)}
+                                            title="Edit permission details"
+                                          >
+                                            <Settings className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleDeletePermission(permission)}
+                                            title="Delete permission"
+                                            className="text-red-600 hover:text-red-700"
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </div>
                       )}
                     </div>
