@@ -1079,7 +1079,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
 
   // Component rendering
   if (toursLoading) {
-    return <div className="fixed bottom-4 right-4 z-50 p-4 bg-white rounded shadow">Loading...</div>;
+    return <div className="fixed bottom-4 right-4 z-50 p-4 bg-white dark:bg-gray-800 rounded shadow">Loading...</div>;
   }
   
   if (!isVisible) {
@@ -1105,9 +1105,9 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           title="System interaction is disabled during this tour. Use the tour window to navigate."
         >
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white/90 rounded-lg p-4 shadow-lg max-w-sm mx-4 text-center">
-              <p className="text-sm text-gray-700 font-medium">Tour Mode Active</p>
-              <p className="text-xs text-gray-600 mt-1">Use the tour window to navigate. System interaction is restricted during this guided tour.</p>
+            <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg p-4 shadow-lg max-w-sm mx-4 text-center">
+              <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">Tour Mode Active</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Use the tour window to navigate. System interaction is restricted during this guided tour.</p>
             </div>
           </div>
         </div>
@@ -1119,7 +1119,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       {/* Draggable and resizable tour window - FORCE viewport positioning */}
       <Card 
         ref={cardRef}
-        className="bg-white shadow-2xl z-50 flex flex-col"
+        className="bg-white dark:bg-gray-800 shadow-2xl z-50 flex flex-col"
         style={{
           position: 'fixed',
           left: `${position.x}px`,

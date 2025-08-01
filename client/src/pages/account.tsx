@@ -277,8 +277,8 @@ export default function AccountPage() {
       <div className="p-6">
         <div className="text-center py-12">
           <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Not Found</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Account Not Found</h2>
+          <p className="text-gray-600 dark:text-gray-400">
             Unable to load account information. Please contact support for assistance.
           </p>
         </div>
@@ -290,8 +290,8 @@ export default function AccountPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-8">
         <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Account Settings</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Account Settings</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Manage your subscription, billing information, and account preferences
           </p>
         </div>

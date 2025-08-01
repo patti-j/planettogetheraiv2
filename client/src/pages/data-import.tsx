@@ -2682,7 +2682,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         onFocus: handleFocus,
         onBlur: handleBlur,
         // Enhanced mobile-friendly input styling
-        className: "w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded focus:z-10",
+        className: "w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white dark:focus:bg-gray-800 focus:border focus:border-blue-500 focus:rounded focus:z-10",
         // Improved mobile input handling
         autoComplete: "off",
         autoCorrect: "off",
@@ -2746,7 +2746,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
               }
             }}
             {...commonProps}
-            className="w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white focus:border focus:border-blue-500 focus:rounded"
+            className="w-full px-3 py-1 border-0 outline-none bg-transparent text-sm h-[36px] focus:bg-white dark:focus:bg-gray-800 focus:border focus:border-blue-500 focus:rounded"
           >
             <option value="">Select...</option>
             <option value="low">Low</option>
@@ -3350,7 +3350,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                       variant="outline"
                       size="sm"
                       onClick={() => downloadTemplate(selectedImportDataType)}
-                      className="bg-white border-amber-300 text-amber-700 hover:bg-amber-50"
+                      className="bg-white dark:bg-gray-800 border-amber-300 text-amber-700 hover:bg-amber-50 dark:hover:bg-gray-700"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download {supportedDataTypes.find(dt => dt.key === selectedImportDataType)?.label} Template
@@ -3748,7 +3748,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         {dataTypesToGenerate.map(key => {
                           const dataType = supportedDataTypes.find(dt => dt.key === key);
                           return (
-                            <Badge key={key} variant="outline" className="text-xs bg-white/50">
+                            <Badge key={key} variant="outline" className="text-xs bg-white/50 dark:bg-gray-800/50">
                               {dataType?.label}
                             </Badge>
                           );
@@ -3843,7 +3843,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                         aiSampleSize === option.value ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
                       }`}>
                         {aiSampleSize === option.value && (
-                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                          <div className="h-1.5 w-1.5 rounded-full bg-white dark:bg-gray-800" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

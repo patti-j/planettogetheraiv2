@@ -1047,9 +1047,9 @@ export default function AIAgent() {
         
         {/* Attachments Preview */}
         {attachments.length > 0 && (
-          <div className="border rounded-lg p-3 bg-gray-50 space-y-2">
+          <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800 space-y-2">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-700">Attachments ({attachments.length})</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments ({attachments.length})</h4>
               <Button
                 type="button"
                 variant="ghost"
@@ -1064,7 +1064,7 @@ export default function AIAgent() {
               {attachments.map((attachment) => {
                 const FileIcon = getFileIcon(attachment.type);
                 return (
-                  <div key={attachment.id} className="flex items-center gap-2 p-2 bg-white rounded border text-sm">
+                  <div key={attachment.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-700 rounded border text-sm">
                     <FileIcon className="w-4 h-4 text-gray-600" />
                     <span className="flex-1 truncate">{attachment.name}</span>
                     <span className="text-xs text-gray-500">

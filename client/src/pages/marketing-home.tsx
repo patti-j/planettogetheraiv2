@@ -351,7 +351,7 @@ const MarketingHome: React.FC = () => {
                 size="lg" 
                 variant="default"
                 onClick={handleGetStarted}
-                className="px-8 py-6 text-lg font-semibold bg-white text-blue-600 hover:bg-gray-100 hover:text-blue-700"
+                className="px-8 py-6 text-lg font-semibold bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-300"
               >
                 Start Free Trial
                 <Rocket className="ml-2 w-5 h-5" />
@@ -361,7 +361,7 @@ const MarketingHome: React.FC = () => {
                 size="lg" 
                 variant="outline"
                 onClick={handleWatchDemo}
-                className="px-8 py-6 text-lg font-semibold bg-white/10 border-white text-white hover:bg-white/20"
+                className="px-8 py-6 text-lg font-semibold bg-white/10 dark:bg-gray-800/10 border-white text-white hover:bg-white/20 dark:hover:bg-gray-800/20"
               >
                 Schedule Demo
                 <Calendar className="ml-2 w-5 h-5" />
