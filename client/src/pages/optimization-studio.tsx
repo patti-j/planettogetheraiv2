@@ -330,15 +330,15 @@ export default function OptimizationStudio() {
   };
 
   const AlgorithmCard = ({ algorithm }: { algorithm: OptimizationAlgorithm }) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <div className="flex-1">
-            <CardTitle className="text-lg">{algorithm.displayName}</CardTitle>
-            <CardDescription className="mt-1">{algorithm.description}</CardDescription>
+            <CardTitle className="text-base sm:text-lg leading-tight">{algorithm.displayName}</CardTitle>
+            <CardDescription className="mt-1 text-sm line-clamp-2">{algorithm.description}</CardDescription>
           </div>
-          <div className="flex flex-col gap-2 ml-4">
-            <Badge className={`${getStatusColor(algorithm.status)} text-white`}>
+          <div className="flex flex-wrap gap-2 sm:flex-col sm:ml-4">
+            <Badge className={`${getStatusColor(algorithm.status)} text-white text-xs`}>
               {algorithm.status}
             </Badge>
             {algorithm.isStandard && (
@@ -350,46 +350,48 @@ export default function OptimizationStudio() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col">
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-          <span className="capitalize">{algorithm.category.replace('_', ' ')}</span>
-          <span>v{algorithm.version}</span>
+          <span className="capitalize truncate">{algorithm.category.replace('_', ' ')}</span>
+          <span className="text-xs ml-2">v{algorithm.version}</span>
         </div>
+        
         {algorithm.performance && Object.keys(algorithm.performance).length > 0 && (
-          <div className="mb-3 flex gap-4 text-xs">
+          <div className="mb-3 flex flex-wrap gap-2 text-xs">
             <div className="flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
+              <TrendingUp className="w-3 h-3 text-green-600" />
               <span>Performance: {algorithm.performance.score || 'N/A'}</span>
             </div>
           </div>
         )}
         
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex-1"></div>
+        
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <Button 
             size="sm" 
-            variant="outline" 
-            className="flex-1"
+            className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white"
             onClick={(e) => {
               e.stopPropagation();
               setSelectedAlgorithm(algorithm);
             }}
           >
-            <Eye className="w-3 h-3 mr-1" />
-            Details
+            <Eye className="w-4 h-4 mr-2" />
+            View Details & Performance
           </Button>
           {algorithm.name === 'backwards-scheduling' && (
             <Button 
               size="sm" 
               variant="outline" 
-              className="flex-1"
+              className="w-full sm:flex-1"
               onClick={(e) => {
                 e.stopPropagation();
                 setArchitectureAlgorithmName(algorithm.displayName);
                 setShowArchitectureView(true);
               }}
             >
-              <Cpu className="w-3 h-3 mr-1" />
+              <Cpu className="w-4 h-4 mr-2" />
               Architecture
             </Button>
           )}
@@ -1315,58 +1317,129 @@ export default function OptimizationStudio() {
       {/* Algorithm Detail Dialog */}
       {selectedAlgorithm && (
         <Dialog open={!!selectedAlgorithm} onOpenChange={() => setSelectedAlgorithm(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl sm:max-w-[95vw] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedAlgorithm.displayName}
-                <Badge className={`${getStatusColor(selectedAlgorithm.status)} text-white`}>
-                  {selectedAlgorithm.status}
-                </Badge>
-                {selectedAlgorithm.isStandard && (
-                  <Badge variant="outline">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Standard
+              <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-lg sm:text-xl">{selectedAlgorithm.displayName}</span>
+                <div className="flex items-center gap-2">
+                  <Badge className={`${getStatusColor(selectedAlgorithm.status)} text-white text-xs`}>
+                    {selectedAlgorithm.status}
                   </Badge>
-                )}
+                  {selectedAlgorithm.isStandard && (
+                    <Badge variant="outline" className="text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Standard
+                    </Badge>
+                  )}
+                </div>
               </DialogTitle>
-              <DialogDescription>{selectedAlgorithm.description}</DialogDescription>
+              <DialogDescription className="text-sm">{selectedAlgorithm.description}</DialogDescription>
             </DialogHeader>
             
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <strong>Category:</strong> {selectedAlgorithm.category.replace('_', ' ')}
+              {/* Algorithm Overview */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div>
+                    <strong>Category:</strong> {selectedAlgorithm.category.replace('_', ' ')}
+                  </div>
+                  <div>
+                    <strong>Type:</strong> {selectedAlgorithm.type}
+                  </div>
                 </div>
-                <div>
-                  <strong>Version:</strong> {selectedAlgorithm.version}
+                <div className="space-y-2">
+                  <div>
+                    <strong>Version:</strong> {selectedAlgorithm.version}
+                  </div>
+                  <div>
+                    <strong>Created:</strong> {new Date(selectedAlgorithm.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
-                <div>
-                  <strong>Type:</strong> {selectedAlgorithm.type}
+              </div>
+
+              {/* Performance & Configuration */}
+              {(selectedAlgorithm.performance || selectedAlgorithm.configuration) && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-base">Performance & Configuration</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedAlgorithm.performance && Object.keys(selectedAlgorithm.performance).length > 0 && (
+                      <Card className="p-4">
+                        <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4" />
+                          Performance Metrics
+                        </h5>
+                        <div className="space-y-1 text-sm">
+                          {Object.entries(selectedAlgorithm.performance).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                              <span className="capitalize">{key.replace('_', ' ')}:</span>
+                              <span className="font-medium">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+                    
+                    {selectedAlgorithm.configuration && Object.keys(selectedAlgorithm.configuration).length > 0 && (
+                      <Card className="p-4">
+                        <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <Settings className="w-4 h-4" />
+                          Configuration
+                        </h5>
+                        <div className="space-y-1 text-sm">
+                          {Object.entries(selectedAlgorithm.configuration).slice(0, 5).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                              <span className="capitalize">{key.replace('_', ' ')}:</span>
+                              <span className="font-medium truncate ml-2">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <strong>Created:</strong> {new Date(selectedAlgorithm.createdAt).toLocaleDateString()}
+              )}
+
+              {/* How It Works */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Brain className="w-5 h-5" />
+                  How It Works
+                </h4>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="space-y-2 text-sm">
+                    <p><strong>Algorithm Type:</strong> {selectedAlgorithm.type}</p>
+                    <p><strong>Category:</strong> {selectedAlgorithm.category.replace('_', ' ')}</p>
+                    <p><strong>Description:</strong> {selectedAlgorithm.description}</p>
+                    {selectedAlgorithm.configuration?.objective && (
+                      <p><strong>Objective:</strong> {selectedAlgorithm.configuration.objective}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {selectedAlgorithm.algorithmCode && (
                 <div>
-                  <h4 className="font-semibold mb-2">Algorithm Code</h4>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Code className="w-4 h-4" />
+                    Algorithm Implementation
+                  </h4>
                   <div className="bg-gray-100 p-4 rounded-lg overflow-x-auto">
-                    <pre className="text-sm"><code>{selectedAlgorithm.algorithmCode}</code></pre>
+                    <pre className="text-xs sm:text-sm"><code>{selectedAlgorithm.algorithmCode}</code></pre>
                   </div>
                 </div>
               )}
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   <Edit3 className="w-4 h-4 mr-2" />
-                  Edit
+                  Edit Algorithm
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   <Copy className="w-4 h-4 mr-2" />
                   Duplicate
                 </Button>
-                <Button>
+                <Button size="sm" className="w-full sm:w-auto">
                   <TestTube className="w-4 h-4 mr-2" />
                   Test Algorithm
                 </Button>
