@@ -76,7 +76,10 @@ const MarketingHome: React.FC = () => {
   };
 
   const handleLogin = () => {
+    console.log("🔵 Login button clicked! Navigating to /login");
+    console.log("🔵 Current location before navigation:", window.location.pathname);
     setLocation("/login");
+    console.log("🔵 setLocation called with /login");
   };
 
   const features = [

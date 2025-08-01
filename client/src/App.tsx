@@ -227,6 +227,7 @@ function Router() {
         <Route path="/presentation" component={PresentationPage} />
         <Route path="/marketing" component={MarketingLandingPage} />
         <Route path="/home" component={MarketingHome} />
+        <Route path="/login" component={Login} />
         <Route path="/" component={MarketingHome} />
         <Route component={Login} />
       </Switch>
@@ -520,10 +521,6 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
-          <Route path="/login">
-            {/* Redirect authenticated users to homepage */}
-            <MarketingHome />
-          </Route>
           <Route path="/" component={MarketingHome} />
           <Route component={NotFound} />
         </Switch>
