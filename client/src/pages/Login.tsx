@@ -138,15 +138,15 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-6">
         {/* Logo and Title */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
             <Factory className="text-primary mr-3" size={32} />
-            <h1 className="text-3xl font-bold text-gray-800">PlanetTogether</h1>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">PlanetTogether</h1>
           </div>
-          <p className="text-gray-600">AI-powered production scheduling platform</p>
+          <p className="text-gray-600 dark:text-gray-300">AI Powered Factory Optimization</p>
         </div>
 
         {/* Login Form */}
@@ -162,7 +162,7 @@ export default function Login() {
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <Info className="h-4 w-4 text-gray-500" />
+                    <Info className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -175,29 +175,29 @@ export default function Login() {
                   <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                     <div className="space-y-3">
                       {demoAccounts.map((account) => (
-                        <div key={account.username} className="p-4 bg-gray-50 rounded-lg border">
+                        <div key={account.username} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-800">{account.username}</span>
-                                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">{account.role}</span>
+                                <span className="font-medium text-gray-800 dark:text-gray-200">{account.username}</span>
+                                <span className="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">{account.role}</span>
                               </div>
-                              <p className="text-sm text-gray-600 font-medium">{account.name}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{account.name}</p>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs text-gray-500 mb-1">Password:</div>
-                              <span className="text-sm font-mono text-gray-800 bg-white px-2 py-1 rounded border">••••••••</span>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Password:</div>
+                              <span className="text-sm font-mono text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 px-2 py-1 rounded border dark:border-gray-600">••••••••</span>
                             </div>
                           </div>
                           <div className="mt-3">
-                            <div className="text-xs text-gray-500 mb-1">Access & Permissions:</div>
-                            <p className="text-sm text-gray-700">{account.access}</p>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Access & Permissions:</div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{account.access}</p>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-300">
                         <strong>Note:</strong> Each account provides access to different features of the manufacturing production scheduling system. 
                         All demo accounts use the same secure password. The Trainer account has comprehensive view access to all modules for demonstration purposes.
                       </p>
@@ -216,7 +216,7 @@ export default function Login() {
               )}
               
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Username
                 </label>
                 <Input
@@ -231,7 +231,7 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Password
                 </label>
                 <div className="relative">
@@ -248,7 +248,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
