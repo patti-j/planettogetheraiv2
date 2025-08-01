@@ -331,7 +331,7 @@ LIVE DATA AVAILABLE:
 
 IMPORTANT: You have access to real live manufacturing data. When users ask about jobs, operations, resources, plants, or system status, use the provided live data above to give accurate answers. DO NOT say you don't have access - you have direct access to current system data.
 
-Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, START_TOUR, CREATE_TOUR, and others.
+Available actions: LIST_WIDGETS, LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, ANALYZE_DOCUMENT, ANALYZE_IMAGE, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CLEAR_CANVAS, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART, SHOW_API_DOCUMENTATION, START_TOUR, CREATE_TOUR, and others.
 
 Tour Guidelines:
 - START_TOUR: Start a guided tour for a specific role with voice narration
@@ -367,6 +367,14 @@ EXAMPLES THAT REQUIRE LIST_AVAILABLE_APIS:
 - "Tell me about yourself"
 - "What do you do?"
 - "How can you help?"
+
+EXAMPLES THAT REQUIRE LIST_WIDGETS:
+- "Which widgets do you have?"
+- "What widgets are available?"
+- "List widgets"
+- "Show me the widgets"
+- "What widget types exist?"
+- "What widget systems are available?"
 
 EXAMPLES THAT REQUIRE LIST_PRODUCTION_ORDERS:
 - "Show me the production orders"
@@ -568,6 +576,80 @@ async function getSystemContext(): Promise<SystemContext> {
 async function executeAction(action: string, parameters: any, message: string, context?: SystemContext, attachments?: AttachmentFile[]): Promise<AIAgentResponse> {
   try {
     switch (action) {
+      case "LIST_WIDGETS":
+        const widgetInfo = {
+          systems: [
+            { 
+              name: "Optimization Widget", 
+              type: "optimization",
+              description: "Advanced scheduling optimization controls with quick actions, history tracking, and performance metrics",
+              features: ["Quick optimization actions", "Optimization history", "Performance metrics", "Multiple algorithm support"]
+            },
+            { 
+              name: "Cockpit Widgets", 
+              type: "cockpit",
+              description: "Production cockpit widgets for real-time monitoring and control",
+              features: ["Real-time data display", "Custom layouts", "Interactive controls"]
+            },
+            { 
+              name: "Canvas Widgets", 
+              type: "canvas",
+              description: "Visual canvas widgets for dynamic data visualization",
+              features: ["Drag and drop", "Resizable", "Multiple widget types", "Live data updates"]
+            },
+            { 
+              name: "Dashboard Widgets", 
+              type: "dashboard",
+              description: "Analytics dashboard widgets for KPIs and reporting",
+              features: ["KPI metrics", "Charts and graphs", "Custom configurations", "Auto-refresh"]
+            }
+          ],
+          widgetTypes: [
+            { type: "kpi", description: "Key performance indicators with metrics" },
+            { type: "chart", description: "Charts (bar, line, pie, doughnut, gauge)" },
+            { type: "table", description: "Data tables with columns and rows" },
+            { type: "alert", description: "Notifications and alerts" },
+            { type: "progress", description: "Progress bars and trackers" },
+            { type: "text", description: "Text displays and labels" },
+            { type: "gauge", description: "Gauge displays for metrics" }
+          ]
+        };
+
+        // Check if should display in canvas
+        const shouldDisplayWidgetsInCanvas = parameters.displayInCanvas || 
+                                           message.toLowerCase().includes('canvas') ||
+                                           message.toLowerCase().includes('display') ||
+                                           message.toLowerCase().includes('show');
+        
+        if (shouldDisplayWidgetsInCanvas) {
+          return {
+            success: true,
+            message: message || "Here are the available widget systems and types:",
+            data: widgetInfo,
+            canvasAction: {
+              type: "ADD_CANVAS_CONTENT",
+              content: {
+                type: "table",
+                title: "Available Widget Systems",
+                data: widgetInfo.systems.reduce((acc, system) => {
+                  acc[system.name] = system.description;
+                  return acc;
+                }, {} as Record<string, string>),
+                width: "100%",
+                height: "auto"
+              }
+            },
+            actions: ["LIST_WIDGETS", "ADD_CANVAS_CONTENT"]
+          };
+        }
+
+        return {
+          success: true,
+          message: message || `We have several widget systems available:\n\n${widgetInfo.systems.map(s => `• ${s.name} (${s.type})\n  ${s.description}\n  Features: ${s.features.join(', ')}`).join('\n\n')}\n\nWidget types include: ${widgetInfo.widgetTypes.map(t => t.type).join(', ')}`,
+          data: widgetInfo,
+          actions: ["LIST_WIDGETS"]
+        };
+
       case "LIST_PRODUCTION_ORDERS":
       case "LIST_JOBS": // Keep backward compatibility
         const allProductionOrders = await storage.getProductionOrders();
