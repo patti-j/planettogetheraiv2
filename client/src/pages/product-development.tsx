@@ -401,15 +401,15 @@ export default function ProductDevelopment() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
             <Code2 className="w-8 h-8 text-blue-500" />
             Product Development Hub
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
             Strategy, architecture, development planning, and testing for system builders
           </p>
         </div>
@@ -455,7 +455,7 @@ export default function ProductDevelopment() {
         {/* Strategy Tab */}
         <TabsContent value="strategy" className="space-y-6">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl sm:text-2xl font-semibold">Strategic Documentation</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Strategic Documentation</h2>
             <Button onClick={() => setShowStrategyDialog(true)} className="text-sm px-3 flex-shrink-0">
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">New Strategy Doc</span>
@@ -464,15 +464,15 @@ export default function ProductDevelopment() {
           </div>
 
           {strategyLoading ? (
-            <div className="text-center py-8">Loading strategy documents...</div>
+            <div className="text-center py-8 text-gray-600 dark:text-gray-300">Loading strategy documents...</div>
           ) : (
             <div className="grid gap-4">
               {Array.isArray(strategyDocuments) && strategyDocuments.map((strategy) => (
-                <Card key={strategy.id} className="hover:shadow-lg transition-shadow">
+                <Card key={strategy.id} className="hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                           <FileText className="w-5 h-5 text-blue-500" />
                           {strategy.title}
                         </CardTitle>
@@ -480,7 +480,7 @@ export default function ProductDevelopment() {
                           <Badge variant={strategy.category === 'architecture' ? 'default' : 'secondary'}>
                             {strategy.category}
                           </Badge>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             Updated {new Date(strategy.updatedAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -496,12 +496,12 @@ export default function ProductDevelopment() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{strategy.content}</p>
+                    <p className="text-gray-700 dark:text-gray-300">{strategy.content}</p>
                   </CardContent>
                 </Card>
               ))}
               {(!Array.isArray(strategyDocuments) || strategyDocuments.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No strategy documents found. Create your first one above.
                 </div>
               )}
@@ -512,13 +512,13 @@ export default function ProductDevelopment() {
         {/* Roadmap Tab */}
         <TabsContent value="roadmap" className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Product Development Roadmap</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Product Development Roadmap</h2>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
                 <Calendar className="w-4 h-4 mr-2" />
                 Export Timeline
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
                 <Settings className="w-4 h-4 mr-2" />
                 Configure View
               </Button>
@@ -527,37 +527,37 @@ export default function ProductDevelopment() {
 
           {/* Roadmap Overview Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-green-600">{roadmapPhases.filter(p => p.status === 'completed').length}</p>
-                  <p className="text-sm text-gray-600">Completed Phases</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Completed Phases</p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-blue-600">{roadmapPhases.filter(p => p.status === 'in-progress').length}</p>
-                  <p className="text-sm text-gray-600">Active Phases</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Active Phases</p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-600">{roadmapPhases.filter(p => p.status === 'upcoming').length}</p>
-                  <p className="text-sm text-gray-600">Upcoming Phases</p>
+                  <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">{roadmapPhases.filter(p => p.status === 'upcoming').length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Upcoming Phases</p>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-purple-600">
                     {Math.round(roadmapPhases.reduce((acc, p) => acc + p.progress, 0) / roadmapPhases.length)}%
                   </p>
-                  <p className="text-sm text-gray-600">Overall Progress</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Overall Progress</p>
                 </div>
               </CardContent>
             </Card>
@@ -566,11 +566,11 @@ export default function ProductDevelopment() {
           {/* Timeline View */}
           <div className="space-y-6">
             {roadmapPhases.map((phase, index) => (
-              <Card key={phase.id} className={`relative overflow-hidden ${
-                phase.status === 'completed' ? 'border-green-200 bg-green-50' :
-                phase.status === 'in-progress' ? 'border-blue-200 bg-blue-50' :
-                phase.status === 'delayed' ? 'border-red-200 bg-red-50' :
-                'border-gray-200'
+              <Card key={phase.id} className={`relative overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 ${
+                phase.status === 'completed' ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' :
+                phase.status === 'in-progress' ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' :
+                phase.status === 'delayed' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' :
+                'border-gray-200 dark:border-gray-700'
               }`}>
                 {/* Phase Header */}
                 <CardHeader className="pb-4">
@@ -585,8 +585,8 @@ export default function ProductDevelopment() {
                         {index + 1}
                       </div>
                       <div>
-                        <CardTitle className="text-xl">{phase.name}</CardTitle>
-                        <CardDescription className="text-base mt-1">{phase.description}</CardDescription>
+                        <CardTitle className="text-xl text-gray-900 dark:text-white">{phase.name}</CardTitle>
+                        <CardDescription className="text-base mt-1 text-gray-600 dark:text-gray-300">{phase.description}</CardDescription>
                         <div className="flex items-center gap-4 mt-2">
                           <Badge variant={
                             phase.status === 'completed' ? 'default' :
@@ -595,11 +595,11 @@ export default function ProductDevelopment() {
                           }>
                             {phase.status.replace('-', ' ')}
                           </Badge>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
                             {new Date(phase.startDate).toLocaleDateString()} - {new Date(phase.endDate).toLocaleDateString()}
                           </span>
                           {phase.dependencies && phase.dependencies.length > 0 && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               Depends on Phase {phase.dependencies.join(', ')}
                             </span>
                           )}
@@ -607,7 +607,7 @@ export default function ProductDevelopment() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-800">{phase.progress}%</div>
+                      <div className="text-2xl font-bold text-gray-800 dark:text-gray-200">{phase.progress}%</div>
                       <Progress value={phase.progress} className="w-24 mt-1" />
                     </div>
                   </div>
@@ -728,24 +728,72 @@ export default function ProductDevelopment() {
         {/* Architecture Tab */}
         <TabsContent value="architecture" className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">System Architecture</h2>
-            <Button variant="outline">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">System Architecture</h2>
+            <Button variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
               <Network className="w-4 h-4 mr-2" />
               Visual Diagram
             </Button>
           </div>
 
+          {/* Architecture Overview */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Database className="w-5 h-5 text-blue-500" />
+                  Data Layer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 dark:text-gray-300">PostgreSQL with Drizzle ORM</p>
+                <div className="mt-2">
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Stable</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Layers className="w-5 h-5 text-purple-500" />
+                  Backend API
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Express.js with TypeScript</p>
+                <div className="mt-2">
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Stable</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                  <Code2 className="w-5 h-5 text-orange-500" />
+                  Frontend
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 dark:text-gray-300">React with TypeScript</p>
+                <div className="mt-2">
+                  <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Active Development</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid gap-4">
             {Array.isArray(architectureComponents) && architectureComponents.map((component, index) => (
-              <Card key={index}>
+              <Card key={index} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                         <Layers className="w-5 h-5 text-green-500" />
                         {component.name}
                       </CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">{component.technology}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{component.technology}</p>
                     </div>
                     <div className="text-right">
                       <Badge variant={
@@ -754,23 +802,86 @@ export default function ProductDevelopment() {
                       }>
                         {component.health}
                       </Badge>
-                      <p className="text-sm text-gray-500 mt-1">{component.coverage}% Coverage</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{component.coverage}% Coverage</p>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 mb-3">{component.description}</p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">{component.description}</p>
                   <Progress value={component.coverage} className="w-full" />
                 </CardContent>
               </Card>
             ))}
+            
+            {(!Array.isArray(architectureComponents) || architectureComponents.length === 0) && (
+              <div className="space-y-4">
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                      <Database className="w-5 h-5 text-blue-500" />
+                      Database Architecture
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">PostgreSQL database with comprehensive manufacturing schema including production orders, operations, resources, and planning data.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Production Orders</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Operations</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Resources</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Inventory</Badge>
+                    </div>
+                    <Progress value={95} className="w-full mt-3" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">95% Schema Complete</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                      <Layers className="w-5 h-5 text-purple-500" />
+                      API Layer
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">RESTful API built with Express.js providing endpoints for all manufacturing operations and data management.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Authentication</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Scheduling</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Optimization</Badge>
+                    </div>
+                    <Progress value={88} className="w-full mt-3" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">88% API Coverage</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                      <Code2 className="w-5 h-5 text-orange-500" />
+                      Frontend Architecture
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">React-based SPA with modular component architecture, featuring Gantt charts, dashboards, and real-time updates.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">React Query</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Tailwind CSS</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">React DnD</Badge>
+                      <Badge variant="outline" className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">Shadcn/UI</Badge>
+                    </div>
+                    <Progress value={75} className="w-full mt-3" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">75% Implementation Complete</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </TabsContent>
 
         {/* Development Tab */}
         <TabsContent value="development" className="space-y-6">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl sm:text-2xl font-semibold">Development Planning</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Development Planning</h2>
             <Button onClick={() => setShowTaskDialog(true)} className="text-sm px-3 flex-shrink-0">
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">New Task</span>
@@ -779,15 +890,15 @@ export default function ProductDevelopment() {
           </div>
 
           {tasksLoading ? (
-            <div className="text-center py-8">Loading development tasks...</div>
+            <div className="text-center py-8 text-gray-600 dark:text-gray-300">Loading development tasks...</div>
           ) : (
             <div className="grid gap-4">
               {Array.isArray(developmentTasks) && developmentTasks.map((task) => (
-                <Card key={task.id} className="hover:shadow-lg transition-shadow">
+                <Card key={task.id} className="hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                           <GitBranch className="w-5 h-5 text-orange-500" />
                           {task.title}
                         </CardTitle>
@@ -801,7 +912,7 @@ export default function ProductDevelopment() {
                           <Badge variant="outline">
                             {task.status.replace('-', ' ')}
                           </Badge>
-                          <span className="text-sm text-gray-500">{task.phase}</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">{task.phase}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -823,11 +934,11 @@ export default function ProductDevelopment() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{task.description}</p>
+                    <p className="text-gray-700 dark:text-gray-300">{task.description}</p>
                     {task.dueDate && (
                       <div className="flex items-center gap-2 mt-2">
                         <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           Due: {new Date(task.dueDate).toLocaleDateString()}
                         </span>
                       </div>
@@ -836,7 +947,7 @@ export default function ProductDevelopment() {
                 </Card>
               ))}
               {(!Array.isArray(developmentTasks) || developmentTasks.length === 0) && !(tasksLoading) && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No development tasks found. Create your first one above.
                 </div>
               )}
@@ -875,9 +986,9 @@ export default function ProductDevelopment() {
             ))}
           </div>
 
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                 <BarChart3 className="w-5 h-5 text-blue-500" />
                 Overall System Progress
               </CardTitle>
@@ -886,19 +997,19 @@ export default function ProductDevelopment() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-green-600">58%</p>
-                  <p className="text-sm text-gray-600">Overall Complete</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Overall Complete</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-blue-600">34</p>
-                  <p className="text-sm text-gray-600">Total Tasks</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-orange-600">22</p>
-                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-purple-600">12</p>
-                  <p className="text-sm text-gray-600">Remaining</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Remaining</p>
                 </div>
               </div>
             </CardContent>
@@ -908,7 +1019,7 @@ export default function ProductDevelopment() {
         {/* Testing Tab */}
         <TabsContent value="testing" className="space-y-6">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-xl sm:text-2xl font-semibold">System Testing</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">System Testing</h2>
             <Button onClick={() => setShowTestDialog(true)} className="text-sm px-3 flex-shrink-0">
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">New Test Suite</span>
@@ -916,16 +1027,52 @@ export default function ProductDevelopment() {
             </Button>
           </div>
 
+          {/* Testing Overview Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">245</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Passed Tests</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-red-600">12</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Failed Tests</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">95%</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Coverage</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">2.3s</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Runtime</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {testsLoading ? (
-            <div className="text-center py-8">Loading test suites...</div>
+            <div className="text-center py-8 text-gray-600 dark:text-gray-300">Loading test suites...</div>
           ) : (
             <div className="grid gap-4">
               {Array.isArray(testSuites) && testSuites.map((suite) => (
-                <Card key={suite.id} className="hover:shadow-lg transition-shadow">
+                <Card key={suite.id} className="hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                           <TestTube className="w-5 h-5 text-teal-500" />
                           {suite.name}
                         </CardTitle>
@@ -936,7 +1083,7 @@ export default function ProductDevelopment() {
                           <Badge variant={suite.status === 'active' ? 'default' : 'secondary'}>
                             {suite.status}
                           </Badge>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             Updated {new Date(suite.updatedAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -957,31 +1104,31 @@ export default function ProductDevelopment() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 mb-3">{suite.description}</p>
+                    <p className="text-gray-700 dark:text-gray-300 mb-3">{suite.description}</p>
                     
                     <div className="mt-4 space-y-2">
-                      <h4 className="font-medium">Test Cases ({testCasesBySuite[suite.id]?.length || 0})</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-white">Test Cases ({testCasesBySuite[suite.id]?.length || 0})</h4>
                       {testCasesBySuite[suite.id]?.map((testCase) => (
-                        <div key={testCase.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div key={testCase.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${
                               testCase.status === 'pass' ? 'bg-green-500' :
                               testCase.status === 'fail' ? 'bg-red-500' :
                               testCase.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-400'
                             }`} />
-                            <span className="text-sm font-medium">{testCase.name}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">{testCase.name}</span>
                           </div>
-                          <span className="text-xs text-gray-500 capitalize">{testCase.status}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{testCase.status}</span>
                         </div>
                       )) || (
-                        <div className="text-sm text-gray-500 p-2">No test cases defined</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 p-2">No test cases defined</div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
               {(!Array.isArray(testSuites) || testSuites.length === 0) && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No test suites found. Create your first one above.
                 </div>
               )}
