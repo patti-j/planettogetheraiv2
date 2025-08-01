@@ -72,9 +72,9 @@ import {
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
 
   // Extension Studio
-  extensions, extensionFiles, extensionInstallations, extensionMarketplace, extensionReviews, extensionData,
-  type Extension, type ExtensionFile, type ExtensionInstallation, type ExtensionMarketplace, type ExtensionReview, type ExtensionData,
-  type InsertExtension, type InsertExtensionFile, type InsertExtensionInstallation, type InsertExtensionMarketplace, type InsertExtensionReview, type InsertExtensionData,
+  extensions, extensionFiles, extensionInstallations, extensionMarketplace, extensionReviews,
+  type Extension, type ExtensionFile, type ExtensionInstallation, type ExtensionMarketplace, type ExtensionReview,
+  type InsertExtension, type InsertExtensionFile, type InsertExtensionInstallation, type InsertExtensionMarketplace, type InsertExtensionReview,
 
   // Constraints Management System
   constraintCategories, constraints, constraintViolations, constraintExceptions,
