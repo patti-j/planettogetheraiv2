@@ -56,7 +56,9 @@ import {
   insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
   insertFieldCommentSchema,
   // Constraints Management Schemas
-  insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema
+  insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema,
+  // Buffer Management Schemas
+  insertBufferDefinitionSchema, insertBufferConsumptionSchema, insertBufferManagementHistorySchema, insertBufferPolicySchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
 import { emailService } from "./email";
@@ -19434,6 +19436,238 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     } catch (error) {
       console.error("Error running drum analysis:", error);
       res.status(500).json({ error: "Failed to run drum analysis" });
+    }
+  });
+
+  // ==================== TOC BUFFER MANAGEMENT ENDPOINTS ====================
+  
+  // Buffer Definitions API
+  app.get("/api/buffer-definitions", async (req, res) => {
+    try {
+      const { bufferType, bufferCategory, isActive } = req.query;
+      const buffers = await storage.getBufferDefinitions(
+        bufferType as string,
+        bufferCategory as string,
+        isActive !== undefined ? isActive === 'true' : undefined
+      );
+      res.json(buffers);
+    } catch (error) {
+      console.error("Error fetching buffer definitions:", error);
+      res.status(500).json({ error: "Failed to fetch buffer definitions" });
+    }
+  });
+
+  app.get("/api/buffer-definitions/:id", async (req, res) => {
+    try {
+      const buffer = await storage.getBufferDefinition(parseInt(req.params.id));
+      if (!buffer) {
+        return res.status(404).json({ error: "Buffer definition not found" });
+      }
+      res.json(buffer);
+    } catch (error) {
+      console.error("Error fetching buffer definition:", error);
+      res.status(500).json({ error: "Failed to fetch buffer definition" });
+    }
+  });
+
+  app.post("/api/buffer-definitions", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertBufferDefinitionSchema.parse({
+        ...req.body,
+        createdBy: req.session.userId || req.user?.id
+      });
+      const buffer = await storage.createBufferDefinition(validatedData);
+      res.status(201).json(buffer);
+    } catch (error) {
+      console.error("Error creating buffer definition:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid buffer data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create buffer definition" });
+    }
+  });
+
+  app.patch("/api/buffer-definitions/:id", requireAuth, async (req, res) => {
+    try {
+      const buffer = await storage.updateBufferDefinition(parseInt(req.params.id), {
+        ...req.body,
+        updatedBy: req.session.userId || req.user?.id
+      });
+      if (!buffer) {
+        return res.status(404).json({ error: "Buffer definition not found" });
+      }
+      res.json(buffer);
+    } catch (error) {
+      console.error("Error updating buffer definition:", error);
+      res.status(500).json({ error: "Failed to update buffer definition" });
+    }
+  });
+
+  app.delete("/api/buffer-definitions/:id", requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteBufferDefinition(parseInt(req.params.id));
+      if (!deleted) {
+        return res.status(404).json({ error: "Buffer definition not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buffer definition:", error);
+      res.status(500).json({ error: "Failed to delete buffer definition" });
+    }
+  });
+
+  // Buffer Consumption API
+  app.get("/api/buffer-consumption", async (req, res) => {
+    try {
+      const { bufferDefinitionId, currentZone } = req.query;
+      const consumption = await storage.getBufferConsumption(
+        bufferDefinitionId ? parseInt(bufferDefinitionId as string) : undefined,
+        currentZone as string
+      );
+      res.json(consumption);
+    } catch (error) {
+      console.error("Error fetching buffer consumption:", error);
+      res.status(500).json({ error: "Failed to fetch buffer consumption" });
+    }
+  });
+
+  app.get("/api/buffer-consumption/latest/:bufferDefinitionId", async (req, res) => {
+    try {
+      const consumption = await storage.getLatestBufferConsumption(parseInt(req.params.bufferDefinitionId));
+      if (!consumption) {
+        return res.status(404).json({ error: "No consumption data found" });
+      }
+      res.json(consumption);
+    } catch (error) {
+      console.error("Error fetching latest buffer consumption:", error);
+      res.status(500).json({ error: "Failed to fetch latest buffer consumption" });
+    }
+  });
+
+  app.post("/api/buffer-consumption", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertBufferConsumptionSchema.parse(req.body);
+      const consumption = await storage.createBufferConsumption(validatedData);
+      res.status(201).json(consumption);
+    } catch (error) {
+      console.error("Error creating buffer consumption:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid consumption data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create buffer consumption" });
+    }
+  });
+
+  app.post("/api/buffer-consumption/update-level", requireAuth, async (req, res) => {
+    try {
+      const { bufferDefinitionId, newLevel, consumingEntityType, consumingEntityId } = req.body;
+      if (!bufferDefinitionId || newLevel === undefined) {
+        return res.status(400).json({ error: "bufferDefinitionId and newLevel are required" });
+      }
+      
+      const consumption = await storage.updateBufferLevel(
+        bufferDefinitionId,
+        newLevel,
+        consumingEntityType && consumingEntityId ? { type: consumingEntityType, id: consumingEntityId } : undefined
+      );
+      res.json(consumption);
+    } catch (error) {
+      console.error("Error updating buffer level:", error);
+      res.status(500).json({ error: "Failed to update buffer level" });
+    }
+  });
+
+  // Buffer Management History API
+  app.get("/api/buffer-management-history", async (req, res) => {
+    try {
+      const { bufferDefinitionId, eventType } = req.query;
+      const history = await storage.getBufferManagementHistory(
+        bufferDefinitionId ? parseInt(bufferDefinitionId as string) : undefined,
+        eventType as string
+      );
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching buffer management history:", error);
+      res.status(500).json({ error: "Failed to fetch buffer management history" });
+    }
+  });
+
+  // Buffer Policies API
+  app.get("/api/buffer-policies", async (req, res) => {
+    try {
+      const { policyType, isActive } = req.query;
+      const policies = await storage.getBufferPolicies(
+        policyType as string,
+        isActive !== undefined ? isActive === 'true' : undefined
+      );
+      res.json(policies);
+    } catch (error) {
+      console.error("Error fetching buffer policies:", error);
+      res.status(500).json({ error: "Failed to fetch buffer policies" });
+    }
+  });
+
+  app.post("/api/buffer-policies", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertBufferPolicySchema.parse({
+        ...req.body,
+        createdBy: req.session.userId || req.user?.id
+      });
+      const policy = await storage.createBufferPolicy(validatedData);
+      res.status(201).json(policy);
+    } catch (error) {
+      console.error("Error creating buffer policy:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid policy data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create buffer policy" });
+    }
+  });
+
+  app.patch("/api/buffer-policies/:id", requireAuth, async (req, res) => {
+    try {
+      const policy = await storage.updateBufferPolicy(parseInt(req.params.id), req.body);
+      if (!policy) {
+        return res.status(404).json({ error: "Buffer policy not found" });
+      }
+      res.json(policy);
+    } catch (error) {
+      console.error("Error updating buffer policy:", error);
+      res.status(500).json({ error: "Failed to update buffer policy" });
+    }
+  });
+
+  app.delete("/api/buffer-policies/:id", requireAuth, async (req, res) => {
+    try {
+      const deleted = await storage.deleteBufferPolicy(parseInt(req.params.id));
+      if (!deleted) {
+        return res.status(404).json({ error: "Buffer policy not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting buffer policy:", error);
+      res.status(500).json({ error: "Failed to delete buffer policy" });
+    }
+  });
+
+  // Buffer Analysis API
+  app.get("/api/buffer-analysis/:bufferDefinitionId", async (req, res) => {
+    try {
+      const analysis = await storage.analyzeBufferHealth(parseInt(req.params.bufferDefinitionId));
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing buffer health:", error);
+      res.status(500).json({ error: "Failed to analyze buffer health" });
+    }
+  });
+
+  app.get("/api/buffer-alerts", async (req, res) => {
+    try {
+      const alerts = await storage.getBufferAlerts();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching buffer alerts:", error);
+      res.status(500).json({ error: "Failed to fetch buffer alerts" });
     }
   });
 

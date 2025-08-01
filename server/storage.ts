@@ -76,6 +76,11 @@ import {
   type ConstraintCategory, type Constraint, type ConstraintViolation, type ConstraintException,
   type InsertConstraintCategory, type InsertConstraint, type InsertConstraintViolation, type InsertConstraintException,
 
+  // TOC Buffer Management System
+  bufferDefinitions, bufferConsumption, bufferManagementHistory, bufferPolicies,
+  type BufferDefinition, type BufferConsumption, type BufferManagementHistory, type BufferPolicy,
+  type InsertBufferDefinition, type InsertBufferConsumption, type InsertBufferManagementHistory, type InsertBufferPolicy,
+
   productionPlans, productionTargets, resourceAllocations, productionMilestones,
   type ProductionPlan, type ProductionTarget, type ResourceAllocation, type ProductionMilestone,
   type InsertProductionPlan, type InsertProductionTarget, type InsertResourceAllocation, type InsertProductionMilestone,
@@ -743,6 +748,48 @@ export interface IStorage {
       recommendation: string;
     }>;
   }>;
+  
+  // TOC Buffer Management
+  // Buffer Definitions
+  getBufferDefinitions(bufferType?: string, bufferCategory?: string, isActive?: boolean): Promise<BufferDefinition[]>;
+  getBufferDefinition(id: number): Promise<BufferDefinition | undefined>;
+  getBufferDefinitionsByLocation(entityType: string, entityId: number): Promise<BufferDefinition[]>;
+  createBufferDefinition(buffer: InsertBufferDefinition): Promise<BufferDefinition>;
+  updateBufferDefinition(id: number, buffer: Partial<InsertBufferDefinition>): Promise<BufferDefinition | undefined>;
+  deleteBufferDefinition(id: number): Promise<boolean>;
+  
+  // Buffer Consumption
+  getBufferConsumption(bufferDefinitionId?: number, currentZone?: string): Promise<BufferConsumption[]>;
+  getLatestBufferConsumption(bufferDefinitionId: number): Promise<BufferConsumption | undefined>;
+  createBufferConsumption(consumption: InsertBufferConsumption): Promise<BufferConsumption>;
+  updateBufferConsumption(id: number, consumption: Partial<InsertBufferConsumption>): Promise<BufferConsumption | undefined>;
+  updateBufferLevel(bufferDefinitionId: number, newLevel: number, consumingEntity?: { type: string; id: number }): Promise<BufferConsumption>;
+  
+  // Buffer Management History
+  getBufferManagementHistory(bufferDefinitionId?: number, eventType?: string): Promise<BufferManagementHistory[]>;
+  createBufferManagementHistory(history: InsertBufferManagementHistory): Promise<BufferManagementHistory>;
+  
+  // Buffer Policies
+  getBufferPolicies(policyType?: string, isActive?: boolean): Promise<BufferPolicy[]>;
+  getBufferPolicy(id: number): Promise<BufferPolicy | undefined>;
+  createBufferPolicy(policy: InsertBufferPolicy): Promise<BufferPolicy>;
+  updateBufferPolicy(id: number, policy: Partial<InsertBufferPolicy>): Promise<BufferPolicy | undefined>;
+  deleteBufferPolicy(id: number): Promise<boolean>;
+  
+  // Buffer Analysis and Monitoring
+  analyzeBufferHealth(bufferDefinitionId: number): Promise<{
+    currentStatus: string;
+    penetrationHistory: Array<{ timestamp: Date; penetration: number }>;
+    recommendations: string[];
+    projectedExhaustion: Date | null;
+  }>;
+  getBufferAlerts(): Promise<Array<{
+    bufferId: number;
+    bufferName: string;
+    alertType: string;
+    severity: string;
+    message: string;
+  }>>;
   
   // Canvas Settings Management
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
@@ -12812,6 +12859,323 @@ export class DatabaseStorage implements IStorage {
       updated: drumsUpdated,
       recommendations: recommendations.sort((a, b) => b.score - a.score).slice(0, 10)
     };
+  }
+
+  // TOC Buffer Management Implementation
+  // Buffer Definitions
+  async getBufferDefinitions(bufferType?: string, bufferCategory?: string, isActive?: boolean): Promise<BufferDefinition[]> {
+    let query = db.select().from(bufferDefinitions);
+    
+    const conditions: any[] = [];
+    if (bufferType) conditions.push(eq(bufferDefinitions.bufferType, bufferType));
+    if (bufferCategory) conditions.push(eq(bufferDefinitions.bufferCategory, bufferCategory));
+    if (isActive !== undefined) conditions.push(eq(bufferDefinitions.isActive, isActive));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query;
+  }
+
+  async getBufferDefinition(id: number): Promise<BufferDefinition | undefined> {
+    const [buffer] = await db.select().from(bufferDefinitions).where(eq(bufferDefinitions.id, id));
+    return buffer || undefined;
+  }
+
+  async getBufferDefinitionsByLocation(entityType: string, entityId: number): Promise<BufferDefinition[]> {
+    return await db.select().from(bufferDefinitions)
+      .where(
+        and(
+          eq(bufferDefinitions.locationEntityType, entityType),
+          eq(bufferDefinitions.locationEntityId, entityId)
+        )
+      );
+  }
+
+  async createBufferDefinition(buffer: InsertBufferDefinition): Promise<BufferDefinition> {
+    const [newBuffer] = await db.insert(bufferDefinitions).values(buffer).returning();
+    return newBuffer;
+  }
+
+  async updateBufferDefinition(id: number, buffer: Partial<InsertBufferDefinition>): Promise<BufferDefinition | undefined> {
+    const [updated] = await db.update(bufferDefinitions)
+      .set({
+        ...buffer,
+        updatedAt: new Date(),
+      })
+      .where(eq(bufferDefinitions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteBufferDefinition(id: number): Promise<boolean> {
+    const result = await db.delete(bufferDefinitions).where(eq(bufferDefinitions.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Buffer Consumption
+  async getBufferConsumption(bufferDefinitionId?: number, currentZone?: string): Promise<BufferConsumption[]> {
+    let query = db.select().from(bufferConsumption);
+    
+    const conditions: any[] = [];
+    if (bufferDefinitionId) conditions.push(eq(bufferConsumption.bufferDefinitionId, bufferDefinitionId));
+    if (currentZone) conditions.push(eq(bufferConsumption.currentZone, currentZone));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(bufferConsumption.measurementTimestamp));
+  }
+
+  async getLatestBufferConsumption(bufferDefinitionId: number): Promise<BufferConsumption | undefined> {
+    const [latest] = await db.select().from(bufferConsumption)
+      .where(eq(bufferConsumption.bufferDefinitionId, bufferDefinitionId))
+      .orderBy(desc(bufferConsumption.measurementTimestamp))
+      .limit(1);
+    return latest || undefined;
+  }
+
+  async createBufferConsumption(consumption: InsertBufferConsumption): Promise<BufferConsumption> {
+    const [newConsumption] = await db.insert(bufferConsumption).values(consumption).returning();
+    return newConsumption;
+  }
+
+  async updateBufferConsumption(id: number, consumption: Partial<InsertBufferConsumption>): Promise<BufferConsumption | undefined> {
+    const [updated] = await db.update(bufferConsumption)
+      .set(consumption)
+      .where(eq(bufferConsumption.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateBufferLevel(
+    bufferDefinitionId: number, 
+    newLevel: number, 
+    consumingEntity?: { type: string; id: number }
+  ): Promise<BufferConsumption> {
+    // Get buffer definition to calculate zones
+    const buffer = await this.getBufferDefinition(bufferDefinitionId);
+    if (!buffer) throw new Error('Buffer definition not found');
+
+    const targetSize = Number(buffer.targetSize);
+    const redZone = Number(buffer.redZonePercent) / 100;
+    const yellowZone = Number(buffer.yellowZonePercent) / 100;
+    
+    // Calculate current zone
+    const levelPercent = newLevel / targetSize;
+    let currentZone: string;
+    let alertStatus = 'normal';
+    let penetrationIntoRed = 0;
+
+    if (levelPercent <= redZone) {
+      currentZone = 'red';
+      alertStatus = 'critical';
+      penetrationIntoRed = ((redZone - levelPercent) / redZone) * 100;
+    } else if (levelPercent <= redZone + yellowZone) {
+      currentZone = 'yellow';
+      alertStatus = 'warning';
+    } else {
+      currentZone = 'green';
+    }
+
+    // Get previous consumption to calculate rate
+    const previousConsumption = await this.getLatestBufferConsumption(bufferDefinitionId);
+    let consumptionRate = 0;
+    
+    if (previousConsumption) {
+      const timeDiff = Date.now() - new Date(previousConsumption.measurementTimestamp).getTime();
+      const hoursDiff = timeDiff / (1000 * 60 * 60);
+      if (hoursDiff > 0) {
+        consumptionRate = (Number(previousConsumption.currentLevel) - newLevel) / hoursDiff;
+      }
+    }
+
+    // Create new consumption record
+    const newConsumption = await this.createBufferConsumption({
+      bufferDefinitionId,
+      currentLevel: newLevel,
+      currentZone,
+      consumptionRate,
+      consumingEntityType: consumingEntity?.type,
+      consumingEntityId: consumingEntity?.id,
+      penetrationIntoRed,
+      alertStatus,
+      actionRequired: alertStatus === 'critical' ? 'Expedite replenishment' : 
+                     alertStatus === 'warning' ? 'Monitor closely' : null,
+    });
+
+    // Record event in history if zone changed
+    if (previousConsumption && previousConsumption.currentZone !== currentZone) {
+      await this.createBufferManagementHistory({
+        bufferDefinitionId,
+        eventType: 'penetration',
+        eventDescription: `Buffer zone changed from ${previousConsumption.currentZone} to ${currentZone}`,
+        levelBefore: previousConsumption.currentLevel,
+        levelAfter: newLevel,
+        zoneBefore: previousConsumption.currentZone,
+        zoneAfter: currentZone,
+        impactSeverity: currentZone === 'red' ? 'critical' : currentZone === 'yellow' ? 'medium' : 'low',
+      });
+    }
+
+    return newConsumption;
+  }
+
+  // Buffer Management History
+  async getBufferManagementHistory(bufferDefinitionId?: number, eventType?: string): Promise<BufferManagementHistory[]> {
+    let query = db.select().from(bufferManagementHistory);
+    
+    const conditions: any[] = [];
+    if (bufferDefinitionId) conditions.push(eq(bufferManagementHistory.bufferDefinitionId, bufferDefinitionId));
+    if (eventType) conditions.push(eq(bufferManagementHistory.eventType, eventType));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(bufferManagementHistory.eventTimestamp));
+  }
+
+  async createBufferManagementHistory(history: InsertBufferManagementHistory): Promise<BufferManagementHistory> {
+    const [newHistory] = await db.insert(bufferManagementHistory).values(history).returning();
+    return newHistory;
+  }
+
+  // Buffer Policies
+  async getBufferPolicies(policyType?: string, isActive?: boolean): Promise<BufferPolicy[]> {
+    let query = db.select().from(bufferPolicies);
+    
+    const conditions: any[] = [];
+    if (policyType) conditions.push(eq(bufferPolicies.policyType, policyType));
+    if (isActive !== undefined) conditions.push(eq(bufferPolicies.isActive, isActive));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query;
+  }
+
+  async getBufferPolicy(id: number): Promise<BufferPolicy | undefined> {
+    const [policy] = await db.select().from(bufferPolicies).where(eq(bufferPolicies.id, id));
+    return policy || undefined;
+  }
+
+  async createBufferPolicy(policy: InsertBufferPolicy): Promise<BufferPolicy> {
+    const [newPolicy] = await db.insert(bufferPolicies).values(policy).returning();
+    return newPolicy;
+  }
+
+  async updateBufferPolicy(id: number, policy: Partial<InsertBufferPolicy>): Promise<BufferPolicy | undefined> {
+    const [updated] = await db.update(bufferPolicies)
+      .set({
+        ...policy,
+        updatedAt: new Date(),
+      })
+      .where(eq(bufferPolicies.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteBufferPolicy(id: number): Promise<boolean> {
+    const result = await db.delete(bufferPolicies).where(eq(bufferPolicies.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Buffer Analysis and Monitoring
+  async analyzeBufferHealth(bufferDefinitionId: number): Promise<{
+    currentStatus: string;
+    penetrationHistory: Array<{ timestamp: Date; penetration: number }>;
+    recommendations: string[];
+    projectedExhaustion: Date | null;
+  }> {
+    // Get recent consumption history
+    const consumptionHistory = await db.select().from(bufferConsumption)
+      .where(eq(bufferConsumption.bufferDefinitionId, bufferDefinitionId))
+      .orderBy(desc(bufferConsumption.measurementTimestamp))
+      .limit(100);
+
+    if (consumptionHistory.length === 0) {
+      return {
+        currentStatus: 'No data available',
+        penetrationHistory: [],
+        recommendations: ['Start monitoring buffer consumption'],
+        projectedExhaustion: null,
+      };
+    }
+
+    const latest = consumptionHistory[0];
+    const currentStatus = `Zone: ${latest.currentZone}, Level: ${latest.currentLevel}, Alert: ${latest.alertStatus}`;
+
+    // Calculate penetration history
+    const penetrationHistory = consumptionHistory
+      .filter(c => c.penetrationIntoRed && Number(c.penetrationIntoRed) > 0)
+      .map(c => ({
+        timestamp: new Date(c.measurementTimestamp),
+        penetration: Number(c.penetrationIntoRed),
+      }));
+
+    // Generate recommendations
+    const recommendations: string[] = [];
+    if (latest.currentZone === 'red') {
+      recommendations.push('URGENT: Expedite replenishment immediately');
+      recommendations.push('Review and adjust buffer size if red zone penetrations are frequent');
+    } else if (latest.currentZone === 'yellow') {
+      recommendations.push('Monitor consumption closely');
+      recommendations.push('Prepare for potential replenishment');
+    }
+
+    // Calculate projected exhaustion
+    let projectedExhaustion: Date | null = null;
+    if (latest.consumptionRate && Number(latest.consumptionRate) > 0) {
+      const hoursToExhaustion = Number(latest.currentLevel) / Number(latest.consumptionRate);
+      projectedExhaustion = new Date(Date.now() + hoursToExhaustion * 60 * 60 * 1000);
+    }
+
+    return {
+      currentStatus,
+      penetrationHistory,
+      recommendations,
+      projectedExhaustion,
+    };
+  }
+
+  async getBufferAlerts(): Promise<Array<{
+    bufferId: number;
+    bufferName: string;
+    alertType: string;
+    severity: string;
+    message: string;
+  }>> {
+    // Get all buffers with critical or warning status
+    const criticalBuffers = await db.select({
+      bufferId: bufferDefinitions.id,
+      bufferName: bufferDefinitions.name,
+      alertStatus: bufferConsumption.alertStatus,
+      currentZone: bufferConsumption.currentZone,
+      currentLevel: bufferConsumption.currentLevel,
+      penetrationIntoRed: bufferConsumption.penetrationIntoRed,
+    })
+    .from(bufferConsumption)
+    .innerJoin(bufferDefinitions, eq(bufferConsumption.bufferDefinitionId, bufferDefinitions.id))
+    .where(
+      and(
+        inArray(bufferConsumption.alertStatus, ['warning', 'critical', 'emergency']),
+        eq(bufferDefinitions.isActive, true)
+      )
+    );
+
+    return criticalBuffers.map(buffer => ({
+      bufferId: buffer.bufferId,
+      bufferName: buffer.bufferName,
+      alertType: buffer.currentZone === 'red' ? 'penetration' : 'warning',
+      severity: buffer.alertStatus,
+      message: buffer.currentZone === 'red' 
+        ? `Buffer in RED zone with ${buffer.penetrationIntoRed?.toFixed(1)}% penetration`
+        : `Buffer in ${buffer.currentZone.toUpperCase()} zone - monitoring required`,
+    }));
   }
 }
 

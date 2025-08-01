@@ -12,6 +12,11 @@ The platform's vision is to transform traditional ERP functionality into an AI-f
 - Implemented drum_analysis_history table to track all drum designation changes and analysis results
 - Created API endpoints for drum management: manual designation, analysis history, and automated analysis
 - Drum analysis uses resource utilization metrics (operation count, duration) to calculate bottleneck scores
+- Added complete TOC buffer management system with time and stock buffer capabilities
+- Implemented four buffer tables: buffer_definitions, buffer_consumption, buffer_management_history, buffer_policies
+- Created comprehensive buffer management API endpoints for CRUD operations, consumption tracking, and analysis
+- Buffer system supports red/yellow/green zone management with automatic alert generation
+- Integrated buffer consumption tracking with real-time zone calculations and penetration monitoring
 
 ## User Preferences
 

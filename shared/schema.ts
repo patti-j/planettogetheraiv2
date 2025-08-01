@@ -8692,6 +8692,176 @@ export const drumAnalysisHistory = pgTable("drum_analysis_history", {
   dateIdx: index("drum_analysis_date_idx").on(table.analysisDate),
 }));
 
+// ==================== TOC BUFFER MANAGEMENT ====================
+
+// Buffer Types: Time buffers protect against disruptions, Stock buffers protect against stockouts
+export const bufferDefinitions = pgTable("buffer_definitions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  bufferType: text("buffer_type").notNull(), // 'time', 'stock'
+  bufferCategory: text("buffer_category").notNull(), // For time: 'drum', 'feeding', 'shipping', 'project'; For stock: 'finished_goods', 'raw_material', 'wip'
+  
+  // Location/Application
+  locationEntityType: text("location_entity_type"), // 'resource', 'operation', 'item', 'work_center', 'warehouse'
+  locationEntityId: integer("location_entity_id"),
+  resourceId: integer("resource_id").references(() => resources.id), // For drum buffers
+  operationId: integer("operation_id").references(() => discreteOperations.id), // For feeding buffers
+  itemId: integer("item_id").references(() => items.id), // For stock buffers
+  workCenterId: integer("work_center_id").references(() => workCenters.id),
+  
+  // Buffer sizing
+  targetSize: numeric("target_size", { precision: 15, scale: 2 }).notNull(), // Time in minutes or stock quantity
+  sizeUnit: text("size_unit").notNull(), // 'minutes', 'hours', 'pieces', 'kg', etc.
+  minSize: numeric("min_size", { precision: 15, scale: 2 }),
+  maxSize: numeric("max_size", { precision: 15, scale: 2 }),
+  
+  // Buffer zones (TOC concept: Red, Yellow, Green)
+  redZonePercent: numeric("red_zone_percent", { precision: 5, scale: 2 }).default('33.33'),
+  yellowZonePercent: numeric("yellow_zone_percent", { precision: 5, scale: 2 }).default('33.33'),
+  greenZonePercent: numeric("green_zone_percent", { precision: 5, scale: 2 }).default('33.34'),
+  
+  // Management policies
+  replenishmentPolicy: text("replenishment_policy").default('standard'), // 'standard', 'min-max', 'dynamic'
+  priorityLevel: integer("priority_level").default(1), // 1-5, higher is more critical
+  protectionLevel: text("protection_level").default('standard'), // 'minimal', 'standard', 'critical'
+  
+  // Status and activation
+  isActive: boolean("is_active").default(true),
+  effectiveFromDate: timestamp("effective_from_date"),
+  effectiveToDate: timestamp("effective_to_date"),
+  
+  // Metadata
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  typeIdx: index("buffer_type_idx").on(table.bufferType),
+  categoryIdx: index("buffer_category_idx").on(table.bufferCategory),
+  locationIdx: index("buffer_location_idx").on(table.locationEntityType, table.locationEntityId),
+  activeIdx: index("buffer_active_idx").on(table.isActive),
+}));
+
+// Buffer consumption tracking - real-time buffer status
+export const bufferConsumption = pgTable("buffer_consumption", {
+  id: serial("id").primaryKey(),
+  bufferDefinitionId: integer("buffer_definition_id").references(() => bufferDefinitions.id).notNull(),
+  
+  // Current status
+  currentLevel: numeric("current_level", { precision: 15, scale: 2 }).notNull(), // Current buffer level
+  currentZone: text("current_zone").notNull(), // 'green', 'yellow', 'red'
+  consumptionRate: numeric("consumption_rate", { precision: 15, scale: 2 }), // Rate per hour
+  
+  // Reference to consuming entity
+  consumingEntityType: text("consuming_entity_type"), // 'production_order', 'operation', 'transfer_order'
+  consumingEntityId: integer("consuming_entity_id"),
+  
+  // Tracking details
+  measurementTimestamp: timestamp("measurement_timestamp").defaultNow(),
+  penetrationIntoRed: numeric("penetration_into_red", { precision: 5, scale: 2 }), // % penetration into red zone
+  timeSinceLastReplenishment: integer("time_since_last_replenishment"), // minutes
+  
+  // Alerts and actions
+  alertStatus: text("alert_status").default('normal'), // 'normal', 'warning', 'critical', 'emergency'
+  actionRequired: text("action_required"), // Recommended action
+  
+  // Historical tracking
+  avgConsumptionRate24h: numeric("avg_consumption_rate_24h", { precision: 15, scale: 2 }),
+  avgConsumptionRate7d: numeric("avg_consumption_rate_7d", { precision: 15, scale: 2 }),
+  maxPenetrationRed24h: numeric("max_penetration_red_24h", { precision: 5, scale: 2 }),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  bufferIdx: index("buffer_consumption_buffer_idx").on(table.bufferDefinitionId),
+  zoneIdx: index("buffer_consumption_zone_idx").on(table.currentZone),
+  alertIdx: index("buffer_consumption_alert_idx").on(table.alertStatus),
+  timestampIdx: index("buffer_consumption_timestamp_idx").on(table.measurementTimestamp),
+}));
+
+// Buffer management history - for analysis and improvement
+export const bufferManagementHistory = pgTable("buffer_management_history", {
+  id: serial("id").primaryKey(),
+  bufferDefinitionId: integer("buffer_definition_id").references(() => bufferDefinitions.id).notNull(),
+  
+  // Event details
+  eventType: text("event_type").notNull(), // 'penetration', 'replenishment', 'size_change', 'policy_change', 'expedite'
+  eventTimestamp: timestamp("event_timestamp").defaultNow(),
+  eventDescription: text("event_description"),
+  
+  // Buffer status at event
+  levelBefore: numeric("level_before", { precision: 15, scale: 2 }),
+  levelAfter: numeric("level_after", { precision: 15, scale: 2 }),
+  zoneBefore: text("zone_before"), // 'green', 'yellow', 'red'
+  zoneAfter: text("zone_after"),
+  
+  // Impact and cause
+  impactSeverity: text("impact_severity"), // 'low', 'medium', 'high', 'critical'
+  rootCause: text("root_cause"),
+  causedByEntityType: text("caused_by_entity_type"), // What caused the event
+  causedByEntityId: integer("caused_by_entity_id"),
+  
+  // Response and resolution
+  responseAction: text("response_action"),
+  responseTime: integer("response_time"), // minutes from event to response
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolutionNotes: text("resolution_notes"),
+  
+  // Performance metrics
+  serviceLevel: numeric("service_level", { precision: 5, scale: 2 }), // % of time buffer stayed green
+  leadTimeImpact: integer("lead_time_impact"), // Impact on lead time in minutes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  bufferIdx: index("buffer_history_buffer_idx").on(table.bufferDefinitionId),
+  eventTypeIdx: index("buffer_history_event_type_idx").on(table.eventType),
+  timestampIdx: index("buffer_history_timestamp_idx").on(table.eventTimestamp),
+  severityIdx: index("buffer_history_severity_idx").on(table.impactSeverity),
+}));
+
+// Buffer policies - rules for buffer management
+export const bufferPolicies = pgTable("buffer_policies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  policyType: text("policy_type").notNull(), // 'replenishment', 'expedite', 'size_adjustment', 'alert'
+  
+  // Conditions
+  triggerCondition: jsonb("trigger_condition").$type<{
+    zone: string[]; // Which zones trigger this policy
+    penetrationPercent?: number; // % penetration threshold
+    timePeriod?: number; // Time in zone before trigger
+    consumptionRate?: number; // Consumption rate threshold
+  }>().notNull(),
+  
+  // Actions
+  actionType: text("action_type").notNull(), // 'expedite_order', 'increase_size', 'alert_manager', 'change_priority'
+  actionParameters: jsonb("action_parameters").$type<{
+    expediteLevel?: string;
+    sizeChangePercent?: number;
+    alertRecipients?: string[];
+    priorityChange?: number;
+  }>(),
+  
+  // Application scope
+  applicableBufferTypes: text("applicable_buffer_types").array(), // Which buffer types this applies to
+  applicableBufferCategories: text("applicable_buffer_categories").array(),
+  specificBufferIds: integer("specific_buffer_ids").array(), // Specific buffers if not general
+  
+  // Effectiveness tracking
+  timesTriggered: integer("times_triggered").default(0),
+  successRate: numeric("success_rate", { precision: 5, scale: 2 }),
+  avgResponseTime: integer("avg_response_time"), // minutes
+  
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  typeIdx: index("buffer_policy_type_idx").on(table.policyType),
+  activeIdx: index("buffer_policy_active_idx").on(table.isActive),
+}));
+
 // ==================== CONSTRAINTS MANAGEMENT SYSTEM ====================
 
 // Manufacturing Constraints Management System
@@ -8866,6 +9036,37 @@ export const insertConstraintExceptionSchema = createInsertSchema(constraintExce
 });
 export type InsertConstraintException = z.infer<typeof insertConstraintExceptionSchema>;
 export type ConstraintException = typeof constraintExceptions.$inferSelect;
+
+// Buffer management insert schemas and types
+export const insertBufferDefinitionSchema = createInsertSchema(bufferDefinitions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertBufferDefinition = z.infer<typeof insertBufferDefinitionSchema>;
+export type BufferDefinition = typeof bufferDefinitions.$inferSelect;
+
+export const insertBufferConsumptionSchema = createInsertSchema(bufferConsumption).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBufferConsumption = z.infer<typeof insertBufferConsumptionSchema>;
+export type BufferConsumption = typeof bufferConsumption.$inferSelect;
+
+export const insertBufferManagementHistorySchema = createInsertSchema(bufferManagementHistory).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBufferManagementHistory = z.infer<typeof insertBufferManagementHistorySchema>;
+export type BufferManagementHistory = typeof bufferManagementHistory.$inferSelect;
+
+export const insertBufferPolicySchema = createInsertSchema(bufferPolicies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertBufferPolicy = z.infer<typeof insertBufferPolicySchema>;
+export type BufferPolicy = typeof bufferPolicies.$inferSelect;
 
 
 
