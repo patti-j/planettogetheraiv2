@@ -1,1364 +1,1014 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { AlertTriangle, Shield, AlertCircle, Settings, Plus, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import type { Constraint, ConstraintCategory, ConstraintViolation, ConstraintException } from "@shared/schema";
+import { format } from "date-fns";
+import {
+  Shield,
+  TrendingUp,
+  AlertCircle,
+  Play,
+  Clock,
+  Package,
+  Factory,
+  Activity,
+  BarChart3,
+  History,
+  Plus,
+  Trash2,
+  Edit,
+  CheckCircle,
+  XCircle,
+  Info,
+  RefreshCw,
+  Zap
+} from "lucide-react";
 
-// Form Schemas
-const constraintCategorySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  constraintType: z.enum(["physical", "policy", "quality", "safety", "regulatory", "environmental"]),
-  parentCategoryId: z.number().optional(),
-  isActive: z.boolean().default(true),
+// Types for TOC entities
+interface DrumResource {
+  id: number;
+  resourceId: number;
+  resourceName: string;
+  isDrum: boolean;
+  isManual: boolean;
+  drumType: 'primary' | 'secondary' | 'potential';
+  designatedAt: string;
+  designatedBy: number;
+  reason?: string;
+  utilization?: number;
+}
+
+interface DrumAnalysisHistory {
+  id: number;
+  analysisDate: string;
+  analyzedBy: number;
+  drumResourceId: number | null;
+  resourceName: string | null;
+  bottleneckScore: number | null;
+  utilizationPercent: number | null;
+  operationCount: number | null;
+  totalDuration: number | null;
+  analysisType: 'manual' | 'automated';
+  recommendations?: string;
+}
+
+interface Buffer {
+  id: number;
+  name: string;
+  type: 'time' | 'stock';
+  category: 'drum' | 'feeding' | 'shipping' | 'stock' | 'space' | 'capacity';
+  targetSize: number;
+  currentSize: number;
+  uom: string;
+  redZone: number;
+  yellowZone: number;
+  greenZone: number;
+  location?: string;
+  resourceId?: number;
+  itemId?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  resourceName?: string;
+  itemName?: string;
+  penetration?: number;
+  zone?: 'red' | 'yellow' | 'green';
+}
+
+interface BufferConsumption {
+  id: number;
+  bufferId: number;
+  consumptionDate: string;
+  consumedAmount: number;
+  remainingAmount: number;
+  penetrationPercent: number;
+  zone: 'red' | 'yellow' | 'green';
+  reason?: string;
+  actionTaken?: string;
+  jobId?: number;
+  operationId?: number;
+  createdBy: number;
+}
+
+// Form schemas
+const bufferFormSchema = z.object({
+  name: z.string().min(1, "Buffer name is required"),
+  type: z.enum(["time", "stock"]),
+  category: z.enum(["drum", "feeding", "shipping", "stock", "space", "capacity"]),
+  targetSize: z.number().positive("Target size must be positive"),
+  currentSize: z.number().min(0, "Current size cannot be negative"),
+  uom: z.string().min(1, "Unit of measure is required"),
+  redZone: z.number().min(0).max(100, "Red zone must be between 0-100%"),
+  yellowZone: z.number().min(0).max(100, "Yellow zone must be between 0-100%"),
+  greenZone: z.number().min(0).max(100, "Green zone must be between 0-100%"),
+  location: z.string().optional(),
+  resourceId: z.number().optional(),
+  itemId: z.number().optional(),
+  isActive: z.boolean().default(true)
 });
 
-const constraintSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  categoryId: z.number().min(1, "Category is required"),
-  scope: z.enum(["global", "plant", "resource", "item", "operation"]),
-  severityLevel: z.enum(["hard", "soft"]),
-  priority: z.enum(["critical", "high", "medium", "low"]),
-  constraintRule: z.object({
-    field: z.string(),
-    operator: z.enum(["=", "!=", "<", ">", "<=", ">=", "between", "in", "not_in"]),
-    value: z.any(),
-  }),
-  impactDescription: z.string().optional(),
-  isActive: z.boolean().default(true),
+const drumDesignationSchema = z.object({
+  resourceId: z.number().positive("Resource is required"),
+  drumType: z.enum(["primary", "secondary", "potential"]),
+  reason: z.string().optional()
 });
 
-export default function ConstraintsPage() {
-  const [activeTab, setActiveTab] = useState("overview");
+export default function ConstraintsManagement() {
+  const [selectedTab, setSelectedTab] = useState("drums");
+  const [isBufferDialogOpen, setIsBufferDialogOpen] = useState(false);
+  const [editingBuffer, setEditingBuffer] = useState<Buffer | null>(null);
+  const [isDrumDialogOpen, setIsDrumDialogOpen] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Queries
-  const { data: constraintCategories = [] } = useQuery<ConstraintCategory[]>({
-    queryKey: ["/api/constraint-categories"],
-    enabled: true,
+  const { data: drums = [], isLoading: drumsLoading } = useQuery({
+    queryKey: ["/api/toc/drums"],
+    enabled: selectedTab === "drums"
   });
 
-  const { data: constraints = [] } = useQuery<Constraint[]>({
-    queryKey: ["/api/constraints"],
-    enabled: true,
+  const { data: drumHistory = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["/api/toc/drums/history"],
+    enabled: selectedTab === "drums"
   });
 
-  const { data: violations = [] } = useQuery<ConstraintViolation[]>({
-    queryKey: ["/api/constraint-violations"],
-    enabled: true,
+  const { data: buffers = [], isLoading: buffersLoading } = useQuery({
+    queryKey: ["/api/toc/buffers"],
+    enabled: selectedTab === "buffers"
   });
 
-  const { data: violationsSummary } = useQuery<any>({
-    queryKey: ["/api/constraint-violations/summary"],
-    enabled: true,
+  const { data: resources = [] } = useQuery({
+    queryKey: ["/api/resources"]
   });
 
-  return (
-    <div className="space-y-6 p-4 pt-16">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Constraints Management</h1>
-          <p className="text-muted-foreground">
-            Manage manufacturing constraints, monitor violations, and ensure compliance
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
-        </div>
-      </div>
+  const { data: items = [] } = useQuery({
+    queryKey: ["/api/items"]
+  });
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="w-full flex overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
-          <TabsTrigger value="bottlenecks" className="whitespace-nowrap">Bottlenecks</TabsTrigger>
-          <TabsTrigger value="buffers" className="whitespace-nowrap">Buffers</TabsTrigger>
-          <TabsTrigger value="dbr" className="whitespace-nowrap">DBR Schedule</TabsTrigger>
-          <TabsTrigger value="throughput" className="whitespace-nowrap">Throughput</TabsTrigger>
-          <TabsTrigger value="constraints" className="whitespace-nowrap">Constraints</TabsTrigger>
-          <TabsTrigger value="violations" className="whitespace-nowrap">Violations</TabsTrigger>
-          <TabsTrigger value="monitoring" className="whitespace-nowrap">Monitoring</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <ConstraintsOverview 
-            summary={violationsSummary}
-            constraints={constraints}
-            violations={violations}
-          />
-        </TabsContent>
-
-        <TabsContent value="bottlenecks">
-          <BottleneckAnalysis />
-        </TabsContent>
-
-        <TabsContent value="buffers">
-          <BufferManagement />
-        </TabsContent>
-
-        <TabsContent value="dbr">
-          <DrumBufferRopeSchedule />
-        </TabsContent>
-
-        <TabsContent value="throughput">
-          <ThroughputAccounting />
-        </TabsContent>
-
-        <TabsContent value="constraints">
-          <ConstraintsManagement 
-            constraints={constraints}
-            categories={constraintCategories}
-            queryClient={queryClient}
-            toast={toast}
-          />
-        </TabsContent>
-
-        <TabsContent value="violations">
-          <ViolationsManagement 
-            violations={violations}
-            constraints={constraints}
-            queryClient={queryClient}
-            toast={toast}
-          />
-        </TabsContent>
-
-        <TabsContent value="monitoring">
-          <ConstraintsMonitoring />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
-
-// Overview Component
-function ConstraintsOverview({ summary, constraints, violations }: {
-  summary: any;
-  constraints: Constraint[];
-  violations: ConstraintViolation[];
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Constraints</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{constraints.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {constraints.filter(c => c.isActive).length} active
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Violations</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary?.open || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary?.critical || 0} critical
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical Violations</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{summary?.critical || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Require immediate attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved Today</CardTitle>
-            <Shield className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary?.resolved || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              All violations resolved
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Violations</CardTitle>
-            <CardDescription>Latest constraint violations requiring attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {violations.slice(0, 5).map((violation) => (
-                <div key={violation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{violation.impactDescription}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {violation.violationEntityType} ID: {violation.violationEntityId}
-                    </p>
-                  </div>
-                  <Badge 
-                    variant={violation.violationSeverity === 'critical' ? 'destructive' : 
-                            violation.violationSeverity === 'major' ? 'default' : 'secondary'}
-                  >
-                    {violation.violationSeverity}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Constraint Distribution</CardTitle>
-            <CardDescription>Constraints by type and severity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Hard Constraints</span>
-                <Badge variant="destructive">
-                  {constraints.filter(c => c.severityLevel === 'hard').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Soft Constraints</span>
-                <Badge variant="secondary">
-                  {constraints.filter(c => c.severityLevel === 'soft').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Global Scope</span>
-                <Badge variant="outline">
-                  {constraints.filter(c => c.scope === 'global').length}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Plant Scope</span>
-                <Badge variant="outline">
-                  {constraints.filter(c => c.scope === 'plant').length}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-// Constraint Categories Component
-function ConstraintCategories({ categories, queryClient, toast }: {
-  categories: ConstraintCategory[];
-  queryClient: any;
-  toast: any;
-}) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("/api/constraint-categories", "POST", data),
+  // Mutations
+  const drumAnalysisMutation = useMutation({
+    mutationFn: () => apiRequest("/api/toc/drums/analyze", "POST"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/constraint-categories"] });
-      setIsCreateDialogOpen(false);
-      toast({ title: "Category created successfully" });
-    },
-    onError: (error: any) => {
-      toast({ 
-        title: "Error creating category", 
-        description: error.response?.data?.error || "Something went wrong",
-        variant: "destructive" 
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/drums"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/drums/history"] });
+      toast({
+        title: "Analysis Complete",
+        description: "Drum analysis has been completed successfully"
       });
-    },
+    }
   });
 
-  const form = useForm({
-    resolver: zodResolver(constraintCategorySchema),
+  const drumDesignationMutation = useMutation({
+    mutationFn: (data: z.infer<typeof drumDesignationSchema>) => 
+      apiRequest("/api/toc/drums/designate", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/drums"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/drums/history"] });
+      setIsDrumDialogOpen(false);
+      toast({
+        title: "Drum Designated",
+        description: "Resource has been designated as a drum"
+      });
+    }
+  });
+
+  const bufferMutation = useMutation({
+    mutationFn: (data: z.infer<typeof bufferFormSchema> & { id?: number }) => {
+      if (data.id) {
+        return apiRequest(`/api/toc/buffers/${data.id}`, "PATCH", data);
+      }
+      return apiRequest("/api/toc/buffers", "POST", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/buffers"] });
+      setIsBufferDialogOpen(false);
+      setEditingBuffer(null);
+      toast({
+        title: editingBuffer ? "Buffer Updated" : "Buffer Created",
+        description: "Buffer has been saved successfully"
+      });
+    }
+  });
+
+  const deleteBufferMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/toc/buffers/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/buffers"] });
+      toast({
+        title: "Buffer Deleted",
+        description: "Buffer has been deleted successfully"
+      });
+    }
+  });
+
+  // Forms
+  const bufferForm = useForm<z.infer<typeof bufferFormSchema>>({
+    resolver: zodResolver(bufferFormSchema),
     defaultValues: {
       name: "",
-      description: "",
-      constraintType: "physical" as const,
-      isActive: true,
-    },
+      type: "time",
+      category: "feeding",
+      targetSize: 100,
+      currentSize: 100,
+      uom: "hours",
+      redZone: 33,
+      yellowZone: 33,
+      greenZone: 34,
+      isActive: true
+    }
   });
 
-  const onSubmit = (data: any) => {
-    createCategoryMutation.mutate(data);
+  const drumForm = useForm<z.infer<typeof drumDesignationSchema>>({
+    resolver: zodResolver(drumDesignationSchema),
+    defaultValues: {
+      drumType: "primary"
+    }
+  });
+
+  // Reset form when editing buffer changes
+  useEffect(() => {
+    if (editingBuffer) {
+      bufferForm.reset({
+        name: editingBuffer.name,
+        type: editingBuffer.type,
+        category: editingBuffer.category,
+        targetSize: editingBuffer.targetSize,
+        currentSize: editingBuffer.currentSize,
+        uom: editingBuffer.uom,
+        redZone: editingBuffer.redZone,
+        yellowZone: editingBuffer.yellowZone,
+        greenZone: editingBuffer.greenZone,
+        location: editingBuffer.location,
+        resourceId: editingBuffer.resourceId,
+        itemId: editingBuffer.itemId,
+        isActive: editingBuffer.isActive
+      });
+    } else {
+      bufferForm.reset();
+    }
+  }, [editingBuffer, bufferForm]);
+
+  const onSubmitBuffer = (data: z.infer<typeof bufferFormSchema>) => {
+    bufferMutation.mutate({
+      ...data,
+      id: editingBuffer?.id
+    });
+  };
+
+  const onSubmitDrum = (data: z.infer<typeof drumDesignationSchema>) => {
+    drumDesignationMutation.mutate(data);
+  };
+
+  const getZoneColor = (zone: string) => {
+    switch (zone) {
+      case 'red': return 'bg-red-500';
+      case 'yellow': return 'bg-yellow-500';
+      case 'green': return 'bg-green-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getDrumTypeColor = (type: string) => {
+    switch (type) {
+      case 'primary': return 'bg-purple-500';
+      case 'secondary': return 'bg-blue-500';
+      case 'potential': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Constraint Categories</h2>
-          <p className="text-muted-foreground">Organize constraints by type and category</p>
+          <h1 className="text-3xl font-bold tracking-tight">Theory of Constraints Management</h1>
+          <p className="text-gray-500 mt-2">
+            Manage drums, buffers, and optimize your production constraints
+          </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Constraint Category</DialogTitle>
-              <DialogDescription>
-                Create a new category to organize your constraints
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Category name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Category description" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="constraintType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select constraint type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="physical">Physical</SelectItem>
-                          <SelectItem value="policy">Policy</SelectItem>
-                          <SelectItem value="quality">Quality</SelectItem>
-                          <SelectItem value="safety">Safety</SelectItem>
-                          <SelectItem value="regulatory">Regulatory</SelectItem>
-                          <SelectItem value="environmental">Environmental</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsCreateDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createCategoryMutation.isPending}
-                  >
-                    {createCategoryMutation.isPending ? "Creating..." : "Create Category"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <Card key={category.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  <CardDescription>{category.description}</CardDescription>
-                </div>
-                <Badge variant="outline">
-                  {(category as any).constraintType || 'General'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center text-sm text-muted-foreground">
-                <span>Status: {category.isActive ? "Active" : "Inactive"}</span>
-                <span>ID: {category.id}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Constraints Management Component  
-function ConstraintsManagement({ constraints, categories, queryClient, toast }: {
-  constraints: Constraint[];
-  categories: ConstraintCategory[];
-  queryClient: any;
-  toast: any;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Constraints</h2>
-          <p className="text-muted-foreground">Manage manufacturing constraints and rules</p>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Constraint
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {constraints.map((constraint) => (
-          <Card key={constraint.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{constraint.name}</CardTitle>
-                  <CardDescription>{constraint.description}</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Badge variant={constraint.severityLevel === 'hard' ? 'destructive' : 'secondary'}>
-                    {constraint.severityLevel}
-                  </Badge>
-                  <Badge variant="outline">
-                    {constraint.priority}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Scope:</span> {constraint.scope}
-                </div>
-                <div>
-                  <span className="font-medium">Rule:</span> {constraint.constraintRule?.field} {constraint.constraintRule?.operator} {JSON.stringify(constraint.constraintRule?.value)}
-                </div>
-                <div>
-                  <span className="font-medium">Status:</span> {constraint.isActive ? "Active" : "Inactive"}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Violations Management Component
-function ViolationsManagement({ violations, constraints, queryClient, toast }: {
-  violations: ConstraintViolation[];
-  constraints: Constraint[];
-  queryClient: any;
-  toast: any;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Constraint Violations</h2>
-          <p className="text-muted-foreground">Monitor and resolve constraint violations</p>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => drumAnalysisMutation.mutate()}
+            disabled={drumAnalysisMutation.isPending}
+            variant="outline"
+          >
+            {drumAnalysisMutation.isPending ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Activity className="w-4 h-4 mr-2" />
+            )}
+            Run Drum Analysis
+          </Button>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {violations.map((violation) => (
-          <Card key={violation.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{violation.impactDescription}</CardTitle>
-                  <CardDescription>
-                    {violation.violationEntityType} ID: {violation.violationEntityId}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Badge 
-                    variant={violation.violationSeverity === 'critical' ? 'destructive' : 
-                            violation.violationSeverity === 'major' ? 'default' : 'secondary'}
-                  >
-                    {violation.violationSeverity}
-                  </Badge>
-                  <Badge variant="outline">
-                    {violation.status}
-                  </Badge>
-                </div>
-              </div>
+      {/* Main Content */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="drums">Drum Management</TabsTrigger>
+          <TabsTrigger value="buffers">Buffer Management</TabsTrigger>
+          <TabsTrigger value="analytics">TOC Analytics</TabsTrigger>
+        </TabsList>
+
+        {/* Drums Tab */}
+        <TabsContent value="drums" className="space-y-4">
+          <div className="grid gap-4">
+            {/* Current Drums */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Current Drum Resources</CardTitle>
+                <Dialog open={isDrumDialogOpen} onOpenChange={setIsDrumDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Designate Drum
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Designate Resource as Drum</DialogTitle>
+                    </DialogHeader>
+                    <Form {...drumForm}>
+                      <form onSubmit={drumForm.handleSubmit(onSubmitDrum)} className="space-y-4">
+                        <FormField
+                          control={drumForm.control}
+                          name="resourceId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Resource</FormLabel>
+                              <Select
+                                onValueChange={(value) => field.onChange(parseInt(value))}
+                                value={field.value?.toString()}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a resource" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {resources.map((resource: any) => (
+                                    <SelectItem key={resource.id} value={resource.id.toString()}>
+                                      {resource.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={drumForm.control}
+                          name="drumType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Drum Type</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="primary">Primary</SelectItem>
+                                  <SelectItem value="secondary">Secondary</SelectItem>
+                                  <SelectItem value="potential">Potential</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={drumForm.control}
+                          name="reason"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Reason (Optional)</FormLabel>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Reason for designation..." />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" variant="outline" onClick={() => setIsDrumDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={drumDesignationMutation.isPending}>
+                            {drumDesignationMutation.isPending ? "Saving..." : "Designate"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {drumsLoading ? (
+                  <div className="text-center py-4">Loading drums...</div>
+                ) : drums.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      No drum resources designated. Run analysis or manually designate resources.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="space-y-3">
+                    {drums.map((drum: DrumResource) => (
+                      <div key={drum.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <Factory className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium">{drum.resourceName}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={getDrumTypeColor(drum.drumType)}>
+                                {drum.drumType}
+                              </Badge>
+                              {drum.isManual && (
+                                <Badge variant="outline">Manual</Badge>
+                              )}
+                              {drum.utilization && (
+                                <span className="text-sm text-gray-500">
+                                  {drum.utilization.toFixed(1)}% utilization
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Designated {format(new Date(drum.designatedAt), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Analysis History */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Drum Analysis History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="text-center py-4">Loading history...</div>
+                ) : drumHistory.length === 0 ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      No analysis history available. Run your first analysis to identify bottlenecks.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Resource</TableHead>
+                        <TableHead>Bottleneck Score</TableHead>
+                        <TableHead>Utilization</TableHead>
+                        <TableHead>Operations</TableHead>
+                        <TableHead>Type</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {drumHistory.map((history: DrumAnalysisHistory) => (
+                        <TableRow key={history.id}>
+                          <TableCell>
+                            {format(new Date(history.analysisDate), 'MMM d, yyyy HH:mm')}
+                          </TableCell>
+                          <TableCell>{history.resourceName || 'N/A'}</TableCell>
+                          <TableCell>
+                            {history.bottleneckScore ? (
+                              <Badge variant={history.bottleneckScore > 80 ? "destructive" : "default"}>
+                                {history.bottleneckScore.toFixed(1)}
+                              </Badge>
+                            ) : 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            {history.utilizationPercent ? `${history.utilizationPercent.toFixed(1)}%` : 'N/A'}
+                          </TableCell>
+                          <TableCell>{history.operationCount || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={history.analysisType === 'automated' ? "default" : "outline"}>
+                              {history.analysisType}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Buffers Tab */}
+        <TabsContent value="buffers" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Buffer Management</CardTitle>
+              <Button size="sm" onClick={() => {
+                setEditingBuffer(null);
+                setIsBufferDialogOpen(true);
+              }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Buffer
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Expected:</span> {JSON.stringify(violation.expectedValue)}
-                </div>
-                <div>
-                  <span className="font-medium">Actual:</span> {JSON.stringify(violation.violationValue)}
-                </div>
-              </div>
-              {violation.status === 'open' && (
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" variant="outline">
-                    Resolve
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    Waive
-                  </Button>
+              {buffersLoading ? (
+                <div className="text-center py-4">Loading buffers...</div>
+              ) : buffers.length === 0 ? (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    No buffers configured. Create buffers to protect your constraints.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {buffers.map((buffer: Buffer) => (
+                    <Card key={buffer.id} className="relative">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="font-semibold">{buffer.name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline">
+                                {buffer.type === 'time' ? <Clock className="w-3 h-3 mr-1" /> : <Package className="w-3 h-3 mr-1" />}
+                                {buffer.type}
+                              </Badge>
+                              <Badge variant="outline">{buffer.category}</Badge>
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingBuffer(buffer);
+                                setIsBufferDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteBufferMutation.mutate(buffer.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span>Buffer Status</span>
+                              <span>{buffer.currentSize} / {buffer.targetSize} {buffer.uom}</span>
+                            </div>
+                            <Progress value={(buffer.currentSize / buffer.targetSize) * 100} />
+                          </div>
+
+                          {buffer.penetration !== undefined && (
+                            <div>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span>Penetration</span>
+                                <span>{buffer.penetration.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex h-2 rounded-full overflow-hidden">
+                                <div className="bg-green-500" style={{ width: `${buffer.greenZone}%` }} />
+                                <div className="bg-yellow-500" style={{ width: `${buffer.yellowZone}%` }} />
+                                <div className="bg-red-500" style={{ width: `${buffer.redZone}%` }} />
+                              </div>
+                              {buffer.zone && (
+                                <Badge className={`mt-2 ${getZoneColor(buffer.zone)}`}>
+                                  {buffer.zone.toUpperCase()} Zone
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+
+                          {buffer.resourceName && (
+                            <p className="text-sm text-gray-500">Resource: {buffer.resourceName}</p>
+                          )}
+                          {buffer.itemName && (
+                            <p className="text-sm text-gray-500">Item: {buffer.itemName}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-// Constraints Monitoring Component
-function ConstraintsMonitoring() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Constraints Monitoring</h2>
-        <p className="text-muted-foreground">Real-time monitoring and alerts for constraint violations</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Constraint Evaluation</CardTitle>
-          <CardDescription>Test constraint evaluation against sample data</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              This section will contain real-time monitoring capabilities for constraint violations,
-              including automatic evaluation triggers and alert systems.
-            </p>
-            <Button variant="outline">
-              Configure Monitoring
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Bottleneck Analysis Component - Core TOC feature
-function BottleneckAnalysis() {
-  const [showDrumDialog, setShowDrumDialog] = useState(false);
-  const [selectedResource, setSelectedResource] = useState<any>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: resources = [] } = useQuery({
-    queryKey: ["/api/resources"],
-  });
-
-  const { data: operations = [] } = useQuery({
-    queryKey: ["/api/operations"],
-  });
-
-  const { data: drumAnalysis = [] } = useQuery({
-    queryKey: ["/api/drum-analysis"],
-  });
-
-  // Get current drums
-  const currentDrums = resources.filter(r => r.isDrum);
-
-  // Manual drum designation mutation
-  const designateDrumMutation = useMutation({
-    mutationFn: async ({ resourceId, isDrum, reason }: any) => {
-      return apiRequest(`/api/resources/${resourceId}/drum`, {
-        method: 'PATCH',
-        body: JSON.stringify({ isDrum, reason }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
-      toast({
-        title: "Success",
-        description: "Drum designation updated",
-      });
-      setShowDrumDialog(false);
-    },
-  });
-
-  // Run automated analysis mutation
-  const runAnalysisMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('/api/drum-analysis/run', {
-        method: 'POST',
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drum-analysis"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
-      toast({
-        title: "Analysis Complete",
-        description: "Drum analysis has been completed and recommendations are available",
-      });
-    },
-  });
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Bottleneck Analysis & Drum Management</h2>
-          <p className="text-muted-foreground">Identify constraints and manage drum resources using Theory of Constraints</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => runAnalysisMutation.mutate()}
-            disabled={runAnalysisMutation.isPending}
-          >
-            {runAnalysisMutation.isPending ? "Analyzing..." : "Run Automated Analysis"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Current Drums Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-            Current Drum Resources
-          </CardTitle>
-          <CardDescription>Resources designated as production drums (constraints)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {currentDrums.length > 0 ? (
-            <div className="space-y-3">
-              {currentDrums.map((drum) => (
-                <div key={drum.id} className="flex justify-between items-center p-3 border rounded">
-                  <div>
-                    <p className="font-medium">{drum.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Designated: {drum.drumDesignationMethod} - {drum.drumDesignationReason}
-                    </p>
+          {/* Buffer Dialog */}
+          <Dialog open={isBufferDialogOpen} onOpenChange={setIsBufferDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingBuffer ? 'Edit Buffer' : 'Create New Buffer'}</DialogTitle>
+              </DialogHeader>
+              <Form {...bufferForm}>
+                <form onSubmit={bufferForm.handleSubmit(onSubmitBuffer)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={bufferForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Buffer Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Drum Buffer - Line 1" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Buffer Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="time">Time Buffer</SelectItem>
+                              <SelectItem value="stock">Stock Buffer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => {
-                      designateDrumMutation.mutate({ 
-                        resourceId: drum.id, 
-                        isDrum: false, 
-                        reason: "Manual removal" 
-                      });
-                    }}
-                  >
-                    Remove Drum Status
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No drums currently designated</p>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Analysis History */}
-      {drumAnalysis.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Drum Analysis</CardTitle>
-            <CardDescription>Historical bottleneck analysis results</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {drumAnalysis.slice(0, 5).map((analysis: any) => (
-                <div key={analysis.id} className="border rounded p-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{analysis.resourceName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Score: {analysis.bottleneckScore}/100 - {analysis.recommendation}
-                      </p>
-                    </div>
-                    <Badge variant={analysis.isCurrentBottleneck ? "destructive" : "secondary"}>
-                      {analysis.isCurrentBottleneck ? "Bottleneck" : "Clear"}
-                    </Badge>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={bufferForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="drum">Drum Buffer</SelectItem>
+                              <SelectItem value="feeding">Feeding Buffer</SelectItem>
+                              <SelectItem value="shipping">Shipping Buffer</SelectItem>
+                              <SelectItem value="stock">Stock Buffer</SelectItem>
+                              <SelectItem value="space">Space Buffer</SelectItem>
+                              <SelectItem value="capacity">Capacity Buffer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="uom"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit of Measure</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., hours, units, kg" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
-                    <div>Utilization: {analysis.utilizationPercentage}%</div>
-                    <div>Queue: {analysis.avgQueueTimeHours}h</div>
-                    <div>Impact: {analysis.throughputImpact}%</div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={bufferForm.control}
+                      name="targetSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Size</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="currentSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Size</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              Current Bottleneck
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-lg">Reactor 1 - Mixing Station</h3>
-                <p className="text-sm text-muted-foreground">Capacity: 85% utilized</p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Throughput Rate:</span>
-                  <span className="font-medium">120 units/hour</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Queue Time:</span>
-                  <span className="font-medium text-orange-600">4.5 hours</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Impact on Output:</span>
-                  <span className="font-medium text-red-600">-15%</span>
-                </div>
-              </div>
-              <Button size="sm" className="w-full">
-                View Exploitation Options
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={bufferForm.control}
+                      name="greenZone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Green Zone %</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="yellowZone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Yellow Zone %</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="redZone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Red Zone %</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Constraint Candidates</CardTitle>
-            <CardDescription>Resources approaching constraint status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Packaging Line A</span>
-                <Badge variant="outline" className="text-orange-600">78% utilized</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Quality Testing Lab</span>
-                <Badge variant="outline" className="text-yellow-600">72% utilized</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Tablet Press 2</span>
-                <Badge variant="outline">65% utilized</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={bufferForm.control}
+                      name="resourceId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Resource (Optional)</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a resource" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {resources.map((resource: any) => (
+                                <SelectItem key={resource.id} value={resource.id.toString()}>
+                                  {resource.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={bufferForm.control}
+                      name="itemId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Item (Optional)</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)}
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select an item" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {items.map((item: any) => (
+                                <SelectItem key={item.id} value={item.id.toString()}>
+                                  {item.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Constraint Elevation</CardTitle>
-            <CardDescription>Options to increase constraint capacity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Shift Coverage
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Optimize Changeovers
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Reduce Quality Defects
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Resource Utilization Heat Map</CardTitle>
-          <CardDescription>Click on any resource to designate it as a drum. Red indicates high utilization.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-2">
-            {resources.map((resource: any) => {
-              // Simulate utilization data - in production this would come from real metrics
-              const utilization = Math.floor(Math.random() * 60 + 40);
-              const color = utilization > 80 ? "bg-red-500" : 
-                           utilization > 70 ? "bg-orange-500" : 
-                           utilization > 60 ? "bg-yellow-500" : "bg-green-500";
-              
-              return (
-                <div 
-                  key={resource.id} 
-                  className="text-center cursor-pointer group"
-                  onClick={() => {
-                    setSelectedResource(resource);
-                    setShowDrumDialog(true);
-                  }}
-                >
-                  <div className={`h-20 ${color} bg-opacity-80 rounded flex items-center justify-center text-white font-medium relative transition-all group-hover:scale-105`}>
-                    {resource.isDrum && (
-                      <div className="absolute top-1 right-1">
-                        <div className="h-3 w-3 bg-white rounded-full animate-pulse" />
-                      </div>
+                  <FormField
+                    control={bufferForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location (Optional)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., Warehouse A, Production Line 1" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                    {utilization}%
-                  </div>
-                  <p className="text-xs mt-1">{resource.name}</p>
-                  {resource.isDrum && <Badge variant="destructive" className="text-xs mt-1">DRUM</Badge>}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                  />
 
-      {/* Drum Designation Dialog */}
-      <Dialog open={showDrumDialog} onOpenChange={setShowDrumDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Designate Drum Resource</DialogTitle>
-            <DialogDescription>
-              Manually designate {selectedResource?.name} as a drum (constraint) resource
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...useForm({
-            defaultValues: {
-              reason: "",
-            },
-          })}>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              designateDrumMutation.mutate({
-                resourceId: selectedResource?.id,
-                isDrum: true,
-                reason: formData.get("reason") as string,
-              });
-            }} className="space-y-4">
-              <FormField
-                name="reason"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reason for Designation</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field}
-                        placeholder="Explain why this resource is being designated as a drum..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => {
+                      setIsBufferDialogOpen(false);
+                      setEditingBuffer(null);
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={bufferMutation.isPending}>
+                      {bufferMutation.isPending ? "Saving..." : editingBuffer ? "Update" : "Create"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Drums</CardTitle>
+                <Factory className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{drums.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Resources identified as constraints
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Buffers</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{buffers.filter((b: Buffer) => b.isActive).length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Protecting production flow
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Red Zone Alerts</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {buffers.filter((b: Buffer) => b.zone === 'red').length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Buffers requiring immediate attention
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Utilization</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {drums.length > 0 
+                    ? (drums.reduce((sum: number, d: DrumResource) => sum + (d.utilization || 0), 0) / drums.length).toFixed(1)
+                    : '0'}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Average drum resource utilization
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* TOC Performance Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>TOC Performance Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Alert>
+                  <Zap className="h-4 w-4" />
+                  <AlertDescription>
+                    Theory of Constraints implementation helps identify and manage production bottlenecks,
+                    ensuring smooth flow and maximizing throughput.
+                  </AlertDescription>
+                </Alert>
+
+                {drums.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Current Constraints</h3>
+                    {drums.map((drum: DrumResource) => (
+                      <div key={drum.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span>{drum.resourceName}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getDrumTypeColor(drum.drumType)}>
+                            {drum.drumType}
+                          </Badge>
+                          {drum.utilization && (
+                            <Progress value={drum.utilization} className="w-24" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              />
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowDrumDialog(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Designate as Drum
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
 
-// Buffer Management Component - Time and stock buffers before constraints
-function BufferManagement() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Buffer Management</h2>
-        <p className="text-muted-foreground">Manage time and stock buffers to protect constraints and ensure flow</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Time Buffers</CardTitle>
-            <CardDescription>Protective time before constraint operations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Constraint Buffer (Reactor 1)</span>
-                    <span className="text-sm font-medium">2.5 hours</span>
+                {buffers.filter((b: Buffer) => b.zone === 'red' || b.zone === 'yellow').length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold">Buffer Alerts</h3>
+                    {buffers
+                      .filter((b: Buffer) => b.zone === 'red' || b.zone === 'yellow')
+                      .map((buffer: Buffer) => (
+                        <div key={buffer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span>{buffer.name}</span>
+                          <Badge className={getZoneColor(buffer.zone!)}>
+                            {buffer.zone!.toUpperCase()} - {buffer.penetration?.toFixed(1)}%
+                          </Badge>
+                        </div>
+                      ))}
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">60% consumed - Healthy</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Shipping Buffer</span>
-                    <span className="text-sm font-medium">4 hours</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">75% consumed - Monitor</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Assembly Buffer</span>
-                    <span className="text-sm font-medium">1.5 hours</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '90%' }}></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">90% consumed - Critical</p>
-                </div>
+                )}
               </div>
-
-              <Button size="sm" variant="outline" className="w-full">
-                Adjust Buffer Sizes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Stock Buffers</CardTitle>
-            <CardDescription>Strategic inventory to protect constraint</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium">Raw Material A</p>
-                    <p className="text-xs text-muted-foreground">Target: 500 kg</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">425 kg</p>
-                    <Badge variant="outline" className="text-xs">85% of target</Badge>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium">WIP Before Constraint</p>
-                    <p className="text-xs text-muted-foreground">Target: 200 units</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">180 units</p>
-                    <Badge variant="outline" className="text-xs">90% of target</Badge>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium">Finished Goods Buffer</p>
-                    <p className="text-xs text-muted-foreground">Target: 1000 units</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">650 units</p>
-                    <Badge variant="outline" className="text-xs text-orange-600">65% of target</Badge>
-                  </div>
-                </div>
-              </div>
-
-              <Button size="sm" className="w-full">
-                Configure Buffer Policies
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Buffer Penetration Alerts</CardTitle>
-          <CardDescription>Real-time monitoring of buffer consumption</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Assembly Buffer Critical</p>
-                <p className="text-xs text-muted-foreground">90% consumed - Expedite feeding operations</p>
-              </div>
-              <Button size="sm" variant="outline">Take Action</Button>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Shipping Buffer Warning</p>
-                <p className="text-xs text-muted-foreground">75% consumed - Review upstream delays</p>
-              </div>
-              <Button size="sm" variant="outline">Investigate</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Drum-Buffer-Rope Scheduling Component
-function DrumBufferRopeSchedule() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Drum-Buffer-Rope (DBR) Schedule</h2>
-        <p className="text-muted-foreground">Synchronize production flow with the constraint rhythm</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-2 border-red-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-              Drum (Constraint)
-            </CardTitle>
-            <CardDescription>Sets the pace for entire production</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">Reactor 1 - Mixing Station</p>
-                <p className="text-xs text-muted-foreground">Current pace: 120 units/hour</p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Daily Capacity:</span>
-                  <span className="font-medium">2,400 units</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Scheduled Today:</span>
-                  <span className="font-medium">2,350 units</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Utilization:</span>
-                  <span className="font-medium">97.9%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-yellow-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-yellow-500 rounded-full" />
-              Buffer
-            </CardTitle>
-            <CardDescription>Protection against variability</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Constraint Buffer:</span>
-                  <span className="font-medium">2.5 hours</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Shipping Buffer:</span>
-                  <span className="font-medium">4 hours</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Assembly Buffer:</span>
-                  <span className="font-medium">1.5 hours</span>
-                </div>
-              </div>
-              <Button size="sm" variant="outline" className="w-full">
-                Optimize Buffer Sizes
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-2 border-green-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-3 w-3 bg-green-500 rounded-full" />
-              Rope (Release)
-            </CardTitle>
-            <CardDescription>Material release schedule</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Release Time:</span>
-                  <span className="font-medium">Drum - 2.5h</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Next Release:</span>
-                  <span className="font-medium">14:30</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Release Quantity:</span>
-                  <span className="font-medium">150 units</span>
-                </div>
-              </div>
-              <Button size="sm" className="w-full">
-                View Release Schedule
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>DBR Production Flow</CardTitle>
-          <CardDescription>Visual representation of synchronized production flow</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="relative h-32">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t-2 border-dashed border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-between items-center h-full px-8">
-              <div className="bg-green-500 text-white px-4 py-2 rounded">
-                Material Release
-              </div>
-              <div className="bg-yellow-500 text-white px-4 py-2 rounded">
-                Buffer Zone
-              </div>
-              <div className="bg-red-500 text-white px-4 py-2 rounded">
-                Constraint (Drum)
-              </div>
-              <div className="bg-blue-500 text-white px-4 py-2 rounded">
-                Shipping
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-4 gap-4 text-center text-sm">
-            <div>
-              <p className="font-medium">T - 2.5h</p>
-              <p className="text-xs text-muted-foreground">Release materials</p>
-            </div>
-            <div>
-              <p className="font-medium">T - 1h to T</p>
-              <p className="text-xs text-muted-foreground">Buffer protection</p>
-            </div>
-            <div>
-              <p className="font-medium">T</p>
-              <p className="text-xs text-muted-foreground">Process at constraint</p>
-            </div>
-            <div>
-              <p className="font-medium">T + 4h</p>
-              <p className="text-xs text-muted-foreground">Ship to customer</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Throughput Accounting Component
-function ThroughputAccounting() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Throughput Accounting</h2>
-        <p className="text-muted-foreground">Financial metrics focused on constraint optimization</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Throughput ($T)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$125,000</p>
-            <p className="text-xs text-muted-foreground">Sales - Truly Variable Costs</p>
-            <p className="text-xs text-green-600 mt-1">+12% vs last period</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Operating Expense ($OE)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$85,000</p>
-            <p className="text-xs text-muted-foreground">Fixed + overhead costs</p>
-            <p className="text-xs text-red-600 mt-1">+3% vs last period</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Investment ($I)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$450,000</p>
-            <p className="text-xs text-muted-foreground">Inventory + equipment</p>
-            <p className="text-xs text-orange-600 mt-1">-5% vs last period</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Net Profit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">$40,000</p>
-            <p className="text-xs text-muted-foreground">$T - $OE</p>
-            <p className="text-xs text-green-600 mt-1">+32% vs last period</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Throughput per Constraint Hour</CardTitle>
-            <CardDescription>Product profitability ranking</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium">Product A - Premium</p>
-                  <p className="text-xs text-muted-foreground">Constraint time: 0.5h/unit</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$240/hour</p>
-                  <Badge variant="outline" className="text-xs">Priority 1</Badge>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium">Product C - Standard</p>
-                  <p className="text-xs text-muted-foreground">Constraint time: 0.3h/unit</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-green-600">$180/hour</p>
-                  <Badge variant="outline" className="text-xs">Priority 2</Badge>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium">Product B - Basic</p>
-                  <p className="text-xs text-muted-foreground">Constraint time: 0.8h/unit</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-orange-600">$95/hour</p>
-                  <Badge variant="outline" className="text-xs">Priority 3</Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Constraint Exploitation ROI</CardTitle>
-            <CardDescription>Investment options to increase throughput</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="p-3 border rounded">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-medium">Add Weekend Shift</p>
-                  <Badge className="text-xs">320% ROI</Badge>
-                </div>
-                <div className="text-xs space-y-1">
-                  <p>Investment: $5,000/week</p>
-                  <p>Throughput gain: $16,000/week</p>
-                </div>
-              </div>
-
-              <div className="p-3 border rounded">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-medium">Quick Changeover Kit</p>
-                  <Badge className="text-xs">185% ROI</Badge>
-                </div>
-                <div className="text-xs space-y-1">
-                  <p>Investment: $20,000 one-time</p>
-                  <p>Throughput gain: $3,000/week</p>
-                </div>
-              </div>
-
-              <div className="p-3 border rounded">
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-medium">Quality Improvement</p>
-                  <Badge className="text-xs">150% ROI</Badge>
-                </div>
-                <div className="text-xs space-y-1">
-                  <p>Investment: $15,000</p>
-                  <p>Throughput gain: $2,250/week</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
