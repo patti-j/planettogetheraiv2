@@ -21,9 +21,11 @@ interface TableColumn {
   type: string;
   nullable: boolean;
   default?: string;
-  isPrimaryKey?: boolean;
-  isForeignKey?: boolean;
-  references?: string;
+  primaryKey?: boolean;
+  foreignKey?: {
+    table: string;
+    column: string;
+  };
   comment?: string;
 }
 
@@ -239,9 +241,9 @@ export default function TableFieldViewer() {
           'Field Name': column.name,
           'Data Type': column.type,
           'Nullable': column.nullable ? 'Yes' : 'No',
-          'Primary Key': column.isPrimaryKey ? 'Yes' : 'No',
-          'Foreign Key': column.isForeignKey ? 'Yes' : 'No',
-          'References': column.references || '',
+          'Primary Key': column.primaryKey ? 'Yes' : 'No',
+          'Foreign Key': column.foreignKey ? 'Yes' : 'No',
+          'References': column.foreignKey ? `${column.foreignKey.table}.${column.foreignKey.column}` : '',
           'Default Value': column.default || '',
           'Description': fieldComment || '',
         });
@@ -440,7 +442,7 @@ export default function TableFieldViewer() {
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1 sm:gap-2 mb-2">
-                                      {column.isPrimaryKey && (
+                                      {column.primaryKey && (
                                         <Key className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600 flex-shrink-0" title="Primary Key" />
                                       )}
                                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
@@ -484,11 +486,11 @@ export default function TableFieldViewer() {
                                       </span>
                                     </div>
                                   )}
-                                  {column.isForeignKey && column.references && (
+                                  {column.foreignKey && (
                                     <div className="sm:col-span-2">
                                       <span className="text-gray-500 dark:text-gray-400">References:</span>
                                       <span className="ml-2 font-medium text-blue-600 dark:text-blue-400 break-all">
-                                        {column.references}
+                                        {column.foreignKey.table}.{column.foreignKey.column}
                                       </span>
                                     </div>
                                   )}
