@@ -746,7 +746,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                 placeholder="Search or ask Max..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-center placeholder:text-center"
               />
             </form>
             {isDragOver && (
