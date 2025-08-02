@@ -7736,27 +7736,430 @@ Manufacturing Context Available:
     }
   });
 
-  // Backwards Scheduling Algorithm
-  app.post("/api/optimization/algorithms/backwards-scheduling/run", requireAuth, async (req, res) => {
+  // Helper function for backwards scheduling logic
+  async function executeBackwardsScheduling({ parameters, productionOrders, plannedOrders, resources, operations, storage }) {
     try {
-      const { parameters, productionOrders, plannedOrders, resources, operations } = req.body;
+      console.log("Backwards scheduling request:", {
+        hasParameters: !!parameters,
+        parametersType: typeof parameters,
+        productionOrdersCount: Array.isArray(productionOrders) ? productionOrders.length : 'not array',
+        resourcesCount: Array.isArray(resources) ? resources.length : 'not array',
+        operationsCount: Array.isArray(operations) ? operations.length : 'not array'
+      });
       
-      // Input validation
-      if (!parameters || !Array.isArray(productionOrders) || !Array.isArray(resources) || !Array.isArray(operations)) {
-        return res.status(400).json({ error: "Missing required parameters: parameters, productionOrders, resources, operations" });
+      // Input validation with more detailed error messages
+      if (!Array.isArray(productionOrders)) {
+        return { 
+          success: false,
+          error: "Missing required parameter: productionOrders must be an array",
+          received: { productionOrders: typeof productionOrders }
+        };
       }
+      if (!Array.isArray(resources)) {
+        return { 
+          success: false,
+          error: "Missing required parameter: resources must be an array",
+          received: { resources: typeof resources }
+        };
+      }
+      if (!Array.isArray(operations)) {
+        return { 
+          success: false,
+          error: "Missing required parameter: operations must be an array",
+          received: { operations: typeof operations }
+        };
+      }
+      
+      // Provide default parameters if not provided
+      const defaultParameters = {
+        frozenHorizonEnabled: false,
+        frozenHorizonDays: 0,
+        includePlannedOrders: false,
+        plannedOrderWeight: 0.7,
+        resourceConflictResolution: 'first-come-first-served'
+      };
+      const finalParameters = { ...defaultParameters, ...parameters };
 
       // Planned orders are optional
       const allPlannedOrders = Array.isArray(plannedOrders) ? plannedOrders : [];
 
       // Combine production orders and planned orders if specified
       let allOrders = [...productionOrders];
-      if (parameters.includePlannedOrders && allPlannedOrders.length > 0) {
+      if (finalParameters.includePlannedOrders && allPlannedOrders.length > 0) {
         // Mark planned orders with isPlannedOrder flag and apply weight
         const weightedPlannedOrders = allPlannedOrders.map(order => ({
           ...order,
           isPlannedOrder: true,
-          priority: Math.round((order.priority || 3) * (parameters.plannedOrderWeight || 0.7))
+          priority: Math.round((order.priority || 3) * (finalParameters.plannedOrderWeight || 0.7))
+        }));
+        allOrders = [...productionOrders, ...weightedPlannedOrders];
+      }
+
+      if (allOrders.length === 0) {
+        return { success: false, error: "No production orders provided for scheduling" };
+      }
+
+      // Backwards scheduling algorithm implementation
+      const schedule = [];
+      const debugInfo = {
+        totalOrders: allOrders.length,
+        totalOperations: operations.length,
+        totalResources: resources.length,
+        ordersWithoutOperations: [],
+        operationsWithoutResources: [],
+        resourceCapabilityMismatches: []
+      };
+      
+      // Calculate frozen horizon date if enabled
+      let frozenHorizonDate = null;
+      if (finalParameters.frozenHorizonEnabled && finalParameters.frozenHorizonDays > 0) {
+        frozenHorizonDate = new Date();
+        frozenHorizonDate.setDate(frozenHorizonDate.getDate() + finalParameters.frozenHorizonDays);
+      }
+      
+      // 1. Sort orders by priority and due date
+      const sortedOrders = [...allOrders].sort((a, b) => {
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        const priorityDiff = (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3);
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+
+      // 2. Process each production order
+      for (const order of sortedOrders) {
+        const orderOperations = operations.filter(op => op.productionOrderId === order.id);
+        
+        if (orderOperations.length === 0) {
+          debugInfo.ordersWithoutOperations.push({
+            orderId: order.id,
+            orderName: order.name,
+            reason: `No operations found for production order ${order.id}. Check that operations have correct productionOrderId.`
+          });
+          continue;
+        }
+        
+        // Sort operations by sequence (reverse for backwards scheduling)
+        const sortedOps = orderOperations.sort((a, b) => (b.sequence || 0) - (a.sequence || 0));
+        
+        let currentEndTime = new Date(order.dueDate);
+        
+        for (const operation of sortedOps) {
+          // Check if operation is within frozen horizon
+          if (frozenHorizonDate && operation.scheduledStartDate) {
+            const operationStartDate = new Date(operation.scheduledStartDate);
+            if (operationStartDate <= frozenHorizonDate) {
+              // Operation is within frozen horizon - keep existing schedule
+              const assignedResource = resources.find(r => r.id === operation.resourceId) || resources[0];
+              schedule.push({
+                operationId: operation.id,
+                productionOrderId: order.id,
+                productionOrderName: order.name,
+                operationName: operation.name,
+                resourceId: operation.resourceId || resources[0]?.id,
+                resourceName: assignedResource?.name || 'Unknown Resource',
+                startTime: operation.scheduledStartDate,
+                isPlannedOrder: order.isPlannedOrder || false,
+                endTime: operation.scheduledEndDate || new Date(operationStartDate.getTime() + (operation.estimatedDuration || 4) * 60 * 60 * 1000).toISOString(),
+                duration: operation.estimatedDuration || 4,
+                frozen: true
+              });
+              
+              // Update current end time based on frozen operation
+              currentEndTime = new Date(operation.scheduledStartDate);
+              continue;
+            }
+          }
+          
+          // Find suitable resource
+          const suitableResources = resources.filter(resource => {
+            const resourceCapabilities = resource.capabilities || [];
+            const requiredCapabilities = operation.requiredCapabilities || [];
+            
+            // If no capabilities required, any resource can handle it
+            if (requiredCapabilities.length === 0) {
+              return true;
+            }
+            
+            return requiredCapabilities.every(reqCap => 
+              resourceCapabilities.some(resCap => resCap.id === reqCap.id || resCap.name === reqCap.name)
+            );
+          });
+
+          if (suitableResources.length === 0) {
+            debugInfo.operationsWithoutResources.push({
+              operationId: operation.id,
+              operationName: operation.name,
+              orderId: order.id,
+              orderName: order.name,
+              requiredCapabilities: operation.requiredCapabilities || [],
+              reason: operation.requiredCapabilities && operation.requiredCapabilities.length > 0 
+                ? `No resources found with required capabilities: ${operation.requiredCapabilities.map(c => c.name || c.id).join(', ')}`
+                : 'No resources available for scheduling'
+            });
+            continue;
+          }
+
+          if (suitableResources.length > 0) {
+            // Select resource with lowest utilization
+            const selectedResource = suitableResources[0];
+            
+            // Calculate operation duration (default 4 hours if not specified)
+            const duration = operation.estimatedDuration || 4;
+            
+            // Calculate start time (end time minus duration)
+            const startTime = new Date(currentEndTime.getTime() - (duration * 60 * 60 * 1000));
+            
+            // Apply buffer time
+            const bufferHours = parameters.bufferTime || 0.5;
+            const bufferedStartTime = new Date(startTime.getTime() - (bufferHours * 60 * 60 * 1000));
+            
+            // Adjust for working hours if needed
+            let finalStartTime = bufferedStartTime;
+            let finalEndTime = startTime;
+            
+            if (!parameters.allowOvertime) {
+              // Adjust to working hours (simplified - just move to previous working day if needed)
+              const workStart = parameters.workingHoursStart || 8;
+              const workEnd = parameters.workingHoursEnd || 17;
+              
+              if (finalStartTime.getHours() < workStart) {
+                const prevDay = new Date(finalStartTime);
+                prevDay.setDate(prevDay.getDate() - 1);
+                prevDay.setHours(workEnd - duration);
+                finalStartTime = prevDay;
+                finalEndTime = new Date(prevDay.getTime() + (duration * 60 * 60 * 1000));
+              }
+            }
+            
+            // Calculate optimization flags
+            const dueDate = new Date(order.dueDate);
+            const timeDiff = (dueDate.getTime() - finalEndTime.getTime()) / (1000 * 60 * 60); // hours
+            const isEarly = timeDiff > 24;
+            const isLate = timeDiff < -4;
+            const isBottleneck = duration > 8 || suitableResources.length === 1;
+            const criticality = order.priority === 'critical' || isLate ? 'critical' : (isBottleneck ? 'high' : 'normal');
+            const scheduleDeviation = Math.abs(timeDiff);
+            
+            // Optimization notes
+            let optimizationNotes = [];
+            if (isEarly) optimizationNotes.push('Early completion expected');
+            if (isLate) optimizationNotes.push('Late delivery risk');
+            if (isBottleneck) optimizationNotes.push('Limited resource capacity');
+            if (order.isPlannedOrder) optimizationNotes.push('Planned order (lower priority)');
+            
+            schedule.push({
+              operationId: operation.id,
+              productionOrderId: order.id,
+              productionOrderName: order.name,
+              operationName: operation.name,
+              resourceId: selectedResource.id,
+              resourceName: selectedResource.name,
+              startTime: finalStartTime.toISOString(),
+              endTime: finalEndTime.toISOString(),
+              duration: duration,
+              isPlannedOrder: order.isPlannedOrder || false,
+              frozen: false,
+              optimizationFlags: {
+                isEarly,
+                isLate,
+                isBottleneck,
+                criticality,
+                scheduleDeviation,
+                optimizationNotes: optimizationNotes.join('; ')
+              }
+            });
+            
+            // Update current end time for next operation
+            currentEndTime = finalStartTime;
+          }
+        }
+      }
+
+      // Calculate statistics
+      const frozenOperations = schedule.filter(op => op.frozen).length;
+      const rescheduledOperations = schedule.filter(op => !op.frozen).length;
+      
+      // Generate specific error message if no operations were scheduled
+      let errorMessage = null;
+      let specificReasons = [];
+      
+      if (schedule.length === 0) {
+        if (debugInfo.ordersWithoutOperations.length > 0) {
+          specificReasons.push(`${debugInfo.ordersWithoutOperations.length} production orders have no operations assigned`);
+        }
+        if (debugInfo.operationsWithoutResources.length > 0) {
+          specificReasons.push(`${debugInfo.operationsWithoutResources.length} operations cannot be scheduled due to resource capability mismatches`);
+        }
+        if (debugInfo.totalResources === 0) {
+          specificReasons.push('No resources available for scheduling');
+        }
+        if (debugInfo.totalOperations === 0) {
+          specificReasons.push('No operations exist in the system');
+        }
+        
+        errorMessage = specificReasons.length > 0 
+          ? `Unable to schedule any operations: ${specificReasons.join(', ')}`
+          : 'Unable to schedule any operations for unknown reasons';
+      }
+      
+      // Create schedule scenario in database
+      let scenarioId = null;
+      if (schedule.length > 0 && storage) {
+        try {
+          // Create scenario record
+          const scenarioName = `Backward Scheduling - ${new Date().toLocaleString()}`;
+          const scenarioDescription = `Backward scheduling run for ${sortedOrders.length} orders with ${schedule.length} scheduled operations`;
+          
+          const scenario = await storage.createScheduleScenario({
+            name: scenarioName,
+            description: scenarioDescription,
+            status: "draft",
+            createdBy: "system",
+            algorithmId: 2, // backward-scheduling algorithm ID
+            configuration: {
+              scheduling_strategy: "balanced",
+              optimization_priorities: ["delivery_time", "resource_utilization"],
+              constraints: {
+                max_overtime_hours: parameters.allowOvertime ? 999 : 0,
+                resource_availability: {},
+                deadline_priorities: {}
+              }
+            },
+            metrics: {
+              total_duration_hours: Math.max(...schedule.map(s => new Date(s.endTime).getTime() - new Date(s.startTime).getTime())) / (1000 * 60 * 60),
+              resource_utilization_percent: Math.round((schedule.length / resources.length) * 100),
+              on_time_delivery_percent: Math.round((schedule.filter(s => !s.optimizationFlags?.isLate).length / schedule.length) * 100),
+              total_cost: 0,
+              overtime_hours: 0,
+              customer_satisfaction_score: 85,
+              efficiency_score: Math.round((rescheduledOperations / schedule.length) * 100),
+              risk_level: schedule.some(s => s.optimizationFlags?.isLate) ? "high" : "low",
+              bottleneck_resources: [...new Set(schedule.filter(s => s.optimizationFlags?.isBottleneck).map(s => s.resourceName))],
+              critical_path_duration: Math.max(...schedule.map(s => s.duration))
+            }
+          });
+          
+          scenarioId = scenario.id;
+          
+          // Create resource requirement blocks for each scheduled operation
+          for (const scheduledOp of schedule) {
+            // Find the corresponding resource requirement for this operation
+            const operation = operations.find(op => op.id === scheduledOp.operationId);
+            if (operation) {
+              // Get the resource requirements for this operation
+              const resourceRequirements = await storage.getResourceRequirements();
+              const opResourceReq = resourceRequirements.find(rr => 
+                rr.discreteOperationId === operation.id || 
+                rr.discreteOperationPhaseId === operation.phaseId
+              );
+              
+              if (opResourceReq) {
+                await storage.createResourceRequirementBlock({
+                  scenarioId: scenario.id,
+                  discretePhaseResourceRequirementId: opResourceReq.id,
+                  assignedResourceId: scheduledOp.resourceId,
+                  scheduledStartTime: new Date(scheduledOp.startTime),
+                  scheduledEndTime: new Date(scheduledOp.endTime),
+                  blockType: "operation",
+                  status: scheduledOp.frozen ? "confirmed" : "planned",
+                  priority: operation.priority || 1,
+                  requiredCapacity: "1.0",
+                  isBottleneck: scheduledOp.optimizationFlags?.isBottleneck || false,
+                  isCriticalPath: scheduledOp.optimizationFlags?.criticality === "critical",
+                  floatTime: Math.max(0, scheduledOp.optimizationFlags?.scheduleDeviation || 0) * 60, // Convert hours to minutes
+                  notes: scheduledOp.optimizationFlags?.optimizationNotes || null,
+                  constraints: {
+                    setup_time_minutes: 30,
+                    teardown_time_minutes: 15
+                  }
+                });
+              }
+            }
+          }
+          
+        } catch (dbError) {
+          console.error("Error creating schedule scenario:", dbError);
+          // Continue with response even if database creation fails
+        }
+      }
+
+      return {
+        success: schedule.length > 0,
+        schedule: schedule,
+        scenarioId: scenarioId,
+        parameters: parameters,
+        errorMessage: errorMessage,
+        debugInfo: schedule.length === 0 ? debugInfo : undefined,
+        stats: {
+          totalOperations: operations.length,
+          scheduledOperations: schedule.length,
+          ordersProcessed: sortedOrders.length,
+          plannedOrdersIncluded: parameters.includePlannedOrders ? allPlannedOrders.length : 0,
+          frozenOperations: frozenOperations,
+          rescheduledOperations: rescheduledOperations,
+          scenarioCreated: scenarioId !== null
+        }
+      };
+    } catch (error) {
+      console.error("Error running backwards scheduling algorithm:", error);
+      return { success: false, error: "Failed to run backwards scheduling algorithm" };
+    }
+  }
+
+  // Backwards Scheduling Algorithm
+  app.post("/api/optimization/algorithms/backwards-scheduling/run", requireAuth, async (req, res) => {
+    try {
+      const { parameters, productionOrders, plannedOrders, resources, operations } = req.body;
+      
+      console.log("Backwards scheduling request:", {
+        hasParameters: !!parameters,
+        parametersType: typeof parameters,
+        productionOrdersCount: Array.isArray(productionOrders) ? productionOrders.length : 'not array',
+        resourcesCount: Array.isArray(resources) ? resources.length : 'not array',
+        operationsCount: Array.isArray(operations) ? operations.length : 'not array'
+      });
+      
+      // Input validation with more detailed error messages
+      if (!Array.isArray(productionOrders)) {
+        return res.status(400).json({ 
+          error: "Missing required parameter: productionOrders must be an array",
+          received: { productionOrders: typeof productionOrders }
+        });
+      }
+      if (!Array.isArray(resources)) {
+        return res.status(400).json({ 
+          error: "Missing required parameter: resources must be an array",
+          received: { resources: typeof resources }
+        });
+      }
+      if (!Array.isArray(operations)) {
+        return res.status(400).json({ 
+          error: "Missing required parameter: operations must be an array",
+          received: { operations: typeof operations }
+        });
+      }
+      
+      // Provide default parameters if not provided
+      const defaultParameters = {
+        frozenHorizonEnabled: false,
+        frozenHorizonDays: 0,
+        includePlannedOrders: false,
+        plannedOrderWeight: 0.7,
+        resourceConflictResolution: 'first-come-first-served'
+      };
+      const finalParameters = { ...defaultParameters, ...parameters };
+
+      // Planned orders are optional
+      const allPlannedOrders = Array.isArray(plannedOrders) ? plannedOrders : [];
+
+      // Combine production orders and planned orders if specified
+      let allOrders = [...productionOrders];
+      if (finalParameters.includePlannedOrders && allPlannedOrders.length > 0) {
+        // Mark planned orders with isPlannedOrder flag and apply weight
+        const weightedPlannedOrders = allPlannedOrders.map(order => ({
+          ...order,
+          isPlannedOrder: true,
+          priority: Math.round((order.priority || 3) * (finalParameters.plannedOrderWeight || 0.7))
         }));
         allOrders = [...productionOrders, ...weightedPlannedOrders];
       }
@@ -7778,9 +8181,9 @@ Manufacturing Context Available:
       
       // Calculate frozen horizon date if enabled
       let frozenHorizonDate = null;
-      if (parameters.frozenHorizonEnabled && parameters.frozenHorizonDays > 0) {
+      if (finalParameters.frozenHorizonEnabled && finalParameters.frozenHorizonDays > 0) {
         frozenHorizonDate = new Date();
-        frozenHorizonDate.setDate(frozenHorizonDate.getDate() + parameters.frozenHorizonDays);
+        frozenHorizonDate.setDate(frozenHorizonDate.getDate() + finalParameters.frozenHorizonDays);
       }
       
       // 1. Sort orders by priority and due date
@@ -8308,26 +8711,48 @@ Manufacturing Context Available:
       let schedule = null;
       
       if (algorithm.name === 'backwards-scheduling-v1') {
-        // Call the backwards scheduling algorithm
-        const backwardsResponse = await fetch(`http://localhost:5000/api/optimization/algorithms/backwards-scheduling/run`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': req.headers.authorization || ''
-          },
-          body: JSON.stringify({
-            parameters: parameters || {},
-            jobs: filteredJobs,
-            resources: filteredResources,
-            operations: filteredOperations
-          })
+        // Prepare parameters with defaults for backwards scheduling
+        const backwardsParameters = {
+          frozenHorizonEnabled: false,
+          frozenHorizonDays: 0,
+          includePlannedOrders: false,
+          plannedOrderWeight: 0.7,
+          resourceConflictResolution: 'first-come-first-served',
+          ...parameters
+        };
+
+        console.log("Executing backwards scheduling with:", {
+          parametersCount: Object.keys(backwardsParameters).length,
+          productionOrdersCount: filteredJobs.length,
+          resourcesCount: filteredResources.length,
+          operationsCount: filteredOperations.length
         });
-        
-        const backwardsResult = await backwardsResponse.json();
-        if (backwardsResult.success) {
-          schedule = backwardsResult.schedule;
-        } else {
-          throw new Error('Backwards scheduling failed');
+
+        // Call the backwards scheduling logic directly instead of making HTTP request
+        try {
+          const backwardsResult = await executeBackwardsScheduling({
+            parameters: backwardsParameters,
+            productionOrders: filteredJobs,
+            resources: filteredResources,
+            operations: filteredOperations,
+            plannedOrders: [],
+            storage: storage
+          });
+
+          console.log("Backwards scheduling result:", {
+            success: backwardsResult.success,
+            error: backwardsResult.error,
+            scheduleLength: backwardsResult.schedule?.length || 0
+          });
+
+          if (backwardsResult.success) {
+            schedule = backwardsResult.schedule;
+          } else {
+            throw new Error(backwardsResult.error || 'Backwards scheduling failed');
+          }
+        } catch (directCallError) {
+          console.error("Direct backwards scheduling call failed:", directCallError);
+          throw new Error(`Backwards scheduling failed: ${directCallError.message}`);
         }
       } else {
         return res.status(400).json({ error: "Unsupported algorithm type" });
