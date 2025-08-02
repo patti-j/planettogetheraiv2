@@ -73,6 +73,8 @@ import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import WidgetStudio from "@/pages/widget-studio";
+import MobileHomePage from "@/pages/mobile-home";
+import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
 import WidgetsPage from "@/pages/widgets";
 import DashboardsPage from "@/pages/dashboards";
 import DataImportPage from "@/pages/data-import";
@@ -157,7 +159,7 @@ function DashboardWithAutoTour() {
     }
   }, [user, startTour]);
 
-  return <Homepage />;
+  return <SmartHomeWrapper />;
 }
 
 // MainContentArea is now replaced by SplitPaneLayout
@@ -506,6 +508,7 @@ function Router() {
               <DashboardsPage />
             </ProtectedRoute>
           </Route>
+          <Route path="/mobile-home" component={MobileHomePage} />
           <Route path="/product-development">
             <ProtectedRoute feature="systems-management" action="view">
               <ProductDevelopment />
@@ -518,7 +521,9 @@ function Router() {
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
           <Route path="/login" component={Login} />
-          <Route path="/" component={MarketingHome} />
+          <Route path="/">
+            <SmartHomeWrapper />
+          </Route>
           <Route component={NotFound} />
         </Switch>
         </OnboardingGate>
