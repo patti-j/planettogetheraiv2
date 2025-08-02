@@ -349,15 +349,25 @@ export default function ScheduleOptimizationWidget({
               {/* Selected Profile with Editable Weights */}
               {selectedProfile && (
                 <div className="p-3 bg-muted/30 rounded-lg border">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Profile</span>
-                      {selectedProfile.isDefault && (
-                        <Badge variant="secondary" className="text-xs">Default</Badge>
-                      )}
+                  <div className="flex flex-col gap-2 mb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Settings className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="text-sm font-medium">Profile</span>
+                        {selectedProfile.isDefault && (
+                          <Badge variant="secondary" className="text-xs">Default</Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 flex-shrink-0"
+                        onClick={() => setEditingProfile(!editingProfile)}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center">
                       <Select
                         value={selectedProfile.id.toString()}
                         onValueChange={(value) => {
@@ -367,7 +377,7 @@ export default function ScheduleOptimizationWidget({
                           setEditingProfile(false);
                         }}
                       >
-                        <SelectTrigger className="w-auto h-7 text-xs">
+                        <SelectTrigger className="w-full h-7 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -383,14 +393,6 @@ export default function ScheduleOptimizationWidget({
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => setEditingProfile(!editingProfile)}
-                      >
-                        <Settings className="h-3 w-3" />
-                      </Button>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">{selectedProfile.description}</p>
