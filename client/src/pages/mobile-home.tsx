@@ -209,8 +209,12 @@ export default function MobileHomePage() {
               size="sm" 
               className="p-2"
               onClick={() => {
-                // Force refresh of mobile home page
-                window.location.reload();
+                // Close Max pane and reset to clean home state
+                setShowMaxPane(false);
+                setShowSearch(false);
+                setSearchQuery("");
+                // Scroll to top smoothly
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <Home className="w-5 h-5" />
