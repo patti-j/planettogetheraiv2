@@ -983,15 +983,15 @@ export default function MobileHomePage() {
 
           {/* Max AI Fly-out Panel */}
           {maxPanelOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-40 lg:hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setMaxPanelOpen(false)}
           />
           
-          {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
+          {/* Panel - positioned below header */}
+          <div className="absolute right-0 top-16 bottom-0 w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
