@@ -134,9 +134,9 @@ export default function MobileHomePage() {
 
   // Fetch mobile widgets and dashboards
   const { data: mobileWidgets = [] } = useQuery({
-    queryKey: ["/api/widgets"],
+    queryKey: ["/api/mobile/widgets"],
     queryFn: async () => {
-      const response = await fetch("/api/widgets");
+      const response = await fetch("/api/mobile/widgets");
       const allWidgets = await response.json();
       // Filter for mobile-compatible widgets
       return allWidgets.filter((widget: any) => 
@@ -146,9 +146,9 @@ export default function MobileHomePage() {
   });
 
   const { data: mobileDashboards = [] } = useQuery({
-    queryKey: ["/api/dashboards"], 
+    queryKey: ["/api/mobile/dashboards"], 
     queryFn: async () => {
-      const response = await fetch("/api/dashboards");
+      const response = await fetch("/api/mobile/dashboards");
       const allDashboards = await response.json();
       // Filter for mobile-compatible dashboards
       return allDashboards.filter((dashboard: any) => 

@@ -12,17 +12,20 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Use direct neon connection instead of Pool to avoid timeout issues
-const connection = neon(process.env.DATABASE_URL);
+// Create Neon connection
+const sql_connection = neon(process.env.DATABASE_URL);
 
 // Add connection monitoring
 let connectionCount = 0;
 let queryCount = 0;
 let errorCount = 0;
 
-export const db = drizzle(connection, {
+export const db = drizzle(sql_connection, {
   schema,
-} as any);
+});
+
+// Export direct SQL connection for fallback queries
+export const directSql = sql_connection;
 
 // Database metrics for monitoring
 export const getDbMetrics = () => ({
