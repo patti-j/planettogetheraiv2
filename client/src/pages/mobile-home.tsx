@@ -389,7 +389,7 @@ export default function MobileHomePage() {
   });
 
   const { data: mobileDashboards = [] } = useQuery({
-    queryKey: ["mobile-dashboards"], 
+    queryKey: ["mobile-dashboards-fixed"], 
     queryFn: async () => {
       console.log("=== FETCHING MOBILE DASHBOARDS ===");
       const response = await fetch("/api/mobile/dashboards");
@@ -409,21 +409,7 @@ export default function MobileHomePage() {
       console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
       console.log("=== MOBILE DASHBOARDS TYPE ===", typeof allDashboards, Array.isArray(allDashboards));
       
-      // Add Production Scheduler Dashboard if not provided by server
-      const hasSchedulerDashboard = allDashboards.some((d: any) => d.title === "Production Scheduler Dashboard");
-      if (!hasSchedulerDashboard) {
-        allDashboards.push({
-          id: 5,
-          title: "Production Scheduler Dashboard",
-          description: "Advanced scheduling tools for production planners",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "grid",
-            widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp"]
-          },
-          createdAt: new Date().toISOString()
-        });
-      }
+      // Server should now provide Production Scheduler Dashboard (ID 5)
       
       return allDashboards;
     }

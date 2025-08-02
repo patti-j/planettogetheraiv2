@@ -4006,82 +4006,115 @@ Manufacturing Context Available:
     }
   });
 
-  app.get("/api/mobile/dashboards", (req, res) => {
-    console.log("=== MOBILE DASHBOARDS ENDPOINT HIT - NEW VERSION ===");
+  // New endpoint to bypass caching issues
+  app.get("/api/mobile/dashboards-v2", (req, res) => {
+    console.log("=== MOBILE DASHBOARDS V2 ENDPOINT HIT ===");
     
-    // Hardcoded dashboard data - with Production Scheduler Dashboard
-      const sampleDashboards = [
-        {
-          id: 1,
-          title: "Factory Overview",
-          description: "Complete view of factory operations and performance",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "grid",
-            widgets: ["production-metrics", "equipment-status", "quality-dashboard"]
-          },
-          createdAt: new Date().toISOString()
+    const dashboards = [
+      {
+        id: 1,
+        title: "Factory Overview",
+        description: "Real-time production metrics and equipment status",
+        targetPlatform: "both",
+        configuration: { layout: "grid", widgets: ["production-metrics", "equipment-status", "quality-dashboard"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Production Planning",
+        description: "Schedule management and resource allocation",
+        targetPlatform: "both",
+        configuration: { layout: "timeline", widgets: ["gantt-chart", "resource-allocation", "capacity-planning"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: "Quality Control",
+        description: "Quality metrics and testing results",
+        targetPlatform: "both",
+        configuration: { layout: "metrics", widgets: ["quality-tests", "inspection-plans", "certificates"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 4,
+        title: "Inventory Management",
+        description: "Stock levels and material tracking",
+        targetPlatform: "both",
+        configuration: { layout: "dashboard", widgets: ["inventory-tracking", "stock-alerts", "procurement"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 5,
+        title: "Production Scheduler Dashboard",
+        description: "Advanced scheduling tools for production planners",
+        targetPlatform: "both",
+        route: "/production-scheduler-dashboard",
+        configuration: { 
+          layout: "grid",
+          widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
         },
-        {
-          id: 2,
-          title: "Production Planning",
-          description: "Schedule management and resource allocation",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "timeline",
-            widgets: ["gantt-chart", "resource-allocation", "capacity-planning"]
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 3,
-          title: "Quality Control",
-          description: "Quality metrics and testing results",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "metrics",
-            widgets: ["quality-tests", "inspection-plans", "certificates"]
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 4,
-          title: "Inventory Management",
-          description: "Stock levels and material tracking",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "dashboard",
-            widgets: ["inventory-tracking", "stock-alerts", "procurement"]
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 5,
-          title: "Production Scheduler Dashboard",
-          description: "Advanced scheduling tools for production planners",
-          targetPlatform: "both",
-          route: "/production-scheduler-dashboard",
-          configuration: { 
-            layout: "grid",
-            widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 5,
-          title: "Production Scheduler Dashboard",
-          description: "Advanced scheduling tools for production planners",
-          targetPlatform: "both",
-          configuration: { 
-            layout: "grid",
-            widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
-          },
-          createdAt: new Date().toISOString()
-        }
-      ];
+        createdAt: new Date().toISOString()
+      }
+    ];
       
-      console.log("Total dashboards returned:", sampleDashboards.length);
-      res.json(sampleDashboards);
+    console.log("V2 - Total dashboards returned:", dashboards.length);
+    console.log("V2 - Dashboard IDs:", dashboards.map(d => d.id));
+    res.json(dashboards);
+  });
+
+  app.get("/api/mobile/dashboards", (req, res) => {
+    console.log("=== MOBILE DASHBOARDS ENDPOINT BYPASSED - CALLING V2 ===");
+    
+    const dashboards = [
+      {
+        id: 1,
+        title: "Factory Overview",
+        description: "Real-time production metrics and equipment status",
+        targetPlatform: "both",
+        configuration: { layout: "grid", widgets: ["production-metrics", "equipment-status", "quality-dashboard"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Production Planning",
+        description: "Schedule management and resource allocation",
+        targetPlatform: "both",
+        configuration: { layout: "timeline", widgets: ["gantt-chart", "resource-allocation", "capacity-planning"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: "Quality Control",
+        description: "Quality metrics and testing results",
+        targetPlatform: "both",
+        configuration: { layout: "metrics", widgets: ["quality-tests", "inspection-plans", "certificates"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 4,
+        title: "Inventory Management",
+        description: "Stock levels and material tracking",
+        targetPlatform: "both",
+        configuration: { layout: "dashboard", widgets: ["inventory-tracking", "stock-alerts", "procurement"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 5,
+        title: "Production Scheduler Dashboard",
+        description: "Advanced scheduling tools for production planners",
+        targetPlatform: "both",
+        route: "/production-scheduler-dashboard",
+        configuration: { 
+          layout: "grid",
+          widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
+        },
+        createdAt: new Date().toISOString()
+      }
+    ];
+      
+    console.log("BYPASSED - Total dashboards returned:", dashboards.length);
+    console.log("BYPASSED - Dashboard IDs:", dashboards.map(d => d.id));
+    res.json(dashboards);
   });
 
   app.post("/api/dashboard-configs/:id/set-default", async (req, res) => {
