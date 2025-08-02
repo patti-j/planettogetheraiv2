@@ -269,6 +269,7 @@ export default function MobileHomePage() {
 
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
+  console.log("🔍 MobileHomePage - showLibrary state:", showLibrary);
 
   // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
   // This prevents desktop content from showing underneath when pulling to refresh
@@ -769,7 +770,10 @@ export default function MobileHomePage() {
                   <Card 
                     key="dashboards"
                     className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => setShowLibrary(true)}
+                    onClick={() => {
+                      console.log("🔍 Dashboards card clicked, setting showLibrary to true");
+                      setShowLibrary(true);
+                    }}
                   >
                     <CardContent className="p-4 text-center">
                       <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mx-auto mb-3 relative`}>
