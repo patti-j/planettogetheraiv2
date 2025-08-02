@@ -3675,32 +3675,35 @@ Manufacturing Context Available:
   app.get("/api/widgets", requireAuth, async (req, res) => {
     try {
       console.log("=== API WIDGETS ENDPOINT HIT ===");
-      // Get both cockpit widgets and canvas widgets for mobile library
-      const cockpitWidgets = await db.select().from(schema.cockpitWidgets);
-      const canvasWidgets = await db.select().from(schema.canvasWidgets);
+      // Use direct SQL queries to avoid Drizzle ORM issues
+      const cockpitWidgetsResult = await db.execute(sql`SELECT * FROM cockpit_widgets`);
+      const canvasWidgetsResult = await db.execute(sql`SELECT * FROM canvas_widgets`);
+      
+      const cockpitWidgets = cockpitWidgetsResult.rows;
+      const canvasWidgets = canvasWidgetsResult.rows;
       
       console.log("Cockpit widgets count:", cockpitWidgets.length);
       console.log("Canvas widgets count:", canvasWidgets.length);
       
       // Combine and format widgets for mobile library
       const allWidgets = [
-        ...cockpitWidgets.map(widget => ({
+        ...cockpitWidgets.map((widget: any) => ({
           id: widget.id,
           title: widget.title,
           type: widget.type,
-          targetPlatform: widget.targetPlatform || 'both',
+          targetPlatform: widget.target_platform || 'both',
           source: 'cockpit',
           configuration: widget.configuration,
-          createdAt: widget.createdAt
+          createdAt: widget.created_at
         })),
-        ...canvasWidgets.map(widget => ({
+        ...canvasWidgets.map((widget: any) => ({
           id: widget.id,
           title: widget.title,
-          type: widget.widgetType,
-          targetPlatform: widget.targetPlatform || 'both',
+          type: widget.widget_type,
+          targetPlatform: widget.target_platform || 'both',
           source: 'canvas',
           configuration: widget.configuration,
-          createdAt: widget.createdAt
+          createdAt: widget.created_at
         }))
       ];
       
@@ -3715,19 +3718,20 @@ Manufacturing Context Available:
   app.get("/api/dashboards", requireAuth, async (req, res) => {
     try {
       console.log("=== API DASHBOARDS ENDPOINT HIT ===");
-      // Get dashboard configs for mobile library  
-      const dashboardConfigs = await db.select().from(schema.dashboardConfigs);
+      // Use direct SQL query to avoid Drizzle ORM issues
+      const dashboardConfigsResult = await db.execute(sql`SELECT * FROM dashboard_configs`);
+      const dashboardConfigs = dashboardConfigsResult.rows;
       
       console.log("Dashboard configs count:", dashboardConfigs.length);
       
       // Format dashboards for mobile library
-      const dashboards = dashboardConfigs.map(dashboard => ({
+      const dashboards = dashboardConfigs.map((dashboard: any) => ({
         id: dashboard.id,
         title: dashboard.name,
         description: dashboard.description,
-        targetPlatform: dashboard.targetPlatform || 'both',
+        targetPlatform: dashboard.target_platform || 'both',
         configuration: dashboard.configuration,
-        createdAt: dashboard.createdAt
+        createdAt: dashboard.created_at
       }));
       
       console.log("Total dashboards returned:", dashboards.length);

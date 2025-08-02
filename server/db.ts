@@ -22,7 +22,7 @@ let errorCount = 0;
 
 export const db = drizzle(connection, {
   schema,
-});
+} as any);
 
 // Database metrics for monitoring
 export const getDbMetrics = () => ({
