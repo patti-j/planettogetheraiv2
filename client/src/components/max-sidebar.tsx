@@ -1154,13 +1154,12 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         </div>
       </div>
 
-      {/* Voice Settings */}
-      {showVoiceSettings && (
+      {/* Consolidated Settings Panel - Only when needed */}
+      {(showVoiceSettings || currentInsights.length > 0) && (
         <div className="p-3 bg-gray-50 border-b">
-          <div className="space-y-3">
-            {/* Voice Selection */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-700">Voice Selection</div>
+          {/* Voice Settings - Compact */}
+          {showVoiceSettings && (
+            <div className="space-y-2 mb-3">
               <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                 <SelectTrigger className="h-7 text-xs">
                   <SelectValue />
@@ -1176,71 +1175,35 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={testVoice}
-                className="w-full h-7 text-xs"
-              >
-                Test Voice
-              </Button>
-            </div>
-
-            {/* AI Theme Selection */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-700">AI Theme</div>
-              <AIThemeSelector />
-            </div>
-
-            {/* Widget Studio Access */}
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-700">Quick Tools</div>
-              <WidgetStudioButton
-                variant="outline"
-                size="sm"
-                className="w-full h-7 text-xs"
-                targetSystems={['canvas']}
-                onWidgetCreate={(widget, systems) => {
-                  console.log('Widget created from Max for canvas:', widget, systems);
-                  toast({
-                    title: "Widget Created",
-                    description: `Widget "${widget.title}" added to ${systems.join(', ')}`,
-                  });
-                }}
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                Create Widget
-              </WidgetStudioButton>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Current Insights - Hidden on mobile to save space */}
-      {currentInsights.length > 0 && (
-        <div className="p-3 bg-gray-50 border-b hidden md:block">
-          <div className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
-            <Brain className="h-3 w-3" />
-            Smart Insights
-          </div>
-          <div className="space-y-1">
-            {currentInsights.map((insight, index) => (
-              <div 
-                key={index}
-                className="text-xs bg-white p-2 rounded border cursor-pointer hover:bg-gray-50"
-                onClick={() => handleInsightAction(insight)}
-              >
-                <div className="flex items-center gap-1 mb-1">
-                  {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
-                  {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
-                  {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                  {insight.type === 'learning' && <Brain className="h-3 w-3 text-purple-500" />}
-                  <span className="font-medium">{insight.title}</span>
-                </div>
-                <p className="text-gray-600">{insight.message}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={testVoice} className="flex-1 h-7 text-xs">
+                  Test Voice
+                </Button>
+                <AIThemeSelector />
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* Smart Insights - Compact */}
+          {currentInsights.length > 0 && (
+            <div className="space-y-1">
+              {currentInsights.map((insight, index) => (
+                <div 
+                  key={index}
+                  className="text-xs bg-white p-2 rounded border cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleInsightAction(insight)}
+                >
+                  <div className="flex items-center gap-1">
+                    {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
+                    {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
+                    {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
+                    {insight.type === 'learning' && <Brain className="h-3 w-3 text-purple-500" />}
+                    <span className="font-medium">{insight.title}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
