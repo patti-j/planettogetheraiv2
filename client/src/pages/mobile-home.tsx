@@ -762,7 +762,8 @@ export default function MobileHomePage() {
                     }
                   }
                 }}
-                className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full"
+                className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full text-center placeholder:text-center"
+                style={{ textAlign: searchQuery ? 'left' : 'center' }}
               />
             </div>
           </div>
@@ -1354,7 +1355,8 @@ export default function MobileHomePage() {
                         }
                       }
                     }}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full"
+                    className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full text-center placeholder:text-center"
+                    style={{ textAlign: searchQuery ? 'left' : 'center' }}
                   />
                 </div>
 
