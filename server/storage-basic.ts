@@ -77,6 +77,65 @@ export class BasicStorage {
     }
   ];
 
+  private mockOperations = [
+    {
+      id: 1,
+      name: "Material Preparation",
+      status: "completed",
+      assignedResourceId: 1,
+      duration: 120, // minutes
+      startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      endTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+      productionOrderId: 1,
+      isBottleneck: false,
+      isEarly: false,
+      isLate: false,
+      timeVarianceHours: 0
+    },
+    {
+      id: 2,
+      name: "Primary Mixing",
+      status: "in_progress",
+      assignedResourceId: 1,
+      duration: 180,
+      startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+      endTime: null,
+      productionOrderId: 1,
+      isBottleneck: true,
+      isEarly: false,
+      isLate: false,
+      timeVarianceHours: 0
+    },
+    {
+      id: 3,
+      name: "Quality Testing",
+      status: "pending",
+      assignedResourceId: 2,
+      duration: 90,
+      startTime: null,
+      endTime: null,
+      productionOrderId: 1,
+      isBottleneck: false,
+      isEarly: true,
+      isLate: false,
+      timeVarianceHours: 0
+    },
+    {
+      id: 4,
+      name: "Final Processing",
+      status: "pending",
+      assignedResourceId: 1,
+      duration: 240,
+      startTime: null,
+      endTime: null,
+      productionOrderId: 1,
+      isBottleneck: false,
+      isEarly: false,
+      isLate: true,
+      timeVarianceHours: 2.5
+    }
+  ];
+
   private mockOptimizationAlgorithms = [
     {
       id: 1,
@@ -315,6 +374,51 @@ export class BasicStorage {
     if (algorithmIndex === -1) return false;
     
     this.mockOptimizationAlgorithms.splice(algorithmIndex, 1);
+    return true;
+  }
+
+  // Operations
+  async getOperations() {
+    return this.mockOperations;
+  }
+
+  async getOperation(id: number) {
+    return this.mockOperations.find(o => o.id === id) || null;
+  }
+
+  async getOperationsByProductionOrderId(productionOrderId: number) {
+    return this.mockOperations.filter(o => o.productionOrderId === productionOrderId);
+  }
+
+  async createOperation(data: any) {
+    const newOperation = {
+      id: this.mockOperations.length + 1,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.mockOperations.push(newOperation);
+    return newOperation;
+  }
+
+  async updateOperation(id: number, data: any) {
+    const operationIndex = this.mockOperations.findIndex(o => o.id === id);
+    if (operationIndex === -1) return null;
+    
+    this.mockOperations[operationIndex] = {
+      ...this.mockOperations[operationIndex],
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    return this.mockOperations[operationIndex];
+  }
+
+  async deleteOperation(id: number) {
+    const operationIndex = this.mockOperations.findIndex(o => o.id === id);
+    if (operationIndex === -1) return false;
+    
+    this.mockOperations.splice(operationIndex, 1);
     return true;
   }
 }

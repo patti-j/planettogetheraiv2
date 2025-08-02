@@ -67,6 +67,11 @@ interface Profile {
   name: string;
   description: string;
   isDefault: boolean;
+  configuration?: {
+    weights?: {
+      [key: string]: number;
+    };
+  };
 }
 
 export default function ScheduleOptimizationWidget({ 
