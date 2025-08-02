@@ -182,14 +182,8 @@ function Router() {
   const { isActive: isTourActive } = useTour();
   const [location, originalSetLocation] = useLocation();
   
-  // Wrap setLocation to track all navigation calls
-  const setLocation = (newLocation: string) => {
-    console.error('🚨 NAVIGATION DETECTED! Moving to:', newLocation);
-    console.error('🚨 Stack trace:', new Error().stack);
-    console.error('🚨 Current location:', location);
-    console.error('🚨 Browser pathname:', window.location.pathname);
-    originalSetLocation(newLocation);
-  };
+  // Use normal setLocation without debug tracking
+  const setLocation = originalSetLocation;
   
   // Debug logging to understand initial route and any changes
   useEffect(() => {
