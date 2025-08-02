@@ -37,8 +37,9 @@ export default function Login() {
       console.log("🚀 Calling login function...");
       const result = await login({ username, password });
       console.log("🚀 Login function returned:", result);
-      console.log("🚀 Redirecting to home...");
+      console.log("🚀 About to redirect to home...");
       setLocation("/");
+      console.log("🚀 Redirect completed successfully");
     } catch (error: any) {
       console.error("🚀 Login form error:", error);
       console.error("🚀 Error details:", JSON.stringify(error, null, 2));

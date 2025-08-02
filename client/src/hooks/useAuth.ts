@@ -95,26 +95,41 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
       console.log("🔐 Login mutation starting for:", credentials.username);
-      const response = await apiRequest("POST", "/api/auth/login", credentials);
-      console.log("🔐 Response status:", response.status);
-      console.log("🔐 Response headers:", response.headers);
       
-      const userData = await response.json();
-      console.log("🔐 Parsed response data:", userData);
-      
-      // Store token in localStorage if provided
-      if (userData.token) {
-        localStorage.setItem('authToken', userData.token);
-        console.log("🔐 Token stored successfully");
-      } else {
-        console.log("🔐 No token in response");
+      try {
+        const response = await apiRequest("POST", "/api/auth/login", credentials);
+        console.log("🔐 Response status:", response.status);
+        console.log("🔐 Response headers:", response.headers);
+        
+        const userData = await response.json();
+        console.log("🔐 Parsed response data:", userData);
+        console.log("🔐 Token in response:", userData.token);
+        
+        // Store token in localStorage if provided
+        if (userData.token) {
+          console.log("🔐 About to store token:", userData.token);
+          localStorage.setItem('authToken', userData.token);
+          console.log("🔐 Token stored successfully");
+        } else {
+          console.log("🔐 No token in response");
+        }
+        
+        console.log("🔐 About to return userData");
+        return userData;
+      } catch (error) {
+        console.error("🔐 Error in mutationFn:", error);
+        throw error;
       }
-      
-      return userData;
     },
     onSuccess: (data) => {
       console.log("🔐 Login mutation SUCCESS:", data);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      console.log("🔐 About to invalidate queries...");
+      try {
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        console.log("🔐 Query invalidation completed successfully");
+      } catch (error) {
+        console.error("🔐 Query invalidation error:", error);
+      }
     },
     onError: (error) => {
       console.error("🔐 Login mutation ERROR:", error);
