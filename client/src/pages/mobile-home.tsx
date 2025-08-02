@@ -245,8 +245,16 @@ export default function MobileHomePage() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className={`p-2 ${showMaxPane ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'} text-white hover:from-purple-600 hover:to-pink-600`}
+              className={`p-2 border-2 ${showMaxPane 
+                ? 'border-purple-600 text-purple-600' 
+                : 'border-purple-500 text-purple-500'
+              } hover:border-purple-600 hover:text-purple-600 bg-transparent`}
               onClick={() => setShowMaxPane(!showMaxPane)}
+              style={{
+                borderImage: showMaxPane 
+                  ? 'linear-gradient(45deg, #9333ea, #ec4899) 1'
+                  : 'linear-gradient(45deg, #8b5cf6, #f472b6) 1'
+              }}
             >
               <Bot className="w-5 h-5" />
             </Button>
