@@ -270,9 +270,9 @@ export default function MobileHomePage() {
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
 
-  // If we're on /mobile-home route, we should show mobile view regardless of currentView
-  // Only show desktop version if we're NOT on mobile-home route and desktop is forced
-  if (currentView === "desktop" && location !== "/mobile-home") {
+  // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
+  // This prevents desktop content from showing underneath when pulling to refresh
+  if (false) { // Disabled desktop rendering on mobile-home route
     return (
       <div className="force-desktop-view">
         {/* Desktop Navigation Header */}
