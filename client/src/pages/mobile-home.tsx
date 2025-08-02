@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -83,6 +83,17 @@ export default function MobileHomePage() {
   const [showMaxPane, setShowMaxPane] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
+
+  // Debug effect to track view mode changes and dialog states
+  useEffect(() => {
+    console.log("🔍 View mode or dialog state changed:", {
+      currentView,
+      isForced,
+      showSearch,
+      showLibrary,
+      showMaxPane
+    });
+  }, [currentView, isForced, showSearch, showLibrary, showMaxPane]);
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -503,26 +514,25 @@ export default function MobileHomePage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("🔍 Search button clicked, setting showSearch to true");
-                // Use longer timeout and force the state to true
-                setTimeout(() => {
-                  console.log("🔍 Timeout executing - forcing showSearch to true");
+                console.log("🔍 Search button clicked - opening search dialog");
+                
+                // Use requestAnimationFrame to ensure state update happens after any other pending updates
+                requestAnimationFrame(() => {
                   setShowSearch(true);
-                  // Double-check and force again after a small delay
-                  setTimeout(() => {
-                    console.log("🔍 Double-check timeout - ensuring showSearch stays true");
-                    setShowSearch(current => {
-                      console.log("🔍 Current showSearch state:", current);
-                      return true;
-                    });
-                  }, 50);
-                }, 10);
+                  console.log("🔍 Search dialog state set to true");
+                });
               }}
             >
               <Search className="w-5 h-5" />
             </Button>
             
-            <Dialog open={showSearch} onOpenChange={setShowSearch}>
+            <Dialog 
+              open={showSearch} 
+              onOpenChange={(open) => {
+                console.log("🔍 Search dialog onOpenChange triggered:", open);
+                setShowSearch(open);
+              }}
+            >
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Search</DialogTitle>
@@ -566,26 +576,25 @@ export default function MobileHomePage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("📚 Library button clicked, setting showLibrary to true");
-                // Use longer timeout and force the state to true
-                setTimeout(() => {
-                  console.log("📚 Timeout executing - forcing showLibrary to true");
+                console.log("📚 Library button clicked - opening library dialog");
+                
+                // Use requestAnimationFrame to ensure state update happens after any other pending updates
+                requestAnimationFrame(() => {
                   setShowLibrary(true);
-                  // Double-check and force again after a small delay
-                  setTimeout(() => {
-                    console.log("📚 Double-check timeout - ensuring showLibrary stays true");
-                    setShowLibrary(current => {
-                      console.log("📚 Current showLibrary state:", current);
-                      return true;
-                    });
-                  }, 50);
-                }, 10);
+                  console.log("📚 Library dialog state set to true");
+                });
               }}
             >
               <Library className="w-5 h-5" />
             </Button>
 
-            <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
+            <Dialog 
+              open={showLibrary} 
+              onOpenChange={(open) => {
+                console.log("📚 Library dialog onOpenChange triggered:", open);
+                setShowLibrary(open);
+              }}
+            >
               <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Mobile Library</DialogTitle>
