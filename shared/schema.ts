@@ -166,7 +166,7 @@ export const plannedOrderProductionOrders = pgTable("planned_order_production_or
   conversionRatio: numeric("conversion_ratio", { precision: 8, scale: 4 }).notNull().default("1.0000"), // plannedQuantity/totalPlannedQuantity for this production order
   notes: text("notes"), // Reason for consolidation/split
   convertedAt: timestamp("converted_at").defaultNow(),
-  convertedBy: integer("converted_by").references(() => users.id),
+  convertedBy: integer("converted_by"), // Will be FK to users.id when users table is moved up
 }, (table) => ({
   // Ensure each planned order can only be converted to a production order once with the same conversion details
   uniquePlannedProductionOrder: unique().on(table.plannedOrderId, table.productionOrderId),
@@ -218,8 +218,8 @@ export const recipes = pgTable("recipes", {
 export const recipeProductOutputs = pgTable("recipe_product_outputs", {
   id: serial("id").primaryKey(),
   recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
-  productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
-  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for output tracking
+  productId: integer("product_id").notNull(), // Will be FK to items.id when items table is moved up  
+  stockId: integer("stock_id"), // Will be FK to stocks.id when stocks table is moved up
   outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
   productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
@@ -2609,7 +2609,7 @@ export const stockBalances = pgTable("stock_balances", {
 // Demand Planning Tables
 export const demandForecasts = pgTable("demand_forecasts", {
   id: serial("id").primaryKey(),
-  stockId: integer("stock_id").references(() => stocks.id).notNull(), // Link to specific stock record for demand forecasting
+  stockId: integer("stock_id").notNull(), // Will be FK to stocks.id when stocks table is moved up
   forecastPeriod: text("forecast_period").notNull(), // daily, weekly, monthly, quarterly
   forecastDate: timestamp("forecast_date").notNull(),
   forecastQuantity: integer("forecast_quantity").notNull(),

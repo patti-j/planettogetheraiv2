@@ -20,7 +20,9 @@ let connectionCount = 0;
 let queryCount = 0;
 let errorCount = 0;
 
-export const db = drizzle({ client: connection, schema });
+export const db = drizzle(connection, {
+  schema,
+});
 
 // Database metrics for monitoring
 export const getDbMetrics = () => ({
