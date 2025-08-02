@@ -259,6 +259,35 @@ export default function OperationSequencerWidget({
     );
   }
 
+  // Show empty state when no operations are available
+  if (!operations || operations.length === 0) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardContent className="p-4 flex-1 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg">Operation Sequencer</h3>
+          </div>
+          
+          {/* Empty state */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <Settings className="w-8 h-8 text-gray-400" />
+              </div>
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No Operations Found</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                  Operations will appear here once production orders with scheduled activities are created.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <Card className="h-full flex flex-col">
