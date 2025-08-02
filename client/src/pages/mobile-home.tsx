@@ -255,28 +255,34 @@ export default function MobileHomePage() {
               <Bot className="w-5 h-5" />
             </Button>
 
-            {/* User Avatar & Menu */}
+            {/* Mobile Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={user?.username || ""} />
-                    <AvatarFallback>
-                      {user?.username?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                <Button variant="ghost" size="sm" className="p-2">
+                  <Menu className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
+                {/* User Info Section */}
                 <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.username}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user?.email}
-                    </p>
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="" alt={user?.username || ""} />
+                      <AvatarFallback>
+                        {user?.username?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user?.username}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                
+                {/* User Actions */}
                 <DropdownMenuItem onClick={() => setLocation("/account")}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Account</span>
@@ -286,29 +292,22 @@ export default function MobileHomePage() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2">
-                  <Menu className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel>Menu</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                
+                {/* Navigation Items */}
+                <DropdownMenuLabel>Navigation</DropdownMenuLabel>
                 {menuItems.map((item) => (
                   <DropdownMenuItem key={item.path} onClick={() => setLocation(item.path)}>
                     <item.icon className="mr-2 h-4 w-4" />
                     <span>{item.title}</span>
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                
+                {/* Logout */}
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
