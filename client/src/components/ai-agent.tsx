@@ -9,10 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File, Edit2 } from "lucide-react";
+import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File, Edit2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
+import { useMaxDock } from "@/contexts/MaxDockContext";
 
 interface AttachmentFile {
   id: string;
@@ -49,7 +50,12 @@ interface QueuedMessage {
   isEditing?: boolean;
 }
 
-export default function AIAgent() {
+interface AIAgentProps {
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+}
+
+export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentProps = {}) {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: "1",
@@ -88,6 +94,7 @@ export default function AIAgent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  const { isMaxOpen } = useMaxDock();
 
   // Load voice settings from localStorage on component mount
   useEffect(() => {
@@ -702,6 +709,22 @@ export default function AIAgent() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    // Add search query as a user message and process it
+    addToQueue(searchQuery);
+    onSearchChange?.(""); // Clear search after submission
+  };
+
+  const highlightSearchTerm = (text: string, searchTerm: string) => {
+    if (!searchTerm) return text;
+    
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
+  };
+
   return (
     <TooltipProvider>
       <Card 
@@ -713,23 +736,58 @@ export default function AIAgent() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="w-5 h-5" />
-            AI Manufacturing Assistant
-            {isDragOver && (
-              <Badge variant="secondary" className="ml-auto">
-                Drop files here
-              </Badge>
-            )}
-          </CardTitle>
+        <CardHeader className="pb-4 space-y-4">
+          {/* Consolidated Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
+              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-200 flex items-center">
+                <Bot className="w-6 h-6 mr-2" />
+                Max, your AI Assistant
+              </h1>
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+                Use voice commands or text to manage your manufacturing operations.
+              </p>
+            </div>
+            
+            {/* Integrated Search Box */}
+            <div className="flex items-center gap-2 min-w-0 lg:min-w-96">
+              <form onSubmit={handleSearchSubmit} className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search messages or ask Max anything..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange?.(e.target.value)}
+                  className="pl-10"
+                />
+              </form>
+              {isDragOver && (
+                <Badge variant="secondary">
+                  Drop files here
+                </Badge>
+              )}
+            </div>
+          </div>
         </CardHeader>
       
       <CardContent className="flex-1 flex flex-col gap-4">
         {/* Messages */}
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
-            {messages.map((message) => (
+            {searchQuery && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-600 pb-2">
+                {messages.filter(message => 
+                  message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  message.actions?.some(action => action.toLowerCase().includes(searchQuery.toLowerCase()))
+                ).length} result(s) for "{searchQuery}"
+              </div>
+            )}
+            {messages
+              .filter(message => 
+                !searchQuery || 
+                message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                message.actions?.some(action => action.toLowerCase().includes(searchQuery.toLowerCase()))
+              )
+              .map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
@@ -749,7 +807,12 @@ export default function AIAgent() {
                       ? "bg-blue-500 text-white" 
                       : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                   }`}>
-                    <p className="text-sm">{message.content}</p>
+                    <div 
+                      className="text-sm"
+                      dangerouslySetInnerHTML={{ 
+                        __html: highlightSearchTerm(message.content, searchQuery) 
+                      }}
+                    />
                     
                     {/* Attachments Display */}
                     {message.attachments && message.attachments.length > 0 && (
