@@ -741,7 +741,7 @@ export default function MobileHomePage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder={isSearchFocused ? "Search or ask Max AI..." : "Search or ask Max..."}
+                placeholder={isSearchFocused ? "Search or ask Max AI..." : "...Search or ask Max..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -1334,7 +1334,7 @@ export default function MobileHomePage() {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder={isSearchFocused ? "Ask me anything..." : "Search or ask Max..."}
+                    placeholder={isSearchFocused ? "Ask me anything..." : "...Search or ask Max..."}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
