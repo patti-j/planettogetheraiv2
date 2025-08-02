@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
 import CompanyLogoImage from "@/assets/company-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Home,
   LayoutDashboard,
   CheckSquare,
@@ -44,7 +51,10 @@ import {
   Activity,
   Library,
   BarChart3,
-  Monitor
+  Monitor,
+  Smartphone,
+  ToggleLeft,
+  ToggleRight
 } from "lucide-react";
 
 interface Task {
@@ -72,6 +82,7 @@ export default function MobileHomePage() {
   const [showSearch, setShowSearch] = useState(false);
   const [showMaxPane, setShowMaxPane] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
+  const { currentView, toggleView, isForced } = useViewMode();
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -257,7 +268,9 @@ export default function MobileHomePage() {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${showMaxPane ? 'flex flex-col' : ''}`}>
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${showMaxPane ? 'flex flex-col' : ''} ${
+      currentView === "desktop" ? 'force-desktop-view' : 'force-mobile-view'
+    }`}>
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
@@ -315,6 +328,34 @@ export default function MobileHomePage() {
             >
               <Bot className="w-5 h-5" />
             </Button>
+
+            {/* View Mode Toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={toggleView}
+                    className={`p-2 ${isForced ? 'view-mode-forced' : ''}`}
+                  >
+                    {currentView === "mobile" ? (
+                      <Monitor className="w-5 h-5" />
+                    ) : (
+                      <Smartphone className="w-5 h-5" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    {currentView === "mobile" 
+                      ? "Switch to Desktop View" 
+                      : "Switch to Mobile View"
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             {/* Mobile Library */}
             <Dialog open={showLibrary} onOpenChange={setShowLibrary}>

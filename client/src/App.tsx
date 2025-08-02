@@ -11,6 +11,7 @@ import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -538,20 +539,22 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <DndProvider backend={HTML5Backend}>
-            <TooltipProvider>
-              <NavigationProvider>
-                <TourProvider>
-                  <MaxDockProvider>
-                  <Router />
-                  <OnboardingWizard />
-                  <ResumeTourButton />
-                  <Toaster />
-                  </MaxDockProvider>
-                </TourProvider>
-              </NavigationProvider>
-            </TooltipProvider>
-          </DndProvider>
+          <ViewModeProvider>
+            <DndProvider backend={HTML5Backend}>
+              <TooltipProvider>
+                <NavigationProvider>
+                  <TourProvider>
+                    <MaxDockProvider>
+                    <Router />
+                    <OnboardingWizard />
+                    <ResumeTourButton />
+                    <Toaster />
+                    </MaxDockProvider>
+                  </TourProvider>
+                </NavigationProvider>
+              </TooltipProvider>
+            </DndProvider>
+          </ViewModeProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
