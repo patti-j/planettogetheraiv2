@@ -270,6 +270,8 @@ export default function MobileHomePage() {
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
   console.log("🔍 MobileHomePage - showLibrary state:", showLibrary);
+  console.log("🔍 MobileHomePage - showSearch state:", showSearch);
+  console.log("🤖 MobileHomePage - showMaxPane state:", showMaxPane);
 
   // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
   // This prevents desktop content from showing underneath when pulling to refresh
@@ -496,7 +498,15 @@ export default function MobileHomePage() {
             {/* Search */}
             <Dialog open={showSearch} onOpenChange={setShowSearch}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-2"
+                  onClick={() => {
+                    console.log("🔍 Search button clicked, setting showSearch to true");
+                    setShowSearch(true);
+                  }}
+                >
                   <Search className="w-5 h-5" />
                 </Button>
               </DialogTrigger>
@@ -523,7 +533,10 @@ export default function MobileHomePage() {
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={() => setShowMaxPane(!showMaxPane)}
+              onClick={() => {
+                console.log("🤖 Max button clicked, toggling showMaxPane from", showMaxPane, "to", !showMaxPane);
+                setShowMaxPane(!showMaxPane);
+              }}
             >
               <Bot className="w-5 h-5" />
             </Button>
