@@ -3672,11 +3672,15 @@ Manufacturing Context Available:
   });
 
   // Mobile Library API - Combined widgets and dashboards endpoints for mobile library
-  app.get("/api/widgets", async (req, res) => {
+  app.get("/api/widgets", requireAuth, async (req, res) => {
     try {
+      console.log("=== API WIDGETS ENDPOINT HIT ===");
       // Get both cockpit widgets and canvas widgets for mobile library
       const cockpitWidgets = await db.select().from(schema.cockpitWidgets);
       const canvasWidgets = await db.select().from(schema.canvasWidgets);
+      
+      console.log("Cockpit widgets count:", cockpitWidgets.length);
+      console.log("Canvas widgets count:", canvasWidgets.length);
       
       // Combine and format widgets for mobile library
       const allWidgets = [
@@ -3700,6 +3704,7 @@ Manufacturing Context Available:
         }))
       ];
       
+      console.log("Total widgets returned:", allWidgets.length);
       res.json(allWidgets);
     } catch (error) {
       console.error("Error fetching widgets:", error);
@@ -3707,10 +3712,13 @@ Manufacturing Context Available:
     }
   });
 
-  app.get("/api/dashboards", async (req, res) => {
+  app.get("/api/dashboards", requireAuth, async (req, res) => {
     try {
-      // Get dashboard configs for mobile library
+      console.log("=== API DASHBOARDS ENDPOINT HIT ===");
+      // Get dashboard configs for mobile library  
       const dashboardConfigs = await db.select().from(schema.dashboardConfigs);
+      
+      console.log("Dashboard configs count:", dashboardConfigs.length);
       
       // Format dashboards for mobile library
       const dashboards = dashboardConfigs.map(dashboard => ({
@@ -3722,6 +3730,7 @@ Manufacturing Context Available:
         createdAt: dashboard.createdAt
       }));
       
+      console.log("Total dashboards returned:", dashboards.length);
       res.json(dashboards);
     } catch (error) {
       console.error("Error fetching dashboards:", error);
