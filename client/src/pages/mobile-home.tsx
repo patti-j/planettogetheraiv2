@@ -408,6 +408,28 @@ export default function MobileHomePage() {
       
       console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
       console.log("=== MOBILE DASHBOARDS TYPE ===", typeof allDashboards, Array.isArray(allDashboards));
+      
+      // Temporary fix: Add Production Scheduler Dashboard to mobile library
+      // This works around the server caching issue preventing the new dashboard from appearing
+      const productionSchedulerDashboard = {
+        id: 5,
+        title: "Production Scheduler Dashboard",
+        description: "Advanced scheduling tools for production planners",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "grid",
+          widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
+        },
+        createdAt: new Date().toISOString()
+      };
+      
+      // Check if dashboard already exists to prevent duplicates
+      const hasSchedulerDashboard = allDashboards.some((d: any) => d.title === "Production Scheduler Dashboard");
+      if (!hasSchedulerDashboard) {
+        allDashboards.push(productionSchedulerDashboard);
+        console.log("=== ADDED PRODUCTION SCHEDULER DASHBOARD ===", allDashboards.length);
+      }
+      
       return allDashboards;
     }
   });
