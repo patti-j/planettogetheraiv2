@@ -4,7 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { MaxSidebar } from "@/components/max-sidebar";
-import PlanetTogetherLogo from "@/assets/planettogether-logo.svg";
+// Using direct path to PNG logo
+const CompanyLogo = "/attached_assets/Copy of logo-icon_250px_1754109283906.PNG";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -195,9 +196,9 @@ export default function MobileHomePage() {
           {/* Logo/Brand */}
           <div className="flex items-center">
             <img 
-              src={PlanetTogetherLogo} 
-              alt="PlanetTogether" 
-              className="h-8 w-auto text-gray-900 dark:text-white"
+              src={CompanyLogo} 
+              alt="Company Logo" 
+              className="h-8 w-8 object-contain"
             />
           </div>
 
