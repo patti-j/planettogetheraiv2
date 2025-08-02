@@ -13,6 +13,7 @@ import type { CanvasItem } from "@/contexts/MaxDockContext";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useLocation } from "wouter";
 import { useTour } from "@/contexts/TourContext";
+import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
 import { 
   Bot, 
   Send, 
@@ -120,6 +121,7 @@ export function MaxSidebar() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const { isKeyboardOpen, handleInputFocus, handleInputBlur } = useMobileKeyboard();
   const { 
     setMaxOpen, 
     isMobile, 
@@ -213,7 +215,6 @@ export function MaxSidebar() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1047,7 +1048,7 @@ export function MaxSidebar() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className={`h-full flex flex-col bg-white ${isKeyboardOpen ? 'keyboard-adjusted' : ''}`}>
       {/* Header - Draggable for resizing */}
       <div 
         className={`p-4 ${getThemeClasses(false)} flex items-center justify-between cursor-move`}
@@ -1279,7 +1280,7 @@ export function MaxSidebar() {
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-3 border-t bg-gray-50">
+      <div className={`p-3 border-t bg-gray-50 ${isMobile ? 'mobile-input-fixed mobile-input-container' : ''}`}>
         <div className="flex gap-2">
           <div className="flex-1 flex gap-1 relative">
             <Input
@@ -1288,7 +1289,10 @@ export function MaxSidebar() {
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''}`}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''} ${isMobile ? 'mobile-input' : ''}`}
+              style={{ fontSize: isMobile ? '16px' : undefined }} // Prevent iOS zoom
             />
             {isListening && (
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
