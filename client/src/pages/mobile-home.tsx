@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { MaxSidebar } from "@/components/max-sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +66,7 @@ export default function MobileHomePage() {
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [showMaxPane, setShowMaxPane] = useState(false);
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -185,7 +187,7 @@ export default function MobileHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${showMaxPane ? 'flex flex-col' : ''}`}>
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
@@ -238,8 +240,8 @@ export default function MobileHomePage() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-              onClick={() => setLocation("/ai-assistant")}
+              className={`p-2 ${showMaxPane ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'} text-white hover:from-purple-600 hover:to-pink-600`}
+              onClick={() => setShowMaxPane(!showMaxPane)}
             >
               <Bot className="w-5 h-5" />
             </Button>
@@ -305,143 +307,165 @@ export default function MobileHomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="p-4 space-y-6">
-        {/* Welcome Section */}
-        <div className="text-center py-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Welcome back, {user?.username}!
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
-        </div>
+      <div className={`${showMaxPane ? 'flex-1 flex flex-col' : 'p-4 space-y-6'}`}>
+        {showMaxPane ? (
+          <>
+            {/* Canvas Area - Top */}
+            <div className="flex-1 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
+              <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+                <div className="text-center">
+                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">Canvas Area</p>
+                  <p className="text-xs text-muted-foreground">Visualizations will appear here</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Max Pane - Bottom */}
+            <div className="h-80 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+              <MaxSidebar />
+            </div>
+          </>
+        ) : (
+          <div className="p-4 space-y-6">
+            {/* Welcome Section */}
+            <div className="text-center py-4">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Welcome back, {user?.username}!
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-2 gap-4">
-          {quickActions.map((action) => (
-            <Link key={action.path} href={action.path}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardContent className="p-4 text-center">
-                  <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mx-auto mb-3 relative`}>
-                    <action.icon className="w-6 h-6" />
-                    {action.badge && (
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
-                        {action.badge}
-                      </Badge>
-                    )}
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {quickActions.map((action) => (
+                <Link key={action.path} href={action.path}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mx-auto mb-3 relative`}>
+                        <action.icon className="w-6 h-6" />
+                        {action.badge && (
+                          <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
+                            {action.badge}
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                        {action.title}
+                      </h3>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            {/* Priority Tasks */}
+            {highPriorityTasks.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                      Priority Tasks
+                    </h2>
+                    <Badge variant="destructive">{highPriorityTasks.length}</Badge>
                   </div>
-                  <h3 className="font-medium text-gray-900 dark:text-white text-sm">
-                    {action.title}
-                  </h3>
+                  <div className="space-y-2">
+                    {highPriorityTasks.slice(0, 3).map((task) => (
+                      <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {task.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Due: {task.dueDate}
+                          </p>
+                        </div>
+                        <Badge className={`ml-2 ${getPriorityColor(task.priority)}`} variant="secondary">
+                          {task.priority}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                  {highPriorityTasks.length > 3 && (
+                    <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setLocation("/tasks")}>
+                      View All Tasks ({highPriorityTasks.length})
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
-            </Link>
-          ))}
-        </div>
+            )}
 
-        {/* Priority Tasks */}
-        {highPriorityTasks.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  Priority Tasks
-                </h2>
-                <Badge variant="destructive">{highPriorityTasks.length}</Badge>
-              </div>
-              <div className="space-y-2">
-                {highPriorityTasks.slice(0, 3).map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {task.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Due: {task.dueDate}
-                      </p>
-                    </div>
-                    <Badge className={`ml-2 ${getPriorityColor(task.priority)}`} variant="secondary">
-                      {task.priority}
-                    </Badge>
+            {/* Recent Notifications */}
+            {unreadNotifications.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-blue-500" />
+                      Recent Alerts
+                    </h2>
+                    <Badge variant="secondary">{unreadNotifications.length} new</Badge>
                   </div>
-                ))}
-              </div>
-              {highPriorityTasks.length > 3 && (
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setLocation("/tasks")}>
-                  View All Tasks ({highPriorityTasks.length})
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Notifications */}
-        {unreadNotifications.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-blue-500" />
-                  Recent Alerts
-                </h2>
-                <Badge variant="secondary">{unreadNotifications.length} new</Badge>
-              </div>
-              <div className="space-y-2">
-                {unreadNotifications.slice(0, 3).map((notification) => (
-                  <div key={notification.id} className="flex items-start gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    {getNotificationIcon(notification.type)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        {new Date(notification.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
+                  <div className="space-y-2">
+                    {unreadNotifications.slice(0, 3).map((notification) => (
+                      <div key={notification.id} className="flex items-start gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        {getNotificationIcon(notification.type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            {new Date(notification.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {unreadNotifications.length > 3 && (
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setLocation("/inbox")}>
-                  View All Notifications ({unreadNotifications.length})
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  {unreadNotifications.length > 3 && (
+                    <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setLocation("/inbox")}>
+                      View All Notifications ({unreadNotifications.length})
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {tasks.filter(t => t.status === "completed").length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Completed Today
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {pendingTasks.length}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Pending Tasks
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {tasks.filter(t => t.status === "completed").length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Completed Today
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {pendingTasks.length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Pending Tasks
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
