@@ -518,33 +518,7 @@ export default function MobileHomePage() {
               <Bot className="w-5 h-5" />
             </Button>
 
-            {/* View Mode Toggle */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={toggleView}
-                    className={`p-2 ${isForced ? 'view-mode-forced' : ''}`}
-                  >
-                    {currentView === "mobile" ? (
-                      <Monitor className="w-5 h-5" />
-                    ) : (
-                      <Smartphone className="w-5 h-5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {currentView === "mobile" 
-                      ? "Switch to Desktop View" 
-                      : "Switch to Mobile View"
-                    }
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+
 
             {/* Mobile Library */}
             <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
@@ -702,6 +676,22 @@ export default function MobileHomePage() {
                 <DropdownMenuItem onClick={() => setLocation("/account")}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                
+                {/* View Mode Toggle */}
+                <DropdownMenuItem onClick={toggleView}>
+                  {currentView === "mobile" ? (
+                    <>
+                      <Monitor className="mr-2 h-4 w-4" />
+                      <span>Switch to Desktop View</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="mr-2 h-4 w-4" />
+                      <span>Switch to Mobile View</span>
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 
