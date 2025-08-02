@@ -363,8 +363,11 @@ export default function Sidebar() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => logout()}
-                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  console.log("Sidebar logout button clicked");
+                  logout();
+                }}
+                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 ring-2 ring-red-200"
                 title="Sign Out"
               >
                 <LogOut className="w-3 h-3" />

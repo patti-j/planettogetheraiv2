@@ -165,13 +165,26 @@ export function useAuth() {
         window.dispatchEvent(new CustomEvent('tourClose'));
       }
       
+      console.log("Attempting logout...");
       return apiRequest("POST", "/api/auth/logout", {});
     },
     onSuccess: () => {
+      console.log("Logout successful, clearing auth data...");
       // Clear localStorage token on logout
       localStorage.removeItem('authToken');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear(); // Clear all cached data
+      
+      // Force redirect to login page
+      window.location.href = '/login';
+    },
+    onError: (error) => {
+      console.error("Logout error:", error);
+      // Even if logout fails on server, clear local auth data
+      localStorage.removeItem('authToken');
+      queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.clear();
+      window.location.href = '/login';
     },
   });
 

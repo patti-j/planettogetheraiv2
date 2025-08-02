@@ -456,8 +456,11 @@ export default function TopMenu() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => logout()}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => {
+                          console.log("Logout button clicked");
+                          logout();
+                        }}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 ring-2 ring-red-200"
                         title="Logout"
                       >
                         <LogOut className="h-4 w-4" />

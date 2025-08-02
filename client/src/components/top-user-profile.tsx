@@ -78,8 +78,11 @@ export default function TopUserProfile() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => logout()}
-                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+                  onClick={() => {
+                    console.log("User profile logout button clicked");
+                    logout();
+                  }}
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 ring-2 ring-red-200"
                 >
                   <LogOut className="w-3 h-3" />
                 </Button>
