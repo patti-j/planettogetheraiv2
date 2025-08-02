@@ -139,12 +139,9 @@ export default function MobileHomePage() {
       const response = await fetch("/api/mobile/widgets");
       const allWidgets = await response.json();
       console.log("=== MOBILE WIDGETS DATA ===", allWidgets);
-      // Filter for mobile-compatible widgets
-      const filtered = allWidgets.filter((widget: any) => 
-        widget.targetPlatform === "mobile" || widget.targetPlatform === "both"
-      );
-      console.log("=== FILTERED MOBILE WIDGETS ===", filtered);
-      return filtered;
+      // For now, return all widgets without filtering to test
+      console.log("=== FILTERED MOBILE WIDGETS ===", allWidgets);
+      return allWidgets;
     }
   });
 
@@ -154,12 +151,9 @@ export default function MobileHomePage() {
       const response = await fetch("/api/mobile/dashboards");
       const allDashboards = await response.json();
       console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
-      // Filter for mobile-compatible dashboards
-      const filtered = allDashboards.filter((dashboard: any) => 
-        dashboard.targetPlatform === "mobile" || dashboard.targetPlatform === "both"
-      );
-      console.log("=== FILTERED MOBILE DASHBOARDS ===", filtered);
-      return filtered;
+      // For now, return all dashboards without filtering to test
+      console.log("=== FILTERED MOBILE DASHBOARDS ===", allDashboards);
+      return allDashboards;
     }
   });
 
@@ -341,6 +335,13 @@ export default function MobileHomePage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Debug info */}
+                  <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                    <p>Widgets: {mobileWidgets.length}</p>
+                    <p>Dashboards: {mobileDashboards.length}</p>
+                    <p>Recent Items: {recentItems.length}</p>
+                  </div>
 
                   {/* Mobile Widgets */}
                   {mobileWidgets.length > 0 && (
