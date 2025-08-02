@@ -504,7 +504,10 @@ export default function MobileHomePage() {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log("🔍 Search button clicked, setting showSearch to true");
-                setShowSearch(true);
+                // Use setTimeout to ensure state change happens after any other handlers
+                setTimeout(() => {
+                  setShowSearch(true);
+                }, 0);
               }}
             >
               <Search className="w-5 h-5" />
@@ -555,7 +558,10 @@ export default function MobileHomePage() {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log("📚 Library button clicked, setting showLibrary to true");
-                setShowLibrary(true);
+                // Use setTimeout to ensure state change happens after any other handlers
+                setTimeout(() => {
+                  setShowLibrary(true);
+                }, 0);
               }}
             >
               <Library className="w-5 h-5" />
@@ -799,7 +805,10 @@ export default function MobileHomePage() {
                       e.preventDefault();
                       e.stopPropagation();
                       console.log("🔍 Dashboards card clicked, setting showLibrary to true");
-                      setShowLibrary(true);
+                      // Use setTimeout to ensure state change happens after any other handlers
+                      setTimeout(() => {
+                        setShowLibrary(true);
+                      }, 0);
                     }}
                   >
                     <CardContent className="p-4 text-center">
