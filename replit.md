@@ -16,6 +16,9 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+Component terminology for reference:
+- **Max mobile interface/panel**: Full-screen overlay component in mobile-home.tsx that appears when Max is opened on mobile
+
 ## System Architecture
 
 ### Frontend Architecture
