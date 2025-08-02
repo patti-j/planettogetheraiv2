@@ -3824,135 +3824,186 @@ Manufacturing Context Available:
     res.json({ status: "working", message: "Test endpoint success" });
   });
 
-  // Mobile Library API - Working widgets endpoint
+  // Test endpoint for new widgets - to bypass cache
+  app.get("/api/widgets-new", (req, res) => {
+    console.log("=== NEW WIDGETS TEST ENDPOINT ===");
+    const testWidgets = [
+      {
+        id: 9,
+        title: "Schedule Optimization",
+        type: "schedule-optimization",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { showOptimizer: true },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 10,
+        title: "Resource Gantt",
+        type: "resource-gantt", 
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { view: "resource" },
+        createdAt: new Date().toISOString()
+      }
+    ];
+    console.log("Test widgets count:", testWidgets.length);
+    res.json(testWidgets);
+  });
+
+  // Mobile Library API - Complete widgets endpoint with all 10 widgets
   app.get("/api/mobile/widgets", (req, res) => {
-    console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
+    console.log("=== NEW VERSION: MOBILE WIDGETS ENDPOINT HIT ===");
     
-    // Simple hardcoded response without any database imports
-    const sampleWidgets = [
-        {
-          id: 1,
-          title: "Production Overview",
-          type: "production-metrics",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { metrics: ["output", "efficiency", "quality"] },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 2,
-          title: "Equipment Status",
-          type: "equipment-status",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 3,
-          title: "Quality Metrics",
-          type: "quality-dashboard",
-          targetPlatform: "both",
-          source: "canvas",
-          configuration: { tests: ["pH", "temperature", "purity"] },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 4,
-          title: "Inventory Levels",
-          type: "inventory-tracking",
-          targetPlatform: "both",
-          source: "canvas",
-          configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 5,
-          title: "Schedule Gantt",
-          type: "gantt-chart",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { view: "weekly", resources: ["all"] },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 6,
-          title: "Schedule Trade-off Analyzer",
-          type: "schedule-tradeoff-analyzer",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { 
-            showResourceConflicts: true,
-            showCostAnalysis: true,
-            showCustomerImpact: true,
-            maxAnalysisDepth: 5
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 7,
-          title: "ATP/CTP Calculator",
-          type: "atp-ctp",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { 
-            view: "full",
-            showCalculator: true,
-            showOverview: true,
-            autoRefresh: true
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 8,
-          title: "Available to Promise",
-          type: "available-to-promise",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { 
-            compact: true,
-            showQuickView: true
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 9,
-          title: "Schedule Optimization",
-          type: "schedule-optimization",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { 
-            showQuickActions: true,
-            showHistory: true,
-            showMetrics: true,
-            maxHistoryItems: 5,
-            defaultView: "overview",
-            showAlgorithmSelector: true,
-            showProfileSelector: true
-          },
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 10,
-          title: "Resource Gantt",
-          type: "resource-gantt",
-          targetPlatform: "both",
-          source: "cockpit",
-          configuration: { 
-            view: "resource",
-            timeframe: "week",
-            showDependencies: true,
-            showResourceLoading: true,
-            allowDragDrop: true,
-            showCriticalPath: true,
-            groupBy: "resource"
-          },
-          createdAt: new Date().toISOString()
-        }
-      ];
+    try {
+      const allWidgets = [];
       
-      console.log("Total widgets returned:", sampleWidgets.length);
-      res.json(sampleWidgets);
+      // Widget 1
+      allWidgets.push({
+        id: 1,
+        title: "Production Overview",
+        type: "production-metrics",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { metrics: ["output", "efficiency", "quality"] },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 2
+      allWidgets.push({
+        id: 2,
+        title: "Equipment Status",
+        type: "equipment-status",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 3
+      allWidgets.push({
+        id: 3,
+        title: "Quality Metrics",
+        type: "quality-dashboard",
+        targetPlatform: "both",
+        source: "canvas",
+        configuration: { tests: ["pH", "temperature", "purity"] },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 4
+      allWidgets.push({
+        id: 4,
+        title: "Inventory Levels",
+        type: "inventory-tracking",
+        targetPlatform: "both",
+        source: "canvas",
+        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 5
+      allWidgets.push({
+        id: 5,
+        title: "Schedule Gantt",
+        type: "gantt-chart",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { view: "weekly", resources: ["all"] },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 6
+      allWidgets.push({
+        id: 6,
+        title: "Schedule Trade-off Analyzer",
+        type: "schedule-tradeoff-analyzer",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          showResourceConflicts: true,
+          showCostAnalysis: true,
+          showCustomerImpact: true,
+          maxAnalysisDepth: 5
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 7
+      allWidgets.push({
+        id: 7,
+        title: "ATP/CTP Calculator",
+        type: "atp-ctp",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          view: "full",
+          showCalculator: true,
+          showOverview: true,
+          autoRefresh: true
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 8
+      allWidgets.push({
+        id: 8,
+        title: "Available to Promise",
+        type: "available-to-promise",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          compact: true,
+          showQuickView: true
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 9 - Schedule Optimization
+      allWidgets.push({
+        id: 9,
+        title: "Schedule Optimization",
+        type: "schedule-optimization",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          showQuickActions: true,
+          showHistory: true,
+          showMetrics: true,
+          maxHistoryItems: 5,
+          defaultView: "overview",
+          showAlgorithmSelector: true,
+          showProfileSelector: true
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 10 - Resource Gantt
+      allWidgets.push({
+        id: 10,
+        title: "Resource Gantt",
+        type: "resource-gantt",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          view: "resource",
+          timeframe: "week",
+          showDependencies: true,
+          showResourceLoading: true,
+          allowDragDrop: true,
+          showCriticalPath: true,
+          groupBy: "resource"
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      console.log("Total widgets returned:", allWidgets.length);
+      console.log("Last 2 widgets:", allWidgets.slice(-2).map(w => ({id: w.id, title: w.title})));
+      res.json(allWidgets);
+    } catch (error) {
+      console.error("Error in mobile widgets endpoint:", error);
+      res.status(500).json({ error: "Failed to get widgets" });
+    }
   });
 
   app.get("/api/mobile/dashboards", (req, res) => {
