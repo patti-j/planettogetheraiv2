@@ -736,36 +736,24 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <CardHeader className="pb-4 space-y-4">
-          {/* Consolidated Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-              <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-200 flex items-center">
-                <Bot className="w-6 h-6 mr-2" />
-                Max, your AI Assistant
-              </h1>
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-                Use voice commands or text to manage your manufacturing operations.
-              </p>
-            </div>
-            
-            {/* Integrated Search Box */}
-            <div className="flex items-center gap-2 min-w-0 lg:min-w-96">
-              <form onSubmit={handleSearchSubmit} className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search messages or ask Max anything..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  className="pl-10"
-                />
-              </form>
-              {isDragOver && (
-                <Badge variant="secondary">
-                  Drop files here
-                </Badge>
-              )}
-            </div>
+        <CardHeader className="pb-4">
+          {/* Single Clean Header with Search */}
+          <div className="flex items-center gap-4">
+            <Bot className="w-6 h-6 text-gray-600 flex-shrink-0" />
+            <form onSubmit={handleSearchSubmit} className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search or ask Max..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                className="pl-10"
+              />
+            </form>
+            {isDragOver && (
+              <Badge variant="secondary">
+                Drop files here
+              </Badge>
+            )}
           </div>
         </CardHeader>
       
