@@ -391,6 +391,214 @@ export function registerSimpleRoutes(app: express.Application): Server {
     res.json(desktopDashboards);
   });
 
+  // Optimization endpoints for Schedule Optimizer widget
+  app.get("/api/optimization/algorithms", async (req, res) => {
+    try {
+      // Sample optimization algorithms for the Schedule Optimizer widget
+      const algorithms = [
+        {
+          id: 1,
+          name: "forward-scheduling",
+          displayName: "Forward Scheduling",
+          description: "Schedule operations from start date forward, optimizing for earliest completion",
+          category: "scheduling",
+          type: "built-in",
+          status: "active",
+          isStandard: true,
+          configuration: {
+            timeHorizon: "weeks",
+            optimizationCriteria: ["completion_time", "resource_utilization"],
+            constraints: ["resource_capacity", "operation_dependencies"]
+          },
+          performance: {
+            efficiency: 85,
+            speed: "fast",
+            accuracy: "high"
+          }
+        },
+        {
+          id: 2,
+          name: "backward-scheduling", 
+          displayName: "Backward Scheduling",
+          description: "Schedule operations from due date backward, optimizing for just-in-time delivery",
+          category: "scheduling",
+          type: "built-in", 
+          status: "active",
+          isStandard: true,
+          configuration: {
+            timeHorizon: "weeks",
+            optimizationCriteria: ["due_date_adherence", "inventory_minimization"],
+            constraints: ["due_dates", "resource_availability"]
+          },
+          performance: {
+            efficiency: 82,
+            speed: "fast", 
+            accuracy: "high"
+          }
+        },
+        {
+          id: 3,
+          name: "bottleneck-optimizer",
+          displayName: "Bottleneck Optimization",
+          description: "Identify and optimize around production bottlenecks using Theory of Constraints",
+          category: "optimization",
+          type: "advanced",
+          status: "active", 
+          isStandard: true,
+          configuration: {
+            timeHorizon: "days",
+            optimizationCriteria: ["throughput", "bottleneck_utilization"],
+            constraints: ["bottleneck_capacity", "buffer_management"]
+          },
+          performance: {
+            efficiency: 92,
+            speed: "medium",
+            accuracy: "very_high"
+          }
+        },
+        {
+          id: 4,
+          name: "genetic-algorithm",
+          displayName: "Genetic Algorithm Scheduler", 
+          description: "Advanced evolutionary algorithm for complex multi-objective scheduling",
+          category: "ai_optimization",
+          type: "advanced",
+          status: "active",
+          isStandard: false,
+          configuration: {
+            timeHorizon: "weeks",
+            optimizationCriteria: ["makespan", "resource_utilization", "setup_reduction"],
+            constraints: ["all_constraints"],
+            parameters: {
+              populationSize: 100,
+              generations: 500,
+              mutationRate: 0.1
+            }
+          },
+          performance: {
+            efficiency: 96,
+            speed: "slow",
+            accuracy: "very_high"
+          }
+        }
+      ];
+      
+      res.json(algorithms);
+    } catch (error) {
+      console.error("Error fetching optimization algorithms:", error);
+      res.status(500).json({ error: "Failed to fetch optimization algorithms" });
+    }
+  });
+
+  app.get("/api/optimization/profiles", async (req, res) => {
+    try {
+      // Sample optimization profiles
+      const profiles = [
+        {
+          id: 1,
+          name: "High Efficiency",
+          description: "Maximize equipment utilization and minimize idle time",
+          algorithmId: 3, // Bottleneck Optimizer
+          configuration: {
+            priority: "efficiency",
+            weights: {
+              utilization: 0.4,
+              throughput: 0.3,
+              quality: 0.2,
+              cost: 0.1
+            }
+          },
+          isDefault: true
+        },
+        {
+          id: 2,
+          name: "Fast Delivery",
+          description: "Optimize for shortest lead times and on-time delivery",
+          algorithmId: 1, // Forward Scheduling
+          configuration: {
+            priority: "speed",
+            weights: {
+              delivery: 0.5,
+              throughput: 0.3,
+              utilization: 0.2
+            }
+          },
+          isDefault: false
+        },
+        {
+          id: 3,
+          name: "Balanced Production",
+          description: "Balance efficiency, quality, and delivery performance",
+          algorithmId: 4, // Genetic Algorithm
+          configuration: {
+            priority: "balanced",
+            weights: {
+              efficiency: 0.25,
+              quality: 0.25,
+              delivery: 0.25,
+              cost: 0.25
+            }
+          },
+          isDefault: false
+        }
+      ];
+      
+      res.json(profiles);
+    } catch (error) {
+      console.error("Error fetching optimization profiles:", error);
+      res.status(500).json({ error: "Failed to fetch optimization profiles" });
+    }
+  });
+
+  app.get("/api/optimization/scheduling-history", async (req, res) => {
+    try {
+      // Sample scheduling history
+      const history = [
+        {
+          id: 1,
+          profileName: "High Efficiency",
+          algorithm: "Bottleneck Optimization",
+          executedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+          duration: 45000, // 45 seconds
+          results: {
+            efficiency: 94,
+            utilization: 87,
+            makespan: 168, // hours
+            improvements: {
+              throughput: "+12%",
+              efficiency: "+8%",
+              bottleneckReduction: "2 resolved"
+            }
+          },
+          status: "completed"
+        },
+        {
+          id: 2,
+          profileName: "Fast Delivery", 
+          algorithm: "Forward Scheduling",
+          executedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+          duration: 15000, // 15 seconds
+          results: {
+            efficiency: 88,
+            utilization: 82,
+            makespan: 144, // hours
+            improvements: {
+              deliveryTime: "-24 hours",
+              efficiency: "+5%",
+              resourceBalance: "Improved"
+            }
+          },
+          status: "completed"
+        }
+      ];
+      
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching scheduling history:", error);
+      res.status(500).json({ error: "Failed to fetch scheduling history" });
+    }
+  });
+
   // Mobile AI Chat endpoint - simple version without authentication
   app.post("/api/ai-agent/mobile-chat", async (req, res) => {
     try {
