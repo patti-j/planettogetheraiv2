@@ -43,6 +43,9 @@ import UniversalWidget from "@/components/universal-widget";
 import { WidgetConfig, WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import MaxAICard from "@/components/max-ai-card";
+import { useDeviceType, shouldShowWidget } from "@/hooks/useDeviceType";
+import { TargetPlatformSelector } from "@/components/target-platform-selector";
+import { Smartphone, Tablet } from "lucide-react";
 
 interface WidgetItem {
   id: string;
@@ -54,6 +57,7 @@ interface WidgetItem {
   status: 'active' | 'draft' | 'archived';
   description?: string;
   configuration?: any;
+  targetPlatform?: "mobile" | "desktop" | "both";
 }
 
 export default function WidgetsPage() {
@@ -61,6 +65,7 @@ export default function WidgetsPage() {
   const isMobile = useMobile();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
+  const currentDevice = useDeviceType();
   
   // Scroll position management
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -164,8 +169,9 @@ export default function WidgetsPage() {
     const matchesType = filterType === "all" || widget.type === filterType;
     const matchesSystem = filterSystem === "all" || widget.system === filterSystem;
     const matchesStatus = filterStatus === "all" || widget.status === filterStatus;
+    const matchesPlatform = shouldShowWidget(widget.targetPlatform || "both", currentDevice);
 
-    return matchesSearch && matchesType && matchesSystem && matchesStatus;
+    return matchesSearch && matchesType && matchesSystem && matchesStatus && matchesPlatform;
   });
 
   // Widget metrics
@@ -600,9 +606,17 @@ export default function WidgetsPage() {
                             <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                             <h3 className="font-semibold truncate text-sm sm:text-base">{widget.title}</h3>
                           </div>
-                          <Badge className={`text-xs flex-shrink-0 ${getSystemBadgeColor(widget.system)}`}>
-                            {widget.system}
-                          </Badge>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Badge className={`text-xs ${getSystemBadgeColor(widget.system)}`}>
+                              {widget.system}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                              {widget.targetPlatform === "mobile" && <Smartphone className="w-3 h-3 mr-1" />}
+                              {widget.targetPlatform === "desktop" && <Monitor className="w-3 h-3 mr-1" />}
+                              {widget.targetPlatform === "both" && <Tablet className="w-3 h-3 mr-1" />}
+                              {widget.targetPlatform || "both"}
+                            </Badge>
+                          </div>
                         </div>
                         {widget.description && (
                           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">

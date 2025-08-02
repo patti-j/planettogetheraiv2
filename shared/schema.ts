@@ -1116,6 +1116,7 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
   configuration: jsonb("configuration").$type<{
     standardWidgets: Array<{
       id: string;
@@ -1238,6 +1239,7 @@ export const unifiedWidgets = pgTable("unified_widgets", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
+  targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
   widgetType: text("widget_type").notNull(), // kpi, chart, table, alert, progress, gauge, list, timeline
   dataSource: text("data_source").notNull(), // jobs, operations, resources, metrics, alerts, plants, users
   chartType: text("chart_type"), // bar, line, pie, doughnut, number, gauge, progress
@@ -1990,6 +1992,7 @@ export const cockpitLayouts = pgTable("cockpit_layouts", {
   userId: integer("user_id").references(() => users.id).notNull(),
   name: text("name").notNull(),
   description: text("description"),
+  targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
   isDefault: boolean("is_default").default(false),
   isShared: boolean("is_shared").default(false), // Can be shared with other users
   sharedWithRoles: jsonb("shared_with_roles").$type<string[]>().default([]), // Role IDs that can access
@@ -2020,6 +2023,7 @@ export const cockpitWidgets = pgTable("cockpit_widgets", {
   type: text("type").notNull(), // kpi, chart, table, alert, gantt, resource_status, schedule_overview
   title: text("title").notNull(),
   subTitle: text("sub_title"),
+  targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
   position: jsonb("position").$type<{
     x: number; y: number; w: number; h: number;
   }>().notNull(),
@@ -8633,6 +8637,7 @@ export type InsertProductionVersionPhaseFormulationDetail = z.infer<typeof inser
 export const canvasWidgets = pgTable("canvas_widgets", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
   widgetType: text("widget_type").notNull(), // 'chart', 'table', 'metric', 'alert', 'list', 'custom'
   widgetSubtype: text("widget_subtype"), // 'bar', 'pie', 'line', 'gauge', etc.
   data: jsonb("data").$type<Record<string, any>>().notNull(), // Widget data content

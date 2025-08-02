@@ -44,12 +44,16 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
 import UniversalWidget from "@/components/universal-widget";
 import { SystemData, WidgetConfig } from "@/lib/widget-library";
+import { useDeviceType, shouldShowWidget } from "@/hooks/useDeviceType";
+import { TargetPlatformSelector } from "@/components/target-platform-selector";
+import { Smartphone, Tablet } from "lucide-react";
 
 
 interface DashboardItem {
   id: number;
   name: string;
   description?: string;
+  targetPlatform?: "mobile" | "desktop" | "both";
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -128,6 +132,7 @@ export default function DashboardsPage() {
   const isMobile = useMobile();
   const { aiTheme } = useAITheme();
   const queryClient = useQueryClient();
+  const currentDevice = useDeviceType();
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,6 +145,7 @@ export default function DashboardsPage() {
 
   const [showAiDashboardDialog, setShowAiDashboardDialog] = useState(false);
   const [aiDashboardPrompt, setAiDashboardPrompt] = useState("");
+  const [newDashboardTargetPlatform, setNewDashboardTargetPlatform] = useState<"mobile" | "desktop" | "both">("both");
   const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewDashboard, setViewDashboard] = useState<DashboardItem | null>(null);
@@ -336,6 +342,7 @@ export default function DashboardsPage() {
       const dashboardData = {
         name: dashboardConfig.name,
         description: dashboardConfig.description || "AI-generated dashboard",
+        targetPlatform: "both", // Default for AI-generated dashboards
         configuration: {
           standardWidgets: [],
           customWidgets: dashboardConfig.widgets || []
@@ -374,6 +381,7 @@ export default function DashboardsPage() {
     const dashboardData = {
       name: template.name,
       description: template.description,
+      targetPlatform: "both", // Default for template dashboards
       isDefault: false,
       configuration: {
         standardWidgets: [],
@@ -418,7 +426,8 @@ export default function DashboardsPage() {
   const filteredDashboards = dashboards.filter(dashboard => {
     const matchesSearch = dashboard.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          dashboard.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const matchesPlatform = shouldShowWidget(dashboard.targetPlatform || "both", currentDevice);
+    return matchesSearch && matchesPlatform;
   });
 
   return (
@@ -518,12 +527,20 @@ export default function DashboardsPage() {
                       <CardTitle className="text-lg flex items-center gap-2">
                         <Layout className="w-5 h-5 text-blue-600" />
                         {dashboard.name}
-                        {dashboard.isDefault && (
-                          <Badge variant="secondary" className="ml-2">
-                            <Layout className="w-3 h-3 mr-1" />
-                            Default
+                        <div className="flex items-center gap-1 ml-2">
+                          {dashboard.isDefault && (
+                            <Badge variant="secondary">
+                              <Layout className="w-3 h-3 mr-1" />
+                              Default
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                            {dashboard.targetPlatform === "mobile" && <Smartphone className="w-3 h-3 mr-1" />}
+                            {dashboard.targetPlatform === "desktop" && <Monitor className="w-3 h-3 mr-1" />}
+                            {dashboard.targetPlatform === "both" && <Tablet className="w-3 h-3 mr-1" />}
+                            {dashboard.targetPlatform || "both"}
                           </Badge>
-                        )}
+                        </div>
                       </CardTitle>
                       <p className="text-sm text-gray-600 mt-1">
                         {dashboard.description || "No description provided"}
@@ -685,6 +702,7 @@ export default function DashboardsPage() {
                       const dashboardData = {
                         name: newDashboardName || "Untitled Dashboard",
                         description: newDashboardDescription || "Dashboard created with canvas editor",
+                        targetPlatform: newDashboardTargetPlatform,
                         configuration: {
                           standardWidgets: [],
                           customWidgets: tempDashboardWidgets
@@ -695,6 +713,7 @@ export default function DashboardsPage() {
                     setShowEnhancedDashboardManager(false);
                     setNewDashboardName("");
                     setNewDashboardDescription("");
+                    setNewDashboardTargetPlatform("both");
                     setTempDashboardWidgets([]);
                   }}
                   disabled={createDashboardMutation.isPending || updateDashboardMutation.isPending}
@@ -727,6 +746,15 @@ export default function DashboardsPage() {
                     value={newDashboardDescription}
                     onChange={(e) => setNewDashboardDescription(e.target.value)}
                     placeholder={selectedDashboard?.description || "Enter dashboard description"}
+                  />
+                </div>
+                
+                {/* Target Platform Selector */}
+                <div className="col-span-1 md:col-span-2">
+                  <TargetPlatformSelector 
+                    value={newDashboardTargetPlatform}
+                    onChange={setNewDashboardTargetPlatform}
+                    label="Target Platform"
                   />
                 </div>
               </div>

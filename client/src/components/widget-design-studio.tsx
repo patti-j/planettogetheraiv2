@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import UniversalWidget from './universal-widget';
 import { WidgetConfig, SystemData, WidgetTemplate, WIDGET_TEMPLATES } from '@/lib/widget-library';
+import { TargetPlatformSelector } from './target-platform-selector';
 
 interface WidgetDesignStudioProps {
   open: boolean;
@@ -105,6 +106,7 @@ export default function WidgetDesignStudio({
   const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
   const [widgetConfig, setWidgetConfig] = useState<Partial<WidgetConfig>>({});
   const [targetSystems, setTargetSystems] = useState<string[]>(['analytics']);
+  const [targetPlatform, setTargetPlatform] = useState<"mobile" | "desktop" | "both">("both");
   const [previewData, setPreviewData] = useState<SystemData>({});
   
   // UI state
@@ -183,6 +185,7 @@ export default function WidgetDesignStudio({
       type: selectedTemplate.type,
       title: widgetConfig.title,
       subtitle: widgetConfig.subtitle,
+      targetPlatform,
       dataSource: widgetConfig.dataSource || selectedTemplate.defaultConfig.dataSource || 'productionOrders',
       chartType: widgetConfig.chartType || selectedTemplate.defaultConfig.chartType || 'bar',
       aggregation: widgetConfig.aggregation || selectedTemplate.defaultConfig.aggregation || 'count',
@@ -377,6 +380,7 @@ export default function WidgetDesignStudio({
     setSelectedTemplate(null);
     setWidgetConfig({});
     setTargetSystems(['analytics']);
+    setTargetPlatform("both");
     setActiveTab('template');
   };
 
@@ -503,6 +507,14 @@ export default function WidgetDesignStudio({
                             className="text-sm mt-1"
                           />
                         </div>
+                        
+                        {/* Target Platform Selector */}
+                        <TargetPlatformSelector 
+                          value={targetPlatform}
+                          onChange={setTargetPlatform}
+                          label="Target Platform"
+                          className="mt-4"
+                        />
                       </div>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
