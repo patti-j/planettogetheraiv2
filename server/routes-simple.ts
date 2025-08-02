@@ -343,6 +343,18 @@ export function registerSimpleRoutes(app: express.Application): Server {
           widgets: ["inventory-tracking", "stock-alerts", "procurement"]
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 5,
+        title: "Production Scheduler Dashboard",
+        description: "Advanced scheduling tools for production planners",
+        targetPlatform: "both",
+        route: "/production-scheduler-dashboard",
+        configuration: { 
+          layout: "grid",
+          widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
+        },
+        createdAt: new Date().toISOString()
       }
     ];
     
