@@ -468,7 +468,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view fixed inset-0 w-full h-full overflow-y-auto z-[9999]">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
