@@ -73,6 +73,7 @@ import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
+import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
 import WidgetStudio from "@/pages/widget-studio";
 import MobileHomePage from "@/pages/mobile-home";
 import MobileWidgetView from "@/pages/mobile-widget-view";
@@ -248,6 +249,11 @@ function Router() {
           </Route>
           <Route path="/dashboard">
             <DashboardWithAutoTour />
+          </Route>
+          <Route path="/production-scheduler-dashboard">
+            <ProtectedRoute feature="scheduling" action="view">
+              <ProductionSchedulerDashboard />
+            </ProtectedRoute>
           </Route>
           <Route path="/analytics">
             <ProtectedRoute feature="analytics" action="view">
