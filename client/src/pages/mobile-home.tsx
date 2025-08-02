@@ -237,34 +237,26 @@ export default function MobileHomePage() {
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Logo/Brand */}
+          {/* Logo/Brand - Clickable to go home */}
           <div className="flex items-center">
             <img 
               src={CompanyLogoImage} 
               alt="Company Logo" 
-              className="h-8 w-8 object-contain"
-            />
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            {/* Home */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2"
+              className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => {
                 // Close Max pane and reset to clean home state
                 setShowMaxPane(false);
                 setShowSearch(false);
                 setSearchQuery("");
+                setShowLibrary(false);
                 // Scroll to top smoothly
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-            >
-              <Home className="w-5 h-5" />
-            </Button>
+            />
+          </div>
 
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
             {/* Search */}
             <Dialog open={showSearch} onOpenChange={setShowSearch}>
               <DialogTrigger asChild>
