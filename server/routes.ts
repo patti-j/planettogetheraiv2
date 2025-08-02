@@ -3997,6 +3997,23 @@ Manufacturing Context Available:
         createdAt: new Date().toISOString()
       });
       
+      // Widget 11 - Production Order Status
+      allWidgets.push({
+        id: 11,
+        title: "Production Order Status",
+        type: "production-order-status",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          defaultSearch: "",
+          showAdvancedMetrics: true,
+          showTimingDetails: true,
+          showQualityInfo: true,
+          maxResults: 20
+        },
+        createdAt: new Date().toISOString()
+      });
+      
       console.log("Total widgets returned:", allWidgets.length);
       console.log("Last 2 widgets:", allWidgets.slice(-2).map(w => ({id: w.id, title: w.title})));
       res.json(allWidgets);

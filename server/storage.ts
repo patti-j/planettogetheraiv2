@@ -142,8 +142,6 @@ export interface Operation {
   assignedResourceId?: number;
   startTime?: Date;
   endTime?: Date;
-  scheduledStartDate?: Date;
-  scheduledEndDate?: Date;
   isBottleneck?: boolean;
   isEarly?: boolean;
   isLate?: boolean;
@@ -165,8 +163,6 @@ export interface InsertOperation {
   routingId?: number; // Link to routing instead of direct production order
   startTime?: Date;
   endTime?: Date;
-  scheduledStartDate?: Date;
-  scheduledEndDate?: Date;
 }
 
 export interface IStorage {
@@ -2289,9 +2285,7 @@ export class DatabaseStorage implements IStorage {
       sequenceNumber: operation.order || 1,
       status: operation.status,
       startTime: operation.startTime,
-      endTime: operation.endTime,
-      scheduledStartDate: operation.scheduledStartDate,
-      scheduledEndDate: operation.scheduledEndDate
+      endTime: operation.endTime
     };
     
     const [newOp] = await db.insert(discreteOperations).values(discreteOp).returning();

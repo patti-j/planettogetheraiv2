@@ -12,6 +12,7 @@ import { SalesOrderStatusWidget } from "@/components/widgets/sales-order-status-
 import ReportsWidget from "@/components/widgets/reports-widget";
 import ScheduleTradeoffAnalyzerWidget from "@/components/widgets/schedule-tradeoff-analyzer-widget";
 import ScheduleOptimizationWidget from "@/components/schedule-optimization-widget";
+import ProductionOrderStatusWidget from "@/components/widgets/production-order-status-widget";
 
 interface Widget {
   id: number;
@@ -31,6 +32,7 @@ const WIDGET_COMPONENTS = {
   'reports': ReportsWidget,
   'schedule-tradeoff-analyzer': ScheduleTradeoffAnalyzerWidget,
   'schedule-optimizer': ScheduleOptimizationWidget,
+  'production-order-status': ProductionOrderStatusWidget,
 };
 
 export default function MobileWidgetView() {

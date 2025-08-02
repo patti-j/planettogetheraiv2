@@ -62,8 +62,6 @@ export const productionOrders = pgTable("production_orders", {
   status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled
   quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull().default("1"),
   dueDate: timestamp("due_date"),
-  scheduledStartDate: timestamp("scheduled_start_date"),
-  scheduledEndDate: timestamp("scheduled_end_date"),
   actualStartDate: timestamp("actual_start_date"),
   actualEndDate: timestamp("actual_end_date"),
   itemNumber: text("item_number"), // Reference to items table
@@ -759,8 +757,6 @@ export const discreteOperations = pgTable("discrete_operations", {
   actualDuration: integer("actual_duration"), // Actual time taken
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
-  scheduledStartDate: timestamp("scheduled_start_date"),
-  scheduledEndDate: timestamp("scheduled_end_date"),
   sequenceNumber: integer("sequence_number").notNull().default(0),
   workCenterId: integer("work_center_id"),
   priority: integer("priority").default(5),
@@ -785,8 +781,6 @@ export const discreteOperationPhases = pgTable("discrete_operation_phases", {
   status: text("status", { enum: ["pending", "active", "completed", "skipped", "on_hold"] }).notNull().default("pending"),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
-  scheduledStartTime: timestamp("scheduled_start_time"),
-  scheduledEndTime: timestamp("scheduled_end_time"),
   resourceRequirements: jsonb("resource_requirements"), // Specific resources needed for this phase
   skillRequirements: text("skill_requirements").array(), // Required skills/certifications
   instructions: text("instructions"), // Phase-specific instructions
@@ -909,8 +903,6 @@ export const processOperations = pgTable("process_operations", {
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
-  scheduledStartDate: timestamp("scheduled_start_date"),
-  scheduledEndDate: timestamp("scheduled_end_date"),
   sequenceNumber: integer("sequence_number").notNull().default(0),
   setupTime: integer("setup_time").default(0), // Setup time in minutes
   priority: integer("priority").default(5),
@@ -1538,8 +1530,6 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
   createdAt: true,
 }).extend({
   dueDate: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualStartDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualEndDate: z.union([z.string().datetime(), z.date()]).optional(),
   releaseDate: z.union([z.string().datetime(), z.date()]).optional(),
@@ -1565,8 +1555,6 @@ export const insertDiscreteOperationSchema = createInsertSchema(discreteOperatio
 }).extend({
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases).omit({
@@ -1576,8 +1564,6 @@ export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOpe
 }).extend({
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledStartTime: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({
@@ -1603,8 +1589,6 @@ export const insertProcessOperationSchema = createInsertSchema(processOperations
 }).extend({
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledStartDate: z.union([z.string().datetime(), z.date()]).optional(),
-  scheduledEndDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 export const insertDependencySchema = createInsertSchema(dependencies).omit({

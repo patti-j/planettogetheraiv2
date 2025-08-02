@@ -17,8 +17,9 @@ import type { DiscreteOperation, ProductionOrder, Capability, Resource } from "@
 const operationFormSchema = insertDiscreteOperationSchema.extend({
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-  scheduledStartDate: z.string().optional(),
-  scheduledEndDate: z.string().optional(),
+}).omit({
+  createdAt: true,
+  updatedAt: true,
 });
 
 type OperationFormData = z.infer<typeof operationFormSchema>;
@@ -45,17 +46,20 @@ export default function OperationForm({
   const form = useForm<OperationFormData>({
     resolver: zodResolver(operationFormSchema),
     defaultValues: {
-      productionOrderId: operation?.productionOrderId || (jobs[0]?.id ?? 0),
+      routingId: operation?.routingId || 1,
       operationName: operation?.operationName || "",
       description: operation?.description || "",
       status: operation?.status || "planned",
       standardDuration: operation?.standardDuration || 8,
-      assignedResourceId: operation?.assignedResourceId || undefined,
       sequenceNumber: operation?.sequenceNumber || 1,
+      workCenterId: operation?.workCenterId || undefined,
+      priority: operation?.priority || 5,
+      completionPercentage: operation?.completionPercentage || 0,
+      qualityCheckRequired: operation?.qualityCheckRequired || false,
+      qualityStatus: operation?.qualityStatus || "pending",
       startTime: operation?.startTime ? new Date(operation.startTime).toISOString().slice(0, 16) : "",
       endTime: operation?.endTime ? new Date(operation.endTime).toISOString().slice(0, 16) : "",
-      scheduledStartDate: operation?.scheduledStartDate ? new Date(operation.scheduledStartDate).toISOString().slice(0, 16) : "",
-      scheduledEndDate: operation?.scheduledEndDate ? new Date(operation.scheduledEndDate).toISOString().slice(0, 16) : "",
+      notes: operation?.notes || "",
     },
   });
 
@@ -65,8 +69,6 @@ export default function OperationForm({
         ...data,
         startTime: data.startTime ? new Date(data.startTime) : undefined,
         endTime: data.endTime ? new Date(data.endTime) : undefined,
-        scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
-        scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
       };
       const response = await apiRequest("POST", "/api/operations", operationData);
       return response.json();
@@ -89,8 +91,6 @@ export default function OperationForm({
         ...data,
         startTime: data.startTime ? new Date(data.startTime) : undefined,
         endTime: data.endTime ? new Date(data.endTime) : undefined,
-        scheduledStartDate: data.scheduledStartDate ? new Date(data.scheduledStartDate) : undefined,
-        scheduledEndDate: data.scheduledEndDate ? new Date(data.scheduledEndDate) : undefined,
       };
       const response = await apiRequest("PUT", `/api/operations/${operation!.id}`, operationData);
       return response.json();
@@ -262,10 +262,10 @@ export default function OperationForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="scheduledStartDate"
+            name="startTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Scheduled Start Date/Time</FormLabel>
+                <FormLabel>Start Time (Optional)</FormLabel>
                 <FormControl>
                   <Input type="datetime-local" {...field} />
                 </FormControl>
@@ -276,10 +276,10 @@ export default function OperationForm({
 
           <FormField
             control={form.control}
-            name="scheduledEndDate"
+            name="endTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Scheduled End Date/Time</FormLabel>
+                <FormLabel>End Time (Optional)</FormLabel>
                 <FormControl>
                   <Input type="datetime-local" {...field} />
                 </FormControl>
