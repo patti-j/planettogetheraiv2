@@ -529,11 +529,23 @@ export default function MobileHomePage() {
             <Dialog 
               open={showSearch} 
               onOpenChange={(open) => {
-                console.log("🔍 Search dialog onOpenChange triggered:", open);
-                setShowSearch(open);
+                console.log("🔍 Search dialog onOpenChange triggered:", open, "from showSearch:", showSearch);
+                if (!open) {
+                  console.log("🔍 Dialog trying to close - preventing if just opened");
+                  // Only allow closing if the dialog was actually open for more than 100ms
+                  const now = Date.now();
+                  if (!window.searchDialogOpenTime || now - window.searchDialogOpenTime > 100) {
+                    setShowSearch(open);
+                  } else {
+                    console.log("🔍 Prevented premature dialog close");
+                  }
+                } else {
+                  window.searchDialogOpenTime = Date.now();
+                  setShowSearch(open);
+                }
               }}
             >
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
                 <DialogHeader>
                   <DialogTitle>Search</DialogTitle>
                 </DialogHeader>
@@ -543,6 +555,7 @@ export default function MobileHomePage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <div className="text-sm text-muted-foreground">
                     Enter keywords to search across the platform
@@ -591,11 +604,23 @@ export default function MobileHomePage() {
             <Dialog 
               open={showLibrary} 
               onOpenChange={(open) => {
-                console.log("📚 Library dialog onOpenChange triggered:", open);
-                setShowLibrary(open);
+                console.log("📚 Library dialog onOpenChange triggered:", open, "from showLibrary:", showLibrary);
+                if (!open) {
+                  console.log("📚 Dialog trying to close - preventing if just opened");
+                  // Only allow closing if the dialog was actually open for more than 100ms
+                  const now = Date.now();
+                  if (!window.libraryDialogOpenTime || now - window.libraryDialogOpenTime > 100) {
+                    setShowLibrary(open);
+                  } else {
+                    console.log("📚 Prevented premature dialog close");
+                  }
+                } else {
+                  window.libraryDialogOpenTime = Date.now();
+                  setShowLibrary(open);
+                }
               }}
             >
-              <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 <DialogHeader>
                   <DialogTitle>Mobile Library</DialogTitle>
                 </DialogHeader>
