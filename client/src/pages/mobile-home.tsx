@@ -88,7 +88,11 @@ export default function MobileHomePage() {
       console.log('Sending AI prompt:', prompt);
       const response = await fetch('/api/ai-agent/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           message: prompt,
           context: {
@@ -99,12 +103,24 @@ export default function MobileHomePage() {
         })
       });
       
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Received non-JSON response:', contentType);
+        alert('Max AI: Authentication required. Please refresh the page and try again.');
+        return;
+      }
+      
       const data = await response.json();
       console.log('AI Response:', data);
       
       // Show AI response in a simple alert - we can enhance this later
       if (data.message) {
         alert(`Max AI: ${data.message.substring(0, 200)}${data.message.length > 200 ? '...' : ''}`);
+      } else if (data.error) {
+        alert(`Max AI: ${data.error}`);
+      } else {
+        alert('Max AI: Received an empty response. Please try again.');
       }
     } catch (error) {
       console.error('AI prompt error:', error);
