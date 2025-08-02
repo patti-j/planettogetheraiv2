@@ -963,8 +963,21 @@ export default function MobileHomePage() {
         <div 
           id="max-pane"
           style={{ display: 'none' }}
-          className="fixed inset-y-0 right-0 w-80 bg-white border-l shadow-lg z-40"
+          className="fixed inset-0 bg-white dark:bg-gray-800 z-50 md:inset-y-0 md:right-0 md:w-80 md:border-l shadow-lg"
         >
+          {/* Mobile Close Button */}
+          <div className="md:hidden flex justify-between items-center p-4 border-b dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Max AI Assistant</h2>
+            <button 
+              onClick={() => {
+                const maxPane = document.getElementById('max-pane');
+                if (maxPane) maxPane.style.display = 'none';
+              }}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              ✕
+            </button>
+          </div>
           <MaxSidebar 
             className="h-full"
             onClose={() => {
