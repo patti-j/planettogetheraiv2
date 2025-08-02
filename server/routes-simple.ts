@@ -113,14 +113,45 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
-  // Basic auth endpoint for demo
+  // Basic auth endpoints for demo
   app.get("/api/auth/me", (req, res) => {
     res.json({
-      id: "demo_user",
+      id: "demo_user", 
       username: "demo_user",
       email: "demo@example.com",
       isDemo: true
     });
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      console.log("Login attempt for:", username);
+      
+      // Demo authentication - accept any credentials for demo purposes
+      const user = {
+        id: "demo_user",
+        username: username || "demo_user", 
+        email: "demo@example.com",
+        isDemo: true
+      };
+      
+      // Generate a simple token for demo
+      const token = "demo_token_" + Date.now();
+      
+      res.json({
+        user,
+        token,
+        message: "Login successful"
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(401).json({ error: "Authentication failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    res.json({ message: "Logged out successfully" });
   });
 
   // Mobile Library API - Working widgets endpoint with hardcoded data

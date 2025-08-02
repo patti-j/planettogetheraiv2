@@ -316,7 +316,7 @@ export default function MobileHomePage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={user?.avatar} />
+                      <AvatarImage src="" />
                       <AvatarFallback>{user?.username?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
