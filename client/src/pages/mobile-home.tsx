@@ -496,16 +496,21 @@ export default function MobileHomePage() {
           {/* Right Actions */}
           <div className="flex items-center gap-2">
             {/* Search */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("🔍 Search button clicked, setting showSearch to true");
+                setShowSearch(true);
+              }}
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+            
             <Dialog open={showSearch} onOpenChange={setShowSearch}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-2"
-                >
-                  <Search className="w-5 h-5" />
-                </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Search</DialogTitle>
@@ -542,12 +547,21 @@ export default function MobileHomePage() {
 
 
             {/* Mobile Library */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("📚 Library button clicked, setting showLibrary to true");
+                setShowLibrary(true);
+              }}
+            >
+              <Library className="w-5 h-5" />
+            </Button>
+
             <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2">
-                  <Library className="w-5 h-5" />
-                </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Mobile Library</DialogTitle>
