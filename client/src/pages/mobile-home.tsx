@@ -4,8 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { MaxSidebar } from "@/components/max-sidebar";
-// Using direct path to PNG logo
-const CompanyLogo = "/attached_assets/Copy of logo-icon_250px_1754109283906.PNG";
+import CompanyLogoImage from "@/assets/company-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -196,7 +195,7 @@ export default function MobileHomePage() {
           {/* Logo/Brand */}
           <div className="flex items-center">
             <img 
-              src={CompanyLogo} 
+              src={CompanyLogoImage} 
               alt="Company Logo" 
               className="h-8 w-8 object-contain"
             />
