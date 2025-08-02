@@ -138,9 +138,12 @@ export default function MobileHomePage() {
     queryFn: async () => {
       const response = await fetch("/api/mobile/widgets");
       const allWidgets = await response.json();
+      console.log("=== MOBILE WIDGETS RESPONSE ===", response.status, response.ok);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       console.log("=== MOBILE WIDGETS DATA ===", allWidgets);
-      // For now, return all widgets without filtering to test
-      console.log("=== FILTERED MOBILE WIDGETS ===", allWidgets);
+      console.log("=== MOBILE WIDGETS TYPE ===", typeof allWidgets, Array.isArray(allWidgets));
       return allWidgets;
     }
   });
@@ -150,9 +153,12 @@ export default function MobileHomePage() {
     queryFn: async () => {
       const response = await fetch("/api/mobile/dashboards");
       const allDashboards = await response.json();
+      console.log("=== MOBILE DASHBOARDS RESPONSE ===", response.status, response.ok);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
-      // For now, return all dashboards without filtering to test
-      console.log("=== FILTERED MOBILE DASHBOARDS ===", allDashboards);
+      console.log("=== MOBILE DASHBOARDS TYPE ===", typeof allDashboards, Array.isArray(allDashboards));
       return allDashboards;
     }
   });

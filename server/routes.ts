@@ -3677,12 +3677,11 @@ Manufacturing Context Available:
   });
 
   // Mobile Library API - Working widgets endpoint
-  app.get("/api/mobile/widgets", async (req, res) => {
-    try {
-      console.log("=== API WIDGETS ENDPOINT HIT ===");
-      
-      // Simple hardcoded response without any database imports
-      const sampleWidgets = [
+  app.get("/api/mobile/widgets", (req, res) => {
+    console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
+    
+    // Simple hardcoded response without any database imports
+    const sampleWidgets = [
         {
           id: 1,
           title: "Production Overview",
@@ -3732,17 +3731,12 @@ Manufacturing Context Available:
       
       console.log("Total widgets returned:", sampleWidgets.length);
       res.json(sampleWidgets);
-    } catch (error) {
-      console.error("Error fetching widgets:", error);
-      res.status(500).json({ error: "Failed to fetch widgets" });
-    }
   });
 
-  app.get("/api/mobile/dashboards", async (req, res) => {
-    try {
-      console.log("=== API DASHBOARDS ENDPOINT HIT ===");
-      
-      // Temporary hardcoded data until database connection is fixed
+  app.get("/api/mobile/dashboards", (req, res) => {
+    console.log("=== MOBILE DASHBOARDS ENDPOINT HIT ===");
+    
+    // Hardcoded dashboard data
       const sampleDashboards = [
         {
           id: 1,
@@ -3792,10 +3786,6 @@ Manufacturing Context Available:
       
       console.log("Total dashboards returned:", sampleDashboards.length);
       res.json(sampleDashboards);
-    } catch (error) {
-      console.error("Error fetching dashboards:", error);
-      res.status(500).json({ error: "Failed to fetch dashboards" });
-    }
   });
 
   app.post("/api/dashboard-configs/:id/set-default", async (req, res) => {
