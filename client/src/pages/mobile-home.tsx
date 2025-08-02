@@ -656,6 +656,16 @@ export default function MobileHomePage() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Max AI Button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2"
+              onClick={() => setMaxPanelOpen(true)}
+            >
+              <Bot className="w-5 h-5 text-blue-600" />
+            </Button>
+
             {/* Library */}
             <Button 
               variant="ghost" 
@@ -1178,7 +1188,7 @@ export default function MobileHomePage() {
 
           {/* Max AI Fly-out Panel - Full Screen Overlay */}
           {maxPanelOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[60] lg:hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
