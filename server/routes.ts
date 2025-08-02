@@ -3037,6 +3037,39 @@ Return ONLY a valid JSON object with this exact structure:
     }
   }
 
+  // Temporary test endpoint without auth for mobile debugging
+  app.post("/api/ai-agent/mobile-chat", async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      console.log('=== MOBILE AI CHAT DEBUG ===');
+      console.log('User Message:', message);
+      console.log('Context:', context);
+      console.log('=============================');
+
+      // Use the enhanced AI agent system
+      const agentResponse = await processAICommand(message, []);
+      
+      res.json({ 
+        message: agentResponse.message,
+        canvasAction: agentResponse.canvasAction,
+        data: agentResponse.data,
+        actions: agentResponse.actions
+      });
+
+    } catch (error) {
+      console.error("Mobile AI chat error:", error);
+      res.status(500).json({ 
+        error: "Failed to process AI chat request",
+        response: "I'm experiencing some technical difficulties. Please try again in a moment."
+      });
+    }
+  });
+
   app.post("/api/ai-agent/chat", requireAuth, async (req, res) => {
     try {
       const { message, context, conversationHistory } = req.body;

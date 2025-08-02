@@ -86,7 +86,7 @@ export default function MobileHomePage() {
   const handleAIPrompt = async (prompt: string) => {
     try {
       console.log('Sending AI prompt:', prompt);
-      const response = await fetch('/api/ai-agent/chat', {
+      const response = await fetch('/api/ai-agent/mobile-chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
