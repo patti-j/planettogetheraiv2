@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, User, Building2, Palette, Type, Edit3, Trash2, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, User, Building2, Palette, Type, Edit3, Trash2, Calendar, Clock, AlertTriangle, BarChart3, Activity, Zap, Target, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -194,6 +194,82 @@ export default function GanttChart({
     return null;
   }, [resourceViews, selectedResourceViewId]);
   
+  // Calculate resource utilization and scheduling metrics
+  const resourceMetrics = useMemo(() => {
+    const metrics = new Map<number, {
+      utilization: number;
+      scheduledHours: number;
+      availableHours: number;
+      upcomingOperations: number;
+      overdueOperations: number;
+      conflictCount: number;
+      efficiency: number;
+    }>();
+
+    resources.forEach(resource => {
+      const resourceOperations = operations.filter(op => 
+        op.assignedResourceId === resource.id && op.startTime && op.endTime
+      );
+
+      // Calculate scheduled hours for this resource
+      let scheduledHours = 0;
+      let overdueOperations = 0;
+      let upcomingOperations = 0;
+      let conflictCount = 0;
+
+      const now = new Date();
+      const timeSlots: Array<{start: Date, end: Date}> = [];
+
+      resourceOperations.forEach(op => {
+        const startTime = new Date(op.startTime!);
+        const endTime = new Date(op.endTime!);
+        const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+        
+        scheduledHours += durationHours;
+
+        // Check for overdue operations
+        if (endTime < now && op.status !== 'completed') {
+          overdueOperations++;
+        }
+
+        // Check for upcoming operations
+        if (startTime > now) {
+          upcomingOperations++;
+        }
+
+        // Check for overlapping time slots (conflicts)
+        const hasConflict = timeSlots.some(slot => 
+          (startTime < slot.end && endTime > slot.start)
+        );
+        if (hasConflict) {
+          conflictCount++;
+        }
+
+        timeSlots.push({start: startTime, end: endTime});
+      });
+
+      // Calculate available hours (assuming 8-hour workdays, 5 days a week)
+      const availableHours = 40; // Weekly available hours
+      const utilization = Math.min((scheduledHours / availableHours) * 100, 100);
+      
+      // Calculate efficiency based on completed vs scheduled operations
+      const completedOps = resourceOperations.filter(op => op.status === 'completed').length;
+      const efficiency = resourceOperations.length > 0 ? (completedOps / resourceOperations.length) * 100 : 0;
+
+      metrics.set(resource.id, {
+        utilization,
+        scheduledHours,
+        availableHours,
+        upcomingOperations,
+        overdueOperations,
+        conflictCount,
+        efficiency
+      });
+    });
+
+    return metrics;
+  }, [resources, operations]);
+
   // Order resources according to the selected view
   const orderedResources = useMemo(() => {
     if (view !== "resources") {

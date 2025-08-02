@@ -3914,6 +3914,23 @@ Manufacturing Context Available:
             showQuickView: true
           },
           createdAt: new Date().toISOString()
+        },
+        {
+          id: 9,
+          title: "Schedule Optimization",
+          type: "schedule-optimization",
+          targetPlatform: "both",
+          source: "cockpit",
+          configuration: { 
+            showQuickActions: true,
+            showHistory: true,
+            showMetrics: true,
+            maxHistoryItems: 5,
+            defaultView: "overview",
+            showAlgorithmSelector: true,
+            showProfileSelector: true
+          },
+          createdAt: new Date().toISOString()
         }
       ];
       

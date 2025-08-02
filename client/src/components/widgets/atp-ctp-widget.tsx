@@ -75,11 +75,15 @@ export default function AtpCtpWidget({ className = "", compact = false }: AtpCtp
 
   // Fetch data
   const { data: stockItems, isLoading: stockItemsLoading, error: stockItemsError } = useQuery<StockItem[]>({
-    queryKey: ['/api/stock-items']
+    queryKey: ['/api/stock-items'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3
   });
 
-  const { data: stockBalances } = useQuery<StockBalance[]>({
-    queryKey: ['/api/stock-balances']
+  const { data: stockBalances, error: stockBalancesError } = useQuery<StockBalance[]>({
+    queryKey: ['/api/stock-balances'],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3
   });
 
   const calculateAtpCtp = async () => {
