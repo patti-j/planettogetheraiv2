@@ -20095,6 +20095,64 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Mobile Library API - Combined widgets and dashboards endpoints for mobile library
+  app.get("/api/widgets", async (req, res) => {
+    try {
+      // Get both cockpit widgets and canvas widgets for mobile library
+      const cockpitWidgets = await db.select().from(schema.cockpitWidgets);
+      const canvasWidgets = await db.select().from(schema.canvasWidgets);
+      
+      // Combine and format widgets for mobile library
+      const allWidgets = [
+        ...cockpitWidgets.map(widget => ({
+          id: widget.id,
+          title: widget.title,
+          type: widget.type,
+          targetPlatform: widget.targetPlatform || 'both',
+          source: 'cockpit',
+          configuration: widget.configuration,
+          createdAt: widget.createdAt
+        })),
+        ...canvasWidgets.map(widget => ({
+          id: widget.id,
+          title: widget.title,
+          type: widget.widgetType,
+          targetPlatform: widget.targetPlatform || 'both',
+          source: 'canvas',
+          configuration: widget.configuration,
+          createdAt: widget.createdAt
+        }))
+      ];
+      
+      res.json(allWidgets);
+    } catch (error) {
+      console.error("Error fetching widgets:", error);
+      res.status(500).json({ error: "Failed to fetch widgets" });
+    }
+  });
+
+  app.get("/api/dashboards", async (req, res) => {
+    try {
+      // Get dashboard configs for mobile library
+      const dashboardConfigs = await db.select().from(schema.dashboardConfigs);
+      
+      // Format dashboards for mobile library
+      const dashboards = dashboardConfigs.map(dashboard => ({
+        id: dashboard.id,
+        title: dashboard.name,
+        description: dashboard.description,
+        targetPlatform: dashboard.targetPlatform || 'both',
+        configuration: dashboard.configuration,
+        createdAt: dashboard.createdAt
+      }));
+      
+      res.json(dashboards);
+    } catch (error) {
+      console.error("Error fetching dashboards:", error);
+      res.status(500).json({ error: "Failed to fetch dashboards" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
