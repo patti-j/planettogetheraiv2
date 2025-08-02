@@ -230,6 +230,104 @@ export default function MobileWidgetView() {
           </div>
         );
 
+      case 'schedule-optimizer':
+        return (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Schedule Optimization
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">94%</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Efficiency</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">87%</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Utilization</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Current Schedule</span>
+                    <Badge variant="outline" className="text-xs">Optimized</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Trade-off Analysis</span>
+                    <Badge variant="secondary" className="text-xs">Available</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Bottlenecks</span>
+                    <span className="text-sm font-medium text-orange-600">2 identified</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Optimization Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="space-y-3">
+                  <div className="bg-green-50 dark:bg-green-950 p-3 rounded border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-200">Reduce Setup Time</p>
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">+12% efficiency gain</p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Parallel Processing</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">-4 hours total time</p>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-950 p-3 rounded border border-orange-200 dark:border-orange-800">
+                    <p className="text-sm font-medium text-orange-800 dark:text-orange-200">Resource Reallocation</p>
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">Resolve bottlenecks</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1">
+                Apply Optimization
+              </Button>
+              <Button size="sm" variant="outline" className="flex-1">
+                View Details
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'atp-ctp':
+        return (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">ATP/CTP Calculator</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Available to Promise</span>
+                    <span className="text-sm font-medium text-green-600">2,450 units</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Capable to Promise</span>
+                    <span className="text-sm font-medium text-blue-600">3,200 units</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Next Available</span>
+                    <span className="text-sm font-medium">Jan 15, 2025</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       default:
         return (
           <Card>
