@@ -208,7 +208,10 @@ export default function MobileHomePage() {
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={() => setLocation("/")}
+              onClick={() => {
+                // Force refresh of mobile home page
+                window.location.reload();
+              }}
             >
               <Home className="w-5 h-5" />
             </Button>
