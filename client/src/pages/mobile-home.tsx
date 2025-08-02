@@ -79,6 +79,7 @@ export default function MobileHomePage() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
 
   // Mock data - in real app, these would come from API
@@ -468,101 +469,54 @@ export default function MobileHomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo/Brand - Clickable to go home */}
-          <div className="flex items-center">
-            <img 
-              src={CompanyLogoImage} 
-              alt="Company Logo" 
-              className="h-8 w-8 object-contain cursor-pointer"
-              onClick={() => {
-                // Close Max pane and reset to clean home state
-                const maxPane = document.getElementById('max-pane');
-                if (maxPane) maxPane.style.display = 'none';
-                const searchDialog = document.getElementById('search-dialog');
-                if (searchDialog) searchDialog.style.display = 'none';
-                const libraryDialog = document.getElementById('library-dialog');
-                if (libraryDialog) libraryDialog.style.display = 'none';
-                setSearchQuery("");
-                // Scroll to top smoothly
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
+          <img 
+            src={CompanyLogoImage} 
+            alt="Company Logo" 
+            className="h-8 w-8 object-contain cursor-pointer flex-shrink-0"
+            onClick={() => {
+              // Close dialogs and reset to clean home state
+              const libraryDialog = document.getElementById('library-dialog');
+              if (libraryDialog) libraryDialog.style.display = 'none';
+              setSearchQuery("");
+              // Scroll to top smoothly
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+
+          {/* Search/Prompt Input */}
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder={isSearchFocused ? "Search or ask Max AI..." : "Search or ask Max..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    // Handle search or AI prompt
+                    if (searchQuery.toLowerCase().includes('max') || searchQuery.includes('?') || searchQuery.includes('how') || searchQuery.includes('what')) {
+                      // This looks like an AI prompt
+                      console.log('AI Prompt:', searchQuery);
+                      // TODO: Send to Max AI
+                    } else {
+                      // This looks like a search
+                      console.log('Search:', searchQuery);
+                      // TODO: Perform search
+                    }
+                  }
+                }}
+                className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full"
+              />
+            </div>
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            {/* Search */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2"
-              onClick={() => {
-                const searchDialog = document.getElementById('search-dialog');
-                if (searchDialog) {
-                  searchDialog.style.display = 'block';
-                }
-              }}
-            >
-              <Search className="w-5 h-5" />
-            </Button>
-            
-            {/* Search Modal */}
-            <div 
-              id="search-dialog" 
-              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-              style={{ display: 'none' }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) {
-                  e.currentTarget.style.display = 'none';
-                }
-              }}
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Search</h2>
-                  <button 
-                    onClick={() => {
-                      const dialog = document.getElementById('search-dialog');
-                      if (dialog) dialog.style.display = 'none';
-                    }}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  <Input
-                    placeholder="Search dashboards, widgets, reports..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
-                  />
-                  <div className="text-sm text-muted-foreground">
-                    Enter keywords to search across the platform
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Max AI Assistant */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2"
-              onClick={() => {
-                const maxPane = document.getElementById('max-pane');
-                if (maxPane) {
-                  maxPane.style.display = maxPane.style.display === 'none' ? 'block' : 'none';
-                }
-              }}
-            >
-              <Bot className="w-5 h-5" />
-            </Button>
-
-
-
-            {/* Mobile Library */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Library */}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -959,33 +913,7 @@ export default function MobileHomePage() {
               </Card>
         </div>
 
-        {/* Max AI Assistant Sidebar */}
-        <div 
-          id="max-pane"
-          style={{ display: 'none' }}
-          className="fixed inset-0 bg-white dark:bg-gray-800 z-50 md:inset-y-0 md:right-0 md:w-80 md:border-l shadow-lg"
-        >
-          {/* Mobile Close Button */}
-          <div className="md:hidden flex justify-between items-center p-4 border-b dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Max AI Assistant</h2>
-            <button 
-              onClick={() => {
-                const maxPane = document.getElementById('max-pane');
-                if (maxPane) maxPane.style.display = 'none';
-              }}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              ✕
-            </button>
-          </div>
-          <MaxSidebar 
-            className="h-full"
-            onClose={() => {
-              const maxPane = document.getElementById('max-pane');
-              if (maxPane) maxPane.style.display = 'none';
-            }}
-          />
-        </div>
+
       </div>
     </div>
   );
