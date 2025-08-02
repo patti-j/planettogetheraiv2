@@ -332,6 +332,14 @@ export default function MobileHomePage() {
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  
+                  {/* View Mode Toggle in Desktop Mode */}
+                  <DropdownMenuItem onClick={toggleView}>
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    <span>Switch to Mobile View</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
