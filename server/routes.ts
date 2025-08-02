@@ -3931,6 +3931,23 @@ Manufacturing Context Available:
             showProfileSelector: true
           },
           createdAt: new Date().toISOString()
+        },
+        {
+          id: 10,
+          title: "Resource Gantt",
+          type: "resource-gantt",
+          targetPlatform: "both",
+          source: "cockpit",
+          configuration: { 
+            view: "resource",
+            timeframe: "week",
+            showDependencies: true,
+            showResourceLoading: true,
+            allowDragDrop: true,
+            showCriticalPath: true,
+            groupBy: "resource"
+          },
+          createdAt: new Date().toISOString()
         }
       ];
       
