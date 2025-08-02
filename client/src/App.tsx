@@ -251,9 +251,7 @@ function Router() {
             <DashboardWithAutoTour />
           </Route>
           <Route path="/production-scheduler-dashboard">
-            <ProtectedRoute feature="scheduling" action="view">
-              <ProductionSchedulerDashboard />
-            </ProtectedRoute>
+            <ProductionSchedulerDashboard />
           </Route>
           <Route path="/analytics">
             <ProtectedRoute feature="analytics" action="view">
