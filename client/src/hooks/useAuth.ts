@@ -166,7 +166,14 @@ export function useAuth() {
       }
       
       console.log("Attempting logout...");
-      return apiRequest("POST", "/api/auth/logout", {});
+      try {
+        await apiRequest("POST", "/api/auth/logout", {});
+        console.log("Server logout successful");
+      } catch (error) {
+        console.warn("Server logout failed, proceeding with local logout:", error);
+        // Continue with local cleanup even if server fails
+      }
+      return true;
     },
     onSuccess: () => {
       console.log("Logout successful, clearing auth data...");
@@ -176,11 +183,13 @@ export function useAuth() {
       queryClient.clear(); // Clear all cached data
       
       // Force redirect to login page
+      console.log("Redirecting to login page...");
       window.location.href = '/login';
     },
     onError: (error) => {
       console.error("Logout error:", error);
-      // Even if logout fails on server, clear local auth data
+      // Even if logout fails, clear local auth data
+      console.log("Clearing local auth data despite error...");
       localStorage.removeItem('authToken');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
@@ -193,7 +202,12 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user && !error,
     login: loginMutation.mutateAsync,
-    logout: logoutMutation.mutate,
+    logout: () => {
+      console.log("=== LOGOUT CALLED ===");
+      console.log("Current user:", user);
+      console.log("Local storage token:", localStorage.getItem('authToken'));
+      logoutMutation.mutate();
+    },
     loginError: loginMutation.error,
     isLoginPending: loginMutation.isPending,
   };
