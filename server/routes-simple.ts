@@ -123,11 +123,67 @@ export function registerSimpleRoutes(app: express.Application): Server {
     });
   });
 
-  // Mobile Library API - Combined widgets and dashboards endpoints for mobile library
+  // Mobile Library API - Working widgets endpoint with hardcoded data
+  app.get("/api/mobile/widgets", (req, res) => {
+    console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
+    
+    const sampleWidgets = [
+      {
+        id: 1,
+        title: "Production Overview",
+        type: "production-metrics",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { metrics: ["output", "efficiency", "quality"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Equipment Status",
+        type: "equipment-status",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: "Quality Metrics",
+        type: "quality-dashboard",
+        targetPlatform: "both",
+        source: "canvas",
+        configuration: { tests: ["pH", "temperature", "purity"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 4,
+        title: "Inventory Levels",
+        type: "inventory-tracking",
+        targetPlatform: "both",
+        source: "canvas",
+        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 5,
+        title: "Schedule Gantt",
+        type: "gantt-chart",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { view: "weekly", resources: ["all"] },
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    console.log("Total widgets returned:", sampleWidgets.length);
+    res.json(sampleWidgets);
+  });
+
+  // Keep the old broken endpoint for now
   app.get("/api/widgets", async (req, res) => {
     try {
       console.log("=== API WIDGETS ENDPOINT HIT ===");
-      // Get both cockpit widgets and canvas widgets for mobile library
+      // Get both cockpit widgets and canvas widgets for mobile library  
       const cockpitWidgets = await db.select().from(schema.cockpitWidgets);
       const canvasWidgets = await db.select().from(schema.canvasWidgets);
       
@@ -164,6 +220,62 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Mobile Library API - Working dashboards endpoint with hardcoded data
+  app.get("/api/mobile/dashboards", (req, res) => {
+    console.log("=== MOBILE DASHBOARDS ENDPOINT HIT ===");
+    
+    const sampleDashboards = [
+      {
+        id: 1,
+        title: "Factory Overview",
+        description: "Real-time production metrics and equipment status",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "grid",
+          widgets: ["production-metrics", "equipment-status", "quality-dashboard"]
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Production Planning",
+        description: "Schedule management and resource allocation",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "timeline",
+          widgets: ["gantt-chart", "resource-allocation", "capacity-planning"]
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: "Quality Control",
+        description: "Quality metrics and testing results",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "metrics",
+          widgets: ["quality-tests", "inspection-plans", "certificates"]
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 4,
+        title: "Inventory Management",
+        description: "Stock levels and material tracking",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "dashboard",
+          widgets: ["inventory-tracking", "stock-alerts", "procurement"]
+        },
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    console.log("Total dashboards returned:", sampleDashboards.length);
+    res.json(sampleDashboards);
+  });
+
+  // Keep the old broken endpoint for now
   app.get("/api/dashboards", async (req, res) => {
     try {
       console.log("=== API DASHBOARDS ENDPOINT HIT ===");
