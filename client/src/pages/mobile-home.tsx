@@ -81,6 +81,36 @@ export default function MobileHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
+  
+  // AI prompt handling
+  const handleAIPrompt = async (prompt: string) => {
+    try {
+      console.log('Sending AI prompt:', prompt);
+      const response = await fetch('/api/ai-agent/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: prompt,
+          context: {
+            page: '/mobile-home',
+            user: user?.username,
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+      
+      const data = await response.json();
+      console.log('AI Response:', data);
+      
+      // Show AI response in a simple alert - we can enhance this later
+      if (data.message) {
+        alert(`Max AI: ${data.message.substring(0, 200)}${data.message.length > 200 ? '...' : ''}`);
+      }
+    } catch (error) {
+      console.error('AI prompt error:', error);
+      alert('Max AI is temporarily unavailable. Please try again later.');
+    }
+  };
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -495,17 +525,19 @@ export default function MobileHomePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
-                onKeyPress={(e) => {
+                onKeyPress={async (e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     // Handle search or AI prompt
-                    if (searchQuery.toLowerCase().includes('max') || searchQuery.includes('?') || searchQuery.includes('how') || searchQuery.includes('what')) {
+                    if (searchQuery.toLowerCase().includes('max') || searchQuery.includes('?') || searchQuery.includes('how') || searchQuery.includes('what') || searchQuery.includes('show') || searchQuery.includes('create')) {
                       // This looks like an AI prompt
-                      console.log('AI Prompt:', searchQuery);
-                      // TODO: Send to Max AI
+                      await handleAIPrompt(searchQuery);
+                      setSearchQuery(""); // Clear after sending
                     } else {
                       // This looks like a search
                       console.log('Search:', searchQuery);
-                      // TODO: Perform search
+                      // TODO: Perform search functionality
+                      alert(`Searching for: ${searchQuery}`);
+                      setSearchQuery(""); // Clear after searching
                     }
                   }
                 }}
