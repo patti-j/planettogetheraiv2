@@ -59,12 +59,122 @@ import {
   Plus,
   Edit,
   Trash2,
-  X
+  X,
+  // Additional icons for widget and dashboard types
+  PieChart,
+  LineChart,
+  Gauge,
+  Table,
+  AlertTriangle,
+  Users,
+  Factory,
+  CheckCircle,
+  Target,
+  Package,
+  Calculator,
+  FileText,
+  Cog,
+  Zap,
+  Shield,
+  Layers,
+  GitBranch,
+  BarChart2,
+  TrendingDown,
+  Database
 } from "lucide-react";
 
 // Import widget components
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { WidgetConfig } from '@/lib/widget-library';
+
+// Icon mapping functions
+const getWidgetIcon = (type: string) => {
+  switch (type) {
+    case 'production-metrics':
+    case 'production-overview':
+      return Factory;
+    case 'equipment-status':
+    case 'resource-status':
+      return Cog;
+    case 'quality-dashboard':
+    case 'quality-metrics':
+      return Shield;
+    case 'inventory-tracking':
+    case 'inventory-levels':
+      return Package;
+    case 'gantt-chart':
+    case 'schedule-gantt':
+      return Calendar;
+    case 'atp-ctp':
+    case 'atp-ctp-calculator':
+      return Calculator;
+    case 'reports':
+    case 'reports-widget':
+      return FileText;
+    case 'alerts':
+    case 'alert-dashboard':
+      return AlertTriangle;
+    case 'kpi':
+    case 'performance-metrics':
+      return Target;
+    case 'chart':
+    case 'bar-chart':
+      return BarChart3;
+    case 'pie-chart':
+      return PieChart;
+    case 'line-chart':
+      return LineChart;
+    case 'table':
+    case 'data-table':
+      return Table;
+    case 'gauge':
+    case 'progress':
+      return Gauge;
+    case 'users':
+    case 'user-management':
+      return Users;
+    case 'sales-order-status':
+      return CheckCircle;
+    case 'schedule-optimization':
+      return Zap;
+    case 'database':
+    case 'data-source':
+      return Database;
+    default:
+      return BarChart3; // Default fallback
+  }
+};
+
+const getDashboardIcon = (title: string, description?: string) => {
+  const combined = `${title} ${description || ''}`.toLowerCase();
+  
+  if (combined.includes('factory') || combined.includes('production')) {
+    return Factory;
+  }
+  if (combined.includes('planning') || combined.includes('schedule')) {
+    return Calendar;
+  }
+  if (combined.includes('quality') || combined.includes('control')) {
+    return Shield;
+  }
+  if (combined.includes('inventory') || combined.includes('stock')) {
+    return Package;
+  }
+  if (combined.includes('analytics') || combined.includes('metrics')) {
+    return TrendingUp;
+  }
+  if (combined.includes('maintenance') || combined.includes('equipment')) {
+    return Cog;
+  }
+  if (combined.includes('management') || combined.includes('users')) {
+    return Users;
+  }
+  if (combined.includes('overview') || combined.includes('summary')) {
+    return Layers;
+  }
+  
+  return Monitor; // Default fallback
+};
 
 interface Task {
   id: string;
@@ -829,7 +939,10 @@ export default function MobileHomePage() {
                                 setLocation(`/widgets/${widget.id}`);
                               }}
                             >
-                              <BarChart3 className="w-4 h-4 text-blue-600" />
+                              {(() => {
+                                const IconComponent = getWidgetIcon(widget.type);
+                                return <IconComponent className="w-4 h-4 text-blue-600" />;
+                              })()}
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{widget.title}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{widget.type}</p>
@@ -903,7 +1016,10 @@ export default function MobileHomePage() {
                             }}
                           >
                             <div className="flex items-center space-x-3">
-                              <Monitor className="w-4 h-4 text-green-600" />
+                              {(() => {
+                                const IconComponent = getDashboardIcon(dashboard.title, dashboard.description);
+                                return <IconComponent className="w-4 h-4 text-green-600" />;
+                              })()}
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{dashboard.title}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{dashboard.description || 'Dashboard'}</p>
