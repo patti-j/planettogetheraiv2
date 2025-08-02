@@ -39,11 +39,12 @@ interface StockBalance {
   id: number;
   itemId: number;
   location: string;
-  currentQuantity: number;
-  reservedQuantity: number;
-  allocatedQuantity: number;
-  incomingQuantity: number;
-  lastUpdated: string;
+  quantityOnHand: number;
+  quantityAllocated: number;
+  quantityOnOrder: number;
+  quantityAvailable: number;
+  lastTransactionDate: string | null;
+  updatedAt: string | null;
 }
 
 interface AtpResult {
@@ -111,17 +112,18 @@ export default function AtpCtpWidget({ className = "", compact = false }: AtpCtp
           id: 0,
           itemId: stockItem.id,
           location: 'Main Warehouse',
-          currentQuantity: Math.floor(Math.random() * 200) + 50, // Demo data
-          reservedQuantity: Math.floor(Math.random() * 30),
-          allocatedQuantity: Math.floor(Math.random() * 20),
-          incomingQuantity: Math.floor(Math.random() * 100),
-          lastUpdated: new Date().toISOString()
+          quantityOnHand: Math.floor(Math.random() * 200) + 50, // Demo data
+          quantityAllocated: Math.floor(Math.random() * 30),
+          quantityOnOrder: Math.floor(Math.random() * 100),
+          quantityAvailable: 0, // Will be calculated
+          lastTransactionDate: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
       }
       
       // Calculate ATP (Available to Promise)
-      const availableStock = stockBalance.currentQuantity - stockBalance.reservedQuantity - stockBalance.allocatedQuantity;
-      const atp = Math.max(0, availableStock + stockBalance.incomingQuantity);
+      const availableStock = stockBalance.quantityOnHand - stockBalance.quantityAllocated;
+      const atp = Math.max(0, availableStock + stockBalance.quantityOnOrder);
       
       // Calculate CTP (Capable to Promise) - includes potential production
       const shortfall = Math.max(0, quantity - atp);
@@ -219,23 +221,24 @@ export default function AtpCtpWidget({ className = "", compact = false }: AtpCtp
           id: 0,
           itemId: item.id,
           location: 'Main Warehouse',
-          currentQuantity: Math.floor(Math.random() * 200) + 50,
-          reservedQuantity: Math.floor(Math.random() * 30),
-          allocatedQuantity: Math.floor(Math.random() * 20),
-          incomingQuantity: Math.floor(Math.random() * 100),
-          lastUpdated: new Date().toISOString()
+          quantityOnHand: Math.floor(Math.random() * 200) + 50,
+          quantityAllocated: Math.floor(Math.random() * 20),
+          quantityOnOrder: Math.floor(Math.random() * 100),
+          quantityAvailable: 0,
+          lastTransactionDate: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
       }
 
-      const availableStock = stockBalance.currentQuantity - stockBalance.reservedQuantity - stockBalance.allocatedQuantity;
-      const atp = Math.max(0, availableStock + stockBalance.incomingQuantity);
-      const utilizationPercentage = stockBalance.currentQuantity > 0 ? ((stockBalance.reservedQuantity + stockBalance.allocatedQuantity) / stockBalance.currentQuantity) * 100 : 0;
+      const availableStock = stockBalance.quantityOnHand - stockBalance.quantityAllocated;
+      const atp = Math.max(0, availableStock + stockBalance.quantityOnOrder);
+      const utilizationPercentage = stockBalance.quantityOnHand > 0 ? (stockBalance.quantityAllocated / stockBalance.quantityOnHand) * 100 : 0;
       
       return {
         sku: item.sku,
         name: item.name,
         atp,
-        currentStock: stockBalance.currentQuantity,
+        currentStock: stockBalance.quantityOnHand,
         utilizationPercentage: isNaN(utilizationPercentage) ? 0 : utilizationPercentage,
         status: atp >= item.safetyStock ? 'healthy' : atp > item.minStockLevel ? 'warning' : 'critical',
         classification: item.abcClassification
