@@ -355,10 +355,12 @@ export default function TopMenu() {
     }
   };
 
+  const { currentView } = useViewMode();
+
   return (
     <>
-      {/* Hamburger Menu Button - Only visible when menu is closed */}
-      {!menuOpen && (
+      {/* Hamburger Menu Button - Only visible when menu is closed and NOT in mobile view */}
+      {!menuOpen && currentView !== "mobile" && (
         <div className="fixed top-2 left-2 z-50">
           <Button 
             variant="outline" 
@@ -371,15 +373,15 @@ export default function TopMenu() {
         </div>
       )}
       
-      {/* Persistent Theme Toggle - Always visible */}
-      {!menuOpen && (
+      {/* Persistent Theme Toggle - Always visible except in mobile view */}
+      {!menuOpen && currentView !== "mobile" && (
         <div className="fixed top-2 right-2 z-50">
           <ThemeToggleSimple />
         </div>
       )}
 
-      {/* Full Screen Dropdown Menu */}
-      {menuOpen && (
+      {/* Full Screen Dropdown Menu - Hide in mobile view */}
+      {menuOpen && currentView !== "mobile" && (
         <div 
           className="fixed inset-0 z-50 bg-black bg-opacity-25"
           style={{ touchAction: 'none' }}

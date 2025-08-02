@@ -238,6 +238,22 @@ body.force-mobile-view > *:not(.force-mobile-view) {
   display: none !important;
 }
 
+/* Nuclear option: Hide all fixed positioned elements when mobile view is active */
+body.force-mobile-view .fixed,
+body.force-mobile-view [class*="fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* But allow mobile elements to show */
+body.force-mobile-view .force-mobile-view .fixed,
+body.force-mobile-view .force-mobile-view [class*="fixed"] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
 /* Mobile-friendly text truncation utilities */
 .line-clamp-1 {
   display: -webkit-box;
