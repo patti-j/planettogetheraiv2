@@ -1025,7 +1025,47 @@ export default function MobileHomePage() {
             {showMaxSettings && (
               <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4">
                 <h3 className="font-medium text-gray-900 dark:text-white mb-3">Max AI Settings</h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
+                  {/* AI Theme Colors */}
+                  <div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 block mb-2">AI Theme</span>
+                    <div className="flex gap-2">
+                      <button className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 border-2 border-white dark:border-gray-600"></button>
+                      <button className="w-6 h-6 rounded-full bg-gradient-to-r from-green-500 to-teal-600 border border-gray-300 dark:border-gray-600"></button>
+                      <button className="w-6 h-6 rounded-full bg-gradient-to-r from-orange-500 to-red-600 border border-gray-300 dark:border-gray-600"></button>
+                      <button className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 border border-gray-300 dark:border-gray-600"></button>
+                      <button className="w-6 h-6 rounded-full bg-gradient-to-r from-gray-600 to-gray-800 border border-gray-300 dark:border-gray-600"></button>
+                    </div>
+                  </div>
+
+                  {/* Voice Settings */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Voice Response</span>
+                    <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      <option>Alloy (Default)</option>
+                      <option>Echo</option>
+                      <option>Fable</option>
+                      <option>Onyx</option>
+                      <option>Nova</option>
+                      <option>Shimmer</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Voice Speed</span>
+                    <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      <option>Normal</option>
+                      <option>Slow</option>
+                      <option>Fast</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Enable Voice</span>
+                    <input type="checkbox" className="rounded" />
+                  </div>
+
+                  {/* Response Settings */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Response Speed</span>
                     <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
@@ -1034,14 +1074,17 @@ export default function MobileHomePage() {
                       <option>Detailed</option>
                     </select>
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Show Action Buttons</span>
                     <input type="checkbox" defaultChecked className="rounded" />
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Auto-create Widgets</span>
                     <input type="checkbox" defaultChecked className="rounded" />
                   </div>
+
                   <button 
                     className="w-full text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700"
                     onClick={() => setShowMaxSettings(false)}
