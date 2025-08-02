@@ -4,6 +4,7 @@ import { storage } from "./storage-basic";
 import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertUserSchema, insertProductionOrderSchema } from "../shared/schema-simple";
 import { db } from "./db";
 import * as schema from "../shared/schema";
+import { processAICommand } from "./ai-agent";
 
 export function registerSimpleRoutes(app: express.Application): Server {
   // Health check
@@ -330,6 +331,39 @@ export function registerSimpleRoutes(app: express.Application): Server {
     } catch (error) {
       console.error("Error fetching dashboards:", error);
       res.status(500).json({ error: "Failed to fetch dashboards" });
+    }
+  });
+
+  // Mobile AI Chat endpoint - simple version without authentication
+  app.post("/api/ai-agent/mobile-chat", async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      console.log('=== MOBILE AI CHAT DEBUG ===');
+      console.log('User Message:', message);
+      console.log('Context:', context);
+      console.log('=============================');
+
+      // Use the enhanced AI agent system
+      const agentResponse = await processAICommand(message, []);
+      
+      res.json({ 
+        message: agentResponse.message,
+        canvasAction: agentResponse.canvasAction,
+        data: agentResponse.data,
+        actions: agentResponse.actions
+      });
+
+    } catch (error) {
+      console.error("Mobile AI chat error:", error);
+      res.status(500).json({ 
+        error: "Failed to process AI chat request",
+        response: "I'm experiencing some technical difficulties. Please try again in a moment."
+      });
     }
   });
 
