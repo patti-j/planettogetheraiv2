@@ -1084,11 +1084,40 @@ export default function MobileHomePage() {
           <div className="absolute right-0 top-16 bottom-0 w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                <h2 className="font-semibold text-gray-900 dark:text-white">Max AI</h2>
+                {/* Search Input matching main header */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder={isSearchFocused ? "Search or ask Max AI..." : "Search or ask Max..."}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setIsSearchFocused(false)}
+                      onKeyPress={async (e) => {
+                        if (e.key === 'Enter' && searchQuery.trim()) {
+                          // Handle search or AI prompt
+                          if (searchQuery.toLowerCase().includes('max') || searchQuery.includes('?') || searchQuery.includes('how') || searchQuery.includes('what') || searchQuery.includes('show') || searchQuery.includes('create')) {
+                            // This looks like an AI prompt
+                            await handleAIPrompt(searchQuery);
+                            setSearchQuery(""); // Clear after sending
+                          } else {
+                            // This looks like a search
+                            console.log('Search:', searchQuery);
+                            // TODO: Perform search functionality
+                            alert(`Searching for: ${searchQuery}`);
+                            setSearchQuery(""); // Clear after searching
+                          }
+                        }
+                      }}
+                      className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full"
+                    />
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
