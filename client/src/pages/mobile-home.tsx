@@ -469,8 +469,13 @@ export default function MobileHomePage() {
       <div className={`${showMaxPane ? 'flex-1 flex flex-col' : 'p-4 space-y-6'}`}>
         {showMaxPane ? (
           <>
-            {/* Canvas Area - Top */}
-            <div className="flex-1 bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
+            {/* Max Pane - Top */}
+            <div className="h-80 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+              <MaxSidebar />
+            </div>
+            
+            {/* Canvas Area - Bottom */}
+            <div className="flex-1 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-4">
               <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
                 <div className="text-center">
                   <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -478,11 +483,6 @@ export default function MobileHomePage() {
                   <p className="text-xs text-muted-foreground">Visualizations will appear here</p>
                 </div>
               </div>
-            </div>
-            
-            {/* Max Pane - Bottom */}
-            <div className="h-80 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-              <MaxSidebar />
             </div>
           </>
         ) : (

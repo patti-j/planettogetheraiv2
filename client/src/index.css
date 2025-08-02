@@ -96,11 +96,11 @@
   /* Fixed input area for mobile to prevent shift */
   .mobile-input-fixed {
     position: sticky;
-    bottom: 0;
+    top: 0;
     z-index: 100;
     background: white;
-    border-top: 1px solid #e5e7eb;
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    border-bottom: 1px solid #e5e7eb;
+    padding-top: env(safe-area-inset-top, 0);
   }
   
   /* Prevent scroll when keyboard is open */

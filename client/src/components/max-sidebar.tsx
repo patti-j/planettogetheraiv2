@@ -1234,6 +1234,62 @@ export function MaxSidebar() {
         </div>
       )}
 
+      {/* Mobile Input - At the top before messages */}
+      {isMobile && (
+        <div className="p-3 border-b bg-gray-50 mobile-input-fixed mobile-input-container">
+          <div className="flex gap-2">
+            <div className="flex-1 flex gap-1 relative">
+              <Input
+                ref={inputRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''} mobile-input`}
+                style={{ fontSize: '16px' }} // Prevent iOS zoom
+              />
+              {isListening && (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
+                  <Mic className="h-3 w-3 animate-pulse" />
+                  <span className="animate-pulse">●</span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleMicrophone}
+                className={`px-2 transition-colors ${
+                  isListening 
+                    ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                {isListening ? (
+                  <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+                ) : (
+                  <Mic className="h-4 w-4 text-gray-500" />
+                )}
+              </Button>
+            </div>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+              size="sm"
+              className={`px-3 ${getThemeClasses()}`}
+            >
+              {sendMessageMutation.isPending ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-3">
@@ -1279,59 +1335,62 @@ export function MaxSidebar() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className={`p-3 border-t bg-gray-50 ${isMobile ? 'mobile-input-fixed mobile-input-container' : ''}`}>
-        <div className="flex gap-2">
-          <div className="flex-1 flex gap-1 relative">
-            <Input
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
-              className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''} ${isMobile ? 'mobile-input' : ''}`}
-              style={{ fontSize: isMobile ? '16px' : undefined }} // Prevent iOS zoom
-            />
-            {isListening && (
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
-                <Mic className="h-3 w-3 animate-pulse" />
-                <span className="animate-pulse">●</span>
-              </div>
-            )}
+
+
+      {/* Input - Desktop version at bottom */}
+      {!isMobile && (
+        <div className="p-3 border-t bg-gray-50">
+          <div className="flex gap-2">
+            <div className="flex-1 flex gap-1 relative">
+              <Input
+                ref={inputRef}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                className={`text-sm ${isListening ? 'border-green-300 bg-green-50 pl-8' : ''}`}
+              />
+              {isListening && (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-green-600">
+                  <Mic className="h-3 w-3 animate-pulse" />
+                  <span className="animate-pulse">●</span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleMicrophone}
+                className={`px-2 transition-colors ${
+                  isListening 
+                    ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                {isListening ? (
+                  <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+                ) : (
+                  <Mic className="h-4 w-4 text-gray-500" />
+                )}
+              </Button>
+            </div>
             <Button
-              variant="outline"
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || sendMessageMutation.isPending}
               size="sm"
-              onClick={toggleMicrophone}
-              className={`px-2 transition-colors ${
-                isListening 
-                  ? 'bg-green-50 border-green-300 hover:bg-green-100' 
-                  : 'hover:bg-gray-100'
-              }`}
-              title={isListening ? 'Stop listening' : 'Start voice input'}
+              className={`px-3 ${getThemeClasses()}`}
             >
-              {isListening ? (
-                <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+              {sendMessageMutation.isPending ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
-                <Mic className="h-4 w-4 text-gray-500" />
+                <Send className="h-4 w-4" />
               )}
             </Button>
           </div>
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || sendMessageMutation.isPending}
-            size="sm"
-            className={`px-3 ${getThemeClasses()}`}
-          >
-            {sendMessageMutation.isPending ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </Button>
         </div>
-      </div>
+      )}
 
     </div>
   );
