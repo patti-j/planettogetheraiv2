@@ -86,6 +86,8 @@ export default function ScheduleOptimizationWidget({
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [optimizationDialog, setOptimizationDialog] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileWeights, setProfileWeights] = useState<any>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -163,6 +165,24 @@ export default function ScheduleOptimizationWidget({
   const recentOptimizations = safeSchedulingHistory.slice(0, config.maxHistoryItems || 5);
   const lastOptimization = safeSchedulingHistory[0];
   const runningOptimizations = safeSchedulingHistory.filter((h: OptimizationHistory) => h.status === 'running');
+
+  // Auto-select default profile and approved algorithm on load
+  useEffect(() => {
+    if (profiles.length > 0 && !selectedProfile) {
+      const defaultProfile = profiles.find((p: Profile) => p.isDefault) || profiles[0];
+      setSelectedProfile(defaultProfile);
+      setProfileWeights(defaultProfile?.configuration?.weights || {});
+    }
+  }, [profiles, selectedProfile]);
+
+  useEffect(() => {
+    if (algorithms.length > 0 && !selectedAlgorithm) {
+      const approvedAlgorithms = algorithms.filter((a: Algorithm) => a.status === 'approved');
+      if (approvedAlgorithms.length > 0) {
+        setSelectedAlgorithm(approvedAlgorithms[0]);
+      }
+    }
+  }, [algorithms, selectedAlgorithm]);
 
   return (
     <Card className="h-full">
@@ -247,7 +267,10 @@ export default function ScheduleOptimizationWidget({
                         if (selectedAlgorithm && selectedProfile) {
                           optimizationMutation.mutate({
                             algorithmId: selectedAlgorithm.id,
-                            profileId: selectedProfile.id
+                            profileId: selectedProfile.id,
+                            parameters: {
+                              weights: profileWeights
+                            }
                           });
                         }
                       }}
@@ -285,6 +308,123 @@ export default function ScheduleOptimizationWidget({
       <CardContent className="pt-0">
         {currentView === 'overview' && (
           <div className="space-y-4">
+            {/* Algorithm and Profile Configuration */}
+            <div className="space-y-3">
+              {/* Selected Algorithm */}
+              {selectedAlgorithm && (
+                <div className="p-3 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Algorithm</span>
+                    </div>
+                    <Select
+                      value={selectedAlgorithm.id.toString()}
+                      onValueChange={(value) => {
+                        const algorithm = algorithms.find((a: Algorithm) => a.id === parseInt(value));
+                        setSelectedAlgorithm(algorithm);
+                      }}
+                    >
+                      <SelectTrigger className="w-auto h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {algorithms.filter((a: Algorithm) => a.status === 'approved').map((algorithm: Algorithm) => (
+                          <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
+                            {algorithm.displayName || algorithm.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{selectedAlgorithm.description}</p>
+                </div>
+              )}
+
+              {/* Selected Profile with Editable Weights */}
+              {selectedProfile && (
+                <div className="p-3 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Profile</span>
+                      {selectedProfile.isDefault && (
+                        <Badge variant="secondary" className="text-xs">Default</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Select
+                        value={selectedProfile.id.toString()}
+                        onValueChange={(value) => {
+                          const profile = profiles.find((p: Profile) => p.id === parseInt(value));
+                          setSelectedProfile(profile);
+                          setProfileWeights(profile?.configuration?.weights || {});
+                          setEditingProfile(false);
+                        }}
+                      >
+                        <SelectTrigger className="w-auto h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles.map((profile: Profile) => (
+                            <SelectItem key={profile.id} value={profile.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                {profile.name}
+                                {profile.isDefault && (
+                                  <Badge variant="secondary" className="text-xs">Default</Badge>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setEditingProfile(!editingProfile)}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{selectedProfile.description}</p>
+                  
+                  {/* Profile Weights Configuration */}
+                  {selectedProfile.configuration?.weights && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-muted-foreground">Optimization Weights</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(selectedProfile.configuration.weights).map(([key, value]) => (
+                          <div key={key} className="flex items-center justify-between">
+                            <span className="text-xs capitalize">{key}</span>
+                            {editingProfile ? (
+                              <input
+                                type="number"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                value={profileWeights[key] || value}
+                                onChange={(e) => {
+                                  setProfileWeights(prev => ({
+                                    ...prev,
+                                    [key]: parseFloat(e.target.value)
+                                  }));
+                                }}
+                                className="w-16 h-6 text-xs text-right bg-background border border-border rounded px-1"
+                              />
+                            ) : (
+                              <span className="text-xs font-mono">{(profileWeights[key] || value).toFixed(1)}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Status Overview */}
             {runningOptimizations.length > 0 && (
               <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
