@@ -109,9 +109,9 @@ import {
   schedulingHistory, schedulingResults, algorithmPerformance,
   type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
-  resourceRequirements, resourceRequirementAssignments,
-  type ResourceRequirement, type ResourceRequirementAssignment, 
-  type InsertResourceRequirement, type InsertResourceRequirementAssignment,
+  resourceRequirements, resourceRequirementAssignments, resourceRequirementBlocks,
+  type ResourceRequirement, type ResourceRequirementAssignment, type ResourceRequirementBlock,
+  type InsertResourceRequirement, type InsertResourceRequirementAssignment, type InsertResourceRequirementBlock,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
@@ -2645,6 +2645,44 @@ export class DatabaseStorage implements IStorage {
   async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
     const result = await db.delete(resourceRequirementAssignments)
       .where(eq(resourceRequirementAssignments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Resource Requirement Blocks methods
+  async getResourceRequirementBlocks(scenarioId?: number): Promise<ResourceRequirementBlock[]> {
+    if (scenarioId) {
+      return await db.select().from(resourceRequirementBlocks)
+        .where(eq(resourceRequirementBlocks.scenarioId, scenarioId))
+        .orderBy(asc(resourceRequirementBlocks.scheduledStartTime));
+    }
+    return await db.select().from(resourceRequirementBlocks)
+      .orderBy(asc(resourceRequirementBlocks.scheduledStartTime));
+  }
+
+  async getResourceRequirementBlock(id: number): Promise<ResourceRequirementBlock | undefined> {
+    const [block] = await db.select().from(resourceRequirementBlocks)
+      .where(eq(resourceRequirementBlocks.id, id));
+    return block || undefined;
+  }
+
+  async createResourceRequirementBlock(block: InsertResourceRequirementBlock): Promise<ResourceRequirementBlock> {
+    const [newBlock] = await db.insert(resourceRequirementBlocks)
+      .values(block)
+      .returning();
+    return newBlock;
+  }
+
+  async updateResourceRequirementBlock(id: number, block: Partial<InsertResourceRequirementBlock>): Promise<ResourceRequirementBlock | undefined> {
+    const [updatedBlock] = await db.update(resourceRequirementBlocks)
+      .set(block)
+      .where(eq(resourceRequirementBlocks.id, id))
+      .returning();
+    return updatedBlock || undefined;
+  }
+
+  async deleteResourceRequirementBlock(id: number): Promise<boolean> {
+    const result = await db.delete(resourceRequirementBlocks)
+      .where(eq(resourceRequirementBlocks.id, id));
     return (result.rowCount || 0) > 0;
   }
 

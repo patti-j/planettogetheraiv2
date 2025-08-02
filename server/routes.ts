@@ -7969,9 +7969,91 @@ Manufacturing Context Available:
           : 'Unable to schedule any operations for unknown reasons';
       }
       
+      // Create schedule scenario in database
+      let scenarioId = null;
+      if (schedule.length > 0) {
+        try {
+          // Create scenario record
+          const scenarioName = `Backward Scheduling - ${new Date().toLocaleString()}`;
+          const scenarioDescription = `Backward scheduling run for ${sortedOrders.length} orders with ${schedule.length} scheduled operations`;
+          
+          const scenario = await storage.createScheduleScenario({
+            name: scenarioName,
+            description: scenarioDescription,
+            status: "draft",
+            createdBy: "system",
+            algorithmId: 2, // backward-scheduling algorithm ID
+            configuration: {
+              scheduling_strategy: "balanced",
+              optimization_priorities: ["delivery_time", "resource_utilization"],
+              constraints: {
+                max_overtime_hours: parameters.allowOvertime ? 999 : 0,
+                resource_availability: {},
+                deadline_priorities: {}
+              }
+            },
+            metrics: {
+              total_duration_hours: Math.max(...schedule.map(s => new Date(s.endTime).getTime() - new Date(s.startTime).getTime())) / (1000 * 60 * 60),
+              resource_utilization_percent: Math.round((schedule.length / resources.length) * 100),
+              on_time_delivery_percent: Math.round((schedule.filter(s => !s.optimizationFlags?.isLate).length / schedule.length) * 100),
+              total_cost: 0,
+              overtime_hours: 0,
+              customer_satisfaction_score: 85,
+              efficiency_score: Math.round((rescheduledOperations / schedule.length) * 100),
+              risk_level: schedule.some(s => s.optimizationFlags?.isLate) ? "high" : "low",
+              bottleneck_resources: [...new Set(schedule.filter(s => s.optimizationFlags?.isBottleneck).map(s => s.resourceName))],
+              critical_path_duration: Math.max(...schedule.map(s => s.duration))
+            }
+          });
+          
+          scenarioId = scenario.id;
+          
+          // Create resource requirement blocks for each scheduled operation
+          for (const scheduledOp of schedule) {
+            // Find the corresponding resource requirement for this operation
+            const operation = operations.find(op => op.id === scheduledOp.operationId);
+            if (operation) {
+              // Get the resource requirements for this operation
+              const resourceRequirements = await storage.getResourceRequirements();
+              const opResourceReq = resourceRequirements.find(rr => 
+                rr.discreteOperationId === operation.id || 
+                rr.discreteOperationPhaseId === operation.phaseId
+              );
+              
+              if (opResourceReq) {
+                await storage.createResourceRequirementBlock({
+                  scenarioId: scenario.id,
+                  discretePhaseResourceRequirementId: opResourceReq.id,
+                  assignedResourceId: scheduledOp.resourceId,
+                  scheduledStartTime: new Date(scheduledOp.startTime),
+                  scheduledEndTime: new Date(scheduledOp.endTime),
+                  blockType: "operation",
+                  status: scheduledOp.frozen ? "confirmed" : "planned",
+                  priority: operation.priority || 1,
+                  requiredCapacity: "1.0",
+                  isBottleneck: scheduledOp.optimizationFlags?.isBottleneck || false,
+                  isCriticalPath: scheduledOp.optimizationFlags?.criticality === "critical",
+                  floatTime: Math.max(0, scheduledOp.optimizationFlags?.scheduleDeviation || 0) * 60, // Convert hours to minutes
+                  notes: scheduledOp.optimizationFlags?.optimizationNotes || null,
+                  constraints: {
+                    setup_time_minutes: 30,
+                    teardown_time_minutes: 15
+                  }
+                });
+              }
+            }
+          }
+          
+        } catch (dbError) {
+          console.error("Error creating schedule scenario:", dbError);
+          // Continue with response even if database creation fails
+        }
+      }
+
       res.json({
         success: schedule.length > 0,
         schedule: schedule,
+        scenarioId: scenarioId,
         parameters: parameters,
         errorMessage: errorMessage,
         debugInfo: schedule.length === 0 ? debugInfo : undefined,
@@ -7981,7 +8063,8 @@ Manufacturing Context Available:
           ordersProcessed: sortedOrders.length,
           plannedOrdersIncluded: parameters.includePlannedOrders ? allPlannedOrders.length : 0,
           frozenOperations: frozenOperations,
-          rescheduledOperations: rescheduledOperations
+          rescheduledOperations: rescheduledOperations,
+          scenarioCreated: scenarioId !== null
         }
       });
     } catch (error) {
