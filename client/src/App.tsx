@@ -511,6 +511,7 @@ function Router() {
               <DashboardsPage />
             </ProtectedRoute>
           </Route>
+          <Route path="/mobile" component={MobileHomePage} />
           <Route path="/mobile-home" component={MobileHomePage} />
           <Route path="/widgets/:id" component={MobileWidgetView} />
           <Route path="/dashboards/:id" component={MobileDashboardView} />

@@ -87,6 +87,7 @@ export default function MobileHomePage() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
   const queryClient = useQueryClient();
@@ -319,6 +320,32 @@ export default function MobileHomePage() {
   const unreadNotifications = notifications.filter(n => !n.read);
   const pendingTasks = tasks.filter(t => t.status === "pending");
   const highPriorityTasks = tasks.filter(t => t.priority === "high");
+
+  // Filter widgets and dashboards based on search query
+  const filteredWidgets = mobileWidgets.filter((widget: any) => {
+    if (!librarySearchQuery) return true;
+    const query = librarySearchQuery.toLowerCase();
+    return (
+      widget.title.toLowerCase().includes(query) ||
+      widget.type.toLowerCase().includes(query) ||
+      (widget.description && widget.description.toLowerCase().includes(query))
+    );
+  });
+
+  const filteredDashboards = mobileDashboards.filter((dashboard: any) => {
+    if (!librarySearchQuery) return true;
+    const query = librarySearchQuery.toLowerCase();
+    return (
+      dashboard.title.toLowerCase().includes(query) ||
+      (dashboard.description && dashboard.description.toLowerCase().includes(query))
+    );
+  });
+
+  const filteredRecentItems = recentItems.filter((item: any) => {
+    if (!librarySearchQuery) return true;
+    const query = librarySearchQuery.toLowerCase();
+    return item.title.toLowerCase().includes(query);
+  });
 
   const quickActions = [
     {
@@ -660,20 +687,62 @@ export default function MobileHomePage() {
                   <button 
                     onClick={() => {
                       const dialog = document.getElementById('library-dialog');
-                      if (dialog) dialog.style.display = 'none';
+                      if (dialog) {
+                        dialog.style.display = 'none';
+                        setLibrarySearchQuery(""); // Reset search when closing
+                      }
                     }}
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   >
                     ✕
                   </button>
                 </div>
+                
+                {/* Search Input */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search widgets and dashboards..."
+                    value={librarySearchQuery}
+                    onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setLibrarySearchQuery("");
+                      }
+                    }}
+                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
+                    autoFocus
+                  />
+                  {librarySearchQuery && (
+                    <button
+                      onClick={() => setLibrarySearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-6">
+                  {/* Search Results Summary */}
+                  {librarySearchQuery && (
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        Found {filteredWidgets.length + filteredDashboards.length + filteredRecentItems.length} results for "{librarySearchQuery}"
+                      </p>
+                    </div>
+                  )}
+
                   {/* Recent Items */}
-                  {recentItems.length > 0 && (
+                  {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Recently Viewed</h3>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                        Recently Viewed
+                        {librarySearchQuery && (
+                          <span className="ml-2 text-xs text-gray-500">({filteredRecentItems.length})</span>
+                        )}
+                      </h3>
                       <div className="space-y-2">
-                        {recentItems.slice(0, 5).map((item: any) => (
+                        {(librarySearchQuery ? filteredRecentItems : recentItems).slice(0, 5).map((item: any) => (
                           <div
                             key={`${item.type}-${item.id}`}
                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -711,7 +780,14 @@ export default function MobileHomePage() {
                   {/* Mobile Widgets */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Mobile Widgets ({mobileWidgets.length})</h3>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                        Mobile Widgets 
+                        {librarySearchQuery ? (
+                          <span className="ml-1">({filteredWidgets.length}/{mobileWidgets.length})</span>
+                        ) : (
+                          <span className="ml-1">({mobileWidgets.length})</span>
+                        )}
+                      </h3>
                       <Button
                         variant="outline"
                         size="sm"
@@ -726,9 +802,9 @@ export default function MobileHomePage() {
                       </Button>
                     </div>
                     
-                    {mobileWidgets.length > 0 ? (
+                    {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
                       <div className="space-y-2">
-                        {mobileWidgets.map((widget: any) => (
+                        {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
                           <div
                             key={widget.id}
                             className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg"
@@ -777,18 +853,34 @@ export default function MobileHomePage() {
                       </div>
                     ) : (
                       <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                        <p className="text-sm">No widgets yet</p>
-                        <p className="text-xs">Create your first widget to get started</p>
+                        {librarySearchQuery ? (
+                          <>
+                            <p className="text-sm">No widgets match your search</p>
+                            <p className="text-xs">Try a different search term</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm">No widgets yet</p>
+                            <p className="text-xs">Create your first widget to get started</p>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
 
                   {/* Mobile Dashboards */}
-                  {mobileDashboards.length > 0 && (
+                  {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Mobile Dashboards ({mobileDashboards.length})</h3>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                        Mobile Dashboards 
+                        {librarySearchQuery ? (
+                          <span className="ml-1">({filteredDashboards.length}/{mobileDashboards.length})</span>
+                        ) : (
+                          <span className="ml-1">({mobileDashboards.length})</span>
+                        )}
+                      </h3>
                       <div className="space-y-2">
-                        {mobileDashboards.map((dashboard: any) => (
+                        {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
                             className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
@@ -814,11 +906,23 @@ export default function MobileHomePage() {
                   )}
 
                   {/* Empty State */}
-                  {mobileWidgets.length === 0 && mobileDashboards.length === 0 && (
+                  {(librarySearchQuery ? 
+                    (filteredWidgets.length === 0 && filteredDashboards.length === 0 && filteredRecentItems.length === 0) :
+                    (mobileWidgets.length === 0 && mobileDashboards.length === 0)
+                  ) && (
                     <div className="text-center py-8">
                       <Library className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No mobile widgets or dashboards available</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Create some widgets or dashboards with mobile target platform</p>
+                      {librarySearchQuery ? (
+                        <>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No results found for "{librarySearchQuery}"</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Try adjusting your search terms</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No mobile widgets or dashboards available</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Create some widgets or dashboards with mobile target platform</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
