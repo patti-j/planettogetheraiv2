@@ -201,6 +201,43 @@ body.force-mobile-view {
   z-index: -1;
 }
 
+/* Hide specific desktop hamburger menu elements when mobile view is forced */
+body.force-mobile-view .fixed.top-2.left-2.z-50,
+body.force-mobile-view .hamburger-menu-container,
+body.force-mobile-view .hamburger-menu,
+body.force-mobile-view .mobile-menu-button,
+body.force-mobile-view [data-hamburger-menu],
+body.force-mobile-view .fixed.inset-0.z-50.bg-black,
+.force-mobile-view .fixed.top-2.left-2.z-50,
+.force-mobile-view .hamburger-menu-container,
+.force-mobile-view .hamburger-menu,
+.force-mobile-view .mobile-menu-button,
+.force-mobile-view [data-hamburger-menu],
+.force-mobile-view .fixed.inset-0.z-50.bg-black {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide any potential desktop navigation during mobile view */
+body.force-mobile-view .desktop-nav,
+body.force-mobile-view .top-menu,
+body.force-mobile-view nav:not(.mobile-nav),
+body.force-mobile-view .fixed.top-2.right-2.z-50,
+.force-mobile-view .desktop-nav,
+.force-mobile-view .top-menu,
+.force-mobile-view nav:not(.mobile-nav),
+.force-mobile-view .fixed.top-2.right-2.z-50 {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide all desktop UI elements that could show during mobile overscroll */
+body.force-mobile-view > *:not(.force-mobile-view) {
+  display: none !important;
+}
+
 /* Mobile-friendly text truncation utilities */
 .line-clamp-1 {
   display: -webkit-box;
