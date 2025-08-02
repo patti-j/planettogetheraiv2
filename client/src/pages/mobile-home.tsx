@@ -763,7 +763,7 @@ export default function MobileHomePage() {
           <>
             {/* Max Pane - Top */}
             <div className="h-80 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-              <MaxSidebar />
+              <MaxSidebar onClose={() => setShowMaxPane(false)} />
             </div>
             
             {/* Canvas Area - Bottom */}

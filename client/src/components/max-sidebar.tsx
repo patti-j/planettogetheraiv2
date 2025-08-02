@@ -117,7 +117,11 @@ function AIThemeSelector() {
   );
 }
 
-export function MaxSidebar() {
+interface MaxSidebarProps {
+  onClose?: () => void;
+}
+
+export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -1135,7 +1139,13 @@ export function MaxSidebar() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setMaxOpen(false)}
+            onClick={() => {
+              if (onClose) {
+                onClose();
+              } else {
+                setMaxOpen(false);
+              }
+            }}
             className="h-6 w-6 p-0 text-white hover:bg-white/20"
             title="Close Max"
           >
