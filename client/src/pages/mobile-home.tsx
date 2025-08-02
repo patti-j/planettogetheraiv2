@@ -138,10 +138,13 @@ export default function MobileHomePage() {
     queryFn: async () => {
       const response = await fetch("/api/mobile/widgets");
       const allWidgets = await response.json();
+      console.log("=== MOBILE WIDGETS DATA ===", allWidgets);
       // Filter for mobile-compatible widgets
-      return allWidgets.filter((widget: any) => 
+      const filtered = allWidgets.filter((widget: any) => 
         widget.targetPlatform === "mobile" || widget.targetPlatform === "both"
       );
+      console.log("=== FILTERED MOBILE WIDGETS ===", filtered);
+      return filtered;
     }
   });
 
@@ -150,10 +153,13 @@ export default function MobileHomePage() {
     queryFn: async () => {
       const response = await fetch("/api/mobile/dashboards");
       const allDashboards = await response.json();
+      console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
       // Filter for mobile-compatible dashboards
-      return allDashboards.filter((dashboard: any) => 
+      const filtered = allDashboards.filter((dashboard: any) => 
         dashboard.targetPlatform === "mobile" || dashboard.targetPlatform === "both"
       );
+      console.log("=== FILTERED MOBILE DASHBOARDS ===", filtered);
+      return filtered;
     }
   });
 
