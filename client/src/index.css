@@ -834,6 +834,7 @@ div[data-radix-tooltip-content] {
   --mobile-padding: 2rem;
   --mobile-text-size: 1rem;
   --mobile-button-size: 2.5rem;
+  min-width: 1024px !important;
 }
 
 .force-desktop-view .mobile-only {
@@ -842,6 +843,26 @@ div[data-radix-tooltip-content] {
 
 .force-desktop-view .desktop-only {
   display: block !important;
+}
+
+.force-desktop-view * {
+  /* Override mobile-first responsive classes */
+  box-sizing: border-box;
+}
+
+/* Force desktop grid layouts on mobile */
+.force-desktop-view .grid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+}
+
+.force-desktop-view .flex {
+  flex-wrap: wrap !important;
+}
+
+/* Make text more desktop-like */
+.force-desktop-view {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
 }
 
 .force-mobile-view .desktop-only {

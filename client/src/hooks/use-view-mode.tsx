@@ -43,25 +43,37 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   const isForced = viewMode !== "auto";
 
   const setViewMode = (mode: ViewMode) => {
+    console.log("🎯 Setting view mode to:", mode);
     setViewModeState(mode);
     localStorage.setItem("viewMode", mode);
     
     // Apply CSS class to body for desktop override
     if (mode === "desktop") {
+      console.log("💻 Adding force-desktop-view class");
       document.body.classList.add("force-desktop-view");
       document.body.classList.remove("force-mobile-view");
+      document.documentElement.classList.add("force-desktop-view");
+      document.documentElement.classList.remove("force-mobile-view");
     } else if (mode === "mobile") {
+      console.log("📱 Adding force-mobile-view class");
       document.body.classList.add("force-mobile-view");
       document.body.classList.remove("force-desktop-view");
+      document.documentElement.classList.add("force-mobile-view");
+      document.documentElement.classList.remove("force-desktop-view");
     } else {
+      console.log("🔄 Removing forced view classes");
       document.body.classList.remove("force-desktop-view", "force-mobile-view");
+      document.documentElement.classList.remove("force-desktop-view", "force-mobile-view");
     }
   };
 
   const toggleView = () => {
+    console.log("🔄 Toggle clicked - Current view:", currentView, "Current mode:", viewMode);
     if (currentView === "mobile") {
+      console.log("🖥️ Switching to desktop view");
       setViewMode("desktop");
     } else {
+      console.log("📱 Switching to mobile view");  
       setViewMode("mobile");
     }
   };

@@ -267,6 +267,9 @@ export default function MobileHomePage() {
     }
   };
 
+  // Debug logging
+  console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
+
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${showMaxPane ? 'flex flex-col' : ''} ${
       currentView === "desktop" ? 'force-desktop-view' : 'force-mobile-view'
