@@ -79,21 +79,7 @@ export default function MobileHomePage() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [showMaxPane, setShowMaxPane] = useState(false);
-  const [showLibrary, setShowLibrary] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
-
-  // Debug effect to track view mode changes and dialog states
-  useEffect(() => {
-    console.log("🔍 View mode or dialog state changed:", {
-      currentView,
-      isForced,
-      showSearch,
-      showLibrary,
-      showMaxPane
-    });
-  }, [currentView, isForced, showSearch, showLibrary, showMaxPane]);
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -280,9 +266,6 @@ export default function MobileHomePage() {
 
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
-  console.log("🔍 MobileHomePage - showLibrary state:", showLibrary);
-  console.log("🔍 MobileHomePage - showSearch state:", showSearch);
-  console.log("🤖 MobileHomePage - showMaxPane state:", showMaxPane);
 
   // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
   // This prevents desktop content from showing underneath when pulling to refresh
@@ -494,10 +477,13 @@ export default function MobileHomePage() {
               className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => {
                 // Close Max pane and reset to clean home state
-                setShowMaxPane(false);
-                setShowSearch(false);
+                const maxPane = document.getElementById('max-pane');
+                if (maxPane) maxPane.style.display = 'none';
+                const searchDialog = document.getElementById('search-dialog');
+                if (searchDialog) searchDialog.style.display = 'none';
+                const libraryDialog = document.getElementById('library-dialog');
+                if (libraryDialog) libraryDialog.style.display = 'none';
                 setSearchQuery("");
-                setShowLibrary(false);
                 // Scroll to top smoothly
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -511,69 +497,64 @@ export default function MobileHomePage() {
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("🔍 Search button clicked - opening search dialog");
-                
-                // Use requestAnimationFrame to ensure state update happens after any other pending updates
-                requestAnimationFrame(() => {
-                  setShowSearch(true);
-                  console.log("🔍 Search dialog state set to true");
-                });
+              onClick={() => {
+                const searchDialog = document.getElementById('search-dialog');
+                if (searchDialog) {
+                  searchDialog.style.display = 'block';
+                }
               }}
             >
               <Search className="w-5 h-5" />
             </Button>
             
-            <Dialog 
-              open={showSearch} 
-              onOpenChange={(open) => {
-                console.log("🔍 Search dialog onOpenChange triggered:", open, "from showSearch:", showSearch);
-                if (!open) {
-                  console.log("🔍 Dialog trying to close - preventing if just opened");
-                  // Only allow closing if the dialog was actually open for more than 100ms
-                  const now = Date.now();
-                  if (!window.searchDialogOpenTime || now - window.searchDialogOpenTime > 100) {
-                    setShowSearch(open);
-                  } else {
-                    console.log("🔍 Prevented premature dialog close");
-                  }
-                } else {
-                  window.searchDialogOpenTime = Date.now();
-                  setShowSearch(open);
+            {/* Search Modal */}
+            <div 
+              id="search-dialog" 
+              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+              style={{ display: 'none' }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  e.currentTarget.style.display = 'none';
                 }
               }}
             >
-              <DialogContent className="sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-                <DialogHeader>
-                  <DialogTitle>Search</DialogTitle>
-                </DialogHeader>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Search</h2>
+                  <button 
+                    onClick={() => {
+                      const dialog = document.getElementById('search-dialog');
+                      if (dialog) dialog.style.display = 'none';
+                    }}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    ✕
+                  </button>
+                </div>
                 <div className="space-y-4">
                   <Input
                     placeholder="Search dashboards, widgets, reports..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full"
-                    onClick={(e) => e.stopPropagation()}
                   />
                   <div className="text-sm text-muted-foreground">
                     Enter keywords to search across the platform
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </div>
+            </div>
 
             {/* Max AI Assistant */}
             <Button 
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("🤖 Max button clicked, toggling showMaxPane from", showMaxPane, "to", !showMaxPane);
-                setShowMaxPane(!showMaxPane);
+              onClick={() => {
+                const maxPane = document.getElementById('max-pane');
+                if (maxPane) {
+                  maxPane.style.display = maxPane.style.display === 'none' ? 'block' : 'none';
+                }
               }}
             >
               <Bot className="w-5 h-5" />
@@ -586,44 +567,40 @@ export default function MobileHomePage() {
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("📚 Library button clicked - opening library dialog");
-                
-                // Use requestAnimationFrame to ensure state update happens after any other pending updates
-                requestAnimationFrame(() => {
-                  setShowLibrary(true);
-                  console.log("📚 Library dialog state set to true");
-                });
+              onClick={() => {
+                const libraryDialog = document.getElementById('library-dialog');
+                if (libraryDialog) {
+                  libraryDialog.style.display = 'block';
+                }
               }}
             >
               <Library className="w-5 h-5" />
             </Button>
 
-            <Dialog 
-              open={showLibrary} 
-              onOpenChange={(open) => {
-                console.log("📚 Library dialog onOpenChange triggered:", open, "from showLibrary:", showLibrary);
-                if (!open) {
-                  console.log("📚 Dialog trying to close - preventing if just opened");
-                  // Only allow closing if the dialog was actually open for more than 100ms
-                  const now = Date.now();
-                  if (!window.libraryDialogOpenTime || now - window.libraryDialogOpenTime > 100) {
-                    setShowLibrary(open);
-                  } else {
-                    console.log("📚 Prevented premature dialog close");
-                  }
-                } else {
-                  window.libraryDialogOpenTime = Date.now();
-                  setShowLibrary(open);
+            {/* Library Modal */}
+            <div 
+              id="library-dialog" 
+              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+              style={{ display: 'none' }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  e.currentTarget.style.display = 'none';
                 }
               }}
             >
-              <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                <DialogHeader>
-                  <DialogTitle>Mobile Library</DialogTitle>
-                </DialogHeader>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
+                  <button 
+                    onClick={() => {
+                      const dialog = document.getElementById('library-dialog');
+                      if (dialog) dialog.style.display = 'none';
+                    }}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    ✕
+                  </button>
+                </div>
                 <div className="space-y-6">
                   {/* Recent Items */}
                   {recentItems.length > 0 && (
@@ -635,8 +612,9 @@ export default function MobileHomePage() {
                             key={`${item.type}-${item.id}`}
                             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                             onClick={() => {
+                              const dialog = document.getElementById('library-dialog');
+                              if (dialog) dialog.style.display = 'none';
                               setLocation(item.type === 'widget' ? `/widgets/${item.id}` : `/dashboards/${item.id}`);
-                              setShowLibrary(false);
                             }}
                           >
                             <div className="flex items-center space-x-3">
@@ -675,8 +653,9 @@ export default function MobileHomePage() {
                             className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
                             onClick={() => {
                               addToRecent(widget, 'widget');
+                              const dialog = document.getElementById('library-dialog');
+                              if (dialog) dialog.style.display = 'none';
                               setLocation(`/widgets/${widget.id}`);
-                              setShowLibrary(false);
                             }}
                           >
                             <div className="flex items-center space-x-3">
@@ -704,8 +683,9 @@ export default function MobileHomePage() {
                             className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
                             onClick={() => {
                               addToRecent(dashboard, 'dashboard');
+                              const dialog = document.getElementById('library-dialog');
+                              if (dialog) dialog.style.display = 'none';
                               setLocation(`/dashboards/${dashboard.id}`);
-                              setShowLibrary(false);
                             }}
                           >
                             <div className="flex items-center space-x-3">
@@ -731,8 +711,8 @@ export default function MobileHomePage() {
                     </div>
                   )}
                 </div>
-              </DialogContent>
-            </Dialog>
+              </div>
+            </div>
 
             {/* Mobile Menu */}
             <DropdownMenu>
@@ -810,27 +790,7 @@ export default function MobileHomePage() {
       </div>
 
       {/* Main Content */}
-      <div className={`${showMaxPane ? 'flex-1 flex flex-col' : 'p-4 space-y-6'}`}>
-        {showMaxPane ? (
-          <>
-            {/* Max Pane - Top */}
-            <div className="h-80 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-              <MaxSidebar onClose={() => setShowMaxPane(false)} />
-            </div>
-            
-            {/* Canvas Area - Bottom */}
-            <div className="flex-1 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-4">
-              <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
-                <div className="text-center">
-                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-sm">Canvas Area</p>
-                  <p className="text-xs text-muted-foreground">Visualizations will appear here</p>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6">
             {/* Welcome Section */}
             <div className="text-center py-4">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -859,7 +819,8 @@ export default function MobileHomePage() {
                       console.log("🔍 Dashboards card clicked, setting showLibrary to true");
                       // Use setTimeout to ensure state change happens after any other handlers
                       setTimeout(() => {
-                        setShowLibrary(true);
+                        const libraryDialog = document.getElementById('library-dialog');
+                        if (libraryDialog) libraryDialog.style.display = 'block';
                       }, 0);
                     }}
                   >
@@ -996,9 +957,22 @@ export default function MobileHomePage() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
-        )}
+        </div>
+
+        {/* Max AI Assistant Sidebar */}
+        <div 
+          id="max-pane"
+          style={{ display: 'none' }}
+          className="fixed inset-y-0 right-0 w-80 bg-white border-l shadow-lg z-40"
+        >
+          <MaxSidebar 
+            className="h-full"
+            onClose={() => {
+              const maxPane = document.getElementById('max-pane');
+              if (maxPane) maxPane.style.display = 'none';
+            }}
+          />
+        </div>
       </div>
     </div>
   );
