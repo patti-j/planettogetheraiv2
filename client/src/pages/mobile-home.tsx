@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { MaxSidebar } from "@/components/max-sidebar";
+import PlanetTogetherLogo from "@/assets/planettogether-logo.svg";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -192,11 +193,12 @@ export default function MobileHomePage() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
           {/* Logo/Brand */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">PT</span>
-            </div>
-            <span className="font-semibold text-gray-900 dark:text-white">PlanetTogether</span>
+          <div className="flex items-center">
+            <img 
+              src={PlanetTogetherLogo} 
+              alt="PlanetTogether" 
+              className="h-8 w-auto text-gray-900 dark:text-white"
+            />
           </div>
 
           {/* Right Actions */}
