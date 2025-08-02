@@ -1053,16 +1053,16 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
 
   return (
     <div className={`h-full flex flex-col bg-white ${isKeyboardOpen ? 'keyboard-adjusted' : ''}`}>
-      {/* Header - Draggable for resizing */}
+      {/* Single Consolidated Header */}
       <div 
         className={`p-4 ${getThemeClasses(false)} flex items-center justify-between cursor-move`}
         onMouseDown={handleHeaderMouseDown}
         onTouchStart={handleHeaderTouchStart}
         style={{ touchAction: 'none' }}
       >
-        <div className="flex items-center gap-2 ml-12">
+        <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-white" />
-          <h2 className="text-white text-sm font-medium">Max AI Assistant</h2>
+          <h2 className="text-white text-sm font-medium">Max</h2>
         </div>
         <div className="flex gap-1">
           <Button
