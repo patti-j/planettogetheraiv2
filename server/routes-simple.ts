@@ -348,21 +348,66 @@ export function registerSimpleRoutes(app: express.Application): Server {
       console.log('Context:', context);
       console.log('=============================');
 
-      // Use the enhanced AI agent system
-      const agentResponse = await processAICommand(message, []);
+      // Simple AI responses for mobile without database dependencies
+      const lowerMessage = message.toLowerCase();
+      let response = {
+        message: "Hello! I'm Max, your AI assistant. I can help you with production optimization, scheduling, and manufacturing insights.",
+        canvasAction: null,
+        data: null,
+        actions: []
+      };
+
+      if (lowerMessage.includes('optimize') || lowerMessage.includes('widget')) {
+        response = {
+          message: "I can help you optimize your production! Here are some key areas to focus on:\n\n• **Production Efficiency**: Monitor OEE (Overall Equipment Effectiveness)\n• **Resource Utilization**: Track equipment and labor usage\n• **Quality Metrics**: Watch defect rates and first-pass yield\n• **Schedule Optimization**: Balance workload across resources\n\nWould you like me to show you specific optimization widgets or create a custom dashboard?",
+          canvasAction: 'create',
+          data: {
+            type: 'widget',
+            title: 'Production Optimization Dashboard',
+            content: {
+              widgets: ['efficiency-metrics', 'resource-utilization', 'quality-trends', 'schedule-optimizer']
+            }
+          },
+          actions: ['show_widget', 'create_dashboard']
+        };
+      } else if (lowerMessage.includes('production') || lowerMessage.includes('manufacturing')) {
+        response = {
+          message: "I can provide insights on your manufacturing operations:\n\n• **Current Production Status**: Real-time job progress\n• **Equipment Status**: Machine availability and performance\n• **Quality Control**: Testing results and compliance\n• **Inventory Levels**: Raw materials and finished goods\n\nWhat specific production area would you like to explore?",
+          canvasAction: 'show',
+          data: {
+            type: 'dashboard',
+            title: 'Production Overview',
+            metrics: ['output', 'efficiency', 'quality', 'inventory']
+          },
+          actions: ['show_production', 'view_equipment']
+        };
+      } else if (lowerMessage.includes('schedule') || lowerMessage.includes('planning')) {
+        response = {
+          message: "I can assist with production scheduling and planning:\n\n• **Schedule Optimization**: Balance resources and minimize bottlenecks\n• **Capacity Planning**: Forecast resource needs\n• **Dependency Management**: Handle operation sequences\n• **What-if Analysis**: Test different scenarios\n\nLet me know what scheduling challenge you're facing!",
+          canvasAction: 'create',
+          data: {
+            type: 'gantt',
+            title: 'Production Schedule',
+            view: 'weekly'
+          },
+          actions: ['show_schedule', 'optimize_schedule']
+        };
+      } else if (lowerMessage.includes('help') || lowerMessage.includes('what') || lowerMessage.includes('how')) {
+        response = {
+          message: "I'm Max, your AI manufacturing assistant! I can help you with:\n\n• **Production Optimization** - Improve efficiency and reduce waste\n• **Schedule Management** - Balance workloads and meet deadlines\n• **Quality Control** - Monitor metrics and prevent defects\n• **Resource Planning** - Optimize equipment and labor usage\n• **Data Analysis** - Generate insights from your manufacturing data\n\nJust ask me about any aspect of your manufacturing operations!",
+          canvasAction: null,
+          data: null,
+          actions: ['learn_more']
+        };
+      }
       
-      res.json({ 
-        message: agentResponse.message,
-        canvasAction: agentResponse.canvasAction,
-        data: agentResponse.data,
-        actions: agentResponse.actions
-      });
+      res.json(response);
 
     } catch (error) {
       console.error("Mobile AI chat error:", error);
       res.status(500).json({ 
         error: "Failed to process AI chat request",
-        response: "I'm experiencing some technical difficulties. Please try again in a moment."
+        message: "I'm experiencing some technical difficulties. Please try again in a moment."
       });
     }
   });
