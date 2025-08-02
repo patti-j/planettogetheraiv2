@@ -846,6 +846,26 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     targetSystems: ['cockpit', 'analytics', 'canvas'],
     complexity: 'advanced'
   },
+  // Schedule Trade-off Analyzer Widget
+  {
+    id: 'schedule-tradeoff-analyzer',
+    name: 'Schedule Trade-off Analyzer',
+    description: 'Analyze schedule changes and their impact on other orders',
+    category: 'operations',
+    type: 'schedule-tradeoff-analyzer',
+    icon: Calculator,
+    defaultConfig: {
+      type: 'schedule-tradeoff-analyzer',
+      dataSource: 'schedule-analysis',
+      size: { width: 500, height: 400 },
+      showQuickActions: true,
+      showHistory: true,
+      maxHistoryItems: 10,
+      defaultView: 'analysis'
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas'],
+    complexity: 'advanced'
+  },
   // ATP/CTP Calculator Widget
   {
     id: 'atp-ctp-calculator',
@@ -931,28 +951,6 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     },
     targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
     complexity: 'intermediate'
-  },
-  // Schedule Trade-off Analyzer Widget
-  {
-    id: 'schedule-tradeoff-analyzer',
-    name: 'Schedule Trade-off Analyzer',
-    description: 'Analyze impact of expediting production orders without affecting actual schedule',
-    category: 'operations',
-    type: 'schedule-tradeoff-analyzer',
-    icon: Calculator,
-    defaultConfig: {
-      type: 'schedule-tradeoff-analyzer',
-      dataSource: 'schedule-analysis',
-      size: { width: 800, height: 600 },
-      configuration: {
-        showResourceConflicts: true,
-        showCostAnalysis: true,
-        showCustomerImpact: true,
-        maxAnalysisDepth: 5
-      }
-    },
-    targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
-    complexity: 'advanced'
   }
 ];
 
