@@ -82,17 +82,24 @@ export default function MobileHomePage() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
   
+  // Max AI panel state
+  const [maxPanelOpen, setMaxPanelOpen] = useState(false);
+  const [maxResponse, setMaxResponse] = useState<any>(null);
+  const [isMaxLoading, setIsMaxLoading] = useState(false);
+  
   // AI prompt handling
   const handleAIPrompt = async (prompt: string) => {
     try {
+      setIsMaxLoading(true);
       console.log('Sending AI prompt:', prompt);
+      
       const response = await fetch('/api/ai-agent/mobile-chat', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include',
         body: JSON.stringify({
           message: prompt,
           context: {
@@ -107,24 +114,36 @@ export default function MobileHomePage() {
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.error('Received non-JSON response:', contentType);
-        alert('Max AI: Authentication required. Please refresh the page and try again.');
+        setMaxResponse({
+          message: "Authentication required. Please refresh the page and try again.",
+          error: true
+        });
+        setMaxPanelOpen(true);
         return;
       }
       
       const data = await response.json();
       console.log('AI Response:', data);
       
-      // Show AI response in a simple alert - we can enhance this later
-      if (data.message) {
-        alert(`Max AI: ${data.message.substring(0, 200)}${data.message.length > 200 ? '...' : ''}`);
-      } else if (data.error) {
-        alert(`Max AI: ${data.error}`);
-      } else {
-        alert('Max AI: Received an empty response. Please try again.');
+      // Store response and open panel
+      setMaxResponse(data);
+      setMaxPanelOpen(true);
+      
+      // Handle widget creation if requested
+      if (data.canvasAction === 'create' && data.data?.type === 'widget') {
+        // Navigate to widget view - for now just show in response
+        console.log('Would create widget:', data.data);
       }
+      
     } catch (error) {
       console.error('AI prompt error:', error);
-      alert('Max AI is temporarily unavailable. Please try again later.');
+      setMaxResponse({
+        message: "I'm temporarily unavailable. Please try again later.",
+        error: true
+      });
+      setMaxPanelOpen(true);
+    } finally {
+      setIsMaxLoading(false);
     }
   };
 
@@ -959,10 +978,139 @@ export default function MobileHomePage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+
+          {/* Max AI Fly-out Panel */}
+          {maxPanelOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            onClick={() => setMaxPanelOpen(false)}
+          />
+          
+          {/* Panel */}
+          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-900 shadow-xl border-l border-gray-200 dark:border-gray-700 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="font-semibold text-gray-900 dark:text-white">Max AI</h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMaxPanelOpen(false)}
+                className="p-2"
+              >
+                ✕
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {isMaxLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Max is thinking...</span>
+                </div>
+              ) : maxResponse ? (
+                <div className="space-y-4">
+                  {/* AI Response */}
+                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <div className="whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                        {maxResponse.message}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  {maxResponse.actions && maxResponse.actions.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Quick Actions</h3>
+                      {maxResponse.actions.map((action: string, index: number) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            // Handle action clicks
+                            if (action === 'show_widget' && maxResponse.data?.type === 'widget') {
+                              setLocation('/widgets/1'); // Navigate to a sample widget
+                            } else if (action === 'create_dashboard') {
+                              setLocation('/dashboard'); // Navigate to dashboard
+                            } else if (action === 'show_production') {
+                              setLocation('/production-cockpit');
+                            } else if (action === 'show_schedule') {
+                              setLocation('/scheduling');
+                            }
+                            setMaxPanelOpen(false);
+                          }}
+                        >
+                          {action.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Widget Preview */}
+                  {maxResponse.data && maxResponse.data.type === 'widget' && (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        {maxResponse.data.title}
+                      </h3>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        Widget Type: {maxResponse.data.type}
+                      </div>
+                      {maxResponse.data.content?.widgets && (
+                        <div className="mt-2">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Components:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {maxResponse.data.content.widgets.map((widget: string, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {widget.replace('-', ' ')}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Bot className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Max is ready to help!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Input */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask Max anything..."
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      handleAIPrompt(e.currentTarget.value.trim());
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+                <Button size="sm" variant="outline">
+                  <Bot className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-
-
-      </div>
+      )}
     </div>
   );
 }
