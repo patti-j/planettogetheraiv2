@@ -36,6 +36,7 @@ import { WidgetConfig, WidgetDataProcessor, SystemData } from '@/lib/widget-libr
 import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
+import { SalesOrderStatusWidget } from '@/components/widgets/sales-order-status-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -424,6 +425,15 @@ export default function UniversalWidget({
     );
   };
 
+  const renderSalesOrderStatusWidget = () => {
+    return (
+      <SalesOrderStatusWidget 
+        widgetId={config.id}
+        className="h-full"
+      />
+    );
+  };
+
   const renderSimpleWidget = (type: string) => {
     switch (type) {
       case 'text':
@@ -487,6 +497,8 @@ export default function UniversalWidget({
       case 'available-to-promise':
       case 'capable-to-promise':
         return renderAtpCtpWidget();
+      case 'sales-order-status':
+        return renderSalesOrderStatusWidget();
       case 'dashboard':
         // Dashboard widgets are composite widgets - render as KPI for now
         return renderKPIWidget();

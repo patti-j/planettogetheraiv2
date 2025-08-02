@@ -24,10 +24,10 @@ import {
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status';
   title: string;
   subtitle?: string;
-  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization';
+  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders';
   chartType?: 'bar' | 'line' | 'pie' | 'doughnut' | 'number' | 'gauge' | 'progress';
   aggregation?: 'count' | 'sum' | 'avg' | 'min' | 'max';
   groupBy?: string;
@@ -85,6 +85,7 @@ export interface SystemData {
   users?: any[];
   metrics?: Record<string, any>;
   alerts?: any[];
+  salesOrders?: any[];
 }
 
 export interface ProcessedWidgetData {
@@ -171,6 +172,8 @@ export class WidgetDataProcessor {
         return this.systemData.metrics || {};
       case 'alerts':
         return this.systemData.alerts || [];
+      case 'salesOrders':
+        return this.systemData.salesOrders || [];
       default:
         return [];
     }
@@ -882,6 +885,26 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     },
     targetSystems: ['cockpit', 'analytics', 'canvas'],
     complexity: 'basic'
+  },
+  // Sales Order Status Widget
+  {
+    id: 'sales-order-status',
+    name: 'Sales Order Status',
+    description: 'Search and track sales order status with sharing capability',
+    category: 'management',
+    type: 'sales-order-status',
+    icon: Package,
+    defaultConfig: {
+      type: 'sales-order-status',
+      dataSource: 'salesOrders',
+      size: { width: 450, height: 400 },
+      searchEnabled: true,
+      sharingEnabled: true,
+      showOrderDetails: true,
+      showTimeline: true
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
+    complexity: 'intermediate'
   }
 ];
 

@@ -20245,6 +20245,58 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Sales Orders API endpoints
+  app.get("/api/sales-orders", async (req, res) => {
+    try {
+      const { search, searchType } = req.query;
+      
+      if (!search || typeof search !== 'string' || search.length < 2) {
+        return res.json([]);
+      }
+
+      const searchTerm = search.toLowerCase();
+      let orders;
+
+      switch (searchType) {
+        case 'orderNumber':
+          orders = await storage.searchSalesOrdersByNumber(searchTerm);
+          break;
+        case 'customer':
+          orders = await storage.searchSalesOrdersByCustomer(searchTerm);
+          break;
+        case 'product':
+          orders = await storage.searchSalesOrdersByProduct(searchTerm);
+          break;
+        default:
+          orders = await storage.searchSalesOrdersByNumber(searchTerm);
+      }
+
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching sales orders:", error);
+      res.status(500).json({ error: "Failed to fetch sales orders" });
+    }
+  });
+
+  app.get("/api/sales-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid sales order ID" });
+      }
+
+      const order = await storage.getSalesOrder(id);
+      if (!order) {
+        return res.status(404).json({ error: "Sales order not found" });
+      }
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching sales order:", error);
+      res.status(500).json({ error: "Failed to fetch sales order" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

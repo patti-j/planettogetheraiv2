@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, productionVersionPhaseMaterialRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -11,7 +11,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type ProductionOrder, type PlannedOrder, type DiscreteOperation, type DiscreteOperationPhase, type DiscreteOperationPhaseResourceRequirement, type ProductionVersionPhaseMaterialRequirement, type ProcessOperation, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
-  type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
+  type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -1563,6 +1563,12 @@ export interface IStorage {
   voteAlgorithmFeedback(feedbackId: number, userId: number, voteType: 'upvote' | 'downvote'): Promise<AlgorithmFeedbackVote>;
   removeAlgorithmFeedbackVote(feedbackId: number, userId: number): Promise<boolean>;
   getAlgorithmFeedbackVoteCounts(feedbackId: number): Promise<{ upvotes: number; downvotes: number }>;
+
+  // Sales Orders
+  getSalesOrder(id: number): Promise<SalesOrder | undefined>;
+  searchSalesOrdersByNumber(searchTerm: string): Promise<SalesOrder[]>;
+  searchSalesOrdersByCustomer(searchTerm: string): Promise<SalesOrder[]>;
+  searchSalesOrdersByProduct(searchTerm: string): Promise<SalesOrder[]>;
 }
 
 export class MemStorage implements Partial<IStorage> {
@@ -13321,6 +13327,54 @@ export class DatabaseStorage implements IStorage {
         ? `Buffer in RED zone with ${buffer.penetrationIntoRed?.toFixed(1)}% penetration`
         : `Buffer in ${buffer.currentZone.toUpperCase()} zone - monitoring required`,
     }));
+  }
+
+  // Sales Orders
+  async getSalesOrder(id: number): Promise<SalesOrder | undefined> {
+    const [order] = await db.select()
+      .from(salesOrders)
+      .leftJoin(customers, eq(salesOrders.customerId, customers.id))
+      .where(eq(salesOrders.id, id))
+      .limit(1);
+    
+    if (!order) return undefined;
+
+    return {
+      ...order.sales_orders,
+      customerName: order.customers?.customerName,
+    };
+  }
+
+  async searchSalesOrdersByNumber(searchTerm: string): Promise<SalesOrder[]> {
+    const orders = await db.select()
+      .from(salesOrders)
+      .leftJoin(customers, eq(salesOrders.customerId, customers.id))
+      .where(ilike(salesOrders.orderNumber, `%${searchTerm}%`))
+      .limit(20);
+
+    return orders.map(order => ({
+      ...order.sales_orders,
+      customerName: order.customers?.customerName,
+    }));
+  }
+
+  async searchSalesOrdersByCustomer(searchTerm: string): Promise<SalesOrder[]> {
+    const orders = await db.select()
+      .from(salesOrders)
+      .leftJoin(customers, eq(salesOrders.customerId, customers.id))
+      .where(ilike(customers.customerName, `%${searchTerm}%`))
+      .limit(20);
+
+    return orders.map(order => ({
+      ...order.sales_orders,
+      customerName: order.customers?.customerName,
+    }));
+  }
+
+  async searchSalesOrdersByProduct(searchTerm: string): Promise<SalesOrder[]> {
+    // Since product info is in sales order lines, this would require joining with sales order lines
+    // For now, return empty array as this would need the item/product table structure
+    return [];
   }
 }
 
