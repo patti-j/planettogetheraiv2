@@ -502,10 +502,6 @@ export default function MobileHomePage() {
                   variant="ghost" 
                   size="sm" 
                   className="p-2"
-                  onClick={() => {
-                    console.log("🔍 Search button clicked, setting showSearch to true");
-                    setShowSearch(true);
-                  }}
                 >
                   <Search className="w-5 h-5" />
                 </Button>
@@ -533,7 +529,9 @@ export default function MobileHomePage() {
               variant="ghost" 
               size="sm" 
               className="p-2"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log("🤖 Max button clicked, toggling showMaxPane from", showMaxPane, "to", !showMaxPane);
                 setShowMaxPane(!showMaxPane);
               }}
@@ -783,7 +781,9 @@ export default function MobileHomePage() {
                   <Card 
                     key="dashboards"
                     className="hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       console.log("🔍 Dashboards card clicked, setting showLibrary to true");
                       setShowLibrary(true);
                     }}
