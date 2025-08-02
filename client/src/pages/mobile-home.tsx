@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
@@ -54,8 +55,15 @@ import {
   Monitor,
   Smartphone,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Plus,
+  Edit,
+  Trash2
 } from "lucide-react";
+
+// Import widget components
+import WidgetDesignStudio from '@/components/widget-design-studio';
+import { WidgetConfig } from '@/lib/widget-library';
 
 interface Task {
   id: string;
@@ -81,12 +89,48 @@ export default function MobileHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
+  const queryClient = useQueryClient();
   
   // Max AI panel state
   const [maxPanelOpen, setMaxPanelOpen] = useState(false);
   const [maxResponse, setMaxResponse] = useState<any>(null);
   const [isMaxLoading, setIsMaxLoading] = useState(false);
   const [showMaxSettings, setShowMaxSettings] = useState(false);
+
+  // Widget management state
+  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
+  const [editingWidget, setEditingWidget] = useState<any>(null);
+
+  // Widget deletion mutation
+  const deleteWidgetMutation = useMutation({
+    mutationFn: async (widgetId: string) => {
+      const response = await apiRequest("DELETE", `/api/analytics/widgets/${widgetId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/mobile/widgets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
+    },
+  });
+
+  // Widget management functions
+  const handleCreateWidget = (widget: WidgetConfig, targetSystems: string[]) => {
+    console.log('Widget created for mobile:', widget, 'systems:', targetSystems);
+    queryClient.invalidateQueries({ queryKey: ["/api/mobile/widgets"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
+    setWidgetStudioOpen(false);
+  };
+
+  const handleEditWidget = (widget: any) => {
+    setEditingWidget(widget);
+    setWidgetStudioOpen(true);
+  };
+
+  const handleDeleteWidget = async (widget: any) => {
+    if (confirm(`Are you sure you want to delete "${widget.title}"?`)) {
+      await deleteWidgetMutation.mutateAsync(widget.id);
+    }
+  };
   
   // AI prompt handling
   const handleAIPrompt = async (prompt: string) => {
@@ -665,34 +709,79 @@ export default function MobileHomePage() {
                   </div>
 
                   {/* Mobile Widgets */}
-                  {mobileWidgets.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Mobile Widgets ({mobileWidgets.length})</h3>
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">Mobile Widgets ({mobileWidgets.length})</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingWidget(null);
+                          setWidgetStudioOpen(true);
+                        }}
+                        className="flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span className="text-xs">Create</span>
+                      </Button>
+                    </div>
+                    
+                    {mobileWidgets.length > 0 ? (
                       <div className="space-y-2">
                         {mobileWidgets.map((widget: any) => (
                           <div
                             key={widget.id}
-                            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
-                            onClick={() => {
-                              addToRecent(widget, 'widget');
-                              const dialog = document.getElementById('library-dialog');
-                              if (dialog) dialog.style.display = 'none';
-                              setLocation(`/widgets/${widget.id}`);
-                            }}
+                            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg"
                           >
-                            <div className="flex items-center space-x-3">
+                            <div 
+                              className="flex items-center space-x-3 flex-1 cursor-pointer"
+                              onClick={() => {
+                                addToRecent(widget, 'widget');
+                                const dialog = document.getElementById('library-dialog');
+                                if (dialog) dialog.style.display = 'none';
+                                setLocation(`/widgets/${widget.id}`);
+                              }}
+                            >
                               <BarChart3 className="w-4 h-4 text-blue-600" />
                               <div>
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{widget.title}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{widget.type}</p>
                               </div>
                             </div>
-                            <Badge variant="secondary" className="text-xs">Widget</Badge>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditWidget(widget);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteWidget(widget);
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                        <p className="text-sm">No widgets yet</p>
+                        <p className="text-xs">Create your first widget to get started</p>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Mobile Dashboards */}
                   {mobileDashboards.length > 0 && (
@@ -1184,6 +1273,15 @@ export default function MobileHomePage() {
           </div>
         </div>
       )}
+
+      {/* Widget Design Studio for Mobile */}
+      <WidgetDesignStudio
+        open={widgetStudioOpen}
+        onOpenChange={setWidgetStudioOpen}
+        onWidgetCreate={handleCreateWidget}
+        editingWidget={editingWidget}
+        mode={editingWidget ? 'edit' : 'create'}
+      />
     </div>
   );
 }
