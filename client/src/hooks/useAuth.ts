@@ -101,8 +101,20 @@ export function useAuth() {
         console.log("🔐 Response status:", response.status);
         console.log("🔐 Response headers:", response.headers);
         
-        const userData = await response.json();
-        console.log("🔐 Parsed response data:", userData);
+        // Debug response content
+        const responseText = await response.text();
+        console.log("🔐 Raw response text:", responseText);
+        console.log("🔐 Response text length:", responseText.length);
+        
+        let userData;
+        try {
+          userData = JSON.parse(responseText);
+          console.log("🔐 Parsed response data:", userData);
+        } catch (parseError) {
+          console.error("🔐 JSON parse error:", parseError);
+          console.error("🔐 Failed to parse:", responseText.substring(0, 200));
+          throw new Error(`Invalid JSON response: ${parseError.message}`);
+        }
         console.log("🔐 Token in response:", userData.token);
         
         // Store token in localStorage if provided
