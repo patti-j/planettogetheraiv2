@@ -672,7 +672,7 @@ export default function IntegratedAIAssistant() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-white" />
-              <CardTitle className="text-white text-sm">Max AI Assistant</CardTitle>
+              <CardTitle className="text-white text-sm">Max</CardTitle>
               <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
                 {user?.roles?.[0]?.name || 'Online'}
               </Badge>

@@ -1328,7 +1328,7 @@ export default function MobileHomePage() {
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">Max AI Assistant</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">Max</span>
               </div>
               
               {/* Close Button */}
