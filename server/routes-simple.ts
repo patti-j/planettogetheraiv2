@@ -204,6 +204,21 @@ export function registerSimpleRoutes(app: express.Application): Server {
         source: "cockpit",
         configuration: { view: "weekly", resources: ["all"] },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 6,
+        title: "Operation Sequencer",
+        type: "operation-sequencer",
+        targetPlatform: "both",
+        source: "scheduling",
+        configuration: { 
+          view: "compact", 
+          allowReorder: true,
+          showResourceFilter: true,
+          showStatusFilter: true,
+          showOptimizationFlags: true
+        },
+        createdAt: new Date().toISOString()
       }
     ];
     

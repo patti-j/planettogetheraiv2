@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { Skeleton } from "@/components/ui/skeleton";
+import OperationSequencerWidget from "@/components/widgets/operation-sequencer-widget";
 
 interface Widget {
   id: number;
@@ -216,6 +217,16 @@ export default function MobileWidgetView() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        );
+
+      case 'operation-sequencer':
+        return (
+          <div className="h-[600px]">
+            <OperationSequencerWidget 
+              configuration={widget.configuration}
+              isDesktop={false}
+            />
           </div>
         );
 

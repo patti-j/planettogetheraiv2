@@ -34,6 +34,7 @@ import {
 import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2';
 import { WidgetConfig, WidgetDataProcessor, SystemData } from '@/lib/widget-library';
 import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
+import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -394,6 +395,21 @@ export default function UniversalWidget({
     );
   };
 
+  const renderOperationSequencerWidget = () => {
+    return (
+      <OperationSequencerWidget 
+        configuration={config.configuration || {
+          view: 'compact',
+          allowReorder: true,
+          showResourceFilter: true,
+          showStatusFilter: true,
+          showOptimizationFlags: true
+        }}
+        isDesktop={true}
+      />
+    );
+  };
+
   const renderSimpleWidget = (type: string) => {
     switch (type) {
       case 'text':
@@ -450,6 +466,8 @@ export default function UniversalWidget({
         return renderListWidget();
       case 'schedule-optimization':
         return renderScheduleOptimizationWidget();
+      case 'operation-sequencer':
+        return renderOperationSequencerWidget();
       case 'dashboard':
         // Dashboard widgets are composite widgets - render as KPI for now
         return renderKPIWidget();
