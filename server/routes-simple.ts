@@ -394,95 +394,11 @@ export function registerSimpleRoutes(app: express.Application): Server {
   // Optimization endpoints for Schedule Optimizer widget
   app.get("/api/optimization/algorithms", async (req, res) => {
     try {
-      // Sample optimization algorithms for the Schedule Optimizer widget
-      const algorithms = [
-        {
-          id: 1,
-          name: "forward-scheduling",
-          displayName: "Forward Scheduling",
-          description: "Schedule operations from start date forward, optimizing for earliest completion",
-          category: "scheduling",
-          type: "built-in",
-          status: "active",
-          isStandard: true,
-          configuration: {
-            timeHorizon: "weeks",
-            optimizationCriteria: ["completion_time", "resource_utilization"],
-            constraints: ["resource_capacity", "operation_dependencies"]
-          },
-          performance: {
-            efficiency: 85,
-            speed: "fast",
-            accuracy: "high"
-          }
-        },
-        {
-          id: 2,
-          name: "backward-scheduling", 
-          displayName: "Backward Scheduling",
-          description: "Schedule operations from due date backward, optimizing for just-in-time delivery",
-          category: "scheduling",
-          type: "built-in", 
-          status: "active",
-          isStandard: true,
-          configuration: {
-            timeHorizon: "weeks",
-            optimizationCriteria: ["due_date_adherence", "inventory_minimization"],
-            constraints: ["due_dates", "resource_availability"]
-          },
-          performance: {
-            efficiency: 82,
-            speed: "fast", 
-            accuracy: "high"
-          }
-        },
-        {
-          id: 3,
-          name: "bottleneck-optimizer",
-          displayName: "Bottleneck Optimization",
-          description: "Identify and optimize around production bottlenecks using Theory of Constraints",
-          category: "optimization",
-          type: "advanced",
-          status: "active", 
-          isStandard: true,
-          configuration: {
-            timeHorizon: "days",
-            optimizationCriteria: ["throughput", "bottleneck_utilization"],
-            constraints: ["bottleneck_capacity", "buffer_management"]
-          },
-          performance: {
-            efficiency: 92,
-            speed: "medium",
-            accuracy: "very_high"
-          }
-        },
-        {
-          id: 4,
-          name: "genetic-algorithm",
-          displayName: "Genetic Algorithm Scheduler", 
-          description: "Advanced evolutionary algorithm for complex multi-objective scheduling",
-          category: "ai_optimization",
-          type: "advanced",
-          status: "active",
-          isStandard: false,
-          configuration: {
-            timeHorizon: "weeks",
-            optimizationCriteria: ["makespan", "resource_utilization", "setup_reduction"],
-            constraints: ["all_constraints"],
-            parameters: {
-              populationSize: 100,
-              generations: 500,
-              mutationRate: 0.1
-            }
-          },
-          performance: {
-            efficiency: 96,
-            speed: "slow",
-            accuracy: "very_high"
-          }
-        }
-      ];
-      
+      const { category, status } = req.query;
+      const algorithms = await storage.getOptimizationAlgorithms(
+        category as string, 
+        status as string
+      );
       res.json(algorithms);
     } catch (error) {
       console.error("Error fetching optimization algorithms:", error);
