@@ -4007,9 +4007,9 @@ Manufacturing Context Available:
   });
 
   app.get("/api/mobile/dashboards", (req, res) => {
-    console.log("=== MOBILE DASHBOARDS ENDPOINT HIT ===");
+    console.log("=== MOBILE DASHBOARDS ENDPOINT HIT - NEW VERSION ===");
     
-    // Hardcoded dashboard data
+    // Hardcoded dashboard data - with Production Scheduler Dashboard
       const sampleDashboards = [
         {
           id: 1,
@@ -4052,6 +4052,18 @@ Manufacturing Context Available:
           configuration: { 
             layout: "dashboard",
             widgets: ["inventory-tracking", "stock-alerts", "procurement"]
+          },
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 5,
+          title: "Production Scheduler Dashboard",
+          description: "Advanced scheduling tools for production planners",
+          targetPlatform: "both",
+          route: "/production-scheduler-dashboard",
+          configuration: { 
+            layout: "grid",
+            widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
           },
           createdAt: new Date().toISOString()
         },
