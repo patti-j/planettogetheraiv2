@@ -247,6 +247,20 @@ export function registerSimpleRoutes(app: express.Application): Server {
           maxItems: 3
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 9,
+        title: "Schedule Optimizer",
+        type: "schedule-optimizer",
+        targetPlatform: "both",
+        source: "scheduling",
+        configuration: { 
+          view: "full",
+          showTradeoffs: true,
+          showOptimization: true,
+          allowConfiguration: true
+        },
+        createdAt: new Date().toISOString()
       }
     ];
     
