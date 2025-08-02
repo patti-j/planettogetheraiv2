@@ -131,9 +131,9 @@ export default function MobileHomePage() {
 
   const quickActions = [
     {
-      title: "Home",
-      icon: Home,
-      path: "/",
+      title: "Production",
+      icon: Activity,
+      path: "/production-cockpit",
       color: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400"
     },
     {
@@ -199,6 +199,16 @@ export default function MobileHomePage() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* Home */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2"
+              onClick={() => setLocation("/")}
+            >
+              <Home className="w-5 h-5" />
+            </Button>
+
             {/* Search */}
             <Dialog open={showSearch} onOpenChange={setShowSearch}>
               <DialogTrigger asChild>
