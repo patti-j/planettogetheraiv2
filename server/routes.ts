@@ -3386,6 +3386,121 @@ Manufacturing Context Available:
     }
   });
 
+  // Schedule Trade-off Analysis endpoints
+  app.post("/api/schedule/analyze-tradeoff", requireAuth, async (req, res) => {
+    try {
+      const { orderId, proposedStartDate, notes } = req.body;
+      
+      if (!orderId || !proposedStartDate) {
+        return res.status(400).json({ message: "Order ID and proposed start date are required" });
+      }
+
+      // Simulate trade-off analysis logic
+      const targetOrder = await storage.getProductionOrder(orderId);
+      if (!targetOrder) {
+        return res.status(404).json({ message: "Production order not found" });
+      }
+
+      // Mock analysis data - in real implementation this would run complex scheduling algorithms
+      const analysis = {
+        targetOrder,
+        proposedStartDate,
+        proposedEndDate: new Date(new Date(proposedStartDate).getTime() + (72 * 60 * 60 * 1000)).toISOString(),
+        impactedOrders: [
+          {
+            order: { id: 2, orderNumber: "PO-2024-002", name: "Product B", dueDate: "2024-02-01" },
+            impactType: "delayed",
+            originalDate: "2024-01-25",
+            newDate: "2024-01-28",
+            delayDays: 3,
+            riskLevel: "medium",
+            customerImpact: false
+          },
+          {
+            order: { id: 3, orderNumber: "PO-2024-003", name: "Product C", dueDate: "2024-02-05" },
+            impactType: "rescheduled",
+            originalDate: "2024-01-28",
+            newDate: "2024-01-30",
+            delayDays: 2,
+            riskLevel: "low",
+            customerImpact: true
+          }
+        ],
+        resourceConflicts: [
+          {
+            resourceId: 1,
+            resourceName: "Primary Reactor",
+            conflictPeriod: { start: proposedStartDate, end: new Date(new Date(proposedStartDate).getTime() + (24 * 60 * 60 * 1000)).toISOString() },
+            affectedOrders: [orderId, 2]
+          }
+        ],
+        metrics: {
+          totalOrdersAffected: 2,
+          avgDelayDays: 2.5,
+          highRiskOrders: 0,
+          customerOrdersAffected: 1,
+          totalCostImpact: 15000,
+          scheduleEfficiencyImpact: -8.5
+        }
+      };
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Trade-off analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze trade-offs" });
+    }
+  });
+
+  app.post("/api/schedule/commit-tradeoff", requireAuth, async (req, res) => {
+    try {
+      const { analysisId, notes } = req.body;
+      
+      if (!analysisId) {
+        return res.status(400).json({ message: "Analysis ID is required" });
+      }
+
+      // In a real implementation, this would apply the schedule changes
+      // For now, we'll simulate the commit
+      console.log(`Committing schedule changes for analysis: ${analysisId}`);
+      console.log(`Notes: ${notes}`);
+
+      res.json({ 
+        success: true, 
+        message: "Schedule changes committed successfully",
+        analysisId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Trade-off commit error:", error);
+      res.status(500).json({ message: "Failed to commit schedule changes" });
+    }
+  });
+
+  app.post("/api/schedule/share-analysis", requireAuth, async (req, res) => {
+    try {
+      const { analysisId, recipients, message } = req.body;
+      
+      if (!analysisId || !recipients || !Array.isArray(recipients)) {
+        return res.status(400).json({ message: "Analysis ID and recipients are required" });
+      }
+
+      // In a real implementation, this would send notifications/emails
+      console.log(`Sharing analysis ${analysisId} with:`, recipients);
+      console.log(`Message: ${message}`);
+
+      res.json({ 
+        success: true, 
+        message: "Analysis shared successfully",
+        analysisId,
+        recipients: recipients.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Analysis sharing error:", error);
+      res.status(500).json({ message: "Failed to share analysis" });
+    }
+  });
+
   // Custom Text Labels
   app.get("/api/custom-text-labels", async (req, res) => {
     try {

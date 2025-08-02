@@ -25,10 +25,10 @@ import {
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status' | 'reports';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status' | 'reports' | 'schedule-tradeoff-analyzer';
   title: string;
   subtitle?: string;
-  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders' | 'reports';
+  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders' | 'reports' | 'schedule-analysis';
   chartType?: 'bar' | 'line' | 'pie' | 'doughnut' | 'number' | 'gauge' | 'progress';
   aggregation?: 'count' | 'sum' | 'avg' | 'min' | 'max';
   groupBy?: string;
@@ -931,6 +931,28 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     },
     targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
     complexity: 'intermediate'
+  },
+  // Schedule Trade-off Analyzer Widget
+  {
+    id: 'schedule-tradeoff-analyzer',
+    name: 'Schedule Trade-off Analyzer',
+    description: 'Analyze impact of expediting production orders without affecting actual schedule',
+    category: 'operations',
+    type: 'schedule-tradeoff-analyzer',
+    icon: Calculator,
+    defaultConfig: {
+      type: 'schedule-tradeoff-analyzer',
+      dataSource: 'schedule-analysis',
+      size: { width: 800, height: 600 },
+      configuration: {
+        showResourceConflicts: true,
+        showCostAnalysis: true,
+        showCustomerImpact: true,
+        maxAnalysisDepth: 5
+      }
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
+    complexity: 'advanced'
   }
 ];
 

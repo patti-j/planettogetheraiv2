@@ -38,6 +38,7 @@ import OperationSequencerWidget from '@/components/widgets/operation-sequencer-w
 import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
 import { SalesOrderStatusWidget } from '@/components/widgets/sales-order-status-widget';
 import ReportsWidget from '@/components/widgets/reports-widget';
+import ScheduleTradeoffAnalyzerWidget from '@/components/widgets/schedule-tradeoff-analyzer-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -510,6 +511,13 @@ export default function UniversalWidget({
         return renderSalesOrderStatusWidget();
       case 'reports':
         return renderReportsWidget();
+      case 'schedule-tradeoff-analyzer':
+        return (
+          <ScheduleTradeoffAnalyzerWidget 
+            configuration={config.configuration || {}}
+            isDesktop={!readOnly}
+          />
+        );
       case 'dashboard':
         // Dashboard widgets are composite widgets - render as KPI for now
         return renderKPIWidget();
