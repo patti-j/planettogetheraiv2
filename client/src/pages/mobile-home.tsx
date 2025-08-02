@@ -1000,14 +1000,27 @@ export default function MobileHomePage() {
                 </div>
                 <h2 className="font-semibold text-gray-900 dark:text-white">Max AI</h2>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMaxPanelOpen(false)}
-                className="p-2"
-              >
-                ✕
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-2"
+                  onClick={() => {
+                    // TODO: Open Max AI settings/preferences
+                    console.log('Max AI settings clicked');
+                  }}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMaxPanelOpen(false)}
+                  className="p-2"
+                >
+                  ✕
+                </Button>
+              </div>
             </div>
 
             {/* Content */}
