@@ -4,7 +4,7 @@ import { storage } from "./storage-basic";
 import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertUserSchema, insertProductionOrderSchema } from "../shared/schema-simple";
 import { db } from "./db";
 import * as schema from "../shared/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { processAICommand } from "./ai-agent";
 
 export function registerSimpleRoutes(app: express.Application): Server {
