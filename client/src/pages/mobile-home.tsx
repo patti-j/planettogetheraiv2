@@ -136,12 +136,21 @@ export default function MobileHomePage() {
   const { data: mobileWidgets = [] } = useQuery({
     queryKey: ["/api/mobile/widgets"],
     queryFn: async () => {
+      console.log("=== FETCHING MOBILE WIDGETS ===");
       const response = await fetch("/api/mobile/widgets");
-      const allWidgets = await response.json();
       console.log("=== MOBILE WIDGETS RESPONSE ===", response.status, response.ok);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const responseText = await response.text();
+      console.log("=== RAW RESPONSE TEXT ===", responseText.substring(0, 200));
+      
+      let allWidgets;
+      try {
+        allWidgets = JSON.parse(responseText);
+      } catch (e) {
+        console.error("=== JSON PARSE ERROR ===", e);
+        return [];
       }
+      
       console.log("=== MOBILE WIDGETS DATA ===", allWidgets);
       console.log("=== MOBILE WIDGETS TYPE ===", typeof allWidgets, Array.isArray(allWidgets));
       return allWidgets;
@@ -151,12 +160,21 @@ export default function MobileHomePage() {
   const { data: mobileDashboards = [] } = useQuery({
     queryKey: ["/api/mobile/dashboards"], 
     queryFn: async () => {
+      console.log("=== FETCHING MOBILE DASHBOARDS ===");
       const response = await fetch("/api/mobile/dashboards");
-      const allDashboards = await response.json();
       console.log("=== MOBILE DASHBOARDS RESPONSE ===", response.status, response.ok);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const responseText = await response.text();
+      console.log("=== RAW RESPONSE TEXT ===", responseText.substring(0, 200));
+      
+      let allDashboards;
+      try {
+        allDashboards = JSON.parse(responseText);
+      } catch (e) {
+        console.error("=== JSON PARSE ERROR ===", e);
+        return [];
       }
+      
       console.log("=== MOBILE DASHBOARDS DATA ===", allDashboards);
       console.log("=== MOBILE DASHBOARDS TYPE ===", typeof allDashboards, Array.isArray(allDashboards));
       return allDashboards;
