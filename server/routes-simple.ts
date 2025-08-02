@@ -4,6 +4,7 @@ import { storage } from "./storage-basic";
 import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertUserSchema, insertProductionOrderSchema } from "../shared/schema-simple";
 import { db } from "./db";
 import * as schema from "../shared/schema";
+import { sql } from "drizzle-orm";
 import { processAICommand } from "./ai-agent";
 
 export function registerSimpleRoutes(app: express.Application): Server {
@@ -155,11 +156,12 @@ export function registerSimpleRoutes(app: express.Application): Server {
     res.json({ message: "Logged out successfully" });
   });
 
-  // Mobile Library API - Working widgets endpoint with hardcoded data
-  app.get("/api/mobile/widgets", (req, res) => {
+  // Mobile Library API - Returns widgets for mobile library
+  app.get("/api/mobile/widgets", async (req, res) => {
     console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
     
-    const sampleWidgets = [
+    // Return working sample data with Schedule Optimizer included
+    const mobileWidgets = [
       {
         id: 1,
         title: "Production Overview",
@@ -264,8 +266,8 @@ export function registerSimpleRoutes(app: express.Application): Server {
       }
     ];
     
-    console.log("Total widgets returned:", sampleWidgets.length);
-    res.json(sampleWidgets);
+    console.log("Total widgets returned:", mobileWidgets.length);
+    res.json(mobileWidgets);
   });
 
   // Keep the old broken endpoint for now
