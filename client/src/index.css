@@ -834,7 +834,8 @@ div[data-radix-tooltip-content] {
   --mobile-padding: 2rem;
   --mobile-text-size: 1rem;
   --mobile-button-size: 2.5rem;
-  min-width: 1024px !important;
+  /* Allow horizontal scrolling for wide desktop layouts */
+  overflow-x: auto;
 }
 
 .force-desktop-view .mobile-only {

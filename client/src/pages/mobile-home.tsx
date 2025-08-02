@@ -270,10 +270,196 @@ export default function MobileHomePage() {
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
 
+  // If desktop view is forced, redirect to main app with desktop navigation
+  if (currentView === "desktop") {
+    return (
+      <div className="force-desktop-view">
+        {/* Desktop Navigation Header */}
+        <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <img 
+                src={CompanyLogoImage} 
+                alt="Company Logo" 
+                className="h-8 w-8 object-contain"
+              />
+              <nav className="flex space-x-2 md:space-x-6 overflow-x-auto">
+                <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">Dashboard</Link>
+                <Link href="/production-cockpit" className="text-sm font-medium hover:text-blue-600">Production</Link>
+                <Link href="/analytics" className="text-sm font-medium hover:text-blue-600">Analytics</Link>
+                <Link href="/shop-floor" className="text-sm font-medium hover:text-blue-600">Shop Floor</Link>
+                <Link href="/boards" className="text-sm font-medium hover:text-blue-600">Boards</Link>
+                <Link href="/reports" className="text-sm font-medium hover:text-blue-600">Reports</Link>
+              </nav>
+            </div>
+            <div className="flex items-center space-x-2">
+              {/* View Mode Toggle */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={toggleView}
+                      className="p-2 view-mode-forced"
+                    >
+                      <Smartphone className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Switch to Mobile View</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback>{user?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+        
+        {/* Desktop Content Area */}
+        <div className="flex flex-col md:flex-row">
+          {/* Desktop Sidebar - collapsible on mobile */}
+          <div className="w-full md:w-64 bg-white dark:bg-gray-800 border-b md:border-r md:border-b-0 dark:border-gray-700 min-h-screen">
+            <div className="p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Manufacturing</h3>
+              <nav className="grid grid-cols-2 md:grid-cols-1 gap-2">
+                <Link href="/dashboard" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <LayoutDashboard className="mr-3 h-4 w-4" />
+                  Dashboard
+                </Link>
+                <Link href="/production-cockpit" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <Activity className="mr-3 h-4 w-4" />
+                  Production Cockpit
+                </Link>
+                <Link href="/analytics" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <TrendingUp className="mr-3 h-4 w-4" />
+                  Analytics
+                </Link>
+                <Link href="/shop-floor" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <Settings className="mr-3 h-4 w-4" />
+                  Shop Floor
+                </Link>
+                <Link href="/boards" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <BarChart3 className="mr-3 h-4 w-4" />
+                  Boards
+                </Link>
+                <Link href="/reports" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <Calendar className="mr-3 h-4 w-4" />
+                  Reports
+                </Link>
+              </nav>
+            </div>
+          </div>
+          
+          {/* Main Content */}
+          <div className="flex-1 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Manufacturing Dashboard</h1>
+              
+              {/* Desktop Grid Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {/* Quick Stats */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <Activity className="h-8 w-8 text-blue-600" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Production</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">87%</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <TrendingUp className="h-8 w-8 text-green-600" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Efficiency</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">94%</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center">
+                      <AlertCircle className="h-8 w-8 text-yellow-600" />
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Issues</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Recent Activities */}
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activities</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <CheckSquare className="h-5 w-5 text-green-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">Production order PO-2025-001 completed</p>
+                        <p className="text-xs text-gray-500">2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">Equipment maintenance scheduled</p>
+                        <p className="text-xs text-gray-500">4 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="h-5 w-5 text-blue-600 mr-3" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">New shift started</p>
+                        <p className="text-xs text-gray-500">6 hours ago</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${showMaxPane ? 'flex flex-col' : ''} ${
-      currentView === "desktop" ? 'force-desktop-view' : 'force-mobile-view'
-    }`}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
         <div className="flex items-center justify-between px-4 py-3">
