@@ -41,7 +41,10 @@ import {
   Clock,
   AlertCircle,
   TrendingUp,
-  Activity
+  Activity,
+  Library,
+  BarChart3,
+  Monitor
 } from "lucide-react";
 
 interface Task {
@@ -68,6 +71,7 @@ export default function MobileHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showMaxPane, setShowMaxPane] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   // Mock data - in real app, these would come from API
   const { data: tasks = [] } = useQuery({
@@ -127,6 +131,47 @@ export default function MobileHomePage() {
       ] as Notification[];
     }
   });
+
+  // Fetch mobile widgets and dashboards
+  const { data: mobileWidgets = [] } = useQuery({
+    queryKey: ["/api/widgets"],
+    queryFn: async () => {
+      const response = await fetch("/api/widgets");
+      const allWidgets = await response.json();
+      // Filter for mobile-compatible widgets
+      return allWidgets.filter((widget: any) => 
+        widget.targetPlatform === "mobile" || widget.targetPlatform === "both"
+      );
+    }
+  });
+
+  const { data: mobileDashboards = [] } = useQuery({
+    queryKey: ["/api/dashboards"], 
+    queryFn: async () => {
+      const response = await fetch("/api/dashboards");
+      const allDashboards = await response.json();
+      // Filter for mobile-compatible dashboards
+      return allDashboards.filter((dashboard: any) => 
+        dashboard.targetPlatform === "mobile" || dashboard.targetPlatform === "both"
+      );
+    }
+  });
+
+  // Recent items tracking
+  const getRecentItems = () => {
+    const recent = localStorage.getItem('mobileRecentItems');
+    return recent ? JSON.parse(recent) : [];
+  };
+
+  const addToRecent = (item: any, type: 'widget' | 'dashboard') => {
+    const recent = getRecentItems();
+    const newItem = { ...item, type, viewedAt: new Date().toISOString() };
+    const filtered = recent.filter((r: any) => !(r.id === item.id && r.type === type));
+    const updated = [newItem, ...filtered].slice(0, 10); // Keep last 10
+    localStorage.setItem('mobileRecentItems', JSON.stringify(updated));
+  };
+
+  const recentItems = getRecentItems();
 
   const unreadNotifications = notifications.filter(n => !n.read);
   const pendingTasks = tasks.filter(t => t.status === "pending");
@@ -254,6 +299,120 @@ export default function MobileHomePage() {
             >
               <Bot className="w-5 h-5" />
             </Button>
+
+            {/* Mobile Library */}
+            <Dialog open={showLibrary} onOpenChange={setShowLibrary}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="p-2">
+                  <Library className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Mobile Library</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Recent Items */}
+                  {recentItems.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Recently Viewed</h3>
+                      <div className="space-y-2">
+                        {recentItems.slice(0, 5).map((item: any) => (
+                          <div
+                            key={`${item.type}-${item.id}`}
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                            onClick={() => {
+                              setLocation(item.type === 'widget' ? `/widgets/${item.id}` : `/dashboards/${item.id}`);
+                              setShowLibrary(false);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              {item.type === 'widget' ? (
+                                <BarChart3 className="w-4 h-4 text-blue-500" />
+                              ) : (
+                                <Monitor className="w-4 h-4 text-green-500" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{item.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{item.type}</p>
+                              </div>
+                            </div>
+                            <Clock className="w-4 h-4 text-gray-400" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mobile Widgets */}
+                  {mobileWidgets.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Mobile Widgets ({mobileWidgets.length})</h3>
+                      <div className="space-y-2">
+                        {mobileWidgets.map((widget: any) => (
+                          <div
+                            key={widget.id}
+                            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900"
+                            onClick={() => {
+                              addToRecent(widget, 'widget');
+                              setLocation(`/widgets/${widget.id}`);
+                              setShowLibrary(false);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <BarChart3 className="w-4 h-4 text-blue-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{widget.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{widget.type}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">Widget</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mobile Dashboards */}
+                  {mobileDashboards.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Mobile Dashboards ({mobileDashboards.length})</h3>
+                      <div className="space-y-2">
+                        {mobileDashboards.map((dashboard: any) => (
+                          <div
+                            key={dashboard.id}
+                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
+                            onClick={() => {
+                              addToRecent(dashboard, 'dashboard');
+                              setLocation(`/dashboards/${dashboard.id}`);
+                              setShowLibrary(false);
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Monitor className="w-4 h-4 text-green-600" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{dashboard.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{dashboard.description || 'Dashboard'}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">Dashboard</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {mobileWidgets.length === 0 && mobileDashboards.length === 0 && (
+                    <div className="text-center py-8">
+                      <Library className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No mobile widgets or dashboards available</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Create some widgets or dashboards with mobile target platform</p>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Mobile Menu */}
             <DropdownMenu>
