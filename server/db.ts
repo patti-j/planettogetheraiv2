@@ -1,4 +1,4 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { neon, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { sql } from 'drizzle-orm';
 import ws from "ws";
@@ -12,51 +12,21 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Enhanced connection pool configuration for better performance and monitoring
-const poolConfig = {
-  connectionString: process.env.DATABASE_URL,
-  // Connection pool settings - reduced for stability
-  max: parseInt(process.env.DB_POOL_MAX || '2'), // Maximum connections in pool - reduced
-  min: parseInt(process.env.DB_POOL_MIN || '0'),  // Minimum connections to maintain - reduced
-  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'), // 30 seconds
-  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '15000'), // 15 seconds
-  // Performance monitoring
-  log: process.env.NODE_ENV === 'development' ? undefined : undefined, // Disable logging
-};
+// Use direct neon connection instead of Pool to avoid timeout issues
+const connection = neon(process.env.DATABASE_URL);
 
-export const pool = new Pool(poolConfig);
-
-// Add connection pool monitoring
+// Add connection monitoring
 let connectionCount = 0;
 let queryCount = 0;
 let errorCount = 0;
 
-// Hook into pool events for monitoring
-const originalConnect = pool.connect.bind(pool);
-pool.connect = async function() {
-  connectionCount++;
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`📊 DB Pool: Active connections: ${connectionCount}`);
-  }
-  return originalConnect();
-};
-
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle({ client: connection, schema });
 
 // Database metrics for monitoring
 export const getDbMetrics = () => ({
-  totalConnections: pool.totalCount,
-  idleConnections: pool.idleCount,
-  waitingClients: pool.waitingCount,
   connectionCount,
   queryCount,
   errorCount,
-  poolConfig: {
-    max: poolConfig.max,
-    min: poolConfig.min,
-    idleTimeout: poolConfig.idleTimeoutMillis,
-    connectionTimeout: poolConfig.connectionTimeoutMillis,
-  }
 });
 
 // Database health check function

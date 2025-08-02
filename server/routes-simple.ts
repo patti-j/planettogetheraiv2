@@ -1,10 +1,11 @@
 import express from "express";
+import { createServer, type Server } from "http";
 import { storage } from "./storage-basic";
 import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertUserSchema, insertProductionOrderSchema } from "../shared/schema-simple";
 import { db } from "./db";
 import * as schema from "../shared/schema";
 
-export function registerSimpleRoutes(app: express.Application) {
+export function registerSimpleRoutes(app: express.Application): Server {
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "Server is running" });
@@ -189,5 +190,5 @@ export function registerSimpleRoutes(app: express.Application) {
     }
   });
 
-  return app;
+  return createServer(app);
 }
