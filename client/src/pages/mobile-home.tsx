@@ -58,7 +58,8 @@ import {
   ToggleRight,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 
 // Import widget components
@@ -1175,25 +1176,40 @@ export default function MobileHomePage() {
             </div>
           </div>
 
-          {/* Max AI Fly-out Panel */}
+          {/* Max AI Fly-out Panel - Full Screen Overlay */}
           {maxPanelOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={() => setMaxPanelOpen(false)}
           />
           
-          {/* Panel - positioned below header */}
-          <div className="absolute right-0 top-16 bottom-0 w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          {/* Panel - Full screen covering header completely */}
+          <div className="absolute inset-0 w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
+            {/* Max Header - Replaces mobile header completely */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <div className="flex items-center gap-2 flex-1">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
-                {/* Search Input matching main header */}
-                <div className="flex-1">
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">Max AI Assistant</span>
+              </div>
+              
+              {/* Close Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMaxPanelOpen(false)}
+                className="p-2 h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Search Input Row */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
@@ -1222,7 +1238,10 @@ export default function MobileHomePage() {
                     />
                   </div>
                 </div>
-              </div>
+            </div>
+
+            {/* Max Footer with Controls */}
+            <div className="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -1232,15 +1251,15 @@ export default function MobileHomePage() {
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMaxPanelOpen(false)}
-                  className="p-2"
-                >
-                  ✕
-                </Button>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMaxPanelOpen(false)}
+                className="p-2"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
 
             {/* Settings Panel */}
