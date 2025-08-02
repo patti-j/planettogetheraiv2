@@ -504,10 +504,19 @@ export default function MobileHomePage() {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log("🔍 Search button clicked, setting showSearch to true");
-                // Use setTimeout to ensure state change happens after any other handlers
+                // Use longer timeout and force the state to true
                 setTimeout(() => {
+                  console.log("🔍 Timeout executing - forcing showSearch to true");
                   setShowSearch(true);
-                }, 0);
+                  // Double-check and force again after a small delay
+                  setTimeout(() => {
+                    console.log("🔍 Double-check timeout - ensuring showSearch stays true");
+                    setShowSearch(current => {
+                      console.log("🔍 Current showSearch state:", current);
+                      return true;
+                    });
+                  }, 50);
+                }, 10);
               }}
             >
               <Search className="w-5 h-5" />
@@ -558,10 +567,19 @@ export default function MobileHomePage() {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log("📚 Library button clicked, setting showLibrary to true");
-                // Use setTimeout to ensure state change happens after any other handlers
+                // Use longer timeout and force the state to true
                 setTimeout(() => {
+                  console.log("📚 Timeout executing - forcing showLibrary to true");
                   setShowLibrary(true);
-                }, 0);
+                  // Double-check and force again after a small delay
+                  setTimeout(() => {
+                    console.log("📚 Double-check timeout - ensuring showLibrary stays true");
+                    setShowLibrary(current => {
+                      console.log("📚 Current showLibrary state:", current);
+                      return true;
+                    });
+                  }, 50);
+                }, 10);
               }}
             >
               <Library className="w-5 h-5" />
