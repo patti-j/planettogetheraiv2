@@ -1145,13 +1145,15 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
 });
 
 // Schedule Scenarios for evaluation and comparison
-export const scheduleScenarios: any = pgTable("schedule_scenarios", {
+export const scheduleScenarios = pgTable("schedule_scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("draft"), // draft, active, approved, rejected, archived
   createdBy: text("created_by").notNull(),
   baselineScenarioId: integer("baseline_scenario_id").references(() => scheduleScenarios.id),
+  algorithmId: integer("algorithm_id"), // Reference to optimization algorithm used
+  optimizationProfileId: integer("optimization_profile_id"), // Reference to optimization profile used
   configuration: jsonb("configuration").$type<{
     scheduling_strategy: "fastest" | "most_efficient" | "balanced" | "custom";
     optimization_priorities: Array<"delivery_time" | "resource_utilization" | "cost_efficiency" | "customer_satisfaction">;
@@ -1177,7 +1179,53 @@ export const scheduleScenarios: any = pgTable("schedule_scenarios", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Operations within specific scenarios
+// Scenario Operation Blocks - represents scheduled operation resource requirements
+export const scenarioOperationBlocks = pgTable("scenario_operation_blocks", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
+  
+  // Reference to the operation and its resource requirement
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
+  resourceRequirementId: integer("resource_requirement_id"), // References discreteOperationPhaseResourceRequirements or similar
+  
+  // Assigned resource and timing
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id).notNull(),
+  scheduledStartTime: timestamp("scheduled_start_time").notNull(),
+  scheduledEndTime: timestamp("scheduled_end_time").notNull(),
+  
+  // Block properties
+  blockType: text("block_type").notNull().default("operation"), // operation, setup, teardown, maintenance
+  status: text("status").notNull().default("planned"), // planned, confirmed, in_progress, completed, cancelled
+  priority: integer("priority").default(1), // Higher number = higher priority for conflict resolution
+  
+  // Capacity and resource usage
+  requiredCapacity: numeric("required_capacity", { precision: 10, scale: 4 }).default("1.0"), // How much of the resource is needed (0.0-1.0 or more for parallel)
+  actualCapacity: numeric("actual_capacity", { precision: 10, scale: 4 }), // Actual capacity used when executed
+  
+  // Dependencies and constraints
+  predecessorBlockIds: jsonb("predecessor_block_ids").$type<number[]>().default([]), // Must complete before this block
+  successorBlockIds: jsonb("successor_block_ids").$type<number[]>().default([]), // This block must complete before these
+  
+  // Optimization data
+  isBottleneck: boolean("is_bottleneck").default(false),
+  isCriticalPath: boolean("is_critical_path").default(false),
+  floatTime: integer("float_time").default(0), // Available slack time in minutes
+  
+  // Notes and metadata
+  notes: text("notes"),
+  constraints: jsonb("constraints").$type<{
+    cannot_overlap_with?: number[]; // Block IDs that cannot overlap
+    requires_same_resource_as?: number[]; // Block IDs that must use same resource
+    setup_time_minutes?: number;
+    teardown_time_minutes?: number;
+  }>().default({}),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Operations within specific scenarios (kept for backward compatibility)
 export const scenarioOperations = pgTable("scenario_operations", {
   id: serial("id").primaryKey(),
   scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
@@ -1595,6 +1643,15 @@ export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertScenarioOperationBlockSchema = createInsertSchema(scenarioOperationBlocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  scheduledStartTime: z.union([z.string().datetime(), z.date()]),
+  scheduledEndTime: z.union([z.string().datetime(), z.date()]),
 });
 
 export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
@@ -2446,6 +2503,9 @@ export type ScheduleScenario = typeof scheduleScenarios.$inferSelect;
 
 export type InsertScenarioOperation = z.infer<typeof insertScenarioOperationSchema>;
 export type ScenarioOperation = typeof scenarioOperations.$inferSelect;
+
+export type InsertScenarioOperationBlock = z.infer<typeof insertScenarioOperationBlockSchema>;
+export type ScenarioOperationBlock = typeof scenarioOperationBlocks.$inferSelect;
 
 export type InsertScenarioEvaluation = z.infer<typeof insertScenarioEvaluationSchema>;
 export type ScenarioEvaluation = typeof scenarioEvaluations.$inferSelect;
