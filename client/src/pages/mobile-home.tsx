@@ -765,8 +765,12 @@ export default function MobileHomePage() {
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-2 gap-4">
               {quickActions.map((action) => (
-                <Link key={action.path} href={action.path}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                action.title === "Dashboards" ? (
+                  <Card 
+                    key="dashboards"
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setShowLibrary(true)}
+                  >
                     <CardContent className="p-4 text-center">
                       <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mx-auto mb-3 relative`}>
                         <action.icon className="w-6 h-6" />
@@ -781,7 +785,25 @@ export default function MobileHomePage() {
                       </h3>
                     </CardContent>
                   </Card>
-                </Link>
+                ) : (
+                  <Link key={action.path} href={action.path}>
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                      <CardContent className="p-4 text-center">
+                        <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mx-auto mb-3 relative`}>
+                          <action.icon className="w-6 h-6" />
+                          {action.badge && (
+                            <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-red-500 text-white">
+                              {action.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                          {action.title}
+                        </h3>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
               ))}
             </div>
 
