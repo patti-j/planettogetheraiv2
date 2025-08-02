@@ -3874,6 +3874,46 @@ Manufacturing Context Available:
           source: "cockpit",
           configuration: { view: "weekly", resources: ["all"] },
           createdAt: new Date().toISOString()
+        },
+        {
+          id: 6,
+          title: "Schedule Trade-off Analyzer",
+          type: "schedule-tradeoff-analyzer",
+          targetPlatform: "both",
+          source: "cockpit",
+          configuration: { 
+            showResourceConflicts: true,
+            showCostAnalysis: true,
+            showCustomerImpact: true,
+            maxAnalysisDepth: 5
+          },
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 7,
+          title: "ATP/CTP Calculator",
+          type: "atp-ctp",
+          targetPlatform: "both",
+          source: "cockpit",
+          configuration: { 
+            view: "full",
+            showCalculator: true,
+            showOverview: true,
+            autoRefresh: true
+          },
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 8,
+          title: "Available to Promise",
+          type: "available-to-promise",
+          targetPlatform: "both",
+          source: "cockpit",
+          configuration: { 
+            compact: true,
+            showQuickView: true
+          },
+          createdAt: new Date().toISOString()
         }
       ];
       
