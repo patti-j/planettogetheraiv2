@@ -75,6 +75,8 @@ import SchedulingHistory from "@/pages/scheduling-history";
 import WidgetShowcase from "@/pages/widget-showcase";
 import WidgetStudio from "@/pages/widget-studio";
 import MobileHomePage from "@/pages/mobile-home";
+import MobileWidgetView from "@/pages/mobile-widget-view";
+import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
 import WidgetsPage from "@/pages/widgets";
 import DashboardsPage from "@/pages/dashboards";
@@ -510,6 +512,8 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/mobile-home" component={MobileHomePage} />
+          <Route path="/widgets/:id" component={MobileWidgetView} />
+          <Route path="/dashboards/:id" component={MobileDashboardView} />
           <Route path="/product-development">
             <ProtectedRoute feature="systems-management" action="view">
               <ProductDevelopment />
