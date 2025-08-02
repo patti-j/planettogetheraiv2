@@ -160,14 +160,13 @@ export function registerSimpleRoutes(app: express.Application): Server {
   app.get("/api/mobile/widgets", async (req, res) => {
     console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
     
-    // Return working sample data with Schedule Optimizer included
+    // Simplified widget data with only targetPlatform categorization
     const mobileWidgets = [
       {
         id: 1,
         title: "Production Overview",
         type: "production-metrics",
         targetPlatform: "both",
-        source: "cockpit",
         configuration: { metrics: ["output", "efficiency", "quality"] },
         createdAt: new Date().toISOString()
       },
@@ -176,7 +175,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Equipment Status",
         type: "equipment-status",
         targetPlatform: "both",
-        source: "cockpit",
         configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
         createdAt: new Date().toISOString()
       },
@@ -185,7 +183,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Quality Metrics",
         type: "quality-dashboard",
         targetPlatform: "both",
-        source: "canvas",
         configuration: { tests: ["pH", "temperature", "purity"] },
         createdAt: new Date().toISOString()
       },
@@ -194,7 +191,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Inventory Levels",
         type: "inventory-tracking",
         targetPlatform: "both",
-        source: "canvas",
         configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
         createdAt: new Date().toISOString()
       },
@@ -203,7 +199,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Schedule Gantt",
         type: "gantt-chart",
         targetPlatform: "both",
-        source: "cockpit",
         configuration: { view: "weekly", resources: ["all"] },
         createdAt: new Date().toISOString()
       },
@@ -212,7 +207,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Operation Sequencer",
         type: "operation-sequencer",
         targetPlatform: "both",
-        source: "scheduling",
         configuration: { 
           view: "compact", 
           allowReorder: true,
@@ -227,7 +221,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "ATP/CTP Calculator",
         type: "atp-ctp",
         targetPlatform: "both",
-        source: "planning",
         configuration: { 
           view: "full",
           showCalculator: true,
@@ -241,7 +234,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "ATP Overview",
         type: "atp-ctp",
         targetPlatform: "both",
-        source: "planning",
         configuration: { 
           view: "compact",
           compact: true,
@@ -255,7 +247,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         title: "Schedule Optimizer",
         type: "schedule-optimizer",
         targetPlatform: "both",
-        source: "scheduling",
         configuration: { 
           view: "full",
           showTradeoffs: true,
@@ -270,52 +261,36 @@ export function registerSimpleRoutes(app: express.Application): Server {
     res.json(mobileWidgets);
   });
 
-  // Keep the old broken endpoint for now
-  app.get("/api/widgets", async (req, res) => {
-    try {
-      console.log("=== API WIDGETS ENDPOINT HIT ===");
-      // Get both cockpit widgets and canvas widgets for mobile library  
-      const cockpitWidgets = await db.select().from(schema.cockpitWidgets);
-      const canvasWidgets = await db.select().from(schema.canvasWidgets);
-      
-      console.log("Cockpit widgets count:", cockpitWidgets.length);
-      console.log("Canvas widgets count:", canvasWidgets.length);
-      
-      // Combine and format widgets for mobile library
-      const allWidgets = [
-        ...cockpitWidgets.map(widget => ({
-          id: widget.id,
-          title: widget.title,
-          type: widget.type,
-          targetPlatform: widget.targetPlatform || 'both',
-          source: 'cockpit',
-          configuration: widget.configuration,
-          createdAt: widget.createdAt
-        })),
-        ...canvasWidgets.map(widget => ({
-          id: widget.id,
-          title: widget.title,
-          type: widget.widgetType,
-          targetPlatform: widget.targetPlatform || 'both',
-          source: 'canvas',
-          configuration: widget.configuration,
-          createdAt: widget.createdAt
-        }))
-      ];
-      
-      console.log("Total widgets returned:", allWidgets.length);
-      res.json(allWidgets);
-    } catch (error) {
-      console.error("Error fetching widgets:", error);
-      res.status(500).json({ error: "Failed to fetch widgets" });
-    }
+  // Desktop widgets endpoint (if needed later)
+  app.get("/api/desktop/widgets", async (req, res) => {
+    console.log("=== DESKTOP WIDGETS ENDPOINT HIT ===");
+    
+    // Filter for desktop and both widgets
+    const mobileWidgets = [
+      {
+        id: 1,
+        title: "Production Overview",
+        type: "production-metrics",
+        targetPlatform: "both",
+        configuration: { metrics: ["output", "efficiency", "quality"] },
+        createdAt: new Date().toISOString()
+      },
+      // Add more desktop-specific or both widgets as needed
+    ];
+    
+    const desktopWidgets = mobileWidgets.filter(widget => 
+      widget.targetPlatform === "desktop" || widget.targetPlatform === "both"
+    );
+    
+    console.log("Total desktop widgets returned:", desktopWidgets.length);
+    res.json(desktopWidgets);
   });
 
-  // Mobile Library API - Working dashboards endpoint with hardcoded data
+  // Mobile Dashboards API - Simplified with targetPlatform only
   app.get("/api/mobile/dashboards", (req, res) => {
     console.log("=== MOBILE DASHBOARDS ENDPOINT HIT ===");
     
-    const sampleDashboards = [
+    const mobileDashboards = [
       {
         id: 1,
         title: "Factory Overview",
@@ -362,47 +337,58 @@ export function registerSimpleRoutes(app: express.Application): Server {
       },
       {
         id: 5,
-        title: "Production Scheduler Dashboard",
-        description: "Advanced scheduling tools for production planners",
+        title: "Scheduling Optimization",
+        description: "Advanced scheduling tools and trade-off analysis",
         targetPlatform: "both",
-        route: "/production-scheduler-dashboard",
         configuration: { 
-          layout: "grid",
-          widgets: ["schedule-optimization", "schedule-tradeoff-analyzer", "atp-ctp", "resource-utilization", "production-orders", "bottleneck-alerts", "capacity-overview", "constraint-management"]
+          layout: "optimization",
+          widgets: ["schedule-optimizer", "operation-sequencer", "atp-ctp"]
         },
         createdAt: new Date().toISOString()
       }
     ];
     
-    console.log("Total dashboards returned:", sampleDashboards.length);
-    res.json(sampleDashboards);
+    console.log("Total dashboards returned:", mobileDashboards.length);
+    res.json(mobileDashboards);
   });
 
-  // Keep the old broken endpoint for now
-  app.get("/api/dashboards", async (req, res) => {
-    try {
-      console.log("=== API DASHBOARDS ENDPOINT HIT ===");
-      // Get dashboard configs for mobile library  
-      const dashboardConfigs = await db.select().from(schema.dashboardConfigs);
-      
-      console.log("Dashboard configs count:", dashboardConfigs.length);
-      
-      // Format dashboards for mobile library
-      const dashboards = dashboardConfigs.map(dashboard => ({
-        id: dashboard.id,
-        title: dashboard.name,
-        description: dashboard.description,
-        targetPlatform: dashboard.targetPlatform || 'both',
-        configuration: dashboard.configuration,
-        createdAt: dashboard.createdAt
-      }));
-      
-      console.log("Total dashboards returned:", dashboards.length);
-      res.json(dashboards);
-    } catch (error) {
-      console.error("Error fetching dashboards:", error);
-      res.status(500).json({ error: "Failed to fetch dashboards" });
-    }
+  // Desktop dashboards endpoint (if needed later)
+  app.get("/api/desktop/dashboards", (req, res) => {
+    console.log("=== DESKTOP DASHBOARDS ENDPOINT HIT ===");
+    
+    // Simplified dashboard data with only targetPlatform categorization
+    const allDashboards = [
+      {
+        id: 1,
+        title: "Factory Overview",
+        description: "Real-time production metrics and equipment status",
+        targetPlatform: "both",
+        configuration: { 
+          layout: "grid",
+          widgets: ["production-metrics", "equipment-status", "quality-dashboard"]
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Advanced Analytics",
+        description: "Detailed analytics for desktop users",
+        targetPlatform: "desktop",
+        configuration: { 
+          layout: "analytics",
+          widgets: ["trend-analysis", "predictive-models", "reporting-suite"]
+        },
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    // Filter for desktop and both dashboards
+    const desktopDashboards = allDashboards.filter(dashboard => 
+      dashboard.targetPlatform === "desktop" || dashboard.targetPlatform === "both"
+    );
+    
+    console.log("Total desktop dashboards returned:", desktopDashboards.length);
+    res.json(desktopDashboards);
   });
 
   // Mobile AI Chat endpoint - simple version without authentication
