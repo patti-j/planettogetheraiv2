@@ -991,7 +991,7 @@ export default function MobileHomePage() {
           />
           
           {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-900 shadow-xl border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="absolute right-0 top-0 h-full w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2">
@@ -1090,23 +1090,11 @@ export default function MobileHomePage() {
               )}
             </div>
 
-            {/* Quick Input */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ask Max anything..."
-                  className="flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      handleAIPrompt(e.currentTarget.value.trim());
-                      e.currentTarget.value = '';
-                    }
-                  }}
-                />
-                <Button size="sm" variant="outline">
-                  <Bot className="w-4 h-4" />
-                </Button>
-              </div>
+            {/* Footer with tip */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                💡 Use the search box in the header to continue chatting with Max
+              </p>
             </div>
           </div>
         </div>
