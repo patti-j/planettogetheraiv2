@@ -203,7 +203,7 @@ export default function ScheduleOptimizationWidget({
                             <SelectValue placeholder="Choose algorithm..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {algorithms.filter((a: Algorithm) => a.status === 'active' || a.status === 'approved').map((algorithm: Algorithm) => (
+                            {algorithms.filter((a: Algorithm) => a.status === 'approved').map((algorithm: Algorithm) => (
                               <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
                                 {algorithm.displayName || algorithm.name}
                               </SelectItem>
