@@ -1179,20 +1179,16 @@ export const scheduleScenarios = pgTable("schedule_scenarios", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Resource Requirement Blocks - unified table for both discrete and process operation resource requirements
+// Resource Requirement Blocks - unified scheduling blocks for both discrete and process operation resource requirements
 export const resourceRequirementBlocks = pgTable("resource_requirement_blocks", {
   id: serial("id").primaryKey(),
   scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
   
-  // Reference to the operation and its resource requirement (unified for both discrete and process)
-  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
-  processOperationId: integer("process_operation_id").references(() => processOperations.id),
-  
-  // Resource requirement can come from either discrete or process operations
-  discreteResourceRequirementId: integer("discrete_resource_requirement_id").references(() => discreteOperationPhaseResourceRequirements.id),
+  // Reference to base resource requirement (links to either discrete or process resource requirements)
+  discretePhaseResourceRequirementId: integer("discrete_phase_resource_requirement_id").references(() => discreteOperationPhaseResourceRequirements.id),
   processResourceRequirementId: integer("process_resource_requirement_id"), // Will reference process resource requirements when implemented
   
-  // Assigned resource and timing
+  // Assigned resource and timing (the core scheduling information)
   assignedResourceId: integer("assigned_resource_id").references(() => resources.id).notNull(),
   scheduledStartTime: timestamp("scheduled_start_time").notNull(),
   scheduledEndTime: timestamp("scheduled_end_time").notNull(),
@@ -1228,8 +1224,19 @@ export const resourceRequirementBlocks = pgTable("resource_requirement_blocks", 
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Keep the old table name as an alias for backward compatibility
-export const scenarioOperationBlocks = resourceRequirementBlocks;
+// Scenario Operation Blocks - separate table that tracks which operations are part of which scenarios
+export const scenarioOperationBlocks = pgTable("scenario_operation_blocks", {
+  id: serial("id").primaryKey(),
+  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
+  // Can reference either discrete or process operations
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
+  assignedResourceId: integer("assigned_resource_id").references(() => resources.id),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull().default("planned"),
+  notes: text("notes"),
+});
 
 // Operations within specific scenarios (kept for backward compatibility)
 export const scenarioOperations = pgTable("scenario_operations", {
@@ -1660,8 +1667,12 @@ export const insertResourceRequirementBlockSchema = createInsertSchema(resourceR
   scheduledEndTime: z.union([z.string().datetime(), z.date()]),
 });
 
-// Keep backward compatibility
-export const insertScenarioOperationBlockSchema = insertResourceRequirementBlockSchema;
+export const insertScenarioOperationBlockSchema = createInsertSchema(scenarioOperationBlocks).omit({
+  id: true,
+}).extend({
+  startTime: z.union([z.string().datetime(), z.date()]).optional(),
+  endTime: z.union([z.string().datetime(), z.date()]).optional(),
+});
 
 export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
   id: true,
@@ -2516,9 +2527,8 @@ export type ScenarioOperation = typeof scenarioOperations.$inferSelect;
 export type InsertResourceRequirementBlock = z.infer<typeof insertResourceRequirementBlockSchema>;
 export type ResourceRequirementBlock = typeof resourceRequirementBlocks.$inferSelect;
 
-// Keep backward compatibility
-export type InsertScenarioOperationBlock = InsertResourceRequirementBlock;
-export type ScenarioOperationBlock = ResourceRequirementBlock;
+export type InsertScenarioOperationBlock = z.infer<typeof insertScenarioOperationBlockSchema>;
+export type ScenarioOperationBlock = typeof scenarioOperationBlocks.$inferSelect;
 
 export type InsertScenarioEvaluation = z.infer<typeof insertScenarioEvaluationSchema>;
 export type ScenarioEvaluation = typeof scenarioEvaluations.$inferSelect;

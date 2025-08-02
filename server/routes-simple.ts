@@ -706,20 +706,78 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
-  // Backward compatibility - keep old endpoint names
+  // Scenario Operation Blocks API (tracks which operations are in each scenario)
+  app.get("/api/schedule-scenarios/:scenarioId/operations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      const operations = await db.select().from(schema.scenarioOperationBlocks)
+        .where(eq(schema.scenarioOperationBlocks.scenarioId, scenarioId));
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching scenario operations:", error);
+      res.status(500).json({ message: "Failed to fetch scenario operations" });
+    }
+  });
+
+  app.post("/api/schedule-scenarios/:scenarioId/operations", async (req, res) => {
+    try {
+      const scenarioId = parseInt(req.params.scenarioId);
+      const data = schema.insertScenarioOperationBlockSchema.parse({
+        ...req.body,
+        scenarioId
+      });
+      const [operation] = await db.insert(schema.scenarioOperationBlocks).values(data).returning();
+      res.json(operation);
+    } catch (error) {
+      console.error("Error creating scenario operation:", error);
+      res.status(500).json({ message: "Failed to create scenario operation" });
+    }
+  });
+
   app.get("/api/scenario-operation-blocks/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const [block] = await db.select().from(schema.resourceRequirementBlocks)
-        .where(eq(schema.resourceRequirementBlocks.id, id));
+      const [operation] = await db.select().from(schema.scenarioOperationBlocks)
+        .where(eq(schema.scenarioOperationBlocks.id, id));
       
-      if (!block) {
-        return res.status(404).json({ message: "Resource requirement block not found" });
+      if (!operation) {
+        return res.status(404).json({ message: "Scenario operation not found" });
       }
-      res.json(block);
+      res.json(operation);
     } catch (error) {
-      console.error("Error fetching resource requirement block:", error);
-      res.status(500).json({ message: "Failed to fetch resource requirement block" });
+      console.error("Error fetching scenario operation:", error);
+      res.status(500).json({ message: "Failed to fetch scenario operation" });
+    }
+  });
+
+  app.put("/api/scenario-operation-blocks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const data = req.body;
+      const [operation] = await db.update(schema.scenarioOperationBlocks)
+        .set(data)
+        .where(eq(schema.scenarioOperationBlocks.id, id))
+        .returning();
+      
+      if (!operation) {
+        return res.status(404).json({ message: "Scenario operation not found" });
+      }
+      res.json(operation);
+    } catch (error) {
+      console.error("Error updating scenario operation:", error);
+      res.status(500).json({ message: "Failed to update scenario operation" });
+    }
+  });
+
+  app.delete("/api/scenario-operation-blocks/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await db.delete(schema.scenarioOperationBlocks)
+        .where(eq(schema.scenarioOperationBlocks.id, id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting scenario operation:", error);
+      res.status(500).json({ message: "Failed to delete scenario operation" });
     }
   });
 
