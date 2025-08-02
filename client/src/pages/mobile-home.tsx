@@ -86,6 +86,7 @@ export default function MobileHomePage() {
   const [maxPanelOpen, setMaxPanelOpen] = useState(false);
   const [maxResponse, setMaxResponse] = useState<any>(null);
   const [isMaxLoading, setIsMaxLoading] = useState(false);
+  const [showMaxSettings, setShowMaxSettings] = useState(false);
   
   // AI prompt handling
   const handleAIPrompt = async (prompt: string) => {
@@ -1005,10 +1006,7 @@ export default function MobileHomePage() {
                   variant="ghost"
                   size="sm"
                   className="p-2"
-                  onClick={() => {
-                    // TODO: Open Max AI settings/preferences
-                    console.log('Max AI settings clicked');
-                  }}
+                  onClick={() => setShowMaxSettings(!showMaxSettings)}
                 >
                   <Settings className="w-4 h-4" />
                 </Button>
@@ -1022,6 +1020,37 @@ export default function MobileHomePage() {
                 </Button>
               </div>
             </div>
+
+            {/* Settings Panel */}
+            {showMaxSettings && (
+              <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4">
+                <h3 className="font-medium text-gray-900 dark:text-white mb-3">Max AI Settings</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Response Speed</span>
+                    <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      <option>Balanced</option>
+                      <option>Fast</option>
+                      <option>Detailed</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Show Action Buttons</span>
+                    <input type="checkbox" defaultChecked className="rounded" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Auto-create Widgets</span>
+                    <input type="checkbox" defaultChecked className="rounded" />
+                  </div>
+                  <button 
+                    className="w-full text-xs bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700"
+                    onClick={() => setShowMaxSettings(false)}
+                  >
+                    Save Settings
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
