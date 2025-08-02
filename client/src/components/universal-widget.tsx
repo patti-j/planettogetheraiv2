@@ -35,6 +35,7 @@ import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2';
 import { WidgetConfig, WidgetDataProcessor, SystemData } from '@/lib/widget-library';
 import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
+import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -410,6 +411,19 @@ export default function UniversalWidget({
     );
   };
 
+  const renderAtpCtpWidget = () => {
+    const isCompact = config.configuration?.compact || 
+                     config.configuration?.view === 'compact' || 
+                     config.layout?.width < 300;
+    
+    return (
+      <AtpCtpWidget 
+        compact={isCompact}
+        className="h-full"
+      />
+    );
+  };
+
   const renderSimpleWidget = (type: string) => {
     switch (type) {
       case 'text':
@@ -468,6 +482,11 @@ export default function UniversalWidget({
         return renderScheduleOptimizationWidget();
       case 'operation-sequencer':
         return renderOperationSequencerWidget();
+      case 'atp-ctp':
+      case 'atp-ctp-calculator':
+      case 'available-to-promise':
+      case 'capable-to-promise':
+        return renderAtpCtpWidget();
       case 'dashboard':
         // Dashboard widgets are composite widgets - render as KPI for now
         return renderKPIWidget();

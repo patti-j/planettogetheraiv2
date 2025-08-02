@@ -219,6 +219,34 @@ export function registerSimpleRoutes(app: express.Application): Server {
           showOptimizationFlags: true
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 7,
+        title: "ATP/CTP Calculator",
+        type: "atp-ctp",
+        targetPlatform: "both",
+        source: "planning",
+        configuration: { 
+          view: "full",
+          showCalculator: true,
+          showOverview: true,
+          autoRefresh: true
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 8,
+        title: "ATP Overview",
+        type: "atp-ctp",
+        targetPlatform: "both",
+        source: "planning",
+        configuration: { 
+          view: "compact",
+          compact: true,
+          showOverview: true,
+          maxItems: 3
+        },
+        createdAt: new Date().toISOString()
       }
     ];
     

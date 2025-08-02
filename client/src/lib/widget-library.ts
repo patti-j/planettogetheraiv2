@@ -17,12 +17,14 @@ import {
   CheckCircle, 
   Clock, 
   Target,
-  MoreHorizontal 
+  MoreHorizontal,
+  Package,
+  Calculator 
 } from 'lucide-react';
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise';
   title: string;
   subtitle?: string;
   dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization';
@@ -836,6 +838,50 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     },
     targetSystems: ['cockpit', 'analytics', 'canvas'],
     complexity: 'advanced'
+  },
+  // ATP/CTP Calculator Widget
+  {
+    id: 'atp-ctp-calculator',
+    name: 'ATP/CTP Calculator',
+    description: 'Calculate Available to Promise and Capable to Promise quantities for customer commitments',
+    category: 'operations',
+    type: 'atp-ctp',
+    icon: Calculator,
+    defaultConfig: {
+      type: 'atp-ctp',
+      dataSource: 'productionOrders',
+      size: { width: 400, height: 350 },
+      compact: false,
+      configuration: {
+        view: 'full',
+        showCalculator: true,
+        showOverview: true,
+        autoRefresh: true
+      }
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas'],
+    complexity: 'intermediate'
+  },
+  {
+    id: 'atp-overview',
+    name: 'ATP Overview',
+    description: 'Quick overview of available to promise quantities for top products',
+    category: 'operations',
+    type: 'atp-ctp',
+    icon: Package,
+    defaultConfig: {
+      type: 'atp-ctp',
+      dataSource: 'productionOrders',
+      size: { width: 300, height: 250 },
+      compact: true,
+      configuration: {
+        view: 'compact',
+        showOverview: true,
+        maxItems: 3
+      }
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas'],
+    complexity: 'basic'
   }
 ];
 
