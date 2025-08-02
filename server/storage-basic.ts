@@ -107,7 +107,7 @@ export class BasicStorage {
       description: "Schedule operations from due date backward, optimizing for just-in-time delivery",
       category: "scheduling",
       type: "built-in", 
-      status: "active",
+      status: "approved",
       isStandard: true,
       configuration: {
         timeHorizon: "weeks",
