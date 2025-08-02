@@ -19,15 +19,16 @@ import {
   Target,
   MoreHorizontal,
   Package,
-  Calculator 
+  Calculator,
+  FileText 
 } from 'lucide-react';
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status' | 'reports';
   title: string;
   subtitle?: string;
-  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders';
+  dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders' | 'reports';
   chartType?: 'bar' | 'line' | 'pie' | 'doughnut' | 'number' | 'gauge' | 'progress';
   aggregation?: 'count' | 'sum' | 'avg' | 'min' | 'max';
   groupBy?: string;
@@ -86,6 +87,7 @@ export interface SystemData {
   metrics?: Record<string, any>;
   alerts?: any[];
   salesOrders?: any[];
+  reports?: any[];
 }
 
 export interface ProcessedWidgetData {
@@ -174,6 +176,8 @@ export class WidgetDataProcessor {
         return this.systemData.alerts || [];
       case 'salesOrders':
         return this.systemData.salesOrders || [];
+      case 'reports':
+        return this.systemData.reports || [];
       default:
         return [];
     }
@@ -902,6 +906,28 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
       sharingEnabled: true,
       showOrderDetails: true,
       showTimeline: true
+    },
+    targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
+    complexity: 'intermediate'
+  },
+  // Reports Widget
+  {
+    id: 'reports-widget',
+    name: 'Reports',
+    description: 'Create and view production, resource, and efficiency reports with switchable views',
+    category: 'management',
+    type: 'reports',
+    icon: FileText,
+    defaultConfig: {
+      type: 'reports',
+      dataSource: 'reports',
+      size: { width: 450, height: 500 },
+      configuration: {
+        defaultReportType: 'production',
+        showControls: true,
+        compactView: false,
+        maxReports: 3
+      }
     },
     targetSystems: ['cockpit', 'analytics', 'canvas', 'dashboard'],
     complexity: 'intermediate'

@@ -37,6 +37,7 @@ import ScheduleOptimizationWidget from '@/components/schedule-optimization-widge
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
 import { SalesOrderStatusWidget } from '@/components/widgets/sales-order-status-widget';
+import ReportsWidget from '@/components/widgets/reports-widget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -434,6 +435,14 @@ export default function UniversalWidget({
     );
   };
 
+  const renderReportsWidget = () => {
+    return (
+      <ReportsWidget 
+        config={config.configuration}
+      />
+    );
+  };
+
   const renderSimpleWidget = (type: string) => {
     switch (type) {
       case 'text':
@@ -499,6 +508,8 @@ export default function UniversalWidget({
         return renderAtpCtpWidget();
       case 'sales-order-status':
         return renderSalesOrderStatusWidget();
+      case 'reports':
+        return renderReportsWidget();
       case 'dashboard':
         // Dashboard widgets are composite widgets - render as KPI for now
         return renderKPIWidget();
