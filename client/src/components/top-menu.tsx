@@ -25,6 +25,7 @@ import { TourSelectionDialog } from "./tour-selection-dialog";
 import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useViewMode } from "@/hooks/use-view-mode";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -453,6 +454,7 @@ export default function TopMenu() {
                         onOpenChange={setUserProfileOpen}
                       />
                       <ThemeToggle />
+                      <MobileViewToggle />
                       <Button
                         variant="ghost"
                         size="sm"
@@ -880,5 +882,22 @@ export default function TopMenu() {
         onOpenChange={setTourSelectionOpen}
       />
     </>
+  );
+}
+
+// Mobile View Toggle Component
+function MobileViewToggle() {
+  const { currentView, toggleView } = useViewMode();
+  
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={toggleView}
+      className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 ring-2 ring-blue-200"
+      title="Switch to Mobile View"
+    >
+      <Smartphone className="h-4 w-4" />
+    </Button>
   );
 }

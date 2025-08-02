@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
+import { useLocation } from "wouter";
 
 type ViewMode = "mobile" | "desktop" | "auto";
 
@@ -15,6 +16,7 @@ const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   const [viewMode, setViewModeState] = useState<ViewMode>("auto");
   const [isMobile, setIsMobile] = useState(false);
+  const [, setLocation] = useLocation();
   
   // Detect mobile device
   useEffect(() => {
@@ -72,9 +74,13 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
     if (currentView === "mobile") {
       console.log("🖥️ Switching to desktop view");
       setViewMode("desktop");
+      // Navigate to desktop homepage when switching from mobile to desktop
+      setLocation("/");
     } else {
       console.log("📱 Switching to mobile view");  
       setViewMode("mobile");
+      // Navigate to mobile home when switching from desktop to mobile
+      setLocation("/mobile-home");
     }
   };
 
