@@ -122,8 +122,8 @@ export const productionOrders = pgTable("production_orders", {
   // Quality and compliance tracking
   inspectionStatus: text("inspection_status").default("pending"), // pending, in_progress, passed, failed, conditional
   certificateOfAnalysis: jsonb("certificate_of_analysis").$type<Record<string, any>>().default({}),
-  deviationReports: text("deviation_reports").array().default([]),
-  correctiveActions: text("corrective_actions").array().default([]),
+  deviationReports: text("deviation_reports").array(),
+  correctiveActions: text("corrective_actions").array(),
   batchRecordComplete: boolean("batch_record_complete").default(false),
   releaseApproved: boolean("release_approved").default(false),
   releaseApprovedBy: integer("release_approved_by"), // Will be FK to users.id when users table is defined
@@ -7247,7 +7247,7 @@ export const salesOrders = pgTable("sales_orders", {
   commissionAmount: numeric("commission_amount", { precision: 15, scale: 2 }).default("0"), // Calculated commission amount
   
   // Advanced discount and promotion management
-  discountCodes: text("discount_codes").array().default([]), // Applied discount/promo codes
+  discountCodes: text("discount_codes").array(), // Applied discount/promo codes
   volumeDiscountTier: text("volume_discount_tier"), // bronze, silver, gold, platinum based on order value
   loyaltyDiscount: numeric("loyalty_discount", { precision: 5, scale: 2 }).default("0"), // Customer loyalty discount percentage
   seasonalDiscount: numeric("seasonal_discount", { precision: 5, scale: 2 }).default("0"), // Seasonal promotion discount
