@@ -1,274 +1,197 @@
-import { db } from "./db";
-import { unifiedWidgets, widgetDeployments, type UnifiedWidget, type InsertUnifiedWidget, type WidgetDeployment, type InsertWidgetDeployment } from "../shared/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, desc, or } from "drizzle-orm";
+import { DatabaseStorage } from "./storage.js";
+import { unifiedWidgets, type InsertUnifiedWidget, type UnifiedWidget } from "../shared/schema.js";
 
-export class WidgetStorage {
+export class WidgetStorage extends DatabaseStorage {
   // Create a new widget
   async createWidget(widget: InsertUnifiedWidget): Promise<UnifiedWidget> {
-    const [newWidget] = await db.insert(unifiedWidgets).values(widget).returning();
-    return newWidget;
+    const [created] = await this.db.insert(unifiedWidgets).values(widget).returning();
+    return created;
   }
 
-  // Get all widgets with optional platform filtering
-  async getWidgets(targetPlatform?: string): Promise<UnifiedWidget[]> {
-    if (targetPlatform && targetPlatform !== 'both') {
-      return await db.select()
-        .from(unifiedWidgets)
-        .where(
-          inArray(unifiedWidgets.targetPlatform, [targetPlatform, 'both'])
-        );
-    }
-    return await db.select().from(unifiedWidgets);
+  // Get all active widgets
+  async getAllWidgets(): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
+  // Get widgets by platform
+  async getWidgetsByPlatform(platform: 'mobile' | 'desktop' | 'both'): Promise<SelectUnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(
+        and(
+          eq(unifiedWidgets.isActive, true),
+          eq(unifiedWidgets.targetPlatform, platform)
+        )
+      )
+      .orderBy(desc(unifiedWidgets.createdAt));
   }
 
   // Get widget by ID
-  async getWidgetById(id: number): Promise<UnifiedWidget | null> {
-    const [widget] = await db.select()
+  async getWidgetById(id: number): Promise<SelectUnifiedWidget | null> {
+    const [widget] = await this.db
+      .select()
       .from(unifiedWidgets)
-      .where(eq(unifiedWidgets.id, id));
+      .where(and(
+        eq(unifiedWidgets.id, id),
+        eq(unifiedWidgets.isActive, true)
+      ));
     return widget || null;
   }
 
   // Update widget
-  async updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<UnifiedWidget | null> {
-    const [updated] = await db.update(unifiedWidgets)
+  async updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<SelectUnifiedWidget | null> {
+    const [updated] = await this.db
+      .update(unifiedWidgets)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(unifiedWidgets.id, id))
       .returning();
     return updated || null;
   }
 
-  // Delete widget
+  // Soft delete widget
   async deleteWidget(id: number): Promise<boolean> {
-    const result = await db.delete(unifiedWidgets)
-      .where(eq(unifiedWidgets.id, id));
-    return result.count > 0;
+    const [deleted] = await this.db
+      .update(unifiedWidgets)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(unifiedWidgets.id, id))
+      .returning();
+    return !!deleted;
   }
 
-  // Deploy widget to a system
-  async deployWidget(deployment: InsertWidgetDeployment): Promise<WidgetDeployment> {
-    const [newDeployment] = await db.insert(widgetDeployments).values(deployment).returning();
-    return newDeployment;
+  // Get widgets by category
+  async getWidgetsByCategory(category: string): Promise<SelectUnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(
+        and(
+          eq(unifiedWidgets.isActive, true),
+          eq(unifiedWidgets.category, category)
+        )
+      )
+      .orderBy(desc(unifiedWidgets.createdAt));
   }
 
-  // Get deployments for a widget
-  async getWidgetDeployments(widgetId: number): Promise<WidgetDeployment[]> {
-    return await db.select()
-      .from(widgetDeployments)
-      .where(eq(widgetDeployments.widgetId, widgetId));
-  }
-
-  // Seed initial widgets from hardcoded data
-  async seedWidgets(userId: number): Promise<void> {
-    const existingWidgets = await this.getWidgets();
+  // Seed initial widgets from current hardcoded data
+  async seedWidgets(): Promise<void> {
+    const existingWidgets = await this.getAllWidgets();
     if (existingWidgets.length > 0) {
-      console.log("Widgets already seeded, skipping...");
+      console.log('Widgets already seeded, skipping...');
       return;
     }
 
-    const seedWidgets: InsertUnifiedWidget[] = [
+    const seedData: InsertUnifiedWidget[] = [
       {
         title: "Production Overview",
-        subtitle: "Real-time production metrics",
+        type: "production-metrics",
+        category: "production",
         targetPlatform: "both",
-        widgetType: "kpi",
-        dataSource: "production_orders",
-        chartType: "number",
-        size: { width: 300, height: 200 },
-        position: { x: 0, y: 0 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "production-metrics" },
-          cockpit: { type: "production-order-status" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Overview of current production metrics including output, efficiency, and quality"
+        source: "cockpit",
+        configuration: { metrics: ["output", "efficiency", "quality"] },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
         title: "Equipment Status",
-        subtitle: "Real-time equipment monitoring",
+        type: "equipment-status", 
+        category: "equipment",
         targetPlatform: "both",
-        widgetType: "table",
-        dataSource: "resources",
-        size: { width: 400, height: 300 },
-        position: { x: 0, y: 200 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "equipment-status" },
-          cockpit: { type: "resource-assignment" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Current status of all production equipment and resources"
+        source: "cockpit",
+        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
-        title: "Operation Sequencer",
-        subtitle: "Schedule and sequence operations",
-        targetPlatform: "both",
-        widgetType: "timeline",
-        dataSource: "operations",
-        size: { width: 500, height: 400 },
-        position: { x: 0, y: 500 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "operation-sequencer" },
-          cockpit: { type: "operation-sequencer" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Interactive tool for scheduling and sequencing manufacturing operations"
-      },
-      {
-        title: "ATP/CTP Calculator",
-        subtitle: "Available and Capable to Promise",
-        targetPlatform: "both",
-        widgetType: "chart",
-        dataSource: "production_orders",
-        chartType: "bar",
-        size: { width: 400, height: 300 },
-        position: { x: 400, y: 0 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "atp-ctp" },
-          cockpit: { type: "atp-ctp" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Calculate available and capable to promise quantities"
-      },
-      {
-        title: "Quality Dashboard",
-        subtitle: "Quality metrics and testing results",
-        targetPlatform: "both",
-        widgetType: "chart",
-        dataSource: "metrics",
-        chartType: "line",
-        size: { width: 400, height: 300 },
-        position: { x: 400, y: 300 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "quality-dashboard" },
-          cockpit: { type: "reports" }
-        },
-        createdBy: userId,
+        title: "Quality Metrics",
+        type: "quality-dashboard",
         category: "quality",
-        description: "Quality metrics including pH, temperature, and purity measurements"
+        targetPlatform: "both",
+        source: "canvas",
+        configuration: { tests: ["pH", "temperature", "purity"] },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
-        title: "Inventory Tracking",
-        subtitle: "Stock levels and material tracking",
+        title: "Inventory Levels",
+        type: "inventory-tracking",
+        category: "inventory",
         targetPlatform: "both",
-        widgetType: "kpi",
-        dataSource: "stock_items",
-        chartType: "gauge",
-        size: { width: 300, height: 200 },
-        position: { x: 800, y: 0 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "inventory-tracking" },
-          cockpit: { type: "production-order-status" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Track inventory levels for raw materials, WIP, and finished goods"
+        source: "canvas",
+        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
         title: "Schedule Gantt",
-        subtitle: "Visual production schedule",
+        type: "gantt-chart",
+        category: "scheduling",
         targetPlatform: "both",
-        widgetType: "timeline",
-        dataSource: "operations",
-        size: { width: 600, height: 400 },
-        position: { x: 0, y: 900 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "gantt-chart" },
-          cockpit: { type: "operation-sequencer" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Gantt chart view of production schedule with resource allocation"
+        source: "cockpit",
+        configuration: { view: "weekly", resources: ["all"] },
+        version: "1.0.0",
+        createdBy: "system"
+      },
+      {
+        title: "Operation Sequencer",
+        type: "operation-sequencer",
+        category: "scheduling",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { view: "list", maxOperations: 20 },
+        version: "1.0.0",
+        createdBy: "system"
+      },
+      {
+        title: "ATP/CTP Calculator",
+        type: "atp-ctp",
+        category: "planning",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { showDetails: true, compact: false },
+        version: "1.0.0",
+        createdBy: "system"
+      },
+      {
+        title: "ATP Overview",
+        type: "atp-ctp",
+        category: "planning", 
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { showDetails: false, compact: true },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
         title: "Schedule Optimizer",
-        subtitle: "AI-powered schedule optimization",
+        type: "schedule-optimizer",
+        category: "scheduling",
         targetPlatform: "both",
-        widgetType: "chart",
-        dataSource: "operations",
-        chartType: "bar",
-        size: { width: 400, height: 300 },
-        position: { x: 600, y: 900 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "schedule-optimizer" },
-          cockpit: { type: "schedule-optimizer" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "AI-powered optimization of production schedules"
+        source: "cockpit",
+        configuration: { showOptimizer: true },
+        version: "1.0.0",
+        createdBy: "system"
       },
       {
         title: "Production Order Status",
-        subtitle: "Track production order progress",
+        type: "production-order-status",
+        category: "production",
         targetPlatform: "both",
-        widgetType: "table",
-        dataSource: "production_orders",
-        size: { width: 500, height: 300 },
-        position: { x: 1000, y: 900 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "production-order-status" },
-          cockpit: { type: "production-order-status" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Status and progress tracking for all production orders"
-      },
-      {
-        title: "Operation Dispatch",
-        subtitle: "Dispatch and manage operations",
-        targetPlatform: "both",
-        widgetType: "list",
-        dataSource: "operations",
-        size: { width: 400, height: 350 },
-        position: { x: 1500, y: 0 },
-        deployedSystems: ["mobile", "cockpit"],
-        systemSpecificConfig: {
-          mobile: { type: "operation-dispatch" },
-          cockpit: { type: "operation-dispatch" }
-        },
-        createdBy: userId,
-        category: "operational",
-        description: "Dispatch operations to resources and track execution"
+        source: "cockpit",
+        configuration: { showMetrics: true, refreshInterval: 30000 },
+        version: "1.0.0",
+        createdBy: "system"
       }
     ];
 
-    // Insert all seed widgets
-    for (const widget of seedWidgets) {
+    for (const widget of seedData) {
       await this.createWidget(widget);
     }
 
-    console.log(`Seeded ${seedWidgets.length} widgets successfully`);
-  }
-
-  // Get widgets formatted for mobile API (backward compatibility)
-  async getMobileWidgets(): Promise<any[]> {
-    const widgets = await this.getWidgets('mobile');
-    
-    return widgets.map(widget => {
-      const mobileConfig = widget.systemSpecificConfig?.mobile || {};
-      return {
-        id: widget.id,
-        title: widget.title,
-        type: mobileConfig.type || widget.widgetType,
-        targetPlatform: widget.targetPlatform,
-        source: widget.deployedSystems.includes('cockpit') ? 'cockpit' : 'canvas',
-        configuration: mobileConfig,
-        createdAt: widget.createdAt?.toISOString()
-      };
-    });
+    console.log(`Seeded ${seedData.length} widgets successfully`);
   }
 }
-
-export const widgetStorage = new WidgetStorage();

@@ -1,267 +1,175 @@
-import { Request, Response } from "express";
-import { db } from "./storage";
-import { unifiedWidgets, insertUnifiedWidgetSchema, users } from "../shared/schema";
-import { eq, and } from "drizzle-orm";
+import { Express } from "express";
+import { z } from "zod";
+import { WidgetStorage } from "./widget-storage.js";
+import { createInsertSchema } from "drizzle-zod";
+import { unifiedWidgets } from "../shared/schema.js";
 
-// Get all widgets with optional platform filtering
-export const getWidgets = async (req: Request, res: Response) => {
-  try {
-    const { platform, category, active } = req.query;
-    
-    const widgets = await db.select().from(unifiedWidgets);
-    
-    // Filter by platform if specified - note: unifiedWidgets uses targetPlatform (singular)
-    const filteredWidgets = platform 
-      ? widgets.filter(w => 
-          w.targetPlatform === platform || 
-          w.targetPlatform === 'both'
-        )
-      : widgets;
+const insertWidgetSchema = createInsertSchema(unifiedWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
 
-    res.json(filteredWidgets);
-  } catch (error) {
-    console.error('Error fetching widgets:', error);
-    res.status(500).json({ error: 'Failed to fetch widgets' });
-  }
-};
+const updateWidgetSchema = insertWidgetSchema.partial();
 
-// Get single widget by ID
-export const getWidget = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    
-    const widget = await db.select()
-      .from(unifiedWidgets)
-      .where(eq(unifiedWidgets.id, parseInt(id)))
-      .limit(1);
-      
-    if (!widget.length) {
-      return res.status(404).json({ error: 'Widget not found' });
+export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
+  
+  // Get all widgets
+  app.get("/api/widgets", async (req, res) => {
+    try {
+      const widgets = await storage.getAllWidgets();
+      res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching widgets:", error);
+      res.status(500).json({ error: "Failed to fetch widgets" });
     }
-    
-    res.json(widget[0]);
-  } catch (error) {
-    console.error('Error fetching widget:', error);
-    res.status(500).json({ error: 'Failed to fetch widget' });
-  }
-};
+  });
 
-// Create new widget
-export const createWidget = async (req: Request, res: Response) => {
-  try {
-    const widgetData = insertUnifiedWidgetSchema.parse(req.body);
-    
-    const [newWidget] = await db.insert(unifiedWidgets)
-      .values({
-        ...widgetData,
-        createdBy: req.user?.id || 'system',
-        createdAt: new Date(),
-      })
-      .returning();
+  // Get widgets by platform (mobile/desktop/both)
+  app.get("/api/widgets/platform/:platform", async (req, res) => {
+    try {
+      const { platform } = req.params;
       
-    res.status(201).json(newWidget);
-  } catch (error) {
-    console.error('Error creating widget:', error);
-    res.status(400).json({ error: 'Failed to create widget' });
-  }
-};
-
-// Update widget
-export const updateWidget = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const updateData = insertUnifiedWidgetSchema.partial().parse(req.body);
-    
-    const [updatedWidget] = await db.update(unifiedWidgets)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(unifiedWidgets.id, parseInt(id)))
-      .returning();
-      
-    if (!updatedWidget) {
-      return res.status(404).json({ error: 'Widget not found' });
-    }
-    
-    res.json(updatedWidget);
-  } catch (error) {
-    console.error('Error updating widget:', error);
-    res.status(400).json({ error: 'Failed to update widget' });
-  }
-};
-
-// Delete widget (soft delete by setting isActive to false)
-export const deleteWidget = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    
-    const [deletedWidget] = await db.update(unifiedWidgets)
-      .set({ 
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(unifiedWidgets.id, parseInt(id)))
-      .returning();
-      
-    if (!deletedWidget) {
-      return res.status(404).json({ error: 'Widget not found' });
-    }
-    
-    res.json({ message: 'Widget deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting widget:', error);
-    res.status(500).json({ error: 'Failed to delete widget' });
-  }
-};
-
-// Seed initial widgets (for migration from hardcoded data)
-export const seedWidgets = async (req: Request, res: Response) => {
-  try {
-    const initialWidgets = [
-      {
-        title: "Production Overview",
-        type: "production-metrics",
-        category: "production",
-        targetPlatforms: ["both"],
-        configuration: { metrics: ["output", "efficiency", "quality"] },
-        description: "Real-time production metrics and KPIs",
-        componentName: "ProductionOrderStatusWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Equipment Status",
-        type: "equipment-status",
-        category: "equipment",
-        targetPlatforms: ["both"],
-        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
-        description: "Monitor equipment health and status",
-        componentName: "ResourceAssignmentWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Quality Metrics",
-        type: "quality-dashboard",
-        category: "quality",
-        targetPlatforms: ["both"],
-        configuration: { tests: ["pH", "temperature", "purity"] },
-        description: "Quality control metrics and test results",
-        componentName: "ReportsWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Inventory Levels",
-        type: "inventory-tracking",
-        category: "inventory",
-        targetPlatforms: ["both"],
-        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
-        description: "Track inventory levels across all materials",
-        componentName: "ProductionOrderStatusWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Schedule Gantt",
-        type: "gantt-chart",
-        category: "scheduling",
-        targetPlatforms: ["both"],
-        configuration: { view: "weekly", resources: ["all"] },
-        description: "Visual schedule planning and tracking",
-        componentName: "OperationSequencerWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Operation Sequencer",
-        type: "operation-sequencer",
-        category: "scheduling",
-        targetPlatforms: ["both"],
-        configuration: { maxOperations: 50, autoRefresh: true },
-        description: "Sequence and manage production operations",
-        componentName: "OperationSequencerWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "ATP/CTP Calculator",
-        type: "atp-ctp",
-        category: "planning",
-        targetPlatforms: ["both"],
-        configuration: { horizon: 30, includeConstraints: true },
-        description: "Available and Capable to Promise calculations",
-        componentName: "AtpCtpWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Schedule Optimizer",
-        type: "schedule-optimizer",
-        category: "optimization",
-        targetPlatforms: ["both"],
-        configuration: { algorithm: "genetic", maxIterations: 1000 },
-        description: "AI-powered schedule optimization",
-        componentName: "ScheduleOptimizationWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Production Order Status",
-        type: "production-order-status",
-        category: "production",
-        targetPlatforms: ["both"],
-        configuration: { showProgress: true, groupByStatus: true },
-        description: "Track production order progress and status",
-        componentName: "ProductionOrderStatusWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
-      },
-      {
-        title: "Operation Dispatch",
-        type: "operation-dispatch",
-        category: "operations",
-        targetPlatforms: ["both"],
-        configuration: { autoDispatch: false, priorityBased: true },
-        description: "Dispatch operations to resources",
-        componentName: "OperationDispatchWidget",
-        version: "1.0.0",
-        isActive: true,
-        createdBy: "system"
+      if (!['mobile', 'desktop', 'both'].includes(platform)) {
+        return res.status(400).json({ error: "Invalid platform. Must be 'mobile', 'desktop', or 'both'" });
       }
-    ];
 
-    // Check if widgets already exist
-    const existingWidgets = await db.select().from(unifiedWidgets).limit(1);
-    if (existingWidgets.length > 0) {
-      return res.json({ message: 'Widgets already seeded', count: existingWidgets.length });
+      const widgets = await storage.getWidgetsByPlatform(platform as 'mobile' | 'desktop' | 'both');
+      res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching widgets by platform:", error);
+      res.status(500).json({ error: "Failed to fetch widgets" });
     }
+  });
 
-    // Insert all widgets
-    const insertedWidgets = await db.insert(unifiedWidgets)
-      .values(initialWidgets.map(widget => ({
-        ...widget,
-        createdAt: new Date(),
-      })))
-      .returning();
+  // Get widgets by category
+  app.get("/api/widgets/category/:category", async (req, res) => {
+    try {
+      const { category } = req.params;
+      const widgets = await storage.getWidgetsByCategory(category);
+      res.json(widgets);
+    } catch (error) {
+      console.error("Error fetching widgets by category:", error);
+      res.status(500).json({ error: "Failed to fetch widgets" });
+    }
+  });
 
-    res.json({ 
-      message: 'Widgets seeded successfully', 
-      count: insertedWidgets.length,
-      widgets: insertedWidgets 
-    });
-  } catch (error) {
-    console.error('Error seeding widgets:', error);
-    res.status(500).json({ error: 'Failed to seed widgets' });
-  }
-};
+  // Get widget by ID
+  app.get("/api/widgets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const widget = await storage.getWidgetById(id);
+      if (!widget) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json(widget);
+    } catch (error) {
+      console.error("Error fetching widget:", error);
+      res.status(500).json({ error: "Failed to fetch widget" });
+    }
+  });
+
+  // Create new widget
+  app.post("/api/widgets", async (req, res) => {
+    try {
+      const validatedData = insertWidgetSchema.parse(req.body);
+      const widget = await storage.createWidget(validatedData);
+      res.status(201).json(widget);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error creating widget:", error);
+      res.status(500).json({ error: "Failed to create widget" });
+    }
+  });
+
+  // Update widget
+  app.put("/api/widgets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const validatedData = updateWidgetSchema.parse(req.body);
+      const widget = await storage.updateWidget(id, validatedData);
+      
+      if (!widget) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json(widget);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Validation error", details: error.errors });
+      }
+      console.error("Error updating widget:", error);
+      res.status(500).json({ error: "Failed to update widget" });
+    }
+  });
+
+  // Delete widget (soft delete)
+  app.delete("/api/widgets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      const success = await storage.deleteWidget(id);
+      if (!success) {
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      res.json({ message: "Widget deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting widget:", error);
+      res.status(500).json({ error: "Failed to delete widget" });
+    }
+  });
+
+  // Seed widgets endpoint (for development)
+  app.post("/api/widgets/seed", async (req, res) => {
+    try {
+      await storage.seedWidgets();
+      res.json({ message: "Widgets seeded successfully" });
+    } catch (error) {
+      console.error("Error seeding widgets:", error);
+      res.status(500).json({ error: "Failed to seed widgets" });
+    }
+  });
+
+  // Legacy mobile widgets endpoint - now uses database
+  app.get("/api/mobile/widgets", async (req, res) => {
+    try {
+      console.log("=== DATABASE-DRIVEN MOBILE WIDGETS ENDPOINT HIT ===");
+      
+      // Get widgets that are compatible with mobile (mobile or both)
+      const mobileWidgets = await storage.getWidgetsByPlatform('mobile');
+      const bothWidgets = await storage.getWidgetsByPlatform('both');
+      
+      // Combine and format for backward compatibility
+      const allMobileWidgets = [...mobileWidgets, ...bothWidgets].map(widget => ({
+        id: widget.id,
+        title: widget.title,
+        type: widget.type,
+        targetPlatform: widget.targetPlatform,
+        source: widget.source,
+        configuration: widget.configuration,
+        createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
+      }));
+
+      console.log(`Total mobile widgets returned: ${allMobileWidgets.length}`);
+      res.json(allMobileWidgets);
+    } catch (error) {
+      console.error("Error fetching mobile widgets:", error);
+      res.status(500).json({ error: "Failed to fetch mobile widgets" });
+    }
+  });
+}
