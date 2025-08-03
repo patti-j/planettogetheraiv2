@@ -13648,6 +13648,217 @@ export class DatabaseStorage implements IStorage {
     // For now, return empty array as this would need the item/product table structure
     return [];
   }
+
+  // Widget management methods
+  async getWidgets(): Promise<UnifiedWidget[]> {
+    return await db.select().from(unifiedWidgets).where(eq(unifiedWidgets.isActive, true));
+  }
+
+  async getWidget(id: number): Promise<UnifiedWidget | undefined> {
+    const [widget] = await db.select().from(unifiedWidgets).where(eq(unifiedWidgets.id, id));
+    return widget || undefined;
+  }
+
+  async getWidgetsByPlatform(platform: string): Promise<UnifiedWidget[]> {
+    return await db.select().from(unifiedWidgets)
+      .where(
+        and(
+          eq(unifiedWidgets.isActive, true),
+          or(
+            eq(unifiedWidgets.targetPlatform, platform),
+            eq(unifiedWidgets.targetPlatform, 'both')
+          )
+        )
+      );
+  }
+
+  async getWidgetsByCategory(category: string): Promise<UnifiedWidget[]> {
+    return await db.select().from(unifiedWidgets)
+      .where(
+        and(
+          eq(unifiedWidgets.isActive, true),
+          eq(unifiedWidgets.category, category)
+        )
+      );
+  }
+
+  async createWidget(widget: InsertUnifiedWidget): Promise<UnifiedWidget> {
+    const [newWidget] = await db.insert(unifiedWidgets).values(widget).returning();
+    return newWidget;
+  }
+
+  async updateWidget(id: number, widget: Partial<InsertUnifiedWidget>): Promise<UnifiedWidget | undefined> {
+    const [updated] = await db.update(unifiedWidgets)
+      .set({ ...widget, updatedAt: new Date() })
+      .where(eq(unifiedWidgets.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteWidget(id: number): Promise<boolean> {
+    const [updated] = await db.update(unifiedWidgets)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(unifiedWidgets.id, id))
+      .returning();
+    return !!updated;
+  }
+
+  async seedMobileWidgets(): Promise<void> {
+    // Check if widgets already exist
+    const existingWidgets = await db.select().from(unifiedWidgets).limit(1);
+    if (existingWidgets.length > 0) {
+      console.log('Widgets already seeded, skipping...');
+      return;
+    }
+
+    const demoUserId = 1; // Default demo user ID
+    const widgetsToSeed: InsertUnifiedWidget[] = [
+      {
+        title: "Production Overview",
+        subtitle: "Real-time production metrics",
+        targetPlatform: "both",
+        widgetType: "production-metrics",
+        dataSource: "production-orders",
+        chartType: "number",
+        aggregation: "count",
+        size: { width: 4, height: 3 },
+        position: { x: 0, y: 0 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "production",
+        description: "Overview of production metrics including output, efficiency, and quality"
+      },
+      {
+        title: "Equipment Status",
+        subtitle: "Real-time equipment monitoring",
+        targetPlatform: "both",
+        widgetType: "equipment-status",
+        dataSource: "resources",
+        chartType: "gauge",
+        size: { width: 4, height: 3 },
+        position: { x: 4, y: 0 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "equipment",
+        description: "Monitor equipment status and availability"
+      },
+      {
+        title: "Quality Metrics",
+        subtitle: "Quality control dashboard",
+        targetPlatform: "both",
+        widgetType: "quality-dashboard",
+        dataSource: "production-orders",
+        chartType: "bar",
+        size: { width: 4, height: 3 },
+        position: { x: 8, y: 0 },
+        deployedSystems: ["mobile", "canvas"],
+        createdBy: demoUserId,
+        category: "quality",
+        description: "Track quality metrics and test results"
+      },
+      {
+        title: "Inventory Levels",
+        subtitle: "Stock monitoring",
+        targetPlatform: "both",
+        widgetType: "inventory-tracking",
+        dataSource: "stock-items",
+        chartType: "line",
+        size: { width: 4, height: 3 },
+        position: { x: 0, y: 3 },
+        deployedSystems: ["mobile", "canvas"],
+        createdBy: demoUserId,
+        category: "inventory",
+        description: "Monitor inventory levels and material availability"
+      },
+      {
+        title: "Schedule Gantt",
+        subtitle: "Production scheduling",
+        targetPlatform: "both",
+        widgetType: "gantt-chart",
+        dataSource: "operations",
+        chartType: "timeline",
+        size: { width: 8, height: 4 },
+        position: { x: 4, y: 3 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "scheduling",
+        description: "Visual production schedule and resource allocation"
+      },
+      {
+        title: "Operation Sequencer",
+        subtitle: "Operation management",
+        targetPlatform: "both",
+        widgetType: "operation-sequencer",
+        dataSource: "operations",
+        chartType: "list",
+        size: { width: 6, height: 4 },
+        position: { x: 0, y: 7 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "operations",
+        description: "Manage and sequence production operations"
+      },
+      {
+        title: "ATP/CTP Calculator",
+        subtitle: "Available to promise",
+        targetPlatform: "both",
+        widgetType: "atp-ctp",
+        dataSource: "production-orders",
+        chartType: "table",
+        size: { width: 6, height: 4 },
+        position: { x: 6, y: 7 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "planning",
+        description: "Calculate available to promise and capable to promise"
+      },
+      {
+        title: "Schedule Optimizer",
+        subtitle: "AI-powered optimization",
+        targetPlatform: "both",
+        widgetType: "schedule-optimizer",
+        dataSource: "operations",
+        chartType: "gauge",
+        size: { width: 4, height: 3 },
+        position: { x: 0, y: 11 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "optimization",
+        description: "Optimize production schedules using AI algorithms"
+      },
+      {
+        title: "Production Order Status",
+        subtitle: "Order tracking",
+        targetPlatform: "both",
+        widgetType: "production-order-status",
+        dataSource: "production-orders",
+        chartType: "progress",
+        size: { width: 4, height: 3 },
+        position: { x: 4, y: 11 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "production",
+        description: "Track production order progress and status"
+      },
+      {
+        title: "Operation Dispatch",
+        subtitle: "Work order dispatch",
+        targetPlatform: "both",
+        widgetType: "operation-dispatch",
+        dataSource: "operations",
+        chartType: "list",
+        size: { width: 4, height: 3 },
+        position: { x: 8, y: 11 },
+        deployedSystems: ["mobile", "cockpit"],
+        createdBy: demoUserId,
+        category: "operations",
+        description: "Dispatch and manage work orders"
+      }
+    ];
+
+    await db.insert(unifiedWidgets).values(widgetsToSeed);
+    console.log(`Seeded ${widgetsToSeed.length} mobile widgets`);
+  }
 }
 
 export const storage = new DatabaseStorage();
