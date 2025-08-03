@@ -4085,11 +4085,15 @@ Manufacturing Context Available:
     console.log("=== DATABASE-DRIVEN MOBILE WIDGETS ENDPOINT HIT ===");
     
     try {
-      // Get widgets from database for mobile platform
-      const widgets = await storage.getWidgetsByPlatform('mobile');
+      // Get widgets compatible with mobile (both 'mobile' and 'both' platforms)
+      const mobileWidgets = await storage.getWidgetsByPlatform('mobile');
+      const bothWidgets = await storage.getWidgetsByPlatform('both');
+      
+      // Combine all mobile-compatible widgets
+      const allMobileWidgets = [...mobileWidgets, ...bothWidgets];
       
       // Transform database widgets to match frontend expectations
-      const transformedWidgets = widgets.map(widget => ({
+      const transformedWidgets = allMobileWidgets.map(widget => ({
         id: widget.id,
         title: widget.title,
         type: widget.widgetType, // Use widgetType from database
@@ -4100,167 +4104,9 @@ Manufacturing Context Available:
       }));
       
       console.log(`=== MOBILE WIDGETS FROM DATABASE: ${transformedWidgets.length} widgets ===`);
+      transformedWidgets.forEach(w => console.log(`  - ${w.id}: ${w.title} (${w.type})`));
       
-      // If no widgets in database, seed and return seeded widgets
-      if (transformedWidgets.length === 0) {
-        console.log("=== NO WIDGETS FOUND, SEEDING DATABASE ===");
-        await storage.seedMobileWidgets();
-        
-        // Get widgets again after seeding
-        const seededWidgets = await storage.getWidgetsByPlatform('mobile');
-        const transformedSeededWidgets = seededWidgets.map(widget => ({
-          id: widget.id,
-          title: widget.title,
-          type: widget.widgetType,
-          targetPlatform: widget.targetPlatform,
-          source: widget.deployedSystems?.[0] || 'cockpit',
-          configuration: widget.filters || {},
-          createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
-        }));
-        
-        console.log(`=== SEEDED WIDGETS RETURNED: ${transformedSeededWidgets.length} widgets ===`);
-        res.json(transformedSeededWidgets);
-        return;
-      }
-      
-      // Widget 6
-      allWidgets.push({
-        id: 6,
-        title: "Schedule Trade-off Analyzer",
-        type: "schedule-tradeoff-analyzer",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          showResourceConflicts: true,
-          showCostAnalysis: true,
-          showCustomerImpact: true,
-          maxAnalysisDepth: 5
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 7
-      allWidgets.push({
-        id: 7,
-        title: "ATP/CTP Calculator",
-        type: "atp-ctp",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          view: "full",
-          showCalculator: true,
-          showOverview: true,
-          autoRefresh: true
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 8 - ATP/CTP Widget (existing component)
-      allWidgets.push({
-        id: 8,
-        title: "Available to Promise",
-        type: "atp-ctp",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          compact: true,
-          showQuickView: true
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 9 - Schedule Optimizer (existing component)
-      allWidgets.push({
-        id: 9,
-        title: "Schedule Optimization",
-        type: "schedule-optimizer",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          showQuickActions: true,
-          showHistory: true,
-          showMetrics: true,
-          maxHistoryItems: 5,
-          defaultView: "overview",
-          showAlgorithmSelector: true,
-          showProfileSelector: true
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 10 - Operation Dispatch (existing component)
-      allWidgets.push({
-        id: 10,
-        title: "Operation Dispatch",
-        type: "operation-dispatch",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          view: "resource",
-          timeframe: "week",
-          showDependencies: true,
-          showResourceLoading: true,
-          allowDragDrop: true,
-          showCriticalPath: true,
-          groupBy: "resource"
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 11 - Production Order Status
-      allWidgets.push({
-        id: 11,
-        title: "Production Order Status",
-        type: "production-order-status",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          defaultSearch: "",
-          showAdvancedMetrics: true,
-          showTimingDetails: true,
-          showQualityInfo: true,
-          maxResults: 20
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 12 - Operation Dispatch
-      allWidgets.push({
-        id: 12,
-        title: "Operation Dispatch",
-        type: "operation-dispatch",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          defaultResourceId: null,
-          userId: 1,
-          autoRefreshInterval: 30,
-          showAdvancedControls: true,
-          allowSkipOperations: true
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 13 - Resource Assignment
-      allWidgets.push({
-        id: 13,
-        title: "Resource Assignment",
-        type: "resource-assignment",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { 
-          supervisorUserId: 1,
-          defaultSkipPermission: false,
-          defaultScheduleVisibility: 7,
-          showInactiveAssignments: false,
-          allowBulkOperations: true
-        },
-        createdAt: new Date().toISOString()
-      });
-      
-      console.log("Total widgets returned:", allWidgets.length);
-      console.log("Last 3 widgets:", allWidgets.slice(-3).map(w => ({id: w.id, title: w.title})));
-      res.json(allWidgets);
+      res.json(transformedWidgets);
     } catch (error) {
       console.error("Error in mobile widgets endpoint:", error);
       res.status(500).json({ error: "Failed to get widgets" });
