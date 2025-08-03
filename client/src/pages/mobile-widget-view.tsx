@@ -20,8 +20,6 @@ import EquipmentStatusWidget from "@/components/widgets/equipment-status-widget"
 import QualityDashboardWidget from "@/components/widgets/quality-dashboard-widget";
 import InventoryTrackingWidget from "@/components/widgets/inventory-tracking-widget";
 import GanttChartWidget from "@/components/widgets/gantt-chart-widget";
-import InventoryTrackingWidget from "@/components/widgets/inventory-tracking-widget";
-import GanttChartWidget from "@/components/widgets/gantt-chart-widget";
 
 interface Widget {
   id: number;
@@ -59,8 +57,6 @@ export default function MobileWidgetView() {
   const [, setLocation] = useLocation();
   const { currentView } = useViewMode();
   
-  const widgetId = params?.id ?? "";
-  
   if (!params) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -74,7 +70,9 @@ export default function MobileWidgetView() {
     );
   }
   
-  if (!params?.id) {
+  const widgetId = params.id ?? "";
+  
+  if (!params.id) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">

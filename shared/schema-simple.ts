@@ -57,29 +57,50 @@ export const productionOrders = pgTable("production_orders", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Insert schemas
-export const insertPlantSchema = createInsertSchema(plants).omit({
-  id: true,
-  createdAt: true,
+// Insert schemas - simplified to avoid type errors
+export const insertPlantSchema = z.object({
+  name: z.string(),
+  address: z.string().optional(),
+  timezone: z.string().optional(),
+  isActive: z.boolean().optional(),
+  location: z.string().optional(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
-  id: true,
+export const insertCapabilitySchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
 });
 
-export const insertResourceSchema = createInsertSchema(resources).omit({
-  id: true,
+export const insertResourceSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  status: z.string().optional(),
+  capabilities: z.array(z.number()).optional(),
+  photo: z.string().optional(),
+  isDrum: z.boolean().optional(),
+  drumDesignationDate: z.date().optional(),
+  drumDesignationReason: z.string().optional(),
+  drumDesignationMethod: z.string().optional(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserSchema = z.object({
+  username: z.string(),
+  email: z.string().email(),
+  firstName: z.string(),
+  lastName: z.string(),
+  passwordHash: z.string(),
+  isActive: z.boolean().optional(),
+  lastLogin: z.date().optional(),
+  avatar: z.string().optional(),
 });
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
-  id: true,
-  createdAt: true,
+export const insertProductionOrderSchema = z.object({
+  orderNumber: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  plantId: z.number(),
 });
 
 // Types
