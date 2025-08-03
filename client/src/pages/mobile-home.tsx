@@ -265,20 +265,34 @@ function MobileMenuTrigger() {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{user?.username?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium">User</p>
-                    <p className="text-xs text-gray-500">demo@example.com</p>
+                    <p className="text-sm font-medium">{user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500">{user?.email || 'demo@example.com'}</p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setIsOpen(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center space-x-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    className="p-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    title="Log out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               
               {/* Navigation Menu - Categorized Desktop Structure */}
