@@ -2003,6 +2003,11 @@ export class DatabaseStorage implements IStorage {
   // Cache for database schema to avoid repeated expensive queries
   private schemaCache: { data: any[]; timestamp: number } | null = null;
   private readonly SCHEMA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  // Expose db for WidgetStorage
+  get db() {
+    return db;
+  }
   // Plants
   async getPlants(): Promise<Plant[]> {
     return await db.select().from(plants).orderBy(asc(plants.name));

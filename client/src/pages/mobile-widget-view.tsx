@@ -48,7 +48,7 @@ export default function MobileWidgetView() {
   
   const widgetId = params?.id ?? "";
   
-  if (!params || !widgetId) {
+  if (!params || !params.id) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
