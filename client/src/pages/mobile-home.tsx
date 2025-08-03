@@ -73,27 +73,43 @@ import {
   Edit,
   Trash2,
   X,
+  BookOpen,
+  Target,
+  Package,
+  Brain,
+  Briefcase,
+  Sparkles,
+  Database,
+  Truck,
+  Wrench,
+  Building,
+  Server,
+  Grid3X3,
+  Puzzle,
+  Layout,
+  FileSearch,
+  FileText,
+  Layers,
+  Shield,
+  GraduationCap,
+  Presentation,
+  MessageCircle,
+  Columns3,
+  Factory,
+  MessageSquare,
   // Additional icons for widget and dashboard types
   PieChart,
   LineChart,
   Gauge,
   Table,
-  AlertTriangle,
   Users,
-  Factory,
   CheckCircle,
-  Target,
-  Package,
   Calculator,
-  FileText,
   Cog,
   Zap,
-  Shield,
-  Layers,
   GitBranch,
   BarChart2,
-  TrendingDown,
-  Database
+  TrendingDown
 } from "lucide-react";
 
 // Import widget components
@@ -264,27 +280,151 @@ function MobileMenuTrigger() {
                 </Button>
               </div>
               
-              {/* Navigation Menu */}
-              <div className="flex-1 p-4 space-y-2">
-                <Link href="/analytics" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Analytics</span>
+              {/* Navigation Menu - Full Desktop Structure */}
+              <div className="flex-1 p-4 space-y-1 overflow-y-auto">
+                <Link href="/" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Home className="w-4 h-4" />
+                  <span>Homepage</span>
                 </Link>
-                <Link href="/production" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Activity className="w-4 h-4" />
-                  <span>Production</span>
+                <Link href="/help" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <BookOpen className="w-4 h-4" />
+                  <span>Getting Started</span>
+                </Link>
+                <Link href="/business-goals" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Business Goals</span>
+                </Link>
+                <Link href="/production-schedule" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Production Schedule</span>
+                </Link>
+                <Link href="/optimize-orders" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Target className="w-4 h-4" />
+                  <span>Optimize Orders</span>
+                </Link>
+                <Link href="/inventory-optimization" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Package className="w-4 h-4" />
+                  <span>Inventory Optimization</span>
+                </Link>
+                <Link href="/demand-forecasting" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Brain className="w-4 h-4" />
+                  <span>Demand Forecasting</span>
+                </Link>
+                <Link href="/capacity-planning" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Briefcase className="w-4 h-4" />
+                  <span>Capacity Planning</span>
+                </Link>
+                <Link href="/production-planning" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Target className="w-4 h-4" />
+                  <span>Production Planning</span>
+                </Link>
+                <Link href="/optimization-studio" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Optimization Studio</span>
+                </Link>
+                <Link href="/systems-integration" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Database className="w-4 h-4" />
+                  <span>System Integration</span>
                 </Link>
                 <Link href="/shop-floor" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Monitor className="w-4 h-4" />
+                  <Smartphone className="w-4 h-4" />
                   <span>Shop Floor</span>
                 </Link>
-                <Link href="/reports" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>Reports</span>
-                </Link>
-                <Link href="/settings" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                <Link href="/operator-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                   <Settings className="w-4 h-4" />
-                  <span>Settings</span>
+                  <span>Operator</span>
+                </Link>
+                <Link href="/forklift-driver" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Truck className="w-4 h-4" />
+                  <span>Forklift Driver</span>
+                </Link>
+                <Link href="/maintenance" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Wrench className="w-4 h-4" />
+                  <span>Maintenance</span>
+                </Link>
+                <Link href="/disruption-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Disruption Management</span>
+                </Link>
+                <Link href="/plant-manager-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Building className="w-4 h-4" />
+                  <span>Plant Manager</span>
+                </Link>
+                <Link href="/systems-management-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Server className="w-4 h-4" />
+                  <span>Systems Management</span>
+                </Link>
+                <Link href="/plants-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Building className="w-4 h-4" />
+                  <span>Plants Management</span>
+                </Link>
+                <Link href="/widget-showcase" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Grid3X3 className="w-4 h-4" />
+                  <span>Widget Showcase</span>
+                </Link>
+                <Link href="/widgets" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Puzzle className="w-4 h-4" />
+                  <span>Widgets</span>
+                </Link>
+                <Link href="/dashboards" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Layout className="w-4 h-4" />
+                  <span>Dashboards</span>
+                </Link>
+                <Link href="/error-logs" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <FileSearch className="w-4 h-4" />
+                  <span>Logs</span>
+                </Link>
+                <Link href="/data-schema" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Database className="w-4 h-4" />
+                  <span>Data Schema View</span>
+                </Link>
+                <Link href="/table-field-viewer" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <FileText className="w-4 h-4" />
+                  <span>Table Field Documentation</span>
+                </Link>
+                <Link href="/data-import" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Database className="w-4 h-4" />
+                  <span>Master Data Setup</span>
+                </Link>
+                <Link href="/constraints" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Constraints Management</span>
+                </Link>
+                <Link href="/canvas" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Layers className="w-4 h-4" />
+                  <span>Canvas</span>
+                </Link>
+                <Link href="/user-access-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Shield className="w-4 h-4" />
+                  <span>User & Access Management</span>
+                </Link>
+                <Link href="/training" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Training</span>
+                </Link>
+                <Link href="/industry-templates" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Building className="w-4 h-4" />
+                  <span>Industry Templates</span>
+                </Link>
+                <Link href="/presentation-system" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Presentation className="w-4 h-4" />
+                  <span>Presentation System</span>
+                </Link>
+                <Link href="/chat" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Chat</span>
+                </Link>
+                <Link href="/boards" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Columns3 className="w-4 h-4" />
+                  <span>Boards</span>
+                </Link>
+                <Link href="/visual-factory" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Factory className="w-4 h-4" />
+                  <span>Visual Factory</span>
+                </Link>
+                <Link href="/feedback" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Feedback</span>
                 </Link>
               </div>
             </div>
