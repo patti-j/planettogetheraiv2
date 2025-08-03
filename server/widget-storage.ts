@@ -1,6 +1,6 @@
 import { eq, and, desc, or } from "drizzle-orm";
 import { DatabaseStorage } from "./storage.js";
-import { unifiedWidgets, type InsertUnifiedWidget, type UnifiedWidget } from "../shared/schema.js";
+import { unifiedWidgets, widgetDeployments, type InsertUnifiedWidget, type UnifiedWidget } from "../shared/schema.js";
 
 export class WidgetStorage extends DatabaseStorage {
   // Create a new widget
@@ -18,33 +18,29 @@ export class WidgetStorage extends DatabaseStorage {
   }
 
   // Get widgets by platform
-  async getWidgetsByPlatform(platform: 'mobile' | 'desktop' | 'both'): Promise<SelectUnifiedWidget[]> {
+  async getWidgetsByPlatform(platform: 'mobile' | 'desktop' | 'both'): Promise<UnifiedWidget[]> {
     return await this.db
       .select()
       .from(unifiedWidgets)
       .where(
-        and(
-          eq(unifiedWidgets.isActive, true),
-          eq(unifiedWidgets.targetPlatform, platform)
-        )
+        eq(unifiedWidgets.targetPlatform, platform)
       )
       .orderBy(desc(unifiedWidgets.createdAt));
   }
 
   // Get widget by ID
-  async getWidgetById(id: number): Promise<SelectUnifiedWidget | null> {
+  async getWidgetById(id: number): Promise<UnifiedWidget | null> {
     const [widget] = await this.db
       .select()
       .from(unifiedWidgets)
-      .where(and(
-        eq(unifiedWidgets.id, id),
-        eq(unifiedWidgets.isActive, true)
-      ));
+      .where(
+        eq(unifiedWidgets.id, id)
+      );
     return widget || null;
   }
 
   // Update widget
-  async updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<SelectUnifiedWidget | null> {
+  async updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<UnifiedWidget | null> {
     const [updated] = await this.db
       .update(unifiedWidgets)
       .set({ ...updates, updatedAt: new Date() })
@@ -53,26 +49,22 @@ export class WidgetStorage extends DatabaseStorage {
     return updated || null;
   }
 
-  // Soft delete widget
+  // Delete widget (hard delete since schema doesn't have isActive)
   async deleteWidget(id: number): Promise<boolean> {
     const [deleted] = await this.db
-      .update(unifiedWidgets)
-      .set({ isActive: false, updatedAt: new Date() })
+      .delete(unifiedWidgets)
       .where(eq(unifiedWidgets.id, id))
       .returning();
     return !!deleted;
   }
 
   // Get widgets by category
-  async getWidgetsByCategory(category: string): Promise<SelectUnifiedWidget[]> {
+  async getWidgetsByCategory(category: string): Promise<UnifiedWidget[]> {
     return await this.db
       .select()
       .from(unifiedWidgets)
       .where(
-        and(
-          eq(unifiedWidgets.isActive, true),
-          eq(unifiedWidgets.category, category)
-        )
+        eq(unifiedWidgets.category, category)
       )
       .orderBy(desc(unifiedWidgets.createdAt));
   }
@@ -88,23 +80,23 @@ export class WidgetStorage extends DatabaseStorage {
     const seedData: InsertUnifiedWidget[] = [
       {
         title: "Production Overview",
-        type: "production-metrics",
-        category: "production",
+        widgetType: "production-metrics",
+        category: "production", 
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { metrics: ["output", "efficiency", "quality"] },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "jobs",
+        size: { width: 300, height: 200 },
+        position: { x: 0, y: 0 },
+        createdBy: 1
       },
       {
         title: "Equipment Status",
-        type: "equipment-status", 
+        widgetType: "equipment-status", 
         category: "equipment",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "resources",
+        size: { width: 300, height: 200 },
+        position: { x: 320, y: 0 },
+        createdBy: 1
       },
       {
         title: "Quality Metrics",
