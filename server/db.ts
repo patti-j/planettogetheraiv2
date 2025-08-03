@@ -20,9 +20,7 @@ let connectionCount = 0;
 let queryCount = 0;
 let errorCount = 0;
 
-export const db = drizzle(sql_connection, {
-  schema,
-});
+export const db = drizzle(sql_connection, { schema });
 
 // Export direct SQL connection for fallback queries
 export const directSql = sql_connection;
