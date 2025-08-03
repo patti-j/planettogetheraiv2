@@ -215,14 +215,20 @@ interface Notification {
 
 // Mobile Menu Trigger Component that uses useSidebar hook
 function MobileMenuTrigger() {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar();
+  
+  const handleClick = () => {
+    console.log("🍔 Hamburger clicked! isMobile:", isMobile, "openMobile:", openMobile);
+    // Force mobile behavior by directly setting openMobile
+    setOpenMobile(!openMobile);
+  };
   
   return (
     <Button 
       variant="ghost" 
       size="sm" 
       className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-      onClick={toggleSidebar}
+      onClick={handleClick}
     >
       <Menu className="w-5 h-5" />
     </Button>
