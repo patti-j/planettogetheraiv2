@@ -28,7 +28,7 @@ interface Widget {
 
 
 
-// Dynamic widget component mapping
+// Dynamic widget component mapping - now aligned with API widget types
 const WIDGET_COMPONENTS = {
   'operation-sequencer': OperationSequencerWidget,
   'atp-ctp': AtpCtpWidget,
@@ -39,12 +39,6 @@ const WIDGET_COMPONENTS = {
   'production-order-status': ProductionOrderStatusWidget,
   'operation-dispatch': OperationDispatchWidget,
   'resource-assignment': ResourceAssignmentWidget,
-  // Map API widget types to existing components
-  'production-metrics': ProductionOrderStatusWidget, // Use production order status for production metrics
-  'equipment-status': ResourceAssignmentWidget, // Use resource assignment for equipment status
-  'quality-dashboard': ReportsWidget, // Use reports widget for quality dashboard
-  'inventory-tracking': ProductionOrderStatusWidget, // Use production order status for inventory
-  'gantt-chart': OperationSequencerWidget, // Use operation sequencer for gantt chart
 };
 
 export default function MobileWidgetView() {
@@ -54,7 +48,7 @@ export default function MobileWidgetView() {
   
   const widgetId = params?.id ?? "";
   
-  if (!params) {
+  if (!params || !params.id) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">

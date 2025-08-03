@@ -4087,55 +4087,55 @@ Manufacturing Context Available:
     try {
       const allWidgets = [];
       
-      // Widget 1
+      // Widget 1 - Production Order Status (maps to existing component)
       allWidgets.push({
         id: 1,
         title: "Production Overview",
-        type: "production-metrics",
+        type: "production-order-status",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { metrics: ["output", "efficiency", "quality"] },
         createdAt: new Date().toISOString()
       });
       
-      // Widget 2
+      // Widget 2 - Resource Assignment (maps to existing component)
       allWidgets.push({
         id: 2,
         title: "Equipment Status",
-        type: "equipment-status",
+        type: "resource-assignment",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
         createdAt: new Date().toISOString()
       });
       
-      // Widget 3
+      // Widget 3 - Reports Widget (maps to existing component)
       allWidgets.push({
         id: 3,
         title: "Quality Metrics",
-        type: "quality-dashboard",
+        type: "reports",
         targetPlatform: "both",
         source: "canvas",
         configuration: { tests: ["pH", "temperature", "purity"] },
         createdAt: new Date().toISOString()
       });
       
-      // Widget 4
+      // Widget 4 - Production Order Status (maps to existing component)
       allWidgets.push({
         id: 4,
         title: "Inventory Levels",
-        type: "inventory-tracking",
+        type: "production-order-status",
         targetPlatform: "both",
         source: "canvas",
         configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
         createdAt: new Date().toISOString()
       });
       
-      // Widget 5
+      // Widget 5 - Operation Sequencer (maps to existing component)
       allWidgets.push({
         id: 5,
         title: "Schedule Gantt",
-        type: "gantt-chart",
+        type: "operation-sequencer",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { view: "weekly", resources: ["all"] },
@@ -4174,11 +4174,11 @@ Manufacturing Context Available:
         createdAt: new Date().toISOString()
       });
       
-      // Widget 8
+      // Widget 8 - ATP/CTP Widget (existing component)
       allWidgets.push({
         id: 8,
         title: "Available to Promise",
-        type: "available-to-promise",
+        type: "atp-ctp",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { 
@@ -4188,11 +4188,11 @@ Manufacturing Context Available:
         createdAt: new Date().toISOString()
       });
       
-      // Widget 9 - Schedule Optimization
+      // Widget 9 - Schedule Optimizer (existing component)
       allWidgets.push({
         id: 9,
         title: "Schedule Optimization",
-        type: "schedule-optimization",
+        type: "schedule-optimizer",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { 
@@ -4207,11 +4207,11 @@ Manufacturing Context Available:
         createdAt: new Date().toISOString()
       });
       
-      // Widget 10 - Resource Gantt
+      // Widget 10 - Operation Dispatch (existing component)
       allWidgets.push({
         id: 10,
-        title: "Resource Gantt",
-        type: "resource-gantt",
+        title: "Operation Dispatch",
+        type: "operation-dispatch",
         targetPlatform: "both",
         source: "cockpit",
         configuration: { 
