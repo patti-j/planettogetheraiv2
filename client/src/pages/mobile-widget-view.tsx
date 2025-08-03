@@ -100,7 +100,19 @@ export default function MobileWidgetView() {
               compact: widget.configuration?.compact || widget.configuration?.view === 'compact'
             };
           
-
+          case 'operation-dispatch':
+            return { 
+              ...baseProps, 
+              isMobile: true,
+              compact: true
+            };
+          
+          case 'resource-assignment':
+            return { 
+              ...baseProps, 
+              isMobile: true,
+              compact: true
+            };
           
           default:
             return baseProps;
