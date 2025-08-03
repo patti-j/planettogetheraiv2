@@ -1024,7 +1024,7 @@ export const resourceViews = pgTable("resource_views", {
     }>;
     fontSize: number;
     fontColor: string;
-  }>().default(sql`'{"labels": [{"type": "operation_name", "enabled": true, "order": 0}], "fontSize": 12, "fontColor": "#ffffff"}'::jsonb`),
+  }>().default(sql`'{"labels": [{"type": "operation_name", "enabled": undefined, "order": 0}], "fontSize": 12, "fontColor": "#ffffff"}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1054,7 +1054,7 @@ export const kanbanConfigs = pgTable("kanban_configs", {
     showProgress: boolean;
     cardSize: "compact" | "standard" | "detailed";
     groupBy: "none" | "priority" | "customer" | "resource";
-  }>().default(sql`'{"showPriority": true, "showDueDate": true, "showCustomer": true, "showResource": true, "showProgress": true, "cardSize": "standard", "groupBy": "none"}'::jsonb`),
+  }>().default(sql`'{"showPriority": undefined, "showDueDate": undefined, "showCustomer": undefined, "showResource": undefined, "showProgress": undefined, "cardSize": "standard", "groupBy": "none"}'::jsonb`),
   cardOrdering: jsonb("card_ordering").$type<Record<string, number[]>>().default(sql`'{}'::jsonb`), // Maps swim lane value to array of card IDs in order
   isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1512,30 +1512,30 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
-  id: true,
+export const insertCapabilitySchema = createInsertSchema(capabilities, {
+  id: undefined,
 });
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
-export const insertResourceSchema = createInsertSchema(resources).omit({
-  id: true,
-}).extend({
+export const insertResourceSchema = createInsertSchema(resources, {
+  id: undefined,
+}, {
   isDrum: z.boolean().optional(),
 });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
-export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertPlantResourceSchema = createInsertSchema(plantResources, {
+  id: undefined,
+  createdAt: undefined,
+}, {
   isPrimary: z.boolean().optional(),
 });
 export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertProductionOrderSchema = createInsertSchema(productionOrders, {
+  id: undefined,
+  createdAt: undefined,
+}, {
   dueDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualStartDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualEndDate: z.union([z.string().datetime(), z.date()]).optional(),
@@ -1544,195 +1544,195 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
 });
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
-export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
-  id: true,
-  createdAt: true,
+export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
 // Junction table insert schema for many-to-many relationship
-export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders).omit({
-  id: true,
-  convertedAt: true,
-}).extend({
+export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {
+  id: undefined,
+  convertedAt: undefined,
+}, {
   convertedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
 // Insert schemas for both operation types
-export const insertDiscreteOperationSchema = createInsertSchema(discreteOperations).omit({
-  id: true,
-}).extend({
+export const insertDiscreteOperationSchema = createInsertSchema(discreteOperations, {
+  id: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   isOptional: z.boolean().optional(),
 });
 
-export const insertProductionVersionPhaseMaterialRequirementSchema = createInsertSchema(productionVersionPhaseMaterialRequirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertProductionVersionPhaseMaterialRequirementSchema = createInsertSchema(productionVersionPhaseMaterialRequirements, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   isOptional: z.boolean().optional(),
 });
 
-export const insertDiscreteOperationPhaseRelationshipSchema = createInsertSchema(discreteOperationPhaseRelationships).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertDiscreteOperationPhaseRelationshipSchema = createInsertSchema(discreteOperationPhaseRelationships, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertProcessOperationSchema = createInsertSchema(processOperations).omit({
-  id: true,
-}).extend({
+export const insertProcessOperationSchema = createInsertSchema(processOperations, {
+  id: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDependencySchema = createInsertSchema(dependencies).omit({
-  id: true,
+export const insertDependencySchema = createInsertSchema(dependencies, {
+  id: undefined,
 });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
-  id: true,
-  createdAt: true,
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({
-  id: true,
-  createdAt: true,
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
-  id: true,
-  createdAt: true,
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   isArchived: z.boolean().optional(),
 });
 
-export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   scheduledStartTime: z.union([z.string().datetime(), z.date()]),
   scheduledEndTime: z.union([z.string().datetime(), z.date()]),
 });
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
-  id: true,
-}).extend({
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
+  id: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
-  id: true,
-  createdAt: true,
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemUserSchema = createInsertSchema(systemUsers, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
-  id: true,
-  timestamp: true,
+export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
+  id: undefined,
+  timestamp: undefined,
 });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   scheduledDate: z.union([z.string().datetime(), z.date()]).optional(),
   startedAt: z.union([z.string().datetime(), z.date()]).optional(),
   completedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
-  id: true,
-  timestamp: true,
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
+  id: undefined,
+  timestamp: undefined,
 });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDisruptionSchema = createInsertSchema(disruptions, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]),
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
+  id: undefined,
+  createdAt: undefined,
+}, {
   scheduledTime: z.union([z.string().datetime(), z.date()]).optional(),
   completedTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
+  id: undefined,
+  createdAt: undefined,
+}, {
   expectedResponse: z.union([z.string().datetime(), z.date()]).optional(),
   actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
 });
@@ -2544,55 +2544,55 @@ export type InsertCanvasSettings = z.infer<typeof insertCanvasSettingsSchema>;
 export type CanvasSettings = typeof canvasSettings.$inferSelect;
 
 // Capacity Planning Insert Schemas
-export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertStaffingPlanSchema = createInsertSchema(staffingPlans).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertStaffingPlanSchema = createInsertSchema(staffingPlans, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Canvas Content Insert Schemas
-export const insertCanvasContentSchema = createInsertSchema(canvasContent).omit({
-  id: true,
-  createdAt: true,
+export const insertCanvasContentSchema = createInsertSchema(canvasContent, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Cockpit Insert Schemas
-export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertCockpitAlertSchema = createInsertSchema(cockpitAlerts).omit({
-  id: true,
-  createdAt: true,
+export const insertCockpitAlertSchema = createInsertSchema(cockpitAlerts, {
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Cockpit Types
@@ -2783,25 +2783,25 @@ export const optimizationRecommendations = pgTable("optimization_recommendations
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertShiftPlanSchema = createInsertSchema(shiftPlans).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertShiftPlanSchema = createInsertSchema(shiftPlans, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 }).extend({
   effectiveDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertEquipmentPlanSchema = createInsertSchema(equipmentPlans).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertEquipmentPlanSchema = createInsertSchema(equipmentPlans, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertCapacityProjectionSchema = createInsertSchema(capacityProjections).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCapacityProjectionSchema = createInsertSchema(capacityProjections, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 }).extend({
   validFromDate: z.union([z.string().datetime(), z.date()]),
   validToDate: z.union([z.string().datetime(), z.date()]),
@@ -3175,51 +3175,51 @@ export const goalActions = pgTable("goal_actions", {
 });
 
 // Business Goals Insert Schemas
-export const insertBusinessGoalSchema = createInsertSchema(businessGoals).omit({
-  id: true,
-  lastUpdated: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertBusinessGoalSchema = createInsertSchema(businessGoals, { 
+  id: undefined,
+  lastUpdated: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startDate: z.union([z.string().datetime(), z.date()]),
   targetDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertGoalProgressSchema = createInsertSchema(goalProgress).omit({
-  id: true,
-  createdAt: true,
+export const insertGoalProgressSchema = createInsertSchema(goalProgress, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertGoalRiskSchema = createInsertSchema(goalRisks).omit({
-  id: true,
-  lastReviewed: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertGoalRiskSchema = createInsertSchema(goalRisks, { 
+  id: undefined,
+  lastReviewed: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   mitigation_deadline: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertGoalIssueSchema = createInsertSchema(goalIssues).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertGoalIssueSchema = createInsertSchema(goalIssues, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   estimatedResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertGoalKpiSchema = createInsertSchema(goalKpis).omit({
-  id: true,
-  lastMeasured: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertGoalKpiSchema = createInsertSchema(goalKpis, { 
+  id: undefined,
+  lastMeasured: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertGoalActionSchema = createInsertSchema(goalActions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertGoalActionSchema = createInsertSchema(goalActions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startDate: z.union([z.string().datetime(), z.date()]).optional(),
   targetDate: z.union([z.string().datetime(), z.date()]).optional(),
   completedDate: z.union([z.string().datetime(), z.date()]).optional(),
@@ -3314,7 +3314,7 @@ export const userPreferences = pgTable("user_preferences", {
     desktop: boolean;
     reminders: boolean;
     tours: boolean;
-  }>().default(sql`'{"email": true, "push": true, "desktop": true, "reminders": true, "tours": true}'::jsonb`),
+  }>().default(sql`'{"email": undefined, "push": undefined, "desktop": undefined, "reminders": undefined, "tours": true}'::jsonb`),
   dashboardLayout: jsonb("dashboard_layout").$type<{
     sidebarCollapsed: boolean;
     defaultPage: string;
@@ -3377,28 +3377,28 @@ export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => 
 }));
 
 // User Management Insert Schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserSchema = createInsertSchema(users, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertRoleSchema = createInsertSchema(roles).omit({
-  id: true,
-  createdAt: true,
+export const insertRoleSchema = createInsertSchema(roles, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertPermissionSchema = createInsertSchema(permissions).omit({
-  id: true,
-  createdAt: true,
+export const insertPermissionSchema = createInsertSchema(permissions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
-  assignedAt: true,
+export const insertUserRoleSchema = createInsertSchema(userRoles, { 
+  assignedAt: undefined,
 });
 
-export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
-  grantedAt: true,
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions, { 
+  grantedAt: undefined,
 });
 
 // User Management Types
@@ -3443,10 +3443,10 @@ export const visualFactoryDisplays = pgTable("visual_factory_displays", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertVisualFactoryDisplaySchema = createInsertSchema(visualFactoryDisplays).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertVisualFactoryDisplaySchema = createInsertSchema(visualFactoryDisplays, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertVisualFactoryDisplay = z.infer<typeof insertVisualFactoryDisplaySchema>;
@@ -3532,30 +3532,30 @@ export const skipReasonTemplates = pgTable("skip_reason_templates", {
 });
 
 // Insert schemas and types for user resource assignments
-export const insertUserResourceAssignmentSchema = createInsertSchema(userResourceAssignments).omit({
-  id: true,
-  assignedAt: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserResourceAssignmentSchema = createInsertSchema(userResourceAssignments, { 
+  id: undefined,
+  assignedAt: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertUserResourceAssignment = z.infer<typeof insertUserResourceAssignmentSchema>;
 export type UserResourceAssignment = typeof userResourceAssignments.$inferSelect;
 
 // Insert schemas and types for operation status reports
-export const insertOperationStatusReportSchema = createInsertSchema(operationStatusReports).omit({
-  id: true,
-  reportedAt: true,
-  updatedAt: true,
+export const insertOperationStatusReportSchema = createInsertSchema(operationStatusReports, { 
+  id: undefined,
+  reportedAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertOperationStatusReport = z.infer<typeof insertOperationStatusReportSchema>;
 export type OperationStatusReport = typeof operationStatusReports.$inferSelect;
 
 // Insert schemas and types for skip reason templates
-export const insertSkipReasonTemplateSchema = createInsertSchema(skipReasonTemplates).omit({
-  id: true,
-  createdAt: true,
+export const insertSkipReasonTemplateSchema = createInsertSchema(skipReasonTemplates, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 export type InsertSkipReasonTemplate = z.infer<typeof insertSkipReasonTemplateSchema>;
@@ -3656,24 +3656,24 @@ export const tours = pgTable("tours", {
   createdBy: varchar("created_by", { length: 100 }), // user who generated/created the tour
 });
 
-export const insertDemoTourParticipantSchema = createInsertSchema(demoTourParticipants).omit({
-  id: true,
-  tourStartedAt: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertDemoTourParticipantSchema = createInsertSchema(demoTourParticipants, { 
+  id: undefined,
+  tourStartedAt: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache).omit({
-  id: true,
-  createdAt: true,
-  lastUsedAt: true,
-  usageCount: true,
+export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache, { 
+  id: undefined,
+  createdAt: undefined,
+  lastUsedAt: undefined,
+  usageCount: undefined,
 });
 
-export const insertTourSchema = createInsertSchema(tours).omit({
-  id: true,
-  generatedAt: true,
-  updatedAt: true,
+export const insertTourSchema = createInsertSchema(tours, { 
+  id: undefined,
+  generatedAt: undefined,
+  updatedAt: undefined,
 });
 
 // Field Comments table for database documentation
@@ -3690,10 +3690,10 @@ export const fieldComments = pgTable("field_comments", {
   tableNameIdx: index("field_comments_table_name_idx").on(table.tableName),
 }));
 
-export const insertFieldCommentSchema = createInsertSchema(fieldComments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertFieldCommentSchema = createInsertSchema(fieldComments, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertDemoTourParticipant = z.infer<typeof insertDemoTourParticipantSchema>;
@@ -3706,10 +3706,10 @@ export type InsertFieldComment = z.infer<typeof insertFieldCommentSchema>;
 export type FieldComment = typeof fieldComments.$inferSelect;
 
 // User Preferences Schema and Types
-export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
@@ -3914,34 +3914,34 @@ export const testCasesRelations = relations(testCases, ({ one }) => ({
 }));
 
 // Product Development Insert Schemas
-export const insertStrategyDocumentSchema = createInsertSchema(strategyDocuments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertStrategyDocumentSchema = createInsertSchema(strategyDocuments, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertDevelopmentTaskSchema = createInsertSchema(developmentTasks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertDevelopmentTaskSchema = createInsertSchema(developmentTasks, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertTestSuiteSchema = createInsertSchema(testSuites).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertTestSuiteSchema = createInsertSchema(testSuites, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertTestCaseSchema = createInsertSchema(testCases).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertTestCaseSchema = createInsertSchema(testCases, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertArchitectureComponentSchema = createInsertSchema(architectureComponents).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertArchitectureComponentSchema = createInsertSchema(architectureComponents, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Product Development Types
@@ -3957,26 +3957,26 @@ export type ArchitectureComponent = typeof architectureComponents.$inferSelect;
 export type InsertArchitectureComponent = z.infer<typeof insertArchitectureComponentSchema>;
 
 // Chat Insert Schemas
-export const insertChatChannelSchema = createInsertSchema(chatChannels).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  lastMessageAt: true,
+export const insertChatChannelSchema = createInsertSchema(chatChannels, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+  lastMessageAt: undefined,
 });
 
-export const insertChatMemberSchema = createInsertSchema(chatMembers).omit({
-  id: true,
-  joinedAt: true,
+export const insertChatMemberSchema = createInsertSchema(chatMembers, { 
+  id: undefined,
+  joinedAt: undefined,
 });
 
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
-  id: true,
-  createdAt: true,
+export const insertChatMessageSchema = createInsertSchema(chatMessages, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertChatReactionSchema = createInsertSchema(chatReactions).omit({
-  id: true,
-  createdAt: true,
+export const insertChatReactionSchema = createInsertSchema(chatReactions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Chat Types
@@ -3990,51 +3990,51 @@ export type ChatReaction = typeof chatReactions.$inferSelect;
 export type InsertChatReaction = z.infer<typeof insertChatReactionSchema>;
 
 // Stock and Demand Forecasting Insert Schemas
-export const insertStockItemSchema = createInsertSchema(stockItems).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertStockItemSchema = createInsertSchema(stockItems, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertStockTransactionSchema = createInsertSchema(stockTransactions).omit({
-  id: true,
-  createdAt: true,
+export const insertStockTransactionSchema = createInsertSchema(stockTransactions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertStockBalanceSchema = createInsertSchema(stockBalances).omit({
-  id: true,
-  updatedAt: true,
+export const insertStockBalanceSchema = createInsertSchema(stockBalances, { 
+  id: undefined,
+  updatedAt: undefined,
 });
 
-export const insertDemandForecastSchema = createInsertSchema(demandForecasts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDemandForecastSchema = createInsertSchema(demandForecasts, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   forecastDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertDemandDriverSchema = createInsertSchema(demandDrivers).omit({
-  id: true,
-  createdAt: true,
+export const insertDemandDriverSchema = createInsertSchema(demandDrivers, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertDemandHistorySchema = createInsertSchema(demandHistory).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDemandHistorySchema = createInsertSchema(demandHistory, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   period: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertStockOptimizationScenarioSchema = createInsertSchema(stockOptimizationScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertStockOptimizationScenarioSchema = createInsertSchema(stockOptimizationScenarios, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertOptimizationRecommendationSchema = createInsertSchema(optimizationRecommendations).omit({
-  id: true,
-  createdAt: true,
+export const insertOptimizationRecommendationSchema = createInsertSchema(optimizationRecommendations, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Stock and Demand Planning Types
@@ -4063,63 +4063,63 @@ export type OptimizationRecommendation = typeof optimizationRecommendations.$inf
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
 
 // Recipe Insert Schemas - SAP S/4HANA Process Industries Structure
-export const insertRecipeSchema = createInsertSchema(recipes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertRecipeSchema = createInsertSchema(recipes, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   validityDateFrom: z.union([z.string().datetime(), z.date()]),
   validityDateTo: z.union([z.string().datetime(), z.date()]).optional(),
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertRecipeOperationSchema = createInsertSchema(recipeOperations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertRecipeOperationSchema = createInsertSchema(recipeOperations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertRecipePhaseSchema = createInsertSchema(recipePhases).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertRecipePhaseSchema = createInsertSchema(recipePhases, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertRecipePhaseRelationshipSchema = createInsertSchema(recipePhaseRelationships).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertRecipePhaseRelationshipSchema = createInsertSchema(recipePhaseRelationships, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships).omit({
-  id: true,
-  createdAt: true,
+export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertRecipeMaterialAssignmentSchema = createInsertSchema(recipeMaterialAssignments).omit({
-  id: true,
-  createdAt: true,
+export const insertRecipeMaterialAssignmentSchema = createInsertSchema(recipeMaterialAssignments, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 
 
 // Vendor and Customer Insert Schemas
-export const insertVendorSchema = createInsertSchema(vendors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertVendorSchema = createInsertSchema(vendors, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertCustomerSchema = createInsertSchema(customers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCustomerSchema = createInsertSchema(customers, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Recipe Types - SAP S/4HANA Process Industries Structure
@@ -4277,22 +4277,22 @@ export const feedbackVotesRelations = relations(feedbackVotes, ({ one }) => ({
 }));
 
 // Feedback schemas
-export const insertFeedbackSchema = createInsertSchema(feedback).omit({
-  id: true,
-  votes: true,
-  createdAt: true,
-  updatedAt: true,
-  resolvedAt: true,
+export const insertFeedbackSchema = createInsertSchema(feedback, { 
+  id: undefined,
+  votes: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+  resolvedAt: undefined,
 });
 
-export const insertFeedbackCommentSchema = createInsertSchema(feedbackComments).omit({
-  id: true,
-  createdAt: true,
+export const insertFeedbackCommentSchema = createInsertSchema(feedbackComments, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertFeedbackVoteSchema = createInsertSchema(feedbackVotes).omit({
-  id: true,
-  createdAt: true,
+export const insertFeedbackVoteSchema = createInsertSchema(feedbackVotes, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Feedback types
@@ -4358,16 +4358,16 @@ export const productionVersionPhaseRecipeProductOutputs = pgTable("production_ve
 }));
 
 // Insert schemas for product output junction tables
-export const insertProductionVersionPhaseBomProductOutputSchema = createInsertSchema(productionVersionPhaseBomProductOutputs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProductionVersionPhaseBomProductOutputSchema = createInsertSchema(productionVersionPhaseBomProductOutputs, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertProductionVersionPhaseRecipeProductOutputSchema = createInsertSchema(productionVersionPhaseRecipeProductOutputs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProductionVersionPhaseRecipeProductOutputSchema = createInsertSchema(productionVersionPhaseRecipeProductOutputs, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Types for product output junction tables
@@ -4409,15 +4409,15 @@ export const productionVersionPhaseRecipeProductOutputsRelations = relations(pro
 }));
 
 // Onboarding schemas
-export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({
-  id: true,
-  createdAt: true,
+export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Onboarding types
@@ -4700,38 +4700,38 @@ export const algorithmPerformance = pgTable("algorithm_performance", {
 });
 
 // Systems Integration Insert Schemas
-export const insertSystemIntegrationSchema = createInsertSchema(systemIntegrations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemIntegrationSchema = createInsertSchema(systemIntegrations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertIntegrationJobSchema = createInsertSchema(integrationJobs).omit({
-  id: true,
-  createdAt: true,
+export const insertIntegrationJobSchema = createInsertSchema(integrationJobs, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertIntegrationEventSchema = createInsertSchema(integrationEvents).omit({
-  id: true,
-  createdAt: true,
+export const insertIntegrationEventSchema = createInsertSchema(integrationEvents, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Scheduling History Insert Schemas
-export const insertSchedulingHistorySchema = createInsertSchema(schedulingHistory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSchedulingHistorySchema = createInsertSchema(schedulingHistory, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertSchedulingResultSchema = createInsertSchema(schedulingResults).omit({
-  id: true,
-  createdAt: true,
+export const insertSchedulingResultSchema = createInsertSchema(schedulingResults, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertAlgorithmPerformanceSchema = createInsertSchema(algorithmPerformance).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAlgorithmPerformanceSchema = createInsertSchema(algorithmPerformance, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // TypeScript types for scheduling history
@@ -4742,16 +4742,16 @@ export type InsertSchedulingResult = z.infer<typeof insertSchedulingResultSchema
 export type AlgorithmPerformance = typeof algorithmPerformance.$inferSelect;
 export type InsertAlgorithmPerformance = z.infer<typeof insertAlgorithmPerformanceSchema>;
 
-export const insertIntegrationMappingSchema = createInsertSchema(integrationMappings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertIntegrationMappingSchema = createInsertSchema(integrationMappings, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertIntegrationTemplateSchema = createInsertSchema(integrationTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertIntegrationTemplateSchema = createInsertSchema(integrationTemplates, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Systems Integration Types
@@ -4774,55 +4774,55 @@ export type FeedbackVote = typeof feedbackVotes.$inferSelect;
 export type InsertFeedbackVote = z.infer<typeof insertFeedbackVoteSchema>;
 
 // Workflow Automation Insert Schemas
-export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers).omit({
-  id: true,
-  lastTriggered: true,
-  triggerCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers, { 
+  id: undefined,
+  lastTriggered: undefined,
+  triggerCount: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertWorkflowActionSchema = createInsertSchema(workflowActions).omit({
-  id: true,
-  executionCount: true,
-  lastExecuted: true,
-  averageExecutionTime: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertWorkflowActionSchema = createInsertSchema(workflowActions, { 
+  id: undefined,
+  executionCount: undefined,
+  lastExecuted: undefined,
+  averageExecutionTime: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertWorkflowSchema = createInsertSchema(workflows).omit({
-  id: true,
-  executionCount: true,
-  successCount: true,
-  errorCount: true,
-  lastExecuted: true,
-  averageExecutionTime: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertWorkflowSchema = createInsertSchema(workflows, { 
+  id: undefined,
+  executionCount: undefined,
+  successCount: undefined,
+  errorCount: undefined,
+  lastExecuted: undefined,
+  averageExecutionTime: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertWorkflowActionMappingSchema = createInsertSchema(workflowActionMappings).omit({
-  id: true,
-  createdAt: true,
+export const insertWorkflowActionMappingSchema = createInsertSchema(workflowActionMappings, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutions).omit({
-  id: true,
-  createdAt: true,
+export const insertWorkflowExecutionSchema = createInsertSchema(workflowExecutions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertWorkflowActionExecutionSchema = createInsertSchema(workflowActionExecutions).omit({
-  id: true,
-  createdAt: true,
+export const insertWorkflowActionExecutionSchema = createInsertSchema(workflowActionExecutions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertWorkflowMonitoringSchema = createInsertSchema(workflowMonitoring).omit({
-  id: true,
-  lastAlert: true,
-  alertCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertWorkflowMonitoringSchema = createInsertSchema(workflowMonitoring, { 
+  id: undefined,
+  lastAlert: undefined,
+  alertCount: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Workflow Automation Types
@@ -4848,9 +4848,9 @@ export type WorkflowMonitoring = typeof workflowMonitoring.$inferSelect;
 export type InsertWorkflowMonitoring = z.infer<typeof insertWorkflowMonitoringSchema>;
 
 // Plant Management Schemas
-export const insertPlantSchema = createInsertSchema(plants).omit({
-  id: true,
-  createdAt: true,
+export const insertPlantSchema = createInsertSchema(plants, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Plant Management Types
@@ -5528,57 +5528,57 @@ export const profileUsageHistory = pgTable("profile_usage_history", {
 
 
 // Optimization Studio Insert Schemas
-export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertAlgorithmTestSchema = createInsertSchema(algorithmTests).omit({
-  id: true,
-  createdAt: true,
+export const insertAlgorithmTestSchema = createInsertSchema(algorithmTests, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertAlgorithmDeploymentSchema = createInsertSchema(algorithmDeployments).omit({
-  id: true,
-  deployedAt: true,
-  lastHealthCheck: true,
+export const insertAlgorithmDeploymentSchema = createInsertSchema(algorithmDeployments, { 
+  id: undefined,
+  deployedAt: undefined,
+  lastHealthCheck: undefined,
 });
 
-export const insertExtensionDataSchema = createInsertSchema(extensionData).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertExtensionDataSchema = createInsertSchema(extensionData, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertExtensionFileSchema = createInsertSchema(extensionFiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertExtensionFileSchema = createInsertSchema(extensionFiles, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertExtensionInstallationSchema = createInsertSchema(extensionInstallations).omit({
-  id: true,
-  installedAt: true,
-  lastUsed: true,
+export const insertExtensionInstallationSchema = createInsertSchema(extensionInstallations, { 
+  id: undefined,
+  installedAt: undefined,
+  lastUsed: undefined,
 });
 
-export const insertExtensionMarketplaceSchema = createInsertSchema(extensionMarketplace).omit({
-  id: true,
-  publishedAt: true,
-  updatedAt: true,
+export const insertExtensionMarketplaceSchema = createInsertSchema(extensionMarketplace, { 
+  id: undefined,
+  publishedAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertExtensionReviewSchema = createInsertSchema(extensionReviews).omit({
-  id: true,
-  helpful: true,
-  createdAt: true,
+export const insertExtensionReviewSchema = createInsertSchema(extensionReviews, { 
+  id: undefined,
+  helpful: undefined,
+  createdAt: undefined,
 });
 
-export const insertExtensionSchema = createInsertSchema(extensions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertExtensionSchema = createInsertSchema(extensions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Extension Studio Types
@@ -5611,27 +5611,27 @@ export type ExtensionData = typeof extensionData.$inferSelect;
 export type InsertExtensionData = z.infer<typeof insertExtensionDataSchema>;
 
 // Optimization Scope Configuration Insert Schemas
-export const insertOptimizationScopeConfigSchema = createInsertSchema(optimizationScopeConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertOptimizationScopeConfigSchema = createInsertSchema(optimizationScopeConfigs, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertOptimizationRunSchema = createInsertSchema(optimizationRuns).omit({
-  id: true,
-  createdAt: true,
+export const insertOptimizationRunSchema = createInsertSchema(optimizationRuns, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Optimization Profiles Insert Schemas
-export const insertOptimizationProfileSchema = createInsertSchema(optimizationProfiles).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertOptimizationProfileSchema = createInsertSchema(optimizationProfiles, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertProfileUsageHistorySchema = createInsertSchema(profileUsageHistory).omit({
-  id: true,
-  createdAt: true,
+export const insertProfileUsageHistorySchema = createInsertSchema(profileUsageHistory, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Optimization Scope Configuration Types
@@ -5679,15 +5679,15 @@ export const errorReports = pgTable("error_reports", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertErrorLogSchema = createInsertSchema(errorLogs).omit({
-  id: true,
-  createdAt: true,
+export const insertErrorLogSchema = createInsertSchema(errorLogs, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertErrorReportSchema = createInsertSchema(errorReports).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertErrorReportSchema = createInsertSchema(errorReports, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
@@ -5697,24 +5697,24 @@ export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
 export type ErrorReport = typeof errorReports.$inferSelect;
 
 // Algorithm Feedback System Types and Schemas
-export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedback).omit({
-  id: true,
-  upvotes: true,
-  downvotes: true,
-  createdAt: true,
-  updatedAt: true,
-  lastViewedAt: true,
+export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedback, { 
+  id: undefined,
+  upvotes: undefined,
+  downvotes: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+  lastViewedAt: undefined,
 });
 
-export const insertAlgorithmFeedbackCommentSchema = createInsertSchema(algorithmFeedbackComments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAlgorithmFeedbackCommentSchema = createInsertSchema(algorithmFeedbackComments, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertAlgorithmFeedbackVoteSchema = createInsertSchema(algorithmFeedbackVotes).omit({
-  id: true,
-  createdAt: true,
+export const insertAlgorithmFeedbackVoteSchema = createInsertSchema(algorithmFeedbackVotes, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 export type AlgorithmFeedback = typeof algorithmFeedback.$inferSelect;
@@ -5765,17 +5765,17 @@ export const tourPromptTemplateUsage = pgTable("tour_prompt_template_usage", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertTourPromptTemplateSchema = createInsertSchema(tourPromptTemplates).omit({
-  id: true,
-  usageCount: true,
-  createdAt: true,
-  updatedAt: true,
-  lastUsed: true,
+export const insertTourPromptTemplateSchema = createInsertSchema(tourPromptTemplates, { 
+  id: undefined,
+  usageCount: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+  lastUsed: undefined,
 });
 
-export const insertTourPromptTemplateUsageSchema = createInsertSchema(tourPromptTemplateUsage).omit({
-  id: true,
-  createdAt: true,
+export const insertTourPromptTemplateUsageSchema = createInsertSchema(tourPromptTemplateUsage, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Tour Prompt Templates Types
@@ -5851,25 +5851,25 @@ export const aiMemoryTagsRelations = relations(aiMemoryTags, ({ one }) => ({
 }));
 
 // AI Memory Insert Schemas
-export const insertAIMemorySchema = createInsertSchema(aiMemories).omit({
-  id: true,
-  lastAccessed: true,
-  accessCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAIMemorySchema = createInsertSchema(aiMemories, { 
+  id: undefined,
+  lastAccessed: undefined,
+  accessCount: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertAIMemoryTagSchema = createInsertSchema(aiMemoryTags).omit({
-  id: true,
-  createdAt: true,
+export const insertAIMemoryTagSchema = createInsertSchema(aiMemoryTags, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertAIConversationContextSchema = createInsertSchema(aiConversationContext).omit({
-  id: true,
-  totalMessages: true,
-  lastInteraction: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAIConversationContextSchema = createInsertSchema(aiConversationContext, { 
+  id: undefined,
+  totalMessages: undefined,
+  lastInteraction: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // AI Memory Types
@@ -5883,59 +5883,59 @@ export type AIConversationContext = typeof aiConversationContext.$inferSelect;
 export type InsertAIConversationContext = z.infer<typeof insertAIConversationContextSchema>;
 
 // Presentation System Insert Schemas
-export const insertPresentationSchema = createInsertSchema(presentations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPresentationSchema = createInsertSchema(presentations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertPresentationSlideSchema = createInsertSchema(presentationSlides).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPresentationSlideSchema = createInsertSchema(presentationSlides, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertPresentationTourIntegrationSchema = createInsertSchema(presentationTourIntegrations).omit({
-  id: true,
-  createdAt: true,
+export const insertPresentationTourIntegrationSchema = createInsertSchema(presentationTourIntegrations, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertPresentationLibrarySchema = createInsertSchema(presentationLibrary).omit({
-  id: true,
-  downloadCount: true,
-  rating: true,
-  ratingCount: true,
-  approvedAt: true,
-  createdAt: true,
+export const insertPresentationLibrarySchema = createInsertSchema(presentationLibrary, { 
+  id: undefined,
+  downloadCount: undefined,
+  rating: undefined,
+  ratingCount: undefined,
+  approvedAt: undefined,
+  createdAt: undefined,
 });
 
-export const insertPresentationAnalyticsSchema = createInsertSchema(presentationAnalytics).omit({
-  id: true,
-  createdAt: true,
+export const insertPresentationAnalyticsSchema = createInsertSchema(presentationAnalytics, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertPresentationAIContentSchema = createInsertSchema(presentationAIContent).omit({
-  id: true,
-  createdAt: true,
+export const insertPresentationAIContentSchema = createInsertSchema(presentationAIContent, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Presentation Studio Insert Schemas
-export const insertPresentationMaterialSchema = createInsertSchema(presentationMaterials).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPresentationMaterialSchema = createInsertSchema(presentationMaterials, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertPresentationContentSuggestionSchema = createInsertSchema(presentationContentSuggestions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPresentationContentSuggestionSchema = createInsertSchema(presentationContentSuggestions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertPresentationProjectSchema = createInsertSchema(presentationProjects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertPresentationProjectSchema = createInsertSchema(presentationProjects, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Presentation System Types
@@ -6052,11 +6052,11 @@ export const productionMilestones = pgTable("production_milestones", {
 });
 
 // Production Planning Insert Schemas
-export const insertProductionPlanSchema = createInsertSchema(productionPlans).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertProductionPlanSchema = createInsertSchema(productionPlans, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
     return typeof val === 'string' ? new Date(val) : val;
   }),
@@ -6065,11 +6065,11 @@ export const insertProductionPlanSchema = createInsertSchema(productionPlans).om
   }),
 });
 
-export const insertProductionTargetSchema = createInsertSchema(productionTargets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertProductionTargetSchema = createInsertSchema(productionTargets, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   targetStartDate: z.union([z.string().datetime(), z.date()]).transform((val) => {
     return typeof val === 'string' ? new Date(val) : val;
   }),
@@ -6084,16 +6084,16 @@ export const insertProductionTargetSchema = createInsertSchema(productionTargets
   }).optional(),
 });
 
-export const insertResourceAllocationSchema = createInsertSchema(resourceAllocations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertResourceAllocationSchema = createInsertSchema(resourceAllocations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertProductionMilestoneSchema = createInsertSchema(productionMilestones).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProductionMilestoneSchema = createInsertSchema(productionMilestones, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Production Planning Types
@@ -6255,22 +6255,22 @@ export const templateConfigurations = pgTable("template_configurations", {
 });
 
 // Industry Templates Insert Schemas
-export const insertIndustryTemplateSchema = createInsertSchema(industryTemplates).omit({
-  id: true,
-  usageCount: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertIndustryTemplateSchema = createInsertSchema(industryTemplates, { 
+  id: undefined,
+  usageCount: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertUserIndustryTemplateSchema = createInsertSchema(userIndustryTemplates).omit({
-  id: true,
-  appliedAt: true,
-  lastModified: true,
+export const insertUserIndustryTemplateSchema = createInsertSchema(userIndustryTemplates, { 
+  id: undefined,
+  appliedAt: undefined,
+  lastModified: undefined,
 });
 
-export const insertTemplateConfigurationSchema = createInsertSchema(templateConfigurations).omit({
-  id: true,
-  createdAt: true,
+export const insertTemplateConfigurationSchema = createInsertSchema(templateConfigurations, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
 // Industry Templates Types
@@ -6284,58 +6284,58 @@ export type TemplateConfiguration = typeof templateConfigurations.$inferSelect;
 export type InsertTemplateConfiguration = z.infer<typeof insertTemplateConfigurationSchema>;
 
 // Shift Management System Insert Schemas
-export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertShiftTemplateSchema = createInsertSchema(shiftTemplates, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertResourceShiftAssignmentSchema = createInsertSchema(resourceShiftAssignments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertResourceShiftAssignmentSchema = createInsertSchema(resourceShiftAssignments, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   effectiveDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertShiftScenarioSchema = createInsertSchema(shiftScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertShiftScenarioSchema = createInsertSchema(shiftScenarios, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertHolidaySchema = createInsertSchema(holidays).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertHolidaySchema = createInsertSchema(holidays, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   date: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertResourceAbsenceSchema = createInsertSchema(resourceAbsences).omit({
-  id: true,
-  requestedAt: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertResourceAbsenceSchema = createInsertSchema(resourceAbsences, { 
+  id: undefined,
+  requestedAt: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]),
   approvedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertShiftCoverageSchema = createInsertSchema(shiftCoverage).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertShiftCoverageSchema = createInsertSchema(shiftCoverage, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   shiftDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertShiftUtilizationSchema = createInsertSchema(shiftUtilization).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertShiftUtilizationSchema = createInsertSchema(shiftUtilization, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   date: z.union([z.string().datetime(), z.date()]),
 });
 
@@ -6467,43 +6467,43 @@ export const shiftChangeRequests = pgTable("shift_change_requests", {
 });
 
 // Unplanned Downtime Insert Schemas
-export const insertUnplannedDowntimeSchema = createInsertSchema(unplannedDowntime).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertUnplannedDowntimeSchema = createInsertSchema(unplannedDowntime, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]),
   estimatedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
   lastOccurrence: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertOvertimeShiftSchema = createInsertSchema(overtimeShifts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertOvertimeShiftSchema = createInsertSchema(overtimeShifts, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   startTime: z.union([z.string().datetime(), z.date()]),
   endTime: z.union([z.string().datetime(), z.date()]),
   actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDowntimeActionSchema = createInsertSchema(downtimeActions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDowntimeActionSchema = createInsertSchema(downtimeActions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   dueDate: z.union([z.string().datetime(), z.date()]).optional(),
   startedAt: z.union([z.string().datetime(), z.date()]).optional(),
   completedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertShiftChangeRequestSchema = createInsertSchema(shiftChangeRequests).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertShiftChangeRequestSchema = createInsertSchema(shiftChangeRequests, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   shiftDate: z.union([z.string().datetime(), z.date()]),
 });
 
@@ -6654,33 +6654,33 @@ export const apiCredentials = pgTable("api_credentials", {
 });
 
 // API Integration Insert Schemas
-export const insertApiIntegrationSchema = createInsertSchema(apiIntegrations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertApiIntegrationSchema = createInsertSchema(apiIntegrations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertApiMappingSchema = createInsertSchema(apiMappings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertApiMappingSchema = createInsertSchema(apiMappings, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertApiTestSchema = createInsertSchema(apiTests).omit({
-  id: true,
-  createdAt: true,
-  runAt: true,
+export const insertApiTestSchema = createInsertSchema(apiTests, { 
+  id: undefined,
+  createdAt: undefined,
+  runAt: undefined,
 });
 
-export const insertApiAuditLogSchema = createInsertSchema(apiAuditLogs).omit({
-  id: true,
-  createdAt: true,
+export const insertApiAuditLogSchema = createInsertSchema(apiAuditLogs, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertApiCredentialSchema = createInsertSchema(apiCredentials).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertApiCredentialSchema = createInsertSchema(apiCredentials, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // API Integration Types
@@ -8408,50 +8408,50 @@ export const vendorsRelations = relations(vendors, ({ many }) => ({
 
 // ===== ERP INSERT SCHEMAS =====
 
-export const insertDepartmentSchema = createInsertSchema(departments).omit({
-  id: true,
-  createdAt: true,
+export const insertDepartmentSchema = createInsertSchema(departments, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertWorkCenterSchema = createInsertSchema(workCenters).omit({
-  id: true,
-  createdAt: true,
+export const insertWorkCenterSchema = createInsertSchema(workCenters, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertWorkCenterResourceSchema = createInsertSchema(workCenterResources).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertWorkCenterResourceSchema = createInsertSchema(workCenterResources, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   effectiveDate: z.union([z.string().datetime(), z.date()]).optional(),
   endDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDepartmentResourceSchema = createInsertSchema(departmentResources).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDepartmentResourceSchema = createInsertSchema(departmentResources, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   effectiveDate: z.union([z.string().datetime(), z.date()]).optional(),
   endDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertEmployeeSchema = createInsertSchema(employees).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertEmployeeSchema = createInsertSchema(employees, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   hireDate: z.union([z.string().datetime(), z.date()]).optional(),
   terminationDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSiteSchema = createInsertSchema(sites).omit({
-  id: true,
-  createdAt: true,
+export const insertSiteSchema = createInsertSchema(sites, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertItemSchema = createInsertSchema(items).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertItemSchema = createInsertSchema(items, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   // Date field transformations for enhanced items table
   lastAnalysisDate: z.union([z.string().datetime(), z.date()]).optional(),
   phaseOutDate: z.union([z.string().datetime(), z.date()]).optional(),
@@ -8461,30 +8461,30 @@ export const insertItemSchema = createInsertSchema(items).omit({
   lastUsageDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertStorageLocationSchema = createInsertSchema(storageLocations).omit({
-  id: true,
-  createdAt: true,
+export const insertStorageLocationSchema = createInsertSchema(storageLocations, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertInventorySchema = createInsertSchema(inventory).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertInventorySchema = createInsertSchema(inventory, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertInventoryLotSchema = createInsertSchema(inventoryLots).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertInventoryLotSchema = createInsertSchema(inventoryLots, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   expirationDate: z.union([z.string().datetime(), z.date()]).optional(),
   receivedDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertSalesOrderSchema = createInsertSchema(salesOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertSalesOrderSchema = createInsertSchema(salesOrders, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   orderDate: z.union([z.string().datetime(), z.date()]),
   requestedDate: z.union([z.string().datetime(), z.date()]),
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
@@ -8496,124 +8496,124 @@ export const insertSalesOrderSchema = createInsertSchema(salesOrders).omit({
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   requestedDate: z.union([z.string().datetime(), z.date()]),
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSalesOrderLineDistributionSchema = createInsertSchema(salesOrderLineDistributions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertSalesOrderLineDistributionSchema = createInsertSchema(salesOrderLineDistributions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   shipmentDate: z.union([z.string().datetime(), z.date()]),
   actualDeliveryDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertStockSchema = createInsertSchema(stocks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertStockSchema = createInsertSchema(stocks, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   lastCountDate: z.union([z.string().datetime(), z.date()]).optional(),
   lastReceiptDate: z.union([z.string().datetime(), z.date()]).optional(),
   lastIssueDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   orderDate: z.union([z.string().datetime(), z.date()]),
   requestedDate: z.union([z.string().datetime(), z.date()]),
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
   receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertPurchaseOrderLineSchema = createInsertSchema(purchaseOrderLines).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertPurchaseOrderLineSchema = createInsertSchema(purchaseOrderLines, { 
+  id: undefined,
+  createdAt: undefined,
+}, {
   requestedDate: z.union([z.string().datetime(), z.date()]),
   promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertTransferOrderSchema = createInsertSchema(transferOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertTransferOrderSchema = createInsertSchema(transferOrders, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   requestedDate: z.union([z.string().datetime(), z.date()]),
   shippedDate: z.union([z.string().datetime(), z.date()]).optional(),
   receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertTransferOrderLineSchema = createInsertSchema(transferOrderLines).omit({
-  id: true,
-  createdAt: true,
+export const insertTransferOrderLineSchema = createInsertSchema(transferOrderLines, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertBillOfMaterialSchema = createInsertSchema(billsOfMaterial).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertBillOfMaterialSchema = createInsertSchema(billsOfMaterial, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   effectiveDate: z.union([z.string().datetime(), z.date()]),
   expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertBomLineSchema = createInsertSchema(bomLines).omit({
-  id: true,
-  createdAt: true,
+export const insertBomLineSchema = createInsertSchema(bomLines, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertBomMaterialRequirementSchema = createInsertSchema(bomMaterialRequirements).omit({
-  id: true,
-  createdAt: true,
+export const insertBomMaterialRequirementSchema = createInsertSchema(bomMaterialRequirements, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertBomProductOutputSchema = createInsertSchema(bomProductOutputs).omit({
-  id: true,
-  createdAt: true,
+export const insertBomProductOutputSchema = createInsertSchema(bomProductOutputs, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertRecipeProductOutputSchema = createInsertSchema(recipeProductOutputs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertRecipeProductOutputSchema = createInsertSchema(recipeProductOutputs, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertRoutingSchema = createInsertSchema(routings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertRoutingSchema = createInsertSchema(routings, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   effectiveDate: z.union([z.string().datetime(), z.date()]),
   expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertRoutingOperationSchema = createInsertSchema(routingOperations).omit({
-  id: true,
-  createdAt: true,
+export const insertRoutingOperationSchema = createInsertSchema(routingOperations, { 
+  id: undefined,
+  createdAt: undefined,
 });
 
-export const insertMaterialRequirementSchema = createInsertSchema(materialRequirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertMaterialRequirementSchema = createInsertSchema(materialRequirements, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 // Removed: insertFormulationsSchema - use insertFormulationSchema instead
 
-export const insertForecastSchema = createInsertSchema(forecasts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertForecastSchema = createInsertSchema(forecasts, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   forecastDate: z.union([z.string().datetime(), z.date()]),
 });
 
@@ -8718,37 +8718,37 @@ export const userSecrets = pgTable("user_secrets", {
   userKeyUnique: unique().on(table.userId, table.key), // Ensure unique key per user
 }));
 
-export const insertUserSecretSchema = createInsertSchema(userSecrets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUserSecretSchema = createInsertSchema(userSecrets, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type UserSecret = typeof userSecrets.$inferSelect;
 export type InsertUserSecret = z.infer<typeof insertUserSecretSchema>;
 
 // Production Version Schema
-export const insertProductionVersionSchema = createInsertSchema(productionVersions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProductionVersionSchema = createInsertSchema(productionVersions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type ProductionVersion = typeof productionVersions.$inferSelect;
 export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
 
 // Resource Requirements Insert Schemas
-export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
-export const insertResourceRequirementAssignmentSchema = createInsertSchema(resourceRequirementAssignments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertResourceRequirementAssignmentSchema = createInsertSchema(resourceRequirementAssignments, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   plannedStartTime: z.union([z.string().datetime(), z.date()]).optional(),
   plannedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
   actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
@@ -8765,11 +8765,11 @@ export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceR
 
 
 // Formulations Insert Schema and Types
-export const insertFormulationSchema = createInsertSchema(formulations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertFormulationSchema = createInsertSchema(formulations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+}, {
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
   lastCostUpdate: z.union([z.string().datetime(), z.date()]).optional(),
 });
@@ -8778,19 +8778,19 @@ export type Formulation = typeof formulations.$inferSelect;
 export type InsertFormulation = z.infer<typeof insertFormulationSchema>;
 
 // Formulation Details Insert Schema and Types
-export const insertFormulationDetailSchema = createInsertSchema(formulationDetails).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertFormulationDetailSchema = createInsertSchema(formulationDetails, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type FormulationDetail = typeof formulationDetails.$inferSelect;
 export type InsertFormulationDetail = z.infer<typeof insertFormulationDetailSchema>;
 
-export const insertProductionVersionPhaseFormulationDetailSchema = createInsertSchema(productionVersionPhaseFormulationDetails).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertProductionVersionPhaseFormulationDetailSchema = createInsertSchema(productionVersionPhaseFormulationDetails, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type ProductionVersionPhaseFormulationDetail = typeof productionVersionPhaseFormulationDetails.$inferSelect;
@@ -8822,27 +8822,27 @@ export const canvasWidgets = pgTable("canvas_widgets", {
 }));
 
 // Canvas widgets insert schema and types
-export const insertCanvasWidgetSchema = createInsertSchema(canvasWidgets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertCanvasWidgetSchema = createInsertSchema(canvasWidgets, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 
 export type CanvasWidget = typeof canvasWidgets.$inferSelect;
 export type InsertCanvasWidget = z.infer<typeof insertCanvasWidgetSchema>;
 
 // Unified Widget System Schemas
-export const insertUnifiedWidgetSchema = createInsertSchema(unifiedWidgets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertUnifiedWidgetSchema = createInsertSchema(unifiedWidgets, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertUnifiedWidget = z.infer<typeof insertUnifiedWidgetSchema>;
 export type UnifiedWidget = typeof unifiedWidgets.$inferSelect;
 
-export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments).omit({
-  id: true,
-  deployedAt: true,
+export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments, { 
+  id: undefined,
+  deployedAt: undefined,
 });
 export type InsertWidgetDeployment = z.infer<typeof insertWidgetDeploymentSchema>;
 export type WidgetDeployment = typeof widgetDeployments.$inferSelect;
@@ -9181,63 +9181,63 @@ export const constraintExceptions = pgTable("constraint_exceptions", {
 }));
 
 // Constraints insert schemas and types
-export const insertConstraintCategorySchema = createInsertSchema(constraintCategories).omit({
-  id: true,
-  createdAt: true,
+export const insertConstraintCategorySchema = createInsertSchema(constraintCategories, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertConstraintCategory = z.infer<typeof insertConstraintCategorySchema>;
 export type ConstraintCategory = typeof constraintCategories.$inferSelect;
 
-export const insertConstraintSchema = createInsertSchema(constraints).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertConstraintSchema = createInsertSchema(constraints, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertConstraint = z.infer<typeof insertConstraintSchema>;
 export type Constraint = typeof constraints.$inferSelect;
 
-export const insertConstraintViolationSchema = createInsertSchema(constraintViolations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertConstraintViolationSchema = createInsertSchema(constraintViolations, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertConstraintViolation = z.infer<typeof insertConstraintViolationSchema>;
 export type ConstraintViolation = typeof constraintViolations.$inferSelect;
 
-export const insertConstraintExceptionSchema = createInsertSchema(constraintExceptions).omit({
-  id: true,
-  createdAt: true,
+export const insertConstraintExceptionSchema = createInsertSchema(constraintExceptions, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertConstraintException = z.infer<typeof insertConstraintExceptionSchema>;
 export type ConstraintException = typeof constraintExceptions.$inferSelect;
 
 // Buffer management insert schemas and types
-export const insertBufferDefinitionSchema = createInsertSchema(bufferDefinitions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertBufferDefinitionSchema = createInsertSchema(bufferDefinitions, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertBufferDefinition = z.infer<typeof insertBufferDefinitionSchema>;
 export type BufferDefinition = typeof bufferDefinitions.$inferSelect;
 
-export const insertBufferConsumptionSchema = createInsertSchema(bufferConsumption).omit({
-  id: true,
-  createdAt: true,
+export const insertBufferConsumptionSchema = createInsertSchema(bufferConsumption, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertBufferConsumption = z.infer<typeof insertBufferConsumptionSchema>;
 export type BufferConsumption = typeof bufferConsumption.$inferSelect;
 
-export const insertBufferManagementHistorySchema = createInsertSchema(bufferManagementHistory).omit({
-  id: true,
-  createdAt: true,
+export const insertBufferManagementHistorySchema = createInsertSchema(bufferManagementHistory, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertBufferManagementHistory = z.infer<typeof insertBufferManagementHistorySchema>;
 export type BufferManagementHistory = typeof bufferManagementHistory.$inferSelect;
 
-export const insertBufferPolicySchema = createInsertSchema(bufferPolicies).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertBufferPolicySchema = createInsertSchema(bufferPolicies, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertBufferPolicy = z.infer<typeof insertBufferPolicySchema>;
 export type BufferPolicy = typeof bufferPolicies.$inferSelect;
@@ -9351,63 +9351,63 @@ export const recipeEquipment = pgTable("recipe_equipment", {
 });
 
 // Insert schemas and types for the missing tables
-export const insertAccountInfoSchema = createInsertSchema(accountInfo).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAccountInfoSchema = createInsertSchema(accountInfo, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertAccountInfo = z.infer<typeof insertAccountInfoSchema>;
 export type AccountInfo = typeof accountInfo.$inferSelect;
 
-export const insertBillingHistorySchema = createInsertSchema(billingHistory).omit({
-  id: true,
-  createdAt: true,
+export const insertBillingHistorySchema = createInsertSchema(billingHistory, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertBillingHistory = z.infer<typeof insertBillingHistorySchema>;
 export type BillingHistory = typeof billingHistory.$inferSelect;
 
-export const insertUsageMetricsSchema = createInsertSchema(usageMetrics).omit({
-  id: true,
-  createdAt: true,
+export const insertUsageMetricsSchema = createInsertSchema(usageMetrics, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertUsageMetrics = z.infer<typeof insertUsageMetricsSchema>;
 export type UsageMetrics = typeof usageMetrics.$inferSelect;
 
-export const insertIntegrationDataFlowSchema = createInsertSchema(integrationDataFlow).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertIntegrationDataFlowSchema = createInsertSchema(integrationDataFlow, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertIntegrationDataFlow = z.infer<typeof insertIntegrationDataFlowSchema>;
 export type IntegrationDataFlow = typeof integrationDataFlow.$inferSelect;
 
-export const insertIntegrationExecutionLogSchema = createInsertSchema(integrationExecutionLog).omit({
-  id: true,
-  createdAt: true,
+export const insertIntegrationExecutionLogSchema = createInsertSchema(integrationExecutionLog, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertIntegrationExecutionLog = z.infer<typeof insertIntegrationExecutionLogSchema>;
 export type IntegrationExecutionLog = typeof integrationExecutionLog.$inferSelect;
 
-export const insertIntegrationDataMappingSchema = createInsertSchema(integrationDataMapping).omit({
-  id: true,
-  createdAt: true,
+export const insertIntegrationDataMappingSchema = createInsertSchema(integrationDataMapping, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertIntegrationDataMapping = z.infer<typeof insertIntegrationDataMappingSchema>;
 export type IntegrationDataMapping = typeof integrationDataMapping.$inferSelect;
 
-export const insertIntegrationWebhookSchema = createInsertSchema(integrationWebhook).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertIntegrationWebhookSchema = createInsertSchema(integrationWebhook, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
 });
 export type InsertIntegrationWebhook = z.infer<typeof insertIntegrationWebhookSchema>;
 export type IntegrationWebhook = typeof integrationWebhook.$inferSelect;
 
 
 
-export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment).omit({
-  id: true,
-  createdAt: true,
+export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment, { 
+  id: undefined,
+  createdAt: undefined,
 });
 export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
 export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
