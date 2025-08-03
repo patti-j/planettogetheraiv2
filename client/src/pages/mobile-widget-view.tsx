@@ -24,9 +24,7 @@ interface Widget {
   createdAt: string;
 }
 
-// Import the new widgets
-import OperationDispatchWidget from "@/components/widgets/operation-dispatch-widget";
-import ResourceAssignmentWidget from "@/components/widgets/resource-assignment-widget";
+
 
 // Dynamic widget component mapping
 const WIDGET_COMPONENTS = {
@@ -37,8 +35,6 @@ const WIDGET_COMPONENTS = {
   'schedule-tradeoff-analyzer': ScheduleTradeoffAnalyzerWidget,
   'schedule-optimizer': ScheduleOptimizationWidget,
   'production-order-status': ProductionOrderStatusWidget,
-  'operation-dispatch': OperationDispatchWidget,
-  'resource-assignment': ResourceAssignmentWidget,
 };
 
 export default function MobileWidgetView() {
@@ -100,32 +96,7 @@ export default function MobileWidgetView() {
               compact: widget.configuration?.compact || widget.configuration?.view === 'compact'
             };
           
-          case 'operation-dispatch':
-            return {
-              ...baseProps,
-              config: {
-                userId: 1, // Demo user ID
-                showQuantityFields: true,
-                showTimeFields: true,
-                showCommentsField: true,
-                autoRefreshInterval: 30,
-                ...widget.configuration
-              }
-            };
-          
-          case 'resource-assignment':
-            return {
-              ...baseProps,
-              config: {
-                supervisorUserId: 1, // Demo supervisor ID
-                showInactiveAssignments: false,
-                showAssignmentHistory: true,
-                allowBulkOperations: false,
-                defaultScheduleVisibility: 7,
-                defaultSkipPermission: false,
-                ...widget.configuration
-              }
-            };
+
           
           default:
             return baseProps;
