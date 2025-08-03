@@ -1,273 +1,267 @@
-import { Express } from "express";
-import { DatabaseStorage } from "./storage";
-import { WidgetService } from "./widget-service";
-import { z } from "zod";
+import { Request, Response } from "express";
+import { db } from "./storage";
+import { unifiedWidgets, insertUnifiedWidgetSchema, users } from "../shared/schema";
+import { eq, and } from "drizzle-orm";
 
-const createWidgetSchema = z.object({
-  title: z.string().min(1),
-  type: z.string().min(1),
-  category: z.string().min(1),
-  targetPlatform: z.array(z.enum(['mobile', 'desktop'])).default(['mobile', 'desktop']),
-  configuration: z.record(z.any()).default({}),
-  isActive: z.boolean().default(true)
-});
+// Get all widgets with optional platform filtering
+export const getWidgets = async (req: Request, res: Response) => {
+  try {
+    const { platform, category, active } = req.query;
+    
+    const widgets = await db.select().from(unifiedWidgets);
+    
+    // Filter by platform if specified - note: unifiedWidgets uses targetPlatform (singular)
+    const filteredWidgets = platform 
+      ? widgets.filter(w => 
+          w.targetPlatform === platform || 
+          w.targetPlatform === 'both'
+        )
+      : widgets;
 
-const updateWidgetSchema = createWidgetSchema.partial();
+    res.json(filteredWidgets);
+  } catch (error) {
+    console.error('Error fetching widgets:', error);
+    res.status(500).json({ error: 'Failed to fetch widgets' });
+  }
+};
 
-export function setupWidgetRoutes(app: Express, storage: DatabaseStorage) {
-  const widgetService = new WidgetService(storage);
-
-  // Get all widgets with optional platform filtering
-  app.get("/api/widgets", async (req, res) => {
-    try {
-      const platform = req.query.platform as 'mobile' | 'desktop' | undefined;
-      const category = req.query.category as string | undefined;
+// Get single widget by ID
+export const getWidget = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const widget = await db.select()
+      .from(unifiedWidgets)
+      .where(eq(unifiedWidgets.id, parseInt(id)))
+      .limit(1);
       
-      // For now, return the current hardcoded data structure but validate it
-      const widgets = [
-        {
-          id: 1,
-          title: "Production Overview",
-          type: "production-order-status",
-          category: "production",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { showMetrics: true, refreshInterval: 30000 },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 2,
-          title: "Equipment Status",
-          type: "resource-assignment",
-          category: "resources",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { showDetails: true, compact: false },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 3,
-          title: "Quality Metrics",
-          type: "reports",
-          category: "quality",
-          targetPlatform: ["mobile", "desktop"],
-          source: "canvas",
-          configuration: { reportTypes: ["quality"], timeRange: "daily" },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 4,
-          title: "Inventory Levels",
-          type: "production-order-status",
-          category: "inventory",
-          targetPlatform: ["mobile", "desktop"],
-          source: "canvas",
-          configuration: { showMetrics: true, maxItems: 50 },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 5,
-          title: "Schedule Gantt",
-          type: "operation-sequencer",
-          category: "scheduling",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { view: "grid", maxItems: 20 },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 6,
-          title: "Operation Sequencer",
-          type: "operation-sequencer",
-          category: "scheduling",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { view: "list", isDesktop: false },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 7,
-          title: "ATP/CTP Calculator",
-          type: "atp-ctp",
-          category: "planning",
-          targetPlatform: ["mobile", "desktop"],
-          source: "canvas",
-          configuration: { compact: false, showDetails: true },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 8,
-          title: "ATP Overview",
-          type: "atp-ctp",
-          category: "planning",
-          targetPlatform: ["mobile", "desktop"],
-          source: "canvas",
-          configuration: { compact: true, view: "compact" },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 9,
-          title: "Schedule Optimizer",
-          type: "schedule-optimizer",
-          category: "scheduling",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { showOptimizer: true, optimizationLevel: "balanced" },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        },
-        {
-          id: 10,
-          title: "Operation Dispatch",
-          type: "operation-dispatch",
-          category: "operations",
-          targetPlatform: ["mobile", "desktop"],
-          source: "cockpit",
-          configuration: { showActions: true, compact: false },
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: "system"
-        }
-      ];
-
-      // Validate and filter widgets
-      const validatedWidgets = widgets
-        .filter(widget => {
-          // Filter by platform if specified
-          if (platform && !widgetService.isWidgetSupportedOnPlatform(widget.type, platform)) {
-            return false;
-          }
-          // Filter by category if specified
-          if (category && widget.category !== category) {
-            return false;
-          }
-          return widget.isActive;
-        })
-        .map(widget => ({
-          ...widget,
-          configuration: widgetService.validateWidgetConfig(widget.type, widget.configuration)
-        }));
-
-      console.log(`=== WIDGETS ENDPOINT HIT (platform: ${platform}, category: ${category}) ===`);
-      console.log(`Total widgets returned: ${validatedWidgets.length}`);
-      
-      res.json(validatedWidgets);
-    } catch (error) {
-      console.error("Error fetching widgets:", error);
-      res.status(500).json({ error: "Failed to fetch widgets" });
+    if (!widget.length) {
+      return res.status(404).json({ error: 'Widget not found' });
     }
-  });
+    
+    res.json(widget[0]);
+  } catch (error) {
+    console.error('Error fetching widget:', error);
+    res.status(500).json({ error: 'Failed to fetch widget' });
+  }
+};
 
-  // Get widget by ID
-  app.get("/api/widgets/:id", async (req, res) => {
-    try {
-      const widgetId = parseInt(req.params.id);
-      
-      // Get from the widgets endpoint and find by ID
-      const allWidgets = await new Promise<any[]>((resolve) => {
-        app.request('/api/widgets', {}, (err: any, response: any) => {
-          if (err) resolve([]);
-          else resolve(response.body || []);
-        });
-      });
-
-      const widget = allWidgets.find(w => w.id === widgetId);
-      
-      if (!widget) {
-        return res.status(404).json({ error: "Widget not found" });
-      }
-
-      res.json(widget);
-    } catch (error) {
-      console.error("Error fetching widget:", error);
-      res.status(500).json({ error: "Failed to fetch widget" });
-    }
-  });
-
-  // Get widget types registry
-  app.get("/api/widget-types", (req, res) => {
-    try {
-      const widgetTypes = widgetService.getAvailableWidgetTypes().map(type => ({
-        type,
-        ...widgetService.getWidgetMetadata(type)
-      }));
-      
-      res.json(widgetTypes);
-    } catch (error) {
-      console.error("Error fetching widget types:", error);
-      res.status(500).json({ error: "Failed to fetch widget types" });
-    }
-  });
-
-  // Get widget configuration for specific type and platform
-  app.get("/api/widget-config/:type", (req, res) => {
-    try {
-      const { type } = req.params;
-      const platform = (req.query.platform as 'mobile' | 'desktop') || 'desktop';
-      const configuration = req.query.configuration ? JSON.parse(req.query.configuration as string) : {};
-      
-      if (!widgetService.isWidgetSupportedOnPlatform(type, platform)) {
-        return res.status(400).json({ error: `Widget type ${type} not supported on ${platform}` });
-      }
-
-      const props = widgetService.getWidgetProps(type, configuration, platform);
-      const metadata = widgetService.getWidgetMetadata(type);
-      
-      res.json({
-        type,
-        platform,
-        props,
-        metadata
-      });
-    } catch (error) {
-      console.error("Error getting widget config:", error);
-      res.status(500).json({ error: "Failed to get widget configuration" });
-    }
-  });
-
-  // Create new widget (for future use)
-  app.post("/api/widgets", async (req, res) => {
-    try {
-      const widgetData = createWidgetSchema.parse(req.body);
-      
-      // Validate widget type exists
-      if (!widgetService.getWidgetMetadata(widgetData.type)) {
-        return res.status(400).json({ error: `Unknown widget type: ${widgetData.type}` });
-      }
-
-      // Validate configuration
-      const validatedConfig = widgetService.validateWidgetConfig(widgetData.type, widgetData.configuration);
-      
-      // For now, just return success - database implementation would go here
-      const newWidget = {
-        id: Date.now(), // Temporary ID generation
+// Create new widget
+export const createWidget = async (req: Request, res: Response) => {
+  try {
+    const widgetData = insertUnifiedWidgetSchema.parse(req.body);
+    
+    const [newWidget] = await db.insert(unifiedWidgets)
+      .values({
         ...widgetData,
-        configuration: validatedConfig,
-        createdAt: new Date().toISOString(),
-        createdBy: "user" // Would come from auth
-      };
+        createdBy: req.user?.id || 'system',
+        createdAt: new Date(),
+      })
+      .returning();
+      
+    res.status(201).json(newWidget);
+  } catch (error) {
+    console.error('Error creating widget:', error);
+    res.status(400).json({ error: 'Failed to create widget' });
+  }
+};
 
-      res.status(201).json(newWidget);
-    } catch (error) {
-      console.error("Error creating widget:", error);
-      res.status(400).json({ error: "Failed to create widget" });
+// Update widget
+export const updateWidget = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData = insertUnifiedWidgetSchema.partial().parse(req.body);
+    
+    const [updatedWidget] = await db.update(unifiedWidgets)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(unifiedWidgets.id, parseInt(id)))
+      .returning();
+      
+    if (!updatedWidget) {
+      return res.status(404).json({ error: 'Widget not found' });
     }
-  });
-}
+    
+    res.json(updatedWidget);
+  } catch (error) {
+    console.error('Error updating widget:', error);
+    res.status(400).json({ error: 'Failed to update widget' });
+  }
+};
+
+// Delete widget (soft delete by setting isActive to false)
+export const deleteWidget = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const [deletedWidget] = await db.update(unifiedWidgets)
+      .set({ 
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(unifiedWidgets.id, parseInt(id)))
+      .returning();
+      
+    if (!deletedWidget) {
+      return res.status(404).json({ error: 'Widget not found' });
+    }
+    
+    res.json({ message: 'Widget deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting widget:', error);
+    res.status(500).json({ error: 'Failed to delete widget' });
+  }
+};
+
+// Seed initial widgets (for migration from hardcoded data)
+export const seedWidgets = async (req: Request, res: Response) => {
+  try {
+    const initialWidgets = [
+      {
+        title: "Production Overview",
+        type: "production-metrics",
+        category: "production",
+        targetPlatforms: ["both"],
+        configuration: { metrics: ["output", "efficiency", "quality"] },
+        description: "Real-time production metrics and KPIs",
+        componentName: "ProductionOrderStatusWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Equipment Status",
+        type: "equipment-status",
+        category: "equipment",
+        targetPlatforms: ["both"],
+        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
+        description: "Monitor equipment health and status",
+        componentName: "ResourceAssignmentWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Quality Metrics",
+        type: "quality-dashboard",
+        category: "quality",
+        targetPlatforms: ["both"],
+        configuration: { tests: ["pH", "temperature", "purity"] },
+        description: "Quality control metrics and test results",
+        componentName: "ReportsWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Inventory Levels",
+        type: "inventory-tracking",
+        category: "inventory",
+        targetPlatforms: ["both"],
+        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
+        description: "Track inventory levels across all materials",
+        componentName: "ProductionOrderStatusWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Schedule Gantt",
+        type: "gantt-chart",
+        category: "scheduling",
+        targetPlatforms: ["both"],
+        configuration: { view: "weekly", resources: ["all"] },
+        description: "Visual schedule planning and tracking",
+        componentName: "OperationSequencerWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Operation Sequencer",
+        type: "operation-sequencer",
+        category: "scheduling",
+        targetPlatforms: ["both"],
+        configuration: { maxOperations: 50, autoRefresh: true },
+        description: "Sequence and manage production operations",
+        componentName: "OperationSequencerWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "ATP/CTP Calculator",
+        type: "atp-ctp",
+        category: "planning",
+        targetPlatforms: ["both"],
+        configuration: { horizon: 30, includeConstraints: true },
+        description: "Available and Capable to Promise calculations",
+        componentName: "AtpCtpWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Schedule Optimizer",
+        type: "schedule-optimizer",
+        category: "optimization",
+        targetPlatforms: ["both"],
+        configuration: { algorithm: "genetic", maxIterations: 1000 },
+        description: "AI-powered schedule optimization",
+        componentName: "ScheduleOptimizationWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Production Order Status",
+        type: "production-order-status",
+        category: "production",
+        targetPlatforms: ["both"],
+        configuration: { showProgress: true, groupByStatus: true },
+        description: "Track production order progress and status",
+        componentName: "ProductionOrderStatusWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      },
+      {
+        title: "Operation Dispatch",
+        type: "operation-dispatch",
+        category: "operations",
+        targetPlatforms: ["both"],
+        configuration: { autoDispatch: false, priorityBased: true },
+        description: "Dispatch operations to resources",
+        componentName: "OperationDispatchWidget",
+        version: "1.0.0",
+        isActive: true,
+        createdBy: "system"
+      }
+    ];
+
+    // Check if widgets already exist
+    const existingWidgets = await db.select().from(unifiedWidgets).limit(1);
+    if (existingWidgets.length > 0) {
+      return res.json({ message: 'Widgets already seeded', count: existingWidgets.length });
+    }
+
+    // Insert all widgets
+    const insertedWidgets = await db.insert(unifiedWidgets)
+      .values(initialWidgets.map(widget => ({
+        ...widget,
+        createdAt: new Date(),
+      })))
+      .returning();
+
+    res.json({ 
+      message: 'Widgets seeded successfully', 
+      count: insertedWidgets.length,
+      widgets: insertedWidgets 
+    });
+  } catch (error) {
+    console.error('Error seeding widgets:', error);
+    res.status(500).json({ error: 'Failed to seed widgets' });
+  }
+};
