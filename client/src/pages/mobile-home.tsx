@@ -23,6 +23,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -212,6 +213,8 @@ interface Notification {
   read: boolean;
 }
 
+
+
 export default function MobileHomePage() {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
@@ -220,6 +223,9 @@ export default function MobileHomePage() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
   const queryClient = useQueryClient();
+  
+  // State for controlling sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Max AI panel state
   const [maxPanelOpen, setMaxPanelOpen] = useState(false);
@@ -735,7 +741,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
         {/* Sidebar with navigation content */}
         <Sidebar side="right" className="w-80">
@@ -908,7 +914,14 @@ export default function MobileHomePage() {
             </Button>
 
             {/* Hamburger Menu Trigger */}
-            <SidebarTrigger className="hover:bg-gray-100 dark:hover:bg-gray-700" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
 
             {/* Library Modal */}
             <div 
