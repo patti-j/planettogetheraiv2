@@ -3323,6 +3323,113 @@ Manufacturing Context Available:
       };
 
       res.json({ attachment });
+
+  // User Resource Assignments API
+  app.get("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getUserResourceAssignments();
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.get("/api/user-resource-assignments/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assignments = await storage.getUserResourceAssignments(userId);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.post("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const assignment = await storage.createUserResourceAssignment(req.body);
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error creating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to create user resource assignment" });
+    }
+  });
+
+  app.put("/api/user-resource-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignment = await storage.updateUserResourceAssignment(id, req.body);
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to update user resource assignment" });
+    }
+  });
+
+  app.delete("/api/user-resource-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteUserResourceAssignment(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user resource assignment:", error);
+      res.status(500).json({ error: "Failed to delete user resource assignment" });
+    }
+  });
+
+  // Operation Status Reports API
+  app.get("/api/operation-status-reports", async (req, res) => {
+    try {
+      const reports = await storage.getOperationStatusReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching operation status reports:", error);
+      res.status(500).json({ error: "Failed to fetch operation status reports" });
+    }
+  });
+
+  app.post("/api/operation-status-reports", async (req, res) => {
+    try {
+      const report = await storage.createOperationStatusReport(req.body);
+      res.json(report);
+    } catch (error) {
+      console.error("Error creating operation status report:", error);
+      res.status(500).json({ error: "Failed to create operation status report" });
+    }
+  });
+
+  // Skip Reason Templates API
+  app.get("/api/skip-reason-templates", async (req, res) => {
+    try {
+      const templates = await storage.getSkipReasonTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching skip reason templates:", error);
+      res.status(500).json({ error: "Failed to fetch skip reason templates" });
+    }
+  });
+
+  app.get("/api/discrete-operations", async (req, res) => {
+    try {
+      const { resourceId, status } = req.query;
+      let operations = await storage.getDiscreteOperations();
+      
+      if (resourceId) {
+        operations = operations.filter(op => op.resourceId === parseInt(resourceId as string));
+      }
+      
+      if (status) {
+        const statusList = (status as string).split(',').map(s => s.trim());
+        operations = operations.filter(op => statusList.includes(op.status));
+      }
+      
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching discrete operations:", error);
+      res.status(500).json({ error: "Failed to fetch discrete operations" });
+    }
+  });
     } catch (error) {
       console.error("Attachment upload error:", error);
       res.status(500).json({ 
