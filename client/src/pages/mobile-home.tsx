@@ -61,6 +61,7 @@ import {
   Calendar,
   Clock,
   AlertCircle,
+  AlertTriangle,
   TrendingUp,
   Activity,
   Library,
