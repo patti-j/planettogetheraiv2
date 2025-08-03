@@ -741,9 +741,11 @@ export default function MobileHomePage() {
           {/* Search/Prompt Input */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 transition-all duration-200 ${
+                searchQuery || isSearchFocused ? 'left-3' : 'left-1/2 -translate-x-1/2'
+              }`} />
               <Input
-                placeholder={isSearchFocused ? "Search or ask Max" : "Search or ask Max"}
+                placeholder="Search or ask Max"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -764,8 +766,11 @@ export default function MobileHomePage() {
                     }
                   }
                 }}
-                className="pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full text-center placeholder:text-center"
-                style={{ textAlign: searchQuery ? 'left' : 'center' }}
+                className={`py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full transition-all duration-200 ${
+                  searchQuery || isSearchFocused 
+                    ? 'pl-10 pr-4 text-left' 
+                    : 'px-4 text-center placeholder:text-center'
+                }`}
               />
             </div>
           </div>
