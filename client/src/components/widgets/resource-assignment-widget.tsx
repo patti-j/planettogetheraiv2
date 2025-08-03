@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable } from "@/components/ui/data-table";
+
 import { 
   Users,
   Settings,
@@ -33,7 +33,8 @@ import {
   Shield,
   ShieldCheck,
   UserCheck,
-  UserX
+  UserX,
+  ChevronRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -145,12 +146,9 @@ export default function ResourceAssignmentWidget({
   // Create assignment mutation
   const createAssignmentMutation = useMutation({
     mutationFn: async (assignmentData: any) => {
-      return apiRequest('/api/user-resource-assignments', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...assignmentData,
-          assignedBy: currentSupervisorId
-        })
+      return apiRequest('/api/user-resource-assignments', 'POST', {
+        ...assignmentData,
+        assignedBy: currentSupervisorId
       });
     },
     onSuccess: () => {
@@ -180,10 +178,7 @@ export default function ResourceAssignmentWidget({
   // Update assignment mutation
   const updateAssignmentMutation = useMutation({
     mutationFn: async ({ id, ...data }: any) => {
-      return apiRequest(`/api/user-resource-assignments/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data)
-      });
+      return apiRequest(`/api/user-resource-assignments/${id}`, 'PATCH', data);
     },
     onSuccess: () => {
       toast({
@@ -206,11 +201,8 @@ export default function ResourceAssignmentWidget({
   // Revoke assignment mutation
   const revokeAssignmentMutation = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return apiRequest(`/api/user-resource-assignments/${assignmentId}/revoke`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          revokedBy: currentSupervisorId
-        })
+      return apiRequest(`/api/user-resource-assignments/${assignmentId}/revoke`, 'PATCH', {
+        revokedBy: currentSupervisorId
       });
     },
     onSuccess: () => {

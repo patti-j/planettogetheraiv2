@@ -46,7 +46,7 @@ export default function MobileWidgetView() {
   const [, setLocation] = useLocation();
   const { currentView } = useViewMode();
   
-  const widgetId = params?.id;
+  const widgetId = params?.id || "";
 
   // Fetch widget data
   const { data: widget, isLoading } = useQuery<Widget>({

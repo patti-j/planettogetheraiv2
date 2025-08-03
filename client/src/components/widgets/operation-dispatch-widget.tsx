@@ -163,14 +163,11 @@ export default function OperationDispatchWidget({
   // Report operation status mutation
   const reportStatusMutation = useMutation({
     mutationFn: async (report: OperationStatusReport & { operationId: number }) => {
-      return apiRequest('/api/operation-status-reports', {
-        method: 'POST',
-        body: JSON.stringify({
-          discreteOperationId: report.operationId,
-          reportedBy: currentUserId,
-          resourceId: selectedResourceId,
-          ...report
-        })
+      return apiRequest('/api/operation-status-reports', 'POST', {
+        discreteOperationId: report.operationId,
+        reportedBy: currentUserId,
+        resourceId: selectedResourceId,
+        ...report
       });
     },
     onSuccess: () => {
@@ -195,18 +192,15 @@ export default function OperationDispatchWidget({
   // Skip operation mutation
   const skipOperationMutation = useMutation({
     mutationFn: async ({ operationId, reason, category }: { operationId: number; reason: string; category: string }) => {
-      return apiRequest('/api/operation-status-reports', {
-        method: 'POST',
-        body: JSON.stringify({
-          discreteOperationId: operationId,
-          reportedBy: currentUserId,
-          resourceId: selectedResourceId,
-          phaseType: "setup",
-          phaseStatus: "skipped",
-          skipReason: reason,
-          skipReasonCategory: category,
-          comments: reportData.comments
-        })
+      return apiRequest('/api/operation-status-reports', 'POST', {
+        discreteOperationId: operationId,
+        reportedBy: currentUserId,
+        resourceId: selectedResourceId,
+        phaseType: "setup",
+        phaseStatus: "skipped",
+        skipReason: reason,
+        skipReasonCategory: category,
+        comments: reportData.comments
       });
     },
     onSuccess: () => {
