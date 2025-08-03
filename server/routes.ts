@@ -4014,8 +4014,42 @@ Manufacturing Context Available:
         createdAt: new Date().toISOString()
       });
       
+      // Widget 12 - Operation Dispatch
+      allWidgets.push({
+        id: 12,
+        title: "Operation Dispatch",
+        type: "operation-dispatch",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          defaultResourceId: null,
+          userId: 1,
+          autoRefreshInterval: 30,
+          showAdvancedControls: true,
+          allowSkipOperations: true
+        },
+        createdAt: new Date().toISOString()
+      });
+      
+      // Widget 13 - Resource Assignment
+      allWidgets.push({
+        id: 13,
+        title: "Resource Assignment",
+        type: "resource-assignment",
+        targetPlatform: "both",
+        source: "cockpit",
+        configuration: { 
+          supervisorUserId: 1,
+          defaultSkipPermission: false,
+          defaultScheduleVisibility: 7,
+          showInactiveAssignments: false,
+          allowBulkOperations: true
+        },
+        createdAt: new Date().toISOString()
+      });
+      
       console.log("Total widgets returned:", allWidgets.length);
-      console.log("Last 2 widgets:", allWidgets.slice(-2).map(w => ({id: w.id, title: w.title})));
+      console.log("Last 3 widgets:", allWidgets.slice(-3).map(w => ({id: w.id, title: w.title})));
       res.json(allWidgets);
     } catch (error) {
       console.error("Error in mobile widgets endpoint:", error);
@@ -21179,6 +21213,85 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
   app.patch("/api/user-resource-assignments/:id/revoke", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const { revokedBy } = req.body;
+      const assignment = await storage.revokeUserResourceAssignment(id, revokedBy);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error revoking user resource assignment:", error);
+      res.status(500).json({ error: "Failed to revoke user resource assignment" });
+    }
+  });
+
+  // Operation Status Reports - for Operation Dispatch widget
+  app.get("/api/operation-status-reports", async (req, res) => {
+    try {
+      const { operationId, resourceId, reportedBy, fromDate, toDate } = req.query;
+      const reports = await storage.getOperationStatusReports({
+        operationId: operationId ? parseInt(operationId as string) : undefined,
+        resourceId: resourceId ? parseInt(resourceId as string) : undefined,
+        reportedBy: reportedBy ? parseInt(reportedBy as string) : undefined,
+        fromDate: fromDate as string,
+        toDate: toDate as string
+      });
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching operation status reports:", error);
+      res.status(500).json({ error: "Failed to fetch operation status reports" });
+    }
+  });
+
+  app.post("/api/operation-status-reports", async (req, res) => {
+    try {
+      const report = await storage.createOperationStatusReport(req.body);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating operation status report:", error);
+      res.status(500).json({ error: "Failed to create operation status report" });
+    }
+  });
+
+  // Skip Reason Templates - for Operation Dispatch widget
+  app.get("/api/skip-reason-templates", async (req, res) => {
+    try {
+      const { category, active } = req.query;
+      const templates = await storage.getSkipReasonTemplates({
+        category: category as string,
+        active: active === 'true' ? true : undefined
+      });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching skip reason templates:", error);
+      res.status(500).json({ error: "Failed to fetch skip reason templates" });
+    }
+  });
+
+  // Discrete Operations - enhanced for Operation Dispatch widget
+  app.get("/api/discrete-operations", async (req, res) => {
+    try {
+      const { resourceId, status } = req.query;
+      let operations;
+      
+      if (resourceId) {
+        const resourceIdNum = parseInt(resourceId as string);
+        const statusFilter = status ? (status as string).split(',') : undefined;
+        operations = await storage.getDiscreteOperationsByResource(resourceIdNum, statusFilter);
+      } else {
+        operations = await storage.getDiscreteOperations();
+      }
+      
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching discrete operations:", error);
+      res.status(500).json({ error: "Failed to fetch discrete operations" });
+    }
+  });
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid assignment ID" });
       }

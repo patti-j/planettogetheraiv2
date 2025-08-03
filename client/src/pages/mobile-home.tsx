@@ -139,6 +139,10 @@ const getWidgetIcon = (type: string) => {
       return Zap;
     case 'production-order-status':
       return CheckCircle;
+    case 'operation-dispatch':
+      return Zap;
+    case 'resource-assignment':
+      return Users;
     case 'database':
     case 'data-source':
       return Database;
