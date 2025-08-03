@@ -186,6 +186,26 @@ export class WidgetStorage {
         size: { width: 300, height: 200 },
         position: { x: 640, y: 760 },
         createdBy: 1
+      },
+      {
+        title: "Operation Dispatch",
+        widgetType: "operation-dispatch",
+        category: "operations",
+        targetPlatform: "both",
+        dataSource: "operations",
+        size: { width: 350, height: 400 },
+        position: { x: 0, y: 1200 },
+        createdBy: 1
+      },
+      {
+        title: "Resource Assignment",
+        widgetType: "resource-assignment", 
+        category: "resources",
+        targetPlatform: "both",
+        dataSource: "resources",
+        size: { width: 350, height: 400 },
+        position: { x: 370, y: 1200 },
+        createdBy: 1
       }
     ];
 
