@@ -3524,6 +3524,36 @@ export const skipReasonTemplates = pgTable("skip_reason_templates", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Insert schemas and types for user resource assignments
+export const insertUserResourceAssignmentSchema = createInsertSchema(userResourceAssignments).omit({
+  id: true,
+  assignedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserResourceAssignment = z.infer<typeof insertUserResourceAssignmentSchema>;
+export type UserResourceAssignment = typeof userResourceAssignments.$inferSelect;
+
+// Insert schemas and types for operation status reports
+export const insertOperationStatusReportSchema = createInsertSchema(operationStatusReports).omit({
+  id: true,
+  reportedAt: true,
+  updatedAt: true,
+});
+
+export type InsertOperationStatusReport = z.infer<typeof insertOperationStatusReportSchema>;
+export type OperationStatusReport = typeof operationStatusReports.$inferSelect;
+
+// Insert schemas and types for skip reason templates
+export const insertSkipReasonTemplateSchema = createInsertSchema(skipReasonTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertSkipReasonTemplate = z.infer<typeof insertSkipReasonTemplateSchema>;
+export type SkipReasonTemplate = typeof skipReasonTemplates.$inferSelect;
+
 // Demo Tour Participants Schema
 export const demoTourParticipants = pgTable("demo_tour_participants", {
   id: serial("id").primaryKey(),

@@ -24,6 +24,10 @@ interface Widget {
   createdAt: string;
 }
 
+// Import the new widgets
+import OperationDispatchWidget from "@/components/widgets/operation-dispatch-widget";
+import ResourceAssignmentWidget from "@/components/widgets/resource-assignment-widget";
+
 // Dynamic widget component mapping
 const WIDGET_COMPONENTS = {
   'operation-sequencer': OperationSequencerWidget,
@@ -33,6 +37,8 @@ const WIDGET_COMPONENTS = {
   'schedule-tradeoff-analyzer': ScheduleTradeoffAnalyzerWidget,
   'schedule-optimizer': ScheduleOptimizationWidget,
   'production-order-status': ProductionOrderStatusWidget,
+  'operation-dispatch': OperationDispatchWidget,
+  'resource-assignment': ResourceAssignmentWidget,
 };
 
 export default function MobileWidgetView() {
