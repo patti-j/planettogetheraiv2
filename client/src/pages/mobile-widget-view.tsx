@@ -46,7 +46,20 @@ export default function MobileWidgetView() {
   const [, setLocation] = useLocation();
   const { currentView } = useViewMode();
   
-  const widgetId = params?.id || "";
+  const widgetId = params?.id ?? "";
+  
+  if (!params) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Invalid Route</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">No widget ID provided in the URL.</p>
+          <Button onClick={() => setLocation("/mobile-home")}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch widget data
   const { data: widget, isLoading } = useQuery<Widget>({
@@ -85,6 +98,33 @@ export default function MobileWidgetView() {
             return { 
               ...baseProps, 
               compact: widget.configuration?.compact || widget.configuration?.view === 'compact'
+            };
+          
+          case 'operation-dispatch':
+            return {
+              ...baseProps,
+              config: {
+                userId: 1, // Demo user ID
+                showQuantityFields: true,
+                showTimeFields: true,
+                showCommentsField: true,
+                autoRefreshInterval: 30,
+                ...widget.configuration
+              }
+            };
+          
+          case 'resource-assignment':
+            return {
+              ...baseProps,
+              config: {
+                supervisorUserId: 1, // Demo supervisor ID
+                showInactiveAssignments: false,
+                showAssignmentHistory: true,
+                allowBulkOperations: false,
+                defaultScheduleVisibility: 7,
+                defaultSkipPermission: false,
+                ...widget.configuration
+              }
             };
           
           default:
