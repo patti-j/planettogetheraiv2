@@ -39,6 +39,12 @@ const WIDGET_COMPONENTS = {
   'production-order-status': ProductionOrderStatusWidget,
   'operation-dispatch': OperationDispatchWidget,
   'resource-assignment': ResourceAssignmentWidget,
+  // Map API widget types to existing components
+  'production-metrics': ProductionOrderStatusWidget, // Use production order status for production metrics
+  'equipment-status': ResourceAssignmentWidget, // Use resource assignment for equipment status
+  'quality-dashboard': ReportsWidget, // Use reports widget for quality dashboard
+  'inventory-tracking': ProductionOrderStatusWidget, // Use production order status for inventory
+  'gantt-chart': OperationSequencerWidget, // Use operation sequencer for gantt chart
 };
 
 export default function MobileWidgetView() {
