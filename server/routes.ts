@@ -12506,7 +12506,7 @@ Create a natural, conversational voice script that explains this feature to some
     try {
       const itemId = parseInt(req.params.itemId);
       const location = req.query.location as string || '';
-      const data = insertInventoryBalanceSchema.partial().parse(req.body);
+      const data = insertStockBalanceSchema.partial().parse(req.body);
       const balance = await storage.updateInventoryBalance(itemId, location, data);
       if (!balance) {
         return res.status(404).json({ error: "Inventory balance not found" });
