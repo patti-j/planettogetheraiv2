@@ -117,12 +117,23 @@ export function registerSimpleRoutes(app: express.Application): Server {
 
   // Basic auth endpoints for demo
   app.get("/api/auth/me", (req, res) => {
-    res.json({
-      id: "demo_user", 
-      username: "demo_user",
-      email: "demo@example.com",
-      isDemo: true
-    });
+    // Check for stored user in session or token
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ') && authHeader.includes('trainer_token_')) {
+      res.json({
+        id: "trainer", 
+        username: "trainer",
+        email: "trainer@example.com",
+        isDemo: false
+      });
+    } else {
+      res.json({
+        id: "demo_user", 
+        username: "demo_user",
+        email: "demo@example.com",
+        isDemo: true
+      });
+    }
   });
 
   app.post("/api/auth/login", async (req, res) => {
@@ -130,7 +141,26 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const { username, password } = req.body;
       console.log("Login attempt for:", username);
       
-      // Demo authentication - accept any credentials for demo purposes
+      // Handle trainer user
+      if (username === "trainer") {
+        const user = {
+          id: "trainer",
+          username: "trainer",
+          email: "trainer@example.com",
+          isDemo: false
+        };
+        
+        const token = "trainer_token_" + Date.now();
+        
+        res.json({
+          user,
+          token,
+          message: "Login successful"
+        });
+        return;
+      }
+      
+      // Default demo authentication for other users
       const user = {
         id: "demo_user",
         username: username || "demo_user", 
