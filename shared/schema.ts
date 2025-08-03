@@ -2519,55 +2519,55 @@ export type InsertCanvasSettings = z.infer<typeof insertCanvasSettingsSchema>;
 export type CanvasSettings = typeof canvasSettings.$inferSelect;
 
 // Capacity Planning Insert Schemas
-export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertCapacityPlanningScenarioSchema = createInsertSchema(capacityPlanningScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   startDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertStaffingPlanSchema = createInsertSchema(staffingPlans, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertStaffingPlanSchema = createInsertSchema(staffingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Canvas Content Insert Schemas
-export const insertCanvasContentSchema = createInsertSchema(canvasContent, {
-  id: undefined,
-  createdAt: undefined,
+export const insertCanvasContentSchema = createInsertSchema(canvasContent).omit({
+  id: true,
+  createdAt: true,
 });
 
-export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertCanvasSettingsSchema = createInsertSchema(canvasSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Cockpit Insert Schemas
-export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertCockpitAlertSchema = createInsertSchema(cockpitAlerts, {
-  id: undefined,
-  createdAt: undefined,
+export const insertCockpitAlertSchema = createInsertSchema(cockpitAlerts).omit({
+  id: true,
+  createdAt: true,
 });
 
-export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Cockpit Types
@@ -2758,25 +2758,25 @@ export const optimizationRecommendations = pgTable("optimization_recommendations
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertShiftPlanSchema = createInsertSchema(shiftPlans, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertShiftPlanSchema = createInsertSchema(shiftPlans).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 }).extend({
   effectiveDate: z.union([z.string().datetime(), z.date()]),
   endDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertEquipmentPlanSchema = createInsertSchema(equipmentPlans, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertEquipmentPlanSchema = createInsertSchema(equipmentPlans).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertCapacityProjectionSchema = createInsertSchema(capacityProjections, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertCapacityProjectionSchema = createInsertSchema(capacityProjections).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 }).extend({
   validFromDate: z.union([z.string().datetime(), z.date()]),
   validToDate: z.union([z.string().datetime(), z.date()]),
@@ -3150,51 +3150,51 @@ export const goalActions = pgTable("goal_actions", {
 });
 
 // Business Goals Insert Schemas
-export const insertBusinessGoalSchema = createInsertSchema(businessGoals, { 
-  id: undefined,
-  lastUpdated: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertBusinessGoalSchema = createInsertSchema(businessGoals).omit({ 
+  id: true,
+  lastUpdated: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   startDate: z.union([z.string().datetime(), z.date()]),
   targetDate: z.union([z.string().datetime(), z.date()]),
 });
 
-export const insertGoalProgressSchema = createInsertSchema(goalProgress, { 
-  id: undefined,
-  createdAt: undefined,
+export const insertGoalProgressSchema = createInsertSchema(goalProgress).omit({ 
+  id: true,
+  createdAt: true,
 });
 
-export const insertGoalRiskSchema = createInsertSchema(goalRisks, { 
-  id: undefined,
-  lastReviewed: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertGoalRiskSchema = createInsertSchema(goalRisks).omit({ 
+  id: true,
+  lastReviewed: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   mitigation_deadline: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertGoalIssueSchema = createInsertSchema(goalIssues, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertGoalIssueSchema = createInsertSchema(goalIssues).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   estimatedResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
   actualResolutionDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertGoalKpiSchema = createInsertSchema(goalKpis, { 
-  id: undefined,
-  lastMeasured: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertGoalKpiSchema = createInsertSchema(goalKpis).omit({ 
+  id: true,
+  lastMeasured: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertGoalActionSchema = createInsertSchema(goalActions, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertGoalActionSchema = createInsertSchema(goalActions).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   startDate: z.union([z.string().datetime(), z.date()]).optional(),
   targetDate: z.union([z.string().datetime(), z.date()]).optional(),
   completedDate: z.union([z.string().datetime(), z.date()]).optional(),
