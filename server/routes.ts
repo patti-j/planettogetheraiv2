@@ -4080,67 +4080,48 @@ Manufacturing Context Available:
     res.json(testWidgets);
   });
 
-  // Mobile Library API - Complete widgets endpoint with all 10 widgets
-  app.get("/api/mobile/widgets", (req, res) => {
-    console.log("=== NEW VERSION: MOBILE WIDGETS ENDPOINT HIT ===");
+  // Mobile Library API - Database-driven widgets endpoint  
+  app.get("/api/mobile/widgets", async (req, res) => {
+    console.log("=== DATABASE-DRIVEN MOBILE WIDGETS ENDPOINT HIT ===");
     
     try {
-      const allWidgets = [];
+      // Get widgets from database for mobile platform
+      const widgets = await storage.getWidgetsByPlatform('mobile');
       
-      // Widget 1 - Production Order Status (maps to existing component)
-      allWidgets.push({
-        id: 1,
-        title: "Production Overview",
-        type: "production-order-status",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { metrics: ["output", "efficiency", "quality"] },
-        createdAt: new Date().toISOString()
-      });
+      // Transform database widgets to match frontend expectations
+      const transformedWidgets = widgets.map(widget => ({
+        id: widget.id,
+        title: widget.title,
+        type: widget.widgetType, // Use widgetType from database
+        targetPlatform: widget.targetPlatform,
+        source: widget.deployedSystems?.[0] || 'cockpit', // Use first deployed system as source
+        configuration: widget.filters || {}, // Use filters as configuration
+        createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
+      }));
       
-      // Widget 2 - Resource Assignment (maps to existing component)
-      allWidgets.push({
-        id: 2,
-        title: "Equipment Status",
-        type: "resource-assignment",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
-        createdAt: new Date().toISOString()
-      });
+      console.log(`=== MOBILE WIDGETS FROM DATABASE: ${transformedWidgets.length} widgets ===`);
       
-      // Widget 3 - Reports Widget (maps to existing component)
-      allWidgets.push({
-        id: 3,
-        title: "Quality Metrics",
-        type: "reports",
-        targetPlatform: "both",
-        source: "canvas",
-        configuration: { tests: ["pH", "temperature", "purity"] },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 4 - Production Order Status (maps to existing component)
-      allWidgets.push({
-        id: 4,
-        title: "Inventory Levels",
-        type: "production-order-status",
-        targetPlatform: "both",
-        source: "canvas",
-        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
-        createdAt: new Date().toISOString()
-      });
-      
-      // Widget 5 - Operation Sequencer (maps to existing component)
-      allWidgets.push({
-        id: 5,
-        title: "Schedule Gantt",
-        type: "operation-sequencer",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { view: "weekly", resources: ["all"] },
-        createdAt: new Date().toISOString()
-      });
+      // If no widgets in database, seed and return seeded widgets
+      if (transformedWidgets.length === 0) {
+        console.log("=== NO WIDGETS FOUND, SEEDING DATABASE ===");
+        await storage.seedMobileWidgets();
+        
+        // Get widgets again after seeding
+        const seededWidgets = await storage.getWidgetsByPlatform('mobile');
+        const transformedSeededWidgets = seededWidgets.map(widget => ({
+          id: widget.id,
+          title: widget.title,
+          type: widget.widgetType,
+          targetPlatform: widget.targetPlatform,
+          source: widget.deployedSystems?.[0] || 'cockpit',
+          configuration: widget.filters || {},
+          createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
+        }));
+        
+        console.log(`=== SEEDED WIDGETS RETURNED: ${transformedSeededWidgets.length} widgets ===`);
+        res.json(transformedSeededWidgets);
+        return;
+      }
       
       // Widget 6
       allWidgets.push({
