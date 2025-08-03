@@ -42,7 +42,7 @@ interface ProductionOrder {
   wipValue: number;
   efficiencyPercentage: number;
   oeePercentage: number;
-  inspectionStatus: string;
+  inspectionStatus?: string;
   actualStartDate?: string;
   actualEndDate?: string;
   yieldPercentage?: number;
@@ -112,13 +112,17 @@ export default function ProductionOrderStatusWidget({
     }
   };
 
-  const getInspectionStatusIcon = (status: string) => {
+  const getInspectionStatusIcon = (status: string | undefined | null) => {
+    if (!status || typeof status !== 'string') {
+      return <Clock className="w-4 h-4 text-yellow-500" />; // Default to pending
+    }
+    
     switch (status.toLowerCase()) {
       case 'passed': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'failed': return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'in_progress': return <Timer className="w-4 h-4 text-blue-500" />;
       case 'pending': return <Clock className="w-4 h-4 text-yellow-500" />;
-      default: return <Info className="w-4 h-4 text-gray-500" />;
+      default: return <Clock className="w-4 h-4 text-yellow-500" />; // Default to pending
     }
   };
 
@@ -244,7 +248,7 @@ export default function ProductionOrderStatusWidget({
                         <div className="text-right">
                           <div className="flex items-center gap-1 mb-1">
                             {getInspectionStatusIcon(order.inspectionStatus)}
-                            <span className="text-sm capitalize">{order.inspectionStatus}</span>
+                            <span className="text-sm capitalize">{order.inspectionStatus || 'pending'}</span>
                           </div>
                           <p className="text-xs text-gray-500">
                             {order.quantity.toLocaleString()} units
@@ -406,7 +410,7 @@ export default function ProductionOrderStatusWidget({
                       <span className="text-gray-600">Inspection:</span>
                       <div className="flex items-center gap-1">
                         {getInspectionStatusIcon(selectedOrder.inspectionStatus)}
-                        <span className="font-medium capitalize">{selectedOrder.inspectionStatus}</span>
+                        <span className="font-medium capitalize">{selectedOrder.inspectionStatus || 'pending'}</span>
                       </div>
                     </div>
                   </div>
