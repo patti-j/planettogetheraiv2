@@ -907,6 +907,11 @@ export default function MobileHomePage() {
               <Library className="w-5 h-5" />
             </Button>
 
+            {/* Hamburger Menu Trigger */}
+            <SidebarTrigger className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+              <Menu className="w-5 h-5" />
+            </SidebarTrigger>
+
             {/* Library Modal */}
             <div 
               id="library-dialog" 
