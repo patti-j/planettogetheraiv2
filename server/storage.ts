@@ -132,39 +132,63 @@ import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
-// Legacy Operation interface for backward compatibility
+// Legacy Operation interface for backward compatibility - updated to match current schema
 export interface Operation {
   id: number;
-  name: string;
+  name: string; // operationName from schema
   description?: string;
-  duration: number;
-  jobId: number; // productionOrderId for backward compatibility
+  duration?: number; // standardDuration for backward compatibility
+  jobId?: number; // productionOrderId for backward compatibility (from processOperations)
   order: number; // sequenceNumber 
-  status?: string;
+  status: string;
   assignedResourceId?: number;
   startTime?: Date;
   endTime?: Date;
+  // Additional fields from current schema
+  routingId: number;
+  operationName: string;
+  standardDuration: number;
+  actualDuration?: number;
+  workCenterId?: number;
+  priority: number;
+  completionPercentage: number;
+  qualityCheckRequired: boolean;
+  qualityStatus: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Optional fields for backward compatibility
   isBottleneck?: boolean;
   isEarly?: boolean;
   isLate?: boolean;
   timeVarianceHours?: number;
   criticality?: string;
   optimizationNotes?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
-// Legacy InsertOperation interface for backward compatibility  
+// Legacy InsertOperation interface for backward compatibility - updated to match current schema
 export interface InsertOperation {
-  name: string;
+  routingId: number;
+  operationName: string;
   description?: string;
-  duration: number;
-  jobId: number; // For legacy API compatibility
-  order: number; // sequenceNumber
+  standardDuration: number;
   status?: string;
-  routingId?: number; // Link to routing instead of direct production order
+  actualDuration?: number;
   startTime?: Date;
   endTime?: Date;
+  sequenceNumber?: number;
+  workCenterId?: number;
+  priority?: number;
+  completionPercentage?: number;
+  qualityCheckRequired?: boolean;
+  qualityStatus?: string;
+  notes?: string;
+  // Legacy fields for backward compatibility
+  name?: string; // maps to operationName
+  duration?: number; // maps to standardDuration
+  jobId?: number; // For legacy API compatibility
+  order?: number; // maps to sequenceNumber
+  assignedResourceId?: number;
 }
 
 export interface IStorage {
@@ -1818,8 +1842,7 @@ export class MemStorage implements Partial<IStorage> {
         description: opData.description,
         status: opData.status,
         duration: opData.duration,
-        requiredCapabilities: opData.requiredCapabilities,
-        assignedResourceId: opData.assignedResourceId,
+
         startTime: opData.startTime,
         endTime: opData.endTime,
         order: opData.order,
@@ -1879,17 +1902,17 @@ export class MemStorage implements Partial<IStorage> {
 
   // Operations
   async getOperations(): Promise<Operation[]> {
-    return await db.select().from(operations);
+    return await db.select().from(discreteOperations);
   }
 
   async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
-    return await db.select().from(operations)
-      .where(eq(operations.productionOrderId, productionOrderId))
-      .orderBy(operations.order);
+    return await db.select().from(discreteOperations)
+      .where(eq(discreteOperations.routingId, productionOrderId))
+      .orderBy(discreteOperations.sequenceNumber);
   }
 
   async getOperation(id: number): Promise<Operation | undefined> {
-    const [operation] = await db.select().from(operations).where(eq(operations.id, id));
+    const [operation] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
     return operation || undefined;
   }
 
@@ -1901,8 +1924,7 @@ export class MemStorage implements Partial<IStorage> {
       description: operation.description || null,
       status: operation.status || "planned",
       duration: operation.duration,
-      requiredCapabilities: (operation.requiredCapabilities as number[]) || null,
-      assignedResourceId: operation.assignedResourceId || null,
+
       startTime: operation.startTime || null,
       endTime: operation.endTime || null,
       order: operation.order || 0
@@ -1923,7 +1945,7 @@ export class MemStorage implements Partial<IStorage> {
   async deleteOperation(id: number): Promise<boolean> {
     // Also delete associated dependencies
     const dependenciesToDelete = Array.from(this.dependencies.values())
-      .filter(dep => dep.fromOperationId === id || dep.toOperationId === id);
+      .filter(dep => dep.fromDiscreteOperationId === id || dep.toDiscreteOperationId === id);
     
     dependenciesToDelete.forEach(dep => {
       this.dependencies.delete(dep.id);
@@ -1939,11 +1961,11 @@ export class MemStorage implements Partial<IStorage> {
 
   async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
     return Array.from(this.dependencies.values())
-      .filter(dep => dep.fromOperationId === operationId || dep.toOperationId === operationId);
+      .filter(dep => dep.fromDiscreteOperationId === operationId || dep.toDiscreteOperationId === operationId);
   }
 
   async createDependency(dependency: InsertDependency): Promise<Dependency> {
-    const newDependency: Dependency = { id: this.currentDependencyId++, ...dependency };
+    const newDependency: Dependency = { id: this.currentDependencyId++, ...dependency } as Dependency;
     this.dependencies.set(newDependency.id, newDependency);
     return newDependency;
   }
@@ -2239,18 +2261,52 @@ export class DatabaseStorage implements IStorage {
       console.log("Converting operations to legacy format...");
       const combinedOps: Operation[] = [
         ...discreteOps.map(op => ({
-          ...op,
+          id: op.id,
           name: op.operationName,
+          description: op.description,
           duration: op.standardDuration,
-          jobId: op.productionOrderId, // For backward compatibility
-          order: op.sequenceNumber
+          jobId: null, // Discrete operations don't have direct production order link
+          order: op.sequenceNumber,
+          status: op.status,
+          assignedResourceId: op.workCenterId,
+          startTime: op.startTime,
+          endTime: op.endTime,
+          routingId: op.routingId,
+          operationName: op.operationName,
+          standardDuration: op.standardDuration,
+          actualDuration: op.actualDuration,
+          workCenterId: op.workCenterId,
+          priority: op.priority,
+          completionPercentage: op.completionPercentage,
+          qualityCheckRequired: op.qualityCheckRequired,
+          qualityStatus: op.qualityStatus,
+          notes: op.notes,
+          createdAt: op.createdAt,
+          updatedAt: op.updatedAt
         } as Operation)),
         ...processOps.map(op => ({
-          ...op,
+          id: op.id,
           name: op.operationName,
+          description: op.description,
           duration: op.standardDuration,
-          jobId: op.productionOrderId, // For backward compatibility
-          order: op.sequenceNumber
+          jobId: op.productionOrderId,
+          order: op.sequenceNumber,
+          status: op.status,
+          assignedResourceId: op.workCenterId,
+          startTime: op.startTime,
+          endTime: op.endTime,
+          routingId: op.routingId,
+          operationName: op.operationName,
+          standardDuration: op.standardDuration,
+          actualDuration: op.actualDuration,
+          workCenterId: op.workCenterId,
+          priority: op.priority,
+          completionPercentage: op.completionPercentage,
+          qualityCheckRequired: op.qualityCheckRequired,
+          qualityStatus: op.qualityStatus,
+          notes: op.notes,
+          createdAt: op.createdAt,
+          updatedAt: op.updatedAt
         } as Operation))
       ];
       
