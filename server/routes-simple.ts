@@ -156,123 +156,38 @@ export function registerSimpleRoutes(app: express.Application): Server {
     res.json({ message: "Logged out successfully" });
   });
 
-  // Mobile Library API - Returns widgets for mobile library
+  // Mobile Library API - Returns widgets for mobile library (database-driven)
   app.get("/api/mobile/widgets", async (req, res) => {
     console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
     
-    // Simplified widget data with only targetPlatform categorization
-    const mobileWidgets = [
-      {
-        id: 1,
-        title: "Production Overview",
-        type: "production-metrics",
-        targetPlatform: "both",
-        configuration: { metrics: ["output", "efficiency", "quality"] },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        title: "Equipment Status",
-        type: "equipment-status",
-        targetPlatform: "both",
-        configuration: { equipment: ["reactor1", "mixer2", "packaging"] },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 3,
-        title: "Quality Metrics",
-        type: "quality-dashboard",
-        targetPlatform: "both",
-        configuration: { tests: ["pH", "temperature", "purity"] },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 4,
-        title: "Inventory Levels",
-        type: "inventory-tracking",
-        targetPlatform: "both",
-        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 5,
-        title: "Schedule Gantt",
-        type: "gantt-chart",
-        targetPlatform: "both",
-        configuration: { view: "weekly", resources: ["all"] },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 6,
-        title: "Operation Sequencer",
-        type: "operation-sequencer",
-        targetPlatform: "both",
-        configuration: { 
-          view: "compact", 
-          allowReorder: true,
-          showResourceFilter: true,
-          showStatusFilter: true,
-          showOptimizationFlags: true
-        },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 7,
-        title: "ATP/CTP Calculator",
-        type: "atp-ctp",
-        targetPlatform: "both",
-        configuration: { 
-          view: "full",
-          showCalculator: true,
-          showOverview: true,
-          autoRefresh: true
-        },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 8,
-        title: "ATP Overview",
-        type: "atp-ctp",
-        targetPlatform: "both",
-        configuration: { 
-          view: "compact",
-          compact: true,
-          showOverview: true,
-          maxItems: 3
-        },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 9,
-        title: "Schedule Optimizer",
-        type: "schedule-optimizer",
-        targetPlatform: "both",
-        configuration: { 
-          view: "full",
-          showTradeoffs: true,
-          showOptimization: true,
-          allowConfiguration: true
-        },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 10,
-        title: "Production Order Status",
-        type: "production-order-status",
-        targetPlatform: "both",
-        configuration: { 
-          defaultSearch: "",
-          showAdvancedMetrics: true,
-          showTimingDetails: true,
-          showQualityInfo: true,
-          maxResults: 20
-        },
-        createdAt: new Date().toISOString()
-      }
-    ];
-    
-    console.log("Total widgets returned:", mobileWidgets.length);
-    res.json(mobileWidgets);
+    try {
+      // Get mobile-compatible widgets from database (platform = 'mobile' or 'both')
+      const mobileCompatibleWidgets = await db
+        .select()
+        .from(schema.unifiedWidgets)
+        .where(
+          sql`target_platform IN ('mobile', 'both')`
+        )
+        .orderBy(schema.unifiedWidgets.createdAt);
+
+      // Format for backward compatibility
+      const formattedWidgets = mobileCompatibleWidgets.map(widget => ({
+        id: widget.id,
+        title: widget.title,
+        type: widget.widgetType,
+        targetPlatform: widget.targetPlatform,
+        source: widget.dataSource,
+        configuration: widget.filters || {},
+        createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
+      }));
+
+      console.log(`Total widgets returned: ${formattedWidgets.length}`);
+      console.log("Widget IDs:", formattedWidgets.map(w => `${w.id}: ${w.title}`).join(", "));
+      res.json(formattedWidgets);
+    } catch (error) {
+      console.error("Error fetching mobile widgets:", error);
+      res.status(500).json({ error: "Failed to fetch mobile widgets" });
+    }
   });
 
   // Desktop widgets endpoint (if needed later)
