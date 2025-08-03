@@ -113,7 +113,7 @@ export default function ResourceAssignmentWidget({
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
     queryFn: async () => {
-      const response = await fetch('/api/users?role=operator');
+      const response = await fetch('/api/users');
       if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
     }
@@ -501,7 +501,7 @@ export default function ResourceAssignmentWidget({
 
       {/* Create Assignment Dialog */}
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Resource Assignment</DialogTitle>
           </DialogHeader>
@@ -610,7 +610,7 @@ export default function ResourceAssignmentWidget({
 
       {/* Edit Assignment Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Resource Assignment</DialogTitle>
           </DialogHeader>
