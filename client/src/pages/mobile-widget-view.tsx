@@ -15,6 +15,13 @@ import ScheduleOptimizationWidget from "@/components/schedule-optimization-widge
 import ProductionOrderStatusWidget from "@/components/widgets/production-order-status-widget";
 import OperationDispatchWidget from "@/components/widgets/operation-dispatch-widget";
 import ResourceAssignmentWidget from "@/components/widgets/resource-assignment-widget";
+import ProductionMetricsWidget from "@/components/widgets/production-metrics-widget";
+import EquipmentStatusWidget from "@/components/widgets/equipment-status-widget";
+import QualityDashboardWidget from "@/components/widgets/quality-dashboard-widget";
+import InventoryTrackingWidget from "@/components/widgets/inventory-tracking-widget";
+import GanttChartWidget from "@/components/widgets/gantt-chart-widget";
+import InventoryTrackingWidget from "@/components/widgets/inventory-tracking-widget";
+import GanttChartWidget from "@/components/widgets/gantt-chart-widget";
 
 interface Widget {
   id: number;
@@ -39,6 +46,12 @@ const WIDGET_COMPONENTS = {
   'production-order-status': ProductionOrderStatusWidget,
   'operation-dispatch': OperationDispatchWidget,
   'resource-assignment': ResourceAssignmentWidget,
+  // Basic database widgets
+  'production-metrics': ProductionMetricsWidget,
+  'equipment-status': EquipmentStatusWidget,
+  'quality-dashboard': QualityDashboardWidget,
+  'inventory-tracking': InventoryTrackingWidget,
+  'gantt-chart': GanttChartWidget,
 };
 
 export default function MobileWidgetView() {
