@@ -14,7 +14,7 @@ export class WidgetStorage {
   }
   // Create a new widget
   async createWidget(widget: InsertUnifiedWidget): Promise<UnifiedWidget> {
-    const [created] = await this.db.insert(unifiedWidgets).values(widget).returning();
+    const [created] = await this.db.insert(unifiedWidgets).values([widget]).returning();
     return created;
   }
 
@@ -52,7 +52,7 @@ export class WidgetStorage {
   async updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<UnifiedWidget | null> {
     const [updated] = await this.db
       .update(unifiedWidgets)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(updates)
       .where(eq(unifiedWidgets.id, id))
       .returning();
     return updated || null;
