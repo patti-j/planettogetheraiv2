@@ -2432,19 +2432,11 @@ export const presentationProjects = pgTable("presentation_projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
+// Types already defined above - removing duplicates
 export type Capability = typeof capabilities.$inferSelect;
-
-export type InsertResource = z.infer<typeof insertResourceSchema>;
 export type Resource = typeof resources.$inferSelect;
-
-export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 export type PlantResource = typeof plantResources.$inferSelect;
-
-export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 export type ProductionOrder = typeof productionOrders.$inferSelect;
-
-export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 export type PlannedOrder = typeof plannedOrders.$inferSelect;
 
 // Junction table types for many-to-many relationship
