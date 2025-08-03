@@ -213,25 +213,85 @@ interface Notification {
   read: boolean;
 }
 
-// Mobile Menu Trigger Component that uses useSidebar hook
+// Mobile Menu Trigger Component - simplified approach with local state
 function MobileMenuTrigger() {
-  const { toggleSidebar, isMobile, openMobile, setOpenMobile } = useSidebar();
+  const [isOpen, setIsOpen] = useState(false);
   
   const handleClick = () => {
-    console.log("🍔 Hamburger clicked! isMobile:", isMobile, "openMobile:", openMobile);
-    // Force mobile behavior by directly setting openMobile
-    setOpenMobile(!openMobile);
+    console.log("🍔 Hamburger clicked! Opening sidebar");
+    setIsOpen(!isOpen);
   };
   
   return (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-      onClick={handleClick}
-    >
-      <Menu className="w-5 h-5" />
-    </Button>
+    <>
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+        onClick={handleClick}
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
+      
+      {/* Simple mobile sidebar overlay */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Sidebar Panel */}
+          <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">User</p>
+                    <p className="text-xs text-gray-500">demo@example.com</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsOpen(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Navigation Menu */}
+              <div className="flex-1 p-4 space-y-2">
+                <Link href="/analytics" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Analytics</span>
+                </Link>
+                <Link href="/production" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Activity className="w-4 h-4" />
+                  <span>Production</span>
+                </Link>
+                <Link href="/shop-floor" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Monitor className="w-4 h-4" />
+                  <span>Shop Floor</span>
+                </Link>
+                <Link href="/reports" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Reports</span>
+                </Link>
+                <Link href="/settings" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <Settings className="w-4 h-4" />
+                  <span>Settings</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -760,98 +820,9 @@ export default function MobileHomePage() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
-        {/* Sidebar with navigation content */}
-        <Sidebar side="right" className="w-80">
-          <SidebarHeader className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt={user?.username || ""} />
-                <AvatarFallback>
-                  {user?.username?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.username}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
-          </SidebarHeader>
-          
-          <SidebarContent>
-            <SidebarMenu>
-              {/* User Actions */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/account" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Account</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/account" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarSeparator />
-              
-              {/* View Mode Toggle */}
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={toggleView}>
-                  {currentView === "mobile" ? (
-                    <>
-                      <Monitor className="mr-2 h-4 w-4" />
-                      <span>Switch to Desktop View</span>
-                    </>
-                  ) : (
-                    <>
-                      <Smartphone className="mr-2 h-4 w-4" />
-                      <span>Switch to Mobile View</span>
-                    </>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarSeparator />
-              
-              {/* Navigation Items */}
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.path} className="flex items-center">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
-          
-          <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => logout()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-        </Sidebar>
-        
-        {/* Main content area */}
-        <div className="flex-1">
-          {/* Mobile Header */}
-          <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
+      {/* Mobile Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
             <div className="flex items-center px-4 py-3 gap-3">
               {/* Logo/Brand - Clickable to go home */}
               <img 
@@ -1615,16 +1586,14 @@ export default function MobileHomePage() {
         </div>
       )}
 
-        {/* Widget Design Studio for Mobile */}
-        <WidgetDesignStudio
-          open={widgetStudioOpen}
-          onOpenChange={setWidgetStudioOpen}
-          onWidgetCreate={handleCreateWidget}
-          editingWidget={editingWidget}
-          mode={editingWidget ? 'edit' : 'create'}
-        />
-        </div>
-      </div>
-    </SidebarProvider>
+      {/* Widget Design Studio for Mobile */}
+      <WidgetDesignStudio
+        open={widgetStudioOpen}
+        onOpenChange={setWidgetStudioOpen}
+        onWidgetCreate={handleCreateWidget}
+        editingWidget={editingWidget}
+        mode={editingWidget ? 'edit' : 'create'}
+      />
+    </div>
   );
 }
