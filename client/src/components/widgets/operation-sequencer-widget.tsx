@@ -204,7 +204,7 @@ export default function OperationSequencerWidget({
     configuration.defaultScenarioId?.toString() || ""
   );
   const [selectedResource, setSelectedResource] = useState<string>(
-    configuration.defaultResourceId?.toString() || ""
+    configuration.defaultResourceId?.toString() || "all"
   );
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [orderedBlocks, setOrderedBlocks] = useState<ResourceRequirementBlock[]>([]);
@@ -503,7 +503,7 @@ export default function OperationSequencerWidget({
                       <SelectValue placeholder="All Resources" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Resources</SelectItem>
+                      <SelectItem value="all">All Resources</SelectItem>
                       {resources.map((resource) => (
                         <SelectItem key={resource.id} value={resource.id.toString()}>
                           {resource.name}
