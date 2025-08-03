@@ -21690,6 +21690,113 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // User Resource Assignments API Routes
+  app.get("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const { userId, resourceId, active } = req.query;
+      const assignments = await db.select().from(schema.userResourceAssignments)
+        .where(sql`
+          ${userId ? sql`user_id = ${userId}` : sql`1=1`} AND
+          ${resourceId ? sql`resource_id = ${resourceId}` : sql`1=1`} AND
+          ${active === 'true' ? sql`is_active = true` : sql`1=1`}
+        `);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch assignments" });
+    }
+  });
+
+  app.get("/api/user-resource-assignments/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assignments = await db.select().from(schema.userResourceAssignments)
+        .where(sql`user_id = ${userId} AND is_active = true`);
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch assignments" });
+    }
+  });
+
+  app.post("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const assignment = await db.insert(schema.userResourceAssignments)
+        .values(req.body)
+        .returning();
+      res.status(201).json(assignment[0]);
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      res.status(500).json({ error: "Failed to create assignment" });
+    }
+  });
+
+  app.put("/api/user-resource-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignment = await db.update(schema.userResourceAssignments)
+        .set({ ...req.body, updatedAt: new Date() })
+        .where(sql`id = ${id}`)
+        .returning();
+      
+      if (assignment.length === 0) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment[0]);
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      res.status(500).json({ error: "Failed to update assignment" });
+    }
+  });
+
+  app.delete("/api/user-resource-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignment = await db.update(schema.userResourceAssignments)
+        .set({ isActive: false, revokedAt: new Date(), updatedAt: new Date() })
+        .where(sql`id = ${id}`)
+        .returning();
+      
+      if (assignment.length === 0) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json({ message: "Assignment revoked successfully" });
+    } catch (error) {
+      console.error("Error revoking assignment:", error);
+      res.status(500).json({ error: "Failed to revoke assignment" });
+    }
+  });
+
+  // Operation Status Reports API Routes
+  app.get("/api/operation-status-reports", async (req, res) => {
+    try {
+      const { operationId, resourceId, reportedBy } = req.query;
+      const reports = await db.select().from(schema.operationStatusReports)
+        .where(sql`
+          ${operationId ? sql`discrete_operation_id = ${operationId}` : sql`1=1`} AND
+          ${resourceId ? sql`resource_id = ${resourceId}` : sql`1=1`} AND
+          ${reportedBy ? sql`reported_by = ${reportedBy}` : sql`1=1`}
+        `)
+        .orderBy(sql`reported_at DESC`);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching operation status reports:", error);
+      res.status(500).json({ error: "Failed to fetch reports" });
+    }
+  });
+
+  app.post("/api/operation-status-reports", async (req, res) => {
+    try {
+      const report = await db.insert(schema.operationStatusReports)
+        .values(req.body)
+        .returning();
+      res.status(201).json(report[0]);
+    } catch (error) {
+      console.error("Error creating operation status report:", error);
+      res.status(500).json({ error: "Failed to create report" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
