@@ -908,9 +908,7 @@ export default function MobileHomePage() {
             </Button>
 
             {/* Hamburger Menu Trigger */}
-            <SidebarTrigger className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
-              <Menu className="w-5 h-5" />
-            </SidebarTrigger>
+            <SidebarTrigger className="hover:bg-gray-100 dark:hover:bg-gray-700" />
 
             {/* Library Modal */}
             <div 
@@ -1183,10 +1181,7 @@ export default function MobileHomePage() {
               </div>
             </div>
 
-            {/* Mobile Menu - Now using Sidebar */}
-            <SidebarTrigger className="h-8 w-8 p-2">
-              <Menu className="w-5 h-5" />
-            </SidebarTrigger>
+
           </div>
         </div>
       </div>
