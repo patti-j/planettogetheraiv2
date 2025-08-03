@@ -213,7 +213,21 @@ interface Notification {
   read: boolean;
 }
 
-
+// Mobile Menu Trigger Component that uses useSidebar hook
+function MobileMenuTrigger() {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+      onClick={toggleSidebar}
+    >
+      <Menu className="w-5 h-5" />
+    </Button>
+  );
+}
 
 export default function MobileHomePage() {
   const { user, logout } = useAuth();
@@ -224,8 +238,7 @@ export default function MobileHomePage() {
   const { currentView, toggleView, isForced } = useViewMode();
   const queryClient = useQueryClient();
   
-  // State for controlling sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Remove sidebar state as it's handled by SidebarProvider
   
   // Max AI panel state
   const [maxPanelOpen, setMaxPanelOpen] = useState(false);
@@ -741,7 +754,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
         {/* Sidebar with navigation content */}
         <Sidebar side="right" className="w-80">
@@ -914,14 +927,7 @@ export default function MobileHomePage() {
             </Button>
 
             {/* Hamburger Menu Trigger */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+            <MobileMenuTrigger />
 
             {/* Library Modal */}
             <div 
