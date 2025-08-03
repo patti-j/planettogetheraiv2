@@ -4053,65 +4053,9 @@ Manufacturing Context Available:
     res.json({ status: "working", message: "Test endpoint success" });
   });
 
-  // Test endpoint for new widgets - to bypass cache
-  app.get("/api/widgets-new", (req, res) => {
-    console.log("=== NEW WIDGETS TEST ENDPOINT ===");
-    const testWidgets = [
-      {
-        id: 9,
-        title: "Schedule Optimization",
-        type: "schedule-optimization",
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { showOptimizer: true },
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 10,
-        title: "Resource Gantt",
-        type: "resource-gantt", 
-        targetPlatform: "both",
-        source: "cockpit",
-        configuration: { view: "resource" },
-        createdAt: new Date().toISOString()
-      }
-    ];
-    console.log("Test widgets count:", testWidgets.length);
-    res.json(testWidgets);
-  });
 
-  // Mobile Library API - Database-driven widgets endpoint  
-  app.get("/api/mobile/widgets", async (req, res) => {
-    console.log("=== DATABASE-DRIVEN MOBILE WIDGETS ENDPOINT HIT ===");
-    
-    try {
-      // Get widgets compatible with mobile (both 'mobile' and 'both' platforms)
-      const mobileWidgets = await storage.getWidgetsByPlatform('mobile');
-      const bothWidgets = await storage.getWidgetsByPlatform('both');
-      
-      // Combine all mobile-compatible widgets
-      const allMobileWidgets = [...mobileWidgets, ...bothWidgets];
-      
-      // Transform database widgets to match frontend expectations
-      const transformedWidgets = allMobileWidgets.map(widget => ({
-        id: widget.id,
-        title: widget.title,
-        type: widget.widgetType, // Use widgetType from database
-        targetPlatform: widget.targetPlatform,
-        source: widget.deployedSystems?.[0] || 'cockpit', // Use first deployed system as source
-        configuration: widget.filters || {}, // Use filters as configuration
-        createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
-      }));
-      
-      console.log(`=== MOBILE WIDGETS FROM DATABASE: ${transformedWidgets.length} widgets ===`);
-      transformedWidgets.forEach(w => console.log(`  - ${w.id}: ${w.title} (${w.type})`));
-      
-      res.json(transformedWidgets);
-    } catch (error) {
-      console.error("Error in mobile widgets endpoint:", error);
-      res.status(500).json({ error: "Failed to get widgets" });
-    }
-  });
+
+
 
   // New endpoint to bypass caching issues
   app.get("/api/mobile/dashboards-v2", (req, res) => {
