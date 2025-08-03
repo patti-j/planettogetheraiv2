@@ -1515,15 +1515,18 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
   id: true,
 });
+export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
 export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
 });
+export type InsertResource = z.infer<typeof insertResourceSchema>;
 
 export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({
   id: true,
   createdAt: true,
 });
+export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
 export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
   id: true,
@@ -1535,11 +1538,13 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
   releaseDate: z.union([z.string().datetime(), z.date()]).optional(),
   customer: z.string().optional(), // Backward compatibility field
 });
+export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
 export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({
   id: true,
   createdAt: true,
 });
+export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
 // Junction table insert schema for many-to-many relationship
 export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders).omit({
