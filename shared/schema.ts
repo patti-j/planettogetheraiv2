@@ -1598,116 +1598,116 @@ export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
   createdAt: true,
 });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   isArchived: z.boolean().optional(),
 });
 
-export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   scheduledStartTime: z.union([z.string().datetime(), z.date()]),
   scheduledEndTime: z.union([z.string().datetime(), z.date()]),
 });
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
-  id: undefined,
-}, {
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
+  id: true,
+}).extend({
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
-  id: undefined,
-  createdAt: undefined,
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
-  id: undefined,
-  timestamp: undefined,
+export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
+  id: true,
+  timestamp: true,
 });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   scheduledDate: z.union([z.string().datetime(), z.date()]).optional(),
   startedAt: z.union([z.string().datetime(), z.date()]).optional(),
   completedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
-  id: undefined,
-  timestamp: undefined,
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
+  id: true,
+  timestamp: true,
 });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
+export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
   startTime: z.union([z.string().datetime(), z.date()]),
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
-  id: undefined,
-  createdAt: undefined,
-}, {
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
   scheduledTime: z.union([z.string().datetime(), z.date()]).optional(),
   completedTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
-  id: undefined,
-  createdAt: undefined,
-}, {
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
+  id: true,
+  createdAt: true,
+}).extend({
   expectedResponse: z.union([z.string().datetime(), z.date()]).optional(),
   actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
 });
