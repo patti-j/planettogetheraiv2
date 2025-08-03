@@ -8696,7 +8696,7 @@ export type InsertForecast = z.infer<typeof insertForecastSchema>;
 // User Secrets Management - for storing API keys and sensitive connection data
 export const userSecrets = pgTable("user_secrets", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   name: text("name").notNull(), // Display name for the secret (e.g., "OpenAI API Key", "AWS Access Key")
   key: text("key").notNull(), // The actual key identifier (e.g., "OPENAI_API_KEY", "AWS_ACCESS_KEY_ID")
   encryptedValue: text("encrypted_value").notNull(), // Encrypted secret value

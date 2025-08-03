@@ -21221,6 +21221,119 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Operation Dispatch Widget API endpoints
+  app.get("/api/operation-dispatch/operations", async (req, res) => {
+    try {
+      const operations = await storage.getDiscreteOperations();
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching operations for dispatch:", error);
+      res.status(500).json({ error: "Failed to fetch operations" });
+    }
+  });
+
+  app.post("/api/operation-dispatch/report-status", async (req, res) => {
+    try {
+      const data = req.body;
+      
+      // Create operation status report
+      const report = await storage.createOperationStatusReport({
+        discreteOperationId: data.operationId || null,
+        processOperationId: data.processOperationId || null,
+        reportedBy: 1, // TODO: Get from session
+        resourceId: data.resourceId,
+        phaseType: data.phaseType,
+        phaseStatus: data.phaseStatus,
+        skipReason: data.skipReason || null,
+        skipReasonCategory: data.skipReasonCategory || null,
+        timeSpent: data.timeSpent || null,
+        reportedStartTime: data.reportedStartTime ? new Date(data.reportedStartTime) : null,
+        reportedEndTime: data.reportedEndTime ? new Date(data.reportedEndTime) : null,
+        goodQuantity: data.goodQuantity || 0,
+        scrapQuantity: data.scrapQuantity || 0,
+        unitOfMeasure: data.unitOfMeasure || 'EA',
+        comments: data.comments || null,
+        qualityNotes: data.qualityNotes || null,
+        issuesEncountered: data.issuesEncountered || null
+      });
+      
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating status report:", error);
+      res.status(500).json({ error: "Failed to create status report" });
+    }
+  });
+
+  app.post("/api/operation-dispatch/skip-operation", async (req, res) => {
+    try {
+      const { operationId, skipReason, skipCategory, comments } = req.body;
+      
+      // Create skip report
+      const report = await storage.createOperationStatusReport({
+        discreteOperationId: operationId,
+        reportedBy: 1, // TODO: Get from session
+        resourceId: req.body.resourceId,
+        phaseType: "running",
+        phaseStatus: "skipped",
+        skipReason: skipReason,
+        skipReasonCategory: skipCategory,
+        comments: comments
+      });
+      
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error skipping operation:", error);
+      res.status(500).json({ error: "Failed to skip operation" });
+    }
+  });
+
+  // Resource Assignment Widget API endpoints
+  app.get("/api/resource-assignment/assignments", async (req, res) => {
+    try {
+      const assignments = await storage.getUserResourceAssignments();
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch resource assignments" });
+    }
+  });
+
+  app.post("/api/resource-assignment/assign", async (req, res) => {
+    try {
+      const data = req.body;
+      
+      const assignment = await storage.createUserResourceAssignment({
+        userId: data.userId,
+        resourceId: data.resourceId,
+        assignedBy: 1, // TODO: Get from session
+        canSkipOperations: data.canSkipOperations || false,
+        scheduleVisibilityDays: data.scheduleVisibilityDays || 7,
+        notes: data.notes || null
+      });
+      
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating resource assignment:", error);
+      res.status(500).json({ error: "Failed to create resource assignment" });
+    }
+  });
+
+  app.delete("/api/resource-assignment/:id", async (req, res) => {
+    try {
+      const assignmentId = parseInt(req.params.id);
+      const success = await storage.deleteUserResourceAssignment(assignmentId);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting resource assignment:", error);
+      res.status(500).json({ error: "Failed to delete assignment" });
+    }
+  });
+
   app.get("/api/skip-reason-templates", async (req, res) => {
     try {
       const { category, active } = req.query;

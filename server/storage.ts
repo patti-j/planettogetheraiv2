@@ -223,6 +223,13 @@ export interface IStorage {
   createOperation(operation: InsertOperation): Promise<Operation>;
   updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined>;
   deleteOperation(id: number): Promise<boolean>;
+
+  // Discrete Operations
+  getDiscreteOperations(): Promise<DiscreteOperation[]>;
+  getDiscreteOperation(id: number): Promise<DiscreteOperation | undefined>;
+  createDiscreteOperation(operation: InsertDiscreteOperation): Promise<DiscreteOperation>;
+  updateDiscreteOperation(id: number, operation: Partial<InsertDiscreteOperation>): Promise<DiscreteOperation | undefined>;
+  deleteDiscreteOperation(id: number): Promise<boolean>;
   // Optimization flags
   updateOperationOptimizationFlags(id: number, flags: {
     isBottleneck?: boolean;
@@ -476,6 +483,27 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   authenticateUser(username: string, password: string): Promise<UserWithRoles | null>;
+
+  // User Resource Assignments
+  getUserResourceAssignments(): Promise<UserResourceAssignment[]>;
+  getUserResourceAssignmentsByUserId(userId: number): Promise<UserResourceAssignment[]>;
+  getUserResourceAssignmentsByResourceId(resourceId: number): Promise<UserResourceAssignment[]>;
+  createUserResourceAssignment(assignment: any): Promise<UserResourceAssignment>;
+  updateUserResourceAssignment(id: number, assignment: any): Promise<UserResourceAssignment | undefined>;
+  deleteUserResourceAssignment(id: number): Promise<boolean>;
+
+  // Operation Status Reports
+  getOperationStatusReports(): Promise<OperationStatusReport[]>;
+  getOperationStatusReportsByOperationId(operationId: number): Promise<OperationStatusReport[]>;
+  createOperationStatusReport(report: any): Promise<OperationStatusReport>;
+  updateOperationStatusReport(id: number, report: any): Promise<OperationStatusReport | undefined>;
+  deleteOperationStatusReport(id: number): Promise<boolean>;
+
+  // Skip Reason Templates
+  getSkipReasonTemplates(filters?: { category?: string; active?: boolean }): Promise<SkipReasonTemplate[]>;
+  createSkipReasonTemplate(template: any): Promise<SkipReasonTemplate>;
+  updateSkipReasonTemplate(id: number, template: any): Promise<SkipReasonTemplate | undefined>;
+  deleteSkipReasonTemplate(id: number): Promise<boolean>;
 
   // Role Management
   getRoles(): Promise<Role[]>;
@@ -4402,6 +4430,118 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // User Resource Assignments
+  async getUserResourceAssignments(): Promise<UserResourceAssignment[]> {
+    return await db.select().from(userResourceAssignments);
+  }
+
+  async getUserResourceAssignmentsByUserId(userId: number): Promise<UserResourceAssignment[]> {
+    return await db
+      .select()
+      .from(userResourceAssignments)
+      .where(eq(userResourceAssignments.userId, userId));
+  }
+
+  async getUserResourceAssignmentsByResourceId(resourceId: number): Promise<UserResourceAssignment[]> {
+    return await db
+      .select()
+      .from(userResourceAssignments)
+      .where(eq(userResourceAssignments.resourceId, resourceId));
+  }
+
+  async createUserResourceAssignment(assignment: any): Promise<UserResourceAssignment> {
+    const [newAssignment] = await db
+      .insert(userResourceAssignments)
+      .values(assignment)
+      .returning();
+    return newAssignment;
+  }
+
+  async updateUserResourceAssignment(id: number, assignment: any): Promise<UserResourceAssignment | undefined> {
+    const [updatedAssignment] = await db
+      .update(userResourceAssignments)
+      .set({ ...assignment, updatedAt: new Date() })
+      .where(eq(userResourceAssignments.id, id))
+      .returning();
+    return updatedAssignment || undefined;
+  }
+
+  async deleteUserResourceAssignment(id: number): Promise<boolean> {
+    const result = await db.delete(userResourceAssignments).where(eq(userResourceAssignments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Operation Status Reports
+  async getOperationStatusReports(): Promise<OperationStatusReport[]> {
+    return await db.select().from(operationStatusReports);
+  }
+
+  async getOperationStatusReportsByOperationId(operationId: number): Promise<OperationStatusReport[]> {
+    return await db
+      .select()
+      .from(operationStatusReports)
+      .where(eq(operationStatusReports.discreteOperationId, operationId));
+  }
+
+  async createOperationStatusReport(report: any): Promise<OperationStatusReport> {
+    const [newReport] = await db
+      .insert(operationStatusReports)
+      .values(report)
+      .returning();
+    return newReport;
+  }
+
+  async updateOperationStatusReport(id: number, report: any): Promise<OperationStatusReport | undefined> {
+    const [updatedReport] = await db
+      .update(operationStatusReports)
+      .set({ ...report, updatedAt: new Date() })
+      .where(eq(operationStatusReports.id, id))
+      .returning();
+    return updatedReport || undefined;
+  }
+
+  async deleteOperationStatusReport(id: number): Promise<boolean> {
+    const result = await db.delete(operationStatusReports).where(eq(operationStatusReports.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Skip Reason Templates
+  async getSkipReasonTemplates(filters?: { category?: string; active?: boolean }): Promise<SkipReasonTemplate[]> {
+    let query = db.select().from(skipReasonTemplates);
+    
+    if (filters?.category) {
+      query = query.where(eq(skipReasonTemplates.category, filters.category));
+    }
+    
+    if (filters?.active !== undefined) {
+      query = query.where(eq(skipReasonTemplates.isActive, filters.active));
+    }
+    
+    return await query;
+  }
+
+  async createSkipReasonTemplate(template: any): Promise<SkipReasonTemplate> {
+    const [newTemplate] = await db
+      .insert(skipReasonTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateSkipReasonTemplate(id: number, template: any): Promise<SkipReasonTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(skipReasonTemplates)
+      .set({ ...template, updatedAt: new Date() })
+      .where(eq(skipReasonTemplates.id, id))
+      .returning();
+    return updatedTemplate || undefined;
+  }
+
+  async deleteSkipReasonTemplate(id: number): Promise<boolean> {
+    const result = await db.delete(skipReasonTemplates).where(eq(skipReasonTemplates.id, id));
     return (result.rowCount || 0) > 0;
   }
 

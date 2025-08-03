@@ -24,7 +24,7 @@ import {
   Timer,
   Activity,
   Wrench,
-  CleaningServices,
+  Trash2,
   BarChart3,
   User,
   ChevronRight,
@@ -456,7 +456,7 @@ export default function OperationDispatchWidget({
                                 <span>Run: {formatTime(operation.runTimeStandard)}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <CleaningServices className="w-4 h-4 text-purple-500" />
+                                <Trash2 className="w-4 h-4 text-purple-500" />
                                 <span>Cleanup: {formatTime(operation.cleanupTimeStandard)}</span>
                               </div>
                             </div>
@@ -552,7 +552,7 @@ export default function OperationDispatchWidget({
                       </SelectItem>
                       <SelectItem value="cleanup">
                         <div className="flex items-center gap-2">
-                          <CleaningServices className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                           Cleanup
                         </div>
                       </SelectItem>
