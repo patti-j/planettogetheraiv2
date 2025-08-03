@@ -13,6 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarTrigger,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -723,12 +735,101 @@ export default function MobileHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
-      {/* Mobile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
-        <div className="flex items-center px-4 py-3 gap-3">
-          {/* Logo/Brand - Clickable to go home */}
-          <img 
+    <SidebarProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
+        {/* Sidebar with navigation content */}
+        <Sidebar side="right" className="w-80">
+          <SidebarHeader className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="" alt={user?.username || ""} />
+                <AvatarFallback>
+                  {user?.username?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.username}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+          </SidebarHeader>
+          
+          <SidebarContent>
+            <SidebarMenu>
+              {/* User Actions */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/account" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Account</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/account" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarSeparator />
+              
+              {/* View Mode Toggle */}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={toggleView}>
+                  {currentView === "mobile" ? (
+                    <>
+                      <Monitor className="mr-2 h-4 w-4" />
+                      <span>Switch to Desktop View</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="mr-2 h-4 w-4" />
+                      <span>Switch to Mobile View</span>
+                    </>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarSeparator />
+              
+              {/* Navigation Items */}
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.path} className="flex items-center">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          
+          <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-700">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => logout()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+        
+        {/* Main content area */}
+        <div className="flex-1">
+          {/* Mobile Header */}
+          <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
+            <div className="flex items-center px-4 py-3 gap-3">
+              {/* Logo/Brand - Clickable to go home */}
+              <img 
             src={CompanyLogoImage} 
             alt="Company Logo" 
             className="h-8 w-8 object-contain cursor-pointer flex-shrink-0"
@@ -1077,77 +1178,10 @@ export default function MobileHomePage() {
               </div>
             </div>
 
-            {/* Mobile Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2">
-                  <Menu className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                {/* User Info Section */}
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="" alt={user?.username || ""} />
-                      <AvatarFallback>
-                        {user?.username?.charAt(0).toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.username}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                {/* User Actions */}
-                <DropdownMenuItem onClick={() => setLocation("/account")}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/account")}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                
-                {/* View Mode Toggle */}
-                <DropdownMenuItem onClick={toggleView}>
-                  {currentView === "mobile" ? (
-                    <>
-                      <Monitor className="mr-2 h-4 w-4" />
-                      <span>Switch to Desktop View</span>
-                    </>
-                  ) : (
-                    <>
-                      <Smartphone className="mr-2 h-4 w-4" />
-                      <span>Switch to Mobile View</span>
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                
-                {/* Navigation Items */}
-                <DropdownMenuLabel>Navigation</DropdownMenuLabel>
-                {menuItems.map((item) => (
-                  <DropdownMenuItem key={item.path} onClick={() => setLocation(item.path)}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.title}</span>
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                
-                {/* Logout */}
-                <DropdownMenuItem onClick={() => logout()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Mobile Menu - Now using Sidebar */}
+            <SidebarTrigger className="h-8 w-8 p-2">
+              <Menu className="w-5 h-5" />
+            </SidebarTrigger>
           </div>
         </div>
       </div>
@@ -1556,14 +1590,16 @@ export default function MobileHomePage() {
         </div>
       )}
 
-      {/* Widget Design Studio for Mobile */}
-      <WidgetDesignStudio
-        open={widgetStudioOpen}
-        onOpenChange={setWidgetStudioOpen}
-        onWidgetCreate={handleCreateWidget}
-        editingWidget={editingWidget}
-        mode={editingWidget ? 'edit' : 'create'}
-      />
-    </div>
+        {/* Widget Design Studio for Mobile */}
+        <WidgetDesignStudio
+          open={widgetStudioOpen}
+          onOpenChange={setWidgetStudioOpen}
+          onWidgetCreate={handleCreateWidget}
+          editingWidget={editingWidget}
+          mode={editingWidget ? 'edit' : 'create'}
+        />
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
