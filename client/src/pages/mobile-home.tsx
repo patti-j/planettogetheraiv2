@@ -281,152 +281,162 @@ function MobileMenuTrigger() {
                 </Button>
               </div>
               
-              {/* Navigation Menu - Full Desktop Structure */}
-              <div className="flex-1 p-4 space-y-1 overflow-y-auto">
-                <Link href="/" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Home className="w-4 h-4" />
-                  <span>Homepage</span>
-                </Link>
-                <Link href="/help" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <BookOpen className="w-4 h-4" />
-                  <span>Getting Started</span>
-                </Link>
-                <Link href="/business-goals" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>Business Goals</span>
-                </Link>
-                <Link href="/production-schedule" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Production Schedule</span>
-                </Link>
-                <Link href="/optimize-orders" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Target className="w-4 h-4" />
-                  <span>Optimize Orders</span>
-                </Link>
-                <Link href="/inventory-optimization" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Package className="w-4 h-4" />
-                  <span>Inventory Optimization</span>
-                </Link>
-                <Link href="/demand-forecasting" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Brain className="w-4 h-4" />
-                  <span>Demand Forecasting</span>
-                </Link>
-                <Link href="/capacity-planning" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Briefcase className="w-4 h-4" />
-                  <span>Capacity Planning</span>
-                </Link>
-                <Link href="/production-planning" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Target className="w-4 h-4" />
-                  <span>Production Planning</span>
-                </Link>
-                <Link href="/optimization-studio" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Optimization Studio</span>
-                </Link>
-                <Link href="/systems-integration" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Database className="w-4 h-4" />
-                  <span>System Integration</span>
-                </Link>
-                <Link href="/shop-floor" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Smartphone className="w-4 h-4" />
-                  <span>Shop Floor</span>
-                </Link>
-                <Link href="/operator-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Settings className="w-4 h-4" />
-                  <span>Operator</span>
-                </Link>
-                <Link href="/forklift-driver" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Truck className="w-4 h-4" />
-                  <span>Forklift Driver</span>
-                </Link>
-                <Link href="/maintenance" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Wrench className="w-4 h-4" />
-                  <span>Maintenance</span>
-                </Link>
-                <Link href="/disruption-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Disruption Management</span>
-                </Link>
-                <Link href="/plant-manager-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Building className="w-4 h-4" />
-                  <span>Plant Manager</span>
-                </Link>
-                <Link href="/systems-management-dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Server className="w-4 h-4" />
-                  <span>Systems Management</span>
-                </Link>
-                <Link href="/plants-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Building className="w-4 h-4" />
-                  <span>Plants Management</span>
-                </Link>
-                <Link href="/widget-showcase" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Grid3X3 className="w-4 h-4" />
-                  <span>Widget Showcase</span>
-                </Link>
-                <Link href="/widgets" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Puzzle className="w-4 h-4" />
-                  <span>Widgets</span>
-                </Link>
-                <Link href="/dashboards" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Layout className="w-4 h-4" />
-                  <span>Dashboards</span>
-                </Link>
-                <Link href="/error-logs" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <FileSearch className="w-4 h-4" />
-                  <span>Logs</span>
-                </Link>
-                <Link href="/data-schema" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Database className="w-4 h-4" />
-                  <span>Data Schema View</span>
-                </Link>
-                <Link href="/table-field-viewer" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <FileText className="w-4 h-4" />
-                  <span>Table Field Documentation</span>
-                </Link>
-                <Link href="/data-import" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Database className="w-4 h-4" />
-                  <span>Master Data Setup</span>
-                </Link>
-                <Link href="/constraints" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Constraints Management</span>
-                </Link>
-                <Link href="/canvas" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Layers className="w-4 h-4" />
-                  <span>Canvas</span>
-                </Link>
-                <Link href="/user-access-management" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Shield className="w-4 h-4" />
-                  <span>User & Access Management</span>
-                </Link>
-                <Link href="/training" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Training</span>
-                </Link>
-                <Link href="/industry-templates" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Building className="w-4 h-4" />
-                  <span>Industry Templates</span>
-                </Link>
-                <Link href="/presentation-system" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Presentation className="w-4 h-4" />
-                  <span>Presentation System</span>
-                </Link>
-                <Link href="/chat" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Chat</span>
-                </Link>
-                <Link href="/boards" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Columns3 className="w-4 h-4" />
-                  <span>Boards</span>
-                </Link>
-                <Link href="/visual-factory" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Factory className="w-4 h-4" />
-                  <span>Visual Factory</span>
-                </Link>
-                <Link href="/feedback" className="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Feedback</span>
-                </Link>
+              {/* Navigation Menu - Categorized Desktop Structure */}
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                
+                {/* Planning & Scheduling */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Planning & Scheduling</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/production-schedule" className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <BarChart3 className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Production Schedule</span>
+                    </Link>
+                    <Link href="/optimize-orders" className="flex flex-col items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                      <Sparkles className="w-5 h-5 text-amber-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Order Optimization</span>
+                    </Link>
+                    <Link href="/capacity-planning" className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Briefcase className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Capacity Planning</span>
+                    </Link>
+                    <Link href="/production-planning" className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                      <Target className="w-5 h-5 text-green-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Production Planning</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* AI & Optimization */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">AI & Optimization</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/optimization-studio" className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Sparkles className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Optimization Studio</span>
+                    </Link>
+                    <Link href="/demand-forecasting" className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                      <Brain className="w-5 h-5 text-indigo-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Demand Planning</span>
+                    </Link>
+                    <Link href="/inventory-optimization" className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+                      <Package className="w-5 h-5 text-emerald-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Inventory Optimization</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Operations */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Operations</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/shop-floor" className="flex flex-col items-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                      <Factory className="w-5 h-5 text-orange-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Shop Floor</span>
+                    </Link>
+                    <Link href="/operator-dashboard" className="flex flex-col items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-950/20 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors">
+                      <Settings className="w-5 h-5 text-gray-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Operator Dashboard</span>
+                    </Link>
+                    <Link href="/maintenance" className="flex flex-col items-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
+                      <Wrench className="w-5 h-5 text-yellow-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Maintenance</span>
+                    </Link>
+                    <Link href="/disruption-management" className="flex flex-col items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                      <AlertTriangle className="w-5 h-5 text-red-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Disruption Management</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Management & Administration */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Management & Administration</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/systems-management-dashboard" className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900/30 transition-colors">
+                      <Server className="w-5 h-5 text-slate-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Systems Management</span>
+                    </Link>
+                    <Link href="/user-access-management" className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <Shield className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">User Management</span>
+                    </Link>
+                    <Link href="/widgets" className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Puzzle className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Widgets</span>
+                    </Link>
+                    <Link href="/dashboards" className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                      <Layout className="w-5 h-5 text-indigo-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Dashboards</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Data Management */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Data Management</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/data-schema" className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                      <Database className="w-5 h-5 text-indigo-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Data Schema</span>
+                    </Link>
+                    <Link href="/data-import" className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                      <Database className="w-5 h-5 text-green-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Data Import</span>
+                    </Link>
+                    <Link href="/table-field-viewer" className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900/30 transition-colors">
+                      <FileText className="w-5 h-5 text-slate-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Table Documentation</span>
+                    </Link>
+                    <Link href="/error-logs" className="flex flex-col items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                      <FileSearch className="w-5 h-5 text-red-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Error Logs</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Communication & Collaboration */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Communication & Collaboration</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/visual-factory" className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                      <Factory className="w-5 h-5 text-indigo-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Visual Factory</span>
+                    </Link>
+                    <Link href="/chat" className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                      <MessageCircle className="w-5 h-5 text-green-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Chat</span>
+                    </Link>
+                    <Link href="/boards" className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <Columns3 className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Boards</span>
+                    </Link>
+                    <Link href="/feedback" className="flex flex-col items-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                      <MessageSquare className="w-5 h-5 text-orange-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Feedback</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Training & Support */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Training & Support</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/help" className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+                      <BookOpen className="w-5 h-5 text-emerald-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Getting Started</span>
+                    </Link>
+                    <Link href="/training" className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <GraduationCap className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Training</span>
+                    </Link>
+                    <Link href="/presentation-system" className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Presentation className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Presentations</span>
+                    </Link>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
