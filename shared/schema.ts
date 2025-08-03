@@ -1512,56 +1512,30 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities, {
-  id: undefined,
-});
+export const insertCapabilitySchema = createInsertSchema(capabilities).omit({ id: true });
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
-export const insertResourceSchema = createInsertSchema(resources, {
-  id: undefined,
-});
+export const insertResourceSchema = createInsertSchema(resources).omit({ id: true });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
-export const insertPlantResourceSchema = createInsertSchema(plantResources, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({ id: true, createdAt: true });
 export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({ id: true, createdAt: true });
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
-export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({ id: true, createdAt: true });
 export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
 // Junction table insert schema for many-to-many relationship
-export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {
-  id: undefined,
-  convertedAt: undefined,
-});
+export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders).omit({ id: true, convertedAt: true });
 
 // Insert schemas for both operation types
-export const insertDiscreteOperationSchema = createInsertSchema(discreteOperations, {
-  id: undefined,
-});
+export const insertDiscreteOperationSchema = createInsertSchema(discreteOperations).omit({ id: true });
 
-export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+export const insertDiscreteOperationPhaseSchema = createInsertSchema(discreteOperationPhases).omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+export const insertDiscreteOperationPhaseResourceRequirementSchema = createInsertSchema(discreteOperationPhaseResourceRequirements).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertProductionVersionPhaseMaterialRequirementSchema = createInsertSchema(productionVersionPhaseMaterialRequirements, {
   id: undefined,
@@ -1575,34 +1549,17 @@ export const insertDiscreteOperationPhaseRelationshipSchema = createInsertSchema
   updatedAt: undefined,
 });
 
-export const insertProcessOperationSchema = createInsertSchema(processOperations, {
-  id: undefined,
-});
+export const insertProcessOperationSchema = createInsertSchema(processOperations).omit({ id: true });
 
-export const insertDependencySchema = createInsertSchema(dependencies, {
-  id: undefined,
-});
+export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
-  id: undefined,
-  createdAt: undefined,
-});
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({ id: true });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({ id: true });
 
 export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
   id: undefined,
