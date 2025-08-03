@@ -68,14 +68,13 @@ export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
   // Legacy mobile widgets endpoint - now uses database
   app.get("/api/mobile/widgets", async (req, res) => {
     try {
-      console.log("=== DATABASE-DRIVEN MOBILE WIDGETS ENDPOINT HIT ===");
+      console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
       
-      // Get widgets that are compatible with mobile (mobile or both)
-      const mobileWidgets = await storage.getWidgetsByPlatform('mobile');
-      const bothWidgets = await storage.getWidgetsByPlatform('both');
+      // Get all widgets that are compatible with mobile (mobile or both)
+      const mobileCompatibleWidgets = await storage.getMobileCompatibleWidgets();
       
-      // Combine and format for backward compatibility
-      const allMobileWidgets = [...mobileWidgets, ...bothWidgets].map(widget => ({
+      // Format for backward compatibility
+      const formattedWidgets = mobileCompatibleWidgets.map(widget => ({
         id: widget.id,
         title: widget.title,
         type: widget.widgetType,
@@ -85,8 +84,8 @@ export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
         createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
       }));
 
-      console.log(`Total mobile widgets returned: ${allMobileWidgets.length}`);
-      res.json(allMobileWidgets);
+      console.log(`Total widgets returned: ${formattedWidgets.length}`);
+      res.json(formattedWidgets);
     } catch (error) {
       console.error("Error fetching mobile widgets:", error);
       res.status(500).json({ error: "Failed to fetch mobile widgets" });

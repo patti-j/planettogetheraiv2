@@ -33,6 +33,20 @@ export class WidgetStorage {
       .orderBy(desc(unifiedWidgets.createdAt));
   }
 
+  // Get mobile compatible widgets (mobile or both)
+  async getMobileCompatibleWidgets(): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(
+        or(
+          eq(unifiedWidgets.targetPlatform, 'mobile'),
+          eq(unifiedWidgets.targetPlatform, 'both')
+        )
+      )
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
   // Get widget by ID
   async getWidgetById(id: number): Promise<UnifiedWidget | null> {
     const [widget] = await this.db
