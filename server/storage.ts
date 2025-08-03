@@ -2923,6 +2923,104 @@ export class DatabaseStorage implements IStorage {
     await db.update(dashboardConfigs).set({ isDefault: true }).where(eq(dashboardConfigs.id, id));
   }
 
+  // User Resource Assignments
+  async getUserResourceAssignments(userId?: number): Promise<any[]> {
+    const query = db.select({
+      id: userResourceAssignments.id,
+      userId: userResourceAssignments.userId,
+      resourceId: userResourceAssignments.resourceId,
+      assignedBy: userResourceAssignments.assignedBy,
+      assignedAt: userResourceAssignments.assignedAt,
+      revokedAt: userResourceAssignments.revokedAt,
+      revokedBy: userResourceAssignments.revokedBy,
+      canSkipOperations: userResourceAssignments.canSkipOperations,
+      scheduleVisibilityDays: userResourceAssignments.scheduleVisibilityDays,
+      notes: userResourceAssignments.notes,
+      isActive: userResourceAssignments.isActive,
+      createdAt: userResourceAssignments.createdAt,
+      updatedAt: userResourceAssignments.updatedAt,
+      resource: {
+        id: resources.id,
+        name: resources.name,
+        type: resources.type
+      },
+      user: {
+        id: users.id,
+        username: users.username,
+        email: users.email
+      }
+    })
+    .from(userResourceAssignments)
+    .leftJoin(resources, eq(userResourceAssignments.resourceId, resources.id))
+    .leftJoin(users, eq(userResourceAssignments.userId, users.id));
+
+    if (userId) {
+      query.where(eq(userResourceAssignments.userId, userId));
+    }
+
+    return await query;
+  }
+
+  async createUserResourceAssignment(assignment: any): Promise<any> {
+    const [newAssignment] = await db
+      .insert(userResourceAssignments)
+      .values(assignment)
+      .returning();
+    return newAssignment;
+  }
+
+  async updateUserResourceAssignment(id: number, assignment: any): Promise<any> {
+    const [updatedAssignment] = await db
+      .update(userResourceAssignments)
+      .set(assignment)
+      .where(eq(userResourceAssignments.id, id))
+      .returning();
+    return updatedAssignment;
+  }
+
+  async deleteUserResourceAssignment(id: number): Promise<boolean> {
+    const result = await db.delete(userResourceAssignments).where(eq(userResourceAssignments.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Operation Status Reports
+  async getOperationStatusReports(operationId?: number): Promise<any[]> {
+    const query = db.select().from(operationStatusReports);
+    
+    if (operationId) {
+      query.where(eq(operationStatusReports.discreteOperationId, operationId));
+    }
+
+    return await query;
+  }
+
+  async createOperationStatusReport(report: any): Promise<any> {
+    const [newReport] = await db
+      .insert(operationStatusReports)
+      .values(report)
+      .returning();
+    return newReport;
+  }
+
+  async updateOperationStatusReport(id: number, report: any): Promise<any> {
+    const [updatedReport] = await db
+      .update(operationStatusReports)
+      .set(report)
+      .where(eq(operationStatusReports.id, id))
+      .returning();
+    return updatedReport;
+  }
+
+  async deleteOperationStatusReport(id: number): Promise<boolean> {
+    const result = await db.delete(operationStatusReports).where(eq(operationStatusReports.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Skip Reason Templates
+  async getSkipReasonTemplates(): Promise<any[]> {
+    return await db.select().from(skipReasonTemplates).where(eq(skipReasonTemplates.isActive, true));
+  }
+
   // Schedule Scenarios
   async getScheduleScenarios(): Promise<ScheduleScenario[]> {
     return await db.select().from(scheduleScenarios);

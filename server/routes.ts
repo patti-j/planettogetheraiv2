@@ -3501,6 +3501,128 @@ Manufacturing Context Available:
     }
   });
 
+  // User Resource Assignments API Routes
+  app.get("/api/user-resource-assignments", requireAuth, async (req, res) => {
+    try {
+      const { active, userId } = req.query;
+      const assignments = await storage.getUserResourceAssignments({
+        userId: userId ? parseInt(userId as string) : undefined,
+        activeOnly: active === 'true'
+      });
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.get("/api/user-resource-assignments/:userId", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const assignments = await storage.getUserResourceAssignments({ userId, activeOnly: true });
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.post("/api/user-resource-assignments", requireAuth, async (req, res) => {
+    try {
+      const assignment = await storage.createUserResourceAssignment(req.body);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to create user resource assignment" });
+    }
+  });
+
+  app.put("/api/user-resource-assignments/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assignment = await storage.updateUserResourceAssignment(id, req.body);
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to update user resource assignment" });
+    }
+  });
+
+  app.delete("/api/user-resource-assignments/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteUserResourceAssignment(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting user resource assignment:", error);
+      res.status(500).json({ error: "Failed to delete user resource assignment" });
+    }
+  });
+
+  // Operation Status Reports API Routes
+  app.get("/api/operation-status-reports", requireAuth, async (req, res) => {
+    try {
+      const { operationId, resourceId, reportedBy } = req.query;
+      const reports = await storage.getOperationStatusReports({
+        operationId: operationId ? parseInt(operationId as string) : undefined,
+        resourceId: resourceId ? parseInt(resourceId as string) : undefined,
+        reportedBy: reportedBy ? parseInt(reportedBy as string) : undefined
+      });
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching operation status reports:", error);
+      res.status(500).json({ error: "Failed to fetch operation status reports" });
+    }
+  });
+
+  app.post("/api/operation-status-reports", requireAuth, async (req, res) => {
+    try {
+      const report = await storage.createOperationStatusReport(req.body);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating operation status report:", error);
+      res.status(500).json({ error: "Failed to create operation status report" });
+    }
+  });
+
+  // Skip Reason Templates API Routes
+  app.get("/api/skip-reason-templates", requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getSkipReasonTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching skip reason templates:", error);
+      res.status(500).json({ error: "Failed to fetch skip reason templates" });
+    }
+  });
+
+  // Discrete Operations with filtering for operation dispatch
+  app.get("/api/discrete-operations", requireAuth, async (req, res) => {
+    try {
+      const { resourceId, status } = req.query;
+      const operations = await storage.getDiscreteOperations({
+        resourceId: resourceId ? parseInt(resourceId as string) : undefined,
+        status: status as string
+      });
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching discrete operations:", error);
+      res.status(500).json({ error: "Failed to fetch discrete operations" });
+    }
+  });
+
+  // Users API for resource assignment widget
+  app.get("/api/users", requireAuth, async (req, res) => {
+    try {
+      const { role } = req.query;
+      const users = await storage.getUsers({ role: role as string });
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
   // Custom Text Labels
   app.get("/api/custom-text-labels", async (req, res) => {
     try {
