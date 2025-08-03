@@ -2,7 +2,16 @@ import { eq, and, desc, or } from "drizzle-orm";
 import { DatabaseStorage } from "./storage.js";
 import { unifiedWidgets, widgetDeployments, type InsertUnifiedWidget, type UnifiedWidget } from "../shared/schema.js";
 
-export class WidgetStorage extends DatabaseStorage {
+export class WidgetStorage {
+  private storage: DatabaseStorage;
+
+  constructor(storage: DatabaseStorage) {
+    this.storage = storage;
+  }
+
+  private get db() {
+    return this.storage.db;
+  }
   // Create a new widget
   async createWidget(widget: InsertUnifiedWidget): Promise<UnifiedWidget> {
     const [created] = await this.db.insert(unifiedWidgets).values(widget).returning();
@@ -100,83 +109,83 @@ export class WidgetStorage extends DatabaseStorage {
       },
       {
         title: "Quality Metrics",
-        type: "quality-dashboard",
+        widgetType: "quality-dashboard",
         category: "quality",
         targetPlatform: "both",
-        source: "canvas",
-        configuration: { tests: ["pH", "temperature", "purity"] },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "metrics",
+        size: { width: 300, height: 200 },
+        position: { x: 0, y: 220 },
+        createdBy: 1
       },
       {
         title: "Inventory Levels",
-        type: "inventory-tracking",
+        widgetType: "inventory-tracking",
         category: "inventory",
         targetPlatform: "both",
-        source: "canvas",
-        configuration: { materials: ["raw_materials", "wip", "finished_goods"] },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "stocks",
+        size: { width: 300, height: 200 },
+        position: { x: 320, y: 220 },
+        createdBy: 1
       },
       {
         title: "Schedule Gantt",
-        type: "gantt-chart",
+        widgetType: "gantt-chart",
         category: "scheduling",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { view: "weekly", resources: ["all"] },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "operations",
+        size: { width: 640, height: 300 },
+        position: { x: 0, y: 440 },
+        createdBy: 1
       },
       {
         title: "Operation Sequencer",
-        type: "operation-sequencer",
+        widgetType: "operation-sequencer",
         category: "scheduling",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { view: "list", maxOperations: 20 },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "operations",
+        size: { width: 300, height: 200 },
+        position: { x: 0, y: 760 },
+        createdBy: 1
       },
       {
         title: "ATP/CTP Calculator",
-        type: "atp-ctp",
+        widgetType: "atp-ctp",
         category: "planning",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { showDetails: true, compact: false },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "jobs",
+        size: { width: 300, height: 200 },
+        position: { x: 320, y: 760 },
+        createdBy: 1
       },
       {
         title: "ATP Overview",
-        type: "atp-ctp",
+        widgetType: "atp-ctp",
         category: "planning", 
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { showDetails: false, compact: true },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "jobs",
+        size: { width: 300, height: 150 },
+        position: { x: 0, y: 980 },
+        createdBy: 1
       },
       {
         title: "Schedule Optimizer",
-        type: "schedule-optimizer",
+        widgetType: "schedule-optimizer",
         category: "scheduling",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { showOptimizer: true },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "operations",
+        size: { width: 300, height: 150 },
+        position: { x: 320, y: 980 },
+        createdBy: 1
       },
       {
         title: "Production Order Status",
-        type: "production-order-status",
+        widgetType: "production-order-status",
         category: "production",
         targetPlatform: "both",
-        source: "cockpit",
-        configuration: { showMetrics: true, refreshInterval: 30000 },
-        version: "1.0.0",
-        createdBy: "system"
+        dataSource: "jobs",
+        size: { width: 300, height: 200 },
+        position: { x: 640, y: 760 },
+        createdBy: 1
       }
     ];
 

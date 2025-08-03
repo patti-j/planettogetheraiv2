@@ -158,10 +158,10 @@ export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
       const allMobileWidgets = [...mobileWidgets, ...bothWidgets].map(widget => ({
         id: widget.id,
         title: widget.title,
-        type: widget.type,
+        type: widget.widgetType,
         targetPlatform: widget.targetPlatform,
-        source: widget.source,
-        configuration: widget.configuration,
+        source: widget.dataSource,
+        configuration: widget.filters,
         createdAt: widget.createdAt?.toISOString() || new Date().toISOString()
       }));
 
