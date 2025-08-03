@@ -21502,21 +21502,6 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
       res.status(500).json({ error: "Failed to fetch discrete operations" });
     }
   });
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid assignment ID" });
-      }
-
-      const { revokedBy } = req.body;
-      const assignment = await storage.revokeUserResourceAssignment(id, revokedBy);
-      if (!assignment) {
-        return res.status(404).json({ error: "Assignment not found" });
-      }
-      res.json(assignment);
-    } catch (error) {
-      console.error("Error revoking user resource assignment:", error);
-      res.status(500).json({ error: "Failed to revoke user resource assignment" });
-    }
-  });
 
   // Operation Status Reports - for Operation Dispatch widget
   app.get("/api/operation-status-reports", async (req, res) => {
