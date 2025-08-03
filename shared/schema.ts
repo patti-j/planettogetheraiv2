@@ -3445,6 +3445,85 @@ export const insertVisualFactoryDisplaySchema = createInsertSchema(visualFactory
 export type InsertVisualFactoryDisplay = z.infer<typeof insertVisualFactoryDisplaySchema>;
 export type VisualFactoryDisplay = typeof visualFactoryDisplays.$inferSelect;
 
+// User Resource Assignments - tracks which resources operators can access
+export const userResourceAssignments = pgTable("user_resource_assignments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id).notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+  revokedBy: integer("revoked_by").references(() => users.id),
+  canSkipOperations: boolean("can_skip_operations").default(false),
+  scheduleVisibilityDays: integer("schedule_visibility_days").default(7), // How many days ahead they can see
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userResourceUniqueIdx: unique().on(table.userId, table.resourceId),
+  userIdx: index("user_resource_assignments_user_idx").on(table.userId),
+  resourceIdx: index("user_resource_assignments_resource_idx").on(table.resourceId),
+}));
+
+// Operation Status Reports - tracks operator reporting on operations
+export const operationStatusReports = pgTable("operation_status_reports", {
+  id: serial("id").primaryKey(),
+  discreteOperationId: integer("discrete_operation_id").references(() => discreteOperations.id),
+  processOperationId: integer("process_operation_id").references(() => processOperations.id),
+  reportedBy: integer("reported_by").references(() => users.id).notNull(),
+  resourceId: integer("resource_id").references(() => resources.id).notNull(),
+  
+  // Operation phase tracking
+  phaseType: text("phase_type", { enum: ["setup", "running", "cleanup"] }).notNull(),
+  phaseStatus: text("phase_status", { enum: ["started", "completed", "paused", "skipped"] }).notNull(),
+  
+  // Skip handling
+  skipReason: text("skip_reason"), // Required if phase_status is 'skipped'
+  skipReasonCategory: text("skip_reason_category", { 
+    enum: ["material_shortage", "equipment_issue", "quality_problem", "scheduling_conflict", "maintenance_required", "other"] 
+  }),
+  
+  // Time tracking
+  timeSpent: integer("time_spent"), // minutes
+  reportedStartTime: timestamp("reported_start_time"),
+  reportedEndTime: timestamp("reported_end_time"),
+  
+  // Production quantities
+  goodQuantity: numeric("good_quantity", { precision: 10, scale: 4 }).default("0"),
+  scrapQuantity: numeric("scrap_quantity", { precision: 10, scale: 4 }).default("0"),
+  unitOfMeasure: text("unit_of_measure").default("EA"),
+  
+  // Comments and notes
+  comments: text("comments"),
+  qualityNotes: text("quality_notes"),
+  issuesEncountered: text("issues_encountered"),
+  
+  // Metadata
+  reportedAt: timestamp("reported_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  discreteOperationIdx: index("operation_status_reports_discrete_idx").on(table.discreteOperationId),
+  processOperationIdx: index("operation_status_reports_process_idx").on(table.processOperationId),
+  reportedByIdx: index("operation_status_reports_user_idx").on(table.reportedBy),
+  resourceIdx: index("operation_status_reports_resource_idx").on(table.resourceId),
+  reportedAtIdx: index("operation_status_reports_reported_at_idx").on(table.reportedAt),
+}));
+
+// Skip Reason Templates - predefined reasons for skipping operations
+export const skipReasonTemplates = pgTable("skip_reason_templates", {
+  id: serial("id").primaryKey(),
+  category: text("category", { 
+    enum: ["material_shortage", "equipment_issue", "quality_problem", "scheduling_conflict", "maintenance_required", "other"] 
+  }).notNull(),
+  reason: text("reason").notNull(),
+  description: text("description"),
+  requiresApproval: boolean("requires_approval").default(false),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Demo Tour Participants Schema
 export const demoTourParticipants = pgTable("demo_tour_participants", {
   id: serial("id").primaryKey(),

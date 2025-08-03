@@ -21118,6 +21118,123 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // User Resource Assignments - for Operation Dispatch and Resource Assignment widgets
+  app.get("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const { active, userId } = req.query;
+      const assignments = await storage.getUserResourceAssignments({
+        active: active === 'true' ? true : undefined,
+        userId: userId ? parseInt(userId as string) : undefined
+      });
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.get("/api/user-resource-assignments/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      const assignments = await storage.getUserResourceAssignments({ userId });
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching user resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  app.post("/api/user-resource-assignments", async (req, res) => {
+    try {
+      const assignment = await storage.createUserResourceAssignment(req.body);
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error("Error creating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to create user resource assignment" });
+    }
+  });
+
+  app.patch("/api/user-resource-assignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const assignment = await storage.updateUserResourceAssignment(id, req.body);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error updating user resource assignment:", error);
+      res.status(500).json({ error: "Failed to update user resource assignment" });
+    }
+  });
+
+  app.patch("/api/user-resource-assignments/:id/revoke", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid assignment ID" });
+      }
+
+      const { revokedBy } = req.body;
+      const assignment = await storage.revokeUserResourceAssignment(id, revokedBy);
+      if (!assignment) {
+        return res.status(404).json({ error: "Assignment not found" });
+      }
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error revoking user resource assignment:", error);
+      res.status(500).json({ error: "Failed to revoke user resource assignment" });
+    }
+  });
+
+  // Operation Status Reports - for Operation Dispatch widget
+  app.get("/api/operation-status-reports", async (req, res) => {
+    try {
+      const { operationId, resourceId, reportedBy } = req.query;
+      const reports = await storage.getOperationStatusReports({
+        operationId: operationId ? parseInt(operationId as string) : undefined,
+        resourceId: resourceId ? parseInt(resourceId as string) : undefined,
+        reportedBy: reportedBy ? parseInt(reportedBy as string) : undefined
+      });
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching operation status reports:", error);
+      res.status(500).json({ error: "Failed to fetch operation status reports" });
+    }
+  });
+
+  app.post("/api/operation-status-reports", async (req, res) => {
+    try {
+      const report = await storage.createOperationStatusReport(req.body);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating operation status report:", error);
+      res.status(500).json({ error: "Failed to create operation status report" });
+    }
+  });
+
+  app.get("/api/skip-reason-templates", async (req, res) => {
+    try {
+      const { category, active } = req.query;
+      const templates = await storage.getSkipReasonTemplates({
+        category: category as string,
+        active: active === 'true' ? true : undefined
+      });
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching skip reason templates:", error);
+      res.status(500).json({ error: "Failed to fetch skip reason templates" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);

@@ -40,6 +40,8 @@ import {
   fieldComments, type FieldComment, type InsertFieldComment,
   tourPromptTemplates, tourPromptTemplateUsage, type TourPromptTemplate, type TourPromptTemplateUsage, type InsertTourPromptTemplate, type InsertTourPromptTemplateUsage,
   userPreferences, type UserPreferences, type InsertUserPreferences,
+  userResourceAssignments, operationStatusReports, skipReasonTemplates,
+  type UserResourceAssignment, type OperationStatusReport, type SkipReasonTemplate,
   chatChannels, chatMembers, chatMessages, chatReactions,
   type ChatChannel, type ChatMember, type ChatMessage, type ChatReaction,
   type InsertChatChannel, type InsertChatMember, type InsertChatMessage, type InsertChatReaction,
