@@ -1,16 +1,5 @@
 import { Express } from "express";
-import { z } from "zod";
 import { WidgetStorage } from "./widget-storage.js";
-import { createInsertSchema } from "drizzle-zod";
-import { unifiedWidgets } from "../shared/schema.js";
-
-const insertWidgetSchema = createInsertSchema(unifiedWidgets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
-
-const updateWidgetSchema = insertWidgetSchema.partial();
 
 export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
   
@@ -74,76 +63,7 @@ export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
     }
   });
 
-  // Create new widget
-  app.post("/api/widgets", async (req, res) => {
-    try {
-      const validatedData = insertWidgetSchema.parse(req.body);
-      const widget = await storage.createWidget(validatedData);
-      res.status(201).json(widget);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation error", details: error.errors });
-      }
-      console.error("Error creating widget:", error);
-      res.status(500).json({ error: "Failed to create widget" });
-    }
-  });
 
-  // Update widget
-  app.put("/api/widgets/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid widget ID" });
-      }
-
-      const validatedData = updateWidgetSchema.parse(req.body);
-      const widget = await storage.updateWidget(id, validatedData);
-      
-      if (!widget) {
-        return res.status(404).json({ error: "Widget not found" });
-      }
-
-      res.json(widget);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation error", details: error.errors });
-      }
-      console.error("Error updating widget:", error);
-      res.status(500).json({ error: "Failed to update widget" });
-    }
-  });
-
-  // Delete widget (soft delete)
-  app.delete("/api/widgets/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid widget ID" });
-      }
-
-      const success = await storage.deleteWidget(id);
-      if (!success) {
-        return res.status(404).json({ error: "Widget not found" });
-      }
-
-      res.json({ message: "Widget deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting widget:", error);
-      res.status(500).json({ error: "Failed to delete widget" });
-    }
-  });
-
-  // Seed widgets endpoint (for development)
-  app.post("/api/widgets/seed", async (req, res) => {
-    try {
-      await storage.seedWidgets();
-      res.json({ message: "Widgets seeded successfully" });
-    } catch (error) {
-      console.error("Error seeding widgets:", error);
-      res.status(500).json({ error: "Failed to seed widgets" });
-    }
-  });
 
   // Legacy mobile widgets endpoint - now uses database
   app.get("/api/mobile/widgets", async (req, res) => {
