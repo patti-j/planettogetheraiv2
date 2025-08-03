@@ -90,32 +90,43 @@ export default function MobileWidgetView() {
           className: "w-full"
         };
 
+        // Determine if we're in mobile context
+        const isMobileTarget = widget.targetPlatform === 'mobile' || widget.targetPlatform === 'both';
+        const isDesktopTarget = widget.targetPlatform === 'desktop' || widget.targetPlatform === 'both';
+
         switch (widget.type) {
           case 'operation-sequencer':
-            return { ...baseProps, isDesktop: false };
+            return { 
+              ...baseProps, 
+              isDesktop: isDesktopTarget && !isMobileTarget
+            };
           
           case 'atp-ctp':
             return { 
               ...baseProps, 
-              compact: widget.configuration?.compact || widget.configuration?.view === 'compact'
+              compact: widget.configuration?.compact || widget.configuration?.view === 'compact' || isMobileTarget
             };
           
           case 'operation-dispatch':
             return { 
               ...baseProps, 
-              isMobile: true,
-              compact: true
+              isMobile: isMobileTarget,
+              compact: isMobileTarget || widget.configuration?.compact
             };
           
           case 'resource-assignment':
             return { 
               ...baseProps, 
-              isMobile: true,
-              compact: true
+              isMobile: isMobileTarget,
+              compact: isMobileTarget || widget.configuration?.compact
             };
           
           default:
-            return baseProps;
+            return {
+              ...baseProps,
+              isMobile: isMobileTarget,
+              compact: isMobileTarget || widget.configuration?.compact
+            };
         }
       };
 
