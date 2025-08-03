@@ -232,6 +232,7 @@ interface Notification {
 
 // Mobile Menu Trigger Component - simplified approach with local state
 function MobileMenuTrigger() {
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
   const handleClick = () => {
