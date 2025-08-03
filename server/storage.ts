@@ -1650,7 +1650,12 @@ export class MemStorage implements Partial<IStorage> {
         name: res.name,
         type: res.type,
         status: res.status || "active",
-        capabilities: res.capabilities as number[]
+        capabilities: res.capabilities as number[],
+        photo: null,
+        isDrum: false,
+        drumDesignationDate: null,
+        drumDesignationReason: null,
+        drumDesignationMethod: null
       };
       this.resources.set(resource.id, resource);
     });
@@ -1693,8 +1698,7 @@ export class MemStorage implements Partial<IStorage> {
         status: jobData.status,
         quantity: "1",
         dueDate: jobData.dueDate,
-        scheduledStartDate: null,
-        scheduledEndDate: null,
+
         actualStartDate: null,
         actualEndDate: null,
         itemNumber: null,

@@ -1519,12 +1519,16 @@ export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
 export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
+}).extend({
+  isDrum: z.boolean().optional(),
 });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
 export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({
   id: true,
   createdAt: true,
+}).extend({
+  isPrimary: z.boolean().optional(),
 });
 export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
@@ -1575,12 +1579,16 @@ export const insertDiscreteOperationPhaseResourceRequirementSchema = createInser
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  isOptional: z.boolean().optional(),
 });
 
 export const insertProductionVersionPhaseMaterialRequirementSchema = createInsertSchema(productionVersionPhaseMaterialRequirements).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  isOptional: z.boolean().optional(),
 });
 
 export const insertDiscreteOperationPhaseRelationshipSchema = createInsertSchema(discreteOperationPhaseRelationships).omit({
@@ -1631,6 +1639,8 @@ export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  isArchived: z.boolean().optional(),
 });
 
 export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks).omit({
