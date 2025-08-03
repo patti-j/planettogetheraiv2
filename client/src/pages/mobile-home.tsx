@@ -137,6 +137,8 @@ const getWidgetIcon = (type: string) => {
       return CheckCircle;
     case 'schedule-optimization':
       return Zap;
+    case 'production-order-status':
+      return CheckCircle;
     case 'database':
     case 'data-source':
       return Database;

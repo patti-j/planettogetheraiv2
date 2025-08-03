@@ -254,6 +254,20 @@ export function registerSimpleRoutes(app: express.Application): Server {
           allowConfiguration: true
         },
         createdAt: new Date().toISOString()
+      },
+      {
+        id: 10,
+        title: "Production Order Status",
+        type: "production-order-status",
+        targetPlatform: "both",
+        configuration: { 
+          defaultSearch: "",
+          showAdvancedMetrics: true,
+          showTimingDetails: true,
+          showQualityInfo: true,
+          maxResults: 20
+        },
+        createdAt: new Date().toISOString()
       }
     ];
     
