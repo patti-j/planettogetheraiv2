@@ -35,7 +35,8 @@ Component terminology for reference:
 - **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM (Neon Database for serverless PostgreSQL)
 - **Storage**: DatabaseStorage class implementing IStorage interface with high-performance methods for large datasets.
-- **API Design**: RESTful API with JSON responses, robust authentication (session + token) and role-based access control.
+- **API Design**: RESTful API with JSON responses, role-based authentication with proper roles array structure.
+- **Authentication System**: Unified role-based permissions system without demo/non-demo distinction. All users have roles array with detailed permissions structure.
 - **Data Seeding**: Automatic database seeding with sample manufacturing data.
 - **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, collaborative algorithm development, and dynamic content creation (dashboards, widgets, tours, reports).
 
@@ -46,7 +47,7 @@ Component terminology for reference:
 - **Master Data Management**: Unified interface for importing, entering, and templating all master data types. Includes AI-powered modification and data validation.
 - **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms (backwards, planned order generator) with configurable profiles, trade-off analysis, resource requirements, and constraints management (Theory of Constraints/TOC implementation).
 - **Dashboarding & Analytics**: Universal widget design studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views.
-- **Role-Based Access Control**: Granular permission system for all features and routes, integrated with demo roles and training mode.
+- **Role-Based Access Control**: Unified permission system using roles array structure with feature-action permissions. Trainer role has comprehensive access for demonstrations, Production Scheduler has basic scheduling permissions.
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, and comprehensive error handling.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.
 - **Mobile Responsiveness**: Mobile-first design for all pages and components, ensuring optimal experience on various devices.

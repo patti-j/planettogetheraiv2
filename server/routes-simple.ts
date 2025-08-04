@@ -115,7 +115,7 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
-  // Basic auth endpoints for demo
+  // Role-based auth endpoints
   app.get("/api/auth/me", (req, res) => {
     // Check for stored user in session or token
     const authHeader = req.headers.authorization;
@@ -125,15 +125,75 @@ export function registerSimpleRoutes(app: express.Application): Server {
         id: "trainer", 
         username: "trainer",
         email: "trainer@example.com",
-        isDemo: true,
-        role: "Trainer"
+        firstName: "Training",
+        lastName: "User",
+        isActive: true,
+        roles: [{
+          id: 1,
+          name: "Trainer",
+          description: "Trainer role with comprehensive permissions for demonstrations",
+          permissions: [
+            // Training permissions
+            { id: 1, name: "training-view", feature: "training", action: "view", description: "View training content" },
+            { id: 2, name: "role-switching-permissions", feature: "role-switching", action: "permissions", description: "Switch between roles" },
+            
+            // Core system access
+            { id: 3, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
+            { id: 4, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
+            { id: 5, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
+            { id: 6, name: "business-goals-view", feature: "business-goals", action: "view", description: "View business goals" },
+            { id: 7, name: "visual-factory-view", feature: "visual-factory", action: "view", description: "View visual factory" },
+            { id: 8, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
+            { id: 9, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" },
+            { id: 10, name: "systems-management-view", feature: "systems-management", action: "view", description: "View systems management" },
+            
+            // Advanced features  
+            { id: 11, name: "capacity-planning-view", feature: "capacity-planning", action: "view", description: "View capacity planning" },
+            { id: 12, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
+            { id: 13, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
+            { id: 14, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
+            { id: 15, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
+            { id: 16, name: "plant-manager-view", feature: "plant-manager", action: "view", description: "View plant manager features" },
+            { id: 17, name: "operator-dashboard-view", feature: "operator-dashboard", action: "view", description: "View operator dashboard" },
+            { id: 18, name: "maintenance-planning-view", feature: "maintenance-planning", action: "view", description: "View maintenance planning" },
+            { id: 19, name: "role-management-view", feature: "role-management", action: "view", description: "View role management" },
+            { id: 20, name: "user-role-assignments-view", feature: "user-role-assignments", action: "view", description: "View user role assignments" },
+            
+            // Create/edit permissions
+            { id: 21, name: "business-goals-create", feature: "business-goals", action: "create", description: "Create business goals" },
+            { id: 22, name: "business-goals-edit", feature: "business-goals", action: "edit", description: "Edit business goals" },
+            { id: 23, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
+            { id: 24, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" }
+          ]
+        }]
       });
     } else {
       res.json({
         id: "demo_user", 
         username: "demo_user",
         email: "demo@example.com",
-        isDemo: true
+        firstName: "Demo",
+        lastName: "User",
+        isActive: true,
+        roles: [{
+          id: 2,
+          name: "Production Scheduler",
+          description: "Production Scheduler with basic permissions",
+          permissions: [
+            { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
+            { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
+            { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
+            { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
+            { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
+            { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
+            { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
+            { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
+            { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
+            { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
+            { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
+            { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
+          ]
+        }]
       });
     }
   });
@@ -143,14 +203,21 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const { username, password } = req.body;
       console.log("Login attempt for:", username);
       
-      // Handle trainer user (case insensitive)
+      // Handle trainer user (case insensitive) 
       if (username && username.toLowerCase() === "trainer") {
         const user = {
           id: "trainer",
           username: "trainer",
           email: "trainer@example.com",
-          isDemo: true,
-          role: "Trainer"
+          firstName: "Training",
+          lastName: "User",
+          isActive: true,
+          roles: [{
+            id: 1,
+            name: "Trainer",
+            description: "Trainer role with comprehensive permissions",
+            permissions: [] // Will be populated by client-side role structure creation
+          }]
         };
         
         const token = "trainer_token_" + Date.now();
@@ -163,12 +230,20 @@ export function registerSimpleRoutes(app: express.Application): Server {
         return;
       }
       
-      // Default demo authentication for other users
+      // Default authentication for other users
       const user = {
         id: "demo_user",
         username: username || "demo_user", 
         email: "demo@example.com",
-        isDemo: true
+        firstName: "Demo",
+        lastName: "User", 
+        isActive: true,
+        roles: [{
+          id: 2,
+          name: "Production Scheduler",
+          description: "Production Scheduler with basic permissions",
+          permissions: [] // Will be populated by client-side role structure creation
+        }]
       };
       
       // Generate a simple token for demo

@@ -1,60 +1,81 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
-// Demo user permissions mapping
-const getDemoPermissions = (roleName: string, feature: string, action: string): boolean => {
-  const demoPermissions: Record<string, string[]> = {
-    'Director': [
-      'business-goals-view', 'business-goals-create', 'business-goals-edit', 'business-goals-delete',
-      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'Plant Manager': [
-      'plant-manager-view', 'capacity-planning-view', 'reports-view', 'analytics-view',
-      'schedule-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'Production Scheduler': [
-      'schedule-view', 'schedule-create', 'schedule-edit', 'schedule-delete',
-      'scheduling-optimizer-view', 'shop-floor-view', 'boards-view', 'erp-import-view',
-      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'IT Administrator': [
-      'systems-management-view', 'role-management-view', 'user-role-assignments-view',
-      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'Systems Manager': [
-      'systems-management-view', 'role-management-view', 'user-role-assignments-view',
-      'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'Administrator': [
-      'role-management-view', 'systems-management-view', 'user-role-assignments-view',
-      'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
-    ],
-    'Shop Floor Operations': [
-      'shop-floor-view', 'operator-dashboard-view', 'reports-view',
-      'ai-assistant-view', 'feedback-view'
-    ],
-    'Data Analyst': [
-      'analytics-view', 'reports-view', 'schedule-view',
-      'ai-assistant-view', 'feedback-view'
-    ],
-    'Trainer': [
-      'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
-      'schedule-view', 'business-goals-view', 'visual-factory-view',
-      'ai-assistant-view', 'feedback-view', 'systems-management-view',
-      'capacity-planning-view', 'scheduling-optimizer-view', 'shop-floor-view', 
-      'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
-      'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
-      'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit'
-    ],
-    'Maintenance Technician': [
-      'maintenance-planning-view', 'reports-view',
-      'ai-assistant-view', 'feedback-view'
-    ]
-  };
+// Role permissions mapping - creates proper permission objects from role definitions
+const rolePermissionsMap: Record<string, string[]> = {
+  'Director': [
+    'business-goals-view', 'business-goals-create', 'business-goals-edit', 'business-goals-delete',
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'Plant Manager': [
+    'plant-manager-view', 'capacity-planning-view', 'reports-view', 'analytics-view',
+    'schedule-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'Production Scheduler': [
+    'schedule-view', 'schedule-create', 'schedule-edit', 'schedule-delete',
+    'scheduling-optimizer-view', 'shop-floor-view', 'boards-view', 'erp-import-view',
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'IT Administrator': [
+    'systems-management-view', 'role-management-view', 'user-role-assignments-view',
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'Systems Manager': [
+    'systems-management-view', 'role-management-view', 'user-role-assignments-view',
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'Administrator': [
+    'role-management-view', 'systems-management-view', 'user-role-assignments-view',
+    'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+  ],
+  'Shop Floor Operations': [
+    'shop-floor-view', 'operator-dashboard-view', 'reports-view',
+    'ai-assistant-view', 'feedback-view'
+  ],
+  'Data Analyst': [
+    'analytics-view', 'reports-view', 'schedule-view',
+    'ai-assistant-view', 'feedback-view'
+  ],
+  'Trainer': [
+    'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
+    'schedule-view', 'business-goals-view', 'visual-factory-view',
+    'ai-assistant-view', 'feedback-view', 'systems-management-view',
+    'capacity-planning-view', 'scheduling-optimizer-view', 'shop-floor-view', 
+    'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
+    'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
+    'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit'
+  ],
+  'Maintenance Technician': [
+    'maintenance-planning-view', 'reports-view',
+    'ai-assistant-view', 'feedback-view'
+  ]
+};
 
-  const rolePermissions = demoPermissions[roleName] || [];
-  const permissionKey = `${feature}-${action}`;
-  return rolePermissions.includes(permissionKey);
+// Convert permission string to feature-action object
+const createPermissionObject = (permissionString: string, id: number) => {
+  const parts = permissionString.split('-');
+  const action = parts.pop() || 'view';
+  const feature = parts.join('-');
+  
+  return {
+    id,
+    name: permissionString,
+    feature,
+    action,
+    description: `${action} access to ${feature}`
+  };
+};
+
+// Create role structure from role name
+const createRoleStructure = (roleName: string) => {
+  const permissions = rolePermissionsMap[roleName] || [];
+  
+  return {
+    id: Math.abs(roleName.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)),
+    name: roleName,
+    description: `${roleName} role with assigned permissions`,
+    permissions: permissions.map((perm, index) => createPermissionObject(perm, index + 1))
+  };
 };
 
 export interface User {
@@ -232,31 +253,12 @@ export function usePermissions() {
       user: { 
         id: user.id,
         username: user.username,
-        isDemo: (user as any).isDemo, 
-        role: (user as any).role, 
-        permissions: (user as any).permissions,
         roles: user.roles ? user.roles.length : 'undefined',
-        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles',
-        fullUserObject: user // Log the complete user object to debug
+        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles'
       } 
     });
 
-    // Handle demo users from server who have permissions array directly on user object
-    if ((user as any).isDemo && (user as any).permissions && Array.isArray((user as any).permissions)) {
-      const permissionKey = `${feature}-${action}`;
-      const result = (user as any).permissions.includes(permissionKey);
-      console.log("Demo permissions (array) result:", result, "for key:", permissionKey);
-      return result;
-    }
-
-    // Handle demo users who have a simple role string instead of roles array
-    if ((user as any).isDemo && (user as any).role) {
-      const result = getDemoPermissions((user as any).role, feature, action);
-      console.log("Demo permissions (role) result:", result);
-      return result;
-    }
-
-    // Handle regular users with roles array
+    // All users now use the roles array structure
     if (!user.roles || !Array.isArray(user.roles)) {
       console.log("No roles array found on user object");
       return false;
@@ -268,7 +270,7 @@ export function usePermissions() {
       )
     );
     
-    console.log("Regular user permission check result:", result, "for feature-action:", `${feature}-${action}`);
+    console.log("Permission check result:", result, "for feature-action:", `${feature}-${action}`);
     
     return result;
   };
@@ -280,12 +282,7 @@ export function usePermissions() {
   const hasRole = (roleName: string): boolean => {
     if (!user) return false;
 
-    // Handle demo users who have a simple role string
-    if ((user as any).isDemo && (user as any).role) {
-      return (user as any).role === roleName;
-    }
-
-    // Handle regular users with roles array
+    // All users now use roles array structure
     if (!user.roles) return false;
     return user.roles.some(role => role.name === roleName);
   };
