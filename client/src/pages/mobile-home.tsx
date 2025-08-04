@@ -9,7 +9,7 @@ import { MaxSidebar } from "@/components/max-sidebar";
 import { FloatingHamburgerMenu } from "@/components/floating-hamburger-menu";
 import CompanyLogoImage from "@/assets/company-logo.png";
 import planetTogetherLogo from "@/assets/planet-together-logo.png";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -112,7 +112,9 @@ import {
   Zap,
   GitBranch,
   BarChart2,
-  TrendingDown
+  TrendingDown,
+  PlayCircle,
+  PauseCircle
 } from "lucide-react";
 
 // Import widget components
@@ -242,6 +244,178 @@ interface Notification {
   read: boolean;
 }
 
+// Mobile-specific Production Schedule Page
+function MobileProductionSchedulePage() {
+  const { data: jobs = [] }: { data: any[] } = useQuery({
+    queryKey: ["/api/jobs"],
+  });
+
+  const { data: operations = [] }: { data: any[] } = useQuery({
+    queryKey: ["/api/operations"],
+  });
+
+  const { data: resources = [] }: { data: any[] } = useQuery({
+    queryKey: ["/api/resources"],
+  });
+
+  // Calculate basic statistics
+  const totalOperations = operations.length;
+  const runningOperations = operations.filter((op: any) => op.status === "running").length;
+  const completedOperations = operations.filter((op: any) => op.status === "completed").length;
+  const activeResources = resources.filter((resource: any) => 
+    operations.some((op: any) => op.assignedResourceId === resource.id && op.status === "running")
+  ).length;
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Mobile Header */}
+      <div className="text-center">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Production Schedule</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Real-time production scheduling
+        </p>
+      </div>
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {totalOperations}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Total Operations
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-lg font-bold text-green-600 dark:text-green-400">
+              {runningOperations}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Running Now
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-lg font-bold text-gray-600 dark:text-gray-400">
+              {completedOperations}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Completed
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+              {activeResources}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Active Resources
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Current Operations */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            Current Operations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {operations.slice(0, 5).map((operation: any) => (
+            <div key={operation.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex-1">
+                <div className="font-medium text-sm text-gray-900 dark:text-white">
+                  {operation.name || `Operation ${operation.id}`}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Resource: {resources.find((r: any) => r.id === operation.assignedResourceId)?.name || 'Unassigned'}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge 
+                  className={`text-xs ${
+                    operation.status === 'running' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                    operation.status === 'completed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' :
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                  }`}
+                >
+                  {operation.status === 'running' ? (
+                    <PlayCircle className="w-3 h-3 mr-1" />
+                  ) : operation.status === 'completed' ? (
+                    <CheckSquare className="w-3 h-3 mr-1" />
+                  ) : (
+                    <PauseCircle className="w-3 h-3 mr-1" />
+                  )}
+                  {operation.status}
+                </Badge>
+              </div>
+            </div>
+          ))}
+          {operations.length === 0 && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm">No operations scheduled</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resource Status */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-orange-600" />
+            Resource Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {resources.slice(0, 5).map((resource: any) => {
+            const isActive = operations.some((op: any) => op.assignedResourceId === resource.id && op.status === "running");
+            return (
+              <div key={resource.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex-1">
+                  <div className="font-medium text-sm text-gray-900 dark:text-white">
+                    {resource.name}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {resource.type || 'Equipment'}
+                  </div>
+                </div>
+                <Badge 
+                  className={`text-xs ${
+                    isActive 
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                  }`}
+                >
+                  {isActive ? 'Active' : 'Idle'}
+                </Badge>
+              </div>
+            );
+          })}
+          {resources.length === 0 && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Wrench className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm">No resources available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Component to render different pages on mobile underneath the header
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
@@ -253,11 +427,7 @@ function MobilePageContent({ location }: { location: string }) {
 
   switch (location) {
     case "/production-schedule":
-      return (
-        <MobilePageWrapper>
-          <ProductionSchedulePage />
-        </MobilePageWrapper>
-      );
+      return <MobileProductionSchedulePage />;
     case "/dashboard":
       return (
         <MobilePageWrapper>
