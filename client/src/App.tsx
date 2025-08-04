@@ -73,6 +73,7 @@ import ShiftManagement from "@/pages/shift-management";
 import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
+import ProductionSchedulePage from "@/pages/production-schedule";
 import WidgetShowcase from "@/pages/widget-showcase";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
 import WidgetStudio from "@/pages/widget-studio";
@@ -93,7 +94,6 @@ import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
 import Homepage from "@/pages/homepage";
 import ClearNavigation from "@/pages/clear-navigation";
-import ProductionSchedulePage from "@/pages/production-schedule";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -357,6 +357,11 @@ function Router() {
           <Route path="/systems-management-dashboard">
             <ProtectedRoute feature="systems-management" action="view">
               <SystemsManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/production-schedule">
+            <ProtectedRoute feature="schedule" action="view">
+              <ProductionSchedulePage />
             </ProtectedRoute>
           </Route>
           <Route path="/capacity-planning">

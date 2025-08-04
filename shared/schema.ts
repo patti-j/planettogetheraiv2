@@ -6174,6 +6174,229 @@ export const userIndustryTemplates = pgTable("user_industry_templates", {
   userTemplateIdx: unique().on(table.userId, table.templateId),
 }));
 
+// Dashboard and Widget-Based Page Architecture
+// System pages that can be either curated (non-customizable) or user-adjustable
+export const systemPages = pgTable("system_pages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // production-schedule, capacity-planning, analytics, etc
+  title: text("title").notNull(), // "Production Schedule", "Capacity Planning", etc
+  description: text("description"),
+  category: text("category").notNull(), // planning-scheduling, ai-optimization, operations, management, data-management, communication, training
+  path: text("path").notNull().unique(), // /production-schedule, /capacity-planning, etc
+  icon: text("icon").notNull(), // lucide icon name
+  
+  // Page behavior configuration
+  pageType: text("page_type").notNull().default("dashboard"), // dashboard, curated, hybrid, workflow
+  isCustomizable: boolean("is_customizable").default(true), // false for curated pages
+  allowWidgetAdd: boolean("allow_widget_add").default(true),
+  allowWidgetRemove: boolean("allow_widget_remove").default(true),
+  allowWidgetReorder: boolean("allow_widget_reorder").default(true),
+  allowLayoutChange: boolean("allow_layout_change").default(true),
+  
+  // Default layout configuration
+  defaultLayout: jsonb("default_layout").$type<{
+    type: 'grid' | 'flex' | 'masonry' | 'custom';
+    columns: number;
+    gap: number;
+    padding: number;
+    responsive: {
+      mobile: { columns: number; gap: number };
+      tablet: { columns: number; gap: number };
+      desktop: { columns: number; gap: number };
+    };
+  }>().notNull(),
+  
+  // Default widgets for this page
+  defaultWidgets: jsonb("default_widgets").$type<Array<{
+    widgetId: number;
+    position: { x: number; y: number; w: number; h: number };
+    isRequired: boolean; // Cannot be removed by users
+    isResizable: boolean;
+    isMovable: boolean;
+    customConfig?: Record<string, any>;
+  }>>().default([]),
+  
+  // Access control
+  requiredPermissions: jsonb("required_permissions").$type<Array<{
+    feature: string;
+    action: string;
+  }>>().default([]),
+  visibleToRoles: jsonb("visible_to_roles").$type<string[]>().default([]), // Empty means visible to all
+  
+  // Navigation and organization
+  isInMainMenu: boolean("is_in_main_menu").default(true),
+  menuOrder: integer("menu_order").default(100),
+  isInSidebar: boolean("is_in_sidebar").default(true),
+  sidebarOrder: integer("sidebar_order").default(100),
+  
+  // Metadata
+  tags: jsonb("tags").$type<string[]>().default([]),
+  version: text("version").default("1.0.0"),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User-customized versions of system pages
+export const userPageLayouts = pgTable("user_page_layouts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  pageId: integer("page_id").references(() => systemPages.id).notNull(),
+  
+  // Custom layout configuration
+  customLayout: jsonb("custom_layout").$type<{
+    type: 'grid' | 'flex' | 'masonry' | 'custom';
+    columns: number;
+    gap: number;
+    padding: number;
+    responsive: {
+      mobile: { columns: number; gap: number };
+      tablet: { columns: number; gap: number };
+      desktop: { columns: number; gap: number };
+    };
+  }>(),
+  
+  // Custom widget configuration
+  widgets: jsonb("widgets").$type<Array<{
+    widgetId: number;
+    position: { x: number; y: number; w: number; h: number };
+    customConfig?: Record<string, any>;
+    isVisible: boolean;
+    customTitle?: string;
+  }>>().default([]),
+  
+  // User preferences
+  lastViewedAt: timestamp("last_viewed_at"),
+  isBookmarked: boolean("is_bookmarked").default(false),
+  customTitle: text("custom_title"), // User can rename the page for themselves
+  notes: text("notes"), // Personal notes about the page
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userPageUnique: unique().on(table.userId, table.pageId),
+}));
+
+// Dashboard configurations for traditional dashboard-style pages
+export const dashboards = pgTable("dashboards", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("user"), // system, user, template, shared
+  
+  // Layout configuration
+  layout: jsonb("layout").$type<{
+    type: 'grid' | 'flex' | 'masonry';
+    columns: number;
+    rows?: number;
+    gap: number;
+    padding: number;
+    backgroundColor?: string;
+    responsive: {
+      mobile: { columns: number; gap: number };
+      tablet: { columns: number; gap: number };
+      desktop: { columns: number; gap: number };
+    };
+  }>().notNull(),
+  
+  // Widgets configuration
+  widgets: jsonb("widgets").$type<Array<{
+    id: string; // unique within dashboard
+    widgetId: number; // reference to unifiedWidgets
+    position: { x: number; y: number; w: number; h: number };
+    customConfig?: Record<string, any>;
+    customTitle?: string;
+    isVisible: boolean;
+  }>>().default([]),
+  
+  // Dashboard metadata
+  targetPlatform: text("target_platform").notNull().default("both"), // mobile, desktop, both
+  category: text("category"), // operations, financial, quality, custom
+  tags: jsonb("tags").$type<string[]>().default([]),
+  
+  // Access control
+  isPublic: boolean("is_public").default(false),
+  isTemplate: boolean("is_template").default(false),
+  templateCategory: text("template_category"), // production, management, analysis
+  
+  // Ownership
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  sharedWith: jsonb("shared_with").$type<Array<{
+    type: 'user' | 'role';
+    id: string;
+    permissions: ('view' | 'edit' | 'share')[];
+  }>>().default([]),
+  
+  // Usage tracking
+  viewCount: integer("view_count").default(0),
+  lastViewedAt: timestamp("last_viewed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Mobile-optimized dashboard configurations
+export const mobileDashboards = pgTable("mobile_dashboards", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Mobile-specific layout
+  configuration: jsonb("configuration").$type<{
+    layout: 'list' | 'grid' | 'cards' | 'timeline';
+    widgets: string[]; // widget identifiers optimized for mobile
+    scrollDirection: 'vertical' | 'horizontal';
+    itemsPerScreen: number;
+    autoRotate: boolean;
+    rotationInterval: number; // seconds
+  }>().notNull(),
+  
+  targetPlatform: text("target_platform").notNull().default("mobile"),
+  isActive: boolean("is_active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas and types for dashboard/page architecture
+export const insertSystemPageSchema = createInsertSchema(systemPages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserPageLayoutSchema = createInsertSchema(userPageLayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDashboardSchema = createInsertSchema(dashboards).omit({
+  id: true,
+  viewCount: true,
+  lastViewedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMobileDashboardSchema = createInsertSchema(mobileDashboards).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for dashboard/page architecture
+export type SystemPage = typeof systemPages.$inferSelect;
+export type InsertSystemPage = z.infer<typeof insertSystemPageSchema>;
+
+export type UserPageLayout = typeof userPageLayouts.$inferSelect;
+export type InsertUserPageLayout = z.infer<typeof insertUserPageLayoutSchema>;
+
+export type Dashboard = typeof dashboards.$inferSelect;
+export type InsertDashboard = z.infer<typeof insertDashboardSchema>;
+
+export type MobileDashboard = typeof mobileDashboards.$inferSelect;
+export type InsertMobileDashboard = z.infer<typeof insertMobileDashboardSchema>;
+
 // Template configurations for specific use cases
 export const templateConfigurations = pgTable("template_configurations", {
   id: serial("id").primaryKey(),

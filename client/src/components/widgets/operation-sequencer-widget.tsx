@@ -1,584 +1,340 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GripVertical, Clock, AlertTriangle, TrendingUp, TrendingDown, Zap, Settings, Play, Pause, RefreshCw, Calendar } from 'lucide-react';
+import { ArrowUp, ArrowDown, Play, Pause, Check, Clock, AlertTriangle, Settings } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
 
-interface ScheduleScenario {
-  id: number;
-  name: string;
-  description?: string;
-  status: string;
-  createdAt: string;
-}
-
-interface ResourceRequirementBlock {
-  id: number;
-  scenarioId: number;
-  discretePhaseResourceRequirementId?: number;
-  processResourceRequirementId?: number;
-  assignedResourceId: number;
-  scheduledStartTime: string;
-  scheduledEndTime: string;
-  blockType: string;
-  status: string;
-  priority: number;
-  requiredCapacity: string;
-  isBottleneck: boolean;
-  isCriticalPath: boolean;
-  floatTime: number;
-  notes?: string;
+interface OperationSequencerWidgetProps {
+  configuration?: {
+    view?: 'compact' | 'standard' | 'detailed';
+    allowReorder?: boolean;
+    showResourceFilter?: boolean;
+    showStatusFilter?: boolean;
+    showOptimizationFlags?: boolean;
+  };
+  isDesktop?: boolean;
 }
 
 interface Operation {
   id: number;
-  name: string;
-  status: string;
-  duration: number;
-  productionOrderId: number;
-  operationNumber?: string;
-  description?: string;
+  orderNumber: string;
+  operationName: string;
+  resource: string;
+  estimatedDuration: number;
+  actualDuration?: number;
+  status: 'pending' | 'in-progress' | 'completed' | 'blocked';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  dependencies: number[];
+  isOptimized: boolean;
+  setupTime: number;
 }
 
-interface Resource {
-  id: number;
-  name: string;
-  type: string;
-  status: string;
-}
-
-interface SequencerConfig {
-  view: 'compact' | 'standard' | 'detailed';
+const DraggableOperation: React.FC<{
+  operation: Operation;
+  index: number;
+  moveOperation: (dragIndex: number, hoverIndex: number) => void;
   allowReorder: boolean;
-  showResourceFilter: boolean;
-  showStatusFilter: boolean;
-  showOptimizationFlags: boolean;
-  defaultScenarioId?: number;
-  defaultResourceId?: number;
-}
-
-interface OperationSequencerWidgetProps {
-  configuration?: SequencerConfig;
-  isDesktop?: boolean;
-}
-
-const DraggableOperationCard = ({ 
-  block, 
-  operation,
-  index, 
-  onMove, 
-  isCompact = true 
-}: { 
-  block: ResourceRequirementBlock;
-  operation?: Operation;
-  index: number; 
-  onMove: (fromIndex: number, toIndex: number) => void;
-  isCompact?: boolean;
-}) => {
+  view: string;
+}> = ({ operation, index, moveOperation, allowReorder, view }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'operation',
-    item: () => ({ index, id: block.id }),
+    item: { index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    canDrag: allowReorder,
   });
 
-  const [{ isOver, canDrop }, drop] = useDrop({
+  const [, drop] = useDrop({
     accept: 'operation',
-    drop: (item: { index: number; id: number }) => {
-      if (item.index !== index) {
-        onMove(item.index, index);
-        item.index = index;
-      }
+    hover: (item: { index: number }) => {
+      if (!allowReorder) return;
+      
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) return;
+
+      moveOperation(dragIndex, hoverIndex);
+      item.index = hoverIndex;
     },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed': return 'bg-green-500';
-      case 'in_progress': return 'bg-blue-500';
-      case 'planned': return 'bg-blue-400';
-      case 'confirmed': return 'bg-green-400';
-      case 'pending': return 'bg-yellow-500';
-      case 'delayed': return 'bg-red-500';
-      case 'cancelled': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <Check className="w-4 h-4 text-green-500" />;
+      case 'in-progress': return <Play className="w-4 h-4 text-blue-500" />;
+      case 'blocked': return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      default: return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  const formatDuration = (startTime: string, endTime: string) => {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMinutes / 60);
-    const mins = diffMinutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'border-l-red-500 bg-red-50';
+      case 'high': return 'border-l-orange-500 bg-orange-50';
+      case 'medium': return 'border-l-yellow-500 bg-yellow-50';
+      default: return 'border-l-gray-500 bg-gray-50';
+    }
   };
 
-  return (
-    <div 
-      ref={(node) => drag(drop(node))} 
-      style={{ 
-        opacity: isDragging ? 0.5 : 1,
-        backgroundColor: isOver && canDrop ? '#f0f9ff' : 'transparent',
-      }}
-      className={`${isOver && canDrop ? 'border-2 border-blue-300 border-dashed' : ''} mb-2`}
-    >
-      <Card className={`border-l-4 cursor-move hover:bg-gray-50 transition-colors ${getStatusColor(block.status)}`}>
-        <CardContent className="p-3">
+  if (view === 'compact') {
+    return (
+      <div
+        ref={allowReorder ? (node) => drag(drop(node)) : undefined}
+        className={`p-2 border-l-4 ${getPriorityColor(operation.priority)} rounded cursor-${allowReorder ? 'move' : 'default'} ${
+          isDragging ? 'opacity-50' : ''
+        }`}
+      >
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="cursor-grab active:cursor-grabbing">
-              <GripVertical className="w-4 h-4 text-gray-400" />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-sm truncate">
-                  {operation ? operation.name : `Block ${block.id} (${block.blockType})`}
-                </h4>
-                <div className="flex items-center gap-1">
-                  {block.isBottleneck && (
-                    <Zap className="w-3 h-3 text-red-500" />
-                  )}
-                  {block.isCriticalPath && (
-                    <AlertTriangle className="w-3 h-3 text-orange-500" />
-                  )}
-                  {block.floatTime > 0 && (
-                    <TrendingUp className="w-3 h-3 text-green-500" />
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 mt-1 text-xs text-gray-600">
-                <Clock className="w-3 h-3" />
-                <span>{formatDuration(block.scheduledStartTime, block.scheduledEndTime)}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {block.status}
-                </Badge>
-                {block.priority > 1 && (
-                  <Badge variant="outline" className="text-xs">
-                    P{block.priority}
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="text-xs text-gray-500 mt-1">
-                <div>Start: {new Date(block.scheduledStartTime).toLocaleString()}</div>
-                {operation && (
-                  <div className="text-xs text-blue-600 mt-1">
-                    {operation.operationNumber && `Op ${operation.operationNumber} • `}
-                    Order #{operation.productionOrderId}
-                  </div>
-                )}
-              </div>
+            {getStatusIcon(operation.status)}
+            <span className="font-medium text-sm">{operation.operationName}</span>
+            {operation.isOptimized && (
+              <Badge variant="outline" className="text-xs">
+                <Settings className="w-3 h-3 mr-1" />
+                Optimized
+              </Badge>
+            )}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {operation.estimatedDuration}h
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Card
+      ref={allowReorder ? (node) => drag(drop(node)) : undefined}
+      className={`p-4 border-l-4 ${getPriorityColor(operation.priority)} cursor-${allowReorder ? 'move' : 'default'} ${
+        isDragging ? 'opacity-50' : ''
+      }`}
+    >
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getStatusIcon(operation.status)}
+            <div>
+              <div className="font-medium">{operation.operationName}</div>
+              <div className="text-sm text-muted-foreground">{operation.orderNumber}</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <div className="flex items-center gap-2">
+            {operation.isOptimized && (
+              <Badge variant="outline" className="text-xs">
+                <Settings className="w-3 h-3 mr-1" />
+                Optimized
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs capitalize">
+              {operation.priority}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Resource:</span>
+            <div className="font-medium">{operation.resource}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Duration:</span>
+            <div className="font-medium">{operation.estimatedDuration}h</div>
+          </div>
+        </div>
+
+        {view === 'detailed' && (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Setup Time:</span>
+              <div className="font-medium">{operation.setupTime}h</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span>
+              <div className="font-medium capitalize">{operation.status}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 };
 
 export default function OperationSequencerWidget({ 
-  configuration = {
-    view: 'compact',
-    allowReorder: true,
-    showResourceFilter: true,
-    showStatusFilter: true,
-    showOptimizationFlags: true
-  },
-  isDesktop = false
+  configuration = {}, 
+  isDesktop = true 
 }: OperationSequencerWidgetProps) {
-  const [selectedScenario, setSelectedScenario] = useState<string>(
-    configuration.defaultScenarioId?.toString() || ""
-  );
-  const [selectedResource, setSelectedResource] = useState<string>(
-    configuration.defaultResourceId?.toString() || "all"
-  );
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [orderedBlocks, setOrderedBlocks] = useState<ResourceRequirementBlock[]>([]);
-  const [hasReorder, setHasReorder] = useState(false);
-  
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const {
+    view = 'standard',
+    allowReorder = true,
+    showResourceFilter = true,
+    showStatusFilter = true,
+    showOptimizationFlags = true
+  } = configuration;
 
-  // Fetch resources
-  const { data: resources = [], isLoading: resourcesLoading } = useQuery<Resource[]>({
-    queryKey: ["/api/resources"],
-  });
-
-  // Fetch operations (using available endpoint)
-  const { data: operations = [], isLoading: operationsLoading } = useQuery<Operation[]>({
-    queryKey: ["/api/operations"],
-  });
-
-  // Create mock scenarios for demo purposes
-  const scenarios: ScheduleScenario[] = [
+  const [operations, setOperations] = useState<Operation[]>([
     {
       id: 1,
-      name: "Current Production Schedule",
-      description: "Active production schedule with current operations",
-      status: "active",
-      createdAt: new Date().toISOString()
+      orderNumber: "PO-2024-001",
+      operationName: "Material Preparation",
+      resource: "Prep Station 1",
+      estimatedDuration: 2,
+      status: 'completed',
+      priority: 'high',
+      dependencies: [],
+      isOptimized: true,
+      setupTime: 0.5
     },
     {
       id: 2,
-      name: "Optimized Schedule",
-      description: "AI-optimized production sequence",
-      status: "draft",
-      createdAt: new Date().toISOString()
-    }
-  ];
-
-  const scenariosLoading = false;
-
-  // Create mock resource requirement blocks based on operations
-  const blocks: ResourceRequirementBlock[] = useMemo(() => {
-    if (!operations.length || !resources.length) return [];
-    
-    return operations.map((operation, index) => {
-      const assignedResource = resources[index % resources.length];
-      const startTime = new Date(Date.now() + index * 2 * 60 * 60 * 1000); // 2 hours apart
-      const endTime = new Date(startTime.getTime() + operation.duration * 60 * 1000);
-      
-      return {
-        id: operation.id,
-        scenarioId: parseInt(selectedScenario) || 1,
-        discretePhaseResourceRequirementId: operation.id,
-        processResourceRequirementId: undefined,
-        assignedResourceId: assignedResource.id,
-        scheduledStartTime: startTime.toISOString(),
-        scheduledEndTime: endTime.toISOString(),
-        blockType: 'operation',
-        status: operation.status,
-        priority: index + 1,
-        requiredCapacity: '100%',
-        isBottleneck: Math.random() > 0.7,
-        isCriticalPath: Math.random() > 0.8,
-        floatTime: Math.floor(Math.random() * 60),
-        notes: operation.description
-      };
-    });
-  }, [operations, resources, selectedScenario]);
-
-  const blocksLoading = operationsLoading || resourcesLoading;
-
-  // Mutation for updating resource requirement block order
-  const updateBlockMutation = useMutation({
-    mutationFn: async (data: { id: number; priority: number }) => {
-      // Mock update for demo purposes
-      return Promise.resolve(data);
+      orderNumber: "PO-2024-001",
+      operationName: "Mixing Process",
+      resource: "Mixer A",
+      estimatedDuration: 4,
+      status: 'in-progress',
+      priority: 'high',
+      dependencies: [1],
+      isOptimized: true,
+      setupTime: 1
     },
-    onSuccess: () => {
-      toast({
-        title: "Block order updated",
-        description: "The operation sequence has been updated successfully."
-      });
+    {
+      id: 3,
+      orderNumber: "PO-2024-002",
+      operationName: "Quality Check",
+      resource: "QC Lab",
+      estimatedDuration: 1,
+      status: 'pending',
+      priority: 'medium',
+      dependencies: [2],
+      isOptimized: false,
+      setupTime: 0.25
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update block order. Please try again.",
-        variant: "destructive"
-      });
+    {
+      id: 4,
+      orderNumber: "PO-2024-002",
+      operationName: "Packaging",
+      resource: "Pack Line 1",
+      estimatedDuration: 3,
+      status: 'blocked',
+      priority: 'critical',
+      dependencies: [3],
+      isOptimized: true,
+      setupTime: 0.75
     }
+  ]);
+
+  const [filters, setFilters] = useState({
+    resource: 'all',
+    status: 'all'
   });
 
-  // Create operation map for quick lookup
-  const operationMap = useMemo(() => {
-    const map = new Map();
-    operations.forEach(op => {
-      map.set(op.id, op);
-    });
-    return map;
-  }, [operations]);
-
-  // Filter and enrich blocks with operation data
-  const filteredBlocksWithOperations = useMemo(() => {
-    let filtered = hasReorder && orderedBlocks.length > 0 ? [...orderedBlocks] : [...blocks];
-
-    // Filter by resource
-    if (selectedResource && selectedResource !== "all") {
-      filtered = filtered.filter(block => block.assignedResourceId === parseInt(selectedResource));
-    }
-
-    // Filter by status
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter(block => block.status === selectedStatus);
-    }
-
-    // Sort by scheduled start time
-    filtered.sort((a, b) => {
-      return new Date(a.scheduledStartTime).getTime() - new Date(b.scheduledStartTime).getTime();
-    });
-
-    // Enrich with operation data
-    return filtered.map(block => {
-      let operation = null;
-      if (block.discretePhaseResourceRequirementId) {
-        operation = operationMap.get(block.discretePhaseResourceRequirementId);
-      }
-      return { block, operation };
-    });
-  }, [blocks, orderedBlocks, hasReorder, selectedResource, selectedStatus, operationMap]);
-
-  const handleMove = (fromIndex: number, toIndex: number) => {
-    if (!configuration.allowReorder) return;
+  const moveOperation = (dragIndex: number, hoverIndex: number) => {
+    if (!allowReorder) return;
     
-    const newBlocks = [...filteredBlocksWithOperations.map(item => item.block)];
-    const [movedBlock] = newBlocks.splice(fromIndex, 1);
-    newBlocks.splice(toIndex, 0, movedBlock);
-    
-    setOrderedBlocks(newBlocks);
-    setHasReorder(true);
+    setOperations((prevOperations) => {
+      const newOperations = [...prevOperations];
+      const draggedOperation = newOperations[dragIndex];
+      newOperations.splice(dragIndex, 1);
+      newOperations.splice(hoverIndex, 0, draggedOperation);
+      return newOperations;
+    });
   };
 
-  const handleSaveOrder = () => {
-    if (!hasReorder) return;
-    
-    // Update block priorities (higher index = higher priority)
-    orderedBlocks.forEach((block, index) => {
-      updateBlockMutation.mutate({ id: block.id, priority: index + 1 });
-    });
-    
-    setHasReorder(false);
-  };
+  const filteredOperations = operations.filter(op => {
+    if (filters.resource !== 'all' && op.resource !== filters.resource) return false;
+    if (filters.status !== 'all' && op.status !== filters.status) return false;
+    return true;
+  });
 
-  const handleResetOrder = () => {
-    setOrderedBlocks([]);
-    setHasReorder(false);
-  };
-
-  if (scenariosLoading || resourcesLoading || operationsLoading || blocksLoading) {
-    return (
-      <Card className="h-full">
-        <CardContent className="p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show scenario selection if no scenario is selected
-  if (!selectedScenario && scenarios.length > 0) {
-    return (
-      <Card className="h-full flex flex-col">
-        <CardContent className="p-4 flex-1 flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg">Operation Sequencer</h3>
-          </div>
-          
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4 max-w-sm">
-              <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Select Schedule Scenario</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Choose a scenario to view its scheduled operations.
-                </p>
-                <Select value={selectedScenario} onValueChange={setSelectedScenario}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose scenario..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scenarios.map((scenario) => (
-                      <SelectItem key={scenario.id} value={scenario.id.toString()}>
-                        {scenario.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show empty state when no scenarios are available
-  if (!scenarios || scenarios.length === 0) {
-    return (
-      <Card className="h-full flex flex-col">
-        <CardContent className="p-4 flex-1 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg">Operation Sequencer</h3>
-          </div>
-          
-          {/* Empty state */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                <Settings className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No Schedule Scenarios Found</h4>
-                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                  Create schedule scenarios using the Schedule Optimizer to view operations here.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const uniqueResources = [...new Set(operations.map(op => op.resource))];
+  const uniqueStatuses = [...new Set(operations.map(op => op.status))];
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Card className="h-full flex flex-col">
-        <CardContent className="p-4 flex-1 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg">Operation Sequencer</h3>
-            <div className="flex items-center gap-2">
-              {hasReorder && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleResetOrder}
-                    className="text-xs"
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Reset
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveOrder}
-                    className="text-xs"
-                    disabled={updateBlockMutation.isPending}
-                  >
-                    <Play className="w-3 h-3 mr-1" />
-                    Save Order
-                  </Button>
-                </>
-              )}
-              <Button size="sm" variant="ghost">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+      <div className="space-y-4">
+        {/* Filters */}
+        {(showResourceFilter || showStatusFilter) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {showResourceFilter && (
+              <Select 
+                value={filters.resource} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, resource: value }))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Resource" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resources</SelectItem>
+                  {uniqueResources.map(resource => (
+                    <SelectItem key={resource} value={resource}>{resource}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-          {/* Scenario and Filters */}
-          <div className="space-y-2 mb-4">
-            {/* Scenario Selection */}
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Select value={selectedScenario} onValueChange={setSelectedScenario}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select scenario..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scenarios.map((scenario) => (
-                      <SelectItem key={scenario.id} value={scenario.id.toString()}>
-                        {scenario.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {showStatusFilter && (
+              <Select 
+                value={filters.status} 
+                onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {uniqueStatuses.map(status => (
+                    <SelectItem key={status} value={status} className="capitalize">{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-            {/* Resource and Status Filters */}
-            {selectedScenario && (configuration.showResourceFilter || configuration.showStatusFilter) && (
-              <div className="flex gap-2">
-                {configuration.showResourceFilter && (
-                  <Select value={selectedResource} onValueChange={setSelectedResource}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All Resources" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Resources</SelectItem>
-                      {resources.map((resource) => (
-                        <SelectItem key={resource.id} value={resource.id.toString()}>
-                          {resource.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                
-                {configuration.showStatusFilter && (
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+            {showOptimizationFlags && (
+              <div className="flex items-center gap-2 ml-auto">
+                <Badge variant="outline" className="text-xs">
+                  <Settings className="w-3 h-3 mr-1" />
+                  {operations.filter(op => op.isOptimized).length} Optimized
+                </Badge>
               </div>
             )}
           </div>
+        )}
 
-          {/* Operations List */}
-          <div className="flex-1 overflow-y-auto">
-            {!selectedScenario ? (
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="w-8 h-8 mx-auto mb-2" />
-                <p>Select a scenario above to view operations</p>
-              </div>
-            ) : blocksLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-              </div>
-            ) : filteredBlocksWithOperations.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-                <p>No operations found for the selected scenario and filters</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredBlocksWithOperations.map(({ block, operation }, index) => (
-                  <DraggableOperationCard
-                    key={block.id}
-                    block={block}
-                    operation={operation}
-                    index={index}
-                    onMove={handleMove}
-                    isCompact={configuration.view === 'compact'}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Operations List */}
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {filteredOperations.map((operation, index) => (
+            <DraggableOperation
+              key={operation.id}
+              operation={operation}
+              index={index}
+              moveOperation={moveOperation}
+              allowReorder={allowReorder}
+              view={view}
+            />
+          ))}
+        </div>
 
-          {/* Status Bar */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                {selectedScenario ? `${filteredBlocksWithOperations.length} operation blocks` : 'No scenario selected'}
-              </span>
-              {hasReorder && (
-                <span className="text-orange-600 font-medium">
-                  Order changed - save to apply
-                </span>
-              )}
+        {/* Summary */}
+        <div className="pt-3 border-t">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Total Operations:</span>
+              <div className="font-medium">{filteredOperations.length}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Total Duration:</span>
+              <div className="font-medium">
+                {filteredOperations.reduce((sum, op) => sum + op.estimatedDuration, 0)}h
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </DndProvider>
   );
 }
