@@ -125,7 +125,8 @@ export function registerSimpleRoutes(app: express.Application): Server {
         id: "trainer", 
         username: "trainer",
         email: "trainer@example.com",
-        isDemo: false
+        isDemo: true,
+        role: "Trainer"
       });
     } else {
       res.json({
@@ -148,7 +149,8 @@ export function registerSimpleRoutes(app: express.Application): Server {
           id: "trainer",
           username: "trainer",
           email: "trainer@example.com",
-          isDemo: false
+          isDemo: true,
+          role: "Trainer"
         };
         
         const token = "trainer_token_" + Date.now();
