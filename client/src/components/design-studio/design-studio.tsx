@@ -215,7 +215,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   console.log("🎨 DesignStudio render - open:", open);
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
-  const [activeTab, setActiveTab] = useState('pages');
+  const [activeTab, setActiveTab] = useState('widgets');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [justOpened, setJustOpened] = useState(false);
@@ -446,10 +446,6 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             {/* Main Content - Mobile Scrollable */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
               <TabsList className="grid w-full grid-cols-4 m-2 flex-shrink-0 bg-background border-b">
-                <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
-                  <Layout className="w-4 h-4" />
-                  <span className="text-xs">Pages</span>
-                </TabsTrigger>
                 <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
                   <Component className="w-4 h-4" />
                   <span className="text-xs">Widgets</span>
@@ -458,6 +454,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                   <BarChart3 className="w-4 h-4" />
                   <span className="text-xs">Dashboards</span>
                 </TabsTrigger>
+                <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
+                  <Layout className="w-4 h-4" />
+                  <span className="text-xs">Pages</span>
+                </TabsTrigger>
                 <TabsTrigger value="menu" className="flex flex-col items-center gap-1 py-3">
                   <Settings className="w-4 h-4" />
                   <span className="text-xs">Menu</span>
@@ -465,23 +465,28 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
               </TabsList>
 
               <div className="flex-1 overflow-y-auto">
-                <TabsContent value="pages" className="p-3 pb-8 m-0">
+                <TabsContent value="widgets" className="p-3 pb-8 m-0">
                 <div className="grid gap-4 grid-cols-1">
-                  {filteredPageTemplates.map((template) => (
+                  {filteredWidgetTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div>
                             <CardTitle className="text-base">{template.name}</CardTitle>
-                            <Badge variant="secondary" className="mt-1 text-xs">
-                              {template.category}
-                            </Badge>
-                          </div>
-                          <div className="text-muted-foreground">
-                            {template.type === 'grid' && <Grid className="w-4 h-4" />}
-                            {template.type === 'tabs' && <TabsIcon className="w-4 h-4" />}
-                            {template.type === 'dashboard' && <BarChart3 className="w-4 h-4" />}
-                            {template.type === 'custom' && <Settings className="w-4 h-4" />}
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {template.category}
+                              </Badge>
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs flex items-center gap-1"
+                              >
+                                {template.targetPlatform === 'mobile' && <Smartphone className="w-3 h-3" />}
+                                {template.targetPlatform === 'desktop' && <Monitor className="w-3 h-3" />}
+                                {template.targetPlatform === 'both' && <Grid className="w-3 h-3" />}
+                                {template.targetPlatform}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </CardHeader>
@@ -492,14 +497,28 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                         <div className="flex items-center gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => handleCreatePage(template)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔘 Create button clicked for widget:', template.name);
+                              handleCreateWidget(template);
+                            }}
                             className="flex-1"
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Create
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <Copy className="w-3 h-3" />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔘 Edit button clicked for widget:', template.name);
+                              handleEditWidget(template);
+                            }}
+                          >
+                            <Edit3 className="w-3 h-3" />
                           </Button>
                         </div>
                       </CardContent>
@@ -685,10 +704,6 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
               {/* Main Content */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-                  <TabsTrigger value="pages" className="flex items-center gap-2">
-                    <Layout className="w-4 h-4" />
-                    Pages
-                  </TabsTrigger>
                   <TabsTrigger value="widgets" className="flex items-center gap-2">
                     <Component className="w-4 h-4" />
                     Widgets
@@ -697,6 +712,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                     <BarChart3 className="w-4 h-4" />
                     Dashboards
                   </TabsTrigger>
+                  <TabsTrigger value="pages" className="flex items-center gap-2">
+                    <Layout className="w-4 h-4" />
+                    Pages
+                  </TabsTrigger>
                   <TabsTrigger value="menu" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
                     Menu
@@ -704,25 +723,30 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                 </TabsList>
 
                 <div className="flex-1 min-h-0 overflow-hidden">
-                  <TabsContent value="pages" className="h-full m-0 overflow-hidden">
+                  <TabsContent value="widgets" className="h-full m-0 overflow-hidden">
                     <ScrollArea className="h-full" style={{ height: '100%' }}>
                       <div className="p-4 pb-6">
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {filteredPageTemplates.map((template) => (
+                          {filteredWidgetTemplates.map((template) => (
                             <Card key={template.id} className="hover:shadow-md transition-shadow">
                               <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between">
                                   <div>
                                     <CardTitle className="text-base">{template.name}</CardTitle>
-                                    <Badge variant="secondary" className="mt-1 text-xs">
-                                      {template.category}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-muted-foreground">
-                                    {template.type === 'grid' && <Grid className="w-4 h-4" />}
-                                    {template.type === 'tabs' && <TabsIcon className="w-4 h-4" />}
-                                    {template.type === 'dashboard' && <BarChart3 className="w-4 h-4" />}
-                                    {template.type === 'custom' && <Settings className="w-4 h-4" />}
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <Badge variant="secondary" className="text-xs">
+                                        {template.category}
+                                      </Badge>
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs flex items-center gap-1"
+                                      >
+                                        {template.targetPlatform === 'mobile' && <Smartphone className="w-3 h-3" />}
+                                        {template.targetPlatform === 'desktop' && <Monitor className="w-3 h-3" />}
+                                        {template.targetPlatform === 'both' && <Grid className="w-3 h-3" />}
+                                        {template.targetPlatform}
+                                      </Badge>
+                                    </div>
                                   </div>
                                 </div>
                               </CardHeader>  
@@ -733,14 +757,28 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                                 <div className="flex items-center gap-2">
                                   <Button 
                                     size="sm" 
-                                    onClick={() => handleCreatePage(template)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🔘 Desktop Create button clicked for widget:', template.name);
+                                      handleCreateWidget(template);
+                                    }}
                                     className="flex-1"
                                   >
                                     <Plus className="w-3 h-3 mr-1" />
                                     Create
                                   </Button>
-                                  <Button variant="outline" size="sm">
-                                    <Copy className="w-3 h-3" />
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🔘 Desktop Edit button clicked for widget:', template.name);
+                                      handleEditWidget(template);
+                                    }}
+                                  >
+                                    <Edit3 className="w-3 h-3" />
                                   </Button>
                                 </div>
                               </CardContent>
@@ -847,6 +885,53 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                                   <Button 
                                     size="sm" 
                                     onClick={() => handleCreateDashboard(template)}
+                                    className="flex-1"
+                                  >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Create
+                                  </Button>
+                                  <Button variant="outline" size="sm">
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  <TabsContent value="pages" className="h-full m-0 overflow-hidden">
+                    <ScrollArea className="h-full" style={{ height: '100%' }}>
+                      <div className="p-4 pb-6">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {filteredPageTemplates.map((template) => (
+                            <Card key={template.id} className="hover:shadow-md transition-shadow">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <CardTitle className="text-base">{template.name}</CardTitle>
+                                    <Badge variant="secondary" className="mt-1 text-xs">
+                                      {template.category}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-muted-foreground">
+                                    {template.type === 'grid' && <Grid className="w-4 h-4" />}
+                                    {template.type === 'tabs' && <TabsIcon className="w-4 h-4" />}
+                                    {template.type === 'dashboard' && <BarChart3 className="w-4 h-4" />}
+                                    {template.type === 'custom' && <Settings className="w-4 h-4" />}
+                                  </div>
+                                </div>
+                              </CardHeader>  
+                              <CardContent className="pt-0">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  {template.description}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleCreatePage(template)}
                                     className="flex-1"
                                   >
                                     <Plus className="w-3 h-3 mr-1" />
