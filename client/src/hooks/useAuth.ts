@@ -40,7 +40,11 @@ const getDemoPermissions = (roleName: string, feature: string, action: string): 
     'Trainer': [
       'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
       'schedule-view', 'business-goals-view', 'visual-factory-view',
-      'ai-assistant-view', 'feedback-view', 'systems-management-view'
+      'ai-assistant-view', 'feedback-view', 'systems-management-view',
+      'capacity-planning-view', 'scheduling-optimizer-view', 'shop-floor-view', 
+      'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
+      'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
+      'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit'
     ],
     'Maintenance Technician': [
       'maintenance-planning-view', 'reports-view',
