@@ -1277,7 +1277,7 @@ export default function MobileHomePage() {
               src={planetTogetherLogo} 
               alt="PlanetTogether" 
               className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => window.location.href = '/'}
+              onClick={() => setLocation('/')}
             />
           </div>
           
