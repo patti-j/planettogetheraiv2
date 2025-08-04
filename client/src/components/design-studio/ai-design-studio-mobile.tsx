@@ -58,19 +58,37 @@ export function AiDesignStudioMobile({
         console.log('🎯 AI Response:', result);
         
         // Handle the AI response based on the action type
-        if (result.action === 'create_widget') {
-          // Redirect to widget studio or show success message
-          console.log('✅ Widget creation request processed:', result.details);
-        } else if (result.action === 'modify_dashboard') {
-          console.log('✅ Dashboard modification request processed:', result.details);
-        } else if (result.action === 'create_page') {
-          console.log('✅ Page creation request processed:', result.details);
-        } else if (result.action === 'reorganize_menu') {
-          console.log('✅ Menu reorganization request processed:', result.details);
+        if (result.success && result.data) {
+          console.log('✅ AI Response:', result.data);
+          
+          if (result.data.action === 'create_widget') {
+            console.log('🎯 Widget Creation Details:', result.data.details);
+            
+            if (result.data.createdWidget) {
+              alert(`Widget "${result.data.createdWidget.title}" created successfully! Check your widgets list.`);
+              // Optionally reload the widgets list
+              window.location.reload();
+            } else if (result.data.error) {
+              alert(`Widget creation failed: ${result.data.error}`);
+            } else {
+              alert(`Widget creation processed: ${result.data.message}`);
+            }
+          } else if (result.data.action === 'modify_dashboard') {
+            console.log('🎯 Dashboard Modification Details:', result.data.details);
+            alert(`Dashboard modification processed: ${result.data.message}`);
+          } else if (result.data.action === 'create_page') {
+            console.log('🎯 Page Creation Details:', result.data.details);
+            alert(`Page creation processed: ${result.data.message}`);
+          } else if (result.data.action === 'reorganize_menu') {
+            console.log('🎯 Menu Reorganization Details:', result.data.details);
+            alert(`Menu reorganization processed: ${result.data.message}`);
+          }
+          
+          console.log('🎉 AI request completed successfully:', result.data.message);
+        } else {
+          console.log('⚠️ AI request completed but no action taken');
+          alert('AI processed your request but no specific action was identified.');
         }
-        
-        // Show success feedback
-        console.log('🎉 AI request completed successfully');
       } else {
         console.error('❌ AI request failed:', response.status);
       }

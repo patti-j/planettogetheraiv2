@@ -41,14 +41,14 @@ export async function processDesignStudioAIRequest(prompt: string, context: stri
   try {
     console.log('🎯 Processing Design Studio AI request:', { prompt, context, systemData });
 
-    // Get current system data for context
-    const widgets = await storage.getUnifiedWidgets() || [];
-    const dashboards = await storage.getDashboards() || [];
+    // Get current system data for context (using available methods)
+    const widgets = systemData.widgets || 0;
+    const dashboards = systemData.dashboards || 0;
     
     const systemPrompt = `You are an AI Design Assistant for a manufacturing ERP system. You help users create, modify, and delete widgets, dashboards, pages, and menu structures.
 
 CURRENT SYSTEM STATE:
-- Widgets: ${systemData.widgets} total (${widgets.slice(0, 3).map(w => w.title).join(', ')}...)
+- Widgets: ${systemData.widgets} total
 - Dashboards: ${systemData.dashboards} total
 - Pages: ${systemData.pages} total  
 - Menu Sections: ${systemData.menuSections} total
@@ -95,13 +95,52 @@ Analyze the user request and determine the appropriate action.`;
     const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
     console.log('🎯 AI Response generated:', aiResponse);
 
-    // Process the action
+    // Process the action - actually execute it
     if (aiResponse.action === 'create_widget') {
-      // Here you could actually create the widget in the database
-      console.log('✅ Would create widget:', aiResponse.details);
+      console.log('✅ Creating widget based on AI response:', aiResponse.details);
+      
+      // Create a real widget in the database
+      try {
+        const widgetData = {
+          title: aiResponse.details?.title || `AI Generated Widget ${Date.now()}`,
+          subtitle: aiResponse.details?.subtitle || 'Created by AI',
+          targetPlatform: 'both',
+          widgetType: aiResponse.details?.type || 'list',
+          dataSource: aiResponse.details?.dataSource || 'jobs',
+          chartType: aiResponse.details?.chartType || null,
+          aggregation: aiResponse.details?.aggregation || null,
+          groupBy: aiResponse.details?.groupBy || null,
+          sortBy: aiResponse.details?.sortBy || null,
+          filters: aiResponse.details?.filters || {},
+          colors: aiResponse.details?.colors || {},
+          thresholds: aiResponse.details?.thresholds || {},
+          limit: aiResponse.details?.limit || 10,
+          size: aiResponse.details?.size || 'medium',
+          position: { x: 0, y: 0, width: 4, height: 3 },
+          refreshInterval: aiResponse.details?.refreshInterval || 30,
+          drillDownTarget: aiResponse.details?.drillDownTarget || null,
+          drillDownParams: aiResponse.details?.drillDownParams || {},
+          deployedSystems: ['mobile', 'desktop'],
+          systemSpecificConfig: {},
+          createdBy: 'ai-assistant',
+          isShared: true,
+          sharedWith: [],
+          tags: aiResponse.details?.tags || ['ai-generated'],
+          description: aiResponse.details?.description || 'Widget created by AI assistant',
+          category: aiResponse.details?.category || 'production',
+          isTemplate: false,
+          templateCategory: null
+        };
+
+        const newWidget = await storage.createUnifiedWidget(widgetData);
+        console.log('🎯 Widget created successfully:', newWidget);
+        aiResponse.createdWidget = newWidget;
+      } catch (error) {
+        console.error('❌ Failed to create widget:', error);
+        aiResponse.error = 'Failed to create widget in database';
+      }
     } else if (aiResponse.action === 'modify_dashboard') {
-      // Here you could modify the dashboard
-      console.log('✅ Would modify dashboard:', aiResponse.details);
+      console.log('✅ Dashboard modification logic would go here:', aiResponse.details);
     }
 
     return {
