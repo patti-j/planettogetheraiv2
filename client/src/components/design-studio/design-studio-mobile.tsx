@@ -34,132 +34,124 @@ export function MobileDesignStudio({
   onCreateDashboard
 }: MobileDesignStudioProps) {
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="p-3 border-b flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Palette className="w-4 h-4 text-purple-600" />
-          <h2 className="text-sm font-semibold">Design Studio</h2>
-          <button 
-            onClick={onClose}
-            className="ml-auto p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between p-2 border-b bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center gap-1">
+          <Palette className="w-3 h-3 text-purple-600" />
+          <span className="text-xs font-medium">Design Studio</span>
         </div>
+        <button 
+          onClick={onClose}
+          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+        >
+          <X className="w-3 h-3" />
+        </button>
       </div>
 
-      {/* AI Assistant Button */}
-      <div className="px-3 py-2 border-b flex-shrink-0">
+      {/* AI Button - More Compact */}
+      <div className="p-2 border-b">
         <Button
           onClick={onAiAssistant}
           size="sm"
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs"
+          className="w-full h-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-[10px] py-1"
         >
-          <Bot className="w-3 h-3 mr-1" />
+          <Bot className="w-2 h-2 mr-1" />
           AI Assistant
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="grid grid-cols-4 p-2 border-b flex-shrink-0">
+      {/* Compact Tab Bar */}
+      <div className="flex border-b bg-gray-50 dark:bg-gray-800">
         <button
           onClick={() => setActiveTab('widgets')}
-          className={`flex flex-col items-center py-2 px-1 rounded text-xs ${
-            activeTab === 'widgets' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          className={`flex-1 py-2 px-1 text-[10px] ${
+            activeTab === 'widgets' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
           }`}
         >
-          <Component className="w-3 h-3 mb-1" />
+          <Component className="w-2 h-2 mx-auto mb-1" />
           Widgets
         </button>
         <button
           onClick={() => setActiveTab('dashboards')}
-          className={`flex flex-col items-center py-2 px-1 rounded text-xs ${
-            activeTab === 'dashboards' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          className={`flex-1 py-2 px-1 text-[10px] ${
+            activeTab === 'dashboards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
           }`}
         >
-          <BarChart3 className="w-3 h-3 mb-1" />
+          <BarChart3 className="w-2 h-2 mx-auto mb-1" />
           Dashboards
         </button>
         <button
           onClick={() => setActiveTab('pages')}
-          className={`flex flex-col items-center py-2 px-1 rounded text-xs ${
-            activeTab === 'pages' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          className={`flex-1 py-2 px-1 text-[10px] ${
+            activeTab === 'pages' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
           }`}
         >
-          <Layout className="w-3 h-3 mb-1" />
+          <Layout className="w-2 h-2 mx-auto mb-1" />
           Pages
         </button>
         <button
           onClick={() => setActiveTab('menu')}
-          className={`flex flex-col items-center py-2 px-1 rounded text-xs ${
-            activeTab === 'menu' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+          className={`flex-1 py-2 px-1 text-[10px] ${
+            activeTab === 'menu' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400'
           }`}
         >
-          <Settings className="w-3 h-3 mb-1" />
+          <Settings className="w-2 h-2 mx-auto mb-1" />
           Menu
         </button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-3">
+      {/* Ultra Compact Content */}
+      <div className="flex-1 overflow-auto p-2">
         {activeTab === 'widgets' && (
-          <div className="space-y-3">
-            {filteredWidgetTemplates.map((template) => (
-              <Card key={template.id} className="text-xs">
-                <CardContent className="p-3">
-                  <div className="font-medium mb-1">{template.name}</div>
-                  <div className="text-muted-foreground mb-2 text-[10px]">
-                    {template.description}
-                  </div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => onCreateWidget(template)}
-                    className="w-full h-7 text-[10px]"
-                  >
-                    <Plus className="w-2 h-2 mr-1" />
-                    Create
-                  </Button>
-                </CardContent>
-              </Card>
+          <div className="space-y-2">
+            {filteredWidgetTemplates.slice(0, 6).map((template) => (
+              <div key={template.id} className="bg-gray-50 dark:bg-gray-800 rounded p-2 border">
+                <div className="text-[10px] font-medium mb-1 truncate">{template.name}</div>
+                <div className="text-[8px] text-gray-500 mb-2 line-clamp-2">{template.description}</div>
+                <Button 
+                  size="sm" 
+                  onClick={() => onCreateWidget(template)}
+                  className="w-full h-5 text-[8px] py-0"
+                >
+                  <Plus className="w-2 h-2 mr-1" />
+                  Create
+                </Button>
+              </div>
             ))}
           </div>
         )}
 
         {activeTab === 'dashboards' && (
-          <div className="space-y-3">
-            {filteredDashboardTemplates.map((template) => (
-              <Card key={template.id} className="text-xs">
-                <CardContent className="p-3">
-                  <div className="font-medium mb-1">{template.name}</div>
-                  <div className="text-muted-foreground mb-2 text-[10px]">
-                    {template.description}
-                  </div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => onCreateDashboard(template)}
-                    className="w-full h-7 text-[10px]"
-                  >
-                    <Plus className="w-2 h-2 mr-1" />
-                    Create
-                  </Button>
-                </CardContent>
-              </Card>
+          <div className="space-y-2">
+            {filteredDashboardTemplates.slice(0, 4).map((template) => (
+              <div key={template.id} className="bg-gray-50 dark:bg-gray-800 rounded p-2 border">
+                <div className="text-[10px] font-medium mb-1 truncate">{template.name}</div>
+                <div className="text-[8px] text-gray-500 mb-2 line-clamp-2">{template.description}</div>
+                <Button 
+                  size="sm" 
+                  onClick={() => onCreateDashboard(template)}
+                  className="w-full h-5 text-[8px] py-0"
+                >
+                  <Plus className="w-2 h-2 mr-1" />
+                  Create
+                </Button>
+              </div>
             ))}
           </div>
         )}
 
         {activeTab === 'pages' && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Layout className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-xs">Page management coming soon</p>
+          <div className="text-center py-6 text-gray-500">
+            <Layout className="w-6 h-6 mx-auto mb-2 opacity-50" />
+            <p className="text-[10px]">Coming Soon</p>
           </div>
         )}
 
         {activeTab === 'menu' && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-xs">Menu management coming soon</p>
+          <div className="text-center py-6 text-gray-500">
+            <Settings className="w-6 h-6 mx-auto mb-2 opacity-50" />
+            <p className="text-[10px]">Coming Soon</p>
           </div>
         )}
       </div>
