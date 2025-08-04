@@ -41,11 +41,18 @@ export function FloatingHamburgerMenu({
         title="Open Menu"
       >
         {/* Main logo - clean without button styling */}
-        <img 
-          src={planetTogetherLogo} 
-          alt="PlanetTogether" 
-          className="w-8 h-8 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
-        />
+        <div className="flex flex-col items-center gap-1">
+          <img 
+            src={planetTogetherLogo} 
+            alt="PlanetTogether" 
+            className="w-8 h-8 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
+          />
+          {/* Hamburger lines underneath logo */}
+          <div className="flex flex-col gap-0.5">
+            <div className="w-4 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full"></div>
+            <div className="w-3 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full"></div>
+          </div>
+        </div>
         
         {/* Close icon overlay when open */}
         {isOpen && (
