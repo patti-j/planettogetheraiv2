@@ -1091,9 +1091,9 @@ export default function MobileHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view">
-      {/* Mobile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
+      {/* Mobile Header - Fixed */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50">
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
           <div className="flex-shrink-0">
@@ -1496,7 +1496,7 @@ export default function MobileHomePage() {
 
       {/* Main Content - Check route and render appropriate content */}
       {location === "/" || location === "/mobile-home" || location === "/mobile" ? (
-        <div className="p-4 space-y-6">
+        <div className="flex-1 overflow-auto p-4 space-y-6">
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -1667,7 +1667,7 @@ export default function MobileHomePage() {
           </div>
       ) : (
         // For other routes, render them underneath the mobile header
-        <div className="relative" style={{ height: 'calc(100vh - 80px)', overflow: 'auto' }}>
+        <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
           <MobilePageContent location={location} />
         </div>
       )}
