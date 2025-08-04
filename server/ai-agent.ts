@@ -65,10 +65,11 @@ MANUFACTURING DOMAIN KNOWLEDGE:
 
 Your capabilities:
 1. CREATE: Generate new widgets, dashboards, pages, or menu structures with descriptive names
-2. MODIFY: Update existing items with new configurations
-3. DELETE: Remove outdated or unnecessary items  
-4. REORGANIZE: Restructure menus and layouts for better workflow
-5. PREVIEW: Show mockup data for widgets, dashboards, or pages
+2. VIEW/OPEN: Display existing widgets, dashboards, or pages with their current configuration and data
+3. MODIFY: Update existing items with new configurations based on current state
+4. DELETE: Remove outdated or unnecessary items  
+5. REORGANIZE: Restructure menus and layouts for better workflow
+6. PREVIEW: Show mockup data for widgets, dashboards, or pages
 
 When creating widgets, provide DETAILED specifications:
 - Title: Clear, specific name (e.g., "Production Line Efficiency", "Quality Defect Trends")
@@ -78,10 +79,15 @@ When creating widgets, provide DETAILED specifications:
 - Chart Type: Best visualization (bar, line, pie, gauge, number)
 - Category: Logical grouping (production, quality, inventory, scheduling)
 
+When viewing widgets, analyze the user request for:
+- Keywords like "open", "show", "view", "display", "see", "look at", "check"
+- References to existing widget names or types
+- Questions about current configuration or status
+
 Response format: Always return JSON with:
 {
   "success": true,
-  "action": "create_widget|modify_dashboard|create_page|reorganize_menu|preview_item|general_info",
+  "action": "create_widget|view_widget|modify_widget|modify_dashboard|create_page|reorganize_menu|preview_item|general_info",
   "message": "User-friendly description of what was done",
   "details": {
     "title": "Clear, descriptive name",
@@ -95,8 +101,10 @@ Response format: Always return JSON with:
 }
 
 Examples:
-- "Create a widget to track stock levels" → Generate "Current Inventory Levels" with stock data
-- "Show production efficiency" → Generate "Production Line Efficiency" with performance metrics
+- "Create a widget to track stock levels" → action: "create_widget" with "Current Inventory Levels"
+- "Show me the Production Overview widget" → action: "view_widget" to display existing widget details
+- "Open the Quality Metrics widget" → action: "view_widget" to display current configuration
+- "View widget details for Equipment Status" → action: "view_widget" to show widget configuration
 - "Preview the factory dashboard" → action: "preview_item" with mockup data
 
 Analyze the user request and determine the appropriate action.`;
@@ -170,6 +178,94 @@ Analyze the user request and determine the appropriate action.`;
       } catch (error) {
         console.error('❌ Failed to create widget:', error);
         aiResponse.error = 'Failed to create widget in database';
+      }
+    } else if (aiResponse.action === 'view_widget') {
+      console.log('👁️ Viewing widget based on AI response:', aiResponse);
+      
+      // Extract widget identifier from the user prompt (could be name, ID, or description)
+      const userPrompt = prompt.toLowerCase();
+      let targetWidget = null;
+      
+      try {
+        // Import database directly
+        const { db } = await import('./db');
+        const { unifiedWidgets } = await import('../shared/schema');
+        const allWidgets = await db.select().from(unifiedWidgets);
+        console.log('🔍 Available widgets:', allWidgets.map(w => ({ id: w.id, title: w.title })));
+        
+        // Try to find the widget by various criteria
+        targetWidget = allWidgets.find(widget => {
+          const title = widget.title?.toLowerCase() || '';
+          const description = widget.description?.toLowerCase() || '';
+          const category = widget.category?.toLowerCase() || '';
+          
+          // Match by widget ID if it's a number
+          if (userPrompt.match(/widget (\d+)/) && widget.id === parseInt(userPrompt.match(/widget (\d+)/)[1])) {
+            return true;
+          }
+          
+          // Match by title keywords
+          const titleWords = title.split(' ');
+          const promptWords = userPrompt.split(' ');
+          if (titleWords.some(word => word.length > 2 && promptWords.includes(word)) && titleWords.length > 1) {
+            return true;
+          }
+          
+          // Match by category
+          if (category && userPrompt.includes(category)) {
+            return true;
+          }
+          
+          // Match specific keywords
+          if (userPrompt.includes('production') && (title.includes('production') || category === 'production')) {
+            return true;
+          }
+          if (userPrompt.includes('quality') && (title.includes('quality') || category === 'quality')) {
+            return true;
+          }
+          if (userPrompt.includes('inventory') && (title.includes('inventory') || category === 'inventory')) {
+            return true;
+          }
+          if (userPrompt.includes('resource') && (title.includes('resource') || category === 'resources')) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (!targetWidget && allWidgets.length > 0) {
+          // Default to the most recently created widget if no specific match
+          targetWidget = allWidgets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+        }
+        
+        if (targetWidget) {
+          aiResponse.currentWidget = {
+            id: targetWidget.id,
+            title: targetWidget.title,
+            subtitle: targetWidget.subtitle,
+            description: targetWidget.description,
+            type: targetWidget.widgetType,
+            dataSource: targetWidget.dataSource,
+            chartType: targetWidget.chartType,
+            category: targetWidget.category,
+            targetPlatform: targetWidget.targetPlatform,
+            refreshInterval: targetWidget.refreshInterval,
+            filters: targetWidget.filters,
+            colors: targetWidget.colors,
+            thresholds: targetWidget.thresholds,
+            tags: targetWidget.tags,
+            isShared: targetWidget.isShared,
+            createdAt: targetWidget.createdAt,
+            updatedAt: targetWidget.updatedAt
+          };
+          aiResponse.message = `Currently viewing "${targetWidget.title}" widget - ${targetWidget.subtitle || 'Manufacturing widget'}`;
+        } else {
+          aiResponse.error = 'Could not find a widget matching your request. Available widgets: ' + 
+                             allWidgets.map(w => w.title).join(', ');
+        }
+      } catch (error) {
+        console.error('❌ Widget viewing failed:', error);
+        aiResponse.error = `Failed to view widget: ${error.message}`;
       }
     } else if (aiResponse.action === 'modify_dashboard') {
       console.log('✅ Dashboard modification logic would go here:', aiResponse.details);

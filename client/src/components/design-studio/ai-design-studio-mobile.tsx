@@ -75,6 +75,24 @@ export function AiDesignStudioMobile({
             } else {
               alert(`Widget creation processed: ${result.data.message}`);
             }
+          } else if (result.data.action === 'view_widget') {
+            console.log('🎯 Viewing Widget:', result.data.currentWidget);
+            const widget = result.data.currentWidget;
+            if (widget) {
+              const widgetInfo = `📋 Widget Details: ${widget.title}\n\n` +
+                `📊 Type: ${widget.type || 'N/A'}\n` +
+                `📈 Chart: ${widget.chartType || 'N/A'}\n` +
+                `🗃️ Data Source: ${widget.dataSource || 'N/A'}\n` +
+                `📱 Platform: ${widget.targetPlatform || 'N/A'}\n` +
+                `🏷️ Category: ${widget.category || 'N/A'}\n` +
+                `⏱️ Refresh: ${widget.refreshInterval || 'N/A'}s\n\n` +
+                `💬 Description: ${widget.description || 'No description'}\n\n` +
+                `🏷️ Tags: ${widget.tags ? widget.tags.join(', ') : 'None'}\n` +
+                `🔓 Shared: ${widget.isShared ? 'Yes' : 'No'}\n\n` +
+                `Created: ${widget.createdAt ? new Date(widget.createdAt).toLocaleDateString() : 'N/A'}\n\n` +
+                `💡 You can now ask AI to modify this widget!`;
+              alert(widgetInfo);
+            }
           } else if (result.data.action === 'preview_item') {
             console.log('🎯 Preview Data:', result.data.previewData);
             const preview = result.data.previewData;
@@ -189,9 +207,9 @@ export function AiDesignStudioMobile({
   const aiSuggestions = {
     widgets: [
       "Create a production efficiency widget",
-      "Show me a preview of quality metrics",
-      "Build a widget for tracking equipment downtime",
-      "Create an inventory alert widget for low stock"
+      "Open the Production Overview widget",
+      "Show me the Resource Status Overview widget",
+      "View widget details for Equipment Status"
     ],
     dashboards: [
       "Create a mobile-optimized operations dashboard",

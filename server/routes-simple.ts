@@ -765,14 +765,14 @@ export function registerSimpleRoutes(app: express.Application): Server {
       let dashboardCount = 0;
       
       try {
-        const widgets = await storage.getWidgets();
+        const widgets = await db.select().from(schema.unifiedWidgets);
         widgetCount = widgets?.length || 0;
       } catch (error) {
         console.log('Could not fetch widgets count:', error.message);
       }
       
       try {
-        const dashboards = await storage.getDashboards();
+        const dashboards = await db.select().from(schema.dashboards);
         dashboardCount = dashboards?.length || 0;
       } catch (error) {
         console.log('Could not fetch dashboards count:', error.message);
