@@ -293,7 +293,7 @@ export default function PageEditMode({
                 size={isMobile ? "sm" : "sm"}
                 className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
               >
-                {isEditMode ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                {isEditMode ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
                 {!isMobile && (isEditMode ? 'Exit Edit' : 'Edit Page')}
               </Button>
               
