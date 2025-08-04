@@ -394,19 +394,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   console.log("🎨 DesignStudio rendering dialog content");
 
   return (
-    <Dialog open={true} onOpenChange={(newOpen) => {
-      console.log("🎨 Design Studio dialog onOpenChange:", newOpen, "justOpened:", justOpened);
-      // Prevent immediate close after opening
-      if (!newOpen && justOpened) {
-        console.log("🎨 Preventing immediate dialog close - just opened");
-        return;
-      }
-      onOpenChange(newOpen);
-    }}>
-      <DialogContent className={`
-        ${isMobile ? 'max-w-[95vw] max-h-[85vh] w-[95vw] h-[85vh]' : 'max-w-6xl max-h-[85vh]'} 
-        ${isMobile ? 'p-0' : ''} flex flex-col
-      `} style={{ zIndex: 2147483648 }}>
+    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center">
+      <div className={`
+        ${isMobile ? 'w-[95vw] h-[85vh]' : 'w-full max-w-6xl h-[85vh]'} 
+        bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col mx-4
+      `}>
         {isMobile ? (
           // Mobile: Simple scrollable layout  
           <div className="h-full overflow-auto">
@@ -935,7 +927,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </div>
           </>
         )}
-      </DialogContent>
+      </div>
       
       {/* Nested Widget Design Studio */}
       <WidgetDesignStudio
@@ -956,6 +948,6 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         open={aiDesignStudioOpen}
         onOpenChange={setAiDesignStudioOpen}
       />
-    </Dialog>
+    </div>
   );
 }
