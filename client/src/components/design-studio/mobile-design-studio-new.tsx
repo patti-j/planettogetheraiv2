@@ -33,6 +33,18 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
     { id: 3, name: 'Inventory', description: 'Stock levels and tracking' },
   ];
 
+  const pages = [
+    { id: 1, name: 'Production Schedule', description: 'Manufacturing schedule management' },
+    { id: 2, name: 'Resource Planning', description: 'Equipment and workforce planning' },
+    { id: 3, name: 'Quality Dashboard', description: 'Quality control and testing' },
+  ];
+
+  const menuItems = [
+    { id: '1', name: 'Planning & Scheduling', pages: ['Production Schedule', 'Resource Planning'] },
+    { id: '2', name: 'Operations', pages: ['Manufacturing', 'Quality Control'] },
+    { id: '3', name: 'Data Management', pages: ['Master Data', 'Import/Export'] },
+  ];
+
   return (
     <div className="h-full w-full flex flex-col bg-white">
       {/* Simple Header */}
@@ -57,29 +69,51 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
         </Button>
       </div>
 
-      {/* Simple Tab Navigation */}
-      <div className="flex border-b bg-gray-50">
+      {/* Complete Tab Navigation */}
+      <div className="grid grid-cols-4 border-b bg-gray-50">
         <button
           onClick={() => setActiveTab('widgets')}
-          className={`flex-1 py-3 text-sm font-medium ${
+          className={`py-2 text-xs font-medium ${
             activeTab === 'widgets' 
               ? 'border-b-2 border-blue-600 text-blue-600 bg-white' 
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Component className="w-4 h-4 mx-auto mb-1" />
+          <Component className="w-3 h-3 mx-auto mb-1" />
           Widgets
         </button>
         <button
           onClick={() => setActiveTab('dashboards')}
-          className={`flex-1 py-3 text-sm font-medium ${
+          className={`py-2 text-xs font-medium ${
             activeTab === 'dashboards' 
               ? 'border-b-2 border-blue-600 text-blue-600 bg-white' 
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <BarChart3 className="w-4 h-4 mx-auto mb-1" />
+          <BarChart3 className="w-3 h-3 mx-auto mb-1" />
           Dashboards
+        </button>
+        <button
+          onClick={() => setActiveTab('pages')}
+          className={`py-2 text-xs font-medium ${
+            activeTab === 'pages' 
+              ? 'border-b-2 border-blue-600 text-blue-600 bg-white' 
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Layout className="w-3 h-3 mx-auto mb-1" />
+          Pages
+        </button>
+        <button
+          onClick={() => setActiveTab('menu')}
+          className={`py-2 text-xs font-medium ${
+            activeTab === 'menu' 
+              ? 'border-b-2 border-blue-600 text-blue-600 bg-white' 
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Settings className="w-3 h-3 mx-auto mb-1" />
+          Menu
         </button>
       </div>
 
@@ -109,6 +143,42 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
                 <Button size="sm" className="w-full">
                   <Plus className="w-3 h-3 mr-1" />
                   Create Dashboard
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'pages' && (
+          <div className="space-y-3">
+            {pages.map((page) => (
+              <div key={page.id} className="border rounded-lg p-3 bg-white shadow-sm">
+                <h3 className="font-medium text-sm mb-1">{page.name}</h3>
+                <p className="text-xs text-gray-600 mb-3">{page.description}</p>
+                <Button size="sm" className="w-full">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Create Page
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'menu' && (
+          <div className="space-y-3">
+            {menuItems.map((category) => (
+              <div key={category.id} className="border rounded-lg p-3 bg-white shadow-sm">
+                <h3 className="font-medium text-sm mb-2">{category.name}</h3>
+                <div className="space-y-1 mb-3">
+                  {category.pages.map((page, idx) => (
+                    <div key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                      {page}
+                    </div>
+                  ))}
+                </div>
+                <Button size="sm" className="w-full" variant="outline">
+                  <Settings className="w-3 h-3 mr-1" />
+                  Configure
                 </Button>
               </div>
             ))}
