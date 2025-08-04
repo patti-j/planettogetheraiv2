@@ -1091,6 +1091,15 @@ export default function MobileHomePage() {
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
   console.log("🔍 MobileHomePage - location:", location);
   console.log("🔍 MobileHomePage - should show home?", location === "/" || location === "/mobile-home" || location === "/mobile");
+  
+  // Reset any cached view states when navigating to home
+  useEffect(() => {
+    if (location === "/" || location === "/mobile-home" || location === "/mobile") {
+      console.log("🏠 Resetting to mobile home view for location:", location);
+      // Force any potential cached states to clear
+      window.scrollTo(0, 0);
+    }
+  }, [location]);
 
   // Reset scroll position on component mount/login
   useEffect(() => {
@@ -1306,19 +1315,8 @@ export default function MobileHomePage() {
               alt="PlanetTogether" 
               className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
-                console.log("🏠 Logo clicked! Current location:", location, "Setting to /");
-                if (location === '/') {
-                  console.log("🏠 Already on home page - scrolling to top");
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                  console.log("🏠 Navigating from", location, "to /");
-                  console.log("🏠 setLocation function type:", typeof setLocation);
-                  setLocation('/');
-                  console.log("🏠 setLocation called, waiting for location change...");
-                  setTimeout(() => {
-                    console.log("🏠 Location after 100ms:", location);
-                  }, 100);
-                }
+                console.log("🏠 Logo clicked - forcing navigation to home");
+                window.location.href = "/";
               }}
             />
           </div>
@@ -1714,7 +1712,7 @@ export default function MobileHomePage() {
 
       {/* Main Content - Check route and render appropriate content */}
       {location === "/" || location === "/mobile-home" || location === "/mobile" ? (
-        <div className="flex-1 overflow-auto p-4 space-y-6">
+        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6">
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
