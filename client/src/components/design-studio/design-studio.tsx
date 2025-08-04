@@ -404,12 +404,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
       onOpenChange(newOpen);
     }}>
       <DialogContent className={`
-        ${isMobile ? 'max-w-[95vw] max-h-[90vh] w-[95vw] h-[90vh]' : 'max-w-6xl max-h-[85vh]'} 
+        ${isMobile ? 'max-w-[95vw] max-h-[85vh] w-[95vw] h-[85vh]' : 'max-w-6xl max-h-[85vh]'} 
         ${isMobile ? 'p-0' : ''} flex flex-col z-50
       `} style={{ zIndex: 9999 }}>
         {isMobile ? (
-          // Mobile: Full scrollable layout
-          <div className="h-full overflow-y-auto">
+          // Mobile: Full scrollable layout with proper height
+          <div className="h-full flex flex-col overflow-hidden">
             <DialogHeader className="p-4 border-b sticky top-0 bg-background z-10">
               <DialogTitle className="flex items-center gap-2">
                 <Palette className="w-5 h-5 text-purple-600" />
@@ -454,7 +454,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </div>
 
             {/* Main Content - Mobile Scrollable */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
               <TabsList className="grid w-full grid-cols-4 m-2 flex-shrink-0 bg-background border-b">
                 <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
                   <Component className="w-4 h-4" />
@@ -474,8 +474,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto">
-                <TabsContent value="widgets" className="p-3 pb-8 m-0">
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <TabsContent value="widgets" className="p-3 pb-20 m-0 h-full">
                 <div className="grid gap-4 grid-cols-1">
                   {filteredWidgetTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -511,7 +511,6 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                               console.log('🔘 MOBILE Create button clicked for widget:', template.name);
                               console.log('🔘 Template data:', template);
                               console.log('🔘 handleCreateWidget function:', handleCreateWidget);
-                              window.testCreateWidget = () => handleCreateWidget(template);
                               try {
                                 handleCreateWidget(template);
                               } catch (error) {
