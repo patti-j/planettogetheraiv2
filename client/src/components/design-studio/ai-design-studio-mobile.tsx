@@ -29,6 +29,8 @@ export function AiDesignStudioMobile({
   const [activeTab, setActiveTab] = React.useState('widgets');
   const [aiPrompt, setAiPrompt] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [previewItem, setPreviewItem] = React.useState<any>(null);
+  const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | null>(null);
 
   const handleAiPrompt = async (promptOverride?: string) => {
     const finalPrompt = promptOverride || aiPrompt;
@@ -102,6 +104,11 @@ export function AiDesignStudioMobile({
               alert(`❌ Widget modification failed: ${result.data.error}`);
             } else if (result.data.modifiedWidget) {
               alert(`✅ Widget "${result.data.modifiedWidget.title}" has been successfully modified with AI improvements!`);
+              // Close preview dialog if open
+              if (previewItem && previewType) {
+                setPreviewItem(null);
+                setPreviewType(null);
+              }
               // Refresh the widgets list to show updated data
               refetchWidgets();
             } else {
@@ -277,7 +284,7 @@ export function AiDesignStudioMobile({
             />
             <Button 
               size="sm" 
-              onClick={handleAiPrompt}
+              onClick={() => handleAiPrompt()}
               disabled={!aiPrompt.trim() || isProcessing}
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
@@ -366,33 +373,42 @@ export function AiDesignStudioMobile({
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{widget.description || `Widget showing ${widget.dataSource || widget.source} data`}</p>
                     
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 mt-3">
+                    {/* Preview Button */}
+                    <div className="mt-3">
                       <button
-                        onClick={() => {
-                          const prompt = `Show me the details of ${widget.title || widget.name} widget`;
+                        onClick={async () => {
                           console.log('🔍 Preview button clicked for widget:', widget.title || widget.name);
-                          setAiPrompt(prompt);
-                          // Auto-trigger the AI request
-                          setTimeout(() => handleAiPrompt(), 100);
+                          setIsProcessing(true);
+                          
+                          try {
+                            const response = await fetch('/api/ai/design-studio', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify({
+                                prompt: `Show me the details of ${widget.title || widget.name} widget`,
+                                context: 'widgets'
+                              })
+                            });
+                            
+                            if (response.ok) {
+                              const result = await response.json();
+                              if (result.success && result.data?.currentWidget) {
+                                setPreviewItem(result.data.currentWidget);
+                                setPreviewType('widget');
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Preview error:', error);
+                          } finally {
+                            setIsProcessing(false);
+                          }
                         }}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                        className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
+                        disabled={isProcessing}
                       >
                         <Eye className="w-3 h-3" />
-                        Preview
-                      </button>
-                      <button
-                        onClick={() => {
-                          const prompt = `Edit the ${widget.title || widget.name} widget to add better styling and improve functionality`;
-                          console.log('✏️ Edit button clicked for widget:', widget.title || widget.name);
-                          setAiPrompt(prompt);
-                          // Auto-trigger the AI request
-                          setTimeout(() => handleAiPrompt(), 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        AI Edit
+                        {isProcessing ? 'Loading...' : 'Preview & Edit'}
                       </button>
                     </div>
                   </div>
@@ -425,33 +441,28 @@ export function AiDesignStudioMobile({
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{dashboard.description}</p>
                     
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 mt-3">
+                    {/* Preview Button */}
+                    <div className="mt-3">
                       <button
-                        onClick={() => {
-                          const prompt = `Show me the details of ${dashboard.title || dashboard.name} dashboard`;
+                        onClick={async () => {
                           console.log('🔍 Preview button clicked for dashboard:', dashboard.title || dashboard.name);
-                          setAiPrompt(prompt);
-                          // Auto-trigger the AI request
-                          setTimeout(() => handleAiPrompt(), 100);
+                          setIsProcessing(true);
+                          
+                          try {
+                            // For dashboards, just show the basic info for now
+                            setPreviewItem(dashboard);
+                            setPreviewType('dashboard');
+                          } catch (error) {
+                            console.error('Preview error:', error);
+                          } finally {
+                            setIsProcessing(false);
+                          }
                         }}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                        className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
+                        disabled={isProcessing}
                       >
                         <Eye className="w-3 h-3" />
-                        Preview
-                      </button>
-                      <button
-                        onClick={() => {
-                          const prompt = `Edit the ${dashboard.title || dashboard.name} dashboard to improve layout and add more widgets`;
-                          console.log('✏️ Edit button clicked for dashboard:', dashboard.title || dashboard.name);
-                          setAiPrompt(prompt);
-                          // Auto-trigger the AI request
-                          setTimeout(() => handleAiPrompt(), 100);
-                        }}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        AI Edit
+                        {isProcessing ? 'Loading...' : 'Preview & Edit'}
                       </button>
                     </div>
                   </div>
@@ -506,6 +517,130 @@ export function AiDesignStudioMobile({
           )}
         </div>
       </div>
+
+      {/* Preview Dialog */}
+      {previewItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">{previewType === 'widget' ? 'Widget' : 'Dashboard'} Preview</h2>
+              <button
+                onClick={() => {
+                  setPreviewItem(null);
+                  setPreviewType(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <h3 className="font-medium text-lg">{previewItem.title}</h3>
+                {previewItem.subtitle && (
+                  <p className="text-sm text-gray-600 mt-1">{previewItem.subtitle}</p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                  <p className="text-sm mt-1">{previewItem.description || 'No description available'}</p>
+                </div>
+
+                {previewType === 'widget' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chart Type</label>
+                        <p className="text-sm mt-1">{previewItem.chartType || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Source</label>
+                        <p className="text-sm mt-1">{previewItem.dataSource || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</label>
+                        <p className="text-sm mt-1">{previewItem.category || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Refresh Rate</label>
+                        <p className="text-sm mt-1">{previewItem.refreshInterval || 'N/A'}s</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Platform</label>
+                      <p className="text-sm mt-1">{previewItem.targetPlatform || 'N/A'}</p>
+                    </div>
+
+                    {previewItem.tags && previewItem.tags.length > 0 && (
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tags</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {previewItem.tags.map((tag: string, index: number) => (
+                            <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {previewType === 'dashboard' && (
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Target Platform</label>
+                    <p className="text-sm mt-1">{previewItem.targetPlatform || 'N/A'}</p>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500">
+                  Created: {previewItem.createdAt ? new Date(previewItem.createdAt).toLocaleDateString() : 'N/A'}
+                </div>
+              </div>
+
+              {/* AI Edit Section */}
+              <div className="border-t pt-4">
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                  AI Modifications
+                </label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder={`Ask AI to modify this ${previewType}...`}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAiPrompt()}
+                    className="text-sm"
+                  />
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleAiPrompt()}
+                    disabled={!aiPrompt.trim() || isProcessing}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  >
+                    {isProcessing ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Apply AI Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
