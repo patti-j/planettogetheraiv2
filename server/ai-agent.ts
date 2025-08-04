@@ -45,39 +45,59 @@ export async function processDesignStudioAIRequest(prompt: string, context: stri
     const widgets = systemData.widgets || 0;
     const dashboards = systemData.dashboards || 0;
     
-    const systemPrompt = `You are an AI Design Assistant for a manufacturing ERP system. You help users create, modify, and delete widgets, dashboards, pages, and menu structures.
+    const systemPrompt = `You are an AI Design Assistant for a manufacturing ERP system. You help users create, modify, delete, and preview widgets, dashboards, pages, and menu structures.
 
 CURRENT SYSTEM STATE:
-- Widgets: ${systemData.widgets} total
-- Dashboards: ${systemData.dashboards} total
-- Pages: ${systemData.pages} total  
-- Menu Sections: ${systemData.menuSections} total
+- Widgets: ${systemData?.widgets || 0} total
+- Dashboards: ${systemData?.dashboards || 0} total
+- Pages: ${systemData?.pages || 0} total  
+- Menu Sections: ${systemData?.menuSections || 0} total
 
 CONTEXT: Currently working on ${context}
 
+MANUFACTURING DOMAIN KNOWLEDGE:
+- Production Orders: Jobs with statuses (In Progress, Completed, Delayed, Quality Hold)
+- Operations: Process steps (mixing, heating, cooling, packaging, testing)
+- Resources: Equipment (reactors, mixers, conveyors), personnel, tools
+- Quality: Defect rates, compliance metrics, inspection results
+- Inventory: Stock levels, reorder points, material flow
+- Scheduling: Timeline optimization, bottleneck analysis, capacity planning
+
 Your capabilities:
-1. CREATE: Generate new widgets, dashboards, pages, or menu structures
+1. CREATE: Generate new widgets, dashboards, pages, or menu structures with descriptive names
 2. MODIFY: Update existing items with new configurations
 3. DELETE: Remove outdated or unnecessary items  
 4. REORGANIZE: Restructure menus and layouts for better workflow
+5. PREVIEW: Show mockup data for widgets, dashboards, or pages
+
+When creating widgets, provide DETAILED specifications:
+- Title: Clear, specific name (e.g., "Production Line Efficiency", "Quality Defect Trends")
+- Subtitle: Brief explanation of purpose and key metrics shown
+- Description: Detailed explanation of value and usage
+- Data Source: Appropriate source (jobs, operations, resources, stocks, quality)
+- Chart Type: Best visualization (bar, line, pie, gauge, number)
+- Category: Logical grouping (production, quality, inventory, scheduling)
 
 Response format: Always return JSON with:
 {
   "success": true,
-  "action": "create_widget|modify_dashboard|create_page|reorganize_menu|general_info",
+  "action": "create_widget|modify_dashboard|create_page|reorganize_menu|preview_item|general_info",
   "message": "User-friendly description of what was done",
   "details": {
-    "type": "specific action taken",
-    "configuration": "relevant config details",
-    "recommendations": "suggestions for optimization"
+    "title": "Clear, descriptive name",
+    "subtitle": "Purpose and key metrics",
+    "description": "Detailed explanation of value",
+    "type": "widget type or chart type", 
+    "dataSource": "appropriate data source",
+    "chartType": "visualization type",
+    "category": "logical grouping"
   }
 }
 
 Examples:
-- "Create a new production KPI widget" → action: "create_widget"
-- "Modify the Factory Overview dashboard" → action: "modify_dashboard"  
-- "Add a batch tracking page" → action: "create_page"
-- "Reorganize the menu for operators" → action: "reorganize_menu"
+- "Create a widget to track stock levels" → Generate "Current Inventory Levels" with stock data
+- "Show production efficiency" → Generate "Production Line Efficiency" with performance metrics
+- "Preview the factory dashboard" → action: "preview_item" with mockup data
 
 Analyze the user request and determine the appropriate action.`;
 
@@ -99,16 +119,16 @@ Analyze the user request and determine the appropriate action.`;
     if (aiResponse.action === 'create_widget') {
       console.log('✅ Creating widget based on AI response:', aiResponse.details);
       
-      // Create a real widget in the database
+      // Create a real widget in the database with improved naming
       try {
         const widgetData = {
-          title: aiResponse.details?.title || `AI Generated Widget ${Date.now()}`,
-          subtitle: aiResponse.details?.subtitle || 'Created by AI',
+          title: aiResponse.details?.title || `Production Widget ${Date.now()}`,
+          subtitle: aiResponse.details?.subtitle || 'Real-time manufacturing metrics',
           targetPlatform: 'both' as const,
-          widgetType: aiResponse.details?.type || 'list',
+          widgetType: aiResponse.details?.type || 'kpi',
           dataSource: aiResponse.details?.dataSource || 'jobs',
-          chartType: aiResponse.details?.chartType || null,
-          aggregation: aiResponse.details?.aggregation || null,
+          chartType: aiResponse.details?.chartType || 'number',
+          aggregation: aiResponse.details?.aggregation || 'count',
           groupBy: aiResponse.details?.groupBy || null,
           sortBy: aiResponse.details?.sortBy || null,
           filters: aiResponse.details?.filters || {},
@@ -126,7 +146,7 @@ Analyze the user request and determine the appropriate action.`;
           isShared: true,
           sharedWith: [],
           tags: aiResponse.details?.tags || ['ai-generated'],
-          description: aiResponse.details?.description || 'Widget created by AI assistant',
+          description: aiResponse.details?.description || 'Manufacturing widget created by AI to track key production metrics and performance indicators',
           category: aiResponse.details?.category || 'production',
           isTemplate: false,
           templateCategory: null
@@ -153,6 +173,42 @@ Analyze the user request and determine the appropriate action.`;
       }
     } else if (aiResponse.action === 'modify_dashboard') {
       console.log('✅ Dashboard modification logic would go here:', aiResponse.details);
+    } else if (aiResponse.action === 'preview_item') {
+      console.log('✅ Generating preview for:', aiResponse.details);
+      
+      // Generate preview data based on item type
+      const itemType = aiResponse.details?.itemType || 'widget';
+      let previewData = {};
+      
+      if (itemType === 'widget') {
+        previewData = {
+          title: aiResponse.details?.title || 'Sample Widget',
+          subtitle: aiResponse.details?.subtitle || 'Preview data',
+          type: aiResponse.details?.type || 'kpi',
+          dataSource: aiResponse.details?.dataSource || 'jobs',
+          mockData: {
+            value: 42,
+            trend: '+5%',
+            status: 'normal',
+            data: [
+              { name: 'Active Jobs', value: 15 },
+              { name: 'Completed', value: 27 },
+              { name: 'Delayed', value: 3 }
+            ]
+          }
+        };
+      } else if (itemType === 'dashboard') {
+        previewData = {
+          layout: 'grid',
+          widgets: [
+            { title: 'Production Overview', type: 'kpi', position: { x: 0, y: 0 } },
+            { title: 'Quality Metrics', type: 'chart', position: { x: 1, y: 0 } },
+            { title: 'Equipment Status', type: 'gauge', position: { x: 0, y: 1 } }
+          ]
+        };
+      }
+      
+      aiResponse.previewData = previewData;
     }
 
     return {

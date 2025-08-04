@@ -66,13 +66,26 @@ export function AiDesignStudioMobile({
             console.log('🎯 Widget Creation Details:', result.data.details);
             
             if (result.data.createdWidget) {
-              alert(`Widget "${result.data.createdWidget.title}" created successfully! Check your widgets list.`);
+              const widget = result.data.createdWidget;
+              alert(`✅ Widget Created Successfully!\n\nTitle: ${widget.title}\nSubtitle: ${widget.subtitle}\nDescription: ${widget.description}\n\nCheck your widgets list to see it in action.`);
               // Optionally reload the widgets list
               window.location.reload();
             } else if (result.data.error) {
-              alert(`Widget creation failed: ${result.data.error}`);
+              alert(`❌ Widget creation failed: ${result.data.error}`);
             } else {
               alert(`Widget creation processed: ${result.data.message}`);
+            }
+          } else if (result.data.action === 'preview_item') {
+            console.log('🎯 Preview Data:', result.data.previewData);
+            const preview = result.data.previewData;
+            if (preview) {
+              let previewText = `📋 Preview: ${preview.title || 'Item'}\n\n`;
+              if (preview.mockData) {
+                previewText += `Sample Data:\n- Value: ${preview.mockData.value}\n- Trend: ${preview.mockData.trend}\n- Status: ${preview.mockData.status}`;
+              } else if (preview.widgets) {
+                previewText += `Dashboard Layout: ${preview.layout}\nWidgets: ${preview.widgets.map(w => w.title).join(', ')}`;
+              }
+              alert(previewText);
             }
           } else if (result.data.action === 'modify_dashboard') {
             console.log('🎯 Dashboard Modification Details:', result.data.details);
@@ -175,16 +188,16 @@ export function AiDesignStudioMobile({
 
   const aiSuggestions = {
     widgets: [
-      "Create a new production KPI widget",
-      "Clone the Equipment Status widget with different metrics",
-      "Modify the Quality Metrics widget to show trends",
-      "Delete the outdated Inventory Levels widget"
+      "Create a production efficiency widget",
+      "Show me a preview of quality metrics",
+      "Build a widget for tracking equipment downtime",
+      "Create an inventory alert widget for low stock"
     ],
     dashboards: [
       "Create a mobile-optimized operations dashboard",
-      "Clone Factory Overview for night shift",
-      "Add real-time alerts to Production Planning",
-      "Reorganize Quality Control layout"
+      "Preview the Factory Overview dashboard layout",
+      "Build a dashboard for quality control managers",
+      "Show me how the shift handover dashboard would look"
     ],
     pages: [
       "Create a new batch tracking page",
@@ -223,7 +236,7 @@ export function AiDesignStudioMobile({
           </div>
           <div className="flex gap-2">
             <Input
-              placeholder="Tell me what you want to create, modify, or delete..."
+              placeholder={`Ask AI to ${activeTab === 'widgets' ? 'create widgets, preview designs, or track metrics' : activeTab === 'dashboards' ? 'build dashboards, show previews, or organize layouts' : activeTab === 'pages' ? 'create pages or preview layouts' : 'reorganize menus or preview structures'}...`}
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAiPrompt()}

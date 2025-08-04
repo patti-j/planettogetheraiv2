@@ -760,7 +760,34 @@ export function registerSimpleRoutes(app: express.Application): Server {
       req.user = { id: 'demo_user' };
       
       // Process the AI request based on context
-      const result = await processDesignStudioAIRequest(prompt, context, systemData);
+      // Get current system data for context - using safe method calls
+      let widgetCount = 0;
+      let dashboardCount = 0;
+      
+      try {
+        const widgets = await storage.getWidgets();
+        widgetCount = widgets?.length || 0;
+      } catch (error) {
+        console.log('Could not fetch widgets count:', error.message);
+      }
+      
+      try {
+        const dashboards = await storage.getDashboards();
+        dashboardCount = dashboards?.length || 0;
+      } catch (error) {
+        console.log('Could not fetch dashboards count:', error.message);
+      }
+      
+      const systemDataContext = {
+        widgets: widgetCount,
+        dashboards: dashboardCount,
+        pages: 30, // hardcoded for now
+        menuSections: 7 // hardcoded for now  
+      };
+      
+      console.log('🔍 System data context:', systemDataContext);
+      
+      const result = await processDesignStudioAIRequest(prompt, context, systemDataContext);
       
       console.log('🎯 AI Design Studio Result:', result);
       res.json(result);

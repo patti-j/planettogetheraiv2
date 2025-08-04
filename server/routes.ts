@@ -2975,16 +2975,43 @@ Return ONLY a valid JSON object with this exact structure:
   // AI Design Studio endpoint (temporarily bypass auth for debugging)
   app.post("/api/ai/design-studio", async (req, res) => {
     try {
-      const { prompt, context, systemData } = req.body;
+      const { prompt, context } = req.body;
       
       if (!prompt) {
         return res.status(400).json({ error: 'Prompt is required' });
       }
 
-      console.log('🤖 AI Design Studio Request:', { prompt, context, systemData });
+      console.log('🤖 AI Design Studio Request:', { prompt, context });
 
       // Add fake user for debugging
       req.user = { id: 'demo_user' };
+      
+      // Get current system data for context - using safe method calls
+      let widgetCount = 0;
+      let dashboardCount = 0;
+      
+      try {
+        const widgets = await storage.getWidgets();
+        widgetCount = widgets?.length || 0;
+      } catch (error) {
+        console.log('Could not fetch widgets count:', error.message);
+      }
+      
+      try {
+        const dashboards = await storage.getDashboards();
+        dashboardCount = dashboards?.length || 0;
+      } catch (error) {
+        console.log('Could not fetch dashboards count:', error.message);
+      }
+      
+      const systemData = {
+        widgets: widgetCount,
+        dashboards: dashboardCount,
+        pages: 30, // hardcoded for now
+        menuSections: 7 // hardcoded for now  
+      };
+      
+      console.log('🔍 System data context:', systemData);
       
       // Process the AI request based on context
       const result = await processDesignStudioAIRequest(prompt, context, systemData);
