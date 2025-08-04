@@ -26,7 +26,10 @@ import {
   Database,
   Search,
   Filter,
-  MoreVertical
+  MoreVertical,
+  Bot,
+  Sparkles,
+  Wand2
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +37,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
+import AIDesignStudio from '@/components/ai-design-studio';
 
 interface DesignStudioProps {
   open: boolean;
@@ -170,6 +174,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   // Dialog states for nested editors
   const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
+  const [aiDesignStudioOpen, setAiDesignStudioOpen] = useState(false);
   const [editingWidget, setEditingWidget] = useState(null);
   const [editingDashboard, setEditingDashboard] = useState(null);
 
@@ -323,6 +328,26 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* AI Design Assistant Button */}
+          <div className={`${isMobile ? 'p-3' : 'p-4'} border-b flex-shrink-0`}>
+            <Button
+              onClick={() => setAiDesignStudioOpen(true)}
+              className="w-full h-12 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Bot className="w-5 h-5" />
+                  <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
+                </div>
+                <span>AI Design Assistant</span>
+                <Wand2 className="w-4 h-4" />
+              </div>
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Create, modify, or remove pages, widgets, and dashboards with AI
+            </p>
+          </div>
+
           {/* Search and Filter Bar */}
           <div className={`flex items-center gap-4 ${isMobile ? 'p-3' : 'p-4'} border-b flex-shrink-0`}>
             <div className="flex-1 relative">
@@ -622,6 +647,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
           setEditingWidget(null);
           toast({ title: "Success", description: "Widget created successfully" });
         }}
+      />
+
+      {/* AI Design Studio */}
+      <AIDesignStudio
+        open={aiDesignStudioOpen}
+        onOpenChange={setAiDesignStudioOpen}
       />
     </Dialog>
   );

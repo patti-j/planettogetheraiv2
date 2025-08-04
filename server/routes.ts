@@ -21612,6 +21612,159 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // AI Design Assistant endpoint
+  app.post('/api/ai-design-assistant', requireAuth, async (req, res) => {
+    try {
+      const { action, targetType, description, context } = req.body;
+      
+      if (!description) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Description is required' 
+        });
+      }
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Build system prompt based on target type and action
+      const systemPrompt = `You are an expert AI design assistant for a manufacturing ERP system called PlanetTogether. Your role is to help users ${action} ${targetType}s based on their requirements.
+
+Manufacturing ERP Context:
+- Production scheduling and resource management
+- Inventory tracking and material management  
+- Quality control and compliance monitoring
+- Equipment status and maintenance tracking
+- Analytics and reporting dashboards
+- Mobile-first design for shop floor workers
+
+${targetType === 'page' ? `
+Page Design Guidelines:
+- Pages can be grid-based, tab-based, dashboard-style, or custom layouts
+- Should include relevant widgets and data visualizations
+- Consider mobile responsiveness and user workflow
+- Common page types: production schedule, inventory management, quality control, analytics
+` : ''}
+
+${targetType === 'widget' ? `
+Widget Design Guidelines:
+- Widgets display specific data metrics or controls
+- Types: charts (bar, line, pie), gauges, tables, KPIs, alerts
+- Should specify data source and refresh intervals
+- Consider both mobile and desktop layouts
+- Common widgets: production metrics, equipment status, quality indicators
+` : ''}
+
+${targetType === 'dashboard' ? `
+Dashboard Design Guidelines:
+- Dashboards organize multiple related widgets
+- Should have clear layout and grouping logic
+- Consider user roles and information hierarchy
+- Common dashboards: factory overview, production planning, quality control
+` : ''}
+
+User Request: ${action} a ${targetType}
+Description: ${description}
+${context ? `Additional Context: ${context}` : ''}
+
+Generate a complete ${targetType} configuration that matches the user's requirements. Return ONLY valid JSON in this exact format:
+
+{
+  "success": true,
+  "action": "${action}",
+  "result": {
+    "title": "Generated ${targetType} Title",
+    "description": "Detailed description of the ${targetType}",
+    ${targetType === 'page' ? `
+    "type": "grid|tabs|dashboard|custom",
+    "category": "Operations|Quality|Inventory|Analytics|Management|Maintenance|Mobile",
+    "layout": {
+      "type": "grid|tabs|dashboard",
+      "columns": 12,
+      "rows": 8,
+      "widgets": [],
+      "settings": {
+        "responsive": true,
+        "mobileOptimized": true,
+        "showHeader": true,
+        "showFilters": false,
+        "theme": "auto"
+      }
+    }` : ''}
+    ${targetType === 'widget' ? `
+    "type": "chart|gauge|table|kpi|alert",
+    "targetPlatform": "mobile|desktop|both",
+    "source": "jobs|resources|operations|metrics|stocks",
+    "configuration": {
+      "chartType": "bar|line|pie|gauge",
+      "dataSource": "production-orders|equipment-status|quality-metrics",
+      "refreshInterval": 30,
+      "displayOptions": {}
+    }` : ''}
+    ${targetType === 'dashboard' ? `
+    "targetPlatform": "mobile|desktop|both",
+    "configuration": {
+      "layout": "grid|timeline|metrics",
+      "widgets": ["widget-1", "widget-2", "widget-3"],
+      "theme": "light|dark|auto"
+    }` : ''}
+  },
+  "suggestions": [
+    "Suggestion 1 for improvement",
+    "Suggestion 2 for optimization",
+    "Suggestion 3 for best practices"
+  ]
+}`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `${action} a ${targetType}: ${description}${context ? ` Additional context: ${context}` : ''}` }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const aiResult = JSON.parse(response.choices[0].message.content);
+      
+      // Validate the response structure
+      if (!aiResult.result || !aiResult.result.title) {
+        throw new Error('Invalid AI response structure');
+      }
+
+      console.log('AI Design Assistant generated:', aiResult);
+      res.json(aiResult);
+
+    } catch (error) {
+      console.error('AI Design Assistant error:', error);
+      
+      const errorMessage = error.message || "Unknown error";
+      const isQuotaError = errorMessage.includes('quota') || 
+                          errorMessage.includes('limit') || 
+                          errorMessage.includes('exceeded') ||
+                          errorMessage.includes('insufficient_quota') ||
+                          errorMessage.includes('rate_limit');
+      
+      if (isQuotaError) {
+        res.status(429).json({ 
+          success: false,
+          error: "OpenAI quota exceeded",
+          quotaExceeded: true
+        });
+      } else {
+        res.status(500).json({ 
+          success: false,
+          error: "Failed to generate AI design",
+          details: errorMessage
+        });
+      }
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
