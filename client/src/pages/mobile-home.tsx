@@ -994,21 +994,6 @@ export default function MobileHomePage() {
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
             <div className="flex items-center px-4 py-3 gap-3">
-              {/* Logo/Brand - Clickable to go home */}
-              <img 
-            src={CompanyLogoImage} 
-            alt="Company Logo" 
-            className="h-8 w-8 object-contain cursor-pointer flex-shrink-0"
-            onClick={() => {
-              // Close dialogs and reset to clean home state
-              const libraryDialog = document.getElementById('library-dialog');
-              if (libraryDialog) libraryDialog.style.display = 'none';
-              setSearchQuery("");
-              // Scroll to top smoothly
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          />
-
           {/* Search/Prompt Input */}
           <div className="flex-1">
             <div className="relative">
