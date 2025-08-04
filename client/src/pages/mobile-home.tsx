@@ -246,12 +246,25 @@ interface Notification {
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
   const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="mobile-page-wrapper" style={{ 
-      maxHeight: 'calc(100vh - 80px)', // Account for mobile header height
-      overflow: 'auto',
-      position: 'relative'
-    }}>
-      {children}
+    <div 
+      className="mobile-page-wrapper bg-white dark:bg-gray-900" 
+      style={{ 
+        position: 'fixed',
+        top: '80px', // Start below mobile header
+        left: '0',
+        right: '0',
+        bottom: '0',
+        overflow: 'auto',
+        zIndex: 10
+      }}
+    >
+      <div style={{ 
+        position: 'relative',
+        height: 'auto',
+        minHeight: 'auto'
+      }}>
+        {children}
+      </div>
     </div>
   );
 
@@ -1454,13 +1467,25 @@ export default function MobileHomePage() {
 
       {/* Add mobile-specific CSS overrides */}
       <style>{`
-        .mobile-page-wrapper .h-screen {
+        .mobile-page-wrapper * {
+          position: static !important;
+        }
+        .mobile-page-wrapper .h-screen,
+        .mobile-page-wrapper .min-h-screen {
           height: auto !important;
           min-height: auto !important;
         }
         .mobile-page-wrapper > div:first-child {
           height: auto !important;
           min-height: auto !important;
+          position: relative !important;
+        }
+        .mobile-page-wrapper .flex.flex-col.h-screen {
+          height: auto !important;
+          min-height: auto !important;
+        }
+        .mobile-page-wrapper .bg-gray-50.dark\\:bg-gray-900 {
+          background: transparent !important;
         }
       `}</style>
 
