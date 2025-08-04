@@ -174,9 +174,9 @@ export default function ProductionSchedulePage() {
                 variant="ghost"
                 size="sm"
                 onClick={toggleEditMode}
-                className={`${isMobile ? 'w-6 h-6 p-0' : 'w-7 h-7 p-0'} opacity-60 hover:opacity-100 transition-opacity`}
+                className={`${isMobile ? 'w-5 h-5 p-0' : 'w-6 h-6 p-0'} opacity-40 hover:opacity-70 transition-opacity text-gray-400 hover:text-gray-600`}
               >
-                <Edit className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
               </Button>
             </div>
             {!isMobile && (
