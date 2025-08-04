@@ -290,39 +290,49 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   });
 
   const handleCreatePage = (template: PageTemplate) => {
-    console.log('Creating page from template:', template);
-    const pageData = {
-      title: template.name,
-      description: template.description,
-      type: template.type,
-      category: template.category,
-      layout: {
+    console.log('📄 Creating page from template:', template);
+    try {
+      const pageData = {
+        title: template.name,
+        description: template.description,
         type: template.type,
-        columns: 12,
-        rows: 8,
-        widgets: [],
-        settings: {
-          responsive: true,
-          mobileOptimized: true,
-          showHeader: true,
-          showFilters: false,
-          theme: 'auto'
+        category: template.category,
+        layout: {
+          type: template.type,
+          columns: 12,
+          rows: 8,
+          widgets: [],
+          settings: {
+            responsive: true,
+            mobileOptimized: true,
+            showHeader: true,
+            showFilters: false,
+            theme: 'auto'
+          }
         }
-      }
-    };
-    createPageMutation.mutate(pageData);
+      };
+      console.log('📄 Submitting page data:', pageData);
+      createPageMutation.mutate(pageData);
+    } catch (error) {
+      console.error('❌ Error creating page:', error);
+    }
   };
 
   const handleCreateWidget = (template: WidgetTemplate) => {
-    console.log('Creating widget from template:', template);
-    setEditingWidget({
-      title: template.name,
-      type: template.type,
-      category: template.category,
-      targetPlatform: template.targetPlatform,
-      description: template.description
-    });
-    setWidgetStudioOpen(true);
+    console.log('🔧 Creating widget from template:', template);
+    try {
+      setEditingWidget({
+        title: template.name,
+        type: template.type,
+        category: template.category,
+        targetPlatform: template.targetPlatform,
+        description: template.description
+      });
+      console.log('🔧 Opening widget studio...');
+      setWidgetStudioOpen(true);
+    } catch (error) {
+      console.error('❌ Error creating widget:', error);
+    }
   };
 
   const handleCreateDashboard = (template: DashboardTemplate) => {
@@ -340,17 +350,22 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   };
 
   const handleEditWidget = (template: WidgetTemplate) => {
-    console.log('Editing widget template:', template);
-    setEditingWidget({
-      title: template.name,
-      type: template.type,
-      category: template.category,
-      targetPlatform: template.targetPlatform,
-      description: template.description,
-      isTemplate: true,
-      templateId: template.id
-    });
-    setWidgetStudioOpen(true);
+    console.log('✏️ Editing widget template:', template);
+    try {
+      setEditingWidget({
+        title: template.name,
+        type: template.type,
+        category: template.category,
+        targetPlatform: template.targetPlatform,
+        description: template.description,
+        isTemplate: true,
+        templateId: template.id
+      });
+      console.log('✏️ Opening widget studio for editing...');
+      setWidgetStudioOpen(true);
+    } catch (error) {
+      console.error('❌ Error editing widget:', error);
+    }
   };
 
   // Track when dialog opens to prevent immediate close
@@ -521,7 +536,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                         <div className="flex items-center gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => handleCreateWidget(template)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔘 Create button clicked for widget:', template.name);
+                              handleCreateWidget(template);
+                            }}
                             className="flex-1"
                           >
                             <Plus className="w-3 h-3 mr-1" />
@@ -530,7 +550,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleEditWidget(template)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🔘 Edit button clicked for widget:', template.name);
+                              handleEditWidget(template);
+                            }}
                           >
                             <Edit3 className="w-3 h-3" />
                           </Button>
@@ -756,7 +781,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                                 <div className="flex items-center gap-2">
                                   <Button 
                                     size="sm" 
-                                    onClick={() => handleCreateWidget(template)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🔘 Desktop Create button clicked for widget:', template.name);
+                                      handleCreateWidget(template);
+                                    }}
                                     className="flex-1"
                                   >
                                     <Plus className="w-3 h-3 mr-1" />
@@ -765,7 +795,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                                   <Button 
                                     variant="outline" 
                                     size="sm"
-                                    onClick={() => handleEditWidget(template)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('🔘 Desktop Edit button clicked for widget:', template.name);
+                                      handleEditWidget(template);
+                                    }}
                                   >
                                     <Edit3 className="w-3 h-3" />
                                   </Button>
