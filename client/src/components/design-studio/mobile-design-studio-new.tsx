@@ -17,9 +17,20 @@ import {
 interface MobileDesignStudioNewProps {
   onClose: () => void;
   onAiAssistant: () => void;
+  onEditWidget?: (widget: any) => void;
+  onCloneWidget?: (widget: any) => void;
+  onEditDashboard?: (dashboard: any) => void;
+  onCloneDashboard?: (dashboard: any) => void;
 }
 
-export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignStudioNewProps) {
+export function MobileDesignStudioNew({ 
+  onClose, 
+  onAiAssistant, 
+  onEditWidget, 
+  onCloneWidget, 
+  onEditDashboard, 
+  onCloneDashboard 
+}: MobileDesignStudioNewProps) {
   const [activeTab, setActiveTab] = React.useState('widgets');
 
   // Fetch actual widgets from the system
@@ -172,10 +183,18 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="font-medium text-sm">{widget.name}</h3>
                     <div className="flex gap-1">
-                      <button className="p-1 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => onEditWidget?.(widget)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Edit widget"
+                      >
                         <Edit className="w-3 h-3 text-gray-500" />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => onCloneWidget?.(widget)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Clone widget"
+                      >
                         <Copy className="w-3 h-3 text-gray-500" />
                       </button>
                     </div>
@@ -190,11 +209,20 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" variant="outline">
+                    <Button 
+                      size="sm" 
+                      className="flex-1" 
+                      variant="outline"
+                      onClick={() => onEditWidget?.(widget)}
+                    >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => onCloneWidget?.(widget)}
+                    >
                       <Copy className="w-3 h-3 mr-1" />
                       Clone
                     </Button>
@@ -235,10 +263,18 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="font-medium text-sm">{dashboard.name}</h3>
                     <div className="flex gap-1">
-                      <button className="p-1 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => onEditDashboard?.(dashboard)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Edit dashboard"
+                      >
                         <Edit className="w-3 h-3 text-gray-500" />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded">
+                      <button 
+                        onClick={() => onCloneDashboard?.(dashboard)}
+                        className="p-1 hover:bg-gray-100 rounded"
+                        title="Clone dashboard"
+                      >
                         <Copy className="w-3 h-3 text-gray-500" />
                       </button>
                     </div>
@@ -250,11 +286,20 @@ export function MobileDesignStudioNew({ onClose, onAiAssistant }: MobileDesignSt
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" variant="outline">
+                    <Button 
+                      size="sm" 
+                      className="flex-1" 
+                      variant="outline"
+                      onClick={() => onEditDashboard?.(dashboard)}
+                    >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit
                     </Button>
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => onCloneDashboard?.(dashboard)}
+                    >
                       <Copy className="w-3 h-3 mr-1" />
                       Clone
                     </Button>
