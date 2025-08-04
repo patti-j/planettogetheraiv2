@@ -994,6 +994,9 @@ export default function MobileHomePage() {
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
             <div className="flex items-center px-4 py-3 gap-3">
+          {/* Left spacer for hamburger menu */}
+          <div className="w-8 flex-shrink-0"></div>
+          
           {/* Search/Prompt Input */}
           <div className="flex-1">
             <div className="relative">
