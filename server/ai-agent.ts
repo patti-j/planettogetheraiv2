@@ -132,7 +132,7 @@ Analyze the user request and determine the appropriate action.`;
           templateCategory: null
         };
 
-        const newWidget = await storage.createUnifiedWidget(widgetData);
+        const newWidget = await storage.createWidget(widgetData);
         console.log('🎯 Widget created successfully:', newWidget);
         aiResponse.createdWidget = newWidget;
       } catch (error) {

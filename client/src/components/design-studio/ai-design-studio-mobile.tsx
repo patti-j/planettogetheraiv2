@@ -90,10 +90,13 @@ export function AiDesignStudioMobile({
           alert('AI processed your request but no specific action was identified.');
         }
       } else {
-        console.error('❌ AI request failed:', response.status);
+        const errorText = await response.text();
+        console.error('❌ AI request failed:', response.status, errorText);
+        alert(`AI request failed: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('❌ AI request error:', error);
+      alert(`AI request error: ${error.message || 'Network error'}`);
     } finally {
       setIsProcessing(false);
       setAiPrompt('');
