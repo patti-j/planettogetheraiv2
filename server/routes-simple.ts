@@ -5,7 +5,7 @@ import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insert
 import { db } from "./db";
 import * as schema from "../shared/schema";
 import { sql, eq } from "drizzle-orm";
-import { processAICommand } from "./ai-agent";
+import { processAICommand, processDesignStudioAIRequest } from "./ai-agent";
 
 export function registerSimpleRoutes(app: express.Application): Server {
   // Health check

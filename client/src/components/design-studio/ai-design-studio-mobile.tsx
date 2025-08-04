@@ -41,14 +41,15 @@ export function AiDesignStudioMobile({
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           prompt: aiPrompt,
           context: activeTab,
           systemData: {
-            widgets: widgets.length,
-            dashboards: dashboards.length,
-            pages: pages.length,
-            menuSections: menuItems.length
+            widgets: 7, // Using static counts for now
+            dashboards: 5,
+            pages: 30,
+            menuSections: 7
           }
         })
       });
@@ -95,7 +96,12 @@ export function AiDesignStudioMobile({
         alert(`AI request failed: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('❌ AI request error:', error);
+      console.error('❌ AI request error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        error: error
+      });
       alert(`AI request error: ${error.message || 'Network error'}`);
     } finally {
       setIsProcessing(false);

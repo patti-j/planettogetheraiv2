@@ -2986,12 +2986,17 @@ Return ONLY a valid JSON object with this exact structure:
       // Process the AI request based on context
       const result = await processDesignStudioAIRequest(prompt, context, systemData);
       
+      console.log('🎯 AI Design Studio Result:', result);
       res.json(result);
     } catch (error) {
-      console.error('AI Design Studio error:', error);
+      console.error('🚨 AI Design Studio error:', error);
+      console.error('🚨 Error stack:', error.stack);
+      console.error('🚨 Error message:', error.message);
+      console.error('🚨 Request body was:', req.body);
       res.status(500).json({ 
-        error: 'Failed to process AI design request',
-        success: false
+        error: `Failed to process AI design request: ${error.message}`,
+        success: false,
+        details: error.stack
       });
     }
   });
