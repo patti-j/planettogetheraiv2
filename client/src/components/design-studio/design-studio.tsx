@@ -203,8 +203,15 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
     }
   }, [open]);
 
+  if (!open) {
+    console.log("🎨 DesignStudio not rendering - open is false");
+    return null;
+  }
+
+  console.log("🎨 DesignStudio rendering dialog content");
+
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
+    <Dialog open={true} onOpenChange={(newOpen) => {
       console.log("🎨 Design Studio dialog onOpenChange:", newOpen, "justOpened:", justOpened);
       // Prevent immediate close after opening
       if (!newOpen && justOpened) {
@@ -215,8 +222,8 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
     }}>
       <DialogContent className={`
         ${isMobile ? 'max-w-[95vw] max-h-[90vh]' : 'max-w-6xl max-h-[85vh]'} 
-        overflow-hidden flex flex-col
-      `}>
+        overflow-hidden flex flex-col z-50
+      `} style={{ zIndex: 9999 }}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Palette className="w-5 h-5 text-purple-600" />
