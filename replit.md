@@ -29,6 +29,7 @@ Component terminology for reference:
 - **Routing**: Wouter for client-side routing
 - **Drag & Drop**: react-dnd with HTML5 backend for operation scheduling
 - **Build Tool**: Vite for development and production builds
+- **Widget System**: Comprehensive reusable widget components (FilterSearchWidget, MetricsCardWidget, StatusIndicatorWidget, DataTableWidget, ActionButtonsWidget, KanbanCardWidget) for consistent UI patterns across all pages
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation with clear labels and icons, integrated workflow for dashboard and widget creation, Excel-like cell editing, and user-configurable layouts with persistence.
 
 ### Backend Architecture
@@ -48,7 +49,7 @@ Component terminology for reference:
 - **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms (backwards, planned order generator) with configurable profiles, trade-off analysis, resource requirements, and constraints management (Theory of Constraints/TOC implementation).
 - **Dashboarding & Analytics**: Universal widget design studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views.
 - **Role-Based Access Control**: Unified permission system using roles array structure with feature-action permissions. Trainer role has comprehensive access for demonstrations, Production Scheduler has basic scheduling permissions.
-- **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, and comprehensive error handling.
+- **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, comprehensive error handling, and reusable widget system for consistent UX patterns.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.
 - **Mobile Responsiveness**: Mobile-first design for all pages and components, ensuring optimal experience on various devices.
 - **Scaling Strategy**: Implemented 3-Level Scaling Strategy (Database-Per-Tenant) including enhanced database connection pooling, Redis caching, comprehensive rate limiting with DDoS protection, and strategic database indexing with query optimization.
