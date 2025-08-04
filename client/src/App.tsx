@@ -92,6 +92,7 @@ import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
 import Homepage from "@/pages/homepage";
 import ClearNavigation from "@/pages/clear-navigation";
+import ProductionSchedulePage from "@/pages/production-schedule";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -245,7 +246,7 @@ function Router() {
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/onboarding" component={Onboarding} />
           <Route path="/production-schedule">
-            <DashboardWithAutoTour />
+            <ProductionSchedulePage />
           </Route>
           <Route path="/dashboard">
             <DashboardWithAutoTour />
