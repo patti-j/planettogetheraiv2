@@ -122,7 +122,7 @@ Analyze the user request and determine the appropriate action.`;
           drillDownParams: aiResponse.details?.drillDownParams || {},
           deployedSystems: ['mobile', 'desktop'],
           systemSpecificConfig: {},
-          createdBy: 'ai-assistant',
+          createdBy: 1, // Use integer ID instead of string
           isShared: true,
           sharedWith: [],
           tags: aiResponse.details?.tags || ['ai-generated'],
@@ -135,13 +135,17 @@ Analyze the user request and determine the appropriate action.`;
         console.log('🔍 Widget data before creation:', JSON.stringify(widgetData, null, 2));
 
         try {
+          console.log('🔧 About to call storage.createWidget with data:', JSON.stringify(widgetData, null, 2));
           const newWidget = await storage.createWidget(widgetData);
           console.log('🎯 Widget created successfully:', newWidget);
           aiResponse.createdWidget = newWidget;
         } catch (validationError) {
           console.error('❌ Widget validation error:', validationError);
+          console.error('❌ Error message:', validationError.message);
+          console.error('❌ Error stack:', validationError.stack);
           console.error('❌ Widget data that failed:', JSON.stringify(widgetData, null, 2));
-          throw validationError;
+          aiResponse.error = `Widget creation failed: ${validationError.message}`;
+          // Don't re-throw, just log and continue
         }
       } catch (error) {
         console.error('❌ Failed to create widget:', error);

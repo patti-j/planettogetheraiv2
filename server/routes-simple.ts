@@ -745,5 +745,37 @@ export function registerSimpleRoutes(app: express.Application): Server {
 
 
 
+  // AI Design Studio endpoint
+  app.post("/api/ai/design-studio", async (req, res) => {
+    try {
+      const { prompt, context, systemData } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      console.log('🤖 AI Design Studio Request:', { prompt, context, systemData });
+
+      // Add fake user for debugging
+      req.user = { id: 'demo_user' };
+      
+      // Process the AI request based on context
+      const result = await processDesignStudioAIRequest(prompt, context, systemData);
+      
+      console.log('🎯 AI Design Studio Result:', result);
+      res.json(result);
+    } catch (error) {
+      console.error('🚨 AI Design Studio error:', error);
+      console.error('🚨 Error stack:', error.stack);
+      console.error('🚨 Error message:', error.message);
+      console.error('🚨 Request body was:', req.body);
+      res.status(500).json({ 
+        error: `Failed to process AI design request: ${error.message}`,
+        success: false,
+        details: error.stack
+      });
+    }
+  });
+
   return createServer(app);
 }
