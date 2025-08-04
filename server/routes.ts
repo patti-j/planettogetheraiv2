@@ -60,7 +60,7 @@ import {
   // Buffer Management Schemas
   insertBufferDefinitionSchema, insertBufferConsumptionSchema, insertBufferManagementHistorySchema, insertBufferPolicySchema
 } from "@shared/schema";
-import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio } from "./ai-agent";
+import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
 import multer from "multer";
 import session from "express-session";
@@ -2969,6 +2969,30 @@ Return ONLY a valid JSON object with this exact structure:
     } catch (error) {
       console.error('Memory clear error:', error);
       res.status(500).json({ error: 'Failed to clear memories' });
+    }
+  });
+
+  // AI Design Studio endpoint
+  app.post("/api/ai/design-studio", requireAuth, async (req, res) => {
+    try {
+      const { prompt, context, systemData } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      console.log('🤖 AI Design Studio Request:', { prompt, context, systemData });
+
+      // Process the AI request based on context
+      const result = await processDesignStudioAIRequest(prompt, context, systemData);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('AI Design Studio error:', error);
+      res.status(500).json({ 
+        error: 'Failed to process AI design request',
+        success: false
+      });
     }
   });
 

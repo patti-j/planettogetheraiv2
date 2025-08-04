@@ -32,13 +32,54 @@ export function AiDesignStudioMobile({
     if (!aiPrompt.trim()) return;
     
     setIsProcessing(true);
-    console.log('🤖 AI Prompt:', aiPrompt);
+    console.log('🤖 AI Prompt:', aiPrompt, 'Context:', activeTab);
     
-    // Simulate processing
-    setTimeout(() => {
+    try {
+      // Send the AI prompt to the backend for processing
+      const response = await fetch('/api/ai/design-studio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          context: activeTab,
+          systemData: {
+            widgets: widgets.length,
+            dashboards: dashboards.length,
+            pages: pages.length,
+            menuSections: menuItems.length
+          }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🎯 AI Response:', result);
+        
+        // Handle the AI response based on the action type
+        if (result.action === 'create_widget') {
+          // Redirect to widget studio or show success message
+          console.log('✅ Widget creation request processed:', result.details);
+        } else if (result.action === 'modify_dashboard') {
+          console.log('✅ Dashboard modification request processed:', result.details);
+        } else if (result.action === 'create_page') {
+          console.log('✅ Page creation request processed:', result.details);
+        } else if (result.action === 'reorganize_menu') {
+          console.log('✅ Menu reorganization request processed:', result.details);
+        }
+        
+        // Show success feedback
+        console.log('🎉 AI request completed successfully');
+      } else {
+        console.error('❌ AI request failed:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ AI request error:', error);
+    } finally {
       setIsProcessing(false);
       setAiPrompt('');
-    }, 2000);
+    }
   };
 
   // Fetch actual widgets from the system

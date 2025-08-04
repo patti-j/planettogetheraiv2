@@ -37,6 +37,90 @@ export interface SystemContext {
   plants: any[];
 }
 
+export async function processDesignStudioAIRequest(prompt: string, context: string, systemData: any): Promise<AIAgentResponse> {
+  try {
+    console.log('🎯 Processing Design Studio AI request:', { prompt, context, systemData });
+
+    // Get current system data for context
+    const widgets = await storage.getUnifiedWidgets() || [];
+    const dashboards = await storage.getDashboards() || [];
+    
+    const systemPrompt = `You are an AI Design Assistant for a manufacturing ERP system. You help users create, modify, and delete widgets, dashboards, pages, and menu structures.
+
+CURRENT SYSTEM STATE:
+- Widgets: ${systemData.widgets} total (${widgets.slice(0, 3).map(w => w.title).join(', ')}...)
+- Dashboards: ${systemData.dashboards} total
+- Pages: ${systemData.pages} total  
+- Menu Sections: ${systemData.menuSections} total
+
+CONTEXT: Currently working on ${context}
+
+Your capabilities:
+1. CREATE: Generate new widgets, dashboards, pages, or menu structures
+2. MODIFY: Update existing items with new configurations
+3. DELETE: Remove outdated or unnecessary items  
+4. REORGANIZE: Restructure menus and layouts for better workflow
+
+Response format: Always return JSON with:
+{
+  "success": true,
+  "action": "create_widget|modify_dashboard|create_page|reorganize_menu|general_info",
+  "message": "User-friendly description of what was done",
+  "details": {
+    "type": "specific action taken",
+    "configuration": "relevant config details",
+    "recommendations": "suggestions for optimization"
+  }
+}
+
+Examples:
+- "Create a new production KPI widget" → action: "create_widget"
+- "Modify the Factory Overview dashboard" → action: "modify_dashboard"  
+- "Add a batch tracking page" → action: "create_page"
+- "Reorganize the menu for operators" → action: "reorganize_menu"
+
+Analyze the user request and determine the appropriate action.`;
+
+    // Use GPT-4o for natural language processing
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7
+    });
+
+    const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
+    console.log('🎯 AI Response generated:', aiResponse);
+
+    // Process the action
+    if (aiResponse.action === 'create_widget') {
+      // Here you could actually create the widget in the database
+      console.log('✅ Would create widget:', aiResponse.details);
+    } else if (aiResponse.action === 'modify_dashboard') {
+      // Here you could modify the dashboard
+      console.log('✅ Would modify dashboard:', aiResponse.details);
+    }
+
+    return {
+      success: true,
+      message: aiResponse.message || 'AI request processed successfully',
+      data: aiResponse,
+      actions: [aiResponse.action]
+    };
+
+  } catch (error) {
+    console.error('Design Studio AI error:', error);
+    return {
+      success: false,
+      message: 'Failed to process design request',
+      data: { error: error.message }
+    };
+  }
+}
+
 export async function processShiftAIRequest(request: any): Promise<AIAgentResponse> {
   try {
     // Get current system context for shift planning
