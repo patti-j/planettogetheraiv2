@@ -449,7 +449,7 @@ function MobilePageContent({ location }: { location: string }) {
       console.log("📅 Rendering Production Schedule page");
       return (
         <MobilePageWrapper>
-          <MobileProductionSchedulePage />
+          <ProductionSchedulePage />
         </MobilePageWrapper>
       );
     case "/dashboard":
