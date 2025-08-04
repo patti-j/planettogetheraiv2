@@ -104,7 +104,7 @@ Analyze the user request and determine the appropriate action.`;
         const widgetData = {
           title: aiResponse.details?.title || `AI Generated Widget ${Date.now()}`,
           subtitle: aiResponse.details?.subtitle || 'Created by AI',
-          targetPlatform: 'both',
+          targetPlatform: 'both' as const,
           widgetType: aiResponse.details?.type || 'list',
           dataSource: aiResponse.details?.dataSource || 'jobs',
           chartType: aiResponse.details?.chartType || null,
@@ -115,8 +115,8 @@ Analyze the user request and determine the appropriate action.`;
           colors: aiResponse.details?.colors || {},
           thresholds: aiResponse.details?.thresholds || {},
           limit: aiResponse.details?.limit || 10,
-          size: aiResponse.details?.size || 'medium',
-          position: { x: 0, y: 0, width: 4, height: 3 },
+          size: { width: 4, height: 3 },
+          position: { x: 0, y: 0 },
           refreshInterval: aiResponse.details?.refreshInterval || 30,
           drillDownTarget: aiResponse.details?.drillDownTarget || null,
           drillDownParams: aiResponse.details?.drillDownParams || {},
@@ -131,10 +131,18 @@ Analyze the user request and determine the appropriate action.`;
           isTemplate: false,
           templateCategory: null
         };
+        
+        console.log('🔍 Widget data before creation:', JSON.stringify(widgetData, null, 2));
 
-        const newWidget = await storage.createWidget(widgetData);
-        console.log('🎯 Widget created successfully:', newWidget);
-        aiResponse.createdWidget = newWidget;
+        try {
+          const newWidget = await storage.createWidget(widgetData);
+          console.log('🎯 Widget created successfully:', newWidget);
+          aiResponse.createdWidget = newWidget;
+        } catch (validationError) {
+          console.error('❌ Widget validation error:', validationError);
+          console.error('❌ Widget data that failed:', JSON.stringify(widgetData, null, 2));
+          throw validationError;
+        }
       } catch (error) {
         console.error('❌ Failed to create widget:', error);
         aiResponse.error = 'Failed to create widget in database';
