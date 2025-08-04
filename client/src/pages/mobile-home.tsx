@@ -425,8 +425,11 @@ function MobilePageContent({ location }: { location: string }) {
     </div>
   );
 
+  console.log("🔍 MobilePageContent - Rendering for location:", location);
+  
   switch (location) {
     case "/production-schedule":
+      console.log("📅 Rendering Production Schedule page");
       return (
         <MobilePageWrapper>
           <MobileProductionSchedulePage />
@@ -1284,7 +1287,12 @@ export default function MobileHomePage() {
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
                   console.log("🏠 Navigating from", location, "to /");
+                  console.log("🏠 setLocation function type:", typeof setLocation);
                   setLocation('/');
+                  console.log("🏠 setLocation called, waiting for location change...");
+                  setTimeout(() => {
+                    console.log("🏠 Location after 100ms:", location);
+                  }, 100);
                 }
               }}
             />
