@@ -12,7 +12,9 @@ import {
   Sparkles,
   Bot,
   Zap,
-  MessageSquare
+  MessageSquare,
+  Eye,
+  Edit3
 } from 'lucide-react';
 
 interface AiDesignStudioMobileProps {
@@ -93,6 +95,17 @@ export function AiDesignStudioMobile({
                 `💡 You can now ask AI to modify this widget!`;
               alert(widgetInfo);
             }
+          } else if (result.data.action === 'modify_widget') {
+            console.log('🎯 Modified Widget:', result.data.modifiedWidget);
+            if (result.data.error) {
+              alert(`❌ Widget modification failed: ${result.data.error}`);
+            } else if (result.data.modifiedWidget) {
+              alert(`✅ Widget "${result.data.modifiedWidget.title}" has been successfully modified with AI improvements!`);
+              // Refresh the widgets list to show updated data
+              refetchWidgets();
+            } else {
+              alert(`Widget modification processed: ${result.data.message}`);
+            }
           } else if (result.data.action === 'preview_item') {
             console.log('🎯 Preview Data:', result.data.previewData);
             const preview = result.data.previewData;
@@ -141,7 +154,7 @@ export function AiDesignStudioMobile({
   };
 
   // Fetch actual widgets from the system
-  const { data: widgets = [], isLoading: widgetsLoading } = useQuery({
+  const { data: widgets = [], isLoading: widgetsLoading, refetch: refetchWidgets } = useQuery({
     queryKey: ['/api/mobile/widgets'],
     select: (data: any) => data?.map((widget: any) => ({
       id: widget.id,
@@ -340,19 +353,34 @@ export function AiDesignStudioMobile({
                 widgets.map((widget: any) => (
                   <div key={widget.id} className="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-medium text-sm">{widget.name}</h3>
+                      <h3 className="font-medium text-sm">{widget.title || widget.name}</h3>
                       <div className="flex gap-1">
                         <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          {widget.type}
+                          {widget.widgetType || widget.type}
                         </span>
                         <span className="text-[10px] bg-green-100 text-green-800 px-2 py-1 rounded">
-                          {widget.source}
+                          {widget.dataSource || widget.source}
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">{widget.description}</p>
-                    <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                      💡 Ask AI to modify, clone, or delete this widget
+                    <p className="text-xs text-gray-600 mb-2">{widget.description || `Widget showing ${widget.dataSource || widget.source} data`}</p>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => setAiPrompt(`Show me the details of ${widget.title || widget.name} widget`)}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </button>
+                      <button
+                        onClick={() => setAiPrompt(`Edit the ${widget.title || widget.name} widget to add better styling and improve functionality`)}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        AI Edit
+                      </button>
                     </div>
                   </div>
                 ))
@@ -377,14 +405,29 @@ export function AiDesignStudioMobile({
                 dashboards.map((dashboard: any) => (
                   <div key={dashboard.id} className="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-medium text-sm">{dashboard.name}</h3>
+                      <h3 className="font-medium text-sm">{dashboard.title || dashboard.name}</h3>
                       <span className="text-[10px] bg-purple-100 text-purple-800 px-2 py-1 rounded">
                         {dashboard.targetPlatform}
                       </span>
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{dashboard.description}</p>
-                    <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                      💡 Ask AI to modify, clone, or delete this dashboard
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => setAiPrompt(`Show me the details of ${dashboard.title || dashboard.name} dashboard`)}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </button>
+                      <button
+                        onClick={() => setAiPrompt(`Edit the ${dashboard.title || dashboard.name} dashboard to improve layout and add more widgets`)}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        AI Edit
+                      </button>
                     </div>
                   </div>
                 ))

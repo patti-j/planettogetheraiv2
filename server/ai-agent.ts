@@ -84,6 +84,11 @@ When viewing widgets, analyze the user request for:
 - References to existing widget names or types
 - Questions about current configuration or status
 
+When modifying widgets, look for:
+- Keywords like "edit", "modify", "change", "update", "improve", "enhance"
+- Specific changes requested (color, chart type, refresh rate, description)
+- References to adding features or improving functionality
+
 Response format: Always return JSON with:
 {
   "success": true,
@@ -105,6 +110,7 @@ Examples:
 - "Show me the Production Overview widget" → action: "view_widget" to display existing widget details
 - "Open the Quality Metrics widget" → action: "view_widget" to display current configuration
 - "View widget details for Equipment Status" → action: "view_widget" to show widget configuration
+- "Edit the Resource Status widget to show more details" → action: "modify_widget" with improvements
 - "Preview the factory dashboard" → action: "preview_item" with mockup data
 
 Analyze the user request and determine the appropriate action.`;
@@ -266,6 +272,93 @@ Analyze the user request and determine the appropriate action.`;
       } catch (error) {
         console.error('❌ Widget viewing failed:', error);
         aiResponse.error = `Failed to view widget: ${error.message}`;
+      }
+    } else if (aiResponse.action === 'modify_widget') {
+      console.log('✏️ Modifying widget based on AI response:', aiResponse);
+      
+      const userPrompt = prompt.toLowerCase();
+      let targetWidget = null;
+      
+      try {
+        // Import database directly
+        const { db } = await import('./db');
+        const { unifiedWidgets } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        const allWidgets = await db.select().from(unifiedWidgets);
+        console.log('🔍 Available widgets for modification:', allWidgets.map(w => ({ id: w.id, title: w.title })));
+        
+        // Find the widget to modify using similar logic as view_widget
+        targetWidget = allWidgets.find(widget => {
+          const title = widget.title?.toLowerCase() || '';
+          const category = widget.category?.toLowerCase() || '';
+          
+          // Match by widget ID if it's a number
+          if (userPrompt.match(/widget (\d+)/) && widget.id === parseInt(userPrompt.match(/widget (\d+)/)[1])) {
+            return true;
+          }
+          
+          // Match by title keywords
+          const titleWords = title.split(' ');
+          const promptWords = userPrompt.split(' ');
+          if (titleWords.some(word => word.length > 2 && promptWords.includes(word)) && titleWords.length > 1) {
+            return true;
+          }
+          
+          // Match by category
+          if (category && userPrompt.includes(category)) {
+            return true;
+          }
+          
+          // Match specific keywords
+          if (userPrompt.includes('production') && (title.includes('production') || category === 'production')) {
+            return true;
+          }
+          if (userPrompt.includes('quality') && (title.includes('quality') || category === 'quality')) {
+            return true;
+          }
+          if (userPrompt.includes('inventory') && (title.includes('inventory') || category === 'inventory')) {
+            return true;
+          }
+          if (userPrompt.includes('resource') && (title.includes('resource') || category === 'resources')) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (targetWidget) {
+          // Apply the modifications suggested by AI
+          const updates = {
+            subtitle: aiResponse.details?.subtitle || targetWidget.subtitle,
+            description: aiResponse.details?.description || targetWidget.description,
+            chartType: aiResponse.details?.chartType || targetWidget.chartType,
+            refreshInterval: aiResponse.details?.refreshInterval || targetWidget.refreshInterval,
+            colors: aiResponse.details?.colors || targetWidget.colors,
+            thresholds: aiResponse.details?.thresholds || targetWidget.thresholds,
+            updatedAt: new Date().toISOString()
+          };
+          
+          console.log('🔧 Applying widget updates:', updates);
+          
+          const updatedWidget = await db
+            .update(unifiedWidgets)
+            .set(updates)
+            .where(eq(unifiedWidgets.id, targetWidget.id))
+            .returning();
+          
+          if (updatedWidget.length > 0) {
+            aiResponse.modifiedWidget = updatedWidget[0];
+            aiResponse.message = `Successfully modified "${targetWidget.title}" widget with ${aiResponse.details?.improvementDescription || 'AI enhancements'}`;
+          } else {
+            aiResponse.error = 'Failed to update widget in database';
+          }
+        } else {
+          aiResponse.error = 'Could not find the widget to modify. Available widgets: ' + 
+                             allWidgets.map(w => w.title).join(', ');
+        }
+      } catch (error) {
+        console.error('❌ Widget modification failed:', error);
+        aiResponse.error = `Failed to modify widget: ${error.message}`;
       }
     } else if (aiResponse.action === 'modify_dashboard') {
       console.log('✅ Dashboard modification logic would go here:', aiResponse.details);
