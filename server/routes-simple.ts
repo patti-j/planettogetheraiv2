@@ -119,10 +119,8 @@ export function registerSimpleRoutes(app: express.Application): Server {
   app.get("/api/auth/me", (req, res) => {
     // Check for stored user in session or token
     const authHeader = req.headers.authorization;
-    console.log("AUTH HEADER DEBUG:", authHeader);
     
     if (authHeader && authHeader.startsWith('Bearer ') && authHeader.includes('trainer_token_')) {
-      console.log("TRAINER AUTH DETECTED - returning trainer user");
       res.json({
         id: "trainer", 
         username: "trainer",
@@ -130,7 +128,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         isDemo: false
       });
     } else {
-      console.log("DEFAULT AUTH - returning demo user");
       res.json({
         id: "demo_user", 
         username: "demo_user",
@@ -147,7 +144,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
       
       // Handle trainer user (case insensitive)
       if (username && username.toLowerCase() === "trainer") {
-        console.log("TRAINER LOGIN DETECTED - username:", username);
         const user = {
           id: "trainer",
           username: "trainer",
@@ -156,7 +152,6 @@ export function registerSimpleRoutes(app: express.Application): Server {
         };
         
         const token = "trainer_token_" + Date.now();
-        console.log("TRAINER TOKEN GENERATED:", token);
         
         res.json({
           user,
