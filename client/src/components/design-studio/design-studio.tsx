@@ -221,7 +221,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
       onOpenChange(newOpen);
     }}>
       <DialogContent className={`
-        ${isMobile ? 'max-w-[95vw] max-h-[90vh]' : 'max-w-6xl max-h-[85vh]'} 
+        ${isMobile ? 'max-w-[95vw] max-h-[90vh] w-[95vw] h-[90vh]' : 'max-w-6xl max-h-[85vh]'} 
         overflow-hidden flex flex-col z-50
       `} style={{ zIndex: 9999 }}>
         <DialogHeader className="flex-shrink-0">
@@ -234,9 +234,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
           </p>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Search and Filter Bar */}
-          <div className="flex items-center gap-4 p-4 border-b flex-shrink-0">
+          <div className={`flex items-center gap-4 ${isMobile ? 'p-3' : 'p-4'} border-b flex-shrink-0`}>
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -263,8 +263,8 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
           </div>
 
           {/* Main Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsList className={`grid w-full grid-cols-4 flex-shrink-0 ${isMobile ? 'm-2' : ''}`}>
               <TabsTrigger value="pages" className="flex items-center gap-2">
                 <Layout className="w-4 h-4" />
                 {!isMobile && 'Pages'}
@@ -285,9 +285,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
 
             <div className="flex-1 min-h-0 overflow-hidden">
               <TabsContent value="pages" className="h-full m-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-4 pb-6">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
                       {filteredPageTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
                           <CardHeader className="pb-3">
@@ -332,9 +332,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
               </TabsContent>
 
               <TabsContent value="widgets" className="h-full m-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-4 pb-6">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
                       {filteredWidgetTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
                           <CardHeader className="pb-3">
@@ -384,9 +384,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
               </TabsContent>
 
               <TabsContent value="dashboards" className="h-full m-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-4 pb-6">
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
                       {filteredDashboardTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
                           <CardHeader className="pb-3">
@@ -428,8 +428,8 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
               </TabsContent>
 
               <TabsContent value="menu" className="h-full m-0 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="p-4 pb-6">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold mb-2">Menu Management</h3>
                       <p className="text-sm text-muted-foreground mb-4">
