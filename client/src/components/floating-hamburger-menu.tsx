@@ -44,13 +44,13 @@ export function FloatingHamburgerMenu({
         <img 
           src={planetTogetherLogo} 
           alt="PlanetTogether" 
-          className="w-12 h-12 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
+          className="w-8 h-8 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
         />
         
         {/* Close icon overlay when open */}
         {isOpen && (
           <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-95 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
-            <X className="w-6 h-6 text-gray-800 dark:text-gray-200 stroke-2" />
+            <X className="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-2" />
           </div>
         )}
       </div>
