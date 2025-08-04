@@ -278,10 +278,11 @@ export default function PageEditMode({
       <div className={`relative ${className}`}>
         {/* Edit Mode Toggle Bar */}
         <div className={`
-          fixed ${isMobile ? 'bottom-4 left-4 right-4' : 'top-4 right-4'} 
+          fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
           z-50 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg
           ${isEditMode ? 'ring-2 ring-blue-500' : ''}
           ${isMobile ? 'p-2' : 'p-2'}
+          ${isMobile && !isEditMode ? 'w-auto' : ''}
         `}>
           <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
             {/* Mobile: Stack vertically when in edit mode, horizontal when not */}
@@ -290,10 +291,10 @@ export default function PageEditMode({
                 onClick={onToggleEditMode}
                 variant={isEditMode ? "default" : "outline"}
                 size={isMobile ? "sm" : "sm"}
-                className={`gap-2 ${isMobile ? 'flex-shrink-0' : ''}`}
+                className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
               >
                 {isEditMode ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                {isMobile && isEditMode ? 'Exit' : isEditMode ? 'Exit Edit' : 'Edit Page'}
+                {!isMobile && (isEditMode ? 'Exit Edit' : 'Edit Page')}
               </Button>
               
               {isEditMode && (
@@ -302,10 +303,10 @@ export default function PageEditMode({
                     onClick={onSave} 
                     variant="outline" 
                     size={isMobile ? "sm" : "sm"}
-                    className={`gap-2 ${isMobile ? 'flex-shrink-0' : ''}`}
+                    className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
                   >
                     <Save className="w-4 h-4" />
-                    {isMobile ? '' : 'Save'}
+                    {!isMobile && 'Save'}
                   </Button>
                   
                   <Dialog open={showSettings} onOpenChange={setShowSettings}>
@@ -313,10 +314,9 @@ export default function PageEditMode({
                       <Button 
                         variant="outline" 
                         size={isMobile ? "sm" : "sm"}
-                        className={isMobile ? 'flex-shrink-0' : ''}
+                        className={`${isMobile ? 'w-10 h-10 p-0' : ''} ${isMobile ? 'flex-shrink-0' : ''}`}
                       >
                         <Settings className="w-4 h-4" />
-                        {isMobile ? '' : ''}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'max-w-md'}`}>
