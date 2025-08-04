@@ -179,21 +179,21 @@ export function AiDesignStudioMobile({
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b bg-gray-50">
+      <div className="flex border-b bg-gray-50 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+            className={`flex-1 min-w-0 px-2 py-2 text-xs font-medium border-b-2 transition-colors ${
               activeTab === tab.id
                 ? 'border-purple-500 text-purple-600 bg-white'
                 : 'border-transparent text-gray-600 hover:text-gray-800'
             }`}
           >
-            <div className="flex items-center justify-center gap-1">
-              <tab.icon className="w-3 h-3" />
-              <span>{tab.name}</span>
-              <span className="text-[10px] bg-gray-200 text-gray-700 px-1 rounded">
+            <div className="flex items-center justify-center gap-1 truncate">
+              <tab.icon className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{tab.name}</span>
+              <span className="text-[10px] bg-gray-200 text-gray-700 px-1 rounded flex-shrink-0">
                 {tab.count}
               </span>
             </div>
@@ -206,7 +206,7 @@ export function AiDesignStudioMobile({
         {/* AI Suggestions Panel */}
         <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
           <div className="flex items-center gap-2 mb-2">
-            <MessageSquare className="w-4 h-4 text-blue-600" />
+            <MessageSquare className="w-4 h-4 text-blue-600 flex-shrink-0" />
             <span className="text-sm font-medium text-blue-800">AI Suggestions</span>
           </div>
           <div className="space-y-1">
@@ -214,7 +214,7 @@ export function AiDesignStudioMobile({
               <button
                 key={index}
                 onClick={() => setAiPrompt(suggestion)}
-                className="block w-full text-left text-xs text-blue-700 hover:text-blue-900 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
+                className="block w-full text-left text-xs text-blue-700 hover:text-blue-900 hover:bg-blue-100 px-2 py-1 rounded transition-colors break-words leading-relaxed"
               >
                 {suggestion}
               </button>
@@ -322,15 +322,15 @@ export function AiDesignStudioMobile({
               </div>
               {menuItems.map((section) => (
                 <div key={section.id} className="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="font-medium text-sm mb-2">{section.name}</h3>
+                  <h3 className="font-medium text-sm mb-2 break-words">{section.name}</h3>
                   <div className="space-y-1">
                     {section.pages.map((pageName, index) => (
-                      <div key={index} className="text-xs text-gray-600 pl-2 border-l-2 border-gray-200">
+                      <div key={index} className="text-xs text-gray-600 pl-2 border-l-2 border-gray-200 break-words leading-relaxed">
                         {pageName}
                       </div>
                     ))}
                   </div>
-                  <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded mt-2">
+                  <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded mt-2 break-words leading-relaxed">
                     💡 Ask AI to reorganize, add pages, or create role-based menus
                   </div>
                 </div>
