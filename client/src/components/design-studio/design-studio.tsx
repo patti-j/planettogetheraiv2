@@ -394,14 +394,16 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   }
 
   console.log("🎨 DesignStudio rendering dialog content");
+  console.log("🎨 isMobile:", isMobile);
+  console.log("🎨 Screen width:", window.innerWidth);
 
   return (
-    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center">
       <div className={`
-        ${isMobile ? 'w-full max-w-sm h-[80vh]' : 'w-full max-w-6xl h-[80vh]'} 
+        w-[90vw] max-w-[280px] h-[85vh] mx-2 
         bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col
       `}>
-        {isMobile ? (
+        {true ? ( // Force mobile layout for now
           <MobileDesignStudio
             activeTab={activeTab}
             setActiveTab={setActiveTab}
