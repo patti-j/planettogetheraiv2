@@ -63,6 +63,7 @@ import {
   Calendar,
   Clock,
   AlertCircle,
+  ArrowLeft,
   AlertTriangle,
   TrendingUp,
   Activity,
@@ -266,14 +267,30 @@ function MobileProductionSchedulePage() {
     operations.some((op: any) => op.assignedResourceId === resource.id && op.status === "running")
   ).length;
 
+  const [, setLocation] = useLocation();
+
   return (
     <div className="p-4 space-y-4">
       {/* Mobile Header */}
-      <div className="text-center">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Production Schedule</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Real-time production scheduling
-        </p>
+      <div className="flex items-center justify-between">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => {
+            console.log("⬅️ Back button clicked from Production Schedule");
+            setLocation('/');
+          }}
+          className="p-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div className="text-center flex-1">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Production Schedule</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Real-time production scheduling
+          </p>
+        </div>
+        <div className="w-9"></div> {/* Spacer for balance */}
       </div>
 
       {/* Quick Stats Grid */}
@@ -420,7 +437,7 @@ function MobileProductionSchedulePage() {
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
   const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="mobile-page-wrapper w-full h-full max-h-full overflow-auto relative bg-white dark:bg-gray-900" style={{ position: 'relative', zIndex: 1 }}>
+    <div className="mobile-page-wrapper w-full h-full max-h-full overflow-auto relative bg-white dark:bg-gray-900" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
       {children}
     </div>
   );
