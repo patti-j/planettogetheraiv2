@@ -152,6 +152,7 @@ const dashboardTemplates: DashboardTemplate[] = [
 ];
 
 export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
+  console.log("🎨 DesignStudio render - open:", open);
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
   const [activeTab, setActiveTab] = useState('pages');
@@ -194,7 +195,10 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      console.log("🎨 Design Studio dialog onOpenChange:", newOpen);
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className={`
         ${isMobile ? 'max-w-[95vw] max-h-[90vh]' : 'max-w-6xl max-h-[85vh]'} 
         overflow-hidden flex flex-col
