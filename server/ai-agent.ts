@@ -37,6 +37,102 @@ export interface SystemContext {
   plants: any[];
 }
 
+// Helper function to generate content-based tags
+function generateContentBasedTags(details: any): string[] {
+  const tags: string[] = [];
+  
+  if (!details) return ['analytics', 'dashboard', 'metrics'];
+  
+  // Add tags based on data source
+  if (details.dataSource) {
+    switch (details.dataSource.toLowerCase()) {
+      case 'jobs':
+      case 'production':
+        tags.push('production', 'orders', 'manufacturing');
+        break;
+      case 'resources':
+      case 'equipment':
+        tags.push('resources', 'equipment', 'capacity');
+        break;
+      case 'operations':
+        tags.push('operations', 'processes', 'workflow');
+        break;
+      case 'quality':
+      case 'metrics':
+        tags.push('quality', 'compliance', 'testing');
+        break;
+      case 'inventory':
+      case 'stocks':
+        tags.push('inventory', 'materials', 'stock-levels');
+        break;
+      case 'schedule':
+      case 'planning':
+        tags.push('scheduling', 'planning', 'timeline');
+        break;
+      default:
+        tags.push('analytics', 'data');
+    }
+  }
+  
+  // Add tags based on chart type
+  if (details.chartType) {
+    switch (details.chartType.toLowerCase()) {
+      case 'gauge':
+      case 'status':
+        tags.push('status-monitoring', 'real-time', 'dashboard');
+        break;
+      case 'bar':
+      case 'column':
+        tags.push('comparison', 'trends', 'analytics');
+        break;
+      case 'line':
+      case 'timeline':
+        tags.push('trends', 'historical', 'tracking');
+        break;
+      case 'pie':
+      case 'donut':
+        tags.push('distribution', 'breakdown', 'percentages');
+        break;
+      case 'kpi':
+      case 'metric':
+        tags.push('kpi', 'performance', 'key-metrics');
+        break;
+      case 'list':
+      case 'table':
+        tags.push('detailed-view', 'data-table', 'listing');
+        break;
+      default:
+        tags.push('visualization', 'chart');
+    }
+  }
+  
+  // Add tags based on category
+  if (details.category) {
+    tags.push(details.category.toLowerCase().replace(/ /g, '-'));
+  }
+  
+  // Add tags based on title content
+  if (details.title) {
+    const title = details.title.toLowerCase();
+    if (title.includes('efficiency')) tags.push('efficiency', 'optimization');
+    if (title.includes('overview')) tags.push('overview', 'summary');
+    if (title.includes('status')) tags.push('status', 'monitoring');
+    if (title.includes('alert')) tags.push('alerts', 'notifications');
+    if (title.includes('performance')) tags.push('performance', 'benchmarking');
+    if (title.includes('utilization')) tags.push('utilization', 'capacity');
+    if (title.includes('defect') || title.includes('quality')) tags.push('quality-control', 'defects');
+    if (title.includes('maintenance')) tags.push('maintenance', 'upkeep');
+    if (title.includes('forecast')) tags.push('forecasting', 'prediction');
+  }
+  
+  // Add contextual manufacturing tags
+  tags.push('manufacturing');
+  
+  // Remove duplicates and limit to 6 most relevant tags
+  const uniqueTags = [...new Set(tags)];
+  return uniqueTags.slice(0, 6);
+}
+
 export async function processDesignStudioAIRequest(prompt: string, context: string, systemData: any): Promise<AIAgentResponse> {
   try {
     console.log('🎯 Processing Design Studio AI request:', { prompt, context, systemData });
@@ -159,7 +255,7 @@ Analyze the user request and determine the appropriate action.`;
           createdBy: 1, // Use integer ID instead of string
           isShared: true,
           sharedWith: [],
-          tags: aiResponse.details?.tags || ['ai-generated'],
+          tags: generateContentBasedTags(aiResponse.details),
           description: aiResponse.details?.description || 'Manufacturing widget created by AI to track key production metrics and performance indicators',
           category: aiResponse.details?.category || 'production',
           isTemplate: false,

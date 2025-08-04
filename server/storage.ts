@@ -10564,7 +10564,7 @@ export class DatabaseStorage implements IStorage {
         requestConfig: { timeout: 30000, retries: 3, retryDelay: 1000 },
         dataTypes: this.getSystemTypeDataTypes(systemType),
         capabilities: ['read', 'write'],
-        tags: ['ai-generated', systemType, provider.toLowerCase()],
+        tags: ['integration', 'api', systemType, provider.toLowerCase(), 'automation'],
         metadata: { aiPrompt: prompt },
         createdBy: userId,
       };
