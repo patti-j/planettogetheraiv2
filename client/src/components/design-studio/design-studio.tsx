@@ -39,7 +39,7 @@ import { apiRequest } from '@/lib/queryClient';
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
 import AIDesignStudio from '@/components/ai-design-studio';
-import { MobileDesignStudio } from './design-studio-mobile';
+import { MobileDesignStudioNew } from './mobile-design-studio-new';
 
 interface DesignStudioProps {
   open: boolean;
@@ -398,35 +398,18 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   console.log("🎨 Screen width:", window.innerWidth);
 
   return (
-    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className={`
-        w-[90vw] max-w-[280px] h-[85vh] mx-2 
-        bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col
-      `}>
-        {true ? ( // Force mobile layout for now
-          <MobileDesignStudio
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            onClose={() => onOpenChange(false)}
-            onAiAssistant={() => setAiDesignStudioOpen(true)}
-            filteredWidgetTemplates={filteredWidgetTemplates}
-            filteredDashboardTemplates={filteredDashboardTemplates}
-            onCreateWidget={(template) => {
-              const newWidget = {
-                title: template.name,
-                type: template.type,
-                category: template.category,
-                targetPlatform: template.targetPlatform,
-                description: template.description,
-                isTemplate: true,
-                templateId: template.id
-              };
-              setEditingWidget(newWidget);
-              setWidgetStudioOpen(true);
-            }}
-            onCreateDashboard={handleCreateDashboard}
-          />
-        ) : (
+    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center p-2">
+      <div className="w-full max-w-sm h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden">
+        <MobileDesignStudioNew
+          onClose={() => onOpenChange(false)}
+          onAiAssistant={() => setAiDesignStudioOpen(true)}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default DesignStudio;
           // Desktop: Existing layout with constrained height  
           <>
             <div className="flex-shrink-0 p-6 pb-4">

@@ -122,7 +122,7 @@ import {
 // Import widget components
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { WidgetConfig } from '@/lib/widget-library';
-import DesignStudio from '@/components/design-studio/design-studio';
+import DesignStudio from '@/components/design-studio/design-studio-clean';
 
 // Import page components for mobile routing - only import existing pages
 import ProductionSchedulePage from "@/pages/production-schedule";
