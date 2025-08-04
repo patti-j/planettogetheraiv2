@@ -497,13 +497,17 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                         <div className="flex items-center gap-2">
                           <Button 
                             size="sm" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🔘 Create button clicked for widget:', template.name);
-                              handleCreateWidget(template);
+                            onClick={() => {
+                              console.log('🔘 MOBILE Create button clicked for widget:', template.name);
+                              console.log('🔘 Template data:', template);
+                              try {
+                                handleCreateWidget(template);
+                              } catch (error) {
+                                console.error('❌ Error in handleCreateWidget:', error);
+                              }
                             }}
                             className="flex-1"
+                            type="button"
                           >
                             <Plus className="w-3 h-3 mr-1" />
                             Create
@@ -511,74 +515,16 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🔘 Edit button clicked for widget:', template.name);
-                              handleEditWidget(template);
+                            onClick={() => {
+                              console.log('🔘 MOBILE Edit button clicked for widget:', template.name);
+                              console.log('🔘 Template data:', template);
+                              try {
+                                handleEditWidget(template);
+                              } catch (error) {
+                                console.error('❌ Error in handleEditWidget:', error);
+                              }
                             }}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="widgets" className="p-3 pb-8 m-0">
-                <div className="grid gap-4 grid-cols-1">
-                  {filteredWidgetTemplates.map((template) => (
-                    <Card key={template.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-base">{template.name}</CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {template.category}
-                              </Badge>
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs flex items-center gap-1"
-                              >
-                                {template.targetPlatform === 'mobile' && <Smartphone className="w-3 h-3" />}
-                                {template.targetPlatform === 'desktop' && <Monitor className="w-3 h-3" />}
-                                {template.targetPlatform === 'both' && <Grid className="w-3 h-3" />}
-                                {template.targetPlatform}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {template.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🔘 Create button clicked for widget:', template.name);
-                              handleCreateWidget(template);
-                            }}
-                            className="flex-1"
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Create
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('🔘 Edit button clicked for widget:', template.name);
-                              handleEditWidget(template);
-                            }}
+                            type="button"
                           >
                             <Edit3 className="w-3 h-3" />
                           </Button>
