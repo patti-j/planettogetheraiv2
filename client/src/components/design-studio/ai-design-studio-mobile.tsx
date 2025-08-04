@@ -31,6 +31,7 @@ export function AiDesignStudioMobile({
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [previewItem, setPreviewItem] = React.useState<any>(null);
   const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | null>(null);
+  const [loadingWidgetId, setLoadingWidgetId] = React.useState<number | null>(null);
 
   const handleAiPrompt = async (promptOverride?: string) => {
     const finalPrompt = promptOverride || aiPrompt;
@@ -378,7 +379,7 @@ export function AiDesignStudioMobile({
                       <button
                         onClick={async () => {
                           console.log('🔍 Preview button clicked for widget:', widget.title || widget.name);
-                          setIsProcessing(true);
+                          setLoadingWidgetId(widget.id);
                           
                           try {
                             const response = await fetch('/api/ai/design-studio', {
@@ -393,22 +394,37 @@ export function AiDesignStudioMobile({
                             
                             if (response.ok) {
                               const result = await response.json();
+                              console.log('🎯 Preview response:', result);
                               if (result.success && result.data?.currentWidget) {
                                 setPreviewItem(result.data.currentWidget);
                                 setPreviewType('widget');
+                                console.log('✅ Opening preview dialog for:', result.data.currentWidget.title);
+                              } else {
+                                console.log('❌ No currentWidget in response:', result);
+                                // Fallback: use the widget data we already have
+                                setPreviewItem(widget);
+                                setPreviewType('widget');
                               }
+                            } else {
+                              console.log('❌ API response not ok:', response.status);
+                              // Fallback: use the widget data we already have
+                              setPreviewItem(widget);
+                              setPreviewType('widget');
                             }
                           } catch (error) {
                             console.error('Preview error:', error);
+                            // Fallback: use the widget data we already have
+                            setPreviewItem(widget);
+                            setPreviewType('widget');
                           } finally {
-                            setIsProcessing(false);
+                            setLoadingWidgetId(null);
                           }
                         }}
                         className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
-                        disabled={isProcessing}
+                        disabled={loadingWidgetId === widget.id}
                       >
                         <Eye className="w-3 h-3" />
-                        {isProcessing ? 'Loading...' : 'Preview & Edit'}
+                        {loadingWidgetId === widget.id ? 'Loading...' : 'Preview & Edit'}
                       </button>
                     </div>
                   </div>
@@ -446,23 +462,20 @@ export function AiDesignStudioMobile({
                       <button
                         onClick={async () => {
                           console.log('🔍 Preview button clicked for dashboard:', dashboard.title || dashboard.name);
-                          setIsProcessing(true);
                           
                           try {
                             // For dashboards, just show the basic info for now
                             setPreviewItem(dashboard);
                             setPreviewType('dashboard');
+                            console.log('✅ Opening preview dialog for dashboard:', dashboard.title);
                           } catch (error) {
                             console.error('Preview error:', error);
-                          } finally {
-                            setIsProcessing(false);
                           }
                         }}
                         className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
-                        disabled={isProcessing}
                       >
                         <Eye className="w-3 h-3" />
-                        {isProcessing ? 'Loading...' : 'Preview & Edit'}
+                        Preview & Edit
                       </button>
                     </div>
                   </div>
@@ -556,11 +569,11 @@ export function AiDesignStudioMobile({
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chart Type</label>
-                        <p className="text-sm mt-1">{previewItem.chartType || 'N/A'}</p>
+                        <p className="text-sm mt-1">{previewItem.chartType || previewItem.chart_type || previewItem.type || 'N/A'}</p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Source</label>
-                        <p className="text-sm mt-1">{previewItem.dataSource || 'N/A'}</p>
+                        <p className="text-sm mt-1">{previewItem.dataSource || previewItem.data_source || previewItem.source || 'N/A'}</p>
                       </div>
                     </div>
 
@@ -571,13 +584,13 @@ export function AiDesignStudioMobile({
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Refresh Rate</label>
-                        <p className="text-sm mt-1">{previewItem.refreshInterval || 'N/A'}s</p>
+                        <p className="text-sm mt-1">{previewItem.refreshInterval || previewItem.refresh_interval || 'N/A'}s</p>
                       </div>
                     </div>
 
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Platform</label>
-                      <p className="text-sm mt-1">{previewItem.targetPlatform || 'N/A'}</p>
+                      <p className="text-sm mt-1">{previewItem.targetPlatform || previewItem.target_platform || 'N/A'}</p>
                     </div>
 
                     {previewItem.tags && previewItem.tags.length > 0 && (
