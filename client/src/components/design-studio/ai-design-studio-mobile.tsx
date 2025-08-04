@@ -103,9 +103,14 @@ export function AiDesignStudioMobile({
             
             if (result.data.createdWidget) {
               const widget = result.data.createdWidget;
-              alert(`✅ Widget Created Successfully!\n\nTitle: ${widget.title}\nSubtitle: ${widget.subtitle}\nDescription: ${widget.description}\n\nCheck your widgets list to see it in action.`);
-              // Optionally reload the widgets list
-              window.location.reload();
+              console.log('✅ Setting preview item to newly created widget:', widget.title);
+              
+              // Show the preview window for the newly created widget
+              setPreviewItem(widget);
+              setPreviewType('widget');
+              
+              // Refresh the widgets list to show the new widget
+              refetchWidgets();
             } else if (result.data.error) {
               alert(`❌ Widget creation failed: ${result.data.error}`);
             } else {
