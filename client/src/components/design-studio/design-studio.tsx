@@ -408,8 +408,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         ${isMobile ? 'p-0' : ''} flex flex-col z-50
       `} style={{ zIndex: 9999 }}>
         {isMobile ? (
-          // Mobile: Proper scrollable layout
-          <div className="h-full flex flex-col">
+          // Mobile: Simple scrollable layout  
+          <div className="h-full overflow-auto">
             <DialogHeader className="p-4 border-b flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <Palette className="w-5 h-5 text-purple-600" />
@@ -454,29 +454,40 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </div>
 
             {/* Main Content - Mobile Scrollable */}
-            <div className="flex-1 overflow-hidden">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-4 m-2 bg-background border-b flex-shrink-0">
-                  <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
-                    <Component className="w-4 h-4" />
-                    <span className="text-xs">Widgets</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="dashboards" className="flex flex-col items-center gap-1 py-3">
-                    <BarChart3 className="w-4 h-4" />
-                    <span className="text-xs">Dashboards</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
-                    <Layout className="w-4 h-4" />
-                    <span className="text-xs">Pages</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="menu" className="flex flex-col items-center gap-1 py-3">
-                    <Settings className="w-4 h-4" />
-                    <span className="text-xs">Menu</span>
-                  </TabsTrigger>
-                </TabsList>
+            <div className="flex-1 flex flex-col">
+              <div className="grid w-full grid-cols-4 m-2 bg-background border-b flex-shrink-0">
+                <button
+                  onClick={() => setActiveTab('widgets')}
+                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'widgets' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <Component className="w-4 h-4" />
+                  <span className="text-xs">Widgets</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('dashboards')}
+                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'dashboards' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="text-xs">Dashboards</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('pages')}
+                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'pages' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <Layout className="w-4 h-4" />
+                  <span className="text-xs">Pages</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('menu')}
+                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'menu' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="text-xs">Menu</span>
+                </button>
+              </div>
 
-                <div className="flex-1" style={{ height: 'calc(100vh - 300px)', overflow: 'auto' }}>
-                <TabsContent value="widgets" className="p-3 pb-20 m-0">
+              <div className="flex-1 overflow-auto p-3 pb-20">
+                {activeTab === 'widgets' && (
                 <div className="grid gap-4 grid-cols-1">
                   {filteredWidgetTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -545,10 +556,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       </CardContent>
                     </Card>
                   ))}
-                  </div>
-                </TabsContent>
+                </div>
+                )}
 
-                <TabsContent value="dashboards" className="p-3 pb-8 m-0">
+                {activeTab === 'dashboards' && (
                 <div className="grid gap-4 grid-cols-1">
                   {filteredDashboardTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -588,18 +599,17 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       </CardContent>
                     </Card>
                   ))}
-                  </div>
-                </TabsContent>
+                </div>
+                )}
 
-                <TabsContent value="menu" className="p-3 pb-8 m-0">
+                {activeTab === 'menu' && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Menu management coming soon</p>
                     <p className="text-sm">Configure sidebar navigation and organization</p>
                   </div>
-                </TabsContent>
-                </div>
-              </Tabs>
+                )}
+              </div>
             </div>
           </div>
         ) : (
