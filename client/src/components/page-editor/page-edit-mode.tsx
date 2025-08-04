@@ -276,76 +276,71 @@ export default function PageEditMode({
   return (
     <DndProvider backend={dndBackend} options={dndOptions}>
       <div className={`relative ${className}`}>
-        {/* Edit Mode Toggle Bar */}
-        <div className={`
-          fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
-          z-50 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg
-          ${isEditMode ? 'ring-2 ring-blue-500' : ''}
-          ${isMobile ? 'p-2' : 'p-2'}
-          ${isMobile && !isEditMode ? 'w-auto' : ''}
-        `}>
-          <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
-            {/* Mobile: Stack vertically when in edit mode, horizontal when not */}
-            <div className={`flex items-center gap-2 ${isMobile && isEditMode ? 'flex-wrap justify-center w-full' : ''}`}>
-              <Button
-                onClick={onToggleEditMode}
-                variant={isEditMode ? "default" : "outline"}
-                size={isMobile ? "sm" : "sm"}
-                className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
-              >
-                {isEditMode ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                {!isMobile && (isEditMode ? 'Exit Edit' : 'Edit Page')}
-              </Button>
+        {/* Edit Mode Controls Bar - Only show when in edit mode */}
+        {isEditMode && (
+          <div className={`
+            fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
+            z-50 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg ring-2 ring-blue-500
+            ${isMobile ? 'p-2' : 'p-2'}
+          `}>
+            <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
+              <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : ''}`}>
+                <Button
+                  onClick={onToggleEditMode}
+                  variant="default"
+                  size={isMobile ? "sm" : "sm"}
+                  className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
+                >
+                  <X className="w-4 h-4" />
+                  {!isMobile && 'Exit Edit'}
+                </Button>
+                
+                <Button 
+                  onClick={onSave} 
+                  variant="outline" 
+                  size={isMobile ? "sm" : "sm"}
+                  className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
+                >
+                  <Save className="w-4 h-4" />
+                  {!isMobile && 'Save'}
+                </Button>
+                
+                <Dialog open={showSettings} onOpenChange={setShowSettings}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size={isMobile ? "sm" : "sm"}
+                      className={`${isMobile ? 'w-10 h-10 p-0' : ''} ${isMobile ? 'flex-shrink-0' : ''}`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'max-w-md'}`}>
+                    <DialogHeader>
+                      <DialogTitle>Page Settings</DialogTitle>
+                    </DialogHeader>
+                    <PageSettingsPanel 
+                      layout={layout}
+                      onLayoutChange={onLayoutChange}
+                      pageTitle={pageTitle}
+                      onPageTitleChange={onPageTitleChange}
+                      pageDescription={pageDescription}
+                      onPageDescriptionChange={onPageDescriptionChange}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
               
-              {isEditMode && (
-                <>
-                  <Button 
-                    onClick={onSave} 
-                    variant="outline" 
-                    size={isMobile ? "sm" : "sm"}
-                    className={`${isMobile ? 'w-10 h-10 p-0' : 'gap-2'} ${isMobile ? 'flex-shrink-0' : ''}`}
-                  >
-                    <Save className="w-4 h-4" />
-                    {!isMobile && 'Save'}
-                  </Button>
-                  
-                  <Dialog open={showSettings} onOpenChange={setShowSettings}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size={isMobile ? "sm" : "sm"}
-                        className={`${isMobile ? 'w-10 h-10 p-0' : ''} ${isMobile ? 'flex-shrink-0' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'max-w-md'}`}>
-                      <DialogHeader>
-                        <DialogTitle>Page Settings</DialogTitle>
-                      </DialogHeader>
-                      <PageSettingsPanel 
-                        layout={layout}
-                        onLayoutChange={onLayoutChange}
-                        pageTitle={pageTitle}
-                        onPageTitleChange={onPageTitleChange}
-                        pageDescription={pageDescription}
-                        onPageDescriptionChange={onPageDescriptionChange}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </>
+              {!isMobile && (
+                <div className="flex items-center gap-1">
+                  <Badge variant="secondary" className="text-xs">
+                    <Monitor className="w-3 h-3" />
+                  </Badge>
+                </div>
               )}
             </div>
-            
-            {isEditMode && !isMobile && (
-              <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">
-                  <Monitor className="w-3 h-3" />
-                </Badge>
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Widget Palette */}
         {isEditMode && (

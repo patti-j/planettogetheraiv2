@@ -168,7 +168,17 @@ export default function ProductionSchedulePage() {
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Calendar className={`text-blue-600 ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
           <div className="min-w-0 flex-1">
-            <h1 className={`font-bold truncate ${isMobile ? 'text-lg' : 'text-2xl'}`}>{layout.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className={`font-bold truncate ${isMobile ? 'text-lg' : 'text-2xl'}`}>{layout.title}</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleEditMode}
+                className={`${isMobile ? 'w-6 h-6 p-0' : 'w-7 h-7 p-0'} opacity-60 hover:opacity-100 transition-opacity`}
+              >
+                <Edit className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+              </Button>
+            </div>
             {!isMobile && (
               <p className="text-muted-foreground text-sm">
                 {layout.description || "Manage production orders, operations, and resource assignments"}
@@ -181,14 +191,6 @@ export default function ProductionSchedulePage() {
           {isMobile ? (
             // Mobile: Show only essential buttons
             <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={toggleEditMode}
-                className="w-9 h-9 p-0"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
               {canCreateSchedule && (
                 <Button variant="default" size="sm" className="w-9 h-9 p-0">
                   <Plus className="w-4 h-4" />
@@ -198,16 +200,6 @@ export default function ProductionSchedulePage() {
           ) : (
             // Desktop: Show all buttons with text
             <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={toggleEditMode}
-                className="gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Edit Page
-              </Button>
-              
               {canCreateSchedule && (
                 <Button variant="default" size="sm" className="gap-2">
                   <Plus className="w-4 h-4" />
