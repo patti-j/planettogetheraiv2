@@ -511,6 +511,7 @@ function MobilePageContent({ location }: { location: string }) {
 function MobileMenuTrigger() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [, setLocation] = useLocation();
   
   const handleToggle = (open: boolean) => {
     console.log("🍔 Mobile Hamburger clicked! Setting open to:", open);
@@ -580,10 +581,17 @@ function MobileMenuTrigger() {
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Planning & Scheduling</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href="/production-schedule" className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                    <div 
+                      className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        console.log("📅 Production Schedule clicked from hamburger menu");
+                        setIsOpen(false); // Close menu first
+                        setLocation('/production-schedule'); // Then navigate
+                      }}
+                    >
                       <BarChart3 className="w-5 h-5 text-blue-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Production Schedule</span>
-                    </Link>
+                    </div>
                     <Link href="/optimize-orders" className="flex flex-col items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
                       <Sparkles className="w-5 h-5 text-amber-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Order Optimization</span>

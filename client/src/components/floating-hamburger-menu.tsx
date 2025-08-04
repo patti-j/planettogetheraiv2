@@ -17,8 +17,8 @@ export function FloatingHamburgerMenu({
   showOnMobile = true 
 }: FloatingHamburgerMenuProps) {
   const handleClick = () => {
-    console.log("🏠 Logo clicked! Navigating to homepage");
-    window.location.href = '/';
+    console.log("🏠 FloatingHamburger logo clicked - this should not be used in mobile");
+    // Don't navigate - this component conflicts with mobile navigation
   };
 
   // Show/hide based on device type
