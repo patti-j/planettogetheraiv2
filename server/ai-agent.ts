@@ -163,7 +163,7 @@ Your capabilities:
 1. CREATE: Generate new widgets, dashboards, pages, or menu structures with descriptive names
 2. VIEW/OPEN: Display existing widgets, dashboards, or pages with their current configuration and data
 3. MODIFY: Update existing items with new configurations based on current state
-4. DELETE: Remove outdated or unnecessary items  
+4. DELETE: Remove outdated or unnecessary items (with confirmation required)
 5. REORGANIZE: Restructure menus and layouts for better workflow
 6. PREVIEW: Show mockup data for widgets, dashboards, or pages
 
@@ -280,6 +280,88 @@ Analyze the user request and determine the appropriate action.`;
       } catch (error) {
         console.error('❌ Failed to create widget:', error);
         aiResponse.error = 'Failed to create widget in database';
+      }
+    } else if (aiResponse.action === 'delete_widget') {
+      console.log('🗑️ Deleting widget based on AI response:', aiResponse);
+      
+      try {
+        const { db } = await import('./db');
+        const { unifiedWidgets } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        // Find the widget to delete
+        const allWidgets = await db.select().from(unifiedWidgets);
+        const userPrompt = prompt.toLowerCase();
+        
+        const targetWidget = allWidgets.find(widget => {
+          const title = widget.title?.toLowerCase() || '';
+          const titleWords = title.split(' ');
+          const promptWords = userPrompt.split(' ');
+          
+          // Match by widget ID
+          if (userPrompt.match(/widget (\d+)/) && widget.id === parseInt(userPrompt.match(/widget (\d+)/)[1])) {
+            return true;
+          }
+          
+          // Match by title keywords
+          if (titleWords.some(word => word.length > 2 && promptWords.includes(word))) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (targetWidget) {
+          await db.delete(unifiedWidgets).where(eq(unifiedWidgets.id, targetWidget.id));
+          aiResponse.message = `Successfully deleted "${targetWidget.title}" widget`;
+          aiResponse.deletedWidget = targetWidget;
+        } else {
+          aiResponse.error = 'Could not find the widget to delete. Please specify the widget name or ID.';
+        }
+      } catch (error) {
+        console.error('❌ Widget deletion failed:', error);
+        aiResponse.error = `Failed to delete widget: ${error.message}`;
+      }
+    } else if (aiResponse.action === 'delete_dashboard') {
+      console.log('🗑️ Deleting dashboard based on AI response:', aiResponse);
+      
+      try {
+        const { db } = await import('./db');
+        const { dashboards } = await import('../shared/schema');
+        const { eq } = await import('drizzle-orm');
+        
+        // Find the dashboard to delete
+        const allDashboards = await db.select().from(dashboards);
+        const userPrompt = prompt.toLowerCase();
+        
+        const targetDashboard = allDashboards.find(dashboard => {
+          const title = dashboard.title?.toLowerCase() || '';
+          const titleWords = title.split(' ');
+          const promptWords = userPrompt.split(' ');
+          
+          // Match by dashboard ID
+          if (userPrompt.match(/dashboard (\d+)/) && dashboard.id === parseInt(userPrompt.match(/dashboard (\d+)/)[1])) {
+            return true;
+          }
+          
+          // Match by title keywords
+          if (titleWords.some(word => word.length > 2 && promptWords.includes(word))) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (targetDashboard) {
+          await db.delete(dashboards).where(eq(dashboards.id, targetDashboard.id));
+          aiResponse.message = `Successfully deleted "${targetDashboard.title}" dashboard`;
+          aiResponse.deletedDashboard = targetDashboard;
+        } else {
+          aiResponse.error = 'Could not find the dashboard to delete. Please specify the dashboard name or ID.';
+        }
+      } catch (error) {
+        console.error('❌ Dashboard deletion failed:', error);
+        aiResponse.error = `Failed to delete dashboard: ${error.message}`;
       }
     } else if (aiResponse.action === 'view_widget') {
       console.log('👁️ Viewing widget based on AI response:', aiResponse);

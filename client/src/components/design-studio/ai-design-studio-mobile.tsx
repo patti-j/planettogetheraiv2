@@ -14,7 +14,8 @@ import {
   Zap,
   MessageSquare,
   Eye,
-  Edit3
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 interface AiDesignStudioMobileProps {
@@ -32,6 +33,11 @@ export function AiDesignStudioMobile({
   const [previewItem, setPreviewItem] = React.useState<any>(null);
   const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | null>(null);
   const [loadingWidgetId, setLoadingWidgetId] = React.useState<number | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
+    item: any;
+    type: 'widget' | 'dashboard';
+    isOpen: boolean;
+  }>({ item: null, type: 'widget', isOpen: false });
 
   // Debug effect to track state changes
   React.useEffect(() => {
@@ -160,6 +166,26 @@ export function AiDesignStudioMobile({
           } else if (result.data.action === 'reorganize_menu') {
             console.log('🎯 Menu Reorganization Details:', result.data.details);
             alert(`Menu reorganization processed: ${result.data.message}`);
+          } else if (result.data.action === 'delete_widget') {
+            console.log('🗑️ Widget Deletion:', result.data.deletedWidget);
+            if (result.data.error) {
+              alert(`❌ Widget deletion failed: ${result.data.error}`);
+            } else if (result.data.deletedWidget) {
+              alert(`✅ Widget "${result.data.deletedWidget.title}" has been successfully deleted!`);
+              refetchWidgets();
+            } else {
+              alert(`Widget deletion processed: ${result.data.message}`);
+            }
+          } else if (result.data.action === 'delete_dashboard') {
+            console.log('🗑️ Dashboard Deletion:', result.data.deletedDashboard);
+            if (result.data.error) {
+              alert(`❌ Dashboard deletion failed: ${result.data.error}`);
+            } else if (result.data.deletedDashboard) {
+              alert(`✅ Dashboard "${result.data.deletedDashboard.title}" has been successfully deleted!`);
+              refetchDashboards();
+            } else {
+              alert(`Dashboard deletion processed: ${result.data.message}`);
+            }
           }
           
           console.log('🎉 AI request completed successfully:', result.data.message);
@@ -199,7 +225,7 @@ export function AiDesignStudioMobile({
   });
 
   // Fetch actual dashboards from the system
-  const { data: dashboards = [], isLoading: dashboardsLoading } = useQuery({
+  const { data: dashboards = [], isLoading: dashboardsLoading, refetch: refetchDashboards } = useQuery({
     queryKey: ['/api/mobile/dashboards'],
     select: (data: any) => data?.map((dashboard: any) => ({
       id: dashboard.id,
@@ -398,8 +424,8 @@ export function AiDesignStudioMobile({
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{widget.description || `Widget showing ${widget.dataSource || widget.source} data`}</p>
                     
-                    {/* Preview Button */}
-                    <div className="mt-3">
+                    {/* Action Buttons */}
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={async () => {
                           console.log('🔍 Preview button clicked for widget:', widget.title || widget.name);
@@ -445,11 +471,24 @@ export function AiDesignStudioMobile({
                             setLoadingWidgetId(null);
                           }
                         }}
-                        className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
                         disabled={loadingWidgetId === widget.id}
                       >
                         <Eye className="w-3 h-3" />
-                        {loadingWidgetId === widget.id ? 'Loading...' : 'Preview & Edit'}
+                        {loadingWidgetId === widget.id ? 'Loading...' : 'Preview'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteConfirmation({
+                            item: widget,
+                            type: 'widget',
+                            isOpen: true
+                          });
+                        }}
+                        className="flex items-center justify-center gap-1 text-xs bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -482,8 +521,8 @@ export function AiDesignStudioMobile({
                     </div>
                     <p className="text-xs text-gray-600 mb-2">{dashboard.description}</p>
                     
-                    {/* Preview Button */}
-                    <div className="mt-3">
+                    {/* Action Buttons */}
+                    <div className="mt-3 flex gap-2">
                       <button
                         onClick={async () => {
                           console.log('🔍 Preview button clicked for dashboard:', dashboard.title || dashboard.name);
@@ -497,10 +536,23 @@ export function AiDesignStudioMobile({
                             console.error('Preview error:', error);
                           }
                         }}
-                        className="w-full flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
+                        className="flex-1 flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
                       >
                         <Eye className="w-3 h-3" />
-                        Preview & Edit
+                        Preview
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteConfirmation({
+                            item: dashboard,
+                            type: 'dashboard',
+                            isOpen: true
+                          });
+                        }}
+                        className="flex items-center justify-center gap-1 text-xs bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -892,6 +944,126 @@ export function AiDesignStudioMobile({
               </div>
 
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmation.isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setDeleteConfirmation({ item: null, type: 'widget', isOpen: false });
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-gray-900">
+                  Delete {deleteConfirmation.type}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete "{deleteConfirmation.item?.title || deleteConfirmation.item?.name}"? 
+              This will permanently remove the {deleteConfirmation.type} and all its data.
+            </p>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setDeleteConfirmation({ item: null, type: 'widget', isOpen: false })}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                onClick={async () => {
+                  setIsProcessing(true);
+                  const prompt = `Delete ${deleteConfirmation.type} "${deleteConfirmation.item?.title || deleteConfirmation.item?.name}"`;
+                  
+                  try {
+                    const response = await fetch('/api/ai/design-studio', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        prompt,
+                        context: deleteConfirmation.type === 'widget' ? 'widgets' : 'dashboards',
+                        systemData: {
+                          widgets: widgets.length,
+                          dashboards: dashboards.length,
+                          pages: 30,
+                          menuSections: 7
+                        }
+                      })
+                    });
+                    
+                    const result = await response.json();
+                    console.log('🗑️ Delete Result:', result);
+                    
+                    if (result.success) {
+                      // Refresh data after deletion
+                      await Promise.all([
+                        refetchWidgets(),
+                        refetchDashboards()
+                      ]);
+                      
+                      setDeleteConfirmation({ item: null, type: 'widget', isOpen: false });
+                      
+                      // Close preview if the deleted item was being previewed
+                      if (previewItem && previewItem.id === deleteConfirmation.item?.id) {
+                        setPreviewItem(null);
+                        setPreviewType(null);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Delete request failed:', error);
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Delete'
+                )}
+              </Button>
             </div>
           </div>
         </div>
