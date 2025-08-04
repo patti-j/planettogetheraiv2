@@ -29,7 +29,8 @@ import {
   MoreVertical,
   Bot,
   Sparkles,
-  Wand2
+  Wand2,
+  X
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useToast } from '@/hooks/use-toast';
@@ -394,22 +395,26 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   console.log("🎨 DesignStudio rendering dialog content");
 
   return (
-    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center">
+    <div style={{ zIndex: 2147483649 }} className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
       <div className={`
-        ${isMobile ? 'w-[95vw] h-[85vh]' : 'w-full max-w-6xl h-[85vh]'} 
-        bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col mx-4
+        ${isMobile ? 'w-full max-w-sm h-[80vh]' : 'w-full max-w-6xl h-[80vh]'} 
+        bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col
       `}>
         {isMobile ? (
-          // Mobile: Simple scrollable layout  
-          <div className="h-full overflow-auto">
-            <div className="p-4 border-b flex-shrink-0">
-              <div className="flex items-center gap-2 mb-2">
-                <Palette className="w-5 h-5 text-purple-600" />
-                <h2 className="text-lg font-semibold">Design Studio</h2>
+          // Mobile: Compact scrollable layout
+          <div className="h-full flex flex-col">
+            {/* Header */}
+            <div className="p-3 border-b flex-shrink-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Palette className="w-4 h-4 text-purple-600" />
+                <h2 className="text-sm font-semibold">Design Studio</h2>
+                <button 
+                  onClick={() => onOpenChange(false)}
+                  className="ml-auto p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Create and manage pages, dashboards, and widgets in one integrated workspace
-              </p>
             </div>
 
             {/* AI Design Assistant Button - Mobile */}
