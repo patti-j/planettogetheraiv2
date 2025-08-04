@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import planetTogetherLogo from "@/assets/planet-together-logo.png";
 
 interface FloatingHamburgerMenuProps {
@@ -47,11 +47,8 @@ export function FloatingHamburgerMenu({
             alt="PlanetTogether" 
             className="w-6 h-6 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
           />
-          {/* Hamburger lines underneath logo */}
-          <div className="flex flex-col gap-0.5">
-            <div className="w-4 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full"></div>
-            <div className="w-3 h-0.5 bg-gray-600 dark:bg-gray-300 rounded-full"></div>
-          </div>
+          {/* Chevron down arrow underneath logo */}
+          <ChevronDown className="w-3 h-3 text-gray-600 dark:text-gray-300" />
         </div>
         
         {/* Close icon overlay when open */}
