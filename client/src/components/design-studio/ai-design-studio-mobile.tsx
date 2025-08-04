@@ -679,7 +679,37 @@ export function AiDesignStudioMobile({
 
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Platform</label>
-                      <p className="text-sm mt-1">{previewItem.targetPlatform || previewItem.target_platform || 'N/A'}</p>
+                      <div className="text-sm mt-1">
+                        {(() => {
+                          const platform = previewItem.targetPlatform || previewItem.target_platform || 'N/A';
+                          if (platform === 'both') {
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+                                  📱 Mobile
+                                </span>
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded flex items-center gap-1">
+                                  🖥️ Desktop
+                                </span>
+                              </div>
+                            );
+                          } else if (platform === 'mobile') {
+                            return (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+                                📱 Mobile
+                              </span>
+                            );
+                          } else if (platform === 'desktop') {
+                            return (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded flex items-center gap-1">
+                                🖥️ Desktop
+                              </span>
+                            );
+                          } else {
+                            return <span>{platform}</span>;
+                          }
+                        })()}
+                      </div>
                     </div>
 
                     {previewItem.tags && previewItem.tags.length > 0 && (
@@ -700,7 +730,37 @@ export function AiDesignStudioMobile({
                 {previewType === 'dashboard' && (
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Target Platform</label>
-                    <p className="text-sm mt-1">{previewItem.targetPlatform || 'N/A'}</p>
+                    <div className="text-sm mt-1">
+                      {(() => {
+                        const platform = previewItem.targetPlatform || 'N/A';
+                        if (platform === 'both') {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+                                📱 Mobile
+                              </span>
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded flex items-center gap-1">
+                                🖥️ Desktop
+                              </span>
+                            </div>
+                          );
+                        } else if (platform === 'mobile') {
+                          return (
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded flex items-center gap-1">
+                              📱 Mobile
+                            </span>
+                          );
+                        } else if (platform === 'desktop') {
+                          return (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded flex items-center gap-1">
+                              🖥️ Desktop
+                            </span>
+                          );
+                        } else {
+                          return <span>{platform}</span>;
+                        }
+                      })()}
+                    </div>
                   </div>
                 )}
 
