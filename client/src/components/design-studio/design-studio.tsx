@@ -320,16 +320,21 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
 
   const handleCreateWidget = (template: WidgetTemplate) => {
     console.log('🔧 Creating widget from template:', template);
+    console.log('🔧 Current widget studio state:', widgetStudioOpen);
+    console.log('🔧 Current editing widget state:', editingWidget);
     try {
-      setEditingWidget({
+      const newEditingWidget = {
         title: template.name,
         type: template.type,
         category: template.category,
         targetPlatform: template.targetPlatform,
         description: template.description
-      });
+      };
+      console.log('🔧 Setting editing widget to:', newEditingWidget);
+      setEditingWidget(newEditingWidget);
       console.log('🔧 Opening widget studio...');
       setWidgetStudioOpen(true);
+      console.log('🔧 Widget studio should now be open');
     } catch (error) {
       console.error('❌ Error creating widget:', error);
     }
@@ -351,8 +356,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
 
   const handleEditWidget = (template: WidgetTemplate) => {
     console.log('✏️ Editing widget template:', template);
+    console.log('✏️ Current widget studio state:', widgetStudioOpen);
+    console.log('✏️ Current editing widget state:', editingWidget);
     try {
-      setEditingWidget({
+      const newEditingWidget = {
         title: template.name,
         type: template.type,
         category: template.category,
@@ -360,9 +367,12 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         description: template.description,
         isTemplate: true,
         templateId: template.id
-      });
+      };
+      console.log('✏️ Setting editing widget to:', newEditingWidget);
+      setEditingWidget(newEditingWidget);
       console.log('✏️ Opening widget studio for editing...');
       setWidgetStudioOpen(true);
+      console.log('✏️ Widget studio should now be open');
     } catch (error) {
       console.error('❌ Error editing widget:', error);
     }
@@ -500,10 +510,13 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                             onClick={() => {
                               console.log('🔘 MOBILE Create button clicked for widget:', template.name);
                               console.log('🔘 Template data:', template);
+                              console.log('🔘 handleCreateWidget function:', handleCreateWidget);
+                              window.testCreateWidget = () => handleCreateWidget(template);
                               try {
                                 handleCreateWidget(template);
                               } catch (error) {
                                 console.error('❌ Error in handleCreateWidget:', error);
+                                console.error('❌ Error stack:', error.stack);
                               }
                             }}
                             className="flex-1"
