@@ -454,28 +454,27 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </div>
 
             {/* Main Content - Mobile Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-                <TabsList className="grid w-full grid-cols-4 m-2 bg-background border-b sticky top-0 z-10">
-                  <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
-                    <Component className="w-4 h-4" />
-                    <span className="text-xs">Widgets</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="dashboards" className="flex flex-col items-center gap-1 py-3">
-                    <BarChart3 className="w-4 h-4" />
-                    <span className="text-xs">Dashboards</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
-                    <Layout className="w-4 h-4" />
-                    <span className="text-xs">Pages</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="menu" className="flex flex-col items-center gap-1 py-3">
-                    <Settings className="w-4 h-4" />
-                    <span className="text-xs">Menu</span>
-                  </TabsTrigger>
-                </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+              <TabsList className="grid w-full grid-cols-4 m-2 bg-background border-b flex-shrink-0">
+                <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
+                  <Component className="w-4 h-4" />
+                  <span className="text-xs">Widgets</span>
+                </TabsTrigger>
+                <TabsTrigger value="dashboards" className="flex flex-col items-center gap-1 py-3">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="text-xs">Dashboards</span>
+                </TabsTrigger>
+                <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
+                  <Layout className="w-4 h-4" />
+                  <span className="text-xs">Pages</span>
+                </TabsTrigger>
+                <TabsTrigger value="menu" className="flex flex-col items-center gap-1 py-3">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-xs">Menu</span>
+                </TabsTrigger>
+              </TabsList>
 
-                <div className="pb-6">{/* Proper spacing for content */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">{/* Scrollable content area */}
                 <TabsContent value="widgets" className="p-3 pb-20 m-0">
                 <div className="grid gap-4 grid-cols-1">
                   {filteredWidgetTemplates.map((template) => (
@@ -598,9 +597,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                     <p className="text-sm">Configure sidebar navigation and organization</p>
                   </div>
                 </TabsContent>
-                </div>
-              </Tabs>
-            </div>
+              </div>
+            </Tabs>
           </div>
         ) : (
           // Desktop: Existing layout with constrained height  
