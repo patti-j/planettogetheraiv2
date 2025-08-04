@@ -1061,6 +1061,8 @@ export default function MobileHomePage() {
 
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
+  console.log("🔍 MobileHomePage - location:", location);
+  console.log("🔍 MobileHomePage - should show home?", location === "/" || location === "/mobile-home" || location === "/mobile");
 
   // Reset scroll position on component mount/login
   useEffect(() => {
