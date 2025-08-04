@@ -8,6 +8,7 @@ import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { FloatingHamburgerMenu } from "@/components/floating-hamburger-menu";
 import CompanyLogoImage from "@/assets/company-logo.png";
+import planetTogetherLogo from "@/assets/planet-together-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -243,12 +244,14 @@ function MobileMenuTrigger() {
   
   return (
     <>
-      <FloatingHamburgerMenu
-        onToggle={handleToggle}
-        isOpen={isOpen}
-        showOnDesktop={false}
-        showOnMobile={true}
-      />
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="p-2"
+        onClick={() => handleToggle(!isOpen)}
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
       
       {/* Simple mobile sidebar overlay */}
       {isOpen && (
@@ -994,8 +997,15 @@ export default function MobileHomePage() {
       {/* Mobile Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
             <div className="flex items-center px-4 py-3 gap-3">
-          {/* Left spacer for hamburger menu */}
-          <div className="w-8 flex-shrink-0"></div>
+          {/* Logo - clickable to go home */}
+          <div className="flex-shrink-0">
+            <img 
+              src={planetTogetherLogo} 
+              alt="PlanetTogether" 
+              className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => window.location.href = '/'}
+            />
+          </div>
           
           {/* Search/Prompt Input */}
           <div className="flex-1">

@@ -17,8 +17,8 @@ export function FloatingHamburgerMenu({
   showOnMobile = true 
 }: FloatingHamburgerMenuProps) {
   const handleClick = () => {
-    console.log("🍔 Floating hamburger clicked! Opening menu");
-    onToggle(!isOpen);
+    console.log("🏠 Logo clicked! Navigating to homepage");
+    window.location.href = '/';
   };
 
   // Show/hide based on device type
@@ -38,25 +38,14 @@ export function FloatingHamburgerMenu({
       <div 
         onClick={handleClick}
         className="cursor-pointer group relative transition-all duration-200 hover:scale-110"
-        title="Open Menu"
+        title="Go to Homepage"
       >
-        {/* Main logo - clean without button styling */}
-        <div className="flex flex-col items-center gap-1">
-          <img 
-            src={planetTogetherLogo} 
-            alt="PlanetTogether" 
-            className="w-6 h-6 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
-          />
-          {/* Chevron down arrow underneath logo */}
-          <ChevronDown className="w-3 h-3 text-gray-600 dark:text-gray-300" />
-        </div>
-        
-        {/* Close icon overlay when open */}
-        {isOpen && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-95 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
-            <X className="w-3 h-3 text-gray-800 dark:text-gray-200 stroke-2" />
-          </div>
-        )}
+        {/* Main logo - clickable to go home */}
+        <img 
+          src={planetTogetherLogo} 
+          alt="PlanetTogether" 
+          className="w-6 h-6 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
+        />
       </div>
     </div>
   );
