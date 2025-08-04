@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
+import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
+import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
@@ -31,6 +33,19 @@ interface LayoutConfig {
 
 export default function ProductionSchedulePage() {
   const { hasPermission } = usePermissions();
+  
+  // Page editor integration
+  const {
+    isEditMode,
+    layout,
+    availableWidgets,
+    toggleEditMode,
+    handleLayoutChange: handlePageLayoutChange,
+    handleTitleChange,
+    handleDescriptionChange,
+    handleSave
+  } = usePageEditor('production-schedule');
+
   const [filters, setFilters] = useState<ScheduleFilters>({
     dateRange: 'week',
     priority: 'all',
@@ -103,7 +118,7 @@ export default function ProductionSchedulePage() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleLayoutChange = (key: keyof LayoutConfig, value: any) => {
+  const handleLayoutConfigChange = (key: keyof LayoutConfig, value: any) => {
     setLayoutConfig(prev => ({ ...prev, [key]: value }));
   };
 
@@ -123,6 +138,25 @@ export default function ProductionSchedulePage() {
                    layoutConfig.columnsPerRow === 2 ? "grid-cols-1 lg:grid-cols-2" :
                    "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3";
 
+  // Render with page edit mode
+  if (isEditMode) {
+    return (
+      <PageEditMode
+        isEditMode={isEditMode}
+        onToggleEditMode={toggleEditMode}
+        pageTitle={layout.title}
+        onPageTitleChange={handleTitleChange}
+        pageDescription={layout.description}
+        onPageDescriptionChange={handleDescriptionChange}
+        layout={layout}
+        onLayoutChange={handlePageLayoutChange}
+        availableWidgets={availableWidgets}
+        onSave={handleSave}
+        className="h-screen"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -130,14 +164,24 @@ export default function ProductionSchedulePage() {
         <div className="flex items-center gap-3">
           <Calendar className="w-6 h-6 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold">Production Schedule</h1>
+            <h1 className="text-2xl font-bold">{layout.title}</h1>
             <p className="text-muted-foreground">
-              Manage production orders, operations, and resource assignments
+              {layout.description || "Manage production orders, operations, and resource assignments"}
             </p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={toggleEditMode}
+            className="gap-2"
+          >
+            <Edit className="w-4 h-4" />
+            Edit Page
+          </Button>
+          
           {canCreateSchedule && (
             <Button variant="default" size="sm" className="gap-2">
               <Plus className="w-4 h-4" />
@@ -231,7 +275,7 @@ export default function ProductionSchedulePage() {
               onClick={() => {
                 const newView = layoutConfig.view === 'compact' ? 'standard' : 
                               layoutConfig.view === 'standard' ? 'detailed' : 'compact';
-                handleLayoutChange('view', newView);
+                handleLayoutConfigChange('view', newView);
               }}
             >
               <Settings className="w-4 h-4" />

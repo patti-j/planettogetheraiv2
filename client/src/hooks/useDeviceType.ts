@@ -1,26 +1,27 @@
 import { useState, useEffect } from 'react';
 
-type DeviceType = 'mobile' | 'desktop';
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 export function useDeviceType(): DeviceType {
   const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
 
   useEffect(() => {
     const checkDeviceType = () => {
-      // Check for mobile devices using various methods
-      const isMobile = 
-        window.innerWidth <= 768 || // Screen width check
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || // User agent check
-        ('ontouchstart' in window) || // Touch support check
-        (navigator.maxTouchPoints > 0); // Touch points check
-
-      setDeviceType(isMobile ? 'mobile' : 'desktop');
+      const width = window.innerWidth;
+      
+      if (width < 768) {
+        setDeviceType('mobile');
+      } else if (width < 1024) {
+        setDeviceType('tablet');  
+      } else {
+        setDeviceType('desktop');
+      }
     };
 
-    // Check on initial load
+    // Check initially
     checkDeviceType();
 
-    // Add resize listener to detect screen size changes
+    // Add event listener for resize
     window.addEventListener('resize', checkDeviceType);
 
     // Cleanup
@@ -30,24 +31,18 @@ export function useDeviceType(): DeviceType {
   return deviceType;
 }
 
-// Utility functions for checking platform compatibility
-export function shouldShowWidget(
-  widgetPlatform: "mobile" | "desktop" | "both",
-  currentDevice: DeviceType
-): boolean {
-  if (widgetPlatform === "both") return true;
-  return widgetPlatform === currentDevice;
-}
-
-export function getPlatformIcon(platform: "mobile" | "desktop" | "both") {
-  switch (platform) {
-    case "mobile":
-      return "📱";
-    case "desktop":
-      return "🖥️";
-    case "both":
-      return "📱🖥️";
+export function shouldShowWidget(targetPlatform: string, currentDevice: DeviceType): boolean {
+  switch (targetPlatform.toLowerCase()) {
+    case 'mobile':
+      return currentDevice === 'mobile';
+    case 'tablet':
+      return currentDevice === 'tablet';
+    case 'desktop':
+      return currentDevice === 'desktop';
+    case 'both':
+    case 'all':
+      return true;
     default:
-      return "📱🖥️";
+      return true;
   }
 }
