@@ -420,14 +420,18 @@ function MobileProductionSchedulePage() {
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
   const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="mobile-page-wrapper w-full h-full">
+    <div className="mobile-page-wrapper w-full h-full max-h-full overflow-auto relative bg-white dark:bg-gray-900" style={{ position: 'relative', zIndex: 1 }}>
       {children}
     </div>
   );
 
   switch (location) {
     case "/production-schedule":
-      return <MobileProductionSchedulePage />;
+      return (
+        <MobilePageWrapper>
+          <MobileProductionSchedulePage />
+        </MobilePageWrapper>
+      );
     case "/dashboard":
       return (
         <MobilePageWrapper>
