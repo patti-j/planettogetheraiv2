@@ -115,12 +115,14 @@ import {
   BarChart2,
   TrendingDown,
   PlayCircle,
-  PauseCircle
+  PauseCircle,
+  Palette
 } from "lucide-react";
 
 // Import widget components
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { WidgetConfig } from '@/lib/widget-library';
+import { DesignStudio } from '@/components/design-studio/design-studio';
 
 // Import page components for mobile routing - only import existing pages
 import ProductionSchedulePage from "@/pages/production-schedule";
@@ -783,6 +785,7 @@ export default function MobileHomePage() {
   // Widget management state
   const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
   const [editingWidget, setEditingWidget] = useState<any>(null);
+  const [designStudioOpen, setDesignStudioOpen] = useState(false);
 
   // Widget deletion mutation
   const deleteWidgetMutation = useMutation({
@@ -1046,10 +1049,16 @@ export default function MobileHomePage() {
       color: "bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400"
     },
     {
+      title: "Design Studio",
+      icon: Palette,
+      action: () => setDesignStudioOpen(true),
+      color: "bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400"
+    },
+    {
       title: "My Tasks",
       icon: CheckSquare,
       path: "/tasks",
-      color: "bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400",
+      color: "bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400",
       badge: pendingTasks.length > 0 ? pendingTasks.length : undefined
     },
     {
@@ -1744,19 +1753,23 @@ export default function MobileHomePage() {
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-2 gap-4">
               {quickActions.map((action) => (
-                action.title === "Dashboards" ? (
+                action.action || action.title === "Dashboards" ? (
                   <Card 
-                    key="dashboards"
+                    key={action.title.toLowerCase().replace(/\s+/g, '-')}
                     className="hover:shadow-md transition-shadow cursor-pointer"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log("🔍 Dashboards card clicked, setting showLibrary to true");
-                      // Use setTimeout to ensure state change happens after any other handlers
-                      setTimeout(() => {
-                        const libraryDialog = document.getElementById('library-dialog');
-                        if (libraryDialog) libraryDialog.style.display = 'block';
-                      }, 0);
+                      if (action.action) {
+                        action.action();
+                      } else if (action.title === "Dashboards") {
+                        console.log("🔍 Dashboards card clicked, setting showLibrary to true");
+                        // Use setTimeout to ensure state change happens after any other handlers
+                        setTimeout(() => {
+                          const libraryDialog = document.getElementById('library-dialog');
+                          if (libraryDialog) libraryDialog.style.display = 'block';
+                        }, 0);
+                      }
                     }}
                   >
                     <CardContent className="p-4 text-center">
@@ -2144,6 +2157,12 @@ export default function MobileHomePage() {
           mode={editingWidget ? 'edit' : 'create'}
         />
       )}
+
+      {/* Design Studio - integrated design system */}
+      <DesignStudio
+        open={designStudioOpen}
+        onOpenChange={setDesignStudioOpen}
+      />
     </div>
   );
 }

@@ -188,24 +188,9 @@ export default function ProductionSchedulePage() {
         </div>
         
         <div className="flex items-center gap-2 flex-shrink-0">
-          {isMobile ? (
-            // Mobile: Show only essential buttons
+          {!isMobile && (
+            // Desktop: Show essential action buttons
             <>
-              {canCreateSchedule && (
-                <Button variant="default" size="sm" className="w-9 h-9 p-0">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              )}
-            </>
-          ) : (
-            // Desktop: Show all buttons with text
-            <>
-              {canCreateSchedule && (
-                <Button variant="default" size="sm" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  New Order
-                </Button>
-              )}
               <Button variant="outline" size="sm" className="gap-2">
                 <Download className="w-4 h-4" />
                 Export
