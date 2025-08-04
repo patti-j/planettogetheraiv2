@@ -244,21 +244,60 @@ interface Notification {
 
 // Component to render different pages on mobile underneath the header
 function MobilePageContent({ location }: { location: string }) {
+  // Mobile wrapper that prevents full-screen behavior and adds proper constraints
+  const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="mobile-page-wrapper" style={{ 
+      maxHeight: 'calc(100vh - 80px)', // Account for mobile header height
+      overflow: 'auto',
+      position: 'relative'
+    }}>
+      {children}
+    </div>
+  );
+
   switch (location) {
     case "/production-schedule":
-      return <ProductionSchedulePage />;
+      return (
+        <MobilePageWrapper>
+          <ProductionSchedulePage />
+        </MobilePageWrapper>
+      );
     case "/dashboard":
-      return <Dashboard />;
+      return (
+        <MobilePageWrapper>
+          <Dashboard />
+        </MobilePageWrapper>
+      );
     case "/production-cockpit":
-      return <ProductionCockpit />;
+      return (
+        <MobilePageWrapper>
+          <ProductionCockpit />
+        </MobilePageWrapper>
+      );
     case "/analytics":
-      return <Analytics />;
+      return (
+        <MobilePageWrapper>
+          <Analytics />
+        </MobilePageWrapper>
+      );
     case "/shop-floor":
-      return <ShopFloor />;
+      return (
+        <MobilePageWrapper>
+          <ShopFloor />
+        </MobilePageWrapper>
+      );
     case "/reports":
-      return <Reports />;
+      return (
+        <MobilePageWrapper>
+          <Reports />
+        </MobilePageWrapper>
+      );
     case "/boards":
-      return <BoardsPage />;
+      return (
+        <MobilePageWrapper>
+          <BoardsPage />
+        </MobilePageWrapper>
+      );
     case "/tasks":
     case "/inbox":
     case "/account":
@@ -1412,6 +1451,18 @@ export default function MobileHomePage() {
           </div>
         </div>
       </div>
+
+      {/* Add mobile-specific CSS overrides */}
+      <style>{`
+        .mobile-page-wrapper .h-screen {
+          height: auto !important;
+          min-height: auto !important;
+        }
+        .mobile-page-wrapper > div:first-child {
+          height: auto !important;
+          min-height: auto !important;
+        }
+      `}</style>
 
       {/* Main Content - Check route and render appropriate content */}
       {location === "/" || location === "/mobile-home" || location === "/mobile" ? (
