@@ -402,15 +402,15 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         {isMobile ? (
           // Mobile: Simple scrollable layout  
           <div className="h-full overflow-auto">
-            <DialogHeader className="p-4 border-b flex-shrink-0">
-              <DialogTitle className="flex items-center gap-2">
+            <div className="p-4 border-b flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2">
                 <Palette className="w-5 h-5 text-purple-600" />
-                Design Studio
-              </DialogTitle>
+                <h2 className="text-lg font-semibold">Design Studio</h2>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Create and manage pages, dashboards, and widgets in one integrated workspace
               </p>
-            </DialogHeader>
+            </div>
 
             {/* AI Design Assistant Button - Mobile */}
             <div className="p-3 border-b flex-shrink-0">
@@ -607,15 +607,15 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         ) : (
           // Desktop: Existing layout with constrained height  
           <>
-            <DialogHeader className="flex-shrink-0">
-              <DialogTitle className="flex items-center gap-2">
+            <div className="flex-shrink-0 p-6 pb-4">
+              <div className="flex items-center gap-2 mb-2">
                 <Palette className="w-5 h-5 text-purple-600" />
-                Design Studio
-              </DialogTitle>
+                <h2 className="text-lg font-semibold">Design Studio</h2>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Create and manage pages, dashboards, and widgets in one integrated workspace
               </p>
-            </DialogHeader>
+            </div>
 
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* AI Design Assistant Button */}
