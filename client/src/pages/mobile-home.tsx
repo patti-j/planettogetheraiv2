@@ -1051,7 +1051,10 @@ export default function MobileHomePage() {
     {
       title: "Design Studio",
       icon: Palette,
-      action: () => setDesignStudioOpen(true),
+      action: () => {
+        console.log("🎨 Design Studio button clicked!");
+        setDesignStudioOpen(true);
+      },
       color: "bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400"
     },
     {
@@ -1102,6 +1105,7 @@ export default function MobileHomePage() {
   console.log("🔍 MobileHomePage - should show home?", location === "/" || location === "/mobile-home" || location === "/mobile");
   console.log("🔍 MobileHomePage - widgetStudioOpen:", widgetStudioOpen);
   console.log("🔍 MobileHomePage - maxPanelOpen:", maxPanelOpen);
+  console.log("🔍 MobileHomePage - designStudioOpen:", designStudioOpen);
   
   // Reset any cached view states when navigating to home
   useEffect(() => {
@@ -1116,6 +1120,7 @@ export default function MobileHomePage() {
       setMaxPanelOpen(false);
       setMaxResponse(null);
       setShowMaxSettings(false);
+      // Don't reset Design Studio state - let it persist
     }
   }, [location]);
 
@@ -1760,7 +1765,9 @@ export default function MobileHomePage() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      console.log(`🎯 Quick action clicked: ${action.title}`, action);
                       if (action.action) {
+                        console.log("🎯 Executing action function...");
                         action.action();
                       } else if (action.title === "Dashboards") {
                         console.log("🔍 Dashboards card clicked, setting showLibrary to true");
