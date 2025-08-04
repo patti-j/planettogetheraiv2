@@ -10,7 +10,8 @@ export function SmartHomeWrapper() {
   // On mobile devices, always show MobileHomePage which will handle routing internally
   // This ensures the mobile header is always present
   if (deviceType === "mobile") {
-    return <MobileHomePage />;
+    // Pass the location as a prop so mobile home can react to route changes
+    return <MobileHomePage key={location} />;
   }
   
   // On desktop, only show Homepage for the root route

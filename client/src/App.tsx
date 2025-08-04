@@ -223,11 +223,14 @@ function Router() {
     '/production-cockpit'
   ];
 
-  // If on mobile and trying to access a mobile route, redirect to home 
-  // The mobile system will handle internal routing
+  // If on mobile and trying to access a mobile route, let SmartHomeWrapper handle it
+  // by rendering it at the root level instead of through main router
   if (deviceType === 'mobile' && mobileRoutes.includes(location)) {
-    // Don't render main router content, let SmartHomeWrapper handle it
-    return null;
+    return (
+      <div className="h-screen bg-gray-50">
+        <SmartHomeWrapper />
+      </div>
+    );
   }
 
   if (isLoading && !isTourActive) {
