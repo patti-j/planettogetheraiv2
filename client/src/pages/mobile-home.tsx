@@ -1091,6 +1091,8 @@ export default function MobileHomePage() {
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
   console.log("🔍 MobileHomePage - location:", location);
   console.log("🔍 MobileHomePage - should show home?", location === "/" || location === "/mobile-home" || location === "/mobile");
+  console.log("🔍 MobileHomePage - widgetStudioOpen:", widgetStudioOpen);
+  console.log("🔍 MobileHomePage - maxPanelOpen:", maxPanelOpen);
   
   // Reset any cached view states when navigating to home
   useEffect(() => {
@@ -1098,6 +1100,13 @@ export default function MobileHomePage() {
       console.log("🏠 Resetting to mobile home view for location:", location);
       // Force any potential cached states to clear
       window.scrollTo(0, 0);
+      // Reset widget studio state to ensure home content is shown
+      setWidgetStudioOpen(false);
+      setEditingWidget(null);
+      // Reset Max panel state
+      setMaxPanelOpen(false);
+      setMaxResponse(null);
+      setShowMaxSettings(false);
     }
   }, [location]);
 
