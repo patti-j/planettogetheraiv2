@@ -29,6 +29,11 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import WidgetDesignStudio from '@/components/widget-design-studio';
+import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
 
 interface DesignStudioProps {
   open: boolean;
@@ -151,7 +156,7 @@ const dashboardTemplates: DashboardTemplate[] = [
   }
 ];
 
-export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
+export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   console.log("🎨 DesignStudio render - open:", open);
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
@@ -159,6 +164,14 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [justOpened, setJustOpened] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Dialog states for nested editors
+  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
+  const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
+  const [editingWidget, setEditingWidget] = useState(null);
+  const [editingDashboard, setEditingDashboard] = useState(null);
 
   const categories = ['All', 'Operations', 'Quality', 'Inventory', 'Analytics', 'Management', 'Maintenance', 'Mobile'];
 
@@ -180,19 +193,94 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
      template.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Create page mutation
+  const createPageMutation = useMutation({
+    mutationFn: async (pageData: any) => {
+      const response = await fetch('/api/pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pageData)
+      });
+      if (!response.ok) throw new Error('Failed to create page');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Page created successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/pages'] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create page", variant: "destructive" });
+    }
+  });
+
+  // Create dashboard mutation
+  const createDashboardMutation = useMutation({
+    mutationFn: async (dashboardData: any) => {
+      const response = await fetch('/api/mobile/dashboards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dashboardData)
+      });
+      if (!response.ok) throw new Error('Failed to create dashboard');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Dashboard created successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/mobile/dashboards'] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create dashboard", variant: "destructive" });
+    }
+  });
+
   const handleCreatePage = (template: PageTemplate) => {
-    // TODO: Implement page creation
     console.log('Creating page from template:', template);
+    const pageData = {
+      title: template.name,
+      description: template.description,
+      type: template.type,
+      category: template.category,
+      layout: {
+        type: template.type,
+        columns: 12,
+        rows: 8,
+        widgets: [],
+        settings: {
+          responsive: true,
+          mobileOptimized: true,
+          showHeader: true,
+          showFilters: false,
+          theme: 'auto'
+        }
+      }
+    };
+    createPageMutation.mutate(pageData);
   };
 
   const handleCreateWidget = (template: WidgetTemplate) => {
-    // TODO: Implement widget creation
     console.log('Creating widget from template:', template);
+    setEditingWidget({
+      title: template.name,
+      type: template.type,
+      category: template.category,
+      targetPlatform: template.targetPlatform,
+      description: template.description
+    });
+    setWidgetStudioOpen(true);
   };
 
   const handleCreateDashboard = (template: DashboardTemplate) => {
-    // TODO: Implement dashboard creation
     console.log('Creating dashboard from template:', template);
+    const dashboardData = {
+      title: template.name,
+      description: template.description,
+      targetPlatform: 'both',
+      configuration: {
+        layout: template.category.toLowerCase(),
+        widgets: []
+      }
+    };
+    createDashboardMutation.mutate(dashboardData);
   };
 
   // Track when dialog opens to prevent immediate close
@@ -521,6 +609,20 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
           </Tabs>
         </div>
       </DialogContent>
+      
+      {/* Nested Widget Design Studio */}
+      <WidgetDesignStudio
+        open={widgetStudioOpen}
+        onOpenChange={setWidgetStudioOpen}
+        editingWidget={editingWidget}
+        mode={editingWidget ? 'edit' : 'create'}
+        onWidgetCreate={(widget, targetSystems) => {
+          console.log('Widget created:', widget, targetSystems);
+          setWidgetStudioOpen(false);
+          setEditingWidget(null);
+          toast({ title: "Success", description: "Widget created successfully" });
+        }}
+      />
     </Dialog>
   );
 }

@@ -21553,6 +21553,65 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Page management endpoints
+  app.get('/api/pages', requireAuth, async (req, res) => {
+    try {
+      // For now, return static page definitions 
+      // This can be extended to store pages in database later
+      const pages = [
+        {
+          id: 'production-schedule',
+          title: 'Production Schedule',
+          description: 'Interactive production scheduling with Gantt chart',
+          type: 'dashboard',
+          category: 'Operations',
+          route: '/production-schedule'
+        },
+        {
+          id: 'mobile-home',
+          title: 'Mobile Home',
+          description: 'Mobile dashboard with widgets and quick actions',
+          type: 'dashboard',
+          category: 'Mobile',
+          route: '/'
+        }
+      ];
+      res.json(pages);
+    } catch (error) {
+      console.error('Error fetching pages:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/pages', requireAuth, async (req, res) => {
+    try {
+      const { title, description, type, category, layout } = req.body;
+      
+      // Generate a page ID from title
+      const id = title.toLowerCase().replace(/\s+/g, '-');
+      
+      const newPage = {
+        id,
+        title,
+        description,
+        type,
+        category,
+        layout,
+        route: `/${id}`,
+        createdAt: new Date().toISOString(),
+        createdBy: req.user?.id
+      };
+      
+      // TODO: Store in database when page storage is implemented
+      console.log('Created page:', newPage);
+      
+      res.status(201).json(newPage);
+    } catch (error) {
+      console.error('Error creating page:', error);
+      res.status(500).json({ message: 'Failed to create page' });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   app.use(errorMiddleware);
