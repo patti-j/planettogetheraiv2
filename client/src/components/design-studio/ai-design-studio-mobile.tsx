@@ -40,6 +40,21 @@ export function AiDesignStudioMobile({
       previewType,
       shouldShowDialog: Boolean(previewItem && previewType)
     });
+    
+    // Additional check for DOM rendering
+    if (previewItem && previewType) {
+      setTimeout(() => {
+        const dialog = document.querySelector('[data-preview-dialog]');
+        console.log('🔍 Dialog element found in DOM:', !!dialog);
+        if (dialog) {
+          console.log('🔍 Dialog computed styles:', {
+            display: window.getComputedStyle(dialog).display,
+            zIndex: window.getComputedStyle(dialog).zIndex,
+            position: window.getComputedStyle(dialog).position
+          });
+        }
+      }, 100);
+    }
   }, [previewItem, previewType]);
 
   const handleAiPrompt = async (promptOverride?: string) => {
@@ -543,8 +558,41 @@ export function AiDesignStudioMobile({
 
       {/* Preview Dialog */}
       {previewItem && previewType && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 99999
+          }}
+          onClick={(e) => {
+            // Close dialog if clicking the backdrop
+            if (e.target === e.currentTarget) {
+              setPreviewItem(null);
+              setPreviewType(null);
+            }
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              maxWidth: '400px',
+              width: '100%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+            data-preview-dialog="true"
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">{previewType === 'widget' ? 'Widget' : 'Dashboard'} Preview</h2>
