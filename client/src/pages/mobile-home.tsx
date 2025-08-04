@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
+import { FloatingHamburgerMenu } from "@/components/floating-hamburger-menu";
 import CompanyLogoImage from "@/assets/company-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -230,26 +231,24 @@ interface Notification {
   read: boolean;
 }
 
-// Mobile Menu Trigger Component - simplified approach with local state
+// Mobile Menu Trigger Component - using FloatingHamburgerMenu
 function MobileMenuTrigger() {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
-  const handleClick = () => {
-    console.log("🍔 Hamburger clicked! Opening sidebar");
-    setIsOpen(!isOpen);
+  const handleToggle = (open: boolean) => {
+    console.log("🍔 Mobile Hamburger clicked! Setting open to:", open);
+    setIsOpen(open);
   };
   
   return (
     <>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-        onClick={handleClick}
-      >
-        <Menu className="w-5 h-5" />
-      </Button>
+      <FloatingHamburgerMenu
+        onToggle={handleToggle}
+        isOpen={isOpen}
+        showOnDesktop={false}
+        showOnMobile={true}
+      />
       
       {/* Simple mobile sidebar overlay */}
       {isOpen && (

@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useViewMode } from "@/hooks/use-view-mode";
+import { FloatingHamburgerMenu } from "./floating-hamburger-menu";
 
 // Define feature groups with hierarchy and visual styling
 const featureGroups = [
@@ -360,19 +361,13 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Hamburger Menu Button - Only visible when menu is closed and NOT in mobile view */}
-      {!menuOpen && currentView !== "mobile" && (
-        <div className="fixed top-2 left-2 z-50">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setMenuOpen(true)}
-            className="p-2 bg-white dark:bg-gray-700 shadow-lg border-2 border-gray-400 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-500 dark:hover:border-gray-400"
-          >
-            <Menu className="w-5 h-5 text-gray-800 dark:text-gray-200 stroke-2" />
-          </Button>
-        </div>
-      )}
+      {/* Floating Hamburger Menu Button - Show on desktop only */}
+      <FloatingHamburgerMenu
+        onToggle={setMenuOpen}
+        isOpen={menuOpen}
+        showOnDesktop={true}
+        showOnMobile={false}
+      />
       
       {/* Persistent Theme Toggle - Always visible except in mobile view */}
       {!menuOpen && currentView !== "mobile" && (
