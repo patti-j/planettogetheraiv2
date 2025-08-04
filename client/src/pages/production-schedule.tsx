@@ -47,7 +47,7 @@ export default function ProductionSchedulePage() {
     refreshInterval: 30
   });
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('gantt');
 
   // Check permissions
   const canViewSchedule = hasPermission('schedule', 'view');
