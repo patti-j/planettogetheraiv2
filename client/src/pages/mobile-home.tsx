@@ -788,6 +788,11 @@ export default function MobileHomePage() {
   // Debug logging
   console.log("🏠 MobileHomePage render - currentView:", currentView, "isForced:", isForced);
 
+  // Reset scroll position on component mount/login
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [user]);
+
   // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
   // This prevents desktop content from showing underneath when pulling to refresh
   if (false) { // Disabled desktop rendering on mobile-home route
