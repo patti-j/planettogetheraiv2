@@ -607,6 +607,37 @@ export function AiDesignStudioMobile({
               </button>
             </div>
 
+            {/* AI Edit Section - Moved to top for mobile keyboard */}
+            <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-blue-50">
+              <label className="text-xs font-medium text-purple-700 uppercase tracking-wide mb-2 block">
+                ✨ AI Modifications
+              </label>
+              <div className="space-y-2">
+                <Input
+                  placeholder={`Ask AI to modify this ${previewType}...`}
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAiPrompt()}
+                  className="text-sm"
+                />
+                <Button 
+                  size="sm" 
+                  onClick={() => handleAiPrompt()}
+                  disabled={!aiPrompt.trim() || isProcessing}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {isProcessing ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Apply AI Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
             {/* Content */}
             <div className="p-4 space-y-4">
               <div>
@@ -678,36 +709,7 @@ export function AiDesignStudioMobile({
                 </div>
               </div>
 
-              {/* AI Edit Section */}
-              <div className="border-t pt-4">
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                  AI Modifications
-                </label>
-                <div className="space-y-2">
-                  <Input
-                    placeholder={`Ask AI to modify this ${previewType}...`}
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAiPrompt()}
-                    className="text-sm"
-                  />
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleAiPrompt()}
-                    disabled={!aiPrompt.trim() || isProcessing}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    {isProcessing ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Edit3 className="w-4 h-4 mr-2" />
-                        Apply AI Changes
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
