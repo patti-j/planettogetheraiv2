@@ -33,6 +33,15 @@ export function AiDesignStudioMobile({
   const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | null>(null);
   const [loadingWidgetId, setLoadingWidgetId] = React.useState<number | null>(null);
 
+  // Debug effect to track state changes
+  React.useEffect(() => {
+    console.log('🎯 Preview state changed:', {
+      previewItem: previewItem ? previewItem.title : null,
+      previewType,
+      shouldShowDialog: Boolean(previewItem && previewType)
+    });
+  }, [previewItem, previewType]);
+
   const handleAiPrompt = async (promptOverride?: string) => {
     const finalPrompt = promptOverride || aiPrompt;
     if (!finalPrompt.trim()) return;
@@ -396,24 +405,25 @@ export function AiDesignStudioMobile({
                               const result = await response.json();
                               console.log('🎯 Preview response:', result);
                               if (result.success && result.data?.currentWidget) {
-                                setPreviewItem(result.data.currentWidget);
+                                console.log('✅ Setting preview item to currentWidget:', result.data.currentWidget.title);
+                                const currentWidget = result.data.currentWidget;
+                                console.log('🔍 Current widget data:', currentWidget);
+                                setPreviewItem(currentWidget);
                                 setPreviewType('widget');
-                                console.log('✅ Opening preview dialog for:', result.data.currentWidget.title);
+                                console.log('🔍 State set - previewItem should be:', currentWidget.title);
                               } else {
-                                console.log('❌ No currentWidget in response:', result);
-                                // Fallback: use the widget data we already have
+                                console.log('❌ No currentWidget in response, using fallback widget data');
                                 setPreviewItem(widget);
                                 setPreviewType('widget');
                               }
                             } else {
                               console.log('❌ API response not ok:', response.status);
-                              // Fallback: use the widget data we already have
                               setPreviewItem(widget);
                               setPreviewType('widget');
                             }
                           } catch (error) {
                             console.error('Preview error:', error);
-                            // Fallback: use the widget data we already have
+                            console.log('❌ Exception occurred, using fallback widget data');
                             setPreviewItem(widget);
                             setPreviewType('widget');
                           } finally {
@@ -532,7 +542,7 @@ export function AiDesignStudioMobile({
       </div>
 
       {/* Preview Dialog */}
-      {previewItem && (
+      {previewItem && previewType && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
             {/* Header */}
