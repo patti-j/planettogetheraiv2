@@ -229,7 +229,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
   const [editingWidget, setEditingWidget] = useState(null);
   const [editingDashboard, setEditingDashboard] = useState(null);
 
-  const categories = ['All', 'Operations', 'Quality', 'Inventory', 'Analytics', 'Management', 'Maintenance', 'Mobile', 'Controls', 'Status', 'Data', 'Cards', 'Charts'];
+  const categories = ['All', 'Operations', 'Quality', 'Inventory', 'Analytics', 'Management', 'Maintenance', 'Mobile'];
 
   const filteredPageTemplates = pageTemplates.filter(template => 
     (selectedCategory === 'All' || template.category === selectedCategory) &&
@@ -575,7 +575,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </Tabs>
           </div>
         ) : (
-          // Desktop: Existing layout with constrained height  
+          // Desktop: Existing layout with constrained height
           <>
             <DialogHeader className="flex-shrink-0">
               <DialogTitle className="flex items-center gap-2">
@@ -587,6 +587,314 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
               </p>
             </DialogHeader>
 
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* AI Design Assistant Button */}
+          <div className={`${isMobile ? 'p-3' : 'p-4'} border-b flex-shrink-0`}>
+            <Button
+              onClick={() => setAiDesignStudioOpen(true)}
+              className="w-full h-12 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Bot className="w-5 h-5" />
+                  <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
+                </div>
+                <span>AI Design Assistant</span>
+                <Wand2 className="w-4 h-4" />
+              </div>
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Create, modify, or remove pages, widgets, and dashboards with AI
+            </p>
+          </div>
+
+          {/* Search and Filter Bar */}
+          <div className={`flex items-center gap-4 ${isMobile ? 'p-3' : 'p-4'} border-b flex-shrink-0`}>
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search templates..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {!isMobile && (
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="px-3 py-1 border rounded-md text-sm"
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Main Content */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <TabsList className={`grid w-full grid-cols-4 flex-shrink-0 ${isMobile ? 'm-2' : ''}`}>
+              <TabsTrigger value="pages" className="flex items-center gap-2">
+                <Layout className="w-4 h-4" />
+                {!isMobile && 'Pages'}
+              </TabsTrigger>
+              <TabsTrigger value="widgets" className="flex items-center gap-2">
+                <Component className="w-4 h-4" />
+                {!isMobile && 'Widgets'}
+              </TabsTrigger>
+              <TabsTrigger value="dashboards" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                {!isMobile && 'Dashboards'}
+              </TabsTrigger>
+              <TabsTrigger value="menu" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                {!isMobile && 'Menu'}
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <TabsContent value="pages" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+                      {filteredPageTemplates.map((template) => (
+                        <Card key={template.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="text-base">{template.name}</CardTitle>
+                                <Badge variant="secondary" className="mt-1 text-xs">
+                                  {template.category}
+                                </Badge>
+                              </div>
+                              <div className="text-muted-foreground">
+                                {template.type === 'grid' && <Grid className="w-4 h-4" />}
+                                {template.type === 'tabs' && <TabsIcon className="w-4 h-4" />}
+                                {template.type === 'dashboard' && <BarChart3 className="w-4 h-4" />}
+                                {template.type === 'custom' && <Settings className="w-4 h-4" />}
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-sm text-muted-foreground mb-4">
+                              {template.description}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleCreatePage(template)}
+                                className="flex-1"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Create
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="widgets" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+                      {filteredWidgetTemplates.map((template) => (
+                        <Card key={template.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="text-base">{template.name}</CardTitle>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="secondary" className="text-xs">
+                                    {template.category}
+                                  </Badge>
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs flex items-center gap-1"
+                                  >
+                                    {template.targetPlatform === 'mobile' && <Smartphone className="w-3 h-3" />}
+                                    {template.targetPlatform === 'desktop' && <Monitor className="w-3 h-3" />}
+                                    {template.targetPlatform === 'both' && <Grid className="w-3 h-3" />}
+                                    {template.targetPlatform}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-sm text-muted-foreground mb-4">
+                              {template.description}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleCreateWidget(template)}
+                                className="flex-1"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Create
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Edit3 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="dashboards" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+                      {filteredDashboardTemplates.map((template) => (
+                        <Card key={template.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <CardTitle className="text-base">{template.name}</CardTitle>
+                                <Badge variant="secondary" className="mt-1 text-xs">
+                                  {template.category}
+                                </Badge>
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {template.widgetCount} widgets
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-sm text-muted-foreground mb-4">
+                              {template.description}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleCreateDashboard(template)}
+                                className="flex-1"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                Create
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Settings className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="menu" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full" style={{ height: '100%' }}>
+                  <div className={`${isMobile ? 'p-3 pb-8' : 'p-4 pb-6'}`}>
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">Menu Management</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Organize and customize the main navigation menu structure
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Menu Categories</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Manage the main menu categories and their organization
+                          </p>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {[
+                            'Planning & Scheduling',
+                            'AI & Optimization', 
+                            'Operations',
+                            'Management & Administration',
+                            'Data Management',
+                            'Communication & Collaboration',
+                            'Training & Support'
+                          ].map((category) => (
+                            <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span className="font-medium">{category}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm">
+                                  <Edit3 className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Page Assignment</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Assign pages to menu categories and set visibility
+                          </p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <Button className="w-full justify-start" variant="outline">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Page to Menu
+                            </Button>
+                            <Button className="w-full justify-start" variant="outline">
+                              <Settings className="w-4 h-4 mr-2" />
+                              Reorder Menu Items
+                            </Button>
+                            <Button className="w-full justify-start" variant="outline">
+                              <Copy className="w-4 h-4 mr-2" />
+                              Duplicate Category
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Menu Preview</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Preview how the menu will appear to users
+                          </p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <p className="text-sm text-muted-foreground text-center">
+                              Menu preview will be implemented here
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          // Desktop: Existing layout with constrained height  
+          <>
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* AI Design Assistant Button */}
               <div className="p-4 border-b flex-shrink-0">
