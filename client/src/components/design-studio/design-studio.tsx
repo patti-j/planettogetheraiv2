@@ -264,7 +264,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
 
           {/* Main Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-            <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
               <TabsTrigger value="pages" className="flex items-center gap-2">
                 <Layout className="w-4 h-4" />
                 {!isMobile && 'Pages'}
@@ -277,12 +277,16 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                 <BarChart3 className="w-4 h-4" />
                 {!isMobile && 'Dashboards'}
               </TabsTrigger>
+              <TabsTrigger value="menu" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                {!isMobile && 'Menu'}
+              </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 min-h-0">
-              <TabsContent value="pages" className="h-full m-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <TabsContent value="pages" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="p-4">
+                  <div className="p-4 pb-6">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {filteredPageTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -327,9 +331,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="widgets" className="h-full m-0">
+              <TabsContent value="widgets" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="p-4">
+                  <div className="p-4 pb-6">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {filteredWidgetTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -379,9 +383,9 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="dashboards" className="h-full m-0">
+              <TabsContent value="dashboards" className="h-full m-0 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="p-4">
+                  <div className="p-4 pb-6">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {filteredDashboardTemplates.map((template) => (
                         <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -418,6 +422,97 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                           </CardContent>
                         </Card>
                       ))}
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="menu" className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-4 pb-6">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold mb-2">Menu Management</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Organize and customize the main navigation menu structure
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Menu Categories</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Manage the main menu categories and their organization
+                          </p>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {[
+                            'Planning & Scheduling',
+                            'AI & Optimization', 
+                            'Operations',
+                            'Management & Administration',
+                            'Data Management',
+                            'Communication & Collaboration',
+                            'Training & Support'
+                          ].map((category) => (
+                            <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <span className="font-medium">{category}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm">
+                                  <Edit3 className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Page Assignment</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Assign pages to menu categories and set visibility
+                          </p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            <Button className="w-full justify-start" variant="outline">
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add Page to Menu
+                            </Button>
+                            <Button className="w-full justify-start" variant="outline">
+                              <Settings className="w-4 h-4 mr-2" />
+                              Reorder Menu Items
+                            </Button>
+                            <Button className="w-full justify-start" variant="outline">
+                              <Copy className="w-4 h-4 mr-2" />
+                              Duplicate Category
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Menu Preview</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Preview how the menu will appear to users
+                          </p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                            <p className="text-sm text-muted-foreground text-center">
+                              Menu preview will be implemented here
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 </ScrollArea>
