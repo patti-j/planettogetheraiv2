@@ -39,6 +39,7 @@ import { apiRequest } from '@/lib/queryClient';
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
 import AIDesignStudio from '@/components/ai-design-studio';
+import { MobileDesignStudio } from './design-studio-mobile';
 
 interface DesignStudioProps {
   open: boolean;
@@ -401,214 +402,28 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
         bg-white dark:bg-gray-900 rounded-lg shadow-xl flex flex-col
       `}>
         {isMobile ? (
-          // Mobile: Compact scrollable layout
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-3 border-b flex-shrink-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Palette className="w-4 h-4 text-purple-600" />
-                <h2 className="text-sm font-semibold">Design Studio</h2>
-                <button 
-                  onClick={() => onOpenChange(false)}
-                  className="ml-auto p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* AI Design Assistant Button - Mobile */}
-            <div className="p-3 border-b flex-shrink-0">
-              <Button
-                onClick={() => setAiDesignStudioOpen(true)}
-                className="w-full h-12 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Bot className="w-5 h-5" />
-                    <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
-                  </div>
-                  <span>AI Design Assistant</span>
-                  <Wand2 className="w-4 h-4" />
-                </div>
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Create, modify, or remove pages, widgets, and dashboards with AI
-              </p>
-            </div>
-
-            {/* Search Bar - Mobile */}
-            <div className="flex items-center gap-4 p-3 border-b flex-shrink-0">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search templates..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Main Content - Mobile Scrollable */}
-            <div className="flex-1 flex flex-col">
-              <div className="grid w-full grid-cols-4 m-2 bg-background border-b flex-shrink-0">
-                <button
-                  onClick={() => setActiveTab('widgets')}
-                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'widgets' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  <Component className="w-4 h-4" />
-                  <span className="text-xs">Widgets</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('dashboards')}
-                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'dashboards' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span className="text-xs">Dashboards</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('pages')}
-                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'pages' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  <Layout className="w-4 h-4" />
-                  <span className="text-xs">Pages</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('menu')}
-                  className={`flex flex-col items-center gap-1 py-3 px-2 rounded-md ${activeTab === 'menu' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="text-xs">Menu</span>
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-auto p-3 pb-20">
-                {activeTab === 'widgets' && (
-                <div className="grid gap-4 grid-cols-1">
-                  {filteredWidgetTemplates.map((template) => (
-                    <Card key={template.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-base">{template.name}</CardTitle>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {template.category}
-                              </Badge>
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs flex items-center gap-1"
-                              >
-                                {template.targetPlatform === 'mobile' && <Smartphone className="w-3 h-3" />}
-                                {template.targetPlatform === 'desktop' && <Monitor className="w-3 h-3" />}
-                                {template.targetPlatform === 'both' && <Grid className="w-3 h-3" />}
-                                {template.targetPlatform}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {template.description}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
-                              console.log('🔘 MOBILE Create button clicked for widget:', template.name);
-                              console.log('🔘 Template data:', template);
-                              console.log('🔘 handleCreateWidget function:', handleCreateWidget);
-                              try {
-                                handleCreateWidget(template);
-                              } catch (error) {
-                                console.error('❌ Error in handleCreateWidget:', error);
-                                console.error('❌ Error stack:', error.stack);
-                              }
-                            }}
-                            className="flex-1"
-                            type="button"
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Create
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              console.log('🔘 MOBILE Edit button clicked for widget:', template.name);
-                              console.log('🔘 Template data:', template);
-                              try {
-                                handleEditWidget(template);
-                              } catch (error) {
-                                console.error('❌ Error in handleEditWidget:', error);
-                              }
-                            }}
-                            type="button"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                )}
-
-                {activeTab === 'dashboards' && (
-                <div className="grid gap-4 grid-cols-1">
-                  {filteredDashboardTemplates.map((template) => (
-                    <Card key={template.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-base">{template.name}</CardTitle>
-                            <Badge variant="secondary" className="mt-1 text-xs">
-                              {template.category}
-                            </Badge>
-                          </div>
-                          <div className="text-muted-foreground">
-                            <BarChart3 className="w-4 h-4" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-sm text-muted-foreground mb-4">
-                          {template.description}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
-                          <span>{template.widgetCount} widgets</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleCreateDashboard(template)}
-                            className="flex-1"
-                          >
-                            <Plus className="w-3 h-3 mr-1" />
-                            Create
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                )}
-
-                {activeTab === 'menu' && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Menu management coming soon</p>
-                    <p className="text-sm">Configure sidebar navigation and organization</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <MobileDesignStudio
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onClose={() => onOpenChange(false)}
+            onAiAssistant={() => setAiDesignStudioOpen(true)}
+            filteredWidgetTemplates={filteredWidgetTemplates}
+            filteredDashboardTemplates={filteredDashboardTemplates}
+            onCreateWidget={(template) => {
+              const newWidget = {
+                title: template.name,
+                type: template.type,
+                category: template.category,
+                targetPlatform: template.targetPlatform,
+                description: template.description,
+                isTemplate: true,
+                templateId: template.id
+              };
+              setEditingWidget(newWidget);
+              setWidgetStudioOpen(true);
+            }}
+            onCreateDashboard={handleCreateDashboard}
+          />
         ) : (
           // Desktop: Existing layout with constrained height  
           <>
