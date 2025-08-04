@@ -638,6 +638,128 @@ export function AiDesignStudioMobile({
               </div>
             </div>
 
+            {/* Live Preview */}
+            <div className="p-4 bg-gray-50 border-b">
+              <label className="text-xs font-medium text-gray-700 uppercase tracking-wide mb-2 block">
+                🔍 Live Preview
+              </label>
+              <div className="bg-white rounded-lg border p-3 shadow-sm">
+                {previewType === 'widget' && (
+                  <div className="space-y-2">
+                    {/* Widget Header */}
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">{previewItem.title}</h4>
+                      <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                    </div>
+                    
+                    {/* Chart Visualization */}
+                    <div className="h-24 bg-gradient-to-br from-blue-50 to-indigo-100 rounded flex items-center justify-center">
+                      {(() => {
+                        const chartType = previewItem.chartType || previewItem.chart_type || previewItem.type || 'chart';
+                        
+                        if (chartType.toLowerCase().includes('gauge') || chartType.toLowerCase().includes('status')) {
+                          return (
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 rounded-full border-4 border-green-300 border-t-green-600 flex items-center justify-center">
+                                <span className="text-xs font-bold text-green-700">85%</span>
+                              </div>
+                              <div className="text-xs">
+                                <div className="text-green-600 font-medium">Operational</div>
+                                <div className="text-gray-500">12/15 Equipment</div>
+                              </div>
+                            </div>
+                          );
+                        } else if (chartType.toLowerCase().includes('bar') || chartType.toLowerCase().includes('chart')) {
+                          return (
+                            <div className="flex items-end space-x-1 h-16">
+                              <div className="w-3 bg-blue-400 h-8 rounded-t"></div>
+                              <div className="w-3 bg-green-400 h-12 rounded-t"></div>
+                              <div className="w-3 bg-yellow-400 h-6 rounded-t"></div>
+                              <div className="w-3 bg-red-400 h-10 rounded-t"></div>
+                              <div className="w-3 bg-purple-400 h-14 rounded-t"></div>
+                            </div>
+                          );
+                        } else if (chartType.toLowerCase().includes('kpi') || chartType.toLowerCase().includes('metric')) {
+                          return (
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-600">247</div>
+                              <div className="text-xs text-gray-500">Active Orders</div>
+                              <div className="text-xs text-green-500 mt-1">↗ +12% from yesterday</div>
+                            </div>
+                          );
+                        } else if (chartType.toLowerCase().includes('list')) {
+                          return (
+                            <div className="w-full space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span>Reactor A-01</span>
+                                <span className="text-green-600">Running</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span>Mixer B-03</span>
+                                <span className="text-yellow-600">Idle</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span>Press C-12</span>
+                                <span className="text-red-600">Maintenance</span>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="text-center">
+                              <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-blue-400 to-purple-500 rounded"></div>
+                              <div className="text-xs text-gray-600">Live Data</div>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                    
+                    {/* Widget Footer */}
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span>Updated: 2m ago</span>
+                      <span>📊 {previewItem.dataSource || previewItem.data_source || 'data'}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {previewType === 'dashboard' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">{previewItem.title}</h4>
+                      <div className="text-xs text-gray-500">Dashboard View</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 h-20">
+                      <div className="bg-blue-100 rounded p-2 flex items-center justify-center">
+                        <div className="text-xs text-center">
+                          <div className="font-bold">Widget 1</div>
+                          <div className="text-gray-600">Chart</div>
+                        </div>
+                      </div>
+                      <div className="bg-green-100 rounded p-2 flex items-center justify-center">
+                        <div className="text-xs text-center">
+                          <div className="font-bold">Widget 2</div>
+                          <div className="text-gray-600">Metrics</div>
+                        </div>
+                      </div>
+                      <div className="bg-yellow-100 rounded p-2 flex items-center justify-center">
+                        <div className="text-xs text-center">
+                          <div className="font-bold">Widget 3</div>
+                          <div className="text-gray-600">Status</div>
+                        </div>
+                      </div>
+                      <div className="bg-purple-100 rounded p-2 flex items-center justify-center">
+                        <div className="text-xs text-center">
+                          <div className="font-bold">Widget 4</div>
+                          <div className="text-gray-600">List</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Content */}
             <div className="p-4 space-y-4">
               <div>
