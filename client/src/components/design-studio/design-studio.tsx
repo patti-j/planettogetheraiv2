@@ -405,8 +405,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
     }}>
       <DialogContent className={`
         ${isMobile ? 'max-w-[95vw] max-h-[85vh] w-[95vw] h-[85vh]' : 'max-w-6xl max-h-[85vh]'} 
-        ${isMobile ? 'p-0' : ''} flex flex-col z-50
-      `} style={{ zIndex: 9999 }}>
+        ${isMobile ? 'p-0' : ''} flex flex-col
+      `} style={{ zIndex: 2147483648 }}>
         {isMobile ? (
           // Mobile: Simple scrollable layout  
           <div className="h-full overflow-auto">
