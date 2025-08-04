@@ -49,29 +49,25 @@ export function FloatingHamburgerMenu({
 
   return (
     <div className={`fixed top-4 left-4 z-50 ${visibilityClass}`}>
-      <Button 
-        variant="outline" 
-        size="sm"
+      <div 
         onClick={handleClick}
-        className="p-2 bg-white dark:bg-gray-800 shadow-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 hover:shadow-xl group relative overflow-hidden"
+        className="cursor-pointer group relative transition-all duration-200 hover:scale-110"
         title="Open Menu"
       >
-        {/* Main logo - always visible and centered */}
-        <div className="flex items-center justify-center">
-          <img 
-            src={logoSvg} 
-            alt="PlanetTogether" 
-            className="w-8 h-8 object-contain transition-all duration-200 group-hover:scale-110"
-          />
-        </div>
+        {/* Main logo - clean without button styling */}
+        <img 
+          src={logoSvg} 
+          alt="PlanetTogether" 
+          className="w-10 h-10 object-contain drop-shadow-lg hover:drop-shadow-xl transition-all duration-200"
+        />
         
         {/* Close icon overlay when open */}
         {isOpen && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-90 rounded-md">
-            <X className="w-5 h-5 text-gray-800 dark:text-gray-200 stroke-2" />
+          <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-95 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
+            <X className="w-6 h-6 text-gray-800 dark:text-gray-200 stroke-2" />
           </div>
         )}
-      </Button>
+      </div>
     </div>
   );
 }
