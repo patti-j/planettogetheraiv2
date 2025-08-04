@@ -246,25 +246,8 @@ interface Notification {
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
   const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div 
-      className="mobile-page-wrapper bg-white dark:bg-gray-900" 
-      style={{ 
-        position: 'fixed',
-        top: '80px', // Start below mobile header
-        left: '0',
-        right: '0',
-        bottom: '0',
-        overflow: 'auto',
-        zIndex: 10
-      }}
-    >
-      <div style={{ 
-        position: 'relative',
-        height: 'auto',
-        minHeight: 'auto'
-      }}>
-        {children}
-      </div>
+    <div className="mobile-page-wrapper w-full h-full">
+      {children}
     </div>
   );
 
@@ -1467,11 +1450,20 @@ export default function MobileHomePage() {
 
       {/* Add mobile-specific CSS overrides */}
       <style>{`
-        .mobile-page-wrapper * {
+        .mobile-page-wrapper *,
+        .mobile-page-wrapper *:before,
+        .mobile-page-wrapper *:after {
           position: static !important;
+          top: unset !important;
+          left: unset !important;
+          right: unset !important;
+          bottom: unset !important;
+          z-index: auto !important;
         }
         .mobile-page-wrapper .h-screen,
-        .mobile-page-wrapper .min-h-screen {
+        .mobile-page-wrapper .min-h-screen,
+        .mobile-page-wrapper .h-full,
+        .mobile-page-wrapper .min-h-full {
           height: auto !important;
           min-height: auto !important;
         }
@@ -1479,13 +1471,26 @@ export default function MobileHomePage() {
           height: auto !important;
           min-height: auto !important;
           position: relative !important;
+          top: 0 !important;
+          left: 0 !important;
+          transform: none !important;
         }
-        .mobile-page-wrapper .flex.flex-col.h-screen {
+        .mobile-page-wrapper .flex.flex-col.h-screen,
+        .mobile-page-wrapper div[class*="h-screen"],
+        .mobile-page-wrapper div[class*="min-h-screen"] {
           height: auto !important;
           min-height: auto !important;
         }
         .mobile-page-wrapper .bg-gray-50.dark\\:bg-gray-900 {
           background: transparent !important;
+        }
+        /* Ensure mobile header stays on top */
+        .mobile-header {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 50 !important;
         }
       `}</style>
 
@@ -1662,7 +1667,7 @@ export default function MobileHomePage() {
           </div>
       ) : (
         // For other routes, render them underneath the mobile header
-        <div className="p-4 min-h-screen">
+        <div className="relative" style={{ height: 'calc(100vh - 80px)', overflow: 'auto' }}>
           <MobilePageContent location={location} />
         </div>
       )}
