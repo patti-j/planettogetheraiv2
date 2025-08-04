@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
+import { useDeviceType } from '@/hooks/useDeviceType';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
@@ -33,6 +34,8 @@ interface LayoutConfig {
 
 export default function ProductionSchedulePage() {
   const { hasPermission } = usePermissions();
+  const deviceType = useDeviceType();
+  const isMobile = deviceType === 'mobile';
   
   // Page editor integration
   const {
@@ -63,6 +66,7 @@ export default function ProductionSchedulePage() {
   });
 
   const [activeTab, setActiveTab] = useState('gantt');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Check permissions
   const canViewSchedule = hasPermission('schedule', 'view');
@@ -160,253 +164,398 @@ export default function ProductionSchedulePage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b">
-        <div className="flex items-center gap-3">
-          <Calendar className="w-6 h-6 text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold">{layout.title}</h1>
-            <p className="text-muted-foreground">
-              {layout.description || "Manage production orders, operations, and resource assignments"}
-            </p>
+      <div className={`flex items-center justify-between border-b ${isMobile ? 'p-3' : 'p-6'}`}>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Calendar className={`text-blue-600 ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
+          <div className="min-w-0 flex-1">
+            <h1 className={`font-bold truncate ${isMobile ? 'text-lg' : 'text-2xl'}`}>{layout.title}</h1>
+            {!isMobile && (
+              <p className="text-muted-foreground text-sm">
+                {layout.description || "Manage production orders, operations, and resource assignments"}
+              </p>
+            )}
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={toggleEditMode}
-            className="gap-2"
-          >
-            <Edit className="w-4 h-4" />
-            Edit Page
-          </Button>
-          
-          {canCreateSchedule && (
-            <Button variant="default" size="sm" className="gap-2">
-              <Plus className="w-4 h-4" />
-              New Order
-            </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isMobile ? (
+            // Mobile: Show only essential buttons
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={toggleEditMode}
+                className="w-9 h-9 p-0"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+              {canCreateSchedule && (
+                <Button variant="default" size="sm" className="w-9 h-9 p-0">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              )}
+            </>
+          ) : (
+            // Desktop: Show all buttons with text
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={toggleEditMode}
+                className="gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Page
+              </Button>
+              
+              {canCreateSchedule && (
+                <Button variant="default" size="sm" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  New Order
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </Button>
+            </>
           )}
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </Button>
         </div>
       </div>
 
       {/* Filters and Controls */}
       {layoutConfig.showFilters && (
-        <div className="flex flex-wrap items-center gap-4 p-4 bg-muted/50 border-b">
-          <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search orders, operations..."
-              value={filters.searchQuery}
-              onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-              className="w-64"
-            />
-          </div>
-          
-          <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange('dateRange', value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="quarter">This Quarter</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className={`bg-muted/50 border-b ${isMobile ? 'p-2' : 'p-4'}`}>
+          {isMobile ? (
+            // Mobile: Collapsible filters
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMobileFilters(!showMobileFilters)}
+                  className="gap-2"
+                >
+                  <Filter className="w-4 h-4" />
+                  Filters
+                  {showMobileFilters ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  <Badge variant="outline" className="text-xs">
+                    <LayoutGrid className="w-3 h-3 mr-1" />
+                    {layoutConfig.view.charAt(0).toUpperCase() + layoutConfig.view.slice(1)}
+                  </Badge>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newView = layoutConfig.view === 'compact' ? 'standard' : 
+                                    layoutConfig.view === 'standard' ? 'detailed' : 'compact';
+                      handleLayoutConfigChange('view', newView);
+                    }}
+                    className="w-8 h-8 p-0"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {showMobileFilters && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search..."
+                      value={filters.searchQuery}
+                      onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+                      className="flex-1 text-sm"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange('dateRange', value)}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="quarter">This Quarter</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-          <Select value={filters.priority} onValueChange={(value) => handleFilterChange('priority', value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
+                    <Select value={filters.priority} onValueChange={(value) => handleFilterChange('priority', value)}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Priority</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                    <SelectTrigger className="text-sm">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="delayed">Delayed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Desktop: Horizontal layout
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search orders, operations..."
+                  value={filters.searchQuery}
+                  onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              
+              <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange('dateRange', value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="delayed">Delayed</SelectItem>
-            </SelectContent>
-          </Select>
+              <Select value={filters.priority} onValueChange={(value) => handleFilterChange('priority', value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priority</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <Badge variant="outline" className="gap-1">
-              <LayoutGrid className="w-3 h-3" />
-              {layoutConfig.view.charAt(0).toUpperCase() + layoutConfig.view.slice(1)} View
-            </Badge>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLayoutConfig(prev => ({ ...prev, showFilters: false }))}
-            >
-              <Filter className="w-4 h-4" />
-            </Button>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="delayed">Delayed</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newView = layoutConfig.view === 'compact' ? 'standard' : 
-                              layoutConfig.view === 'standard' ? 'detailed' : 'compact';
-                handleLayoutConfigChange('view', newView);
-              }}
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <Badge variant="outline" className="gap-1">
+                  <LayoutGrid className="w-3 h-3" />
+                  {layoutConfig.view.charAt(0).toUpperCase() + layoutConfig.view.slice(1)} View
+                </Badge>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLayoutConfig(prev => ({ ...prev, showFilters: false }))}
+                >
+                  <Filter className="w-4 h-4" />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newView = layoutConfig.view === 'compact' ? 'standard' : 
+                                  layoutConfig.view === 'standard' ? 'detailed' : 'compact';
+                    handleLayoutConfigChange('view', newView);
+                  }}
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Schedule Overview</TabsTrigger>
-            <TabsTrigger value="gantt">Gantt Chart</TabsTrigger>
-            <TabsTrigger value="sequencer">Operation Sequencer</TabsTrigger>
-            <TabsTrigger value="resources">Resource Assignment</TabsTrigger>
+          <TabsList className={`${isMobile ? 'grid w-full grid-cols-2 h-auto gap-1 p-1' : 'grid w-full grid-cols-4'}`}>
+            <TabsTrigger 
+              value="overview" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Overview' : 'Schedule Overview'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="gantt" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Gantt' : 'Gantt Chart'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sequencer" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Sequencer' : 'Operation Sequencer'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="resources" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Resources' : 'Resource Assignment'}
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
-            <div className={`grid gap-6 ${gridCols}`}>
+          <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
+            <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : gridCols}`}>
               {/* Gantt Chart Widget */}
               <Card className="col-span-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     Production Timeline
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <GanttChartWidget 
                     configuration={filteredWidgetConfig}
-                    className="h-80"
-                    isMobile={false}
-                    compact={layoutConfig.view === 'compact'}
+                    className={`${isMobile ? 'h-48' : 'h-80'}`}
+                    isMobile={isMobile}
+                    compact={layoutConfig.view === 'compact' || isMobile}
                   />
                 </CardContent>
               </Card>
 
               {/* Operation Sequencer Widget */}
               <Card className="col-span-full lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <List className="w-5 h-5" />
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <List className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     Operation Sequencer
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <OperationSequencerWidget 
                     configuration={{
-                      view: layoutConfig.view,
+                      view: isMobile ? 'compact' : layoutConfig.view,
                       allowReorder: canEditSchedule,
-                      showResourceFilter: true,
-                      showStatusFilter: true,
-                      showOptimizationFlags: true
+                      showResourceFilter: !isMobile,
+                      showStatusFilter: !isMobile,
+                      showOptimizationFlags: !isMobile
                     }}
-                    isDesktop={true}
+                    isDesktop={!isMobile}
                   />
                 </CardContent>
               </Card>
 
               {/* Production Metrics Widget */}
               <Card className="col-span-full lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <Clock className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     Production Metrics
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ProductionMetricsWidget 
                     configuration={filteredWidgetConfig}
-                    className="h-64"
+                    className={`${isMobile ? 'h-48' : 'h-64'}`}
                   />
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="gantt" className="mt-6">
+          <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <Card>
-              <CardHeader>
-                <CardTitle>Production Gantt Chart</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Visual timeline of all production orders and operations
-                </p>
+              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                <CardTitle className={`${isMobile ? 'text-base' : ''}`}>Production Gantt Chart</CardTitle>
+                {!isMobile && (
+                  <p className="text-sm text-muted-foreground">
+                    Visual timeline of all production orders and operations
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <GanttChartWidget 
                   configuration={filteredWidgetConfig}
-                  className="h-[600px]"
-                  isMobile={false}
-                  compact={false}
+                  className={`${isMobile ? 'h-64' : 'h-[600px]'}`}
+                  isMobile={isMobile}
+                  compact={isMobile}
                 />
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="sequencer" className="mt-6">
+          <TabsContent value="sequencer" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <Card>
-              <CardHeader>
-                <CardTitle>Operation Sequencer</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Drag and drop operations to optimize production sequence
-                </p>
+              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                <CardTitle className={`${isMobile ? 'text-base' : ''}`}>Operation Sequencer</CardTitle>
+                {!isMobile && (
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop operations to optimize production sequence
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <OperationSequencerWidget 
                   configuration={{
-                    view: 'detailed',
+                    view: isMobile ? 'compact' : 'detailed',
                     allowReorder: canEditSchedule,
-                    showResourceFilter: true,
-                    showStatusFilter: true,
-                    showOptimizationFlags: true
+                    showResourceFilter: !isMobile,
+                    showStatusFilter: !isMobile,
+                    showOptimizationFlags: !isMobile
                   }}
-                  isDesktop={true}
+                  isDesktop={!isMobile}
                 />
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="resources" className="mt-6">
+          <TabsContent value="resources" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <Card>
-              <CardHeader>
-                <CardTitle>Resource Assignment</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Manage resource allocations and capacity planning
-                </p>
+              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                <CardTitle className={`${isMobile ? 'text-base' : ''}`}>Resource Assignment</CardTitle>
+                {!isMobile && (
+                  <p className="text-sm text-muted-foreground">
+                    Manage resource allocations and capacity planning
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <ResourceAssignmentWidget 
-                  className="h-96"
+                  className={`${isMobile ? 'h-64' : 'h-96'}`}
                 />
               </CardContent>
             </Card>
@@ -415,10 +564,12 @@ export default function ProductionSchedulePage() {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-6 py-3 bg-muted/50 border-t text-sm text-muted-foreground">
-        <div className="flex items-center gap-4">
+      <div className={`flex items-center justify-between bg-muted/50 border-t text-muted-foreground ${
+        isMobile ? 'px-3 py-2 text-xs flex-col gap-2' : 'px-6 py-3 text-sm'
+      }`}>
+        <div className={`flex items-center ${isMobile ? 'gap-3 justify-center w-full' : 'gap-4'}`}>
           <span>
-            {Array.isArray(productionOrders) ? productionOrders.length : 0} Production Orders
+            {Array.isArray(productionOrders) ? productionOrders.length : 0} {isMobile ? 'Orders' : 'Production Orders'}
           </span>
           <span>
             {Array.isArray(operations) ? operations.length : 0} Operations
@@ -428,14 +579,16 @@ export default function ProductionSchedulePage() {
           </span>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center ${isMobile ? 'gap-1 justify-center w-full' : 'gap-2'}`}>
           {layoutConfig.autoRefresh && (
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className={`gap-1 ${isMobile ? 'text-xs' : ''}`}>
               <RefreshCw className="w-3 h-3" />
-              Auto-refresh: {layoutConfig.refreshInterval}s
+              {isMobile ? `${layoutConfig.refreshInterval}s` : `Auto-refresh: ${layoutConfig.refreshInterval}s`}
             </Badge>
           )}
-          <span>Last updated: {new Date().toLocaleTimeString()}</span>
+          <span className={`${isMobile ? 'text-xs' : ''}`}>
+            {isMobile ? new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : `Last updated: ${new Date().toLocaleTimeString()}`}
+          </span>
         </div>
       </div>
     </div>
