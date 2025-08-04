@@ -1279,7 +1279,11 @@ export default function MobileHomePage() {
               className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
                 console.log("🏠 Logo clicked! Current location:", location, "Setting to /");
+                console.log("🏠 setLocation function:", typeof setLocation);
                 setLocation('/');
+                setTimeout(() => {
+                  console.log("🏠 After setLocation - location is now:", location);
+                }, 100);
               }}
             />
           </div>
