@@ -268,9 +268,7 @@ function Router() {
           <Switch>
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/onboarding" component={Onboarding} />
-          <Route path="/production-schedule">
-            <ProductionSchedulePage />
-          </Route>
+
           <Route path="/dashboard">
             <DashboardWithAutoTour />
           </Route>
