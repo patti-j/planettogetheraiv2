@@ -339,6 +339,20 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
     createDashboardMutation.mutate(dashboardData);
   };
 
+  const handleEditWidget = (template: WidgetTemplate) => {
+    console.log('Editing widget template:', template);
+    setEditingWidget({
+      title: template.name,
+      type: template.type,
+      category: template.category,
+      targetPlatform: template.targetPlatform,
+      description: template.description,
+      isTemplate: true,
+      templateId: template.id
+    });
+    setWidgetStudioOpen(true);
+  };
+
   // Track when dialog opens to prevent immediate close
   React.useEffect(() => {
     if (open && !justOpened) {
@@ -513,7 +527,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                             <Plus className="w-3 h-3 mr-1" />
                             Create
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditWidget(template)}
+                          >
                             <Edit3 className="w-3 h-3" />
                           </Button>
                         </div>
@@ -744,7 +762,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                                     <Plus className="w-3 h-3 mr-1" />
                                     Create
                                   </Button>
-                                  <Button variant="outline" size="sm">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEditWidget(template)}
+                                  >
                                     <Edit3 className="w-3 h-3" />
                                   </Button>
                                 </div>
