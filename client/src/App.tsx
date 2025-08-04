@@ -15,6 +15,7 @@ import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { ErrorBoundary } from "@/components/error-boundary";
 import TopMenu from "@/components/top-menu";
 import OnboardingWizard from "@/components/onboarding-wizard";
@@ -188,6 +189,7 @@ function Router() {
   const { isAuthenticated, isLoading, user, loginError } = useAuth();
   const { isActive: isTourActive } = useTour();
   const [location, originalSetLocation] = useLocation();
+  const deviceType = useDeviceType();
   
   // Use normal setLocation without debug tracking
   const setLocation = originalSetLocation;
@@ -209,6 +211,24 @@ function Router() {
   
   // Use session persistence for authenticated users
   useSessionPersistence();
+
+  // Routes that should be handled by mobile system when on mobile device
+  const mobileRoutes = [
+    '/production-schedule',
+    '/dashboard',
+    '/analytics',
+    '/shop-floor',
+    '/reports',
+    '/boards',
+    '/production-cockpit'
+  ];
+
+  // If on mobile and trying to access a mobile route, redirect to home 
+  // The mobile system will handle internal routing
+  if (deviceType === 'mobile' && mobileRoutes.includes(location)) {
+    // Don't render main router content, let SmartHomeWrapper handle it
+    return null;
+  }
 
   if (isLoading && !isTourActive) {
     return (
