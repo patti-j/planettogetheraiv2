@@ -119,6 +119,16 @@ import {
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { WidgetConfig } from '@/lib/widget-library';
 
+// Import page components for mobile routing - only import existing pages
+import ProductionSchedulePage from "@/pages/production-schedule";
+import Dashboard from "@/pages/dashboard";
+import ProductionCockpit from "@/pages/production-cockpit";
+import Analytics from "@/pages/analytics";
+import ShopFloor from "@/pages/shop-floor";
+import Reports from "@/pages/reports";
+import BoardsPage from "@/pages/boards";
+// Note: TasksPage, InboxPage, AccountSettings, DashboardManager, WidgetManager don't exist yet
+
 // Icon mapping functions
 const getWidgetIcon = (type: string) => {
   switch (type) {
@@ -230,6 +240,59 @@ interface Notification {
   type: "info" | "warning" | "error" | "success";
   timestamp: string;
   read: boolean;
+}
+
+// Component to render different pages on mobile underneath the header
+function MobilePageContent({ location }: { location: string }) {
+  switch (location) {
+    case "/production-schedule":
+      return <ProductionSchedulePage />;
+    case "/dashboard":
+      return <Dashboard />;
+    case "/production-cockpit":
+      return <ProductionCockpit />;
+    case "/analytics":
+      return <Analytics />;
+    case "/shop-floor":
+      return <ShopFloor />;
+    case "/reports":
+      return <Reports />;
+    case "/boards":
+      return <BoardsPage />;
+    case "/tasks":
+    case "/inbox":
+    case "/account":
+    case "/account-settings":
+    case "/dashboard-manager":
+    case "/widget-manager":
+      return (
+        <div className="text-center py-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Coming Soon
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            The {location.replace('/', '').replace('-', ' ')} page is under development.
+          </p>
+          <Link href="/">
+            <Button>Go Home</Button>
+          </Link>
+        </div>
+      );
+    default:
+      return (
+        <div className="text-center py-8">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Page Not Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            The page "{location}" could not be found.
+          </p>
+          <Link href="/">
+            <Button>Go Home</Button>
+          </Link>
+        </div>
+      );
+  }
 }
 
 // Mobile Menu Trigger Component - using FloatingHamburgerMenu
@@ -1350,22 +1413,23 @@ export default function MobileHomePage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-4 space-y-6">
-            {/* Welcome Section */}
-            <div className="text-center py-4">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Welcome back, {user?.username}!
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
-            </div>
+      {/* Main Content - Check route and render appropriate content */}
+      {location === "/" || location === "/mobile-home" || location === "/mobile" ? (
+        <div className="p-4 space-y-6">
+          {/* Welcome Section */}
+          <div className="text-center py-4">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Welcome back, {user?.username}!
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+          </div>
 
             {/* Quick Actions Grid */}
             <div className="grid grid-cols-2 gap-4">
@@ -1520,8 +1584,14 @@ export default function MobileHomePage() {
               </Card>
             </div>
           </div>
+      ) : (
+        // For other routes, render them underneath the mobile header
+        <div className="p-4 min-h-screen">
+          <MobilePageContent location={location} />
+        </div>
+      )}
 
-          {/* Max AI Fly-out Panel - Full Screen Overlay */}
+      {/* Max AI Fly-out Panel - Full Screen Overlay */}
           {maxPanelOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           {/* Backdrop */}
