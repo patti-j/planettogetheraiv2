@@ -30,11 +30,12 @@ export function AiDesignStudioMobile({
   const [aiPrompt, setAiPrompt] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
 
-  const handleAiPrompt = async () => {
-    if (!aiPrompt.trim()) return;
+  const handleAiPrompt = async (promptOverride?: string) => {
+    const finalPrompt = promptOverride || aiPrompt;
+    if (!finalPrompt.trim()) return;
     
     setIsProcessing(true);
-    console.log('🤖 AI Prompt:', aiPrompt, 'Context:', activeTab);
+    console.log('🤖 AI Prompt:', finalPrompt, 'Context:', activeTab);
     
     try {
       // Send the AI prompt to the backend for processing
@@ -45,7 +46,7 @@ export function AiDesignStudioMobile({
         },
         credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
-          prompt: aiPrompt,
+          prompt: finalPrompt,
           context: activeTab,
           systemData: {
             widgets: 7, // Using static counts for now
@@ -368,14 +369,26 @@ export function AiDesignStudioMobile({
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-3">
                       <button
-                        onClick={() => setAiPrompt(`Show me the details of ${widget.title || widget.name} widget`)}
+                        onClick={() => {
+                          const prompt = `Show me the details of ${widget.title || widget.name} widget`;
+                          console.log('🔍 Preview button clicked for widget:', widget.title || widget.name);
+                          setAiPrompt(prompt);
+                          // Auto-trigger the AI request
+                          setTimeout(() => handleAiPrompt(), 100);
+                        }}
                         className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
                       >
                         <Eye className="w-3 h-3" />
                         Preview
                       </button>
                       <button
-                        onClick={() => setAiPrompt(`Edit the ${widget.title || widget.name} widget to add better styling and improve functionality`)}
+                        onClick={() => {
+                          const prompt = `Edit the ${widget.title || widget.name} widget to add better styling and improve functionality`;
+                          console.log('✏️ Edit button clicked for widget:', widget.title || widget.name);
+                          setAiPrompt(prompt);
+                          // Auto-trigger the AI request
+                          setTimeout(() => handleAiPrompt(), 100);
+                        }}
                         className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
                       >
                         <Edit3 className="w-3 h-3" />
@@ -415,14 +428,26 @@ export function AiDesignStudioMobile({
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-3">
                       <button
-                        onClick={() => setAiPrompt(`Show me the details of ${dashboard.title || dashboard.name} dashboard`)}
+                        onClick={() => {
+                          const prompt = `Show me the details of ${dashboard.title || dashboard.name} dashboard`;
+                          console.log('🔍 Preview button clicked for dashboard:', dashboard.title || dashboard.name);
+                          setAiPrompt(prompt);
+                          // Auto-trigger the AI request
+                          setTimeout(() => handleAiPrompt(), 100);
+                        }}
                         className="flex-1 flex items-center justify-center gap-1 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-1 rounded transition-colors"
                       >
                         <Eye className="w-3 h-3" />
                         Preview
                       </button>
                       <button
-                        onClick={() => setAiPrompt(`Edit the ${dashboard.title || dashboard.name} dashboard to improve layout and add more widgets`)}
+                        onClick={() => {
+                          const prompt = `Edit the ${dashboard.title || dashboard.name} dashboard to improve layout and add more widgets`;
+                          console.log('✏️ Edit button clicked for dashboard:', dashboard.title || dashboard.name);
+                          setAiPrompt(prompt);
+                          // Auto-trigger the AI request
+                          setTimeout(() => handleAiPrompt(), 100);
+                        }}
                         className="flex-1 flex items-center justify-center gap-1 text-xs bg-purple-50 text-purple-700 hover:bg-purple-100 px-2 py-1 rounded transition-colors"
                       >
                         <Edit3 className="w-3 h-3" />
