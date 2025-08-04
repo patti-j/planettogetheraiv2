@@ -98,13 +98,16 @@ const DraggableWidget: React.FC<{
   onDelete: (widgetId: string) => void;
   isEditMode: boolean;
 }> = ({ widget, onUpdate, onDelete, isEditMode }) => {
+  const deviceType = useDeviceType();
+  const isMobile = deviceType === 'mobile';
+  
   const [{ isDragging }, drag] = useDrag({
     type: 'widget',
     item: { id: widget.id },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    canDrag: isEditMode,
+    canDrag: isEditMode && !isMobile, // Disable drag on mobile for better touch experience
   });
 
   const [, drop] = useDrop({
@@ -114,14 +117,22 @@ const DraggableWidget: React.FC<{
     },
   });
 
+  const toggleVisibility = () => {
+    onUpdate({ ...widget, visible: !widget.visible });
+  };
+
   return (
     <div
-      ref={isEditMode ? (node) => drag(drop(node)) : undefined}
-      className={`relative border-2 ${
-        isEditMode ? 'border-dashed border-blue-300 hover:border-blue-500' : 'border-transparent'
-      } ${isDragging ? 'opacity-50' : ''} transition-all duration-200`}
+      ref={isEditMode && !isMobile ? (node) => drag(drop(node)) : undefined}
+      className={`relative border-2 rounded-lg overflow-hidden bg-white ${
+        isEditMode 
+          ? 'border-dashed border-blue-300 hover:border-blue-500' 
+          : 'border-gray-200'
+      } ${isDragging ? 'opacity-50' : ''} ${
+        !widget.visible ? 'opacity-60' : ''
+      } transition-all duration-200 shadow-sm`}
       style={{
-        gridColumn: `span ${widget.position.w}`,
+        gridColumn: isMobile ? 'span 1' : `span ${widget.position.w}`,
         gridRow: `span ${widget.position.h}`,
       }}
     >
@@ -268,35 +279,47 @@ export default function PageEditMode({
         {/* Edit Mode Toggle Bar */}
         <div className={`
           fixed ${isMobile ? 'bottom-4 left-4 right-4' : 'top-4 right-4'} 
-          z-50 bg-white/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg
+          z-50 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg
           ${isEditMode ? 'ring-2 ring-blue-500' : ''}
+          ${isMobile ? 'p-2' : 'p-2'}
         `}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
+            {/* Mobile: Stack vertically when in edit mode, horizontal when not */}
+            <div className={`flex items-center gap-2 ${isMobile && isEditMode ? 'flex-wrap justify-center w-full' : ''}`}>
               <Button
                 onClick={onToggleEditMode}
                 variant={isEditMode ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
+                size={isMobile ? "sm" : "sm"}
+                className={`gap-2 ${isMobile ? 'flex-shrink-0' : ''}`}
               >
                 {isEditMode ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                {isEditMode ? 'Exit Edit' : 'Edit Page'}
+                {isMobile && isEditMode ? 'Exit' : isEditMode ? 'Exit Edit' : 'Edit Page'}
               </Button>
               
               {isEditMode && (
                 <>
-                  <Button onClick={onSave} variant="outline" size="sm" className="gap-2">
+                  <Button 
+                    onClick={onSave} 
+                    variant="outline" 
+                    size={isMobile ? "sm" : "sm"}
+                    className={`gap-2 ${isMobile ? 'flex-shrink-0' : ''}`}
+                  >
                     <Save className="w-4 h-4" />
-                    Save
+                    {isMobile ? '' : 'Save'}
                   </Button>
                   
                   <Dialog open={showSettings} onOpenChange={setShowSettings}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size={isMobile ? "sm" : "sm"}
+                        className={isMobile ? 'flex-shrink-0' : ''}
+                      >
                         <Settings className="w-4 h-4" />
+                        {isMobile ? '' : ''}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className={`${isMobile ? 'max-w-[95vw] max-h-[90vh] overflow-y-auto' : 'max-w-md'}`}>
                       <DialogHeader>
                         <DialogTitle>Page Settings</DialogTitle>
                       </DialogHeader>
@@ -314,10 +337,10 @@ export default function PageEditMode({
               )}
             </div>
             
-            {isEditMode && (
+            {isEditMode && !isMobile && (
               <div className="flex items-center gap-1">
                 <Badge variant="secondary" className="text-xs">
-                  {isMobile ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
+                  <Monitor className="w-3 h-3" />
                 </Badge>
               </div>
             )}
@@ -327,61 +350,73 @@ export default function PageEditMode({
         {/* Widget Palette */}
         {isEditMode && (
           <div className={`
-            fixed ${isMobile ? 'bottom-20 left-4 right-4' : 'left-4 top-20'} 
-            z-40 bg-white/95 backdrop-blur-sm border rounded-lg p-3 shadow-lg
-            ${isMobile ? 'max-h-40' : 'max-h-80'} overflow-y-auto
+            fixed z-40 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg overflow-hidden
+            ${isMobile 
+              ? 'bottom-20 left-2 right-2 max-h-48' 
+              : 'left-4 top-20 w-64 max-h-80'
+            }
           `}>
-            <div className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Add Widgets
+            <div className="p-3 border-b bg-gray-50/80">
+              <div className="text-sm font-medium flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Widgets
+              </div>
             </div>
             
-            <div className={`grid gap-2 ${isMobile ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {availableWidgets.map((widget) => (
-                <Button
-                  key={widget.id}
-                  variant="outline"
-                  size="sm"
-                  className="justify-start text-xs h-auto p-2"
-                  onClick={() => handleAddWidget(widget, layout.type === 'tabs' ? activeTab : undefined)}
-                >
-                  <div>
-                    <div className="font-medium">{widget.title}</div>
-                    <div className="text-muted-foreground">{widget.category}</div>
-                  </div>
-                </Button>
-              ))}
+            <div className="p-2 overflow-y-auto max-h-full">
+              <div className={`grid gap-1 ${isMobile ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {availableWidgets.map((widget) => (
+                  <Button
+                    key={widget.id}
+                    variant="ghost"
+                    size="sm"
+                    className={`justify-start h-auto p-2 hover:bg-blue-50 ${
+                      isMobile ? 'text-xs' : 'text-sm'
+                    }`}
+                    onClick={() => handleAddWidget(widget, layout.type === 'tabs' ? activeTab : undefined)}
+                  >
+                    <div className="text-left w-full">
+                      <div className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        {widget.title}
+                      </div>
+                      <div className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                        {widget.category}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* Main Content Area */}
-        <div className={`${isEditMode ? 'pb-32' : ''}`}>
+        <div className={`${isEditMode ? (isMobile ? 'pb-64' : 'pb-32') : ''}`}>
           {/* Page Header */}
-          <div className="p-4 border-b">
+          <div className={`p-4 border-b ${isMobile ? 'px-2' : ''}`}>
             {isEditMode ? (
               <div className="space-y-2">
                 <Input
                   value={pageTitle}
                   onChange={(e) => onPageTitleChange(e.target.value)}
-                  className="text-2xl font-bold border-dashed"
+                  className={`font-bold border-dashed ${isMobile ? 'text-lg' : 'text-2xl'}`}
                   placeholder="Page Title"
                 />
                 {onPageDescriptionChange && (
                   <Textarea
                     value={pageDescription || ''}
                     onChange={(e) => onPageDescriptionChange(e.target.value)}
-                    className="border-dashed"
+                    className="border-dashed text-sm"
                     placeholder="Page Description"
-                    rows={2}
+                    rows={isMobile ? 1 : 2}
                   />
                 )}
               </div>
             ) : (
               <div>
-                <h1 className="text-2xl font-bold">{pageTitle}</h1>
+                <h1 className={`font-bold ${isMobile ? 'text-lg' : 'text-2xl'}`}>{pageTitle}</h1>
                 {pageDescription && (
-                  <p className="text-muted-foreground">{pageDescription}</p>
+                  <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>{pageDescription}</p>
                 )}
               </div>
             )}
@@ -389,21 +424,27 @@ export default function PageEditMode({
 
           {/* Layout Content */}
           {layout.type === 'tabs' ? (
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList>
+            <div className={`p-4 ${isMobile ? 'px-2' : ''}`}>
+              <div className={`${isMobile ? 'space-y-3' : 'flex items-center justify-between'} mb-4`}>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+                  <TabsList className={`${isMobile ? 'w-full flex-wrap h-auto p-1 gap-1' : ''}`}>
                     {layout.tabs?.map((tab) => (
-                      <TabsTrigger key={tab.id} value={tab.id}>
+                      <TabsTrigger 
+                        key={tab.id} 
+                        value={tab.id}
+                        className={`${isMobile ? 'flex-1 min-w-0 text-xs px-2 py-1.5' : ''}`}
+                      >
                         {isEditMode ? (
                           <Input
                             value={tab.title}
                             onChange={(e) => handleUpdateTab(tab.id, { title: e.target.value })}
-                            className="border-none p-0 h-auto text-sm"
+                            className={`border-none p-0 h-auto bg-transparent text-center ${
+                              isMobile ? 'text-xs' : 'text-sm'
+                            }`}
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          tab.title
+                          <span className="truncate">{tab.title}</span>
                         )}
                       </TabsTrigger>
                     ))}
@@ -411,9 +452,10 @@ export default function PageEditMode({
                 </Tabs>
                 
                 {isEditMode && (
-                  <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : ''}`}>
                     <Button onClick={handleAddTab} variant="outline" size="sm">
                       <Plus className="w-4 h-4" />
+                      {!isMobile && 'Tab'}
                     </Button>
                     {layout.tabs && layout.tabs.length > 1 && (
                       <Button 
@@ -422,6 +464,7 @@ export default function PageEditMode({
                         size="sm"
                       >
                         <Trash2 className="w-4 h-4" />
+                        {!isMobile && 'Delete'}
                       </Button>
                     )}
                   </div>
@@ -437,7 +480,7 @@ export default function PageEditMode({
               />
             </div>
           ) : (
-            <div className="p-4">
+            <div className={`p-4 ${isMobile ? 'px-2' : ''}`}>
               <WidgetGrid
                 widgets={currentTabWidgets}
                 columns={layout.columns}
@@ -460,12 +503,18 @@ const WidgetGrid: React.FC<{
   onUpdateWidget: (widget: WidgetInstance) => void;
   onDeleteWidget: (widgetId: string) => void;
 }> = ({ widgets, columns, isEditMode, onUpdateWidget, onDeleteWidget }) => {
+  const deviceType = useDeviceType();
+  const isMobile = deviceType === 'mobile';
+  
+  // Force single column on mobile for better usability
+  const effectiveColumns = isMobile ? 1 : columns;
+  
   return (
     <div 
-      className={`grid gap-4`}
+      className={`grid gap-4 ${isMobile ? 'px-2' : ''}`}
       style={{ 
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        gridAutoRows: 'minmax(200px, auto)'
+        gridTemplateColumns: `repeat(${effectiveColumns}, 1fr)`,
+        gridAutoRows: isMobile ? 'minmax(150px, auto)' : 'minmax(200px, auto)'
       }}
     >
       {widgets.map((widget) => (
@@ -479,10 +528,14 @@ const WidgetGrid: React.FC<{
       ))}
       
       {isEditMode && widgets.length === 0 && (
-        <div className="col-span-full flex items-center justify-center h-64 border-2 border-dashed border-gray-300 rounded-lg">
+        <div className={`col-span-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg ${
+          isMobile ? 'h-48' : 'h-64'
+        }`}>
           <div className="text-center text-muted-foreground">
-            <Layout className="w-12 h-12 mx-auto mb-2" />
-            <p>Drag widgets here to start building your page</p>
+            <Layout className={`mx-auto mb-2 ${isMobile ? 'w-8 h-8' : 'w-12 h-12'}`} />
+            <p className={`${isMobile ? 'text-sm px-4' : ''}`}>
+              {isMobile ? 'Tap widgets below to add them' : 'Drag widgets here to start building your page'}
+            </p>
           </div>
         </div>
       )}
