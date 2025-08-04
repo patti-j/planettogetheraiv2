@@ -18,6 +18,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const [selectedWidget, setSelectedWidget] = React.useState<any>(null);
 
   const handleEditWidget = (widget: any) => {
+    console.log('🎯 handleEditWidget called with:', widget);
     setSelectedWidget(widget);
     setWidgetStudioOpen(true);
     toast({

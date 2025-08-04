@@ -184,7 +184,10 @@ export function MobileDesignStudioNew({
                     <h3 className="font-medium text-sm">{widget.name}</h3>
                     <div className="flex gap-1">
                       <button 
-                        onClick={() => onEditWidget?.(widget)}
+                        onClick={() => {
+                          console.log('🔧 Edit widget clicked:', widget);
+                          onEditWidget?.(widget);
+                        }}
                         className="p-1 hover:bg-gray-100 rounded"
                         title="Edit widget"
                       >
@@ -213,7 +216,10 @@ export function MobileDesignStudioNew({
                       size="sm" 
                       className="flex-1" 
                       variant="outline"
-                      onClick={() => onEditWidget?.(widget)}
+                      onClick={() => {
+                        console.log('🔧 Edit button clicked:', widget);
+                        onEditWidget?.(widget);
+                      }}
                     >
                       <Edit className="w-3 h-3 mr-1" />
                       Edit
