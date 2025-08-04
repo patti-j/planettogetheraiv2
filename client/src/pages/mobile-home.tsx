@@ -1768,7 +1768,10 @@ export default function MobileHomePage() {
                       console.log(`🎯 Quick action clicked: ${action.title}`, action);
                       if (action.action) {
                         console.log("🎯 Executing action function...");
-                        action.action();
+                        // Use setTimeout to prevent immediate dialog close
+                        setTimeout(() => {
+                          action.action();
+                        }, 10);
                       } else if (action.title === "Dashboards") {
                         console.log("🔍 Dashboards card clicked, setting showLibrary to true");
                         // Use setTimeout to ensure state change happens after any other handlers

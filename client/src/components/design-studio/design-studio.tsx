@@ -158,6 +158,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const [activeTab, setActiveTab] = useState('pages');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [justOpened, setJustOpened] = useState(false);
 
   const categories = ['All', 'Operations', 'Quality', 'Inventory', 'Analytics', 'Management', 'Maintenance', 'Mobile'];
 
@@ -194,9 +195,22 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
     console.log('Creating dashboard from template:', template);
   };
 
+  // Track when dialog opens to prevent immediate close
+  React.useEffect(() => {
+    if (open && !justOpened) {
+      setJustOpened(true);
+      setTimeout(() => setJustOpened(false), 200);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
-      console.log("🎨 Design Studio dialog onOpenChange:", newOpen);
+      console.log("🎨 Design Studio dialog onOpenChange:", newOpen, "justOpened:", justOpened);
+      // Prevent immediate close after opening
+      if (!newOpen && justOpened) {
+        console.log("🎨 Preventing immediate dialog close - just opened");
+        return;
+      }
       onOpenChange(newOpen);
     }}>
       <DialogContent className={`
