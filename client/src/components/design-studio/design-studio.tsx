@@ -446,17 +446,21 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             {/* Main Content - Mobile Scrollable */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
               <TabsList className="grid w-full grid-cols-4 m-2 flex-shrink-0 bg-background border-b">
-                <TabsTrigger value="pages" className="flex items-center gap-2">
+                <TabsTrigger value="pages" className="flex flex-col items-center gap-1 py-3">
                   <Layout className="w-4 h-4" />
+                  <span className="text-xs">Pages</span>
                 </TabsTrigger>
-                <TabsTrigger value="widgets" className="flex items-center gap-2">
+                <TabsTrigger value="widgets" className="flex flex-col items-center gap-1 py-3">
                   <Component className="w-4 h-4" />
+                  <span className="text-xs">Widgets</span>
                 </TabsTrigger>
-                <TabsTrigger value="dashboards" className="flex items-center gap-2">
+                <TabsTrigger value="dashboards" className="flex flex-col items-center gap-1 py-3">
                   <BarChart3 className="w-4 h-4" />
+                  <span className="text-xs">Dashboards</span>
                 </TabsTrigger>
-                <TabsTrigger value="menu" className="flex items-center gap-2">
+                <TabsTrigger value="menu" className="flex flex-col items-center gap-1 py-3">
                   <Settings className="w-4 h-4" />
+                  <span className="text-xs">Menu</span>
                 </TabsTrigger>
               </TabsList>
 
