@@ -415,8 +415,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             </div>
 
             {/* Main Content - Mobile Scrollable */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 m-2 sticky top-[120px] bg-background z-10">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
+              <TabsList className="grid w-full grid-cols-4 m-2 flex-shrink-0 bg-background border-b">
                 <TabsTrigger value="pages" className="flex items-center gap-2">
                   <Layout className="w-4 h-4" />
                 </TabsTrigger>
@@ -431,7 +431,8 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="pages" className="p-3 pb-8">
+              <div className="flex-1 overflow-y-auto">
+                <TabsContent value="pages" className="p-3 pb-8 m-0">
                 <div className="grid gap-4 grid-cols-1">
                   {filteredPageTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -471,10 +472,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="widgets" className="p-3 pb-8">
+                <TabsContent value="widgets" className="p-3 pb-8 m-0">
                 <div className="grid gap-4 grid-cols-1">
                   {filteredWidgetTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -519,10 +520,10 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="dashboards" className="p-3 pb-8">
+                <TabsContent value="dashboards" className="p-3 pb-8 m-0">
                 <div className="grid gap-4 grid-cols-1">
                   {filteredDashboardTemplates.map((template) => (
                     <Card key={template.id} className="hover:shadow-md transition-shadow">
@@ -562,16 +563,17 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       </CardContent>
                     </Card>
                   ))}
-                </div>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="menu" className="p-3 pb-8">
-                <div className="text-center py-8 text-muted-foreground">
-                  <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Menu management coming soon</p>
-                  <p className="text-sm">Configure sidebar navigation and organization</p>
-                </div>
-              </TabsContent>
+                <TabsContent value="menu" className="p-3 pb-8 m-0">
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Menu management coming soon</p>
+                    <p className="text-sm">Configure sidebar navigation and organization</p>
+                  </div>
+                </TabsContent>
+              </div>
             </Tabs>
           </div>
         ) : (
