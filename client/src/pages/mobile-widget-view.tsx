@@ -70,9 +70,9 @@ export default function MobileWidgetView() {
     );
   }
   
-  const widgetId = params.id ?? "";
+  const widgetId = params?.id ?? "";
   
-  if (!params.id) {
+  if (!widgetId) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -86,12 +86,19 @@ export default function MobileWidgetView() {
   }
 
   // Fetch widget data
-  const { data: widget, isLoading } = useQuery<Widget>({
+  const { data: widget, isLoading, error } = useQuery<Widget>({
     queryKey: ['/api/mobile/widgets', widgetId],
     queryFn: async () => {
       const response = await fetch('/api/mobile/widgets');
+      if (!response.ok) {
+        throw new Error('Failed to fetch widgets');
+      }
       const widgets = await response.json();
-      return widgets.find((w: Widget) => w.id.toString() === widgetId);
+      const foundWidget = widgets.find((w: Widget) => w.id.toString() === widgetId);
+      if (!foundWidget) {
+        throw new Error('Widget not found');
+      }
+      return foundWidget;
     },
     enabled: !!widgetId
   });
@@ -205,13 +212,18 @@ export default function MobileWidgetView() {
     );
   }
 
-  if (!widget) {
+  if (error || !widget) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <AlertCircle className="w-12 h-12 mx-auto text-red-400 mb-4" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Widget Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">The widget you're looking for doesn't exist.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            The widget with ID "{widgetId}" could not be found or failed to load.
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mb-4">
+            {error ? `Error: ${error.message}` : 'Widget does not exist'}
+          </p>
           <Button onClick={handleBack}>Go Back</Button>
         </div>
       </div>
