@@ -142,6 +142,17 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       if (isAuthenticated && user?.id) {
         try {
           const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+          
+          // Check if response is OK and contains JSON
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+          }
+          
           const preferences = await response.json();
           const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
           
