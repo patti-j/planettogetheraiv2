@@ -69,6 +69,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/dashboards': { label: 'Dashboards', icon: 'Layout' },
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' },
+  '/tenant-admin': { label: 'Tenant Administration', icon: 'Settings' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }
 };
 

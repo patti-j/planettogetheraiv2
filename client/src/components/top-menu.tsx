@@ -49,7 +49,7 @@ const featureGroups = [
     ]
   },
   {
-    title: "AI & Optimization", 
+    title: "AI & Analytics", 
     priority: "high",
     color: "purple",
     bgColor: "bg-purple-50 dark:bg-purple-950/20",
@@ -57,9 +57,8 @@ const featureGroups = [
     features: [
       { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
-      { icon: History, label: "Scheduling History", href: "/scheduling-history", feature: "optimization-studio", action: "view", color: "bg-slate-500" },
-      { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
-      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" }
+      { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
+      { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
     ]
   },
   {
@@ -84,8 +83,8 @@ const featureGroups = [
     borderColor: "border-green-200 dark:border-green-800",
     features: [
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
-      { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
-      { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
+      { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
+      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" }
     ]
   },
   {
@@ -127,7 +126,7 @@ const featureGroups = [
     ]
   },
   {
-    title: "Training & Support",
+    title: "Support & Onboarding",
     priority: "low", 
     color: "indigo",
     bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
@@ -135,8 +134,7 @@ const featureGroups = [
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
-      { icon: GraduationCap, label: "Training", href: "/training", feature: "", action: "", color: "bg-blue-500" },
-      { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "", action: "", color: "bg-purple-600" }
+      { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "tenant-admin", action: "view", color: "bg-purple-600" }
     ]
   }
 ];
@@ -236,9 +234,9 @@ export default function TopMenu() {
 
   // Convert to RoleSwitcher-compatible format with required description
   const currentRoleForSwitcher = currentRole ? {
-    id: (currentRole as any)?.id || '',
-    name: (currentRole as any)?.name || '',
-    description: (currentRole as any)?.description || ''
+    id: currentRole?.id || '',
+    name: currentRole?.name || '',
+    description: currentRole?.description || ''
   } : null;
 
   // Function to toggle Max AI Assistant
@@ -447,7 +445,7 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || 'No Role'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{currentRole?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
