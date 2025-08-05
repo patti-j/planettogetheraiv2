@@ -1521,7 +1521,7 @@ export default function MobileHomePage() {
             {/* Library Modal */}
             <div 
               id="library-dialog" 
-              className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4"
+              className="fixed inset-0 z-[9999] bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4"
               style={{ display: 'none' }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
@@ -1529,7 +1529,7 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6 mx-2 sm:mx-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6 mx-2 sm:mx-4 relative z-[10000]">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
                   <button 
@@ -1570,10 +1570,10 @@ export default function MobileHomePage() {
                     </button>
                   )}
                 </div>
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 relative z-[10001]">
                   {/* Search Results Summary */}
                   {librarySearchQuery && (
-                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+                    <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg relative z-40">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         Found {filteredWidgets.length + filteredDashboards.length + filteredRecentItems.length} results for "{librarySearchQuery}"
                       </p>
@@ -1582,7 +1582,7 @@ export default function MobileHomePage() {
 
                   {/* Recent Items */}
                   {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
-                    <div className="pb-2">
+                    <div className="pb-2 relative z-30">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Recently Viewed
                         {librarySearchQuery && (
@@ -1638,7 +1638,7 @@ export default function MobileHomePage() {
 
 
                   {/* Mobile Widgets */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 relative z-20">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Widgets 
@@ -1757,7 +1757,7 @@ export default function MobileHomePage() {
 
                   {/* Mobile Dashboards */}
                   {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 relative z-10">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Mobile Dashboards 
                         {librarySearchQuery ? (
