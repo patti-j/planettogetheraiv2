@@ -1550,8 +1550,9 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto p-4 sm:p-6 m-auto">
-                <div className="flex justify-between items-center mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+                {/* Fixed header */}
+                <div className="flex justify-between items-center p-4 sm:p-6 pb-2 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
                   <button 
                     onClick={() => {
@@ -1567,8 +1568,10 @@ export default function MobileHomePage() {
                   </button>
                 </div>
                 
-                {/* Search Input */}
-                <div className="relative mb-4">
+                {/* Scrollable content area */}
+                <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+                  {/* Search Input */}
+                  <div className="relative mb-4 mt-4">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     placeholder="Search widgets and dashboards..."
@@ -1897,6 +1900,7 @@ export default function MobileHomePage() {
                       )}
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             </div>
