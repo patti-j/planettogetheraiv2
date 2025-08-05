@@ -268,7 +268,10 @@ const getWidgetRoute = (widget: any): string | null => {
       if (widgetTitle.includes('schedule') && widgetTitle.includes('optimizer')) {
         return `/widgets/${widget.id}`;
       }
-      if (widgetTitle.includes('gantt') || widgetTitle.includes('schedule')) {
+      if (widgetTitle.includes('operation') && widgetTitle.includes('sequencer')) {
+        return `/widgets/${widget.id}`;
+      }
+      if (widgetTitle.includes('gantt') || (widgetTitle.includes('schedule') && !widgetTitle.includes('optimizer'))) {
         return '/production-schedule';
       }
       if (widgetTitle.includes('production') && widgetTitle.includes('cockpit')) {
@@ -1066,10 +1069,15 @@ export default function MobileHomePage() {
     const items = recent ? JSON.parse(recent) : [];
     
     // Fix any Schedule Optimizer items with wrong ID (9 should be 52)
+    // Fix any Operation Sequencer items with wrong ID (6 should be 99)
     const fixedItems = items.map((item: any) => {
       if (item.title === 'Schedule Optimizer' && item.id !== 52) {
         console.log("🔧 Fixing Schedule Optimizer ID from", item.id, "to 52");
         return { ...item, id: 52 };
+      }
+      if (item.title === 'Operation Sequencer' && item.id !== 99) {
+        console.log("🔧 Fixing Operation Sequencer ID from", item.id, "to 99");
+        return { ...item, id: 99 };
       }
       return item;
     });
