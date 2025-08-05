@@ -1,244 +1,352 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { User, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useQuery } from "@tanstack/react-query";
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { User, Users, Factory, Plus, X, CheckCircle, AlertCircle, Settings2 } from 'lucide-react';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResourceAssignmentWidgetProps {
   className?: string;
 }
 
-interface ResourceAssignment {
+interface OperatorUser {
   id: number;
-  resourceName: string;
-  resourceType: 'equipment' | 'operator' | 'station';
-  currentOperation?: string;
-  operationId?: number;
-  utilizationPercent: number;
-  status: 'available' | 'busy' | 'maintenance' | 'offline';
-  assignedOperations: number;
-  nextOperation?: string;
-  nextOperationTime?: string;
-  skill_level?: string;
-  department: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  department?: string;
+  jobTitle?: string;
+  roles: string[];
+}
+
+interface ResourceWithAssignments {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  isDrum?: boolean;
+  capabilities?: number[];
+  assignedOperators: {
+    userId: number;
+    username: string;
+    fullName: string;
+    assignedAt: string;
+    canSkipOperations?: boolean;
+    scheduleVisibilityDays?: number;
+    notes?: string;
+  }[];
 }
 
 export default function ResourceAssignmentWidget({ 
   className = '' 
 }: ResourceAssignmentWidgetProps) {
-  // Fetch real resource assignment data from API
-  const { data: resources = [], isLoading, error } = useQuery({
-    queryKey: ["/api/resource-assignments/dashboard"],
-    staleTime: 30000, // Cache for 30 seconds
-    refetchInterval: 60000, // Refresh every minute
+  const { toast } = useToast();
+  const [selectedResourceId, setSelectedResourceId] = useState<number | null>(null);
+  const [selectedOperatorId, setSelectedOperatorId] = useState<number | null>(null);
+  
+  // Fetch operators
+  const { data: operators = [], isLoading: loadingOperators } = useQuery({
+    queryKey: ["/api/user-resource-assignments/operators"],
+    staleTime: 30000,
   });
+  
+  // Fetch resources with their assignments
+  const { data: resources = [], isLoading: loadingResources } = useQuery({
+    queryKey: ["/api/user-resource-assignments/resources"],
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+  
+  // Mutation for assigning operators
+  const assignMutation = useMutation({
+    mutationFn: async (data: { userId: number; resourceId: number; notes?: string }) => {
+      const response = await fetch('/api/user-resource-assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to assign operator');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: `Operator ${data.action === 'created' ? 'assigned' : 'updated'} successfully`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-resource-assignments/resources"] });
+      setSelectedOperatorId(null);
+      setSelectedResourceId(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to assign operator. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation for removing assignments
+  const removeMutation = useMutation({
+    mutationFn: async ({ userId, resourceId }: { userId: number; resourceId: number }) => {
+      const response = await fetch(`/api/user-resource-assignments/${userId}/${resourceId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to remove assignment');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Assignment removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-resource-assignments/resources"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const isLoading = loadingOperators || loadingResources;
 
+  const handleAssignOperator = () => {
+    if (selectedOperatorId && selectedResourceId) {
+      assignMutation.mutate({
+        userId: selectedOperatorId,
+        resourceId: selectedResourceId,
+      });
+    }
+  };
+  
+  const handleRemoveAssignment = (userId: number, resourceId: number) => {
+    removeMutation.mutate({ userId, resourceId });
+  };
+  
   if (isLoading) {
     return (
       <div className={`space-y-4 ${className}`}>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-sm text-gray-500 mt-2">Loading resource assignments...</p>
+          <p className="text-sm text-gray-500 mt-2">Loading assignments...</p>
         </div>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="text-center py-8">
-          <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-          <p className="text-sm text-red-500">Failed to load resource assignments</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!resources || resources.length === 0) {
-    return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="text-center py-8">
-          <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">No resource assignments available</p>
-        </div>
-      </div>
-    );
-  }
-
-
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-500';
-      case 'busy': return 'bg-blue-500';
-      case 'maintenance': return 'bg-yellow-500';
-      case 'offline': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'available': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'busy': return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'maintenance': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      case 'offline': return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      default: return <Clock className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
+  
+  // Get available operators (those not assigned to selected resource)
+  const selectedResource = resources.find(r => r.id === selectedResourceId);
+  const availableOperators = operators.filter(op => 
+    !selectedResource?.assignedOperators.some(ao => ao.userId === op.id)
+  );
+  
+  // Get resource type icon
   const getResourceIcon = (type: string) => {
-    switch (type) {
-      case 'operator': return <User className="w-4 h-4" />;
-      default: return <div className="w-4 h-4 bg-gray-400 rounded" />;
+    switch (type.toLowerCase()) {
+      case 'equipment':
+      case 'machine':
+        return <Settings2 className="w-4 h-4 text-blue-500" />;
+      case 'labor':
+      case 'operator':
+        return <User className="w-4 h-4 text-green-500" />;
+      default:
+        return <Factory className="w-4 h-4 text-gray-500" />;
     }
   };
-
-  const getUtilizationColor = (percentage: number) => {
-    if (percentage > 90) return 'text-red-600';
-    if (percentage > 75) return 'text-yellow-600';
-    return 'text-green-600';
-  };
-
+  
+  // Calculate statistics
+  const totalResources = resources.length;
+  const totalOperators = operators.length;
+  const totalAssignments = resources.reduce((sum, r) => sum + r.assignedOperators.length, 0);
+  const resourcesWithAssignments = resources.filter(r => r.assignedOperators.length > 0).length;
+  
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {resources.filter(r => r.status === 'available').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Available</div>
+            <div className="text-2xl font-bold text-blue-600">{totalResources}</div>
+            <div className="text-xs text-muted-foreground">Total Resources</div>
           </div>
         </Card>
         <Card className="p-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {resources.filter(r => r.status === 'busy').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Busy</div>
+            <div className="text-2xl font-bold text-green-600">{totalOperators}</div>
+            <div className="text-xs text-muted-foreground">Total Operators</div>
           </div>
         </Card>
         <Card className="p-3">
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {resources.filter(r => r.status === 'maintenance').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Maintenance</div>
+            <div className="text-2xl font-bold text-purple-600">{totalAssignments}</div>
+            <div className="text-xs text-muted-foreground">Active Assignments</div>
           </div>
         </Card>
         <Card className="p-3">
           <div className="text-center">
-            <div className="text-2xl font-bold">
-              {Math.round(resources.reduce((sum, r) => sum + r.utilizationPercent, 0) / resources.length)}%
-            </div>
-            <div className="text-xs text-muted-foreground">Avg Utilization</div>
+            <div className="text-2xl font-bold text-orange-600">{resourcesWithAssignments}</div>
+            <div className="text-xs text-muted-foreground">Resources Assigned</div>
           </div>
         </Card>
       </div>
 
-      {/* Resource List */}
-      <div className="space-y-3">
-        {resources.map((resource) => (
-          <Card key={resource.id} className="p-4">
-            <div className="space-y-3">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {getResourceIcon(resource.resourceType)}
-                  <div>
-                    <div className="font-medium">{resource.resourceName}</div>
-                    <div className="text-sm text-muted-foreground capitalize">
-                      {resource.resourceType} • {resource.department}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(resource.status)}
-                  <Badge variant="outline" className="capitalize">
-                    {resource.status}
-                  </Badge>
-                  {resource.skill_level && (
-                    <Badge variant="secondary" className="text-xs">
-                      {resource.skill_level}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Current Activity */}
-              {resource.currentOperation && (
-                <div className="bg-muted p-2 rounded">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Current:</span>{' '}
-                    <span className="font-medium">{resource.currentOperation}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Utilization */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Utilization</span>
-                  <span className={`font-medium ${getUtilizationColor(resource.utilizationPercent)}`}>
-                    {resource.utilizationPercent}%
-                  </span>
-                </div>
-                <Progress value={resource.utilizationPercent} className="h-2" />
-              </div>
-
-              {/* Additional Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Assigned Operations:</span>
-                  <div className="font-medium">{resource.assignedOperations}</div>
-                </div>
-                {resource.nextOperation && (
-                  <div>
-                    <span className="text-muted-foreground">Next:</span>
-                    <div className="font-medium">
-                      {resource.nextOperation}
-                      {resource.nextOperationTime && (
-                        <span className="text-muted-foreground ml-1">
-                          @ {resource.nextOperationTime}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Resource Type Distribution */}
+      {/* Assignment Controls */}
       <Card className="p-4">
-        <h4 className="font-semibold mb-3">Resource Distribution</h4>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-lg font-bold">
-              {resources.filter(r => r.resourceType === 'equipment').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Equipment</div>
-          </div>
-          <div>
-            <div className="text-lg font-bold">  
-              {resources.filter(r => r.resourceType === 'operator').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Operators</div>
-          </div>
-          <div>
-            <div className="text-lg font-bold">
-              {resources.filter(r => r.resourceType === 'station').length}
-            </div>
-            <div className="text-xs text-muted-foreground">Stations</div>
+        <div className="space-y-3">
+          <h4 className="font-semibold flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Assign Operator to Resource
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Select value={selectedResourceId?.toString() || ""} onValueChange={(v) => setSelectedResourceId(Number(v))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Resource" />
+              </SelectTrigger>
+              <SelectContent>
+                {resources.map((resource) => (
+                  <SelectItem key={resource.id} value={resource.id.toString()}>
+                    <div className="flex items-center gap-2">
+                      {getResourceIcon(resource.type)}
+                      <span>{resource.name}</span>
+                      {resource.isDrum && <Badge variant="secondary" className="ml-2 text-xs">Drum</Badge>}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={selectedOperatorId?.toString() || ""} 
+              onValueChange={(v) => setSelectedOperatorId(Number(v))}
+              disabled={!selectedResourceId}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={selectedResourceId ? "Select Operator" : "Select Resource First"} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableOperators.map((operator) => (
+                  <SelectItem key={operator.id} value={operator.id.toString()}>
+                    <div className="flex flex-col">
+                      <span>{operator.fullName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {operator.department || 'No Department'}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              onClick={handleAssignOperator}
+              disabled={!selectedResourceId || !selectedOperatorId || assignMutation.isPending}
+              className="w-full"
+            >
+              {assignMutation.isPending ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Assign
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </Card>
+
+      {/* Resources with Assignments */}
+      <div className="space-y-3">
+        <h4 className="font-semibold flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          Current Assignments
+        </h4>
+        
+        {resources.length === 0 ? (
+          <Card className="p-6">
+            <div className="text-center text-muted-foreground">
+              <Factory className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>No resources available</p>
+            </div>
+          </Card>
+        ) : (
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-3 pr-4">
+              {resources.map((resource) => (
+                <Card key={resource.id} className="p-4">
+                  <div className="space-y-3">
+                    {/* Resource Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {getResourceIcon(resource.type)}
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {resource.name}
+                            {resource.isDrum && (
+                              <Badge variant="secondary" className="text-xs">Drum</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {resource.type} • Status: {resource.status}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge variant="outline">
+                        {resource.assignedOperators.length} Operator{resource.assignedOperators.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
+                    
+                    {/* Assigned Operators */}
+                    {resource.assignedOperators.length > 0 ? (
+                      <div className="space-y-2">
+                        <Separator />
+                        {resource.assignedOperators.map((assignment) => (
+                          <div key={assignment.userId} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-green-500" />
+                              <div>
+                                <div className="text-sm font-medium">{assignment.fullName}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Assigned: {new Date(assignment.assignedAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAssignment(assignment.userId, resource.id)}
+                              disabled={removeMutation.isPending}
+                              className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-2 bg-muted/50 rounded text-center">
+                        No operators assigned
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     </div>
   );
 }

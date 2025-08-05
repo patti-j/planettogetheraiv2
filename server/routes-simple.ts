@@ -4,7 +4,7 @@ import { storage } from "./storage-basic";
 import { insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertUserSchema, insertProductionOrderSchema } from "../shared/schema-simple";
 import { db } from "./db";
 import * as schema from "../shared/schema";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, or, ilike, and } from "drizzle-orm";
 import { processAICommand, processDesignStudioAIRequest } from "./ai-agent";
 import bcrypt from "bcryptjs";
 
@@ -1011,7 +1011,7 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
-  // Resource Assignments Dashboard endpoint
+  // Resource Assignments Dashboard endpoint - for old widget
   app.get("/api/resource-assignments/dashboard", async (req, res) => {
     try {
       const resources = await db.select().from(schema.resources);
@@ -1070,6 +1070,191 @@ export function registerSimpleRoutes(app: express.Application): Server {
     } catch (error) {
       console.error("Error fetching resource assignments:", error);
       res.status(500).json({ error: "Failed to fetch resource assignments" });
+    }
+  });
+
+  // Get all operator users (users with operator-related roles)
+  app.get("/api/user-resource-assignments/operators", async (req, res) => {
+    try {
+      // Get all active users for now
+      // In production, you'd filter for specific operator roles
+      const allUsers = await db
+        .select({
+          id: schema.users.id,
+          username: schema.users.username,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          email: schema.users.email,
+          department: schema.users.department,
+          jobTitle: schema.users.jobTitle,
+        })
+        .from(schema.users)
+        .where(eq(schema.users.isActive, true));
+      
+      // Format users for the frontend
+      const operatorUsers = allUsers.map(user => ({
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        department: user.department,
+        jobTitle: user.jobTitle,
+        roles: [] // Simplified for now
+      }));
+      
+      res.json(operatorUsers);
+    } catch (error) {
+      console.error("Error fetching operator users:", error);
+      res.status(500).json({ error: "Failed to fetch operator users" });
+    }
+  });
+
+  // Get all resources with their current assignments
+  app.get("/api/user-resource-assignments/resources", async (req, res) => {
+    try {
+      // Get all resources
+      const resources = await db.select().from(schema.resources);
+      
+      // Get current active assignments
+      const assignments = await db
+        .select({
+          resourceId: schema.userResourceAssignments.resourceId,
+          userId: schema.userResourceAssignments.userId,
+          username: schema.users.username,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          assignedAt: schema.userResourceAssignments.assignedAt,
+          canSkipOperations: schema.userResourceAssignments.canSkipOperations,
+          scheduleVisibilityDays: schema.userResourceAssignments.scheduleVisibilityDays,
+          notes: schema.userResourceAssignments.notes
+        })
+        .from(schema.userResourceAssignments)
+        .innerJoin(schema.users, eq(schema.userResourceAssignments.userId, schema.users.id))
+        .where(eq(schema.userResourceAssignments.isActive, true));
+      
+      // Map resources with their assignments
+      const resourcesWithAssignments = resources.map(resource => {
+        const resourceAssignments = assignments
+          .filter(a => a.resourceId === resource.id)
+          .map(a => ({
+            userId: a.userId,
+            username: a.username,
+            fullName: `${a.firstName} ${a.lastName}`,
+            assignedAt: a.assignedAt,
+            canSkipOperations: a.canSkipOperations,
+            scheduleVisibilityDays: a.scheduleVisibilityDays,
+            notes: a.notes
+          }));
+        
+        return {
+          id: resource.id,
+          name: resource.name,
+          type: resource.type,
+          status: resource.status,
+          isDrum: resource.isDrum,
+          capabilities: resource.capabilities,
+          assignedOperators: resourceAssignments
+        };
+      });
+      
+      res.json(resourcesWithAssignments);
+    } catch (error) {
+      console.error("Error fetching resources with assignments:", error);
+      res.status(500).json({ error: "Failed to fetch resources with assignments" });
+    }
+  });
+
+  // Create or update user-resource assignment
+  app.post("/api/user-resource-assignments", requireAuth, async (req, res) => {
+    try {
+      const { userId, resourceId, canSkipOperations, scheduleVisibilityDays, notes } = req.body;
+      const assignedBy = req.user.id;
+      
+      // Check if assignment already exists
+      const existing = await db
+        .select()
+        .from(schema.userResourceAssignments)
+        .where(and(
+          eq(schema.userResourceAssignments.userId, userId),
+          eq(schema.userResourceAssignments.resourceId, resourceId)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        // Update existing assignment
+        const [updated] = await db
+          .update(schema.userResourceAssignments)
+          .set({
+            isActive: true,
+            assignedBy,
+            assignedAt: new Date(),
+            canSkipOperations: canSkipOperations ?? false,
+            scheduleVisibilityDays: scheduleVisibilityDays ?? 7,
+            notes,
+            revokedAt: null,
+            revokedBy: null,
+            updatedAt: new Date()
+          })
+          .where(eq(schema.userResourceAssignments.id, existing[0].id))
+          .returning();
+        
+        res.json({ success: true, assignment: updated, action: 'updated' });
+      } else {
+        // Create new assignment
+        const [created] = await db
+          .insert(schema.userResourceAssignments)
+          .values({
+            userId,
+            resourceId,
+            assignedBy,
+            canSkipOperations: canSkipOperations ?? false,
+            scheduleVisibilityDays: scheduleVisibilityDays ?? 7,
+            notes,
+            isActive: true
+          })
+          .returning();
+        
+        res.json({ success: true, assignment: created, action: 'created' });
+      }
+    } catch (error) {
+      console.error("Error creating/updating user-resource assignment:", error);
+      res.status(500).json({ error: "Failed to create/update assignment" });
+    }
+  });
+
+  // Remove user-resource assignment
+  app.delete("/api/user-resource-assignments/:userId/:resourceId", requireAuth, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const resourceId = parseInt(req.params.resourceId);
+      const revokedBy = req.user.id;
+      
+      // Soft delete - mark as inactive
+      const [revoked] = await db
+        .update(schema.userResourceAssignments)
+        .set({
+          isActive: false,
+          revokedAt: new Date(),
+          revokedBy,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(schema.userResourceAssignments.userId, userId),
+          eq(schema.userResourceAssignments.resourceId, resourceId),
+          eq(schema.userResourceAssignments.isActive, true)
+        ))
+        .returning();
+      
+      if (revoked) {
+        res.json({ success: true, message: "Assignment removed successfully" });
+      } else {
+        res.status(404).json({ error: "Assignment not found" });
+      }
+    } catch (error) {
+      console.error("Error removing user-resource assignment:", error);
+      res.status(500).json({ error: "Failed to remove assignment" });
     }
   });
 
