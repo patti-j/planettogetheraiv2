@@ -560,16 +560,8 @@ function Router() {
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
           <Route path="/login" component={Login} />
-          <Route path="/tasks">
-            <ProtectedRoute feature="tasks" action="view">
-              <TasksPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/inbox">
-            <ProtectedRoute feature="notifications" action="view">
-              <InboxPage />
-            </ProtectedRoute>
-          </Route>
+          <Route path="/tasks" component={TasksPage} />
+          <Route path="/inbox" component={InboxPage} />
           <Route path="/">
             <SmartHomeWrapper />
           </Route>
