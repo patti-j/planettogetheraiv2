@@ -1316,5 +1316,154 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Phase 2 Infrastructure Scaling endpoints
+  
+  // Background Jobs Management
+  app.post("/api/jobs", async (req, res) => {
+    try {
+      const { type, data, priority = 2, estimatedDuration } = req.body;
+      const userId = req.user?.id;
+      
+      const { backgroundJobManager, JobType, JobPriority } = await import('./background-jobs');
+      const jobId = await backgroundJobManager.addJob(
+        type as JobType,
+        data,
+        priority as JobPriority,
+        userId,
+        estimatedDuration
+      );
+      
+      res.json({ jobId, status: 'created' });
+    } catch (error) {
+      res.status(400).json({ error: 'Failed to create job', details: String(error) });
+    }
+  });
+
+  app.get("/api/jobs/:jobId", async (req, res) => {
+    try {
+      const { backgroundJobManager } = await import('./background-jobs');
+      const job = await backgroundJobManager.getJob(req.params.jobId);
+      
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+      
+      res.json(job);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch job', details: String(error) });
+    }
+  });
+
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      const { backgroundJobManager } = await import('./background-jobs');
+      const { status, userId } = req.query;
+      
+      let jobs;
+      if (status) {
+        jobs = await backgroundJobManager.getJobsByStatus(status as any);
+      } else if (userId) {
+        jobs = await backgroundJobManager.getJobsByUser(parseInt(String(userId)));
+      } else {
+        // Get pending jobs by default
+        jobs = await backgroundJobManager.getJobsByStatus('pending');
+      }
+      
+      res.json(jobs);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch jobs', details: String(error) });
+    }
+  });
+
+  app.get("/api/jobs-stats", async (req, res) => {
+    try {
+      const { backgroundJobManager } = await import('./background-jobs');
+      const stats = backgroundJobManager.getStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch job stats', details: String(error) });
+    }
+  });
+
+  // Monitoring & Observability endpoints
+  app.get("/api/system/monitoring", async (req, res) => {
+    try {
+      const { monitoringSystem } = await import('./monitoring');
+      const dashboard = monitoringSystem.getDashboardData();
+      res.json(dashboard);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch monitoring data', details: String(error) });
+    }
+  });
+
+  app.get("/api/system/health", async (req, res) => {
+    try {
+      const { monitoringSystem } = await import('./monitoring');
+      const health = monitoringSystem.getSystemHealth();
+      res.json(health);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch health status', details: String(error) });
+    }
+  });
+
+  app.get("/api/system/alerts", async (req, res) => {
+    try {
+      const { monitoringSystem, AlertLevel } = await import('./monitoring');
+      const { level, resolved } = req.query;
+      
+      const alerts = monitoringSystem.getAlerts(
+        level as AlertLevel,
+        resolved === 'true' ? true : resolved === 'false' ? false : undefined
+      );
+      
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch alerts', details: String(error) });
+    }
+  });
+
+  app.get("/api/system/metrics", async (req, res) => {
+    try {
+      const { monitoringSystem } = await import('./monitoring');
+      const { category, hours = 24 } = req.query;
+      
+      if (category) {
+        const history = monitoringSystem.getMetricsHistory(
+          category as 'system' | 'performance' | 'business',
+          parseInt(String(hours))
+        );
+        res.json(history);
+      } else {
+        const latest = monitoringSystem.getLatestMetrics();
+        res.json(latest);
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch metrics', details: String(error) });
+    }
+  });
+
+  // CDN & Asset Optimization endpoints
+  app.get("/api/system/cdn-status", async (req, res) => {
+    try {
+      const { cdnOptimizer } = await import('./cdn-optimizer');
+      const health = await cdnOptimizer.healthCheck();
+      const metrics = cdnOptimizer.getAssetMetrics();
+      
+      res.json({ health, metrics });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch CDN status', details: String(error) });
+    }
+  });
+
+  app.get("/api/system/asset-metrics", async (req, res) => {
+    try {
+      const { cdnOptimizer } = await import('./cdn-optimizer');
+      const metrics = cdnOptimizer.getAssetMetrics();
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch asset metrics', details: String(error) });
+    }
+  });
+
   return createServer(app);
 }
