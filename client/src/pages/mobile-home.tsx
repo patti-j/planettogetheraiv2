@@ -1636,7 +1636,7 @@ export default function MobileHomePage() {
                   )}
 
                   {/* Mobile Widgets Section */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 clear-both">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Widgets 
@@ -1755,7 +1755,7 @@ export default function MobileHomePage() {
 
                   {/* Mobile Dashboards Section */}
                   {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 clear-both mt-4">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Dashboards 
                         {librarySearchQuery ? (
