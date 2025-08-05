@@ -595,6 +595,13 @@ function MobileMenuTrigger() {
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
   
+  // Fetch user profile with firstName for greeting
+  const { data: userProfile } = useQuery({
+    queryKey: ["/api/auth/profile"],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
   const handleToggle = (open: boolean) => {
     console.log("🍔 Mobile Hamburger clicked! Setting open to:", open);
     setIsOpen(open);
