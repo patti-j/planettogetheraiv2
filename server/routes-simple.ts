@@ -103,6 +103,47 @@ export function registerSimpleRoutes(app: express.Application): Server {
             if (user && user.isActive) {
               console.log("Returning admin user data for:", user.username);
               console.log("User details:", { id: user.id, username: user.username, firstName: user.firstName, lastName: user.lastName });
+              // Get user's actual roles and permissions from database
+              const userRoles = await db
+                .select({
+                  roleId: schema.roles.id,
+                  roleName: schema.roles.name,
+                  roleDescription: schema.roles.description,
+                  permissionId: schema.permissions.id,
+                  permissionName: schema.permissions.name,
+                  permissionFeature: schema.permissions.feature,
+                  permissionAction: schema.permissions.action,
+                  permissionDescription: schema.permissions.description,
+                })
+                .from(schema.userRoles)
+                .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+                .leftJoin(schema.rolePermissions, eq(schema.roles.id, schema.rolePermissions.roleId))
+                .leftJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+                .where(eq(schema.userRoles.userId, user.id));
+
+              // Group permissions by role
+              const rolesMap = new Map();
+              for (const row of userRoles) {
+                if (!rolesMap.has(row.roleId)) {
+                  rolesMap.set(row.roleId, {
+                    id: row.roleId,
+                    name: row.roleName,
+                    description: row.roleDescription,
+                    permissions: []
+                  });
+                }
+                
+                if (row.permissionId) {
+                  rolesMap.get(row.roleId).permissions.push({
+                    id: row.permissionId,
+                    name: row.permissionName,
+                    feature: row.permissionFeature,
+                    action: row.permissionAction,
+                    description: row.permissionDescription
+                  });
+                }
+              }
+
               return res.json({
                 id: user.id,
                 username: user.username,
@@ -110,28 +151,7 @@ export function registerSimpleRoutes(app: express.Application): Server {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 isActive: user.isActive,
-                roles: [{
-                  id: 1,
-                  name: "Administrator",
-                  description: "Full system administrator with all permissions",
-                  permissions: [
-                    { id: 1, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
-                    { id: 2, name: "operator-dashboard-view", feature: "operator-dashboard", action: "view", description: "View operator dashboard" },
-                    { id: 3, name: "forklift-driver-view", feature: "forklift-driver", action: "view", description: "View forklift driver" },
-                    { id: 4, name: "maintenance-view", feature: "maintenance", action: "view", description: "View maintenance" },
-                    { id: 5, name: "disruption-management-view", feature: "disruption-management", action: "view", description: "View disruption management" },
-                    { id: 6, name: "optimization-studio-view", feature: "optimization-studio", action: "view", description: "View optimization studio" },
-                    { id: 7, name: "demand-planning-view", feature: "demand-planning", action: "view", description: "View demand planning" },
-                    { id: 8, name: "inventory-optimization-view", feature: "inventory-optimization", action: "view", description: "View inventory optimization" },
-                    { id: 9, name: "business-goals-view", feature: "business-goals", action: "view", description: "View business goals" },
-                    { id: 10, name: "systems-management-view", feature: "systems-management", action: "view", description: "View systems management" },
-                    { id: 11, name: "systems-integration-view", feature: "systems-integration", action: "view", description: "View systems integration" },
-                    { id: 12, name: "industry-templates-view", feature: "industry-templates", action: "view", description: "View industry templates" },
-                    { id: 13, name: "visual-factory-view", feature: "visual-factory", action: "view", description: "View visual factory" },
-                    { id: 14, name: "chat-view", feature: "chat", action: "view", description: "View chat" },
-                    { id: 15, name: "tenant-admin-view", feature: "tenant-admin", action: "view", description: "View tenant administration" }
-                  ]
-                }]
+                roles: Array.from(rolesMap.values())
               });
             }
           } catch (error) {
