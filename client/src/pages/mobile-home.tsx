@@ -1736,49 +1736,69 @@ export default function MobileHomePage() {
                           <span className="ml-1">({mobileDashboards.length})</span>
                         )}
                       </h3>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
-                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg"
+                            className="flex flex-col p-3 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-colors"
+                            onClick={() => {
+                              addToRecent(dashboard, 'dashboard');
+                              const dialog = document.getElementById('library-dialog');
+                              if (dialog) dialog.style.display = 'none';
+                              
+                              // Handle Production Scheduler Dashboard specially
+                              if (dashboard.title === "Production Scheduler Dashboard") {
+                                setLocation('/production-scheduler-dashboard');
+                              } else {
+                                setLocation(`/dashboards/${dashboard.id}`);
+                              }
+                            }}
                           >
-                            <div 
-                              className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900 rounded"
-                              onClick={() => {
-                                addToRecent(dashboard, 'dashboard');
-                                const dialog = document.getElementById('library-dialog');
-                                if (dialog) dialog.style.display = 'none';
-                                
-                                // Handle Production Scheduler Dashboard specially
-                                if (dashboard.title === "Production Scheduler Dashboard") {
-                                  setLocation('/production-scheduler-dashboard');
-                                } else {
-                                  setLocation(`/dashboards/${dashboard.id}`);
-                                }
-                              }}
-                            >
-                              {(() => {
-                                const IconComponent = getDashboardIcon(dashboard.title, dashboard.description);
-                                return <IconComponent className="w-4 h-4 text-green-600" />;
-                              })()}
-                              <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">{dashboard.title}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{dashboard.description || 'Dashboard'}</p>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                {(() => {
+                                  const IconComponent = getDashboardIcon(dashboard.title, dashboard.description);
+                                  return <IconComponent className="w-4 h-4 text-green-600 flex-shrink-0" />;
+                                })()}
+                                <Badge variant="secondary" className="text-xs">Dashboard</Badge>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  setPreviewItem(dashboard);
+                                  setPreviewType('dashboard');
+                                }}
+                                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <div className="text-left">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
+                                {dashboard.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                {dashboard.description || 'Dashboard'}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-200 dark:border-green-800">
+                              <Button
+                                variant="ghost" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleEditDashboard(dashboard);
                                 }}
-                                className="h-8 w-8 p-0"
+                                className="h-6 px-2 text-xs text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
                               >
-                                <Edit className="w-3 h-3" />
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
                               </Button>
-                              <Badge variant="secondary" className="text-xs">Dashboard</Badge>
+                              <span className="text-xs text-gray-400">
+                                #{dashboard.id}
+                              </span>
                             </div>
                           </div>
                         ))}
