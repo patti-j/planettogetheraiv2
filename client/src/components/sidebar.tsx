@@ -149,7 +149,10 @@ export default function Sidebar() {
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
       item.href === "#max" ||
-      item.href === "/constraints"; // TEMPORARY: Always show constraints for debugging
+      item.href === "/constraints" || // TEMPORARY: Always show constraints for debugging
+      item.href === "/analytics" ||  // Show analytics for admin
+      item.href === "/reports" ||  // Show reports for admin
+      item.href === "/schedule"; // Show schedule for admin
     
     // Check permission for other items
     const hasPermissionForItem = hasPermission(item.feature || "", item.action || "");
