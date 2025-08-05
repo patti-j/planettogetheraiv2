@@ -49,7 +49,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
-import type { ProductionOrder, Operation, Resource, Capability, OptimizationProfile, ProfileUsageHistory } from '@shared/schema';
+import type { ProductionOrder, DiscreteOperation, Resource, Capability, OptimizationProfile, ProfileUsageHistory } from '@shared/schema';
 import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
@@ -57,13 +57,26 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { AlgorithmFeedbackButton } from '@/components/algorithm-feedback-button';
 
+interface SchedulingOperation {
+  id: number;
+  name: string;
+  description: string;
+  duration: number;
+  capabilityId: number;
+  assignedResourceId?: number;
+  status: string;
+  priority: string;
+  startTime?: Date;
+  endTime?: Date;
+}
+
 interface SchedulingOption {
   id: string;
   name: string;
   startDate: Date;
   endDate: Date;
   resources: Resource[];
-  operations: Operation[];
+  operations: SchedulingOperation[];
   efficiency: number;
   customerSatisfaction: number;
   utilization: number;
@@ -388,7 +401,7 @@ const profileFormSchema = z.object({
       resourceIds: z.array(z.number()).default([])
     }),
     objectives: z.object({
-      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'minimize_tardiness']),
+      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'maximize_throughput', 'minimize_lateness']),
       weights: z.object({
         cost: z.number().min(0).max(1).default(0.3),
         time: z.number().min(0).max(1).default(0.7)
@@ -468,7 +481,7 @@ const SchedulingOptimizer: React.FC = () => {
     refetchOnWindowFocus: false,
     refetchInterval: false
   });
-  const { data: operations } = useQuery<Operation[]>({ 
+  const { data: operations } = useQuery<SchedulingOperation[]>({ 
     queryKey: ['/api/operations'],
     refetchOnWindowFocus: false,
     refetchInterval: false
@@ -616,7 +629,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: new Date(),
         endDate: addDays(new Date(), fastestDuration),
         resources: resources.slice(0, allowOvertime ? 3 : 2),
-        operations: productionOrderOperations.map((op: Operation, i: number) => ({
+        operations: productionOrderOperations.map((op: SchedulingOperation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), baseDelay + i * 0.5),
@@ -647,7 +660,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), baseDelay),
         endDate: addDays(new Date(), efficientDuration + baseDelay),
         resources: resources.slice(0, 3),
-        operations: productionOrderOperations.map((op: Operation, i: number) => ({
+        operations: productionOrderOperations.map((op: SchedulingOperation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), baseDelay + 1 + i * 0.8),
@@ -678,7 +691,7 @@ const SchedulingOptimizer: React.FC = () => {
         startDate: addDays(new Date(), baseDelay),
         endDate: addDays(new Date(), balancedDuration + baseDelay),
         resources: resources.slice(0, 2),
-        operations: productionOrderOperations.map((op: Operation, i: number) => ({
+        operations: productionOrderOperations.map((op: SchedulingOperation, i: number) => ({
           ...op,
           assignedResourceId: resources[i % resources.length]?.id,
           startTime: addDays(new Date(), baseDelay + 0.5 + i * 0.7),
@@ -1237,7 +1250,7 @@ const SchedulingOptimizer: React.FC = () => {
                           {productionOrder.priority}
                         </Badge>
                       </div>
-                      <CardDescription className="text-sm">{productionOrder.customer}</CardDescription>
+                      <CardDescription className="text-sm">Customer {productionOrder.customerId}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center justify-between text-sm">
@@ -1758,7 +1771,7 @@ const ProfileFormDialog: React.FC<ProfileFormDialogProps> = ({
                         <SelectItem value="minimize_makespan">Minimize Makespan</SelectItem>
                         <SelectItem value="maximize_utilization">Maximize Utilization</SelectItem>
                         <SelectItem value="minimize_cost">Minimize Cost</SelectItem>
-                        <SelectItem value="minimize_tardiness">Minimize Tardiness</SelectItem>
+                        <SelectItem value="minimize_lateness">Minimize Lateness</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
