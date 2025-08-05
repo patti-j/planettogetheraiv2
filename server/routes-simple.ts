@@ -298,6 +298,48 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Get specific mobile widget by ID
+  app.get("/api/mobile/widgets/:id", async (req, res) => {
+    console.log("=== MOBILE WIDGET BY ID ENDPOINT HIT ===");
+    console.log("Widget ID:", req.params.id);
+    
+    try {
+      const widgetId = parseInt(req.params.id);
+      if (isNaN(widgetId)) {
+        return res.status(400).json({ error: "Invalid widget ID" });
+      }
+
+      // Get widget from database
+      const widget = await db
+        .select()
+        .from(schema.unifiedWidgets)
+        .where(sql`id = ${widgetId} AND target_platform IN ('mobile', 'both')`)
+        .limit(1);
+
+      if (widget.length === 0) {
+        console.log(`Widget ${widgetId} not found or not mobile-compatible`);
+        return res.status(404).json({ error: "Widget not found" });
+      }
+
+      // Format for backward compatibility
+      const formattedWidget = {
+        id: widget[0].id,
+        title: widget[0].title,
+        type: widget[0].widgetType,
+        targetPlatform: widget[0].targetPlatform,
+        source: widget[0].dataSource,
+        configuration: widget[0].filters || {},
+        createdAt: widget[0].createdAt?.toISOString() || new Date().toISOString()
+      };
+
+      console.log("Returning widget:", formattedWidget.title);
+      res.json(formattedWidget);
+    } catch (error) {
+      console.error("Error fetching mobile widget by ID:", error);
+      res.status(500).json({ error: "Failed to fetch mobile widget" });
+    }
+  });
+
   // Desktop widgets endpoint (if needed later)
   app.get("/api/desktop/widgets", async (req, res) => {
     console.log("=== DESKTOP WIDGETS ENDPOINT HIT ===");
