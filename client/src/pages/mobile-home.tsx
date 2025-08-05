@@ -1469,7 +1469,7 @@ export default function MobileHomePage() {
           <div className="flex-1">
             <div className="relative">
               <Search className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 transition-all duration-200 ${
-                searchQuery || isSearchFocused ? 'left-3' : 'left-1/2 -translate-x-1/2'
+                searchQuery || isSearchFocused ? 'left-3' : 'left-3'
               }`} />
               <Input
                 placeholder="Search or ask Max"
@@ -1496,7 +1496,7 @@ export default function MobileHomePage() {
                 className={`py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full transition-all duration-200 ${
                   searchQuery || isSearchFocused 
                     ? 'pl-10 pr-4 text-left' 
-                    : 'px-4 text-center placeholder:text-center'
+                    : 'pl-10 pr-4 text-left'
                 }`}
               />
             </div>
