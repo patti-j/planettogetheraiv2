@@ -190,8 +190,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.id;
       console.log("Looking up profile for userId:", userId, "type:", typeof userId);
       
-      // Handle demo users
-      if (typeof userId === 'string' && userId.startsWith('demo_')) {
+      // Handle demo users and special system users
+      if (typeof userId === 'string' && (userId.startsWith('demo_') || userId === 'trainer' || userId === 'admin')) {
         const demoUsers = {
           'demo_user': { firstName: 'Demo', lastName: 'User', username: 'demo_user' },
           'demo_director': { firstName: 'Demo', lastName: 'Director', username: 'demo_director' },
@@ -208,6 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'demo_support': { firstName: 'Demo', lastName: 'Support Engineer', username: 'demo_support_engineer' },
           'demo_supply_chain': { firstName: 'Demo', lastName: 'Supply Chain', username: 'demo_supply_chain' },
           'trainer': { firstName: 'Trainer', lastName: 'User', username: 'trainer' },
+          'admin': { firstName: 'Admin', lastName: 'User', username: 'admin' },
         };
         
         const demoUser = demoUsers[userId as keyof typeof demoUsers];
