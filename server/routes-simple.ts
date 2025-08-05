@@ -6,6 +6,7 @@ import { db } from "./db";
 import * as schema from "../shared/schema";
 import { sql, eq } from "drizzle-orm";
 import { processAICommand, processDesignStudioAIRequest } from "./ai-agent";
+import bcrypt from "bcryptjs";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -236,6 +237,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const { username, password } = req.body;
       console.log("Login attempt for:", username);
       
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
       // Handle trainer user (case insensitive) 
       if (username && username.toLowerCase() === "trainer") {
         const user = {
@@ -263,30 +268,68 @@ export function registerSimpleRoutes(app: express.Application): Server {
         return;
       }
       
-      // Default authentication for other users
-      const user = {
-        id: "demo_user",
-        username: username || "demo_user", 
-        email: "demo@example.com",
-        firstName: "Demo",
-        lastName: "User", 
-        isActive: true,
-        roles: [{
-          id: 2,
-          name: "Production Scheduler",
-          description: "Production Scheduler with basic permissions",
-          permissions: [] // Will be populated by client-side role structure creation
-        }]
-      };
-      
-      // Generate a simple token for demo
-      const token = "demo_token_" + Date.now();
-      
-      res.json({
-        user,
-        token,
-        message: "Login successful"
-      });
+      // Try to authenticate against the database
+      try {
+        const user = await storage.getUserWithRolesAndPermissions(username);
+        if (!user) {
+          console.log("User not found:", username);
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+        
+        console.log("User found:", user.username, "ID:", user.id);
+        
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+        if (!isValidPassword) {
+          console.log("Password verification failed");
+          return res.status(401).json({ message: "Invalid credentials" });
+        }
+        
+        if (!user.isActive) {
+          return res.status(401).json({ message: "Account is disabled" });
+        }
+        
+        // Update last login
+        await storage.updateUserLastLogin(user.id);
+        
+        // Generate token
+        const token = `user_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Return real user data
+        const { passwordHash, ...userData } = user;
+        res.json({
+          user: userData,
+          token,
+          message: "Login successful"
+        });
+        
+      } catch (dbError) {
+        console.error("Database error during login:", dbError);
+        
+        // Fallback to demo user if database is not available
+        const user = {
+          id: "demo_user",
+          username: username || "demo_user", 
+          email: "demo@example.com",
+          firstName: "Demo",
+          lastName: "User", 
+          isActive: true,
+          roles: [{
+            id: 2,
+            name: "Production Scheduler",
+            description: "Production Scheduler with basic permissions",
+            permissions: [] // Will be populated by client-side role structure creation
+          }]
+        };
+        
+        const token = "demo_token_" + Date.now();
+        
+        res.json({
+          user,
+          token,
+          message: "Login successful (demo mode)"
+        });
+      }
     } catch (error) {
       console.error("Login error:", error);
       res.status(401).json({ error: "Authentication failed" });
