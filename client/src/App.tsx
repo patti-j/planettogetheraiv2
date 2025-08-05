@@ -97,6 +97,8 @@ import ClearNavigation from "@/pages/clear-navigation";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
+import TasksPage from "@/pages/tasks";
+import InboxPage from "@/pages/inbox";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -558,6 +560,16 @@ function Router() {
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
           <Route path="/login" component={Login} />
+          <Route path="/tasks">
+            <ProtectedRoute feature="tasks" action="view">
+              <TasksPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/inbox">
+            <ProtectedRoute feature="notifications" action="view">
+              <InboxPage />
+            </ProtectedRoute>
+          </Route>
           <Route path="/">
             <SmartHomeWrapper />
           </Route>
