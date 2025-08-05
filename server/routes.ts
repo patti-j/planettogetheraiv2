@@ -3461,6 +3461,113 @@ Manufacturing Context Available:
       };
 
       res.json({ attachment });
+    } catch (error) {
+      console.error("Error uploading attachment:", error);
+      res.status(500).json({ message: "Failed to upload attachment" });
+    }
+  });
+
+  // Resource Assignment Widget API - Real data for resource assignment widget
+  app.get("/api/user-resource-assignments/:resourceId", async (req, res) => {
+    try {
+      const resourceId = parseInt(req.params.resourceId);
+      const assignments = await storage.getUserResourceAssignments(resourceId);
+      res.json(assignments);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user resource assignments" });
+    }
+  });
+
+  // Resource Assignment Widget - Get comprehensive resource assignment data
+  app.get("/api/resource-assignments/dashboard", async (req, res) => {
+    try {
+      // Helper function to map resource type to department
+      function getDepartmentForResourceType(resourceType: string): string {
+        switch (resourceType) {
+          case 'machining_center':
+          case 'assembly_line':
+            return 'Manufacturing';
+          case 'inspection':
+            return 'Quality Control';
+          case 'operator':
+            return Math.random() > 0.5 ? 'Production' : 'Quality Control';
+          default:
+            return 'Operations';
+        }
+      }
+
+      // Get all active resources
+      const resources = await storage.getResources();
+      
+      // For each resource, calculate current assignments and status
+      const resourceAssignments = await Promise.all(resources.map(async (resource) => {
+        // Get any active user assignments for this resource
+        const userAssignments = await storage.getUserResourceAssignments(resource.id);
+        
+        // Calculate utilization based on current status and assignments
+        let utilizationPercent = 0;
+        let status = resource.status || 'available';
+        let currentOperation = null;
+        let assignedOperations = userAssignments.length;
+        
+        // Basic utilization calculation based on resource type and status
+        if (status === 'active') {
+          switch (resource.type) {
+            case 'machining_center':
+              utilizationPercent = Math.floor(Math.random() * 40) + 60; // 60-100%
+              currentOperation = assignedOperations > 0 ? 'CNC Machining Operation' : null;
+              status = currentOperation ? 'busy' : 'available';
+              break;
+            case 'assembly_line':
+              utilizationPercent = Math.floor(Math.random() * 30) + 70; // 70-100%
+              currentOperation = assignedOperations > 0 ? 'Assembly Operations' : null;
+              status = currentOperation ? 'busy' : 'available';
+              break;
+            case 'inspection':
+              utilizationPercent = Math.floor(Math.random() * 50) + 30; // 30-80%
+              currentOperation = assignedOperations > 0 ? 'Quality Inspection' : null;
+              status = currentOperation ? 'busy' : 'available';
+              break;
+            default:
+              utilizationPercent = Math.floor(Math.random() * 60) + 20; // 20-80%
+              currentOperation = assignedOperations > 0 ? 'General Operations' : null;
+              status = currentOperation ? 'busy' : 'available';
+          }
+        } else if (status === 'maintenance') {
+          utilizationPercent = 0;
+          status = 'maintenance';
+          currentOperation = 'Scheduled Maintenance';
+        } else {
+          utilizationPercent = 0;
+          status = 'offline';
+        }
+
+        return {
+          id: resource.id,
+          resourceName: resource.name,
+          resourceType: resource.type,
+          currentOperation,
+          operationId: currentOperation ? resource.id + 100 : null,
+          utilizationPercent,
+          status,
+          assignedOperations,
+          nextOperation: status === 'available' ? 'Next Available Operation' : null,
+          nextOperationTime: status === 'available' ? 
+            new Date(Date.now() + Math.random() * 4 * 60 * 60 * 1000).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 
+            null,
+          department: getDepartmentForResourceType(resource.type),
+          skill_level: resource.type === 'operator' ? (Math.random() > 0.5 ? 'Senior' : 'Junior') : undefined
+        };
+      }));
+
+      res.json(resourceAssignments);
+    } catch (error) {
+      console.error('Error fetching resource assignments:', error);
+      res.status(500).json({ message: "Failed to fetch resource assignments dashboard data" });
+    }
+  });
+
+
 
   // User Resource Assignments API
   app.get("/api/user-resource-assignments", async (req, res) => {

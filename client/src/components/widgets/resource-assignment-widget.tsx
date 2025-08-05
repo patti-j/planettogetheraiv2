@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { User, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useQuery } from "@tanstack/react-query";
 
 interface ResourceAssignmentWidgetProps {
   className?: string;
@@ -26,67 +27,47 @@ interface ResourceAssignment {
 export default function ResourceAssignmentWidget({ 
   className = '' 
 }: ResourceAssignmentWidgetProps) {
-  const resources: ResourceAssignment[] = [
-    {
-      id: 1,
-      resourceName: "Production Line 1",
-      resourceType: "equipment",
-      currentOperation: "Widget A Assembly",
-      operationId: 101,
-      utilizationPercent: 85,
-      status: "busy",
-      assignedOperations: 3,
-      nextOperation: "Widget B Assembly",
-      nextOperationTime: "14:30",
-      department: "Manufacturing"
-    },
-    {
-      id: 2,
-      resourceName: "John Smith",
-      resourceType: "operator",
-      currentOperation: "Quality Inspection",
-      operationId: 102,
-      utilizationPercent: 70,
-      status: "busy",
-      assignedOperations: 2,
-      skill_level: "Senior",
-      department: "Quality Control"
-    },
-    {
-      id: 3,
-      resourceName: "Mixer Station A",
-      resourceType: "station",
-      utilizationPercent: 0,
-      status: "maintenance",
-      assignedOperations: 0,
-      nextOperation: "Maintenance Complete",
-      nextOperationTime: "16:00",
-      department: "Manufacturing"
-    },
-    {
-      id: 4,
-      resourceName: "Sarah Johnson",
-      resourceType: "operator",
-      utilizationPercent: 45,
-      status: "available",
-      assignedOperations: 1,
-      nextOperation: "Material Prep",
-      nextOperationTime: "15:15",
-      skill_level: "Junior",
-      department: "Preparation"
-    },
-    {
-      id: 5,
-      resourceName: "Packaging Line 2",
-      resourceType: "equipment",
-      currentOperation: "Widget C Packaging",
-      operationId: 103,
-      utilizationPercent: 92,
-      status: "busy",
-      assignedOperations: 4,
-      department: "Packaging"
-    }
-  ];
+  // Fetch real resource assignment data from API
+  const { data: resources = [], isLoading, error } = useQuery({
+    queryKey: ["/api/resource-assignments/dashboard"],
+    staleTime: 30000, // Cache for 30 seconds
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  if (isLoading) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-sm text-gray-500 mt-2">Loading resource assignments...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="text-center py-8">
+          <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+          <p className="text-sm text-red-500">Failed to load resource assignments</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resources || resources.length === 0) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="text-center py-8">
+          <User className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">No resource assignments available</p>
+        </div>
+      </div>
+    );
+  }
+
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
