@@ -833,6 +833,9 @@ export default function MobileHomePage() {
   const [location, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
+  const [activeLibraryTab, setActiveLibraryTab] = useState("widgets");
+  const [editingDashboard, setEditingDashboard] = useState(null);
+  const [dashboardStudioOpen, setDashboardStudioOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { currentView, toggleView, isForced } = useViewMode();
   const queryClient = useQueryClient();
@@ -1580,9 +1583,33 @@ export default function MobileHomePage() {
                     </div>
                   )}
 
+                  {/* Tab Navigation */}
+                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                    <button
+                      onClick={() => setActiveLibraryTab("widgets")}
+                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeLibraryTab === "widgets"
+                          ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950"
+                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      Widgets ({librarySearchQuery ? filteredWidgets.length : mobileWidgets.length})
+                    </button>
+                    <button
+                      onClick={() => setActiveLibraryTab("dashboards")}
+                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeLibraryTab === "dashboards"
+                          ? "border-green-500 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950"
+                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      Dashboards ({librarySearchQuery ? filteredDashboards.length : mobileDashboards.length})
+                    </button>
+                  </div>
+
                   {/* Recent Items */}
                   {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 mb-6">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Recently Viewed
                         {librarySearchQuery && (
@@ -1635,30 +1662,31 @@ export default function MobileHomePage() {
                     </div>
                   )}
 
-                  {/* Mobile Widgets Section */}
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                        Mobile Widgets 
-                        {librarySearchQuery ? (
-                          <span className="ml-1">({filteredWidgets.length}/{mobileWidgets.length})</span>
-                        ) : (
-                          <span className="ml-1">({mobileWidgets.length})</span>
-                        )}
-                      </h3>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingWidget(null);
-                          setWidgetStudioOpen(true);
-                        }}
-                        className="flex items-center gap-1 h-8 px-3 touch-manipulation"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span className="text-xs">Create</span>
-                      </Button>
-                    </div>
+                  {/* Widgets Tab Content */}
+                  {activeLibraryTab === "widgets" && (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                          Mobile Widgets 
+                          {librarySearchQuery ? (
+                            <span className="ml-1">({filteredWidgets.length}/{mobileWidgets.length})</span>
+                          ) : (
+                            <span className="ml-1">({mobileWidgets.length})</span>
+                          )}
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingWidget(null);
+                            setWidgetStudioOpen(true);
+                          }}
+                          className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span className="text-xs">Create</span>
+                        </Button>
+                      </div>
                     
                     {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
                       <div className="w-full">
@@ -1754,20 +1782,36 @@ export default function MobileHomePage() {
                       </div>
                     )}
                   </div>
+                  )}
 
-                  {/* Mobile Dashboards Section */}
-                  {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-6">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                        Mobile Dashboards 
-                        {librarySearchQuery ? (
-                          <span className="ml-1">({filteredDashboards.length}/{mobileDashboards.length})</span>
-                        ) : (
-                          <span className="ml-1">({mobileDashboards.length})</span>
-                        )}
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                        {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
+                  {/* Dashboards Tab Content */}
+                  {activeLibraryTab === "dashboards" && (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                          Mobile Dashboards 
+                          {librarySearchQuery ? (
+                            <span className="ml-1">({filteredDashboards.length}/{mobileDashboards.length})</span>
+                          ) : (
+                            <span className="ml-1">({mobileDashboards.length})</span>
+                          )}
+                        </h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingDashboard(null);
+                            setDashboardStudioOpen(true);
+                          }}
+                          className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span className="text-xs">Create</span>
+                        </Button>
+                      </div>
+                      {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                          {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
                             className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-green-200 dark:active:bg-green-800 touch-manipulation"
@@ -1831,8 +1875,23 @@ export default function MobileHomePage() {
                               </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                          {librarySearchQuery ? (
+                            <>
+                              <p className="text-sm">No dashboards match your search</p>
+                              <p className="text-xs mt-1">Try a different search term</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm">No dashboards yet</p>
+                              <p className="text-xs mt-1">Create your first dashboard to get started</p>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
