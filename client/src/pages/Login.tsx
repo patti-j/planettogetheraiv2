@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Factory, Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail } from "lucide-react";
+import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import { Logo } from "@/components/logo";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -151,8 +152,7 @@ export default function Login() {
         {/* Logo and Title */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <Factory className="text-primary mr-3" size={32} />
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">PlanetTogether</h1>
+            <Logo size="large" showText={true} />
           </div>
           <p className="text-gray-600 dark:text-gray-300">AI Powered Factory Optimization</p>
         </div>

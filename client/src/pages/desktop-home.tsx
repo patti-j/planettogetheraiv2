@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { useQuery } from '@tanstack/react-query';
+import { Logo } from '@/components/logo';
 
 interface Widget {
   id: number;
@@ -128,21 +129,26 @@ export default function DesktopHome() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 mt-2">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="ml-12"> {/* Add left margin to avoid overlap with hamburger menu */}
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Welcome back, {user?.firstName || user?.username || 'User'}!
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Your AI-powered manufacturing command center
-              </p>
+            <div className="ml-12 flex items-center gap-6"> {/* Add left margin to avoid overlap with hamburger menu */}
+              <Logo size="medium" showText={true} />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Welcome back, {user?.firstName || user?.username || 'User'}!
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Your AI-powered manufacturing command center
+                </p>
+              </div>
             </div>
-            <Button 
-              onClick={() => openMax()}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Ask Max AI
-            </Button>
+            <div className="flex items-center gap-4 mr-12"> {/* Add right margin for theme toggle */}
+              <Button 
+                onClick={() => openMax()}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Ask Max AI
+              </Button>
+            </div>
           </div>
         </div>
       </div>

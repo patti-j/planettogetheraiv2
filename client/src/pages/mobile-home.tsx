@@ -7,8 +7,7 @@ import { useDeviceType } from "@/hooks/useDeviceType";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
 import { FloatingHamburgerMenu } from "@/components/floating-hamburger-menu";
-import CompanyLogoImage from "@/assets/company-logo.png";
-import planetTogetherLogo from "@/assets/planet-together-logo.png";
+import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1304,11 +1303,7 @@ export default function MobileHomePage() {
         <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <img 
-                src={CompanyLogoImage} 
-                alt="Company Logo" 
-                className="h-8 w-8 object-contain"
-              />
+              <Logo size="small" showText={false} />
               <nav className="flex space-x-2 md:space-x-6 overflow-x-auto">
                 <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">Dashboard</Link>
                 <Link href="/production-cockpit" className="text-sm font-medium hover:text-blue-600">Production</Link>
@@ -1499,10 +1494,8 @@ export default function MobileHomePage() {
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
           <div className="flex-shrink-0">
-            <img 
-              src={planetTogetherLogo} 
-              alt="PlanetTogether" 
-              className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+            <div 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1519,7 +1512,9 @@ export default function MobileHomePage() {
                 // Use setLocation for proper navigation
                 setLocation("/");
               }}
-            />
+            >
+              <Logo size="small" showText={false} />
+            </div>
           </div>
           
           {/* Search/Prompt Input */}
