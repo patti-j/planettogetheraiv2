@@ -92,7 +92,7 @@ import DataSchemaView from "@/pages/data-schema";
 import TableFieldViewer from "@/pages/table-field-viewer";
 import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
-import Homepage from "@/pages/homepage";
+// Removed obsolete Homepage import - using production schedule as main landing
 import ClearNavigation from "@/pages/clear-navigation";
 import KPIPage from "@/pages/kpi";
 import TenantAdminPage from "@/pages/tenant-admin";

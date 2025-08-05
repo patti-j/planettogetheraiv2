@@ -100,7 +100,7 @@ export default function Sidebar() {
   }> = [
     // Max AI Assistant at the top with AI branding - only show when closed
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
-    { icon: Home, label: "Homepage", href: "/", active: location === "/", feature: "", action: "" },
+    { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "", action: "" },
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
