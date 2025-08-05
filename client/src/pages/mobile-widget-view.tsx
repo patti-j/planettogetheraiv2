@@ -231,56 +231,111 @@ export default function MobileWidgetView() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
-      {/* Mobile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50">
-        <div className="flex items-center px-4 py-3">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="mr-3">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="font-semibold text-gray-900 dark:text-white">{widget.title}</h1>
-            <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{widget.type} • {widget.source}</p>
+    <>
+      <style>{`
+        .widget-scroll-container::-webkit-scrollbar {
+          width: 12px !important;
+          height: 12px !important;
+          display: block !important;
+        }
+        .widget-scroll-container::-webkit-scrollbar-track {
+          background: #f0f0f0 !important;
+          border-radius: 6px !important;
+        }
+        .widget-scroll-container::-webkit-scrollbar-thumb {
+          background: #888 !important;
+          border-radius: 6px !important;
+          border: 2px solid #f0f0f0 !important;
+        }
+        .widget-scroll-container::-webkit-scrollbar-thumb:hover {
+          background: #555 !important;
+        }
+        .dark .widget-scroll-container::-webkit-scrollbar-track {
+          background: #2a2a2a !important;
+        }
+        .dark .widget-scroll-container::-webkit-scrollbar-thumb {
+          background: #666 !important;
+          border: 2px solid #2a2a2a !important;
+        }
+        .dark .widget-scroll-container::-webkit-scrollbar-thumb:hover {
+          background: #888 !important;
+        }
+        .widget-scroll-container {
+          scrollbar-width: auto !important;
+          scrollbar-color: #888 #f0f0f0 !important;
+        }
+        .dark .widget-scroll-container {
+          scrollbar-color: #666 #2a2a2a !important;
+        }
+      `}</style>
+      
+      <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
+        <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50">
+          <div className="flex items-center px-4 py-3">
+            <Button variant="ghost" size="sm" onClick={handleBack} className="mr-3">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="font-semibold text-gray-900 dark:text-white">{widget.title}</h1>
+              <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{widget.type} • {widget.source}</p>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              Widget
+            </Badge>
           </div>
-          <Badge variant="outline" className="text-xs">
-            Widget
-          </Badge>
+        </div>
+
+        {/* Widget Content - Scrollable Container */}
+        <div 
+          className="flex-1 overflow-y-scroll overflow-x-hidden p-4 widget-scroll-container" 
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
+            msOverflowStyle: 'auto',
+            height: 'calc(100vh - 64px)', // Explicit height minus header
+            maxHeight: 'calc(100vh - 64px)'
+          }}
+        >
+          <div className="pb-8">
+            {renderWidgetContent()}
+            
+            {/* Temporary content to force scrolling */}
+            <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg mt-4 p-4 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Debug: This content ensures scrolling</p>
+            </div>
+        
+            {/* Widget Info */}
+            <Card className="mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Widget Information</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Type:</span>
+                  <span className="font-medium capitalize">{widget.type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Source:</span>
+                  <span className="font-medium capitalize">{widget.source}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Platform:</span>
+                  <span className="font-medium capitalize">{widget.targetPlatform}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                  <span className="font-medium">
+                    {new Date(widget.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          </div>
         </div>
       </div>
-
-      {/* Widget Content - Scrollable Container */}
-      <div className="flex-1 overflow-auto p-4">
-        {renderWidgetContent()}
-        
-        {/* Widget Info */}
-        <Card className="mt-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">Widget Information</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Type:</span>
-                <span className="font-medium capitalize">{widget.type}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Source:</span>
-                <span className="font-medium capitalize">{widget.source}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Platform:</span>
-                <span className="font-medium capitalize">{widget.targetPlatform}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">Created:</span>
-                <span className="font-medium">
-                  {new Date(widget.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </>
   );
 }
