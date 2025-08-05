@@ -64,6 +64,9 @@ import {
   Clock,
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   AlertTriangle,
   TrendingUp,
   Activity,
@@ -841,6 +844,11 @@ export default function MobileHomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const [activeLibraryTab, setActiveLibraryTab] = useState("widgets");
+  const [currentWidgetPage, setCurrentWidgetPage] = useState(0);
+  const [currentDashboardPage, setCurrentDashboardPage] = useState(0);
+  
+  // Pagination constants
+  const ITEMS_PER_PAGE = 4; // Show 4 items per page for mobile
   const [editingDashboard, setEditingDashboard] = useState(null);
   const [dashboardStudioOpen, setDashboardStudioOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1144,6 +1152,46 @@ export default function MobileHomePage() {
       (dashboard.description && dashboard.description.toLowerCase().includes(query))
     );
   });
+
+  // Pagination logic for widgets and dashboards
+  const widgetsToShow = librarySearchQuery ? filteredWidgets : mobileWidgets;
+  const dashboardsToShow = librarySearchQuery ? filteredDashboards : mobileDashboards;
+
+  const totalWidgetPages = Math.ceil(widgetsToShow.length / ITEMS_PER_PAGE);
+  const totalDashboardPages = Math.ceil(dashboardsToShow.length / ITEMS_PER_PAGE);
+
+  const paginatedWidgets = widgetsToShow.slice(
+    currentWidgetPage * ITEMS_PER_PAGE,
+    (currentWidgetPage + 1) * ITEMS_PER_PAGE
+  );
+
+  const paginatedDashboards = dashboardsToShow.slice(
+    currentDashboardPage * ITEMS_PER_PAGE,
+    (currentDashboardPage + 1) * ITEMS_PER_PAGE
+  );
+
+  // Navigation functions
+  const goToPrevWidgetPage = () => {
+    setCurrentWidgetPage(Math.max(0, currentWidgetPage - 1));
+  };
+
+  const goToNextWidgetPage = () => {
+    setCurrentWidgetPage(Math.min(totalWidgetPages - 1, currentWidgetPage + 1));
+  };
+
+  const goToPrevDashboardPage = () => {
+    setCurrentDashboardPage(Math.max(0, currentDashboardPage - 1));
+  };
+
+  const goToNextDashboardPage = () => {
+    setCurrentDashboardPage(Math.min(totalDashboardPages - 1, currentDashboardPage + 1));
+  };
+
+  // Reset pagination when switching tabs or searching
+  useEffect(() => {
+    setCurrentWidgetPage(0);
+    setCurrentDashboardPage(0);
+  }, [activeLibraryTab, librarySearchQuery]);
 
   const filteredRecentItems = recentItems.filter((item: any) => {
     if (!librarySearchQuery) return true;
@@ -1708,11 +1756,40 @@ export default function MobileHomePage() {
                           <span className="text-xs">Create</span>
                         </Button>
                       </div>
+
+                      {/* Navigation Controls for Widgets */}
+                      {totalWidgetPages > 1 && (
+                        <div className="flex items-center justify-between">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={goToPrevWidgetPage}
+                            disabled={currentWidgetPage === 0}
+                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="text-xs">Previous</span>
+                          </Button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Page {currentWidgetPage + 1} of {totalWidgetPages}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={goToNextWidgetPage}
+                            disabled={currentWidgetPage >= totalWidgetPages - 1}
+                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                          >
+                            <span className="text-xs">Next</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     
                     {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
                       <div className="w-full">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                        {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
+                        {paginatedWidgets.map((widget: any) => (
                           <div
                             key={widget.id}
                             className="flex flex-col p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-blue-200 dark:active:bg-blue-800 touch-manipulation"
@@ -1811,9 +1888,39 @@ export default function MobileHomePage() {
                           <span className="text-xs">Create</span>
                         </Button>
                       </div>
+
+                      {/* Navigation Controls for Dashboards */}
+                      {totalDashboardPages > 1 && (
+                        <div className="flex items-center justify-between">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={goToPrevDashboardPage}
+                            disabled={currentDashboardPage === 0}
+                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="text-xs">Previous</span>
+                          </Button>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            Page {currentDashboardPage + 1} of {totalDashboardPages}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={goToNextDashboardPage}
+                            disabled={currentDashboardPage >= totalDashboardPages - 1}
+                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
+                          >
+                            <span className="text-xs">Next</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+
                       {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                          {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
+                          {paginatedDashboards.map((dashboard: any) => (
                           <div
                             key={dashboard.id}
                             className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-green-200 dark:active:bg-green-800 touch-manipulation"
