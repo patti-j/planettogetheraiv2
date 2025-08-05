@@ -1598,7 +1598,7 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col touch-pan-y">
                 {/* Fixed header */}
                 <div className="flex justify-between items-center p-4 sm:p-6 pb-2 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
@@ -1617,32 +1617,34 @@ export default function MobileHomePage() {
                 </div>
                 
                 {/* Scrollable content area */}
-                <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
                   {/* Search Input */}
                   <div className="relative mb-4 mt-4">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Search widgets and dashboards..."
-                    value={librarySearchQuery}
-                    onChange={(e) => setLibrarySearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        setLibrarySearchQuery("");
-                      }
-                    }}
-                    className="pl-10 pr-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg touch-manipulation"
-                    autoFocus
-                  />
-                  {librarySearchQuery && (
-                    <button
-                      onClick={() => setLibrarySearchQuery("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-col gap-6">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Search widgets and dashboards..."
+                      value={librarySearchQuery}
+                      onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setLibrarySearchQuery("");
+                        }
+                      }}
+                      className="pl-10 pr-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg touch-manipulation"
+                      autoFocus
+                    />
+                    {librarySearchQuery && (
+                      <button
+                        onClick={() => setLibrarySearchQuery("")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Content area inside scrollable container */}
+                  <div className="flex flex-col gap-6">
                   {/* Search Results Summary */}
                   {librarySearchQuery && (
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
@@ -2007,7 +2009,7 @@ export default function MobileHomePage() {
                       )}
                     </div>
                   )}
-                </div>
+                  </div>
                 </div>
               </div>
             </div>
