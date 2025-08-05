@@ -19,7 +19,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   return (
     <>
       <div style={{ zIndex: 9999 }} className="fixed inset-0 bg-black/50 flex items-center justify-center p-2">
-        <div className="w-full max-w-sm h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden">
+        <div className="w-full max-w-sm h-[90vh] bg-white rounded-lg shadow-xl flex flex-col">
           <AiDesignStudioMobile
             onClose={() => onOpenChange(false)}
             onAiAssistant={() => setAiDesignStudioOpen(true)}

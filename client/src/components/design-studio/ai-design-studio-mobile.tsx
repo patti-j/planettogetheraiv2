@@ -335,9 +335,9 @@ export function AiDesignStudioMobile({
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-white">
+    <div className="h-full w-full flex flex-col bg-white overflow-hidden">
       {/* Header */}
-      <div className="border-b bg-gradient-to-r from-purple-50 to-blue-50 p-3">
+      <div className="border-b bg-gradient-to-r from-purple-50 to-blue-50 p-3 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-600" />
@@ -381,7 +381,7 @@ export function AiDesignStudioMobile({
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex border-b bg-gray-50 overflow-x-auto">
+      <div className="flex border-b bg-gray-50 overflow-x-auto flex-shrink-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
