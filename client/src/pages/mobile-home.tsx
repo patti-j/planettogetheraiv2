@@ -1661,7 +1661,8 @@ export default function MobileHomePage() {
                     </div>
                     
                     {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                      <div className="w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                         {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
                           <div
                             key={widget.id}
@@ -1735,6 +1736,7 @@ export default function MobileHomePage() {
                             </div>
                           </div>
                         ))}
+                        </div>
                       </div>
                     ) : (
                       <div className="text-center py-6 text-gray-500 dark:text-gray-400">
@@ -1755,7 +1757,7 @@ export default function MobileHomePage() {
 
                   {/* Mobile Dashboards Section */}
                   {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-6">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Dashboards 
                         {librarySearchQuery ? (
