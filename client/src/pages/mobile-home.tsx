@@ -244,6 +244,10 @@ const getWidgetRoute = (widget: any): string | null => {
     case 'schedule-optimizer':
     case 'schedule-optimization':
       return `/widgets/${widget.id}`;
+    case 'operation-dispatch':
+    case 'operation-sequencer':
+    case 'operation-sequencing':
+      return `/widgets/${widget.id}`;
     case 'production-metrics':
     case 'production-overview':
       return '/production-cockpit';
