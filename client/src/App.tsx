@@ -95,6 +95,7 @@ import ConstraintsPage from "@/pages/constraints";
 import Homepage from "@/pages/homepage";
 import ClearNavigation from "@/pages/clear-navigation";
 import KPIPage from "@/pages/kpi";
+import TenantAdminPage from "@/pages/tenant-admin";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -398,6 +399,11 @@ function Router() {
           <Route path="/user-role-assignments-page">
             <ProtectedRoute feature="user-management" action="view">
               <UserAccessManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/tenant-admin">
+            <ProtectedRoute feature="admin" action="manage">
+              <TenantAdminPage />
             </ProtectedRoute>
           </Route>
           <Route path="/disruption-management">
