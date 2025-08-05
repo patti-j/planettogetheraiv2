@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { Plus, Users, Database, Activity, Settings, Building, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 
 interface Tenant {
@@ -57,6 +58,12 @@ export default function TenantAdminPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { addRecentPage } = useNavigation();
+
+  // Add this page to recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/tenant-admin', 'Tenant Administration', 'Settings');
+  }, [addRecentPage]);
 
   // Fetch tenant statistics
   const { data: stats, isLoading: statsLoading } = useQuery<TenantStats>({
