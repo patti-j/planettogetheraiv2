@@ -116,7 +116,8 @@ import {
   TrendingDown,
   PlayCircle,
   PauseCircle,
-  Palette
+  Palette,
+  Eye
 } from "lucide-react";
 
 // Import widget components
@@ -228,6 +229,60 @@ const getDashboardIcon = (title: string, description?: string) => {
   }
   
   return Monitor; // Default fallback
+};
+
+// Function to determine the route for a widget based on its type and properties
+const getWidgetRoute = (widget: any): string | null => {
+  const widgetType = widget.type || widget.widgetType;
+  const widgetTitle = widget.title?.toLowerCase() || '';
+  
+  // Map specific widget types to their corresponding pages
+  switch (widgetType) {
+    case 'gantt':
+    case 'schedule-gantt':
+      return '/production-schedule';
+    case 'schedule-optimizer':
+    case 'schedule-optimization':
+      return '/scheduling-optimizer';
+    case 'production-metrics':
+    case 'production-overview':
+      return '/production-cockpit';
+    case 'analytics':
+    case 'analytics-dashboard':
+      return '/analytics';
+    case 'shop-floor':
+    case 'shop-floor-management':
+      return '/shop-floor';
+    case 'reports':
+    case 'reporting':
+      return '/reports';
+    case 'dashboard':
+    case 'overview-dashboard':
+      return '/dashboard';
+    default:
+      // Check title-based routing for specific widgets
+      if (widgetTitle.includes('schedule') && widgetTitle.includes('optimizer')) {
+        return '/scheduling-optimizer';
+      }
+      if (widgetTitle.includes('gantt') || widgetTitle.includes('schedule')) {
+        return '/production-schedule';
+      }
+      if (widgetTitle.includes('production') && widgetTitle.includes('cockpit')) {
+        return '/production-cockpit';
+      }
+      if (widgetTitle.includes('analytics')) {
+        return '/analytics';
+      }
+      if (widgetTitle.includes('shop') && widgetTitle.includes('floor')) {
+        return '/shop-floor';
+      }
+      if (widgetTitle.includes('report')) {
+        return '/reports';
+      }
+      
+      // For unknown widget types, return null to use fallback
+      return null;
+  }
 };
 
 interface Task {
@@ -1514,11 +1569,17 @@ export default function MobileHomePage() {
                             onClick={() => {
                               const dialog = document.getElementById('library-dialog');
                               if (dialog) dialog.style.display = 'none';
-                              // For widgets, show preview instead of navigation
+                              // For widgets, navigate to live widget page
                               if (item.type === 'widget') {
-                                setPreviewItem(item);
-                                setPreviewType('widget');
+                                const route = getWidgetRoute(item);
+                                if (route) {
+                                  setLocation(route);
+                                } else {
+                                  // Fallback to generic widget viewer if no specific route
+                                  setLocation(`/widget-viewer?id=${item.id}&title=${encodeURIComponent(item.title)}`);
+                                }
                               } else {
+                                // For dashboards, show preview
                                 setPreviewItem(item);
                                 setPreviewType('dashboard');
                               }
@@ -1587,9 +1648,14 @@ export default function MobileHomePage() {
                                 addToRecent(widget, 'widget');
                                 const dialog = document.getElementById('library-dialog');
                                 if (dialog) dialog.style.display = 'none';
-                                // Show widget preview instead of navigation
-                                setPreviewItem(widget);
-                                setPreviewType('widget');
+                                // Navigate to the actual widget page to show live widget
+                                const route = getWidgetRoute(widget);
+                                if (route) {
+                                  setLocation(route);
+                                } else {
+                                  // Fallback to generic widget viewer if no specific route
+                                  setLocation(`/widget-viewer?id=${widget.id}&title=${encodeURIComponent(widget.title)}`);
+                                }
                               }}
                             >
                               {(() => {
@@ -1602,6 +1668,20 @@ export default function MobileHomePage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Show preview dialog for this widget
+                                  setPreviewItem(widget);
+                                  setPreviewType('widget');
+                                }}
+                                className="h-8 w-8 p-0"
+                                title="Preview widget"
+                              >
+                                <Eye className="w-3 h-3" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
