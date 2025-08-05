@@ -3514,6 +3514,7 @@ Manufacturing Context Available:
 
       // Get all active resources
       const resources = await storage.getResources();
+      console.log('Resource assignments API - resources found:', resources.length);
       
       // For each resource, calculate current assignments and status
       const resourceAssignments = resources.map((resource) => {
@@ -3577,7 +3578,7 @@ Manufacturing Context Available:
           department: getDepartmentForResourceType(resource.type),
           skill_level: resource.type === 'operator' ? (Math.random() > 0.5 ? 'Senior' : 'Junior') : undefined
         };
-      }));
+      });
 
       res.json(resourceAssignments);
     } catch (error) {
@@ -3694,13 +3695,6 @@ Manufacturing Context Available:
     } catch (error) {
       console.error("Error fetching discrete operations:", error);
       res.status(500).json({ error: "Failed to fetch discrete operations" });
-    }
-  });
-    } catch (error) {
-      console.error("Attachment upload error:", error);
-      res.status(500).json({ 
-        message: "Failed to upload attachment" 
-      });
     }
   });
 

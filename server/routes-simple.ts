@@ -1011,7 +1011,67 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
-
+  // Resource Assignments Dashboard endpoint
+  app.get("/api/resource-assignments/dashboard", async (req, res) => {
+    try {
+      const resources = await db.select().from(schema.resources);
+      const operations = await db.select().from(schema.discreteOperations);
+      
+      // Build resource assignments data
+      const resourceAssignments = resources.map((resource) => {
+        // Find operations assigned to this resource
+        const assignedOps = operations.filter(op => op.resourceId === resource.id);
+        const isActive = assignedOps.length > 0;
+        
+        // Calculate utilization
+        let utilizationPercent = 0;
+        let status: 'available' | 'busy' | 'maintenance' | 'offline' = 'available';
+        let currentOperation = null;
+        let operationId = null;
+        
+        if (isActive && assignedOps.length > 0) {
+          // Use first operation as current
+          const currentOp = assignedOps[0];
+          currentOperation = currentOp.name || 'Operation';
+          operationId = currentOp.id;
+          status = 'busy';
+          
+          // Calculate utilization based on number of operations
+          utilizationPercent = Math.min(100, assignedOps.length * 30);
+        }
+        
+        // Determine department based on resource type
+        let department = 'Operations';
+        if (resource.type === 'Equipment' || resource.type === 'Machine') {
+          department = 'Manufacturing';
+        } else if (resource.type === 'Labor' || resource.type === 'Operator') {
+          department = 'Production';
+        } else if (resource.type === 'Tool') {
+          department = 'Quality Control';
+        }
+        
+        return {
+          id: resource.id,
+          resourceName: resource.name,
+          resourceType: resource.type.toLowerCase() as 'equipment' | 'operator' | 'station',
+          currentOperation,
+          operationId,
+          utilizationPercent,
+          status,
+          assignedOperations: assignedOps.length,
+          nextOperation: assignedOps.length > 1 ? assignedOps[1].name : null,
+          nextOperationTime: assignedOps.length > 1 ? new Date(Date.now() + 3600000).toISOString() : null,
+          skill_level: resource.type === 'Labor' || resource.type === 'Operator' ? 'Senior' : undefined,
+          department
+        };
+      });
+      
+      res.json(resourceAssignments);
+    } catch (error) {
+      console.error("Error fetching resource assignments:", error);
+      res.status(500).json({ error: "Failed to fetch resource assignments" });
+    }
+  });
 
   // AI Design Studio endpoint
   app.post("/api/ai/design-studio", requireAuth, async (req, res) => {
