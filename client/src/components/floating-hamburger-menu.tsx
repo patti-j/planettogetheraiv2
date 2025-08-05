@@ -35,18 +35,15 @@ export function FloatingHamburgerMenu({
 
   return (
     <div className={`fixed top-4 left-4 z-50 ${visibilityClass}`}>
-      <div 
-        onClick={handleClick}
-        className="cursor-pointer group relative transition-all duration-200 hover:scale-110"
-        title="Go to Homepage"
+      <Button
+        onClick={() => onToggle(!isOpen)}
+        variant="ghost"
+        size="icon"
+        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md"
+        aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {/* Main logo - clickable to go home */}
-        <img 
-          src={planetTogetherLogo} 
-          alt="PlanetTogether" 
-          className="w-6 h-6 object-contain drop-shadow-md hover:drop-shadow-lg transition-all duration-200 rounded-full"
-        />
-      </div>
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
     </div>
   );
 }
