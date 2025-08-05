@@ -190,6 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle demo users
       if (typeof userId === 'string' && userId.startsWith('demo_')) {
         const demoUsers = {
+          'demo_user': { firstName: 'Demo', lastName: 'User', username: 'demo_user' },
           'demo_director': { firstName: 'Demo', lastName: 'Director', username: 'demo_director' },
           'demo_scheduler': { firstName: 'Demo', lastName: 'Scheduler', username: 'demo_scheduler' },
           'demo_it_admin': { firstName: 'Demo', lastName: 'IT Admin', username: 'demo_it_admin' },
@@ -203,6 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'demo_customer_service': { firstName: 'Demo', lastName: 'Customer Service', username: 'demo_customer_service' },
           'demo_support': { firstName: 'Demo', lastName: 'Support Engineer', username: 'demo_support_engineer' },
           'demo_supply_chain': { firstName: 'Demo', lastName: 'Supply Chain', username: 'demo_supply_chain' },
+          'trainer': { firstName: 'Trainer', lastName: 'User', username: 'trainer' },
         };
         
         const demoUser = demoUsers[userId as keyof typeof demoUsers];
