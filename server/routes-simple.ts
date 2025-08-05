@@ -270,35 +270,83 @@ export function registerSimpleRoutes(app: express.Application): Server {
       
       // Try to authenticate against the database
       try {
-        const user = await storage.getUserWithRolesAndPermissions(username);
-        if (!user) {
+        // Query database directly for user
+        const userResult = await db.select().from(schema.users).where(eq(schema.users.username, username)).limit(1);
+        
+        if (!userResult || userResult.length === 0) {
           console.log("User not found:", username);
           return res.status(401).json({ message: "Invalid credentials" });
         }
         
-        console.log("User found:", user.username, "ID:", user.id);
+        const dbUser = userResult[0];
+        console.log("User found:", dbUser.username, "ID:", dbUser.id);
         
         // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+        const isValidPassword = await bcrypt.compare(password, dbUser.passwordHash);
         if (!isValidPassword) {
           console.log("Password verification failed");
           return res.status(401).json({ message: "Invalid credentials" });
         }
         
-        if (!user.isActive) {
+        if (!dbUser.isActive) {
           return res.status(401).json({ message: "Account is disabled" });
         }
         
         // Update last login
-        await storage.updateUserLastLogin(user.id);
+        await db.update(schema.users)
+          .set({ lastLogin: new Date() })
+          .where(eq(schema.users.id, dbUser.id));
+        
+        // Get user roles
+        const userRoles = await db.select({
+          role: schema.roles,
+          permissions: schema.permissions
+        })
+          .from(schema.userRoles)
+          .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+          .leftJoin(schema.rolePermissions, eq(schema.roles.id, schema.rolePermissions.roleId))
+          .leftJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+          .where(eq(schema.userRoles.userId, dbUser.id));
+        
+        // Group permissions by role
+        const rolesMap = new Map();
+        userRoles.forEach(ur => {
+          if (!rolesMap.has(ur.role.id)) {
+            rolesMap.set(ur.role.id, {
+              id: ur.role.id,
+              name: ur.role.name,
+              description: ur.role.description,
+              permissions: []
+            });
+          }
+          if (ur.permissions) {
+            rolesMap.get(ur.role.id).permissions.push(ur.permissions);
+          }
+        });
+        
+        const roles = Array.from(rolesMap.values());
         
         // Generate token
-        const token = `user_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const token = `user_${dbUser.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         // Return real user data
-        const { passwordHash, ...userData } = user;
+        const user = {
+          id: dbUser.id,
+          username: dbUser.username,
+          email: dbUser.email,
+          firstName: dbUser.firstName,
+          lastName: dbUser.lastName,
+          isActive: dbUser.isActive,
+          roles: roles.length > 0 ? roles : [{
+            id: 2,
+            name: "Production Scheduler",
+            description: "Default role",
+            permissions: []
+          }]
+        };
+        
         res.json({
-          user: userData,
+          user,
           token,
           message: "Login successful"
         });
