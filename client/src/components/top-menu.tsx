@@ -184,6 +184,8 @@ export default function TopMenu() {
   const { data: currentRoleData } = useQuery({
     queryKey: [`/api/users/${user?.id}/current-role`],
     enabled: !!user?.id,
+    staleTime: 0, // Force fresh data
+    cacheTime: 0  // Don't cache
   });
 
   // Check if onboarding is complete
@@ -234,9 +236,9 @@ export default function TopMenu() {
 
   // Convert to RoleSwitcher-compatible format with required description
   const currentRoleForSwitcher = currentRole ? {
-    id: currentRole?.id || '',
-    name: currentRole?.name || '',
-    description: currentRole?.description || ''
+    id: (currentRole as any)?.id || '',
+    name: (currentRole as any)?.name || '',
+    description: (currentRole as any)?.description || ''
   } : null;
 
   // Function to toggle Max AI Assistant
@@ -445,7 +447,7 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{currentRole?.name || 'No Role'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || 'No Role'}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
