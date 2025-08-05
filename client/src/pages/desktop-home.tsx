@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { useQuery } from '@tanstack/react-query';
 import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface Widget {
   id: number;
@@ -145,6 +146,7 @@ export default function DesktopHome() {
                 <Sparkles className="w-4 h-4 mr-2" />
                 Ask Max AI
               </Button>
+              <ThemeToggle />
             </div>
           </div>
         </div>
