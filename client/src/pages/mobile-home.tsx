@@ -243,7 +243,7 @@ const getWidgetRoute = (widget: any): string | null => {
       return '/production-schedule';
     case 'schedule-optimizer':
     case 'schedule-optimization':
-      return '/optimization-studio';
+      return '/optimize-orders';
     case 'production-metrics':
     case 'production-overview':
       return '/production-cockpit';
@@ -262,7 +262,7 @@ const getWidgetRoute = (widget: any): string | null => {
     default:
       // Check title-based routing for specific widgets
       if (widgetTitle.includes('schedule') && widgetTitle.includes('optimizer')) {
-        return '/optimization-studio';
+        return '/optimize-orders';
       }
       if (widgetTitle.includes('gantt') || widgetTitle.includes('schedule')) {
         return '/production-schedule';
