@@ -1582,7 +1582,7 @@ export default function MobileHomePage() {
 
                   {/* Recent Items */}
                   {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
-                    <div>
+                    <div className="pb-2">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Recently Viewed
                         {librarySearchQuery && (
@@ -1638,7 +1638,7 @@ export default function MobileHomePage() {
 
 
                   {/* Mobile Widgets */}
-                  <div>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Widgets 
@@ -1667,7 +1667,7 @@ export default function MobileHomePage() {
                         {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
                           <div
                             key={widget.id}
-                            className="flex flex-col p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-colors active:scale-95 active:bg-blue-200 dark:active:bg-blue-800"
+                            className="flex flex-col p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-blue-200 dark:active:bg-blue-800 touch-manipulation"
                             onClick={() => {
                               console.log("🔍 Widget clicked - widget:", widget, "id:", widget.id, "title:", widget.title);
                               addToRecent(widget, 'widget');
@@ -1739,16 +1739,16 @@ export default function MobileHomePage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                      <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                         {librarySearchQuery ? (
                           <>
                             <p className="text-sm">No widgets match your search</p>
-                            <p className="text-xs">Try a different search term</p>
+                            <p className="text-xs mt-1">Try a different search term</p>
                           </>
                         ) : (
                           <>
                             <p className="text-sm">No widgets yet</p>
-                            <p className="text-xs">Create your first widget to get started</p>
+                            <p className="text-xs mt-1">Create your first widget to get started</p>
                           </>
                         )}
                       </div>
@@ -1757,7 +1757,7 @@ export default function MobileHomePage() {
 
                   {/* Mobile Dashboards */}
                   {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                         Mobile Dashboards 
                         {librarySearchQuery ? (
@@ -1770,7 +1770,7 @@ export default function MobileHomePage() {
                         {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
-                            className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-colors active:scale-95 active:bg-green-200 dark:active:bg-green-800"
+                            className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-green-200 dark:active:bg-green-800 touch-manipulation"
                             onClick={() => {
                               addToRecent(dashboard, 'dashboard');
                               const dialog = document.getElementById('library-dialog');
@@ -1841,7 +1841,7 @@ export default function MobileHomePage() {
                     (filteredWidgets.length === 0 && filteredDashboards.length === 0 && filteredRecentItems.length === 0) :
                     (mobileWidgets.length === 0 && mobileDashboards.length === 0)
                   ) && (
-                    <div className="text-center py-8">
+                    <div className="text-center py-8 border-t border-gray-200 dark:border-gray-700 mt-6">
                       <Library className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                       {librarySearchQuery ? (
                         <>
