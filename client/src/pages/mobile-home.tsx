@@ -1059,7 +1059,23 @@ export default function MobileHomePage() {
   // Recent items tracking
   const getRecentItems = () => {
     const recent = localStorage.getItem('mobileRecentItems');
-    return recent ? JSON.parse(recent) : [];
+    const items = recent ? JSON.parse(recent) : [];
+    
+    // Fix any Schedule Optimizer items with wrong ID (9 should be 52)
+    const fixedItems = items.map((item: any) => {
+      if (item.title === 'Schedule Optimizer' && item.id !== 52) {
+        console.log("🔧 Fixing Schedule Optimizer ID from", item.id, "to 52");
+        return { ...item, id: 52 };
+      }
+      return item;
+    });
+    
+    // Save the fixed items back to localStorage if changes were made
+    if (JSON.stringify(fixedItems) !== JSON.stringify(items)) {
+      localStorage.setItem('mobileRecentItems', JSON.stringify(fixedItems));
+    }
+    
+    return fixedItems;
   };
 
   const addToRecent = (item: any, type: 'widget' | 'dashboard') => {
@@ -1571,8 +1587,11 @@ export default function MobileHomePage() {
                               if (dialog) dialog.style.display = 'none';
                               // For widgets, navigate to live widget page
                               if (item.type === 'widget') {
+                                console.log("🔍 Recent item clicked - item:", item, "id:", item.id, "title:", item.title);
                                 const route = getWidgetRoute(item);
+                                console.log("🔍 Recent item route result:", route);
                                 if (route) {
+                                  console.log("🔍 Using recent item route:", route);
                                   setLocation(route);
                                 } else {
                                   // Fallback to widget viewer with correct route format
@@ -1611,6 +1630,7 @@ export default function MobileHomePage() {
                     <p>Recent Items: {recentItems.length}</p>
                     <p>Schedule Optimizer in widgets: {mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') ? 'YES' : 'NO'}</p>
                     <p>Schedule Optimizer data: {JSON.stringify(mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') || 'Not found')}</p>
+                    <p>Recent items with Schedule Optimizer: {JSON.stringify(recentItems.filter((item: any) => item.title.includes('Schedule Optimizer')))}</p>
                   </div>
 
                   {/* Mobile Widgets */}
