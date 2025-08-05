@@ -2213,15 +2213,17 @@ export default function MobileHomePage() {
         onOpenChange={setDesignStudioOpen}
       />
 
-      {/* AI Design Studio Mobile - for preview functionality */}
-      <AiDesignStudioMobile
-        previewItem={previewItem}
-        previewType={previewType}
-        onClosePreview={() => {
-          setPreviewItem(null);
-          setPreviewType(null);
-        }}
-      />
+      {/* AI Design Studio Mobile - for preview functionality - only show when preview is active */}
+      {(previewItem && previewType) && (
+        <AiDesignStudioMobile
+          previewItem={previewItem}
+          previewType={previewType}
+          onClosePreview={() => {
+            setPreviewItem(null);
+            setPreviewType(null);
+          }}
+        />
+      )}
     </div>
   );
 }

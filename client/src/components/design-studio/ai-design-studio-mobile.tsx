@@ -24,6 +24,7 @@ interface AiDesignStudioMobileProps {
   previewItem?: any;
   previewType?: 'widget' | 'dashboard' | 'page' | null;
   onClosePreview?: () => void;
+  showDesignStudio?: boolean; // Control whether to show the full design studio interface
 }
 
 export function AiDesignStudioMobile({ 
@@ -31,7 +32,8 @@ export function AiDesignStudioMobile({
   onAiAssistant,
   previewItem: externalPreviewItem,
   previewType: externalPreviewType,
-  onClosePreview
+  onClosePreview,
+  showDesignStudio = false
 }: AiDesignStudioMobileProps) {
   const [activeTab, setActiveTab] = React.useState('widgets');
   const [aiPrompt, setAiPrompt] = React.useState('');
@@ -326,6 +328,11 @@ export function AiDesignStudioMobile({
       "Simplify navigation for operators"
     ]
   };
+
+  // If no preview and design studio not explicitly enabled, don't render anything
+  if (!activePreviewItem && !showDesignStudio) {
+    return null;
+  }
 
   return (
     <div className="h-full w-full flex flex-col bg-white">
