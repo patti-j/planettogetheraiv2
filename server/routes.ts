@@ -1461,6 +1461,7 @@ Rules:
       console.log("Session ID:", req.sessionID);
       console.log("Authorization header:", req.headers.authorization);
       console.log("Session userId:", req.session?.userId);
+      console.log("Session isDemo:", req.session?.isDemo);
       
       let userId = req.session?.userId;
       let isDemo = req.session?.isDemo;
@@ -1494,8 +1495,13 @@ Rules:
         return res.status(401).json({ message: "Not authenticated" });
       }
 
-      // Handle demo users
-      if (isDemo || (typeof userId === 'string' && userId.startsWith('demo_'))) {
+      console.log("=== USER CHECK ===");
+      console.log("userId:", userId, "type:", typeof userId);
+      console.log("isDemo flag:", isDemo);
+      console.log("userId starts with demo_:", typeof userId === 'string' && userId.startsWith('demo_'));
+
+      // Handle demo users - only if explicitly marked as demo or username starts with demo_
+      if (isDemo === true || (typeof userId === 'string' && userId.startsWith('demo_'))) {
         const demoUsers = {
           'demo_director': { 
             id: 'demo_director', 
