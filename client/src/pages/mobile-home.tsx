@@ -636,11 +636,11 @@ function MobileMenuTrigger() {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{(userProfile?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarFallback>{(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium">{userProfile?.firstName || user?.username || 'User'}</p>
-                    <p className="text-xs text-gray-500">{userProfile?.email || user?.email || 'demo@example.com'}</p>
+                    <p className="text-sm font-medium">{user?.firstName || user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500">{user?.email || 'demo@example.com'}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1">
@@ -1341,7 +1341,7 @@ export default function MobileHomePage() {
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <Avatar className="h-6 w-6">
                       <AvatarImage src="" />
-                      <AvatarFallback>{(userProfile?.firstName || user?.username)?.[0]?.toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{(user?.firstName || user?.username)?.[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -2075,7 +2075,7 @@ export default function MobileHomePage() {
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome back, {userProfile?.firstName || user?.username || 'User'}!
+              Welcome back, {user?.firstName || user?.username || 'User'}!
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               {new Date().toLocaleDateString('en-US', { 
