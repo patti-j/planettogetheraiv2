@@ -196,7 +196,8 @@ const DropZone = ({ children, onDrop }: any) => {
     accept: ["widget", "template"],
     drop: (item: any, monitor) => {
       const offset = monitor.getClientOffset();
-      const dropZoneRect = drop.current?.getBoundingClientRect();
+      const dropElement = drop as any;
+      const dropZoneRect = dropElement?.getBoundingClientRect?.();
       if (offset && dropZoneRect) {
         const x = offset.x - dropZoneRect.left;
         const y = offset.y - dropZoneRect.top;

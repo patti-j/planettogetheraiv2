@@ -1,7 +1,7 @@
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 
 // Redis configuration for Phase 1 scaling implementation
-const redisConfig: Redis.RedisOptions = {
+const redisConfig: RedisOptions = {
   host: 'localhost',
   port: 6379,
   maxRetriesPerRequest: 3,
@@ -209,51 +209,7 @@ export class CacheManager {
     }
   }
 
-  async deleteSession(sessionId: string): Promise<void> {
-    try {
-      await this.redis.del(`session:${sessionId}`);
-      console.log(`🗑️ Redis: Session deleted for ${sessionId}`);
-    } catch (error) {
-      console.error('Redis session delete error:', error);
-    }
-  }
 
-  // Query result caching for performance optimization
-  async cacheQueryResult(key: string, data: any, ttl: number = 300): Promise<void> {
-    try {
-      await this.redis.setex(`query:${key}`, ttl, JSON.stringify(data));
-      console.log(`💾 Redis: Query result cached for key ${key}`);
-    } catch (error) {
-      console.error('Redis query cache error:', error);
-    }
-  }
-
-  async getCachedQuery(key: string): Promise<any | null> {
-    try {
-      const data = await this.redis.get(`query:${key}`);
-      if (data) {
-        console.log(`⚡ Redis: Cache hit for query ${key}`);
-        return JSON.parse(data);
-      }
-      console.log(`❌ Redis: Cache miss for query ${key}`);
-      return null;
-    } catch (error) {
-      console.error('Redis query get error:', error);
-      return null;
-    }
-  }
-
-  async invalidateCache(pattern: string): Promise<void> {
-    try {
-      const keys = await this.redis.keys(`query:${pattern}*`);
-      if (keys.length > 0) {
-        await this.redis.del(...keys);
-        console.log(`🧹 Redis: Invalidated ${keys.length} cache entries for pattern ${pattern}`);
-      }
-    } catch (error) {
-      console.error('Redis cache invalidation error:', error);
-    }
-  }
 
   // System metrics for monitoring
   async getMetrics(): Promise<any> {
