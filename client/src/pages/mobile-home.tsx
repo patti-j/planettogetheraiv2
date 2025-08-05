@@ -1540,7 +1540,6 @@ export default function MobileHomePage() {
                       // This looks like a search
                       console.log('Search:', searchQuery);
                       // TODO: Perform search functionality
-                      alert(`Searching for: ${searchQuery}`);
                       setSearchQuery(""); // Clear after searching
                     }
                   }
@@ -2233,7 +2232,6 @@ export default function MobileHomePage() {
                           // This looks like a search
                           console.log('Search:', searchQuery);
                           // TODO: Perform search functionality
-                          alert(`Searching for: ${searchQuery}`);
                           setSearchQuery(""); // Clear after searching
                         }
                       }
