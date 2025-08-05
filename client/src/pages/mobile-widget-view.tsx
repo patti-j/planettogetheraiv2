@@ -50,6 +50,8 @@ const WIDGET_COMPONENTS = {
   'quality-dashboard': QualityDashboardWidget,
   'inventory-tracking': InventoryTrackingWidget,
   'gantt-chart': GanttChartWidget,
+  // KPI widget for Production Overview
+  'kpi': ProductionMetricsWidget,
 };
 
 export default function MobileWidgetView() {
