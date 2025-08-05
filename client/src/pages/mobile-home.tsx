@@ -1756,11 +1756,7 @@ export default function MobileHomePage() {
                                 {widget.type}
                               </p>
                             </div>
-                            <div className="flex items-center justify-end mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
-                              <span className="text-xs text-gray-400">
-                                #{widget.id}
-                              </span>
-                            </div>
+
                           </div>
                         ))}
                         </div>
@@ -1856,11 +1852,7 @@ export default function MobileHomePage() {
                                 {dashboard.description || 'Dashboard'}
                               </p>
                             </div>
-                            <div className="flex items-center justify-end mt-2 pt-2 border-t border-green-200 dark:border-green-800">
-                              <span className="text-xs text-gray-400">
-                                #{dashboard.id}
-                              </span>
-                            </div>
+
                           </div>
                           ))}
                         </div>
