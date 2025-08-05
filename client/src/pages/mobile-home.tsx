@@ -1595,9 +1595,9 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col touch-pan-y">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg h-[85vh] flex flex-col">
                 {/* Fixed header */}
-                <div className="flex justify-between items-center p-4 sm:p-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex justify-between items-center p-4 sm:p-6 pb-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
                   <button 
                     onClick={() => {
@@ -1614,7 +1614,7 @@ export default function MobileHomePage() {
                 </div>
                 
                 {/* Scrollable content area */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-6 overscroll-contain" style={{ WebkitOverflowScrolling: 'touch', scrollBehavior: 'smooth' }}>
                   {/* Search Input */}
                   <div className="relative mb-4 mt-4">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -1755,40 +1755,11 @@ export default function MobileHomePage() {
                           <span className="text-xs">Create</span>
                         </Button>
                       </div>
-
-                      {/* Navigation Controls for Widgets */}
-                      {totalWidgetPages > 1 && (
-                        <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={goToPrevWidgetPage}
-                            disabled={currentWidgetPage === 0}
-                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                            <span className="text-xs">Previous</span>
-                          </Button>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Page {currentWidgetPage + 1} of {totalWidgetPages}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={goToNextWidgetPage}
-                            disabled={currentWidgetPage >= totalWidgetPages - 1}
-                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
-                          >
-                            <span className="text-xs">Next</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
                     
                     {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
                       <div className="w-full">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                        {paginatedWidgets.map((widget: any) => (
+                        {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
                           <div
                             key={widget.id}
                             className="flex flex-col p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-blue-200 dark:active:bg-blue-800 touch-manipulation"
@@ -1888,38 +1859,9 @@ export default function MobileHomePage() {
                         </Button>
                       </div>
 
-                      {/* Navigation Controls for Dashboards */}
-                      {totalDashboardPages > 1 && (
-                        <div className="flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={goToPrevDashboardPage}
-                            disabled={currentDashboardPage === 0}
-                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                            <span className="text-xs">Previous</span>
-                          </Button>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Page {currentDashboardPage + 1} of {totalDashboardPages}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={goToNextDashboardPage}
-                            disabled={currentDashboardPage >= totalDashboardPages - 1}
-                            className="flex items-center gap-1 h-8 px-3 touch-manipulation"
-                          >
-                            <span className="text-xs">Next</span>
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-
                       {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                          {paginatedDashboards.map((dashboard: any) => (
+                          {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
                             className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-all duration-200 active:scale-95 active:bg-green-200 dark:active:bg-green-800 touch-manipulation"
