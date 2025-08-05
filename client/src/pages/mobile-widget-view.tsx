@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { ArrowLeft, BarChart3, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,34 @@ export default function MobileWidgetView() {
   const [, params] = useRoute("/widgets/:id");
   const [, setLocation] = useLocation();
   const { currentView } = useViewMode();
+  
+  // Debug: Log container dimensions on mount and resize
+  useEffect(() => {
+    const checkDimensions = () => {
+      const container = document.querySelector('.widget-scroll-container');
+      if (container) {
+        console.log('🔍 Widget container dimensions:', {
+          scrollHeight: container.scrollHeight,
+          clientHeight: container.clientHeight,
+          offsetHeight: container.offsetHeight,
+          hasOverflow: container.scrollHeight > container.clientHeight,
+          computedStyle: window.getComputedStyle(container).overflow
+        });
+      }
+    };
+    
+    // Check on mount and window resize
+    checkDimensions();
+    window.addEventListener('resize', checkDimensions);
+    
+    // Check after a delay to ensure content is loaded
+    const timer = setTimeout(checkDimensions, 1000);
+    
+    return () => {
+      window.removeEventListener('resize', checkDimensions);
+      clearTimeout(timer);
+    };
+  }, [params?.id]);
   
   if (!params) {
     return (
@@ -302,9 +331,21 @@ export default function MobileWidgetView() {
           <div className="pb-8">
             {renderWidgetContent()}
             
-            {/* Temporary content to force scrolling */}
+            {/* Multiple debug elements to force scrolling */}
             <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg mt-4 p-4 flex items-center justify-center">
-              <p className="text-gray-500 dark:text-gray-400">Debug: This content ensures scrolling</p>
+              <p className="text-gray-500 dark:text-gray-400">Debug Box 1: Height 384px (h-96)</p>
+            </div>
+            
+            <div className="h-64 bg-blue-100 dark:bg-blue-900 rounded-lg mt-4 p-4 flex items-center justify-center">
+              <p className="text-blue-700 dark:text-blue-300">Debug Box 2: Height 256px (h-64)</p>
+            </div>
+            
+            <div className="h-80 bg-green-100 dark:bg-green-900 rounded-lg mt-4 p-4 flex items-center justify-center">
+              <p className="text-green-700 dark:text-green-300">Debug Box 3: Height 320px (h-80)</p>
+            </div>
+            
+            <div className="h-48 bg-purple-100 dark:bg-purple-900 rounded-lg mt-4 p-4 flex items-center justify-center">
+              <p className="text-purple-700 dark:text-purple-300">Debug Box 4: Height 192px (h-48)</p>
             </div>
         
             {/* Widget Info */}
