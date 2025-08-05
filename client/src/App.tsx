@@ -402,9 +402,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/tenant-admin">
-            <ProtectedRoute feature="admin" action="manage">
-              <TenantAdminPage />
-            </ProtectedRoute>
+            <TenantAdminPage />
           </Route>
           <Route path="/disruption-management">
             <ProtectedRoute feature="disruption-management" action="view">
