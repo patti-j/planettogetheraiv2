@@ -188,6 +188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("=== PROFILE ENDPOINT HIT ===");
       console.log("User from request:", req.user);
       const userId = req.user?.id;
+      console.log("Looking up profile for userId:", userId, "type:", typeof userId);
       
       // Handle demo users
       if (typeof userId === 'string' && userId.startsWith('demo_')) {

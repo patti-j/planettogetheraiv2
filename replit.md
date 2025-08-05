@@ -16,6 +16,10 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Development Environment
+- **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
+- **Note**: The dev URL changes when the workspace restarts, always check console logs for the current URL
+
 Component terminology for reference:
 - **Max mobile interface/panel**: Full-screen overlay component in mobile-home.tsx that appears when Max is opened on mobile
 
