@@ -19,19 +19,29 @@ import {
 } from 'lucide-react';
 
 interface AiDesignStudioMobileProps {
-  onClose: () => void;
-  onAiAssistant: () => void;
+  onClose?: () => void;
+  onAiAssistant?: () => void;
+  previewItem?: any;
+  previewType?: 'widget' | 'dashboard' | 'page' | null;
+  onClosePreview?: () => void;
 }
 
 export function AiDesignStudioMobile({ 
   onClose, 
-  onAiAssistant
+  onAiAssistant,
+  previewItem: externalPreviewItem,
+  previewType: externalPreviewType,
+  onClosePreview
 }: AiDesignStudioMobileProps) {
   const [activeTab, setActiveTab] = React.useState('widgets');
   const [aiPrompt, setAiPrompt] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [previewItem, setPreviewItem] = React.useState<any>(null);
   const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | 'page' | null>(null);
+  
+  // Use external preview props if provided, otherwise use internal state
+  const activePreviewItem = externalPreviewItem || previewItem;
+  const activePreviewType = externalPreviewType || previewType;
   const [loadingWidgetId, setLoadingWidgetId] = React.useState<number | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
     item: any;
@@ -648,7 +658,7 @@ export function AiDesignStudioMobile({
       </div>
 
       {/* Preview Dialog */}
-      {previewItem && previewType && (
+      {activePreviewItem && activePreviewType && (
         <div 
           style={{
             position: 'fixed',
@@ -666,8 +676,12 @@ export function AiDesignStudioMobile({
           onClick={(e) => {
             // Close dialog if clicking the backdrop
             if (e.target === e.currentTarget) {
-              setPreviewItem(null);
-              setPreviewType(null);
+              if (onClosePreview) {
+                onClosePreview();
+              } else {
+                setPreviewItem(null);
+                setPreviewType(null);
+              }
             }
           }}
         >
@@ -686,11 +700,15 @@ export function AiDesignStudioMobile({
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold">{previewType === 'widget' ? 'Widget' : 'Dashboard'} Preview</h2>
+              <h2 className="text-lg font-semibold">{activePreviewType === 'widget' ? 'Widget' : activePreviewType === 'dashboard' ? 'Dashboard' : 'Page'} Preview</h2>
               <button
                 onClick={() => {
-                  setPreviewItem(null);
-                  setPreviewType(null);
+                  if (onClosePreview) {
+                    onClosePreview();
+                  } else {
+                    setPreviewItem(null);
+                    setPreviewType(null);
+                  }
                 }}
                 className="p-1 hover:bg-gray-100 rounded"
               >
@@ -705,7 +723,7 @@ export function AiDesignStudioMobile({
               </label>
               <div className="space-y-2">
                 <Input
-                  placeholder={`Ask AI to modify this ${previewType}...`}
+                  placeholder={`Ask AI to modify this ${activePreviewType}...`}
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAiPrompt()}
@@ -735,18 +753,18 @@ export function AiDesignStudioMobile({
                 🔍 Live Preview
               </label>
               <div className="bg-white rounded-lg border p-3 shadow-sm">
-                {previewType === 'widget' && (
+                {activePreviewType === 'widget' && (
                   <div className="space-y-2">
                     {/* Widget Header */}
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">{previewItem.title}</h4>
+                      <h4 className="font-medium text-sm">{activePreviewItem.title}</h4>
                       <div className="w-1 h-1 bg-green-500 rounded-full"></div>
                     </div>
                     
                     {/* Chart Visualization */}
                     <div className="h-24 bg-gradient-to-br from-blue-50 to-indigo-100 rounded flex items-center justify-center">
                       {(() => {
-                        const chartType = previewItem.chartType || previewItem.chart_type || previewItem.type || 'chart';
+                        const chartType = activePreviewItem.chartType || activePreviewItem.chart_type || activePreviewItem.type || 'chart';
                         
                         if (chartType.toLowerCase().includes('gauge') || chartType.toLowerCase().includes('status')) {
                           return (
@@ -809,15 +827,15 @@ export function AiDesignStudioMobile({
                     {/* Widget Footer */}
                     <div className="flex justify-between items-center text-xs text-gray-500">
                       <span>Updated: 2m ago</span>
-                      <span>📊 {previewItem.dataSource || previewItem.data_source || 'data'}</span>
+                      <span>📊 {activePreviewItem.dataSource || activePreviewItem.data_source || 'data'}</span>
                     </div>
                   </div>
                 )}
                 
-                {previewType === 'dashboard' && (
+                {activePreviewType === 'dashboard' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">{previewItem.title}</h4>
+                      <h4 className="font-medium text-sm">{activePreviewItem.title}</h4>
                       <div className="text-xs text-gray-500">Dashboard View</div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 h-20">
@@ -849,17 +867,17 @@ export function AiDesignStudioMobile({
                   </div>
                 )}
 
-                {previewType === 'page' && (
+                {activePreviewType === 'page' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">{previewItem.name}</h4>
+                      <h4 className="font-medium text-sm">{activePreviewItem.name}</h4>
                       <div className="text-xs text-gray-500">Page Layout</div>
                     </div>
                     <div className="h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
                       <div className="text-center">
                         <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-purple-500 rounded"></div>
-                        <div className="text-xs text-gray-600">{previewItem.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">{previewItem.route}</div>
+                        <div className="text-xs text-gray-600">{activePreviewItem.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">{activePreviewItem.route}</div>
                       </div>
                     </div>
                   </div>
@@ -870,39 +888,39 @@ export function AiDesignStudioMobile({
             {/* Content */}
             <div className="p-4 space-y-4">
               <div>
-                <h3 className="font-medium text-lg">{previewItem.title}</h3>
-                {previewItem.subtitle && (
-                  <p className="text-sm text-gray-600 mt-1">{previewItem.subtitle}</p>
+                <h3 className="font-medium text-lg">{activePreviewItem.title || activePreviewItem.name}</h3>
+                {activePreviewItem.subtitle && (
+                  <p className="text-sm text-gray-600 mt-1">{activePreviewItem.subtitle}</p>
                 )}
               </div>
 
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Description</label>
-                  <p className="text-sm mt-1">{previewItem.description || 'No description available'}</p>
+                  <p className="text-sm mt-1">{activePreviewItem.description || 'No description available'}</p>
                 </div>
 
-                {previewType === 'widget' && (
+                {activePreviewType === 'widget' && (
                   <>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Chart Type</label>
-                        <p className="text-sm mt-1">{previewItem.chartType || previewItem.chart_type || previewItem.type || 'N/A'}</p>
+                        <p className="text-sm mt-1">{activePreviewItem.chartType || activePreviewItem.chart_type || activePreviewItem.type || 'N/A'}</p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Source</label>
-                        <p className="text-sm mt-1">{previewItem.dataSource || previewItem.data_source || previewItem.source || 'N/A'}</p>
+                        <p className="text-sm mt-1">{activePreviewItem.dataSource || activePreviewItem.data_source || activePreviewItem.source || 'N/A'}</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Category</label>
-                        <p className="text-sm mt-1">{previewItem.category || 'N/A'}</p>
+                        <p className="text-sm mt-1">{activePreviewItem.category || 'N/A'}</p>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Refresh Rate</label>
-                        <p className="text-sm mt-1">{previewItem.refreshInterval || previewItem.refresh_interval || 'N/A'}s</p>
+                        <p className="text-sm mt-1">{activePreviewItem.refreshInterval || activePreviewItem.refresh_interval || 'N/A'}s</p>
                       </div>
                     </div>
 
@@ -910,7 +928,7 @@ export function AiDesignStudioMobile({
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Platform</label>
                       <div className="text-sm mt-1">
                         {(() => {
-                          const platform = previewItem.targetPlatform || previewItem.target_platform || 'N/A';
+                          const platform = activePreviewItem.targetPlatform || activePreviewItem.target_platform || 'N/A';
                           if (platform === 'both') {
                             return (
                               <div className="flex items-center gap-2">
@@ -941,11 +959,11 @@ export function AiDesignStudioMobile({
                       </div>
                     </div>
 
-                    {previewItem.tags && previewItem.tags.length > 0 && (
+                    {activePreviewItem.tags && activePreviewItem.tags.length > 0 && (
                       <div>
                         <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tags</label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {previewItem.tags.map((tag: string, index: number) => (
+                          {activePreviewItem.tags.map((tag: string, index: number) => (
                             <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
                               {tag}
                             </span>
@@ -956,12 +974,12 @@ export function AiDesignStudioMobile({
                   </>
                 )}
 
-                {previewType === 'dashboard' && (
+                {activePreviewType === 'dashboard' && (
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Target Platform</label>
                     <div className="text-sm mt-1">
                       {(() => {
-                        const platform = previewItem.targetPlatform || 'N/A';
+                        const platform = activePreviewItem.targetPlatform || 'N/A';
                         if (platform === 'both') {
                           return (
                             <div className="flex items-center gap-2">
@@ -993,11 +1011,11 @@ export function AiDesignStudioMobile({
                   </div>
                 )}
 
-                {previewType === 'page' && (
+                {activePreviewType === 'page' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Route</label>
-                      <p className="text-sm mt-1">{previewItem.route || 'N/A'}</p>
+                      <p className="text-sm mt-1">{activePreviewItem.route || 'N/A'}</p>
                     </div>
                     <div>
                       <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</label>
@@ -1007,8 +1025,8 @@ export function AiDesignStudioMobile({
                 )}
 
                 <div className="text-xs text-gray-500">
-                  Created: {previewType === 'page' ? 'System Default' : 
-                           (previewItem.createdAt ? new Date(previewItem.createdAt).toLocaleDateString() : 'N/A')}
+                  Created: {activePreviewType === 'page' ? 'System Default' : 
+                           (activePreviewItem.createdAt ? new Date(activePreviewItem.createdAt).toLocaleDateString() : 'N/A')}
                 </div>
               </div>
 

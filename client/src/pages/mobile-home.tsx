@@ -123,6 +123,7 @@ import {
 import WidgetDesignStudio from '@/components/widget-design-studio';
 import { WidgetConfig } from '@/lib/widget-library';
 import DesignStudio from '@/components/design-studio/design-studio-clean';
+import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studio-mobile';
 
 // Import page components for mobile routing - only import existing pages
 import ProductionSchedulePage from "@/pages/production-schedule";
@@ -786,6 +787,10 @@ export default function MobileHomePage() {
   const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
   const [editingWidget, setEditingWidget] = useState<any>(null);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
+  
+  // Preview states for design studio preview windows
+  const [previewItem, setPreviewItem] = useState<any>(null);
+  const [previewType, setPreviewType] = useState<'widget' | 'dashboard' | null>(null);
 
   // Widget deletion mutation
   const deleteWidgetMutation = useMutation({
@@ -808,8 +813,15 @@ export default function MobileHomePage() {
   };
 
   const handleEditWidget = (widget: any) => {
-    setEditingWidget(widget);
-    setWidgetStudioOpen(true);
+    console.log('🔍 Opening preview for widget:', widget.title);
+    setPreviewItem(widget);
+    setPreviewType('widget');
+  };
+
+  const handleEditDashboard = (dashboard: any) => {
+    console.log('🔍 Opening preview for dashboard:', dashboard.title);
+    setPreviewItem(dashboard);
+    setPreviewType('dashboard');
   };
 
   const handleDeleteWidget = async (widget: any) => {
@@ -1627,21 +1639,23 @@ export default function MobileHomePage() {
                         {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
-                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
-                            onClick={() => {
-                              addToRecent(dashboard, 'dashboard');
-                              const dialog = document.getElementById('library-dialog');
-                              if (dialog) dialog.style.display = 'none';
-                              
-                              // Handle Production Scheduler Dashboard specially
-                              if (dashboard.title === "Production Scheduler Dashboard") {
-                                setLocation('/production-scheduler-dashboard');
-                              } else {
-                                setLocation(`/dashboards/${dashboard.id}`);
-                              }
-                            }}
+                            className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg"
                           >
-                            <div className="flex items-center space-x-3">
+                            <div 
+                              className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900 rounded"
+                              onClick={() => {
+                                addToRecent(dashboard, 'dashboard');
+                                const dialog = document.getElementById('library-dialog');
+                                if (dialog) dialog.style.display = 'none';
+                                
+                                // Handle Production Scheduler Dashboard specially
+                                if (dashboard.title === "Production Scheduler Dashboard") {
+                                  setLocation('/production-scheduler-dashboard');
+                                } else {
+                                  setLocation(`/dashboards/${dashboard.id}`);
+                                }
+                              }}
+                            >
                               {(() => {
                                 const IconComponent = getDashboardIcon(dashboard.title, dashboard.description);
                                 return <IconComponent className="w-4 h-4 text-green-600" />;
@@ -1651,7 +1665,20 @@ export default function MobileHomePage() {
                                 <p className="text-xs text-gray-500 dark:text-gray-400">{dashboard.description || 'Dashboard'}</p>
                               </div>
                             </div>
-                            <Badge variant="secondary" className="text-xs">Dashboard</Badge>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditDashboard(dashboard);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Badge variant="secondary" className="text-xs">Dashboard</Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -2172,6 +2199,16 @@ export default function MobileHomePage() {
       <DesignStudio
         open={designStudioOpen}
         onOpenChange={setDesignStudioOpen}
+      />
+
+      {/* AI Design Studio Mobile - for preview functionality */}
+      <AiDesignStudioMobile
+        previewItem={previewItem}
+        previewType={previewType}
+        onClosePreview={() => {
+          setPreviewItem(null);
+          setPreviewType(null);
+        }}
       />
     </div>
   );
