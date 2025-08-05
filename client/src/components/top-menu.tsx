@@ -361,12 +361,15 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Floating Hamburger Menu Button - Show on desktop only */}
+      {/* Floating Hamburger Menu Button - Show on all views */}
       <FloatingHamburgerMenu
-        onToggle={setMenuOpen}
+        onToggle={(newState) => {
+          console.log('Hamburger menu toggled, new state:', newState);
+          setMenuOpen(newState);
+        }}
         isOpen={menuOpen}
         showOnDesktop={true}
-        showOnMobile={false}
+        showOnMobile={true}
       />
       
       {/* Persistent Theme Toggle - Always visible except in mobile view */}
@@ -376,8 +379,8 @@ export default function TopMenu() {
         </div>
       )}
 
-      {/* Full Screen Dropdown Menu - Hide in mobile view */}
-      {menuOpen && currentView !== "mobile" && (
+      {/* Full Screen Dropdown Menu - Show on all views */}
+      {menuOpen && (
         <div 
           className="fixed inset-0 z-50 bg-black bg-opacity-25"
           style={{ touchAction: 'none' }}
