@@ -1465,5 +1465,133 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Phase 3 Multi-Tenant Architecture endpoints
+  
+  // Tenant Management (Admin endpoints)
+  app.post("/api/tenant-admin/tenants", async (req, res) => {
+    try {
+      const { name, subdomain, plan, adminEmail, adminPassword, features } = req.body;
+      
+      const { tenantManager } = await import('./tenant-manager');
+      const result = await tenantManager.createTenant({
+        name,
+        subdomain,
+        plan,
+        adminEmail,
+        adminPassword,
+        features
+      });
+      
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ 
+        error: 'Failed to create tenant', 
+        details: String(error) 
+      });
+    }
+  });
+
+  app.get("/api/tenant-admin/tenants", async (req, res) => {
+    try {
+      const { tenantManager } = await import('./tenant-manager');
+      const tenants = await tenantManager.getAllTenants();
+      res.json(tenants);
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to fetch tenants', 
+        details: String(error) 
+      });
+    }
+  });
+
+  app.get("/api/tenant-admin/tenants/:tenantId", async (req, res) => {
+    try {
+      const { tenantManager } = await import('./tenant-manager');
+      const tenant = await tenantManager.getTenant(req.params.tenantId);
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+      
+      res.json(tenant);
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to fetch tenant', 
+        details: String(error) 
+      });
+    }
+  });
+
+  app.get("/api/tenant-admin/tenants/:tenantId/health", async (req, res) => {
+    try {
+      const { tenantManager } = await import('./tenant-manager');
+      const health = await tenantManager.checkTenantHealth(req.params.tenantId);
+      res.json(health);
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to check tenant health', 
+        details: String(error) 
+      });
+    }
+  });
+
+  app.get("/api/tenant-admin/stats", async (req, res) => {
+    try {
+      const { tenantManager } = await import('./tenant-manager');
+      const stats = await tenantManager.getTenantStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to fetch tenant stats', 
+        details: String(error) 
+      });
+    }
+  });
+
+  // Tenant Resolution Test endpoints
+  app.get("/api/tenant-info", async (req, res) => {
+    try {
+      const { tenantManager } = await import('./tenant-manager');
+      
+      // Test different resolution strategies
+      const subdomain = req.get('host')?.split('.')[0];
+      const tenantId = req.get('x-tenant-id');
+      
+      let tenant = null;
+      let resolvedBy = 'none';
+      
+      if (tenantId) {
+        tenant = await tenantManager.resolveTenant({ tenantId });
+        resolvedBy = 'header';
+      } else if (subdomain && subdomain !== 'localhost') {
+        tenant = await tenantManager.resolveTenant({ subdomain });
+        resolvedBy = 'subdomain';
+      }
+      
+      res.json({
+        resolved: !!tenant,
+        resolvedBy,
+        tenant: tenant ? {
+          id: tenant.id,
+          name: tenant.name,
+          subdomain: tenant.subdomain,
+          plan: tenant.plan,
+          features: tenant.features
+        } : null,
+        requestInfo: {
+          host: req.get('host'),
+          subdomain,
+          tenantHeader: tenantId,
+          userAgent: req.get('user-agent')
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        error: 'Failed to resolve tenant', 
+        details: String(error) 
+      });
+    }
+  });
+
   return createServer(app);
 }
