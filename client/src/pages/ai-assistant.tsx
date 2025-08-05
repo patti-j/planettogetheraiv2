@@ -9,7 +9,9 @@ export default function AIAssistant() {
   
   return (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <AIAgent searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <div className="md:ml-12 ml-0">
+        <AIAgent searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      </div>
     </div>
   );
 }

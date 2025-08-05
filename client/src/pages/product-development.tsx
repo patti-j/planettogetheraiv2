@@ -418,11 +418,11 @@ export default function ProductDevelopment() {
   ];
 
   return (
-    <div className="space-y-6 p-6 pl-16 bg-white dark:bg-gray-900 min-h-screen">
+    <div className="space-y-6 p-3 sm:p-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
+        <div className="md:ml-12 ml-0">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
             <Code2 className="w-8 h-8 text-blue-500" />
             Product Development Hub
           </h1>

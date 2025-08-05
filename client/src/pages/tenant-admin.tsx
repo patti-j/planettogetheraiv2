@@ -143,10 +143,10 @@ export default function TenantAdminPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tenant Administration</h1>
+        <div className="md:ml-12 ml-0">
+          <h1 className="text-2xl md:text-3xl font-bold">Tenant Administration</h1>
           <p className="text-muted-foreground mt-1">
             Manage multi-tenant infrastructure and customer accounts
           </p>
