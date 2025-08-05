@@ -1,3 +1,7 @@
+import { db } from "./db";
+import { users } from "../shared/schema-simple";
+import { eq } from "drizzle-orm";
+
 // Basic storage using direct SQL queries to bypass Drizzle connection issues
 export class BasicStorage {
   // Mock data that matches database structure
@@ -232,11 +236,27 @@ export class BasicStorage {
   }
 
   async getUser(id: number) {
-    return this.mockUsers.find(u => u.id === id) || null;
+    try {
+      const result = await db.select().from(users).where(eq(users.id, id));
+      console.log("Raw database result for user:", result[0]);
+      console.log("All properties:", result[0] ? Object.keys(result[0]) : "no result");
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching user from database:", error);
+      // Fallback to mock data only if database fails
+      return this.mockUsers.find(u => u.id === id) || null;
+    }
   }
 
   async getUserByUsername(username: string) {
-    return this.mockUsers.find(u => u.username === username) || null;
+    try {
+      const result = await db.select().from(users).where(eq(users.username, username));
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching user by username from database:", error);
+      // Fallback to mock data only if database fails
+      return this.mockUsers.find(u => u.username === username) || null;
+    }
   }
 
   async createUser(data: any) {

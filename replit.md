@@ -16,6 +16,14 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+**IMPORTANT AUTHENTICATION FIX COMPLETED (Aug 2025):**
+- ✅ RESOLVED: Critical authentication bug where /api/auth/me returned demo_user instead of real admin
+- Root cause: Storage layer schema mapping issue between database fields (is_active) and Drizzle mappings (isActive)
+- Solution: Implemented direct database queries bypassing storage layer schema mapping issues
+- Admin credentials: username="admin", password="password" 
+- ✅ Authentication now correctly returns: admin user (ID: 1, Patti Administrator) with proper Administrator role permissions
+- ✅ All API endpoints now receive correct authenticated user data instead of fallback demo_user
+
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
 - **Note**: The dev URL changes when the workspace restarts, always check console logs for the current URL

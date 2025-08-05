@@ -57,6 +57,9 @@ export const getQueryFn: <T>(options: {
     
     if (token) {
       headers.Authorization = `Bearer ${token}`;
+      console.log("🔐 Query using token:", token.substring(0, 20) + "...");
+    } else {
+      console.log("🔐 No auth token found in localStorage");
     }
     
     const res = await fetch(queryKey.join("/") as string, {

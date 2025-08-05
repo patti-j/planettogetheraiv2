@@ -139,8 +139,24 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   // Load recent pages from user preferences (database only) - FIXED to prevent infinite loop
   useEffect(() => {
     const loadRecentPages = async () => {
-      if (isAuthenticated && user?.id) {
+      if (isAuthenticated && user?.id && typeof user.id === 'number') {
         try {
+          // Skip if user is demo_user to avoid auth issues
+          if (user.username === 'demo_user' || user.id === 'demo_user') {
+            const defaultRecentPages = [{
+              path: '/onboarding',
+              label: 'Getting Started',
+              icon: 'BookOpen',
+              timestamp: Date.now(),
+              isPinned: true
+            }];
+            setRecentPages(defaultRecentPages);
+            return;
+          }
+          
+          // Add delay to ensure user is fully authenticated
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
           
           // Check if response is OK and contains JSON
@@ -191,6 +207,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           console.warn('Failed to load recent pages from database:', error);
+          console.warn('Error details:', {
+            message: error?.message,
+            type: error?.constructor?.name,
+            stack: error?.stack?.slice(0, 200)
+          });
           // Initialize with default pinned "Getting Started" on error
           const defaultRecentPages = [{
             path: '/onboarding',
