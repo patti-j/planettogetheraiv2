@@ -351,7 +351,7 @@ export default function OnboardingPage() {
       
       const currentPrefs = userPreferences || {};
       const updatedPrefs = {
-        ...currentPrefs,
+        ...(currentPrefs as object),
         companyInfo: companyInfo
       };
       
@@ -374,12 +374,24 @@ export default function OnboardingPage() {
 
   const createOnboardingMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log('Creating onboarding with data:', data);
       const response = await apiRequest('POST', '/api/onboarding/initialize', data);
-      return response.json();
+      const result = await response.json();
+      console.log('Onboarding creation response:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Onboarding creation successful:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/onboarding/status'] });
       // Removed annoying "Onboarding Started" toast notification
+    },
+    onError: (error) => {
+      console.error('Onboarding creation failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize onboarding. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -479,10 +491,16 @@ export default function OnboardingPage() {
   };
 
   const handleNextStep = async () => {
+    console.log('handleNextStep called - currentStep:', currentStep);
+    console.log('Company info:', companyInfo);
+    console.log('Selected features:', selectedFeatures);
+    console.log('Can proceed?', canProceed());
+    
     setIsLoading(true);
     
     try {
       if (currentStep === 0 && companyInfo.name && companyInfo.industry) {
+        console.log('Initializing company onboarding...');
         // Initialize company onboarding
         await createOnboardingMutation.mutateAsync({
           companyName: companyInfo.name,
@@ -490,6 +508,7 @@ export default function OnboardingPage() {
           size: companyInfo.size,
           description: companyInfo.description
         });
+        console.log('Company onboarding initialized successfully');
       }
 
       if (currentStep === 1 && selectedFeatures.length > 0) {
