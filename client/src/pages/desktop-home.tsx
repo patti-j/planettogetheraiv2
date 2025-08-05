@@ -120,15 +120,17 @@ export default function DesktopHome() {
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 mt-2">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="ml-12"> {/* Add left margin to avoid overlap with hamburger menu */}
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Welcome back, {user?.firstName || 'User'}!
+                Welcome back, {user?.firstName || user?.username || 'User'}!
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Your AI-powered manufacturing command center
