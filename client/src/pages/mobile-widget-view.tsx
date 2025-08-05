@@ -231,9 +231,9 @@ export default function MobileWidgetView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
       {/* Mobile Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky top-0 z-50">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50">
         <div className="flex items-center px-4 py-3">
           <Button variant="ghost" size="sm" onClick={handleBack} className="mr-3">
             <ArrowLeft className="w-5 h-5" />
@@ -248,8 +248,8 @@ export default function MobileWidgetView() {
         </div>
       </div>
 
-      {/* Widget Content */}
-      <div className="p-4">
+      {/* Widget Content - Scrollable Container */}
+      <div className="flex-1 overflow-auto p-4">
         {renderWidgetContent()}
         
         {/* Widget Info */}
