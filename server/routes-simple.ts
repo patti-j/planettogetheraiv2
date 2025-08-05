@@ -405,6 +405,25 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Mobile Widgets and Dashboards
+  app.get("/api/mobile/widgets", async (req, res) => {
+    try {
+      // Return empty array for now - prevents JSON parse errors
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch mobile widgets" });
+    }
+  });
+
+  app.get("/api/mobile/dashboards", async (req, res) => {
+    try {
+      // Return empty array for now - prevents JSON parse errors
+      res.json([]);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch mobile dashboards" });
+    }
+  });
+
   // Production Orders
   app.get("/api/production-orders", async (req, res) => {
     try {
