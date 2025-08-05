@@ -1730,7 +1730,6 @@ export default function MobileHomePage() {
                                   const IconComponent = getWidgetIcon(widget.type);
                                   return <IconComponent className="w-4 h-4 text-blue-600 flex-shrink-0" />;
                                 })()}
-                                <Badge variant="secondary" className="text-xs">Widget</Badge>
                               </div>
                               <div className="flex items-center gap-1">
                                 <Button
@@ -1829,7 +1828,6 @@ export default function MobileHomePage() {
                                   const IconComponent = getDashboardIcon(dashboard.title, dashboard.description);
                                   return <IconComponent className="w-4 h-4 text-green-600 flex-shrink-0" />;
                                 })()}
-                                <Badge variant="secondary" className="text-xs">Dashboard</Badge>
                               </div>
                               <Button
                                 variant="ghost"
