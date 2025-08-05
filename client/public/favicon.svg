@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <!-- Light blue circular background -->
-  <circle cx="16" cy="16" r="16" fill="#60A5FA"/>
+  <!-- Light blue outer circle background -->
+  <circle cx="16" cy="16" r="16" fill="#7DD3FC"/>
   
-  <!-- Dark blue/gray circular center piece (like the logo in screenshot) -->
-  <circle cx="16" cy="16" r="10" fill="#334155"/>
+  <!-- Dark blue-gray inner circle -->
+  <circle cx="16" cy="16" r="11" fill="#475569"/>
   
-  <!-- Light gray square elements inside (representing the geometric pattern) -->
-  <rect x="12" y="12" width="3" height="3" fill="#94A3B8" rx="0.3"/>
-  <rect x="16" y="12" width="4" height="3" fill="#94A3B8" rx="0.3"/>
-  <rect x="12" y="16" width="4" height="4" fill="#94A3B8" rx="0.3"/>
-  <rect x="17" y="16" width="3" height="4" fill="#94A3B8" rx="0.3"/>
+  <!-- Small light gray geometric squares arranged like in the screenshot -->
+  <rect x="11" y="11" width="3" height="3" fill="#CBD5E1" rx="0.2"/>
+  <rect x="15.5" y="11" width="2.5" height="3" fill="#CBD5E1" rx="0.2"/>
+  <rect x="19" y="11" width="2" height="3" fill="#CBD5E1" rx="0.2"/>
+  <rect x="11" y="15.5" width="3" height="2.5" fill="#CBD5E1" rx="0.2"/>
+  <rect x="15.5" y="15.5" width="2.5" height="2.5" fill="#CBD5E1" rx="0.2"/>
+  <rect x="19" y="15.5" width="2" height="2.5" fill="#CBD5E1" rx="0.2"/>
+  <rect x="11" y="19" width="3" height="2" fill="#CBD5E1" rx="0.2"/>
+  <rect x="15.5" y="19" width="2.5" height="2" fill="#CBD5E1" rx="0.2"/>
+  <rect x="19" y="19" width="2" height="2" fill="#CBD5E1" rx="0.2"/>
 </svg>
