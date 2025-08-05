@@ -1,4 +1,4 @@
-import { Factory } from 'lucide-react';
+import companyLogo from '@/assets/company-logo.png';
 
 interface LogoProps {
   size?: 'small' | 'medium' | 'large';
@@ -29,14 +29,13 @@ export function Logo({ size = 'medium', showText = true, className = '' }: LogoP
 
   return (
     <div className={`flex items-center ${container} ${className}`}>
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg opacity-20 blur-sm" />
-        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-2">
-          <Factory className={`${icon} text-white`} />
-        </div>
-      </div>
+      <img 
+        src={companyLogo}
+        alt="PlanetTogether"
+        className={`${icon} object-contain`}
+      />
       {showText && (
-        <span className={`font-bold ${text} bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
+        <span className={`font-bold ${text} text-gray-900 dark:text-white`}>
           PlanetTogether
         </span>
       )}
