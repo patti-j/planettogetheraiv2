@@ -1341,7 +1341,7 @@ export default function MobileHomePage() {
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
       {/* Mobile Header - Fixed */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50 relative">
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
           <div className="flex-shrink-0">
