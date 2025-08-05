@@ -1265,7 +1265,15 @@ const SchedulingOptimizer: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span>Due Date:</span>
-                        <span className="font-medium">{format(new Date(productionOrder.dueDate), 'MMM dd, yyyy')}</span>
+                        <span className="font-medium">
+                          {productionOrder.dueDate ? 
+                            (() => {
+                              const date = new Date(productionOrder.dueDate);
+                              return isNaN(date.getTime()) ? 'Invalid Date' : format(date, 'MMM dd, yyyy');
+                            })() : 
+                            'Not Set'
+                          }
+                        </span>
                       </div>
                       {productionOrder.description && (
                         <div className="text-sm text-gray-600 line-clamp-2">
@@ -1501,7 +1509,10 @@ const SchedulingOptimizer: React.FC = () => {
                           )}
                           <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                             <span>Algorithm: Backwards Scheduling</span>
-                            <span>Created: {format(new Date(profile.createdAt), 'MMM dd, yyyy')}</span>
+                            <span>Created: {profile.createdAt ? (() => {
+                              const date = new Date(profile.createdAt);
+                              return isNaN(date.getTime()) ? 'Unknown' : format(date, 'MMM dd, yyyy');
+                            })() : 'Unknown'}</span>
                           </div>
                           
                           {/* Profile Key Parameters */}
@@ -1577,7 +1588,10 @@ const SchedulingOptimizer: React.FC = () => {
                         <div>
                           <span className="font-medium">{profile?.name || 'Unknown Profile'}</span>
                           <span className="text-gray-500 ml-2">
-                            {format(new Date(usage.executedAt), 'MMM dd, HH:mm')}
+                            {usage.createdAt ? (() => {
+                              const date = new Date(usage.createdAt);
+                              return isNaN(date.getTime()) ? 'Unknown time' : format(date, 'MMM dd, HH:mm');
+                            })() : 'Unknown time'}
                           </span>
                         </div>
                         <div className="text-gray-600">
