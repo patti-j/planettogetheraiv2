@@ -189,94 +189,69 @@ export default function DesktopHome() {
                 </div>
               </div>
               
-              {/* Navigation Menu - Categorized Desktop Structure */}
+              {/* Modern Navigation Menu - Clean Structure */}
               <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                 
-                {/* Planning & Scheduling */}
+                {/* Core Pages */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Planning & Scheduling</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Core</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <div 
-                      className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setSidebarOpen(false);
-                        setLocation('/production-schedule');
-                      }}
-                    >
-                      <BarChart3 className="w-5 h-5 text-blue-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Production Schedule</span>
-                    </div>
-                    <Link href="/optimize-orders" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
-                      <Sparkles className="w-5 h-5 text-amber-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Order Optimization</span>
+                    <Link href="/" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <Grid3X3 className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Home</span>
                     </Link>
-                    <Link href="/capacity-planning" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
-                      <Briefcase className="w-5 h-5 text-purple-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Capacity Planning</span>
+                    <Link href="/tasks" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                      <Activity className="w-5 h-5 text-green-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">My Tasks</span>
                     </Link>
-                    <Link href="/production-planning" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
-                      <Target className="w-5 h-5 text-green-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Production Planning</span>
+                    <Link href="/inbox" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Bell className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Inbox</span>
+                    </Link>
+                    <Link href="/production-schedule" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
+                      <Calendar className="w-5 h-5 text-orange-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Schedule</span>
                     </Link>
                   </div>
                 </div>
 
-                {/* AI & Optimization */}
+                {/* Manufacturing */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">AI & Optimization</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link href="/optimization-studio" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
-                      <Sparkles className="w-5 h-5 text-purple-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Optimization Studio</span>
-                    </Link>
-                    <Link href="/demand-forecasting" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
-                      <Brain className="w-5 h-5 text-indigo-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Demand Planning</span>
-                    </Link>
-                    <Link href="/inventory-optimization" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
-                      <Package className="w-5 h-5 text-emerald-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Inventory Optimization</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Operations */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Operations</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Manufacturing</h3>
                   <div className="grid grid-cols-2 gap-2">
                     <Link href="/shop-floor" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
                       <Factory className="w-5 h-5 text-orange-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Shop Floor</span>
                     </Link>
                     <Link href="/operator-dashboard" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-gray-50 dark:bg-gray-950/20 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900/30 transition-colors">
-                      <Settings className="w-5 h-5 text-gray-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Operator Dashboard</span>
+                      <Users className="w-5 h-5 text-gray-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Operators</span>
                     </Link>
                     <Link href="/maintenance" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors">
                       <Wrench className="w-5 h-5 text-yellow-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Maintenance</span>
                     </Link>
-                    <Link href="/disruption-management" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                      <AlertTriangle className="w-5 h-5 text-red-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Disruption Management</span>
+                    <Link href="/optimization-studio" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <Target className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Optimization</span>
                     </Link>
                   </div>
                 </div>
 
-                {/* Management & Administration */}
+                {/* Analytics & Reporting */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Management & Administration</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Analytics</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href="/systems-management-dashboard" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900/30 transition-colors">
-                      <Server className="w-5 h-5 text-slate-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Systems Management</span>
+                    <Link href="/analytics" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                      <BarChart3 className="w-5 h-5 text-blue-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Analytics</span>
                     </Link>
-                    <Link href="/user-access-management" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-                      <Shield className="w-5 h-5 text-blue-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">User Management</span>
+                    <Link href="/reports" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+                      <FileText className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Reports</span>
                     </Link>
-                    <Link href="/widgets" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
-                      <Puzzle className="w-5 h-5 text-purple-600 mb-1" />
+                    <Link href="/widgets" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+                      <Puzzle className="w-5 h-5 text-emerald-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Widgets</span>
                     </Link>
                     <Link href="/dashboards" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
@@ -286,67 +261,31 @@ export default function DesktopHome() {
                   </div>
                 </div>
 
-                {/* Data Management */}
+                {/* AI & Design Studio */}
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Data Management</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Design Studio</h3>
                   <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className="flex flex-col items-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 hover:bg-gradient-to-br hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setMaxOpen(true);
+                      }}
+                    >
+                      <Sparkles className="w-5 h-5 text-purple-600 mb-1" />
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">AI Design Studio</span>
+                    </div>
                     <Link href="/data-schema" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
                       <Database className="w-5 h-5 text-indigo-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Data Schema</span>
-                    </Link>
-                    <Link href="/data-import" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
-                      <Database className="w-5 h-5 text-green-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Data Import</span>
-                    </Link>
-                    <Link href="/table-field-viewer" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900/30 transition-colors">
-                      <FileText className="w-5 h-5 text-slate-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Table Documentation</span>
-                    </Link>
-                    <Link href="/error-logs" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                      <FileSearch className="w-5 h-5 text-red-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Error Logs</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Communication & Collaboration */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Communication & Collaboration</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link href="/visual-factory" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
-                      <Factory className="w-5 h-5 text-indigo-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Visual Factory</span>
                     </Link>
                     <Link href="/chat" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
                       <MessageSquare className="w-5 h-5 text-green-600 mb-1" />
                       <span className="text-xs text-center text-gray-700 dark:text-gray-300">Chat</span>
                     </Link>
-                    <Link href="/boards" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-                      <Columns3 className="w-5 h-5 text-blue-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Boards</span>
-                    </Link>
-                    <Link href="/feedback" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors">
-                      <MessageSquare className="w-5 h-5 text-orange-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Feedback</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Training & Support */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Training & Support</h3>
-                  <div className="grid grid-cols-2 gap-2">
                     <Link href="/help" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
                       <BookOpen className="w-5 h-5 text-emerald-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Getting Started</span>
-                    </Link>
-                    <Link href="/training" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-                      <GraduationCap className="w-5 h-5 text-blue-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Training</span>
-                    </Link>
-                    <Link href="/presentation-system" onClick={() => setSidebarOpen(false)} className="flex flex-col items-center p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
-                      <Presentation className="w-5 h-5 text-purple-600 mb-1" />
-                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Presentations</span>
+                      <span className="text-xs text-center text-gray-700 dark:text-gray-300">Help</span>
                     </Link>
                   </div>
                 </div>
