@@ -94,6 +94,7 @@ import DataRelationships from "@/pages/data-relationships";
 import ConstraintsPage from "@/pages/constraints";
 import Homepage from "@/pages/homepage";
 import ClearNavigation from "@/pages/clear-navigation";
+import KPIPage from "@/pages/kpi";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -280,6 +281,11 @@ function Router() {
           <Route path="/analytics">
             <ProtectedRoute feature="analytics" action="view">
               <Analytics />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/kpi">
+            <ProtectedRoute feature="analytics" action="view">
+              <KPIPage />
             </ProtectedRoute>
           </Route>
           <Route path="/reports">

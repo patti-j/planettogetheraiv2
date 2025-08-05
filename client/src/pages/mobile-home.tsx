@@ -241,6 +241,8 @@ const getWidgetRoute = (widget: any): string | null => {
   
   // Map specific widget types to their corresponding pages
   switch (widgetType) {
+    case 'kpi':
+      return '/kpi';
     case 'gantt':
     case 'schedule-gantt':
       return '/production-schedule';
