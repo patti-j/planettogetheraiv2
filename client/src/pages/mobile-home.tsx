@@ -1521,7 +1521,7 @@ export default function MobileHomePage() {
             {/* Library Modal */}
             <div 
               id="library-dialog" 
-              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4"
               style={{ display: 'none' }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
@@ -1529,7 +1529,7 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6 mx-2 sm:mx-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
                   <button 
@@ -1540,9 +1540,9 @@ export default function MobileHomePage() {
                         setLibrarySearchQuery(""); // Reset search when closing
                       }
                     }}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-2 touch-manipulation"
                   >
-                    ✕
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
                 
@@ -1558,19 +1558,19 @@ export default function MobileHomePage() {
                         setLibrarySearchQuery("");
                       }
                     }}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg"
+                    className="pl-10 pr-4 py-3 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg touch-manipulation"
                     autoFocus
                   />
                   {librarySearchQuery && (
                     <button
                       onClick={() => setLibrarySearchQuery("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
                     >
-                      ✕
+                      <X className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Search Results Summary */}
                   {librarySearchQuery && (
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
@@ -1593,7 +1593,7 @@ export default function MobileHomePage() {
                         {(librarySearchQuery ? filteredRecentItems : recentItems).slice(0, 5).map((item: any) => (
                           <div
                             key={`${item.type}-${item.id}`}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                            className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 active:bg-gray-200 dark:active:bg-gray-500 touch-manipulation"
                             onClick={() => {
                               const dialog = document.getElementById('library-dialog');
                               if (dialog) dialog.style.display = 'none';
@@ -1635,15 +1635,7 @@ export default function MobileHomePage() {
                     </div>
                   )}
 
-                  {/* Debug info */}
-                  <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-                    <p>Widgets: {mobileWidgets.length}</p>
-                    <p>Dashboards: {mobileDashboards.length}</p>
-                    <p>Recent Items: {recentItems.length}</p>
-                    <p>Schedule Optimizer in widgets: {mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') ? 'YES' : 'NO'}</p>
-                    <p>Schedule Optimizer data: {JSON.stringify(mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') || 'Not found')}</p>
-                    <p>Recent items with Schedule Optimizer: {JSON.stringify(recentItems.filter((item: any) => item.title.includes('Schedule Optimizer')))}</p>
-                  </div>
+
 
                   {/* Mobile Widgets */}
                   <div>
@@ -1663,7 +1655,7 @@ export default function MobileHomePage() {
                           setEditingWidget(null);
                           setWidgetStudioOpen(true);
                         }}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 h-8 px-3 touch-manipulation"
                       >
                         <Plus className="w-3 h-3" />
                         <span className="text-xs">Create</span>
@@ -1671,78 +1663,77 @@ export default function MobileHomePage() {
                     </div>
                     
                     {(librarySearchQuery ? filteredWidgets.length > 0 : mobileWidgets.length > 0) ? (
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                         {(librarySearchQuery ? filteredWidgets : mobileWidgets).map((widget: any) => (
                           <div
                             key={widget.id}
-                            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg"
+                            className="flex flex-col p-3 sm:p-4 bg-blue-50 dark:bg-blue-950 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 cursor-pointer transition-colors active:scale-95 active:bg-blue-200 dark:active:bg-blue-800"
+                            onClick={() => {
+                              console.log("🔍 Widget clicked - widget:", widget, "id:", widget.id, "title:", widget.title);
+                              addToRecent(widget, 'widget');
+                              const dialog = document.getElementById('library-dialog');
+                              if (dialog) dialog.style.display = 'none';
+                              // Navigate to the actual widget page to show live widget
+                              const route = getWidgetRoute(widget);
+                              console.log("🔍 Widget route result:", route);
+                              if (route) {
+                                console.log("🔍 Using widget route:", route);
+                                setLocation(route);
+                              } else {
+                                // Fallback to correct widget viewer format
+                                console.log("🔍 Using fallback route:", `/widgets/${widget.id}`);
+                                setLocation(`/widgets/${widget.id}`);
+                              }
+                            }}
                           >
-                            <div 
-                              className="flex items-center space-x-3 flex-1 cursor-pointer"
-                              onClick={() => {
-                                console.log("🔍 Widget clicked - widget:", widget, "id:", widget.id, "title:", widget.title);
-                                addToRecent(widget, 'widget');
-                                const dialog = document.getElementById('library-dialog');
-                                if (dialog) dialog.style.display = 'none';
-                                // Navigate to the actual widget page to show live widget
-                                const route = getWidgetRoute(widget);
-                                console.log("🔍 Widget route result:", route);
-                                if (route) {
-                                  console.log("🔍 Using widget route:", route);
-                                  setLocation(route);
-                                } else {
-                                  // Fallback to correct widget viewer format
-                                  console.log("🔍 Using fallback route:", `/widgets/${widget.id}`);
-                                  setLocation(`/widgets/${widget.id}`);
-                                }
-                              }}
-                            >
-                              {(() => {
-                                const IconComponent = getWidgetIcon(widget.type);
-                                return <IconComponent className="w-4 h-4 text-blue-600" />;
-                              })()}
-                              <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">{widget.title}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{widget.type}</p>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-2">
+                                {(() => {
+                                  const IconComponent = getWidgetIcon(widget.type);
+                                  return <IconComponent className="w-4 h-4 text-blue-600 flex-shrink-0" />;
+                                })()}
+                                <Badge variant="secondary" className="text-xs">Widget</Badge>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPreviewItem(widget);
+                                    setPreviewType('widget');
+                                  }}
+                                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                                  title="Preview widget"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="text-left flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight mb-1">
+                                {widget.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                {widget.type}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                               <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Show preview dialog for this widget
-                                  setPreviewItem(widget);
-                                  setPreviewType('widget');
-                                }}
-                                className="h-8 w-8 p-0"
-                                title="Preview widget"
-                              >
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
+                                variant="ghost" 
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditWidget(widget);
                                 }}
-                                className="h-8 w-8 p-0"
+                                className="h-8 px-2 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 touch-manipulation"
                               >
-                                <Edit className="w-3 h-3" />
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteWidget(widget);
-                                }}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
+                              <span className="text-xs text-gray-400">
+                                #{widget.id}
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -1775,11 +1766,11 @@ export default function MobileHomePage() {
                           <span className="ml-1">({mobileDashboards.length})</span>
                         )}
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                         {(librarySearchQuery ? filteredDashboards : mobileDashboards).map((dashboard: any) => (
                           <div
                             key={dashboard.id}
-                            className="flex flex-col p-3 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-colors"
+                            className="flex flex-col p-3 sm:p-4 bg-green-50 dark:bg-green-950 rounded-lg hover:bg-green-100 dark:hover:bg-green-900 cursor-pointer transition-colors active:scale-95 active:bg-green-200 dark:active:bg-green-800"
                             onClick={() => {
                               addToRecent(dashboard, 'dashboard');
                               const dialog = document.getElementById('library-dialog');
@@ -1809,9 +1800,9 @@ export default function MobileHomePage() {
                                   setPreviewItem(dashboard);
                                   setPreviewType('dashboard');
                                 }}
-                                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                                className="h-8 w-8 p-0 opacity-60 hover:opacity-100 touch-manipulation"
                               >
-                                <Eye className="w-3 h-3" />
+                                <Eye className="w-4 h-4" />
                               </Button>
                             </div>
                             <div className="text-left">
@@ -1830,7 +1821,7 @@ export default function MobileHomePage() {
                                   e.stopPropagation();
                                   handleEditDashboard(dashboard);
                                 }}
-                                className="h-6 px-2 text-xs text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
+                                className="h-8 px-2 text-xs text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 touch-manipulation"
                               >
                                 <Edit className="w-3 h-3 mr-1" />
                                 Edit
