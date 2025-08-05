@@ -1594,31 +1594,7 @@ export default function MobileHomePage() {
                     </div>
                   )}
 
-                  {/* Tab Navigation */}
-                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                    <button
-                      onClick={() => setActiveLibraryTab("widgets")}
-                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeLibraryTab === "widgets"
-                          ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950"
-                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      }`}
-                    >
-                      Widgets ({librarySearchQuery ? filteredWidgets.length : mobileWidgets.length})
-                    </button>
-                    <button
-                      onClick={() => setActiveLibraryTab("dashboards")}
-                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                        activeLibraryTab === "dashboards"
-                          ? "border-green-500 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950"
-                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      }`}
-                    >
-                      Dashboards ({librarySearchQuery ? filteredDashboards.length : mobileDashboards.length})
-                    </button>
-                  </div>
-
-                  {/* Recent Items */}
+                  {/* Recent Items - Moved above tabs since they contain both widgets and dashboards */}
                   {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
                     <div className="flex flex-col gap-3 mb-6">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
@@ -1672,6 +1648,30 @@ export default function MobileHomePage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Tab Navigation - Now below recently viewed */}
+                  <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                    <button
+                      onClick={() => setActiveLibraryTab("widgets")}
+                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeLibraryTab === "widgets"
+                          ? "border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950"
+                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      Widgets ({librarySearchQuery ? filteredWidgets.length : mobileWidgets.length})
+                    </button>
+                    <button
+                      onClick={() => setActiveLibraryTab("dashboards")}
+                      className={`flex-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        activeLibraryTab === "dashboards"
+                          ? "border-green-500 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950"
+                          : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      Dashboards ({librarySearchQuery ? filteredDashboards.length : mobileDashboards.length})
+                    </button>
+                  </div>
 
                   {/* Widgets Tab Content */}
                   {activeLibraryTab === "widgets" && (
