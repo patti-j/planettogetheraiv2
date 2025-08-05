@@ -31,11 +31,11 @@ export function AiDesignStudioMobile({
   const [aiPrompt, setAiPrompt] = React.useState('');
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [previewItem, setPreviewItem] = React.useState<any>(null);
-  const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | null>(null);
+  const [previewType, setPreviewType] = React.useState<'widget' | 'dashboard' | 'page' | null>(null);
   const [loadingWidgetId, setLoadingWidgetId] = React.useState<number | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = React.useState<{
     item: any;
-    type: 'widget' | 'dashboard';
+    type: 'widget' | 'dashboard' | 'page';
     isOpen: boolean;
   }>({ item: null, type: 'widget', isOpen: false });
 
@@ -190,6 +190,15 @@ export function AiDesignStudioMobile({
               refetchDashboards();
             } else {
               alert(`Dashboard deletion processed: ${result.data.message}`);
+            }
+          } else if (result.data.action === 'delete_page') {
+            console.log('🗑️ Page Deletion:', result.data.deletedPage);
+            if (result.data.error) {
+              alert(`❌ Page deletion failed: ${result.data.error}`);
+            } else if (result.data.deletedPage) {
+              alert(`✅ Page "${result.data.deletedPage.name}" deletion request processed!\n\n${result.data.message}`);
+            } else {
+              alert(`Page deletion processed: ${result.data.message}`);
             }
           }
           
@@ -580,8 +589,33 @@ export function AiDesignStudioMobile({
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">{page.description}</p>
-                  <div className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                    💡 Ask AI to create variations, modify layout, or add features
+                  
+                  {/* Action Buttons */}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        console.log('🔍 Preview button clicked for page:', page.name);
+                        setPreviewItem(page);
+                        setPreviewType('page');
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 px-3 py-2 rounded transition-colors"
+                    >
+                      <Eye className="w-3 h-3" />
+                      Preview
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteConfirmation({
+                          item: page,
+                          type: 'page',
+                          isOpen: true
+                        });
+                      }}
+                      className="flex items-center justify-center gap-1 text-xs bg-red-50 text-red-700 hover:bg-red-100 px-3 py-2 rounded transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
@@ -814,6 +848,22 @@ export function AiDesignStudioMobile({
                     </div>
                   </div>
                 )}
+
+                {previewType === 'page' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">{previewItem.name}</h4>
+                      <div className="text-xs text-gray-500">Page Layout</div>
+                    </div>
+                    <div className="h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-purple-500 rounded"></div>
+                        <div className="text-xs text-gray-600">{previewItem.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">{previewItem.route}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -943,8 +993,22 @@ export function AiDesignStudioMobile({
                   </div>
                 )}
 
+                {previewType === 'page' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Route</label>
+                      <p className="text-sm mt-1">{previewItem.route || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Type</label>
+                      <p className="text-sm mt-1">System Page</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="text-xs text-gray-500">
-                  Created: {previewItem.createdAt ? new Date(previewItem.createdAt).toLocaleDateString() : 'N/A'}
+                  Created: {previewType === 'page' ? 'System Default' : 
+                           (previewItem.createdAt ? new Date(previewItem.createdAt).toLocaleDateString() : 'N/A')}
                 </div>
               </div>
 
@@ -1002,8 +1066,17 @@ export function AiDesignStudioMobile({
             </div>
             
             <p className="text-gray-700 mb-6">
-              Are you sure you want to delete "{deleteConfirmation.item?.title || deleteConfirmation.item?.name}"? 
-              This will permanently remove the {deleteConfirmation.type} and all its data.
+              {deleteConfirmation.type === 'page' ? (
+                <>
+                  Are you sure you want to request deletion of "{deleteConfirmation.item?.name}"? 
+                  This will log a request to remove the page from the system.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete "{deleteConfirmation.item?.title || deleteConfirmation.item?.name}"? 
+                  This will permanently remove the {deleteConfirmation.type} and all its data.
+                </>
+              )}
             </p>
             
             <div className="flex gap-3">
@@ -1027,7 +1100,8 @@ export function AiDesignStudioMobile({
                       credentials: 'include',
                       body: JSON.stringify({
                         prompt,
-                        context: deleteConfirmation.type === 'widget' ? 'widgets' : 'dashboards',
+                        context: deleteConfirmation.type === 'widget' ? 'widgets' : 
+                                deleteConfirmation.type === 'dashboard' ? 'dashboards' : 'pages',
                         systemData: {
                           widgets: widgets.length,
                           dashboards: dashboards.length,

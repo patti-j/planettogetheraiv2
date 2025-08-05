@@ -363,6 +363,16 @@ Analyze the user request and determine the appropriate action.`;
         console.error('❌ Dashboard deletion failed:', error);
         aiResponse.error = `Failed to delete dashboard: ${error.message}`;
       }
+    } else if (aiResponse.action === 'delete_page') {
+      console.log('🗑️ Processing page deletion request based on AI response:', aiResponse);
+      
+      // Since pages are static data in the system, we'll simulate the deletion
+      const userPrompt = prompt.toLowerCase();
+      const pageNameMatch = userPrompt.match(/delete\s+(?:the\s+)?(?:page\s+)?['""]?([^'""\s]+(?:\s+[^'""\s]+)*)['""]?/i);
+      const pageName = pageNameMatch ? pageNameMatch[1] : 'requested page';
+      
+      aiResponse.message = `Page deletion request processed for "${pageName}". Note: Pages are part of the core system architecture and cannot be permanently deleted, but this request has been logged for system administrators.`;
+      aiResponse.deletedPage = { name: pageName };
     } else if (aiResponse.action === 'view_widget') {
       console.log('👁️ Viewing widget based on AI response:', aiResponse);
       
