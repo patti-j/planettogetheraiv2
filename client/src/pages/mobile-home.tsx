@@ -1756,19 +1756,7 @@ export default function MobileHomePage() {
                                 {widget.type}
                               </p>
                             </div>
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
-                              <Button
-                                variant="ghost" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditWidget(widget);
-                                }}
-                                className="h-8 px-2 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 touch-manipulation"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                Edit
-                              </Button>
+                            <div className="flex items-center justify-end mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
                               <span className="text-xs text-gray-400">
                                 #{widget.id}
                               </span>
@@ -1868,19 +1856,7 @@ export default function MobileHomePage() {
                                 {dashboard.description || 'Dashboard'}
                               </p>
                             </div>
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-green-200 dark:border-green-800">
-                              <Button
-                                variant="ghost" 
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditDashboard(dashboard);
-                                }}
-                                className="h-8 px-2 text-xs text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 touch-manipulation"
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                Edit
-                              </Button>
+                            <div className="flex items-center justify-end mt-2 pt-2 border-t border-green-200 dark:border-green-800">
                               <span className="text-xs text-gray-400">
                                 #{dashboard.id}
                               </span>
