@@ -1535,7 +1535,7 @@ export default function MobileHomePage() {
             {/* Library Modal */}
             <div 
               id="library-dialog" 
-              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4"
+              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
               style={{ display: 'none' }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
@@ -1543,7 +1543,7 @@ export default function MobileHomePage() {
                 }
               }}
             >
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6 mx-2 sm:mx-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto p-4 sm:p-6 m-auto">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Mobile Library</h2>
                   <button 
