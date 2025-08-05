@@ -1349,9 +1349,21 @@ export default function MobileHomePage() {
               src={planetTogetherLogo} 
               alt="PlanetTogether" 
               className="w-8 h-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log("🏠 Logo clicked - forcing navigation to home");
-                window.location.href = "/";
+                console.log("🔍 Current states - designStudioOpen:", designStudioOpen, "widgetStudioOpen:", widgetStudioOpen, "maxPanelOpen:", maxPanelOpen);
+                
+                // Close all overlays first
+                setDesignStudioOpen(false);
+                setWidgetStudioOpen(false);
+                setMaxPanelOpen(false);
+                setPreviewItem(null);
+                setPreviewType(null);
+                
+                // Use setLocation for proper navigation
+                setLocation("/");
               }}
             />
           </div>
