@@ -2972,8 +2972,8 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
-  // AI Design Studio endpoint (temporarily bypass auth for debugging)
-  app.post("/api/ai/design-studio", async (req, res) => {
+  // AI Design Studio endpoint
+  app.post("/api/ai/design-studio", requireAuth, async (req, res) => {
     try {
       const { prompt, context } = req.body;
       
@@ -2983,8 +2983,7 @@ Return ONLY a valid JSON object with this exact structure:
 
       console.log('🤖 AI Design Studio Request:', { prompt, context });
 
-      // Add fake user for debugging
-      req.user = { id: 'demo_user' };
+      // User is guaranteed to be authenticated due to requireAuth middleware
       
       // Get current system data for context - using safe method calls
       let widgetCount = 0;

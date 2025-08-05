@@ -7,6 +7,39 @@ import * as schema from "../shared/schema";
 import { sql, eq } from "drizzle-orm";
 import { processAICommand, processDesignStudioAIRequest } from "./ai-agent";
 
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  let userId = req.session?.userId;
+  
+  // Check for token in Authorization header if session fails
+  if (!userId && req.headers.authorization) {
+    const token = req.headers.authorization.replace('Bearer ', '');
+    
+    // Handle demo tokens
+    if (token.startsWith('demo_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 3) {
+        userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+      }
+    }
+    // Extract user ID from regular token (format: user_ID_timestamp_random)
+    else if (token.startsWith('user_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 2) {
+        userId = parseInt(tokenParts[1]);
+      }
+    }
+  }
+  
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  // Add userId to request for use in route handlers
+  req.user = { id: userId };
+  next();
+}
+
 export function registerSimpleRoutes(app: express.Application): Server {
   // Health check
   app.get("/api/health", (req, res) => {
@@ -788,7 +821,7 @@ export function registerSimpleRoutes(app: express.Application): Server {
 
 
   // AI Design Studio endpoint
-  app.post("/api/ai/design-studio", async (req, res) => {
+  app.post("/api/ai/design-studio", requireAuth, async (req, res) => {
     try {
       const { prompt, context, systemData } = req.body;
       
@@ -798,8 +831,7 @@ export function registerSimpleRoutes(app: express.Application): Server {
 
       console.log('🤖 AI Design Studio Request:', { prompt, context, systemData });
 
-      // Add fake user for debugging
-      req.user = { id: 'demo_user' };
+      // User is guaranteed to be authenticated due to requireAuth middleware
       
       // Process the AI request based on context
       // Get current system data for context - using safe method calls
