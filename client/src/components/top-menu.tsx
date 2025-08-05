@@ -303,9 +303,16 @@ export default function TopMenu() {
     if (!searchFilter.trim()) return [];
     
     const searchTerm = searchFilter.toLowerCase();
-    return getAllSearchableItems().filter(item => 
+    const results = getAllSearchableItems().filter(item => 
       item.feature.label.toLowerCase().includes(searchTerm)
     );
+    
+    // Debug logging
+    console.log('Search term:', searchTerm);
+    console.log('All searchable items:', getAllSearchableItems().map(item => item.feature.label));
+    console.log('Search results:', results.map(item => item.feature.label));
+    
+    return results;
   };
 
   const handleFeatureClick = (feature: any) => {
@@ -691,6 +698,19 @@ export default function TopMenu() {
                       </Link>
                     ))}
                   </div>
+                </div>
+              )}
+              
+              {/* No Results Message */}
+              {searchFilter.trim() && getSearchResults().length === 0 && (
+                <div className="p-8 text-center">
+                  <Search className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    No results found for "{searchFilter}"
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500">
+                    Try searching with different keywords
+                  </p>
                 </div>
               )}
               
