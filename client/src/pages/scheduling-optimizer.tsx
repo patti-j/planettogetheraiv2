@@ -1517,15 +1517,24 @@ const SchedulingOptimizer: React.FC = () => {
                           
                           {/* Profile Key Parameters */}
                           <div className="mt-3 flex flex-wrap gap-2">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
-                              {profile.profileConfig.objectives.primary.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </span>
-                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
-                              Buffer: {profile.profileConfig.algorithmParameters.backwardsScheduling.bufferTime}h
-                            </span>
-                            {profile.profileConfig.algorithmParameters.backwardsScheduling.allowOvertime && (
+                            {profile.profileConfig?.objectives?.primary && (
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
+                                {profile.profileConfig.objectives.primary.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </span>
+                            )}
+                            {profile.profileConfig?.algorithmParameters?.backwardsScheduling?.bufferTime && (
+                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
+                                Buffer: {profile.profileConfig.algorithmParameters.backwardsScheduling.bufferTime}h
+                              </span>
+                            )}
+                            {profile.profileConfig?.algorithmParameters?.backwardsScheduling?.allowOvertime && (
                               <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-md">
                                 Overtime OK
+                              </span>
+                            )}
+                            {!profile.profileConfig && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md">
+                                Configuration Loading...
                               </span>
                             )}
                           </div>
