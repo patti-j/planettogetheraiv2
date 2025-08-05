@@ -1570,7 +1570,7 @@ export default function MobileHomePage() {
                     </button>
                   )}
                 </div>
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-6">
                   {/* Search Results Summary */}
                   {librarySearchQuery && (
                     <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
@@ -1582,8 +1582,8 @@ export default function MobileHomePage() {
 
                   {/* Recent Items */}
                   {(!librarySearchQuery || filteredRecentItems.length > 0) && recentItems.length > 0 && (
-                    <div className="pb-4 mb-2">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Recently Viewed
                         {librarySearchQuery && (
                           <span className="ml-2 text-xs text-gray-500">({filteredRecentItems.length})</span>
@@ -1593,7 +1593,7 @@ export default function MobileHomePage() {
                         {(librarySearchQuery ? filteredRecentItems : recentItems).slice(0, 5).map((item: any) => (
                           <div
                             key={`${item.type}-${item.id}`}
-                            className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 active:bg-gray-200 dark:active:bg-gray-500 touch-manipulation"
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 active:scale-95 active:bg-gray-200 dark:active:bg-gray-500 touch-manipulation"
                             onClick={() => {
                               const dialog = document.getElementById('library-dialog');
                               if (dialog) dialog.style.display = 'none';
@@ -1635,11 +1635,9 @@ export default function MobileHomePage() {
                     </div>
                   )}
 
-
-
-                  {/* Mobile Widgets */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 mt-6">
-                    <div className="flex items-center justify-between mb-3">
+                  {/* Mobile Widgets Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
                       <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Widgets 
                         {librarySearchQuery ? (
@@ -1755,10 +1753,10 @@ export default function MobileHomePage() {
                     )}
                   </div>
 
-                  {/* Mobile Dashboards */}
+                  {/* Mobile Dashboards Section */}
                   {(librarySearchQuery ? filteredDashboards.length > 0 : mobileDashboards.length > 0) && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 mt-6">
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                         Mobile Dashboards 
                         {librarySearchQuery ? (
                           <span className="ml-1">({filteredDashboards.length}/{mobileDashboards.length})</span>
@@ -1841,7 +1839,7 @@ export default function MobileHomePage() {
                     (filteredWidgets.length === 0 && filteredDashboards.length === 0 && filteredRecentItems.length === 0) :
                     (mobileWidgets.length === 0 && mobileDashboards.length === 0)
                   ) && (
-                    <div className="text-center py-8 border-t border-gray-200 dark:border-gray-700 mt-8">
+                    <div className="text-center py-8">
                       <Library className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                       {librarySearchQuery ? (
                         <>
