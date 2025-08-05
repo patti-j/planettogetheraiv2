@@ -182,6 +182,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user profile with first name for greeting
+  app.get("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // Handle demo users
+      if (typeof userId === 'string' && userId.startsWith('demo_')) {
+        const demoUsers = {
+          'demo_director': { firstName: 'Demo', lastName: 'Director', username: 'demo_director' },
+          'demo_scheduler': { firstName: 'Demo', lastName: 'Scheduler', username: 'demo_scheduler' },
+          'demo_it_admin': { firstName: 'Demo', lastName: 'IT Admin', username: 'demo_it_admin' },
+          'demo_systems': { firstName: 'Demo', lastName: 'Systems Manager', username: 'demo_systems_manager' },
+          'demo_admin': { firstName: 'Demo', lastName: 'Administrator', username: 'demo_administrator' },
+          'demo_shop_floor': { firstName: 'Demo', lastName: 'Shop Floor', username: 'demo_shop_floor' },
+          'demo_analyst': { firstName: 'Demo', lastName: 'Data Analyst', username: 'demo_data_analyst' },
+          'demo_trainer': { firstName: 'Demo', lastName: 'Trainer', username: 'demo_trainer' },
+          'demo_it_systems': { firstName: 'Demo', lastName: 'IT Systems', username: 'demo_it_systems_admin' },
+          'demo_sales': { firstName: 'Demo', lastName: 'Sales Rep', username: 'demo_sales_rep' },
+          'demo_customer_service': { firstName: 'Demo', lastName: 'Customer Service', username: 'demo_customer_service' },
+          'demo_support': { firstName: 'Demo', lastName: 'Support Engineer', username: 'demo_support_engineer' },
+          'demo_supply_chain': { firstName: 'Demo', lastName: 'Supply Chain', username: 'demo_supply_chain' },
+        };
+        
+        const demoUser = demoUsers[userId as keyof typeof demoUsers];
+        if (demoUser) {
+          return res.json({
+            id: userId,
+            firstName: demoUser.firstName,
+            lastName: demoUser.lastName,
+            username: demoUser.username,
+            email: `${demoUser.username}@demo.planettogether.com`,
+            isDemo: true
+          });
+        }
+      }
+      
+      // Handle real users - look up from database
+      try {
+        const user = await storage.getUser(typeof userId === 'string' ? parseInt(userId) : userId);
+        if (user) {
+          return res.json({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username,
+            email: user.email,
+            isDemo: false
+          });
+        }
+      } catch (error) {
+        console.log('Could not fetch user from database:', error);
+      }
+      
+      // Fallback for authenticated users without profile
+      return res.json({
+        id: userId,
+        firstName: 'User',
+        lastName: '',
+        username: userId.toString(),
+        email: `${userId}@planettogether.com`,
+        isDemo: false
+      });
+      
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch user profile' });
+    }
+  });
+
   // Demo login route for prospective users
   app.post("/api/auth/demo-login", async (req, res) => {
     try {
@@ -1421,7 +1490,7 @@ Rules:
             id: 'demo_director', 
             username: 'demo_director', 
             email: 'demo@planettogether.com', 
-            firstName: 'Demo',
+            firstName: 'Jordan',
             lastName: 'Director',
             isActive: true,
             isDemo: true,
@@ -1447,7 +1516,7 @@ Rules:
             id: 'demo_scheduler', 
             username: 'demo_scheduler', 
             email: 'demo@planettogether.com', 
-            firstName: 'Demo',
+            firstName: 'Morgan',
             lastName: 'Scheduler',
             isActive: true,
             isDemo: true,
@@ -1484,7 +1553,7 @@ Rules:
             id: 'demo_admin', 
             username: 'demo_administrator', 
             email: 'demo@planettogether.com', 
-            firstName: 'Demo',
+            firstName: 'Alex',
             lastName: 'Administrator',
             isActive: true,
             activeRole: { id: 'demo_admin_role', name: 'Administrator' },
@@ -1517,7 +1586,7 @@ Rules:
             id: 'demo_trainer', 
             username: 'demo_trainer', 
             email: 'demo@planettogether.com', 
-            firstName: 'Demo',
+            firstName: 'Sam',
             lastName: 'Trainer',
             isActive: true,
             isDemo: true,
