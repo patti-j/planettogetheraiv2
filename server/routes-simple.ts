@@ -150,11 +150,46 @@ export function registerSimpleRoutes(app: express.Application): Server {
   });
 
   // Role-based auth endpoints
-  app.get("/api/auth/me", (req, res) => {
+  app.get("/api/auth/me", async (req, res) => {
     // Check for stored user in session or token
     const authHeader = req.headers.authorization;
     
-    if (authHeader && authHeader.startsWith('Bearer ') && authHeader.includes('trainer_token_')) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Return demo user if no auth
+      res.json({
+        id: "demo_user", 
+        username: "demo_user",
+        email: "demo@example.com",
+        firstName: "Demo",
+        lastName: "User",
+        isActive: true,
+        roles: [{
+          id: 2,
+          name: "Production Scheduler",
+          description: "Production Scheduler with basic permissions",
+          permissions: [
+            { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
+            { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
+            { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
+            { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
+            { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
+            { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
+            { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
+            { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
+            { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
+            { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
+            { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
+            { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
+          ]
+        }]
+      });
+      return;
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Handle trainer token
+    if (token.includes('trainer_token_')) {
       res.json({
         id: "trainer", 
         username: "trainer",
@@ -201,35 +236,102 @@ export function registerSimpleRoutes(app: express.Application): Server {
           ]
         }]
       });
-    } else {
-      res.json({
-        id: "demo_user", 
-        username: "demo_user",
-        email: "demo@example.com",
-        firstName: "Demo",
-        lastName: "User",
-        isActive: true,
-        roles: [{
-          id: 2,
-          name: "Production Scheduler",
-          description: "Production Scheduler with basic permissions",
-          permissions: [
-            { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
-            { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
-            { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
-            { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
-            { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
-            { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
-            { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
-            { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
-            { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
-            { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
-            { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
-            { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
-          ]
-        }]
-      });
+      return;
     }
+    
+    // Handle real user tokens (format: user_ID_timestamp_random)
+    if (token.startsWith('user_')) {
+      try {
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 2) {
+          const userId = parseInt(tokenParts[1]);
+          
+          // Get user from database
+          const userResult = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+          
+          if (userResult && userResult.length > 0) {
+            const dbUser = userResult[0];
+            
+            // Get user roles
+            const userRoles = await db.select({
+              role: schema.roles,
+              permissions: schema.permissions
+            })
+              .from(schema.userRoles)
+              .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+              .leftJoin(schema.rolePermissions, eq(schema.roles.id, schema.rolePermissions.roleId))
+              .leftJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+              .where(eq(schema.userRoles.userId, dbUser.id));
+            
+            // Group permissions by role
+            const rolesMap = new Map();
+            userRoles.forEach(ur => {
+              if (!rolesMap.has(ur.role.id)) {
+                rolesMap.set(ur.role.id, {
+                  id: ur.role.id,
+                  name: ur.role.name,
+                  description: ur.role.description,
+                  permissions: []
+                });
+              }
+              if (ur.permissions) {
+                rolesMap.get(ur.role.id).permissions.push(ur.permissions);
+              }
+            });
+            
+            const roles = Array.from(rolesMap.values());
+            
+            // Return real user data
+            res.json({
+              id: dbUser.id,
+              username: dbUser.username,
+              email: dbUser.email,
+              firstName: dbUser.firstName,
+              lastName: dbUser.lastName,
+              isActive: dbUser.isActive,
+              roles: roles.length > 0 ? roles : [{
+                id: 2,
+                name: "Production Scheduler",
+                description: "Default role",
+                permissions: []
+              }]
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user for token:", error);
+      }
+    }
+    
+    // Default to demo user
+    res.json({
+      id: "demo_user", 
+      username: "demo_user",
+      email: "demo@example.com",
+      firstName: "Demo",
+      lastName: "User",
+      isActive: true,
+      roles: [{
+        id: 2,
+        name: "Production Scheduler",
+        description: "Production Scheduler with basic permissions",
+        permissions: [
+          { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
+          { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
+          { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
+          { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
+          { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
+          { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
+          { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
+          { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
+          { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
+          { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
+          { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
+          { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
+        ]
+      }]
+    });
   });
 
   app.post("/api/auth/login", async (req, res) => {
