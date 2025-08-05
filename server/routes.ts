@@ -185,6 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user profile with first name for greeting
   app.get("/api/auth/profile", requireAuth, async (req, res) => {
     try {
+      console.log("=== PROFILE ENDPOINT HIT ===");
+      console.log("User from request:", req.user);
       const userId = req.user?.id;
       
       // Handle demo users
@@ -208,15 +210,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         
         const demoUser = demoUsers[userId as keyof typeof demoUsers];
+        console.log("Demo user lookup for", userId, "found:", demoUser);
         if (demoUser) {
-          return res.json({
+          const profileResponse = {
             id: userId,
             firstName: demoUser.firstName,
             lastName: demoUser.lastName,
             username: demoUser.username,
             email: `${demoUser.username}@demo.planettogether.com`,
             isDemo: true
-          });
+          };
+          console.log("Returning profile:", profileResponse);
+          return res.json(profileResponse);
         }
       }
       
@@ -238,14 +243,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Fallback for authenticated users without profile
-      return res.json({
+      const fallbackResponse = {
         id: userId,
         firstName: 'User',
         lastName: '',
         username: userId.toString(),
         email: `${userId}@planettogether.com`,
         isDemo: false
-      });
+      };
+      console.log("Fallback profile response:", fallbackResponse);
+      return res.json(fallbackResponse);
       
     } catch (error) {
       console.error('Profile fetch error:', error);
