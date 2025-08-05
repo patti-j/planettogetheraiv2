@@ -484,36 +484,6 @@ export default function Sidebar() {
     </div>
   );
 
-  return (
-    <TooltipProvider>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed top-2 left-2 z-50">
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-white shadow-lg">
-              <Menu className="w-4 h-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <SidebarContent onNavigate={() => setMobileMenuOpen(false)} isMobileSheet={true} />
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      {/* Desktop Menu Button */}
-      <div className="hidden md:block fixed top-2 left-2 z-50">
-        <Sheet open={desktopMenuOpen} onOpenChange={setDesktopMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-white shadow-lg">
-              <Menu className="w-4 h-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <SidebarContent onNavigate={() => setDesktopMenuOpen(false)} isMobileSheet={false} />
-          </SheetContent>
-        </Sheet>
-      </div>
-
-    </TooltipProvider>
-  );
+  // Sidebar hamburger menu removed - using modern dropdown from top-menu.tsx instead
+  return null;
 }
