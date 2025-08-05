@@ -1401,7 +1401,12 @@ Rules:
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      console.log("=== USER DATA FROM DATABASE ===");
       console.log("User found:", user.username, "ID:", user.id);
+      console.log("User email:", user.email);
+      console.log("User firstName:", user.firstName);
+      console.log("User lastName:", user.lastName);
+      console.log("User roles:", user.roles?.map(r => r.name).join(', '));
       console.log("Stored hash:", user.passwordHash);
       console.log("Comparing password:", password);
       
@@ -1435,9 +1440,12 @@ Rules:
         
         console.log("Session saved successfully with token:", token);
         console.log("Session ID:", req.sessionID);
+        console.log("Session userId:", req.session.userId);
         
         // Return user data with token
         const { passwordHash, ...userData } = user;
+        console.log("=== RETURNING USER DATA ===");
+        console.log("User data to return:", JSON.stringify({ ...userData, token }));
         res.json({ ...userData, token });
       });
     } catch (error) {
