@@ -1535,7 +1535,7 @@ export default function MobileHomePage() {
             {/* Library Modal */}
             <div 
               id="library-dialog" 
-              className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 pt-8 sm:pt-4"
+              className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-2 sm:p-4"
               style={{ display: 'none' }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
