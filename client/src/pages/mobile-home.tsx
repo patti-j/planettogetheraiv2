@@ -1609,6 +1609,8 @@ export default function MobileHomePage() {
                     <p>Widgets: {mobileWidgets.length}</p>
                     <p>Dashboards: {mobileDashboards.length}</p>
                     <p>Recent Items: {recentItems.length}</p>
+                    <p>Schedule Optimizer in widgets: {mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') ? 'YES' : 'NO'}</p>
+                    <p>Schedule Optimizer data: {JSON.stringify(mobileWidgets.find((w: any) => w.title === 'Schedule Optimizer') || 'Not found')}</p>
                   </div>
 
                   {/* Mobile Widgets */}
