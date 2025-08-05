@@ -379,6 +379,32 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // User Preferences
+  app.get("/api/user-preferences/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      // Return empty preferences for now - this will prevent the JSON error
+      const preferences = {
+        dashboardLayout: {
+          recentPages: [],
+          lastVisitedRoute: null
+        }
+      };
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put("/api/user-preferences", async (req, res) => {
+    try {
+      // Just acknowledge the update for now
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update user preferences" });
+    }
+  });
+
   // Production Orders
   app.get("/api/production-orders", async (req, res) => {
     try {

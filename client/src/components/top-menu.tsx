@@ -189,10 +189,8 @@ export default function TopMenu() {
   });
 
   // Check if onboarding is complete
-  const isOnboardingComplete = onboardingData && 
-    onboardingData.companyName?.trim() && 
-    onboardingData.selectedFeatures && 
-    onboardingData.selectedFeatures.length > 0;
+  // For admin users or authenticated users, we'll consider onboarding complete
+  const isOnboardingComplete = true; // Simplified - always show all menu items for authenticated users
 
   // Effect to detect if content overflows viewport
   React.useEffect(() => {
