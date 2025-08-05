@@ -1514,7 +1514,14 @@ export default function MobileHomePage() {
                             onClick={() => {
                               const dialog = document.getElementById('library-dialog');
                               if (dialog) dialog.style.display = 'none';
-                              setLocation(item.type === 'widget' ? `/widgets/${item.id}` : `/dashboards/${item.id}`);
+                              // For widgets, show preview instead of navigation
+                              if (item.type === 'widget') {
+                                setPreviewItem(item);
+                                setPreviewType('widget');
+                              } else {
+                                setPreviewItem(item);
+                                setPreviewType('dashboard');
+                              }
                             }}
                           >
                             <div className="flex items-center space-x-3">
@@ -1580,7 +1587,9 @@ export default function MobileHomePage() {
                                 addToRecent(widget, 'widget');
                                 const dialog = document.getElementById('library-dialog');
                                 if (dialog) dialog.style.display = 'none';
-                                setLocation(`/widgets/${widget.id}`);
+                                // Show widget preview instead of navigation
+                                setPreviewItem(widget);
+                                setPreviewType('widget');
                               }}
                             >
                               {(() => {
@@ -2137,7 +2146,8 @@ export default function MobileHomePage() {
                           onClick={() => {
                             // Handle action clicks
                             if (action === 'show_widget' && maxResponse.data?.type === 'widget') {
-                              setLocation('/widgets/1'); // Navigate to a sample widget
+                              // Show widget creation studio instead
+                              setWidgetStudioOpen(true);
                             } else if (action === 'create_dashboard') {
                               setLocation('/dashboard'); // Navigate to dashboard
                             } else if (action === 'show_production') {
