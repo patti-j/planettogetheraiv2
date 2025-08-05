@@ -1575,8 +1575,9 @@ export default function MobileHomePage() {
                                 if (route) {
                                   setLocation(route);
                                 } else {
-                                  // Fallback to generic widget viewer if no specific route
-                                  setLocation(`/widget-viewer?id=${item.id}&title=${encodeURIComponent(item.title)}`);
+                                  // Fallback to widget viewer with correct route format
+                                  console.log("🔍 Recent item fallback - item:", item, "navigating to:", `/widgets/${item.id}`);
+                                  setLocation(`/widgets/${item.id}`);
                                 }
                               } else {
                                 // For dashboards, show preview
@@ -1645,16 +1646,20 @@ export default function MobileHomePage() {
                             <div 
                               className="flex items-center space-x-3 flex-1 cursor-pointer"
                               onClick={() => {
+                                console.log("🔍 Widget clicked - widget:", widget, "id:", widget.id, "title:", widget.title);
                                 addToRecent(widget, 'widget');
                                 const dialog = document.getElementById('library-dialog');
                                 if (dialog) dialog.style.display = 'none';
                                 // Navigate to the actual widget page to show live widget
                                 const route = getWidgetRoute(widget);
+                                console.log("🔍 Widget route result:", route);
                                 if (route) {
+                                  console.log("🔍 Using widget route:", route);
                                   setLocation(route);
                                 } else {
-                                  // Fallback to generic widget viewer if no specific route
-                                  setLocation(`/widget-viewer?id=${widget.id}&title=${encodeURIComponent(widget.title)}`);
+                                  // Fallback to correct widget viewer format
+                                  console.log("🔍 Using fallback route:", `/widgets/${widget.id}`);
+                                  setLocation(`/widgets/${widget.id}`);
                                 }
                               }}
                             >
