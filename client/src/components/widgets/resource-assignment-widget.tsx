@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { User, Users, Factory, Plus, X, CheckCircle, AlertCircle, Settings2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User, Users, Factory, Plus, X, CheckCircle, AlertCircle, Settings2, ChevronDown } from 'lucide-react';
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -49,7 +50,23 @@ export default function ResourceAssignmentWidget({
 }: ResourceAssignmentWidgetProps) {
   const { toast } = useToast();
   const [selectedResourceId, setSelectedResourceId] = useState<number | null>(null);
-  const [selectedOperatorId, setSelectedOperatorId] = useState<number | null>(null);
+  const [selectedOperatorIds, setSelectedOperatorIds] = useState<number[]>([]);
+  const [showOperatorDropdown, setShowOperatorDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowOperatorDropdown(false);
+      }
+    };
+    
+    if (showOperatorDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showOperatorDropdown]);
   
   // Fetch operators
   const { data: operators = [], isLoading: loadingOperators } = useQuery({
@@ -66,29 +83,34 @@ export default function ResourceAssignmentWidget({
   
   // Mutation for assigning operators
   const assignMutation = useMutation({
-    mutationFn: async (data: { userId: number; resourceId: number; notes?: string }) => {
-      const response = await fetch('/api/user-resource-assignments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      });
-      if (!response.ok) throw new Error('Failed to assign operator');
-      return response.json();
+    mutationFn: async (data: { userIds: number[]; resourceId: number; notes?: string }) => {
+      const assignments = await Promise.all(
+        data.userIds.map(userId => 
+          fetch('/api/user-resource-assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, resourceId: data.resourceId, notes: data.notes }),
+            credentials: 'include',
+          }).then(res => res.json())
+        )
+      );
+      return assignments;
     },
     onSuccess: (data) => {
+      const count = data.length;
       toast({
         title: "Success",
-        description: `Operator ${data.action === 'created' ? 'assigned' : 'updated'} successfully`,
+        description: `${count} operator${count > 1 ? 's' : ''} assigned successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user-resource-assignments/resources"] });
-      setSelectedOperatorId(null);
+      setSelectedOperatorIds([]);
       setSelectedResourceId(null);
+      setShowOperatorDropdown(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to assign operator. Please try again.",
+        description: "Failed to assign operators. Please try again.",
         variant: "destructive",
       });
     },
@@ -123,12 +145,20 @@ export default function ResourceAssignmentWidget({
   const isLoading = loadingOperators || loadingResources;
 
   const handleAssignOperator = () => {
-    if (selectedOperatorId && selectedResourceId) {
+    if (selectedOperatorIds.length > 0 && selectedResourceId) {
       assignMutation.mutate({
-        userId: selectedOperatorId,
+        userIds: selectedOperatorIds,
         resourceId: selectedResourceId,
       });
     }
+  };
+  
+  const toggleOperatorSelection = (operatorId: number) => {
+    setSelectedOperatorIds(prev => 
+      prev.includes(operatorId)
+        ? prev.filter(id => id !== operatorId)
+        : [...prev, operatorId]
+    );
   };
   
   const handleRemoveAssignment = (userId: number, resourceId: number) => {
@@ -210,7 +240,11 @@ export default function ResourceAssignmentWidget({
             Assign Operator to Resource
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Select value={selectedResourceId?.toString() || ""} onValueChange={(v) => setSelectedResourceId(Number(v))}>
+            <Select value={selectedResourceId?.toString() || ""} onValueChange={(v) => {
+              setSelectedResourceId(Number(v));
+              setSelectedOperatorIds([]); // Clear selected operators when resource changes
+              setShowOperatorDropdown(false);
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Resource" />
               </SelectTrigger>
@@ -227,31 +261,93 @@ export default function ResourceAssignmentWidget({
               </SelectContent>
             </Select>
             
-            <Select 
-              value={selectedOperatorId?.toString() || ""} 
-              onValueChange={(v) => setSelectedOperatorId(Number(v))}
-              disabled={!selectedResourceId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={selectedResourceId ? "Select Operator" : "Select Resource First"} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableOperators.map((operator) => (
-                  <SelectItem key={operator.id} value={operator.id.toString()}>
-                    <div className="flex flex-col">
-                      <span>{operator.fullName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {operator.department || 'No Department'}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative" ref={dropdownRef}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowOperatorDropdown(!showOperatorDropdown)}
+                disabled={!selectedResourceId}
+                className="w-full justify-between"
+              >
+                <span className="text-left truncate">
+                  {selectedOperatorIds.length > 0
+                    ? `${selectedOperatorIds.length} operator${selectedOperatorIds.length > 1 ? 's' : ''} selected`
+                    : selectedResourceId 
+                      ? "Select Operators" 
+                      : "Select Resource First"}
+                </span>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+              
+              {showOperatorDropdown && selectedResourceId && (
+                <Card className="absolute z-10 w-full mt-1 p-2 max-h-60 overflow-y-auto">
+                  <div className="space-y-2">
+                    {availableOperators.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-2">
+                        All operators are assigned to this resource
+                      </div>
+                    ) : (
+                      <>
+                        {availableOperators.length > 1 && (
+                          <div className="flex gap-2 pb-2 border-b">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedOperatorIds(availableOperators.map(op => op.id))}
+                              className="text-xs flex-1"
+                            >
+                              Select All ({availableOperators.length})
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedOperatorIds([])}
+                              className="text-xs flex-1"
+                            >
+                              Clear All
+                            </Button>
+                          </div>
+                        )}
+                        {availableOperators.map((operator) => (
+                          <div
+                            key={operator.id}
+                            className="flex items-center space-x-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
+                            onClick={() => toggleOperatorSelection(operator.id)}
+                          >
+                            <Checkbox
+                              checked={selectedOperatorIds.includes(operator.id)}
+                              onCheckedChange={() => toggleOperatorSelection(operator.id)}
+                            />
+                            <div className="flex flex-col flex-1">
+                              <span className="text-sm font-medium">{operator.fullName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {operator.department || 'No Department'}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {availableOperators.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowOperatorDropdown(false)}
+                          className="w-full"
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+            </div>
             
             <Button 
               onClick={handleAssignOperator}
-              disabled={!selectedResourceId || !selectedOperatorId || assignMutation.isPending}
+              disabled={!selectedResourceId || selectedOperatorIds.length === 0 || assignMutation.isPending}
               className="w-full"
             >
               {assignMutation.isPending ? (
@@ -259,7 +355,7 @@ export default function ResourceAssignmentWidget({
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Assign
+                  Assign {selectedOperatorIds.length > 0 ? `(${selectedOperatorIds.length})` : ''}
                 </>
               )}
             </Button>
