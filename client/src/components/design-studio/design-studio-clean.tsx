@@ -23,6 +23,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
           <AiDesignStudioMobile
             onClose={() => onOpenChange(false)}
             onAiAssistant={() => setAiDesignStudioOpen(true)}
+            showDesignStudio={true}
           />
         </div>
       </div>
