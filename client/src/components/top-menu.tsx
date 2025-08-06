@@ -480,14 +480,14 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <AvatarFallback className="bg-blue-500 text-white text-xs sm:text-sm">
-                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                        {(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div 
                       className="hidden md:block text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors duration-200"
                       onClick={() => setUserProfileOpen(true)}
                     >
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.firstName || user?.username}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || (user?.username === 'admin' ? 'Administrator' : 'No Role')}</p>
                     </div>
                     <div className="flex items-center space-x-1">
