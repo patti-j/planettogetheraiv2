@@ -21,20 +21,9 @@ export function FloatingHamburgerMenu({
     // Don't navigate - this component conflicts with mobile navigation
   };
 
-  // Show/hide based on device type
-  let visibilityClass = "";
-  if (showOnDesktop && showOnMobile) {
-    visibilityClass = ""; // Show on all devices
-  } else if (showOnDesktop && !showOnMobile) {
-    visibilityClass = "hidden lg:block"; // Show only on desktop (lg and up)
-  } else if (!showOnDesktop && showOnMobile) {
-    visibilityClass = "lg:hidden"; // Show only on mobile (below lg)
-  } else {
-    return null; // Don't show at all
-  }
-
+  // Always show on all devices (removed device-specific visibility logic)
   return (
-    <div className={`fixed top-4 right-4 z-50 ${visibilityClass}`}>
+    <div className="fixed top-4 right-4 z-50">
       <Button
         onClick={() => onToggle(!isOpen)}
         variant="ghost"

@@ -379,15 +379,13 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Floating Hamburger Menu Button - Show on all views */}
+      {/* Floating Hamburger Menu Button - Always visible on all devices */}
       <FloatingHamburgerMenu
         onToggle={(newState) => {
           console.log('Hamburger menu toggled, new state:', newState);
           setMenuOpen(newState);
         }}
         isOpen={menuOpen}
-        showOnDesktop={true}
-        showOnMobile={true}
       />
       
       {/* Persistent Theme Toggle - Always visible except in mobile view */}

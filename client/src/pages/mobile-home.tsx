@@ -1580,8 +1580,7 @@ export default function MobileHomePage() {
               <Library className="w-5 h-5" />
             </Button>
 
-            {/* Hamburger Menu Trigger */}
-            <MobileMenuTrigger />
+            {/* Hamburger Menu Trigger - Removed to use desktop hamburger */}
 
             {/* Library Modal */}
             <div 
