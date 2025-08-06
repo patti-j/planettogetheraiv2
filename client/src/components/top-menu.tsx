@@ -283,8 +283,9 @@ export default function TopMenu() {
     }> = [];
     
     featureGroups.forEach(group => {
-      const visibleFeatures = getVisibleFeatures(group.features);
-      visibleFeatures.forEach(feature => {
+      // When searching, include ALL features regardless of permissions or onboarding status
+      // Users should be able to search for and see what features exist
+      group.features.forEach(feature => {
         allItems.push({
           feature,
           groupTitle: group.title,
