@@ -156,6 +156,20 @@ export default function TopMenu() {
   const { startTour } = useTour();
   const { resolvedTheme } = useTheme();
 
+  // Prevent body scroll when menu is open to fix double scroll bar issue
+  useEffect(() => {
+    if (menuOpen) {
+      // Store original body overflow style
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup function to restore original overflow
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [menuOpen]);
+
   // Helper function to get dark mode compatible background colors
   const getDarkModeColor = (lightColor: string, darkColor?: string) => {
     // Now we include dark mode classes directly in the data, so just pass through
@@ -394,8 +408,16 @@ export default function TopMenu() {
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-[9995] bg-black bg-opacity-25"
-          style={{ touchAction: 'none' }}
+          className="fixed inset-0 z-[9995] bg-black bg-opacity-25 overflow-hidden"
+          style={{ 
+            touchAction: 'none',
+            // Prevent body scroll when menu is open
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -411,7 +433,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col z-[9996]"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-hidden flex flex-col z-[9996]"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
@@ -426,7 +448,13 @@ export default function TopMenu() {
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                {/* Logo removed to prevent overlap with close button */}
+                {/* Hamburger Menu Icon */}
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-blue-500 dark:bg-blue-600 rounded-lg">
+                    <Menu className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Menu</span>
+                </div>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
@@ -550,7 +578,7 @@ export default function TopMenu() {
             </div>
 
             {/* Menu Content */}
-            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1 overflow-y-auto">
+            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
               {/* Recent & Favorites Section */}
               {recentPages.filter(page => {
                 if (!searchFilter.trim()) return true;
