@@ -314,10 +314,26 @@ export function registerSimpleRoutes(app: express.Application): Server {
   app.get("/api/auth/profile", requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id;
+      const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
       
-      // Get user from database
-      const user = await storage.getUser(typeof userId === 'string' ? parseInt(userId) : userId);
-      if (user) {
+      // Get user directly from database to ensure we get all fields
+      const userResult = await db
+        .select({
+          id: schema.users.id,
+          firstName: schema.users.firstName,
+          lastName: schema.users.lastName,
+          username: schema.users.username,
+          email: schema.users.email,
+          avatar: schema.users.avatar,
+          jobTitle: schema.users.jobTitle,
+          department: schema.users.department,
+          phoneNumber: schema.users.phoneNumber
+        })
+        .from(schema.users)
+        .where(eq(schema.users.id, numericUserId));
+        
+      if (userResult.length > 0) {
+        const user = userResult[0];
         return res.json({
           id: user.id,
           firstName: user.firstName || 'User',
@@ -325,9 +341,9 @@ export function registerSimpleRoutes(app: express.Application): Server {
           username: user.username,
           email: user.email || `${user.username}@planettogether.com`,
           avatar: user.avatar,
-          jobTitle: user.jobTitle,
-          department: user.department,
-          phoneNumber: user.phoneNumber
+          jobTitle: user.jobTitle || '',
+          department: user.department || '',
+          phoneNumber: user.phoneNumber || ''
         });
       }
       
@@ -337,7 +353,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
         firstName: 'User',
         lastName: '',
         username: typeof userId === 'string' ? userId : `user_${userId}`,
-        email: `user_${userId}@planettogether.com`
+        email: `user_${userId}@planettogether.com`,
+        jobTitle: '',
+        department: '',
+        phoneNumber: ''
       });
       
     } catch (error) {
@@ -352,31 +371,41 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const userId = req.user?.id;
       const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
       
-      const updateData = {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        username: req.body.username,
-        jobTitle: req.body.jobTitle,
-        department: req.body.department,
-        phoneNumber: req.body.phoneNumber,
-        avatar: req.body.avatar
-      };
+      // Map from camelCase (API) to snake_case (database)
+      const updateData: any = {};
+      
+      if (req.body.firstName !== undefined) updateData.first_name = req.body.firstName;
+      if (req.body.lastName !== undefined) updateData.last_name = req.body.lastName;
+      if (req.body.email !== undefined) updateData.email = req.body.email;
+      if (req.body.username !== undefined) updateData.username = req.body.username;
+      if (req.body.jobTitle !== undefined) updateData.job_title = req.body.jobTitle;
+      if (req.body.department !== undefined) updateData.department = req.body.department;
+      if (req.body.phoneNumber !== undefined) updateData.phone_number = req.body.phoneNumber;
+      if (req.body.avatar !== undefined) updateData.avatar = req.body.avatar;
       
       // Update user in database
       const result = await db
         .update(schema.users)
         .set({
           ...updateData,
-          updatedAt: new Date()
+          updated_at: new Date()
         })
         .where(eq(schema.users.id, numericUserId))
         .returning();
       
       if (result.length > 0) {
+        const updatedUser = result[0];
+        // Return the updated profile in the same format as the GET endpoint
         res.json({
-          success: true,
-          user: result[0]
+          id: updatedUser.id,
+          firstName: updatedUser.firstName || '',
+          lastName: updatedUser.lastName || '',
+          username: updatedUser.username,
+          email: updatedUser.email || '',
+          avatar: updatedUser.avatar,
+          jobTitle: updatedUser.jobTitle || '',
+          department: updatedUser.department || '',
+          phoneNumber: updatedUser.phoneNumber || ''
         });
       } else {
         res.status(404).json({ message: 'User not found' });
