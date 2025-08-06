@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { MaxSidebar } from "@/components/max-sidebar";
-import TopMenu from "@/components/top-menu";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1488,11 +1487,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <>
-      {/* Top Menu with hamburger - renders at z-100 */}
-      <TopMenu />
-      
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
         {/* Mobile Header - Fixed with lower z-index to allow hamburger menu */}
         <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-30 relative">
             <div className="flex items-center px-4 py-3 gap-3">
@@ -2459,6 +2454,5 @@ export default function MobileHomePage() {
         />
       )}
     </div>
-    </>
   );
 }

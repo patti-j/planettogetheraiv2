@@ -235,7 +235,9 @@ function Router() {
   }
 
   // Skip loading screen for mobile users - they'll get redirected immediately
-  if (isLoading && !isTourActive && deviceType !== 'mobile') {
+  // Check window width directly to ensure mobile detection works
+  const isMobileWidth = typeof window !== 'undefined' && window.innerWidth < 768;
+  if (isLoading && !isTourActive && !isMobileWidth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
