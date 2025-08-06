@@ -429,7 +429,7 @@ export default function TopMenu() {
             }}
           >
             {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Logo removed to prevent overlap with close button */}
               </div>
