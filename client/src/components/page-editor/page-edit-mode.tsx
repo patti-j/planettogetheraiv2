@@ -276,13 +276,12 @@ export default function PageEditMode({
   return (
     <DndProvider backend={dndBackend} options={dndOptions}>
       <div className={`relative ${className}`}>
-        {/* Edit Mode Controls Bar - Only show when in edit mode and hamburger menu is closed */}
+        {/* Edit Mode Controls Bar - Only show when in edit mode */}
         {isEditMode && (
           <div className={`
-            fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
+            fixed ${isMobile ? 'bottom-4 left-4' : 'top-4 left-4'} 
             z-30 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg ring-2 ring-blue-500
             ${isMobile ? 'p-2' : 'p-2'}
-            hamburger-menu-hidden
           `}>
             <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
               <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap justify-center w-full' : ''}`}>

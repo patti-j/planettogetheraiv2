@@ -5,11 +5,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide fixed positioned elements when hamburger menu is open */
-body.hamburger-menu-open .hamburger-menu-hidden {
-  display: none !important;
-}
-
 /* Fix tooltip z-index issues in data schema */
 .react-flow__node {
   z-index: 10 !important;

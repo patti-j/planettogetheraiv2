@@ -377,19 +377,7 @@ export default function TopMenu() {
 
   const { currentView } = useViewMode();
 
-  // Add/remove body class to communicate menu state globally
-  useEffect(() => {
-    if (menuOpen) {
-      document.body.classList.add('hamburger-menu-open');
-    } else {
-      document.body.classList.remove('hamburger-menu-open');
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      document.body.classList.remove('hamburger-menu-open');
-    };
-  }, [menuOpen]);
+
 
   return (
     <>
