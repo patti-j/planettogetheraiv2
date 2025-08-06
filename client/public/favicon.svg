@@ -1,22 +1,26 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- PlanetTogether PT logo based on actual company branding -->
+  <!-- PlanetTogether PT logo - simplified accurate version -->
   <g>
-    <!-- Background circle -->
-    <circle cx="16" cy="16" r="15" fill="#FFFFFF" stroke="none"/>
+    <!-- Background circle - black -->
+    <circle cx="16" cy="16" r="16" fill="#000000"/>
     
-    <!-- Left blue arc (forming P) -->
-    <path d="M 16 1 A 15 15 0 0 1 31 16 L 16 16 Z" fill="#4A90E2"/>
+    <!-- Blue curved left section -->
+    <path d="M 0 16 A 16 16 0 0 1 16 0 L 16 16 Z" fill="#3498DB"/>
     
-    <!-- Small blue section top right -->  
-    <path d="M 16 1 L 31 1 A 15 15 0 0 1 29 5 L 16 16 Z" fill="#4A90E2"/>
+    <!-- Blue small top right triangular section -->
+    <path d="M 16 0 L 32 0 A 16 16 0 0 1 27 8 L 16 16 Z" fill="#3498DB"/>
     
-    <!-- Gray sections forming T -->
-    <path d="M 16 16 L 16 31 A 15 15 0 0 1 1 16 Z" fill="#8B8B8B"/>
+    <!-- Gray right section -->
+    <path d="M 16 16 L 32 16 A 16 16 0 0 1 16 32 Z" fill="#999999"/>
     
-    <path d="M 16 16 L 31 16 A 15 15 0 0 1 16 31 Z" fill="#8B8B8B"/>
+    <!-- Gray bottom left section -->  
+    <path d="M 0 16 A 16 16 0 0 1 16 32 L 16 16 Z" fill="#999999"/>
     
-    <!-- Central PT structure -->
-    <rect x="13" y="4" width="6" height="24" fill="#8B8B8B" rx="1"/>
-    <rect x="4" y="13" width="24" height="6" fill="#FFFFFF" rx="1"/>
+    <!-- Internal PT letter forms with gray blocks -->
+    <rect x="6" y="10" width="6" height="12" fill="#999999"/>
+    <rect x="6" y="10" width="8" height="3" fill="#999999"/>
+    <rect x="6" y="15" width="6" height="2" fill="#999999"/>
+    <rect x="20" y="10" width="6" height="12" fill="#999999"/>
+    <rect x="18" y="10" width="10" height="3" fill="#999999"/>
   </g>
 </svg>
