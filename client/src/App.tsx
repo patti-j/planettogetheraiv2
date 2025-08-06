@@ -556,9 +556,10 @@ function Router() {
           </Route>
           <Route path="/mobile" component={MobileHomePage} />
           <Route path="/mobile-home" component={() => {
-            // Redirect desktop users away from mobile-home to production schedule
-            const deviceType = useDeviceType();
-            if (deviceType === 'desktop') {
+            // Check window width directly to avoid race condition
+            const isMobile = window.innerWidth < 768;
+            if (!isMobile) {
+              // Only redirect if we're actually on desktop
               return <Redirect to="/production-schedule" />;
             }
             return <MobileHomePage />;
