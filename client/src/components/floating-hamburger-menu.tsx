@@ -30,25 +30,21 @@ export function FloatingHamburgerMenu({
   // Always show on all devices (removed device-specific visibility logic)
   // Position at right-6 on all devices to avoid scrollbar overlap
   return (
-    <div className={`fixed right-6 z-[9999] pointer-events-auto ${
-      isMobile ? 'top-3' : 'top-4'
-    }`}>
-      <Button
-        onClick={() => {
-          console.log("🍔 Hamburger button clicked");
-          onToggle(!isOpen);
-        }}
-        variant="outline"
-        size="sm"
-        className={`shadow-md border transition-all duration-200 ${
-          isOpen 
-            ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
-            : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-500'
-        }`}
-        aria-label={isOpen ? "Close menu" : "Open menu"}>
-        {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-      </Button>
-    </div>
+    <Button
+      onClick={() => {
+        console.log("🍔 Hamburger button clicked");
+        onToggle(!isOpen);
+      }}
+      variant="outline"
+      size="sm"
+      className={`shadow-md border transition-all duration-200 ${
+        isOpen 
+          ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
+          : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-500'
+      }`}
+      aria-label={isOpen ? "Close menu" : "Open menu"}>
+      {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+    </Button>
   );
 }
 
