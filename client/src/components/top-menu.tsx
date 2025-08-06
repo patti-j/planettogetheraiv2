@@ -441,14 +441,17 @@ export default function TopMenu() {
                 >
                   <X className="w-5 h-5" />
                 </Button>
-                <Link href={window.innerWidth < 768 ? "/mobile-home" : "/"} 
+                <div
                   className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => {
                     const isMobileDevice = window.innerWidth < 768;
                     console.log('Logo clicked - window width:', window.innerWidth);
                     console.log('Is mobile device:', isMobileDevice);
-                    console.log('Navigating to:', isMobileDevice ? "/mobile-home" : "/");
+                    const targetPath = isMobileDevice ? "/mobile-home" : "/";
+                    console.log('Navigating to:', targetPath);
                     setMenuOpen(false);
+                    // Use window.location for immediate navigation
+                    window.location.href = targetPath;
                   }}
                 >
                   <img 
@@ -457,7 +460,7 @@ export default function TopMenu() {
                     className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
                   />
                   <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
-                </Link>
+                </div>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
