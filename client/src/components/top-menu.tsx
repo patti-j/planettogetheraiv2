@@ -443,15 +443,22 @@ export default function TopMenu() {
                 </Button>
                 <div
                   className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const isMobileDevice = window.innerWidth < 768;
-                    console.log('Logo clicked - window width:', window.innerWidth);
-                    console.log('Is mobile device:', isMobileDevice);
+                    console.log('🔴 LOGO CLICKED - window width:', window.innerWidth);
+                    console.log('🔴 Is mobile device:', isMobileDevice);
+                    console.log('🔴 Current location:', location);
                     const targetPath = isMobileDevice ? "/mobile-home" : "/";
-                    console.log('Navigating to:', targetPath);
+                    console.log('🔴 Target path:', targetPath);
+                    console.log('🔴 Closing menu and navigating...');
                     setMenuOpen(false);
-                    // Use wouter's setLocation for navigation
-                    setLocation(targetPath);
+                    // Force navigation with a small delay to ensure menu closes first
+                    setTimeout(() => {
+                      console.log('🔴 Actually navigating to:', targetPath);
+                      setLocation(targetPath);
+                    }, 100);
                   }}
                 >
                   <img 
