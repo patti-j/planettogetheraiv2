@@ -142,7 +142,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       if (isAuthenticated && user?.id && typeof user.id === 'number') {
         try {
           // Skip if user is demo_user to avoid auth issues
-          if (user.username === 'demo_user' || user.id === 'demo_user') {
+          if (user.username === 'demo_user' || String(user.id) === 'demo_user') {
             const defaultRecentPages = [{
               path: '/onboarding',
               label: 'Getting Started',

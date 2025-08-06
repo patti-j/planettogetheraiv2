@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
 import { useDeviceType } from '@/hooks/useDeviceType';
+import { useNavigation } from '@/contexts/NavigationContext';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
@@ -36,6 +37,12 @@ export default function ProductionSchedulePage() {
   const { hasPermission } = usePermissions();
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
+  const { addRecentPage } = useNavigation();
+  
+  // Add this page to recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/production-schedule', 'Production Schedule', 'Calendar');
+  }, [addRecentPage]);
   
   // Page editor integration
   const {
