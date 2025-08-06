@@ -1552,36 +1552,14 @@ export default function MobileHomePage() {
             </div>
           </div>
 
-          {/* Right Actions - Added margin-right to avoid hamburger menu overlap */}
+          {/* Right Actions - Removed duplicate buttons since hamburger menu provides all actions */}
           <div className="flex items-center gap-2 flex-shrink-0 mr-10">
-            {/* Max AI Button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2"
-              onClick={() => setMaxPanelOpen(true)}
-            >
-              <Bot className="w-5 h-5 text-blue-600" />
-            </Button>
+            {/* All buttons removed - actions available in hamburger menu */}
+          </div>
+        </div>
+      </div>
 
-            {/* Library */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="p-2"
-              onClick={() => {
-                const libraryDialog = document.getElementById('library-dialog');
-                if (libraryDialog) {
-                  libraryDialog.style.display = 'block';
-                }
-              }}
-            >
-              <Library className="w-5 h-5" />
-            </Button>
-
-            {/* Hamburger Menu Trigger - Removed to use desktop hamburger */}
-
-            {/* Library Modal */}
+      {/* Library Modal */}
             <div 
               id="library-dialog" 
               className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
@@ -1949,11 +1927,6 @@ export default function MobileHomePage() {
                 </div>
               </div>
             </div>
-
-
-          </div>
-        </div>
-      </div>
 
       {/* Add mobile-specific CSS overrides */}
       <style>{`
