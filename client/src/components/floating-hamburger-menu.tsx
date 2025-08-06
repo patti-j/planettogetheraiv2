@@ -24,9 +24,14 @@ export function FloatingHamburgerMenu({
     // Don't navigate - this component conflicts with mobile navigation
   };
 
+  // Check if mobile device
+  const isMobile = window.innerWidth < 768;
+  
   // Always show on all devices (removed device-specific visibility logic)
   return (
-    <div className="fixed top-4 right-4 z-[9999] pointer-events-auto">
+    <div className={`fixed right-4 z-[9999] pointer-events-auto ${
+      isMobile ? 'top-3' : 'top-4'
+    }`}>
       <Button
         onClick={() => {
           console.log("🍔 Hamburger button clicked");
