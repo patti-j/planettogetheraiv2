@@ -398,9 +398,10 @@ export default function TopMenu() {
       {/* Floating Hamburger Menu Button - Always visible on all devices */}
       <FloatingHamburgerMenu
         onToggle={(newState) => {
-          console.log('Hamburger menu toggled, new state:', newState);
-          console.log('Previous menuOpen state:', menuOpen);
+          console.log('🔧 Hamburger menu toggled, new state:', newState);
+          console.log('🔧 Previous menuOpen state:', menuOpen);
           setMenuOpen(newState);
+          console.log('🔧 Menu should now be:', newState ? 'VISIBLE' : 'HIDDEN');
         }}
         isOpen={menuOpen}
       />
@@ -408,7 +409,9 @@ export default function TopMenu() {
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-[9995] bg-black bg-opacity-25 overflow-hidden"
+          className="fixed inset-0 z-[99999] bg-red-500 bg-opacity-50 overflow-hidden"
+          onMouseEnter={() => console.log('🎯 MENU OVERLAY IS VISIBLE AND INTERACTIVE!')}
+          onClick={() => console.log('🎯 MENU OVERLAY CLICKED!')}
           style={{ 
             touchAction: 'none',
             // Prevent body scroll when menu is open
@@ -433,7 +436,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-hidden flex flex-col z-[9996]"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-hidden flex flex-col z-[99998]"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
