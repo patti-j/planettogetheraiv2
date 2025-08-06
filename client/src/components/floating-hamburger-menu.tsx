@@ -34,14 +34,10 @@ export function FloatingHamburgerMenu({
         }}
         variant="ghost"
         size="icon"
-        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg border-2 border-gray-300 dark:border-gray-600"
-        style={{ 
-          backgroundColor: isOpen ? '#ef4444' : '#3b82f6',
-          color: 'white'
-        }}
+        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md border border-gray-200 dark:border-gray-700"
         aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {isOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
+        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
     </div>
   );
