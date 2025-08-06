@@ -390,12 +390,7 @@ export default function TopMenu() {
         }}
         isOpen={menuOpen}
       />
-      {/* Persistent Theme Toggle - Always visible except in mobile view - moved left to avoid hamburger overlap */}
-      {!menuOpen && currentView !== "mobile" && (
-        <div className="fixed top-3 left-3 z-50">
-          <ThemeToggle />
-        </div>
-      )}
+
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 

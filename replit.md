@@ -84,6 +84,8 @@ Note on concurrent work:
 - Hamburger menu moved to right-8 for better scroll bar clearance (was right-6)
 - Removed wrapper div from floating hamburger menu for cleaner code structure
 - Updated header spacing to accommodate both theme toggle and hamburger menu on right side
+- ✅ REMOVED: Global persistent theme toggle from left side to avoid duplicate theme toggles
+- Page-specific theme toggle on production schedule replaces global positioning
 
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
