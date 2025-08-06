@@ -1499,7 +1499,7 @@ export default function MobileHomePage() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("🏠 Logo clicked - forcing navigation to home");
+                console.log("🏠 Logo clicked - forcing navigation to mobile home");
                 console.log("🔍 Current states - designStudioOpen:", designStudioOpen, "widgetStudioOpen:", widgetStudioOpen, "maxPanelOpen:", maxPanelOpen);
                 
                 // Close all overlays first
@@ -1509,8 +1509,8 @@ export default function MobileHomePage() {
                 setPreviewItem(null);
                 setPreviewType(null);
                 
-                // Use setLocation for proper navigation
-                setLocation("/");
+                // Navigate to mobile home for mobile devices
+                setLocation("/mobile-home");
               }}
             >
               <Logo size="small" showText={false} />
