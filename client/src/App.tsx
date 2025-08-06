@@ -227,14 +227,11 @@ function Router() {
     '/production-cockpit'
   ];
 
-  // If on mobile and trying to access a mobile route, let SmartHomeWrapper handle it
-  // by rendering it at the root level instead of through main router
+  // If on mobile and trying to access a mobile route, redirect to mobile-home
+  // This ensures mobile users always start at the mobile home page
   if (deviceType === 'mobile' && mobileRoutes.includes(location)) {
-    return (
-      <div className="h-screen bg-gray-50">
-        <SmartHomeWrapper />
-      </div>
-    );
+    console.log('Mobile user accessing desktop route, redirecting to mobile-home');
+    return <Redirect to="/mobile-home" />;
   }
 
   if (isLoading && !isTourActive) {
