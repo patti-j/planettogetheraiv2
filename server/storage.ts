@@ -13239,8 +13239,9 @@ export class DatabaseStorage implements IStorage {
               .update(resources)
               .set({ 
                 isDrum: true,
-                drumUpdatedAt: new Date(),
-                drumUpdatedBy: 'System'
+                drumDesignationDate: new Date(),
+                drumDesignationReason: `High bottleneck score (${score})`,
+                drumDesignationMethod: 'automated'
               })
               .where(eq(resources.id, resource.id));
             drumsUpdated++;
@@ -13256,8 +13257,9 @@ export class DatabaseStorage implements IStorage {
               .update(resources)
               .set({ 
                 isDrum: false,
-                drumUpdatedAt: new Date(),
-                drumUpdatedBy: 'System'
+                drumDesignationDate: new Date(),
+                drumDesignationReason: `Low bottleneck score (${score})`,
+                drumDesignationMethod: 'automated'
               })
               .where(eq(resources.id, resource.id));
             drumsUpdated++;
@@ -13278,17 +13280,11 @@ export class DatabaseStorage implements IStorage {
     // Record analysis in history
     await db.insert(drumAnalysisHistory).values({
       analysisType: 'automated',
-      resourcesAnalyzed: allResources.length,
-      drumsIdentified,
-      drumsUpdated,
-      analysisMetrics: {
-        utilizationThreshold: 70,
-        analysisMethod: 'utilization_based',
-        timestamp: new Date()
-      },
-      recommendations,
-      performedBy: 'System',
-      analysisStatus: 'completed'
+      resourceId: null, // No specific resource for bulk analysis
+      utilizationPercentage: '70',
+      bottleneckScore: '0',
+      recommendation: `Analyzed ${allResources.length} resources, identified ${drumsIdentified} drums`,
+      isCurrentBottleneck: false
     });
 
     return {
@@ -13307,11 +13303,11 @@ export class DatabaseStorage implements IStorage {
         resourceId: resources.id,
         resourceName: resources.name,
         isDrum: resources.isDrum,
-        isManual: sql`true`.as('isManual'), // Assume manual unless specified otherwise
-        drumType: sql`'primary'`.as('drumType'), // Default type
-        designatedAt: resources.drumUpdatedAt,
+        isManual: sql`CASE WHEN ${resources.drumDesignationMethod} = 'manual' THEN true ELSE false END`.as('isManual'),
+        drumType: sql`COALESCE(${resources.drumDesignationMethod}, 'primary')`.as('drumType'),
+        designatedAt: resources.drumDesignationDate,
         designatedBy: sql`1`.as('designatedBy'), // Default user
-        reason: sql`'Manual designation'`.as('reason'),
+        reason: sql`COALESCE(${resources.drumDesignationReason}, 'Manual designation')`.as('reason'),
         utilization: sql`COALESCE(${resources.utilization}, 0)`.as('utilization')
       })
       .from(resources)
