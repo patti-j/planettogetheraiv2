@@ -13445,6 +13445,63 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
+  // Custom Constraints Management for TOC
+  async getCustomConstraints(filters?: { 
+    isActive?: boolean; 
+    constraintType?: string; 
+    severity?: string; 
+    category?: string 
+  }): Promise<CustomConstraint[]> {
+    let query = db.select().from(customConstraints);
+    
+    const conditions: any[] = [];
+    if (filters?.isActive !== undefined) conditions.push(eq(customConstraints.isActive, filters.isActive));
+    if (filters?.constraintType) conditions.push(eq(customConstraints.constraintType, filters.constraintType));
+    if (filters?.severity) conditions.push(eq(customConstraints.severity, filters.severity));
+    if (filters?.category) conditions.push(eq(customConstraints.category, filters.category));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(customConstraints.createdAt));
+  }
+
+  async getCustomConstraint(id: number): Promise<CustomConstraint | undefined> {
+    const [constraint] = await db.select().from(customConstraints).where(eq(customConstraints.id, id));
+    return constraint || undefined;
+  }
+
+  async createCustomConstraint(constraint: InsertCustomConstraint): Promise<CustomConstraint> {
+    const [newConstraint] = await db.insert(customConstraints).values(constraint).returning();
+    return newConstraint;
+  }
+
+  async updateCustomConstraint(id: number, constraint: Partial<InsertCustomConstraint>): Promise<CustomConstraint | undefined> {
+    const [updated] = await db.update(customConstraints)
+      .set({
+        ...constraint,
+        updatedAt: new Date(),
+      })
+      .where(eq(customConstraints.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteCustomConstraint(id: number): Promise<boolean> {
+    const result = await db.delete(customConstraints).where(eq(customConstraints.id, id));
+    return result.rowCount > 0;
+  }
+
+  async recordConstraintViolation(constraintId: number): Promise<void> {
+    await db.update(customConstraints)
+      .set({
+        currentViolationCount: sql`${customConstraints.currentViolationCount} + 1`,
+        lastViolationDate: new Date(),
+      })
+      .where(eq(customConstraints.id, constraintId));
+  }
+
   async updateBufferLevel(
     bufferDefinitionId: number, 
     newLevel: number, 

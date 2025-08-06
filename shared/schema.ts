@@ -5628,6 +5628,73 @@ export type ErrorLog = typeof errorLogs.$inferSelect;
 export type InsertErrorReport = z.infer<typeof insertErrorReportSchema>;
 export type ErrorReport = typeof errorReports.$inferSelect;
 
+// Drum Analysis History - Track analysis runs for drum identification
+export const drumAnalysisHistory = pgTable("drum_analysis_history", {
+  id: serial("id").primaryKey(),
+  analysisType: text("analysis_type").notNull(), // 'automated', 'manual', 'capacity-based', 'utilization-based'
+  resourceId: integer("resource_id"), // Can be null for batch analyses
+  utilizationPercentage: text("utilization_percentage"),
+  bottleneckScore: text("bottleneck_score"),
+  recommendation: text("recommendation"),
+  isCurrentBottleneck: boolean("is_current_bottleneck").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Custom TOC Constraints - User-defined constraints following Theory of Constraints methodology
+export const customConstraints = pgTable("custom_constraints", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Constraint name/title
+  description: text("description").notNull(), // Full text description of the constraint
+  constraintType: text("constraint_type").notNull(), // 'physical' or 'policy'
+  severity: text("severity").notNull(), // 'hard' (cannot be violated) or 'soft' (can be violated)
+  
+  // TOC-specific fields
+  category: text("category"), // e.g., 'capacity', 'resource', 'material', 'schedule', 'quality', 'regulatory'
+  impactArea: text("impact_area"), // e.g., 'throughput', 'inventory', 'operating_expense'
+  bufferType: text("buffer_type"), // 'time', 'stock', 'capacity', 'resource'
+  bufferSize: numeric("buffer_size", { precision: 10, scale: 2 }), // Numeric buffer value if applicable
+  
+  // Relationships
+  resourceIds: jsonb("resource_ids").$type<number[]>().default([]), // Related resource IDs
+  processIds: jsonb("process_ids").$type<number[]>().default([]), // Related process/operation IDs
+  productIds: jsonb("product_ids").$type<number[]>().default([]), // Related product/item IDs
+  
+  // Constraint parameters
+  parameters: jsonb("parameters").$type<{
+    value?: number;
+    unit?: string;
+    formula?: string;
+    conditions?: Array<{
+      field: string;
+      operator: string;
+      value: any;
+    }>;
+  }>().default({}),
+  
+  // Monitoring and enforcement
+  isActive: boolean("is_active").default(true),
+  enforceInScheduling: boolean("enforce_in_scheduling").default(true),
+  enforceInOptimization: boolean("enforce_in_optimization").default(true),
+  monitoringFrequency: text("monitoring_frequency"), // 'realtime', 'hourly', 'daily', 'weekly'
+  
+  // Violation handling
+  violationAction: text("violation_action"), // 'block', 'warn', 'log', 'notify'
+  violationThreshold: numeric("violation_threshold", { precision: 10, scale: 2 }), // Threshold for soft constraints
+  currentViolationCount: integer("current_violation_count").default(0),
+  lastViolationDate: timestamp("last_violation_date"),
+  
+  // Metadata
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => ({
+  nameIndex: index("custom_constraints_name_idx").on(table.name),
+  typeIndex: index("custom_constraints_type_idx").on(table.constraintType),
+  severityIndex: index("custom_constraints_severity_idx").on(table.severity),
+  activeIndex: index("custom_constraints_active_idx").on(table.isActive)
+}));
+
 // Algorithm Feedback System Types and Schemas
 export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedback, { 
   id: undefined,
@@ -5657,6 +5724,18 @@ export type InsertAlgorithmFeedbackComment = z.infer<typeof insertAlgorithmFeedb
 
 export type AlgorithmFeedbackVote = typeof algorithmFeedbackVotes.$inferSelect;
 export type InsertAlgorithmFeedbackVote = z.infer<typeof insertAlgorithmFeedbackVoteSchema>;
+
+// Insert schemas and types for Custom Constraints
+export const insertCustomConstraintSchema = createInsertSchema(customConstraints, { 
+  id: undefined,
+  currentViolationCount: undefined,
+  lastViolationDate: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
+});
+
+export type CustomConstraint = typeof customConstraints.$inferSelect;
+export type InsertCustomConstraint = z.infer<typeof insertCustomConstraintSchema>;
 
 // Tour Prompt Templates System
 export const tourPromptTemplates = pgTable("tour_prompt_templates", {
@@ -9001,25 +9080,6 @@ export const insertWidgetDeploymentSchema = createInsertSchema(widgetDeployments
 });
 export type InsertWidgetDeployment = z.infer<typeof insertWidgetDeploymentSchema>;
 export type WidgetDeployment = typeof widgetDeployments.$inferSelect;
-
-// ==================== TOC DRUM ANALYSIS ====================
-
-export const drumAnalysisHistory = pgTable("drum_analysis_history", {
-  id: serial("id").primaryKey(),
-  analysisDate: timestamp("analysis_date").defaultNow(),
-  analysisType: text("analysis_type").notNull(), // 'utilization', 'queue_time', 'throughput', 'composite'
-  resourceId: integer("resource_id").references(() => resources.id),
-  utilizationPercentage: numeric("utilization_percentage", { precision: 5, scale: 2 }),
-  avgQueueTimeHours: numeric("avg_queue_time_hours", { precision: 10, scale: 2 }),
-  throughputImpact: numeric("throughput_impact", { precision: 5, scale: 2 }),
-  bottleneckScore: numeric("bottleneck_score", { precision: 5, scale: 2 }), // Composite score 0-100
-  recommendation: text("recommendation"),
-  isCurrentBottleneck: boolean("is_current_bottleneck").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  resourceIdx: index("drum_analysis_resource_idx").on(table.resourceId),
-  dateIdx: index("drum_analysis_date_idx").on(table.analysisDate),
-}));
 
 // ==================== TOC BUFFER MANAGEMENT ====================
 

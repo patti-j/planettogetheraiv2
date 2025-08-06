@@ -67,6 +67,42 @@ interface DrumAnalysisHistory {
   recommendations?: string;
 }
 
+interface CustomConstraint {
+  id: number;
+  name: string;
+  description: string;
+  constraintType: 'physical' | 'policy';
+  severity: 'hard' | 'soft';
+  category?: string;
+  impactArea?: string;
+  bufferType?: string;
+  bufferSize?: number;
+  resourceIds?: number[];
+  processIds?: number[];
+  productIds?: number[];
+  parameters?: {
+    value?: number;
+    unit?: string;
+    formula?: string;
+    conditions?: Array<{
+      field: string;
+      operator: string;
+      value: any;
+    }>;
+  };
+  isActive: boolean;
+  enforceInScheduling: boolean;
+  enforceInOptimization: boolean;
+  monitoringFrequency?: string;
+  violationAction?: string;
+  violationThreshold?: number;
+  currentViolationCount: number;
+  lastViolationDate?: string;
+  createdBy?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Buffer {
   id: number;
   name: string;
@@ -128,11 +164,29 @@ const drumDesignationSchema = z.object({
   reason: z.string().optional()
 });
 
+// Form schema for custom constraints
+const customConstraintFormSchema = z.object({
+  name: z.string().min(1, "Constraint name is required"),
+  description: z.string().min(1, "Description is required"),
+  constraintType: z.enum(["physical", "policy"]),
+  severity: z.enum(["hard", "soft"]),
+  category: z.string().optional(),
+  impactArea: z.string().optional(),
+  isActive: z.boolean().default(true),
+  enforceInScheduling: z.boolean().default(false),
+  enforceInOptimization: z.boolean().default(false),
+  monitoringFrequency: z.string().optional(),
+  violationAction: z.string().optional(),
+  violationThreshold: z.number().optional()
+});
+
 export default function ConstraintsManagement() {
   const [selectedTab, setSelectedTab] = useState("drums");
   const [isBufferDialogOpen, setIsBufferDialogOpen] = useState(false);
   const [editingBuffer, setEditingBuffer] = useState<Buffer | null>(null);
   const [isDrumDialogOpen, setIsDrumDialogOpen] = useState(false);
+  const [isConstraintDialogOpen, setIsConstraintDialogOpen] = useState(false);
+  const [editingConstraint, setEditingConstraint] = useState<CustomConstraint | null>(null);
   const { toast } = useToast();
 
   // Queries
@@ -159,7 +213,73 @@ export default function ConstraintsManagement() {
     queryKey: ["/api/items"]
   });
 
+  const { data: customConstraints = [], isLoading: constraintsLoading } = useQuery<CustomConstraint[]>({
+    queryKey: ["/api/toc/constraints"],
+    enabled: selectedTab === "constraints"
+  });
+
   // Mutations
+  const createConstraintMutation = useMutation({
+    mutationFn: (data: z.infer<typeof customConstraintFormSchema>) =>
+      apiRequest("POST", "/api/toc/constraints", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/constraints"] });
+      toast({
+        title: "Success",
+        description: "Custom constraint created successfully",
+      });
+      setIsConstraintDialogOpen(false);
+      constraintForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create constraint",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateConstraintMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<CustomConstraint> }) =>
+      apiRequest("PUT", `/api/toc/constraints/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/constraints"] });
+      toast({
+        title: "Success",
+        description: "Constraint updated successfully",
+      });
+      setIsConstraintDialogOpen(false);
+      setEditingConstraint(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update constraint",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteConstraintMutation = useMutation({
+    mutationFn: (id: number) =>
+      apiRequest("DELETE", `/api/toc/constraints/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/toc/constraints"] });
+      toast({
+        title: "Success",
+        description: "Constraint deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete constraint",
+        variant: "destructive",
+      });
+    },
+  });
+
   const drumAnalysisMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/toc/drums/analyze"),
     onSuccess: () => {
@@ -216,6 +336,24 @@ export default function ConstraintsManagement() {
   });
 
   // Forms
+  const constraintForm = useForm<z.infer<typeof customConstraintFormSchema>>({
+    resolver: zodResolver(customConstraintFormSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      constraintType: "physical",
+      severity: "soft",
+      category: "",
+      impactArea: "",
+      isActive: true,
+      enforceInScheduling: false,
+      enforceInOptimization: false,
+      monitoringFrequency: "",
+      violationAction: "",
+      violationThreshold: undefined
+    }
+  });
+
   const bufferForm = useForm<z.infer<typeof bufferFormSchema>>({
     resolver: zodResolver(bufferFormSchema),
     defaultValues: {
@@ -271,6 +409,17 @@ export default function ConstraintsManagement() {
 
   const onSubmitDrum = (data: z.infer<typeof drumDesignationSchema>) => {
     drumDesignationMutation.mutate(data);
+  };
+
+  const onSubmitConstraint = (data: z.infer<typeof customConstraintFormSchema>) => {
+    if (editingConstraint) {
+      updateConstraintMutation.mutate({
+        id: editingConstraint.id,
+        data
+      });
+    } else {
+      createConstraintMutation.mutate(data);
+    }
   };
 
   const getZoneColor = (zone: string) => {
@@ -331,9 +480,9 @@ export default function ConstraintsManagement() {
             <span className="hidden sm:inline">Buffer Management</span>
             <span className="sm:hidden">Buffers</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="text-xs sm:text-sm">
-            <span className="hidden sm:inline">TOC Analytics</span>
-            <span className="sm:hidden">Analytics</span>
+          <TabsTrigger value="constraints" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Custom Constraints</span>
+            <span className="sm:hidden">Constraints</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1066,6 +1215,353 @@ export default function ConstraintsManagement() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Custom Constraints Tab */}
+        <TabsContent value="constraints" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>Custom Constraints</CardTitle>
+                <p className="text-sm text-gray-500 mt-1">
+                  Define custom physical and policy constraints for your production system
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  setEditingConstraint(null);
+                  constraintForm.reset();
+                  setIsConstraintDialogOpen(true);
+                }}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Constraint
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {constraintsLoading ? (
+                <div className="text-center py-8">Loading constraints...</div>
+              ) : customConstraints.length === 0 ? (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    No custom constraints defined yet. Create your first constraint to start managing your production rules.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-3">
+                  {customConstraints.map((constraint: CustomConstraint) => (
+                    <Card key={constraint.id}>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold">{constraint.name}</h3>
+                              {constraint.isActive ? (
+                                <Badge variant="default" className="bg-green-500">Active</Badge>
+                              ) : (
+                                <Badge variant="secondary">Inactive</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{constraint.description}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant={constraint.constraintType === 'physical' ? 'default' : 'outline'}>
+                                {constraint.constraintType === 'physical' ? (
+                                  <Factory className="w-3 h-3 mr-1" />
+                                ) : (
+                                  <Shield className="w-3 h-3 mr-1" />
+                                )}
+                                {constraint.constraintType}
+                              </Badge>
+                              <Badge variant={constraint.severity === 'hard' ? 'destructive' : 'secondary'}>
+                                {constraint.severity} constraint
+                              </Badge>
+                              {constraint.category && (
+                                <Badge variant="outline">{constraint.category}</Badge>
+                              )}
+                              {constraint.currentViolationCount > 0 && (
+                                <Badge variant="destructive">
+                                  <AlertCircle className="w-3 h-3 mr-1" />
+                                  {constraint.currentViolationCount} violations
+                                </Badge>
+                              )}
+                            </div>
+                            {constraint.enforceInScheduling && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                <CheckCircle className="w-3 h-3 inline mr-1" />
+                                Enforced in scheduling
+                              </p>
+                            )}
+                            {constraint.enforceInOptimization && (
+                              <p className="text-xs text-gray-500">
+                                <CheckCircle className="w-3 h-3 inline mr-1" />
+                                Enforced in optimization
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingConstraint(constraint);
+                                constraintForm.reset({
+                                  name: constraint.name,
+                                  description: constraint.description,
+                                  constraintType: constraint.constraintType,
+                                  severity: constraint.severity,
+                                  category: constraint.category || "",
+                                  impactArea: constraint.impactArea || "",
+                                  isActive: constraint.isActive,
+                                  enforceInScheduling: constraint.enforceInScheduling,
+                                  enforceInOptimization: constraint.enforceInOptimization,
+                                  monitoringFrequency: constraint.monitoringFrequency || "",
+                                  violationAction: constraint.violationAction || "",
+                                  violationThreshold: constraint.violationThreshold
+                                });
+                                setIsConstraintDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteConstraintMutation.mutate(constraint.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Constraint Dialog */}
+          <Dialog open={isConstraintDialogOpen} onOpenChange={setIsConstraintDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingConstraint ? 'Edit Constraint' : 'Create Custom Constraint'}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...constraintForm}>
+                <form onSubmit={constraintForm.handleSubmit(onSubmitConstraint)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={constraintForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Constraint Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Max daily production limit" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={constraintForm.control}
+                      name="constraintType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="physical">Physical (Equipment/Resource)</SelectItem>
+                              <SelectItem value="policy">Policy (Business Rule)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={constraintForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            placeholder="Describe the constraint and its impact on production..."
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={constraintForm.control}
+                      name="severity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Severity</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="hard">Hard (Must be satisfied)</SelectItem>
+                              <SelectItem value="soft">Soft (Should be satisfied)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={constraintForm.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Production, Quality, Safety" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={constraintForm.control}
+                      name="impactArea"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Impact Area (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="e.g., Line 1, Packaging, Assembly" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={constraintForm.control}
+                      name="violationThreshold"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Violation Threshold (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                              placeholder="Number of violations before alert"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <FormField
+                      control={constraintForm.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Active</FormLabel>
+                            <p className="text-sm text-gray-500">Enable this constraint</p>
+                          </div>
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={constraintForm.control}
+                      name="enforceInScheduling"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Enforce in Scheduling</FormLabel>
+                            <p className="text-sm text-gray-500">Apply during schedule generation</p>
+                          </div>
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={constraintForm.control}
+                      name="enforceInOptimization"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>Enforce in Optimization</FormLabel>
+                            <p className="text-sm text-gray-500">Apply during optimization runs</p>
+                          </div>
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={field.value}
+                              onChange={field.onChange}
+                              className="h-4 w-4"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => {
+                      setIsConstraintDialogOpen(false);
+                      setEditingConstraint(null);
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createConstraintMutation.isPending || updateConstraintMutation.isPending}
+                    >
+                      {createConstraintMutation.isPending || updateConstraintMutation.isPending
+                        ? "Saving..." 
+                        : editingConstraint ? "Update" : "Create"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>

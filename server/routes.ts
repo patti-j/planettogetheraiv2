@@ -20902,6 +20902,89 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // ==================== CUSTOM CONSTRAINTS ====================
+  
+  // Get custom constraints
+  app.get("/api/toc/constraints", requireAuth, async (req, res) => {
+    try {
+      const { isActive, constraintType, severity, category } = req.query;
+      const filters: any = {};
+      
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      if (constraintType) filters.constraintType = constraintType as string;
+      if (severity) filters.severity = severity as string;
+      if (category) filters.category = category as string;
+      
+      const constraints = await storage.getCustomConstraints(filters);
+      res.json(constraints);
+    } catch (error) {
+      console.error("Error fetching custom constraints:", error);
+      res.status(500).json({ error: "Failed to fetch custom constraints" });
+    }
+  });
+
+  app.get("/api/toc/constraints/:id", requireAuth, async (req, res) => {
+    try {
+      const constraint = await storage.getCustomConstraint(parseInt(req.params.id));
+      if (!constraint) {
+        return res.status(404).json({ error: "Constraint not found" });
+      }
+      res.json(constraint);
+    } catch (error) {
+      console.error("Error fetching custom constraint:", error);
+      res.status(500).json({ error: "Failed to fetch custom constraint" });
+    }
+  });
+
+  app.post("/api/toc/constraints", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      const constraintData = {
+        ...req.body,
+        createdBy: userId,
+        updatedBy: userId
+      };
+      
+      const constraint = await storage.createCustomConstraint(constraintData);
+      res.status(201).json(constraint);
+    } catch (error) {
+      console.error("Error creating custom constraint:", error);
+      res.status(500).json({ error: "Failed to create custom constraint" });
+    }
+  });
+
+  app.put("/api/toc/constraints/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      const constraintData = {
+        ...req.body,
+        updatedBy: userId
+      };
+      
+      const constraint = await storage.updateCustomConstraint(parseInt(req.params.id), constraintData);
+      if (!constraint) {
+        return res.status(404).json({ error: "Constraint not found" });
+      }
+      res.json(constraint);
+    } catch (error) {
+      console.error("Error updating custom constraint:", error);
+      res.status(500).json({ error: "Failed to update custom constraint" });
+    }
+  });
+
+  app.delete("/api/toc/constraints/:id", requireAuth, async (req, res) => {
+    try {
+      const success = await storage.deleteCustomConstraint(parseInt(req.params.id));
+      if (!success) {
+        return res.status(404).json({ error: "Constraint not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting custom constraint:", error);
+      res.status(500).json({ error: "Failed to delete custom constraint" });
+    }
+  });
+
   // ==================== TOC BUFFERS ====================
   
   // Get buffers
