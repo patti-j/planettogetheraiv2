@@ -51,8 +51,8 @@ Note on concurrent work:
 - Result: Unauthenticated users properly redirected to login page, no unauthorized access to protected routes
 
 **UI IMPROVEMENTS (Aug 6, 2025):**
-- ✅ MOVED: Desktop hamburger menu button to right side
-- Changed positioning from left-4 to right-4 in FloatingHamburgerMenu component
+- ✅ MOVED: Desktop hamburger menu button to right side (right-20 to avoid overlap)
+- Positioned at right-20 to avoid conflicts with refresh buttons (right-2) and maximize buttons (right-16)
 - Provides better UI balance and follows modern design conventions
 - ✅ UNIFIED: Single hamburger menu for all devices
 - Removed mobile-specific hamburger menu, desktop menu now shows on all screen sizes
@@ -61,6 +61,7 @@ Note on concurrent work:
 - Button now visible with blue background (red when active) and white icon
 - Fixed z-index layering (button at z-9999, menu at z-9998)
 - Menu properly opens and closes when button is clicked
+- ✅ FIXED: Desktop hamburger menu no longer overlaps with page refresh/maximize buttons
 
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
