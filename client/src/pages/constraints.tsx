@@ -501,9 +501,9 @@ export default function ConstraintsManagement() {
                       <span className="sm:hidden">Add Drum</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Designate Resource as Drum</DialogTitle>
+                      <DialogTitle className="text-lg sm:text-xl">Designate Resource as Drum</DialogTitle>
                     </DialogHeader>
                     <Form {...drumForm}>
                       <form onSubmit={drumForm.handleSubmit(onSubmitDrum)} className="space-y-4">
@@ -643,7 +643,48 @@ export default function ConstraintsManagement() {
                   </Alert>
                 ) : (
                   <div className="space-y-3">
-                    {/* Mobile-friendly cards for small screens, table for larger screens */}
+                    {/* Mobile-friendly cards for small screens */}
+                    <div className="block sm:hidden space-y-3">
+                      {drumHistory.map((history: DrumAnalysisHistory) => (
+                        <Card key={history.id}>
+                          <CardContent className="p-3">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-start">
+                                <span className="text-xs text-gray-500">Date</span>
+                                <span className="text-xs">{format(new Date(history.analysisDate), 'MMM d, yyyy HH:mm')}</span>
+                              </div>
+                              <div className="flex justify-between items-start">
+                                <span className="text-xs text-gray-500">Resource</span>
+                                <span className="text-xs font-medium">{history.resourceName || 'N/A'}</span>
+                              </div>
+                              {history.bottleneckScore && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-gray-500">Bottleneck Score</span>
+                                  <Badge variant={history.bottleneckScore > 80 ? "destructive" : "default"} className="text-xs">
+                                    {history.bottleneckScore.toFixed(1)}
+                                  </Badge>
+                                </div>
+                              )}
+                              {history.utilizationPercent && (
+                                <div className="flex justify-between items-start">
+                                  <span className="text-xs text-gray-500">Utilization</span>
+                                  <span className="text-xs">{history.utilizationPercent.toFixed(1)}%</span>
+                                </div>
+                              )}
+                              {history.detectedType && (
+                                <div className="flex justify-between items-start">
+                                  <span className="text-xs text-gray-500">Type</span>
+                                  <Badge className={`${getDrumTypeColor(history.detectedType)} text-white text-xs`}>
+                                    {history.detectedType}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Table for larger screens */}
                     <div className="hidden sm:block">
                       <Table>
                         <TableHeader>
@@ -765,7 +806,7 @@ export default function ConstraintsManagement() {
                               <Badge variant="outline" className="text-xs">{buffer.category}</Badge>
                             </div>
                           </div>
-                          <div className="flex gap-1 flex-shrink-0 sm:flex-col">
+                          <div className="flex gap-1 flex-shrink-0">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -773,17 +814,19 @@ export default function ConstraintsManagement() {
                                 setEditingBuffer(buffer);
                                 setIsBufferDialogOpen(true);
                               }}
-                              className="p-2"
+                              className="p-1.5 sm:p-2"
                             >
                               <Edit className="w-4 h-4" />
+                              <span className="sr-only">Edit</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => deleteBufferMutation.mutate(buffer.id)}
-                              className="p-2"
+                              className="p-1.5 sm:p-2"
                             >
                               <Trash2 className="w-4 h-4" />
+                              <span className="sr-only">Delete</span>
                             </Button>
                           </div>
                         </div>
@@ -833,13 +876,13 @@ export default function ConstraintsManagement() {
 
           {/* Buffer Dialog */}
           <Dialog open={isBufferDialogOpen} onOpenChange={setIsBufferDialogOpen}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{editingBuffer ? 'Edit Buffer' : 'Create New Buffer'}</DialogTitle>
+                <DialogTitle className="text-lg sm:text-xl">{editingBuffer ? 'Edit Buffer' : 'Create New Buffer'}</DialogTitle>
               </DialogHeader>
               <Form {...bufferForm}>
                 <form onSubmit={bufferForm.handleSubmit(onSubmitBuffer)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={bufferForm.control}
                       name="name"
@@ -1255,36 +1298,39 @@ export default function ConstraintsManagement() {
                   {customConstraints.map((constraint: CustomConstraint) => (
                     <Card key={constraint.id}>
                       <CardContent className="p-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex flex-col gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{constraint.name}</h3>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-sm sm:text-base">{constraint.name}</h3>
                               {constraint.isActive ? (
-                                <Badge variant="default" className="bg-green-500">Active</Badge>
+                                <Badge variant="default" className="bg-green-500 text-xs w-fit">Active</Badge>
                               ) : (
-                                <Badge variant="secondary">Inactive</Badge>
+                                <Badge variant="secondary" className="text-xs w-fit">Inactive</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">{constraint.description}</p>
-                            <div className="flex flex-wrap gap-2">
-                              <Badge variant={constraint.constraintType === 'physical' ? 'default' : 'outline'}>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">{constraint.description}</p>
+                            <div className="flex flex-wrap gap-1 sm:gap-2">
+                              <Badge variant={constraint.constraintType === 'physical' ? 'default' : 'outline'} className="text-xs">
                                 {constraint.constraintType === 'physical' ? (
                                   <Factory className="w-3 h-3 mr-1" />
                                 ) : (
                                   <Shield className="w-3 h-3 mr-1" />
                                 )}
-                                {constraint.constraintType}
+                                <span className="hidden sm:inline">{constraint.constraintType}</span>
+                                <span className="sm:hidden">{constraint.constraintType === 'physical' ? 'Phys' : 'Policy'}</span>
                               </Badge>
-                              <Badge variant={constraint.severity === 'hard' ? 'destructive' : 'secondary'}>
-                                {constraint.severity} constraint
+                              <Badge variant={constraint.severity === 'hard' ? 'destructive' : 'secondary'} className="text-xs">
+                                <span className="hidden sm:inline">{constraint.severity} constraint</span>
+                                <span className="sm:hidden">{constraint.severity}</span>
                               </Badge>
                               {constraint.category && (
-                                <Badge variant="outline">{constraint.category}</Badge>
+                                <Badge variant="outline" className="text-xs">{constraint.category}</Badge>
                               )}
                               {constraint.currentViolationCount > 0 && (
-                                <Badge variant="destructive">
+                                <Badge variant="destructive" className="text-xs">
                                   <AlertCircle className="w-3 h-3 mr-1" />
-                                  {constraint.currentViolationCount} violations
+                                  <span className="hidden sm:inline">{constraint.currentViolationCount} violations</span>
+                                  <span className="sm:hidden">{constraint.currentViolationCount}</span>
                                 </Badge>
                               )}
                             </div>
@@ -1301,10 +1347,11 @@ export default function ConstraintsManagement() {
                               </p>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1 self-end sm:self-start">
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="p-1.5 sm:p-2"
                               onClick={() => {
                                 setEditingConstraint(constraint);
                                 constraintForm.reset({
@@ -1325,13 +1372,16 @@ export default function ConstraintsManagement() {
                               }}
                             >
                               <Edit className="w-4 h-4" />
+                              <span className="sr-only">Edit</span>
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="p-1.5 sm:p-2"
                               onClick={() => deleteConstraintMutation.mutate(constraint.id)}
                             >
                               <Trash2 className="w-4 h-4" />
+                              <span className="sr-only">Delete</span>
                             </Button>
                           </div>
                         </div>
@@ -1345,15 +1395,15 @@ export default function ConstraintsManagement() {
 
           {/* Constraint Dialog */}
           <Dialog open={isConstraintDialogOpen} onOpenChange={setIsConstraintDialogOpen}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-lg sm:text-xl">
                   {editingConstraint ? 'Edit Constraint' : 'Create Custom Constraint'}
                 </DialogTitle>
               </DialogHeader>
               <Form {...constraintForm}>
                 <form onSubmit={constraintForm.handleSubmit(onSubmitConstraint)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={constraintForm.control}
                       name="name"
@@ -1408,7 +1458,7 @@ export default function ConstraintsManagement() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={constraintForm.control}
                       name="severity"
@@ -1445,7 +1495,7 @@ export default function ConstraintsManagement() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={constraintForm.control}
                       name="impactArea"
