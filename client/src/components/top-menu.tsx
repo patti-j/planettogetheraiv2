@@ -467,12 +467,11 @@ export default function TopMenu() {
                     alt="PlanetTogether" 
                     className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
                   />
-                  <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
                 </div>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-                {/* Moved buttons from right side - MobileViewToggle and Logout */}
+                {/* Moved buttons from right side - MobileViewToggle and Logout - borders removed */}
                 <div className="flex items-center space-x-1">
                   <MobileViewToggle />
                   <Button
@@ -482,7 +481,7 @@ export default function TopMenu() {
                       console.log("Logout button clicked");
                       logout();
                     }}
-                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 ring-2 ring-red-200"
+                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                     title="Logout"
                   >
                     <LogOut className="h-4 w-4" />
@@ -976,7 +975,7 @@ function MobileViewToggle() {
       variant="ghost"
       size="sm"
       onClick={toggleView}
-      className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 ring-2 ring-blue-200"
+      className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
       title="Switch to Mobile View"
     >
       <Smartphone className="h-4 w-4" />
