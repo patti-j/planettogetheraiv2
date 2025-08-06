@@ -185,7 +185,7 @@ export default function TopMenu() {
     queryKey: [`/api/users/${user?.id}/current-role`],
     enabled: !!user?.id,
     staleTime: 0, // Force fresh data
-    cacheTime: 0  // Don't cache
+    gcTime: 0  // Don't cache (using gcTime instead of deprecated cacheTime)
   });
 
   // Check if onboarding is complete
