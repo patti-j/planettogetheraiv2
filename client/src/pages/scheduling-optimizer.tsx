@@ -1117,7 +1117,7 @@ const SchedulingOptimizer: React.FC = () => {
         </div>
         
         {/* Maximize button in top right corner matching hamburger menu positioning */}
-        <div className="fixed top-2 right-2 z-50">
+        <div className="fixed top-2 right-16 z-50">
           <Button
             variant="outline"
             size="sm"

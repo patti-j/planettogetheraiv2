@@ -111,7 +111,7 @@ const PresentationPage = () => {
         variant="outline"
         size="sm"
         onClick={() => setIsMaximized(!isMaximized)}
-        className="fixed top-2 right-2 z-50"
+        className="fixed top-2 right-16 z-50"
         title={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}
       >
         <Maximize2 className="h-4 w-4" />

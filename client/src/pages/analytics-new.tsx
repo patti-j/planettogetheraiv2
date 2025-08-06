@@ -594,8 +594,8 @@ export default function Analytics() {
 
   return (
     <>
-      {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed top-2 right-2 z-50">
+      {/* Maximize button positioned to avoid hamburger menu */}
+      <div className="fixed top-2 right-16 z-50">
         <Button
           variant="outline"
           size="sm"

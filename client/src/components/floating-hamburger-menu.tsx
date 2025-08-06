@@ -29,7 +29,7 @@ export function FloatingHamburgerMenu({
   
   // Always show on all devices (removed device-specific visibility logic)
   return (
-    <div className={`fixed right-16 z-[9999] pointer-events-auto ${
+    <div className={`fixed right-2 z-[9999] pointer-events-auto ${
       isMobile ? 'top-3' : 'top-4'
     }`}>
       <Button
