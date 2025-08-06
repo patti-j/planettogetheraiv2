@@ -976,8 +976,7 @@ export default function CapacityPlanning() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-            <img src="/favicon.svg" alt="PT" className="w-6 h-6 mr-2" />
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
             Resource Capacity Analysis
           </h1>
           <p className="text-sm md:text-base text-gray-600">Monitor resource capacity, utilization, shifts, and overtime across all manufacturing operations</p>
