@@ -172,7 +172,7 @@ export default function ProductionSchedulePage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Theme Toggle - Fixed positioned to the left of hamburger menu */}
-      <div className="fixed top-3 right-20 z-50">
+      <div className="fixed top-5 right-20 z-50">
         <ThemeToggle />
       </div>
       
@@ -201,7 +201,7 @@ export default function ProductionSchedulePage() {
         </div>
         
         {/* Right side: Export and Refresh buttons with proper spacing */}
-        <div className="flex items-center gap-2 flex-shrink-0 pr-20">
+        <div className="flex items-center gap-2 flex-shrink-0 pr-16">
           {!isMobile && (
             <>
               <Button variant="outline" size="sm" className="gap-2">
