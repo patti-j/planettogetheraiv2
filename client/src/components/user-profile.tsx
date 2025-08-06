@@ -506,6 +506,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
         description: "Your profile has been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/auth/profile`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/auth/me`] });
       setSelectedFile(null);
       setPreviewUrl(null);
     },
@@ -678,7 +679,11 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                     <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                   </div>
                 ) : (
-                  <form onSubmit={handleProfileSubmit} className="space-y-6">
+                  <form 
+                    key={profile?.id || 'profile-form'} 
+                    onSubmit={handleProfileSubmit} 
+                    className="space-y-6"
+                  >
                     {/* Avatar Section */}
                     <div className="flex items-center gap-6">
                       <div className="relative">
