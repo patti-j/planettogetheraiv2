@@ -1044,7 +1044,7 @@ export default function IntegratedAIAssistant() {
         <>
           {/* Left dock zone */}
           <div 
-            className="fixed left-0 top-0 w-20 h-full bg-blue-500/30 border-r-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed left-0 top-0 w-20 h-full bg-blue-500/30 border-r-4 border-blue-500 z-20 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
             <div className="text-blue-600 font-bold text-lg rotate-90">DOCK LEFT</div>
@@ -1052,7 +1052,7 @@ export default function IntegratedAIAssistant() {
           
           {/* Right dock zone */}
           <div 
-            className="fixed right-0 top-0 w-20 h-full bg-blue-500/30 border-l-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed right-0 top-0 w-20 h-full bg-blue-500/30 border-l-4 border-blue-500 z-20 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
             <div className="text-blue-600 font-bold text-lg rotate-90">DOCK RIGHT</div>
@@ -1060,7 +1060,7 @@ export default function IntegratedAIAssistant() {
           
           {/* Top dock zone */}
           <div 
-            className="fixed top-0 left-0 w-full h-20 bg-blue-500/30 border-b-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed top-0 left-0 w-full h-20 bg-blue-500/30 border-b-4 border-blue-500 z-20 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
             <div className="text-blue-600 font-bold text-lg">DOCK TOP</div>
@@ -1068,7 +1068,7 @@ export default function IntegratedAIAssistant() {
           
           {/* Bottom dock zone */}
           <div 
-            className="fixed bottom-0 left-0 w-full h-20 bg-blue-500/30 border-t-4 border-blue-500 z-40 flex items-center justify-center pointer-events-none"
+            className="fixed bottom-0 left-0 w-full h-20 bg-blue-500/30 border-t-4 border-blue-500 z-20 flex items-center justify-center pointer-events-none"
             style={{ opacity: isDragging ? 1 : 0, transition: 'opacity 0.2s' }}
           >
             <div className="text-blue-600 font-bold text-lg">DOCK BOTTOM</div>

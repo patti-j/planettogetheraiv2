@@ -280,7 +280,7 @@ export default function PageEditMode({
         {isEditMode && (
           <div className={`
             fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
-            z-50 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg ring-2 ring-blue-500
+            z-30 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg ring-2 ring-blue-500
             ${isMobile ? 'p-2' : 'p-2'}
           `}>
             <div className={`flex items-center gap-2 ${isMobile ? 'justify-center' : 'justify-between'}`}>
