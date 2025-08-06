@@ -38,6 +38,12 @@ Note on concurrent work:
 - Implementation: Using `ilike` comparison in login endpoint for case-insensitive matching
 - Admin credentials remain: username="admin" (any case), password="password"
 
+**LOGOUT IMPROVEMENTS (Aug 6, 2025):**
+- ✅ FIXED: Logout race condition causing users to remain authenticated after logout
+- Root cause: Authorization token persisting in localStorage during logout process 
+- Solution: Clear auth token immediately at start of logout, before server requests
+- Result: Users properly see landing page after logout + refresh, complete session cleanup
+
 **UI IMPROVEMENTS (Aug 6, 2025):**
 - ✅ MOVED: Desktop hamburger menu button to right side
 - Changed positioning from left-4 to right-4 in FloatingHamburgerMenu component

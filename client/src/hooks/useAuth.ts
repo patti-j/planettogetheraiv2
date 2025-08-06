@@ -181,6 +181,10 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Clear localStorage token IMMEDIATELY before doing anything else
+      console.log("Clearing auth token immediately...");
+      localStorage.removeItem('authToken');
+      
       // Close any active tour before logout
       const savedTourState = localStorage.getItem("activeDemoTour");
       if (savedTourState) {
@@ -190,9 +194,14 @@ export function useAuth() {
         window.dispatchEvent(new CustomEvent('tourClose'));
       }
       
-      console.log("Attempting logout...");
+      console.log("Attempting server logout...");
       try {
-        await apiRequest("POST", "/api/auth/logout", {});
+        // Make logout request without token since we cleared it above
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // Include session cookies
+        });
         console.log("Server logout successful");
       } catch (error) {
         console.warn("Server logout failed, proceeding with local logout:", error);
@@ -201,11 +210,17 @@ export function useAuth() {
       return true;
     },
     onSuccess: () => {
-      console.log("Logout successful, clearing auth data...");
-      // Clear localStorage token on logout
+      console.log("Logout successful, clearing remaining auth data...");
+      // Ensure token is cleared (already done in mutationFn but double-check)
       localStorage.removeItem('authToken');
+      
+      // Clear all cached queries
       queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.clear(); // Clear all cached data
+      queryClient.clear();
+      
+      // Clear any other auth-related localStorage items
+      localStorage.removeItem('userPreferences');
+      localStorage.removeItem('lastVisitedPage');
       
       // Force redirect to login page
       console.log("Redirecting to login page...");
@@ -216,6 +231,8 @@ export function useAuth() {
       // Even if logout fails, clear local auth data
       console.log("Clearing local auth data despite error...");
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userPreferences');
+      localStorage.removeItem('lastVisitedPage');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
       window.location.href = '/login';
