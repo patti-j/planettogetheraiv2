@@ -13,7 +13,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { insertResourceSchema } from "@shared/schema";
 import type { Resource, Capability } from "@shared/schema";
 
-const resourceFormSchema = insertResourceSchema;
+// Properly extend the schema with required type information
+const resourceFormSchema = insertResourceSchema.extend({
+  name: z.string().min(1, "Name is required"),
+  type: z.string().min(1, "Type is required"),
+  status: z.string().default("active"),
+  capabilities: z.array(z.number()).default([])
+});
 
 type ResourceFormData = z.infer<typeof resourceFormSchema>;
 
@@ -38,7 +44,7 @@ export default function ResourceForm({
       name: resource?.name || "",
       type: resource?.type || "",
       status: resource?.status || "active",
-      capabilities: resource?.capabilities || [],
+      capabilities: (resource?.capabilities as number[]) || [],
     },
   });
 
@@ -151,11 +157,11 @@ export default function ResourceForm({
                       id={`capability-${capability.id}`}
                       checked={selectedCapabilities.includes(capability.id)}
                       onCheckedChange={(checked) => {
-                        const currentValue = form.getValues("capabilities") || [];
+                        const currentValue = form.getValues("capabilities") as number[] || [];
                         if (checked) {
                           form.setValue("capabilities", [...currentValue, capability.id]);
                         } else {
-                          form.setValue("capabilities", currentValue.filter(id => id !== capability.id));
+                          form.setValue("capabilities", currentValue.filter((id: number) => id !== capability.id));
                         }
                       }}
                     />

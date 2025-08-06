@@ -119,61 +119,37 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
-      console.log("🔐 Login mutation starting for:", credentials.username);
-      
       try {
         const response = await apiRequest("POST", "/api/auth/login", credentials);
-        console.log("🔐 Response status:", response.status);
-        console.log("🔐 Response headers:", response.headers);
         
-        // Debug response content
+        // Parse response content
         const responseText = await response.text();
-        console.log("🔐 Raw response text:", responseText);
-        console.log("🔐 Response text length:", responseText.length);
         
         let userData;
         try {
           userData = JSON.parse(responseText);
-          console.log("🔐 Parsed response data:", userData);
         } catch (parseError) {
-          console.error("🔐 JSON parse error:", parseError);
-          console.error("🔐 Failed to parse:", responseText.substring(0, 200));
           throw new Error(`Invalid JSON response: ${parseError.message}`);
         }
-        console.log("🔐 Token in response:", userData.token);
         
         // Store token in localStorage if provided
         if (userData.token) {
-          console.log("🔐 About to store token:", userData.token);
           localStorage.setItem('authToken', userData.token);
-          console.log("🔐 Token stored successfully");
-        } else {
-          console.log("🔐 No token in response");
         }
         
-        console.log("🔐 About to return userData");
         return userData;
       } catch (error) {
-        console.error("🔐 Error in mutationFn:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("🔐 Login mutation SUCCESS:", data);
-      console.log("🔐 About to invalidate queries...");
       try {
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-        console.log("🔐 Query invalidation completed successfully");
       } catch (error) {
-        console.error("🔐 Query invalidation error:", error);
+        console.error("Query invalidation error:", error);
       }
     },
     onError: (error) => {
-      console.error("🔐 Login mutation ERROR:", error);
-      console.error("🔐 Error type:", typeof error);
-      console.error("🔐 Error constructor:", error?.constructor?.name);
-      console.error("🔐 Error message:", error?.message);
-      console.error("🔐 Error stack:", error?.stack);
       // Clear any stored auth token on login failure
       localStorage.removeItem('authToken');
     }
@@ -182,19 +158,16 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       // Clear localStorage token IMMEDIATELY before doing anything else
-      console.log("Clearing auth token immediately...");
       localStorage.removeItem('authToken');
       
       // Close any active tour before logout
       const savedTourState = localStorage.getItem("activeDemoTour");
       if (savedTourState) {
-        console.log("Closing active tour before logout");
         localStorage.removeItem("activeDemoTour");
         // Dispatch a custom event to notify tour components to close
         window.dispatchEvent(new CustomEvent('tourClose'));
       }
       
-      console.log("Attempting server logout...");
       try {
         // Make logout request without token since we cleared it above
         const response = await fetch("/api/auth/logout", {
@@ -202,15 +175,12 @@ export function useAuth() {
           headers: { "Content-Type": "application/json" },
           credentials: "include", // Include session cookies
         });
-        console.log("Server logout successful");
       } catch (error) {
-        console.warn("Server logout failed, proceeding with local logout:", error);
         // Continue with local cleanup even if server fails
       }
       return true;
     },
     onSuccess: () => {
-      console.log("Logout successful, clearing remaining auth data...");
       // Ensure token is cleared (already done in mutationFn but double-check)
       localStorage.removeItem('authToken');
       

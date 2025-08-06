@@ -57,9 +57,6 @@ export const getQueryFn: <T>(options: {
     
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log("🔐 Query using token:", token.substring(0, 20) + "...");
-    } else {
-      console.log("🔐 No auth token found in localStorage");
     }
     
     const res = await fetch(queryKey.join("/") as string, {
@@ -81,7 +78,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 30 * 1000, // Consider data fresh for 30 seconds
       retry: false,
     },
     mutations: {
