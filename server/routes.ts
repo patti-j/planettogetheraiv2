@@ -237,6 +237,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastName: user.lastName,
             username: user.username,
             email: user.email,
+            avatar: user.avatar,
+            jobTitle: user.jobTitle,
+            department: user.department,
+            phoneNumber: user.phoneNumber,
             isDemo: false
           });
         }

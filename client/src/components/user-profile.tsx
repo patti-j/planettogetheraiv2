@@ -484,10 +484,12 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Fetch user profile
-  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery<UserProfile>({
     queryKey: [`/api/auth/profile`],
     enabled: !!user?.id && open,
   });
+  
+  console.log("Profile dialog state:", { open, user, profile, profileLoading, profileError });
 
   // Fetch user preferences
   const { data: preferences, isLoading: preferencesLoading } = useQuery<UserPreferences>({
@@ -557,6 +559,8 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
 
   const handleProfileSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log("Profile form submitted!");
+    
     const formData = new FormData(event.currentTarget);
     
     let avatarData = profile?.avatar;
@@ -575,6 +579,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
       phoneNumber: formData.get('phoneNumber') as string,
     };
 
+    console.log("Form data collected:", data);
     updateProfileMutation.mutate(data);
   };
 
@@ -817,6 +822,10 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
                       <Button
                         type="submit"
                         disabled={updateProfileMutation.isPending}
+                        onClick={(e) => {
+                          console.log("Save Profile button clicked!");
+                          // Don't prevent default - let form submit normally
+                        }}
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save Profile
