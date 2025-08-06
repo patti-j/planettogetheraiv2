@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
@@ -170,6 +171,11 @@ export default function ProductionSchedulePage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* Theme Toggle - Fixed positioned at left margin */}
+      <div className="fixed top-3 left-3 z-50">
+        <ThemeToggle />
+      </div>
+      
       {/* Header */}
       <div className={`flex items-center justify-between border-b ${isMobile ? 'p-3' : 'p-6'}`}>
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -211,8 +217,8 @@ export default function ProductionSchedulePage() {
                 <RefreshCw className="w-4 h-4" />
                 Refresh
               </Button>
-              {/* Space for hamburger menu (fixed positioned at right-2) */}
-              <div className="w-12"></div>
+              {/* Space for hamburger menu (fixed positioned at right-8 for scroll bar clearance) */}
+              <div className="w-16"></div>
             </>
           )}
         </div>
