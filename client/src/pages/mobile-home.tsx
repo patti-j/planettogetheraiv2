@@ -1563,7 +1563,7 @@ export default function MobileHomePage() {
               }}
               variant="ghost"
               size="icon"
-              className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 touch-manipulation"
+              className="w-9 h-9 touch-manipulation"
             >
               <Library className="w-4 h-4" />
             </Button>
