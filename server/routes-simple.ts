@@ -310,6 +310,83 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // Get user profile
+  app.get("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      
+      // Get user from database
+      const user = await storage.getUser(typeof userId === 'string' ? parseInt(userId) : userId);
+      if (user) {
+        return res.json({
+          id: user.id,
+          firstName: user.firstName || 'User',
+          lastName: user.lastName || '',
+          username: user.username,
+          email: user.email || `${user.username}@planettogether.com`,
+          avatar: user.avatar,
+          jobTitle: user.jobTitle,
+          department: user.department,
+          phoneNumber: user.phoneNumber
+        });
+      }
+      
+      // Fallback response
+      return res.json({
+        id: userId,
+        firstName: 'User',
+        lastName: '',
+        username: typeof userId === 'string' ? userId : `user_${userId}`,
+        email: `user_${userId}@planettogether.com`
+      });
+      
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch user profile' });
+    }
+  });
+  
+  // Update user profile
+  app.put("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
+      
+      const updateData = {
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        username: req.body.username,
+        jobTitle: req.body.jobTitle,
+        department: req.body.department,
+        phoneNumber: req.body.phoneNumber,
+        avatar: req.body.avatar
+      };
+      
+      // Update user in database
+      const result = await db
+        .update(schema.users)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.users.id, numericUserId))
+        .returning();
+      
+      if (result.length > 0) {
+        res.json({
+          success: true,
+          user: result[0]
+        });
+      } else {
+        res.status(404).json({ message: 'User not found' });
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      res.status(500).json({ message: 'Failed to update profile' });
+    }
+  });
+
   // Users
   app.get("/api/users", async (req, res) => {
     try {

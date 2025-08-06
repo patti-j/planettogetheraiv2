@@ -489,7 +489,15 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
     enabled: !!user?.id && open,
   });
   
-  console.log("Profile dialog state:", { open, user, profile, profileLoading, profileError });
+  console.log("Profile dialog state:", { 
+    open, 
+    user, 
+    userId: user?.id,
+    queryEnabled: !!user?.id && open,
+    profile, 
+    profileLoading, 
+    profileError 
+  });
 
   // Fetch user preferences
   const { data: preferences, isLoading: preferencesLoading } = useQuery<UserPreferences>({
