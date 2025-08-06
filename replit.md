@@ -51,9 +51,10 @@ Note on concurrent work:
 - Result: Unauthenticated users properly redirected to login page, no unauthorized access to protected routes
 
 **UI IMPROVEMENTS (Aug 6, 2025):**
-- ✅ FIXED: Hamburger menu positioning now different for mobile vs desktop
-- Desktop: Positioned at right-48 (192px from right edge) to avoid Export, Refresh, and Maximize buttons
-- Mobile: Positioned at right-2 (8px from right edge) for better mobile accessibility
+- ✅ FIXED: Better UI layout with hamburger menu on right, page controls on left
+- Hamburger menu: Positioned at right-2 on all devices for consistency
+- Page controls: Export and Refresh buttons moved to left side of header on desktop pages
+- Result: No more overlapping UI elements, cleaner visual hierarchy
 - Provides better UI balance and follows modern design conventions
 - ✅ UNIFIED: Single hamburger menu for all devices
 - Removed mobile-specific hamburger menu, desktop menu now shows on all screen sizes

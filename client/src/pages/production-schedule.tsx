@@ -166,6 +166,25 @@ export default function ProductionSchedulePage() {
       {/* Header */}
       <div className={`flex items-center justify-between border-b ${isMobile ? 'p-3' : 'p-6'}`}>
         <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Left side: Export and Refresh buttons on desktop */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </Button>
+            </div>
+          )}
+          
           <Calendar className={`text-blue-600 ${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -187,25 +206,9 @@ export default function ProductionSchedulePage() {
           </div>
         </div>
         
+        {/* Right side: Reserved for hamburger menu (which is fixed positioned) */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {!isMobile && (
-            // Desktop: Show essential action buttons
-            <>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </Button>
-            </>
-          )}
+          {/* Empty - hamburger menu is fixed positioned */}
         </div>
       </div>
 

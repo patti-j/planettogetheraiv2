@@ -28,10 +28,10 @@ export function FloatingHamburgerMenu({
   const isMobile = window.innerWidth < 768;
   
   // Always show on all devices (removed device-specific visibility logic)
-  // Position: right-2 on mobile, right-48 on desktop to avoid overlap with page controls
+  // Position at right-2 on all devices - page controls moved to left to avoid overlap
   return (
-    <div className={`fixed z-[9999] pointer-events-auto ${
-      isMobile ? 'right-2 top-3' : 'right-48 top-4'
+    <div className={`fixed right-2 z-[9999] pointer-events-auto ${
+      isMobile ? 'top-3' : 'top-4'
     }`}>
       <Button
         onClick={() => {
