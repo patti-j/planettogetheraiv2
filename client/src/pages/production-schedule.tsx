@@ -43,7 +43,7 @@ export default function ProductionSchedulePage() {
   // Add this page to recent pages when component mounts
   useEffect(() => {
     addRecentPage('/production-schedule', 'Production Schedule', 'Calendar');
-  }, [addRecentPage]);
+  }, []); // Empty dependency array - only run once on mount
   
   // Page editor integration
   const {

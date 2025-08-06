@@ -47,7 +47,7 @@ function DataImport() {
   // Register this page in recent pages when component mounts
   useEffect(() => {
     addRecentPage('/data-import', 'Master Data Setup', 'Database');
-  }, [addRecentPage]);
+  }, []); // Empty dependency array - only run once on mount
   
   // Smart filtering state
   const [showAllDataTypes, setShowAllDataTypes] = useState(false);
