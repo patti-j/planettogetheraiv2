@@ -171,8 +171,8 @@ export default function ProductionSchedulePage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Theme Toggle - Fixed positioned at left margin */}
-      <div className="fixed top-3 left-3 z-50">
+      {/* Theme Toggle - Fixed positioned to the left of hamburger menu */}
+      <div className="fixed top-3 right-20 z-50">
         <ThemeToggle />
       </div>
       
@@ -217,8 +217,8 @@ export default function ProductionSchedulePage() {
                 <RefreshCw className="w-4 h-4" />
                 Refresh
               </Button>
-              {/* Space for hamburger menu (fixed positioned at right-8 for scroll bar clearance) */}
-              <div className="w-16"></div>
+              {/* Space for theme toggle and hamburger menu (right-20 and right-8) */}
+              <div className="w-24"></div>
             </>
           )}
         </div>

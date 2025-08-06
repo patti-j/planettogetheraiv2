@@ -80,9 +80,10 @@ Note on concurrent work:
 - Moved persistent theme toggle from left-6 to left-3 for better spacing
 - Prevents overlap between theme button and hamburger close button
 - ✅ FIXED: Production schedule page layout with proper theme toggle and hamburger menu positioning
-- Theme toggle positioned at left margin (left-3) for easy access
+- Theme toggle positioned to the left of hamburger menu (right-20) to avoid page title overlap
 - Hamburger menu moved to right-8 for better scroll bar clearance (was right-6)
 - Removed wrapper div from floating hamburger menu for cleaner code structure
+- Updated header spacing to accommodate both theme toggle and hamburger menu on right side
 
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
