@@ -262,6 +262,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile
+  app.put("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      console.log("=== PROFILE UPDATE ENDPOINT HIT ===");
+      console.log("User from request:", req.user);
+      console.log("Update data:", req.body);
+      
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      // Extract profile data from request body
+      const { 
+        firstName, 
+        lastName, 
+        email, 
+        username, 
+        jobTitle, 
+        department, 
+        phoneNumber, 
+        avatar 
+      } = req.body;
+
+      // Update user in database
+      try {
+        const updatedUser = await storage.updateUser(userId, {
+          firstName,
+          lastName,
+          email,
+          username,
+          jobTitle,
+          department,
+          phoneNumber,
+          avatar
+        });
+
+        console.log("Profile updated successfully:", updatedUser);
+
+        res.json({
+          id: updatedUser.id,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          username: updatedUser.username,
+          email: updatedUser.email,
+          jobTitle: updatedUser.jobTitle,
+          department: updatedUser.department,
+          phoneNumber: updatedUser.phoneNumber,
+          avatar: updatedUser.avatar
+        });
+
+      } catch (error) {
+        console.error('Error updating user profile:', error);
+        res.status(500).json({ message: 'Failed to update profile' });
+      }
+
+    } catch (error) {
+      console.error('Profile update error:', error);
+      res.status(500).json({ message: 'Failed to update user profile' });
+    }
+  });
+
   // Demo login route for prospective users
   app.post("/api/auth/demo-login", async (req, res) => {
     try {
