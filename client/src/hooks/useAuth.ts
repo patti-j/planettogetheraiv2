@@ -220,7 +220,7 @@ export function useAuth() {
       console.log("Local storage token:", localStorage.getItem('authToken'));
       logoutMutation.mutate();
     },
-    loginError: loginMutation.error,
+    loginError: loginMutation.error || error, // Include auth query error
     isLoginPending: loginMutation.isPending,
   };
 }
