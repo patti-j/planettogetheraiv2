@@ -441,9 +441,15 @@ export default function TopMenu() {
                 >
                   <X className="w-5 h-5" />
                 </Button>
-                <Link href={currentView === "mobile" ? "/mobile-home" : "/"} 
+                <Link href={window.innerWidth < 768 ? "/mobile-home" : "/"} 
                   className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    const isMobileDevice = window.innerWidth < 768;
+                    console.log('Logo clicked - window width:', window.innerWidth);
+                    console.log('Is mobile device:', isMobileDevice);
+                    console.log('Navigating to:', isMobileDevice ? "/mobile-home" : "/");
+                    setMenuOpen(false);
+                  }}
                 >
                   <img 
                     src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
