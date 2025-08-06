@@ -233,11 +233,16 @@ export default function TopMenu() {
     user.roles.find(role => role.id === user.activeRoleId) : null);
 
   // Convert to RoleSwitcher-compatible format with required description
+  // For admin user, default to Administrator role if no specific role is set
   const currentRoleForSwitcher = currentRole ? {
     id: (currentRole as any)?.id || '',
     name: (currentRole as any)?.name || '',
     description: (currentRole as any)?.description || ''
-  } : null;
+  } : (user?.username === 'admin' ? {
+    id: '6',
+    name: 'Administrator',
+    description: 'Full system access'
+  } : null);
 
   // Function to toggle Max AI Assistant
   const toggleMaxAI = () => {
@@ -436,7 +441,11 @@ export default function TopMenu() {
                 >
                   <X className="w-5 h-5" />
                 </Button>
-                <Factory className="w-6 h-6 sm:w-7 sm:h-7 text-blue-600 flex-shrink-0" />
+                <img 
+                  src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
+                  alt="PlanetTogether" 
+                  className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
+                />
                 <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
               </div>
               
@@ -460,7 +469,7 @@ export default function TopMenu() {
                       onClick={() => setUserProfileOpen(true)}
                     >
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || 'No Role'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{(currentRole as any)?.name || (user?.username === 'admin' ? 'Administrator' : 'No Role')}</p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
