@@ -302,14 +302,21 @@ export default function TopMenu() {
     if (!searchFilter.trim()) return [];
     
     const searchTerm = searchFilter.toLowerCase();
-    const results = getAllSearchableItems().filter(item => 
+    const allItems = getAllSearchableItems();
+    
+    // Debug logging
+    console.log('=== MENU SEARCH DEBUG ===');
+    console.log('Search term:', searchTerm);
+    console.log('Total searchable items:', allItems.length);
+    console.log('All items:', allItems.map(item => item.feature.label));
+    
+    const results = allItems.filter(item => 
       item.feature.label.toLowerCase().includes(searchTerm)
     );
     
-    // Debug logging
-    console.log('Search term:', searchTerm);
-    console.log('All searchable items:', getAllSearchableItems().map(item => item.feature.label));
-    console.log('Search results:', results.map(item => item.feature.label));
+    console.log('Matching results:', results.length);
+    console.log('Results:', results.map(item => item.feature.label));
+    console.log('=== END SEARCH DEBUG ===');
     
     return results;
   };
