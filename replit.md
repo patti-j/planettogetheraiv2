@@ -53,7 +53,7 @@ Note on concurrent work:
 
 **UI IMPROVEMENTS (Aug 6, 2025):**
 - ✅ FIXED: Better UI layout with hamburger menu on right, page controls just to its left
-- Hamburger menu: Positioned at right-2 on all devices for consistency  
+- Hamburger menu: Positioned at right-6 on all devices to avoid scrollbar overlap (moved from right-2)  
 - Page controls: Export and Refresh buttons positioned just left of hamburger menu on desktop
 - Result: No more overlapping UI elements, clean grouping of controls on right side
 - Provides better UI balance and follows modern design conventions
@@ -65,6 +65,11 @@ Note on concurrent work:
 - Fixed z-index layering (button at z-9999, menu at z-9998)
 - Menu properly opens and closes when button is clicked
 - ✅ FIXED: Desktop hamburger menu no longer overlaps with page refresh/maximize buttons
+- ✅ FIXED: PT Logo display using actual favicon.svg file instead of generic Factory icon
+- Logo now shows proper PlanetTogether branding with blue sections and gray geometric shapes
+- ✅ ENHANCED: Theme toggle button visibility in light mode
+- Added borders and better positioning at right-16 to avoid hamburger menu collision
+- Button now clearly visible with proper contrast in both light and dark modes
 
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
