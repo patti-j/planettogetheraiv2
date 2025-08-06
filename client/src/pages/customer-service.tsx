@@ -708,7 +708,7 @@ export default function CustomerService() {
   return (
     <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
       {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed right-16 z-50 top-3 md:top-4">
+      <div className="fixed right-12 z-50 top-3 md:top-4">
         <Button
           variant="outline"
           size="sm"

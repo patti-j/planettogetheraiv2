@@ -641,7 +641,7 @@ export default function Reports() {
   return (
     <>
       {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed right-16 z-50 top-3 md:top-4">
+      <div className="fixed right-12 z-50 top-3 md:top-4">
         <Button
           variant="outline"
           size="sm"

@@ -38,16 +38,15 @@ export function FloatingHamburgerMenu({
           console.log("🍔 Hamburger button clicked");
           onToggle(!isOpen);
         }}
-        variant="ghost"
-        size="icon"
+        variant="outline"
+        size="sm"
         className={`shadow-md border transition-all duration-200 ${
           isOpen 
             ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
             : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-500'
         }`}
-        aria-label={isOpen ? "Close menu" : "Open menu"}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        aria-label={isOpen ? "Close menu" : "Open menu"}>
+        {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </Button>
     </div>
   );
