@@ -485,27 +485,27 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
-    queryKey: [`/api/users/${user?.id}/profile`],
+    queryKey: [`/api/auth/profile`],
     enabled: !!user?.id && open,
   });
 
   // Fetch user preferences
   const { data: preferences, isLoading: preferencesLoading } = useQuery<UserPreferences>({
-    queryKey: [`/api/users/${user?.id}/preferences`],
+    queryKey: [`/api/user-preferences/${user?.id}`],
     enabled: !!user?.id && open,
   });
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<UserProfile>) => {
-      return await apiRequest("PUT", `/api/users/${user?.id}/profile`, data);
+      return await apiRequest("PUT", `/api/auth/profile`, data);
     },
     onSuccess: () => {
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/profile`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/auth/profile`] });
       setSelectedFile(null);
       setPreviewUrl(null);
     },
@@ -521,14 +521,14 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
   // Update preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: Partial<UserPreferences>) => {
-      return await apiRequest("PUT", `/api/users/${user?.id}/preferences`, data);
+      return await apiRequest("PUT", `/api/user-preferences`, data);
     },
     onSuccess: () => {
       toast({
         title: "Preferences Updated",
         description: "Your preferences have been saved successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/preferences`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
     },
     onError: (error) => {
       toast({

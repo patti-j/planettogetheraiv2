@@ -409,9 +409,7 @@ export default function TopMenu() {
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-[99999] bg-red-500 bg-opacity-50 overflow-hidden"
-          onMouseEnter={() => console.log('🎯 MENU OVERLAY IS VISIBLE AND INTERACTIVE!')}
-          onClick={() => console.log('🎯 MENU OVERLAY CLICKED!')}
+          className="fixed inset-0 z-[99999] bg-black bg-opacity-25 overflow-hidden"
           style={{ 
             touchAction: 'none',
             // Prevent body scroll when menu is open
