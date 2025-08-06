@@ -92,6 +92,19 @@ Note on concurrent work:
 - Removed "Menu" text from header for cleaner look
 - Close button positioned after theme toggle on right side of menu header
 
+**PROFILE DIALOG FIXES (Aug 6, 2025):**
+- ✅ FIXED: Profile dialog now opens correctly when clicking avatar in hamburger menu
+- Root cause: Event propagation was being blocked by menu overlay
+- Solution: Removed stopPropagation handlers that prevented click events
+- ✅ FIXED: All profile fields now save correctly (job title, department, phone number)
+- Root cause: Database field mapping issue between camelCase API and snake_case database fields
+- Solution: Fixed field mapping in profile update endpoint to handle all user fields
+- ✅ FIXED: Profile dialog automatically closes after successful save
+- Added onOpenChange(false) call after successful profile update
+- ✅ FIXED: Profile form waits for data to load before displaying
+- Form shows loading animation while fetching user profile data
+- Prevents empty form fields from appearing before data loads
+
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
 - **Note**: The dev URL changes when the workspace restarts, always check console logs for the current URL
