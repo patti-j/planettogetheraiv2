@@ -1489,8 +1489,8 @@ export default function MobileHomePage() {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
-      {/* Mobile Header - Fixed */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-50 relative">
+      {/* Mobile Header - Fixed with lower z-index to allow hamburger menu */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-30 relative">
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
           <div className="flex-shrink-0">
@@ -1553,8 +1553,8 @@ export default function MobileHomePage() {
             </div>
           </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Right Actions - Added margin-right to avoid hamburger menu overlap */}
+          <div className="flex items-center gap-2 flex-shrink-0 mr-10">
             {/* Max AI Button */}
             <Button 
               variant="ghost" 

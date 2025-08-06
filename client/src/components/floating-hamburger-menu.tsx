@@ -23,7 +23,7 @@ export function FloatingHamburgerMenu({
 
   // Always show on all devices (removed device-specific visibility logic)
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed top-4 right-4 z-[100]">
       <Button
         onClick={() => onToggle(!isOpen)}
         variant="ghost"
