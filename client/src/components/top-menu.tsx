@@ -140,7 +140,7 @@ const featureGroups = [
 ];
 
 export default function TopMenu() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
@@ -450,8 +450,8 @@ export default function TopMenu() {
                     const targetPath = isMobileDevice ? "/mobile-home" : "/";
                     console.log('Navigating to:', targetPath);
                     setMenuOpen(false);
-                    // Use window.location for immediate navigation
-                    window.location.href = targetPath;
+                    // Use wouter's setLocation for navigation
+                    setLocation(targetPath);
                   }}
                 >
                   <img 
