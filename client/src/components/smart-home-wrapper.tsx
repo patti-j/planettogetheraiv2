@@ -10,12 +10,14 @@ export function SmartHomeWrapper() {
   // Debug logging to understand what's happening
   console.log('SmartHomeWrapper - Device Type:', deviceType, 'Window Width:', window.innerWidth, 'Location:', location);
   
-  // On mobile devices, always show MobileHomePage which will handle routing internally
-  // This ensures the mobile header is always present
+  // On mobile devices, redirect to mobile-home for root routes
   if (deviceType === "mobile" && window.innerWidth < 768) {
-    // Double-check that we're actually on mobile before loading mobile page
+    if (location === "/" || location === "/home") {
+      console.log('Redirecting mobile root to mobile-home');
+      return <Redirect to="/mobile-home" />;
+    }
+    // For other mobile routes, let MobileHomePage handle them
     console.log('Loading MobileHomePage for mobile device');
-    // Pass the location as a prop so mobile home can react to route changes
     return <MobileHomePage key={location} />;
   }
   
