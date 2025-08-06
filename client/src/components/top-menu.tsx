@@ -448,13 +448,7 @@ export default function TopMenu() {
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                {/* Hamburger Menu Icon */}
-                <div className="flex items-center space-x-2">
-                  <div className="p-2 bg-blue-500 dark:bg-blue-600 rounded-lg">
-                    <Menu className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Menu</span>
-                </div>
+                {/* Empty space where logo was removed */}
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
@@ -502,6 +496,19 @@ export default function TopMenu() {
                         onOpenChange={setUserProfileOpen}
                       />
                       <ThemeToggle />
+                      {/* Close Menu Button - Red X since menu is open */}
+                      <Button
+                        onClick={() => {
+                          console.log("Close menu button clicked");
+                          setMenuOpen(false);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="ml-2 bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500 shadow-md border transition-all duration-200"
+                        aria-label="Close menu"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
