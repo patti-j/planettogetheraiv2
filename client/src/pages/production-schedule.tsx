@@ -172,7 +172,7 @@ export default function ProductionSchedulePage() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Theme Toggle - Fixed positioned to the left of hamburger menu */}
-      <div className="fixed top-4 right-20 z-50">
+      <div className="fixed top-2 right-20 z-50">
         <ThemeToggle />
       </div>
       
