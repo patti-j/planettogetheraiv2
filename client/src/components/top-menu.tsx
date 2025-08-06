@@ -7,7 +7,7 @@ import {
   Factory, Briefcase, BarChart3, FileText, Bot, Columns3, Menu, Smartphone, 
   DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, 
   Truck, ChevronDown, ChevronRight, Target, Database, Building, Server, TrendingUp, 
-  Shield, GraduationCap, UserCheck, BookOpen, HelpCircle, AlertTriangle, 
+  Shield, GraduationCap, UserCheck, BookOpen, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle
 } from "lucide-react";
