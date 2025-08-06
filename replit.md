@@ -32,6 +32,12 @@ Note on concurrent work:
 - Solution: Direct window width check (< 768px) instead of relying on useDeviceType hook
 - Result: Logo click on mobile now correctly navigates to /mobile-home page
 
+**LOGIN IMPROVEMENTS (Aug 6, 2025):**
+- ✅ ADDED: Case-insensitive username login
+- Users can now log in with any case variation (e.g., "admin", "Admin", "ADMIN")
+- Implementation: Using `ilike` comparison in login endpoint for case-insensitive matching
+- Admin credentials remain: username="admin" (any case), password="password"
+
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
 - **Note**: The dev URL changes when the workspace restarts, always check console logs for the current URL

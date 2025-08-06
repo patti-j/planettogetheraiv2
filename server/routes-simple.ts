@@ -201,9 +201,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const { username, password } = req.body;
       console.log("Login attempt for:", username);
       
+      // Use case-insensitive comparison for username
       const users = await db.select()
         .from(schema.users)
-        .where(eq(schema.users.username, username))
+        .where(ilike(schema.users.username, username))
         .limit(1);
       
       if (users.length === 0) {
