@@ -161,7 +161,7 @@ export default function ConstraintsManagement() {
 
   // Mutations
   const drumAnalysisMutation = useMutation({
-    mutationFn: () => apiRequest("/api/toc/drums/analyze", "POST"),
+    mutationFn: () => apiRequest("POST", "/api/toc/drums/analyze"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/toc/drums"] });
       queryClient.invalidateQueries({ queryKey: ["/api/toc/drums/history"] });
@@ -174,7 +174,7 @@ export default function ConstraintsManagement() {
 
   const drumDesignationMutation = useMutation({
     mutationFn: (data: z.infer<typeof drumDesignationSchema>) => 
-      apiRequest("/api/toc/drums/designate", "POST", data),
+      apiRequest("POST", "/api/toc/drums/designate", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/toc/drums"] });
       queryClient.invalidateQueries({ queryKey: ["/api/toc/drums/history"] });
@@ -189,9 +189,9 @@ export default function ConstraintsManagement() {
   const bufferMutation = useMutation({
     mutationFn: (data: z.infer<typeof bufferFormSchema> & { id?: number }) => {
       if (data.id) {
-        return apiRequest(`/api/toc/buffers/${data.id}`, "PATCH", data);
+        return apiRequest("PATCH", `/api/toc/buffers/${data.id}`, data);
       }
-      return apiRequest("/api/toc/buffers", "POST", data);
+      return apiRequest("POST", "/api/toc/buffers", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/toc/buffers"] });
@@ -205,7 +205,7 @@ export default function ConstraintsManagement() {
   });
 
   const deleteBufferMutation = useMutation({
-    mutationFn: (id: number) => apiRequest(`/api/toc/buffers/${id}`, "DELETE"),
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/toc/buffers/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/toc/buffers"] });
       toast({

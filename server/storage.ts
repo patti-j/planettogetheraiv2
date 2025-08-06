@@ -13137,6 +13137,29 @@ export class DatabaseStorage implements IStorage {
       .limit(100);
   }
 
+  async getDrumAnalysisHistory(): Promise<any[]> {
+    const analysis = await db
+      .select({
+        id: drumAnalysisHistory.id,
+        analysisDate: drumAnalysisHistory.analysisDate,
+        analysisType: drumAnalysisHistory.analysisType,
+        analyzedBy: sql`1`.as('analyzedBy'),
+        drumResourceId: drumAnalysisHistory.resourceId,
+        resourceName: resources.name,
+        bottleneckScore: drumAnalysisHistory.bottleneckScore,
+        utilizationPercent: drumAnalysisHistory.utilizationPercentage,
+        operationCount: sql`0`.as('operationCount'),
+        totalDuration: sql`0`.as('totalDuration'),
+        recommendations: drumAnalysisHistory.recommendation
+      })
+      .from(drumAnalysisHistory)
+      .leftJoin(resources, eq(drumAnalysisHistory.resourceId, resources.id))
+      .orderBy(desc(drumAnalysisHistory.analysisDate))
+      .limit(50);
+
+    return analysis;
+  }
+
   async runDrumAnalysis(): Promise<{
     analyzed: number;
     identified: number;
@@ -13303,8 +13326,9 @@ export class DatabaseStorage implements IStorage {
       .update(resources)
       .set({ 
         isDrum: true,
-        drumUpdatedAt: new Date(),
-        drumUpdatedBy: 'User'
+        drumDesignationDate: new Date(),
+        drumDesignationReason: reason || 'Manual designation',
+        drumDesignationMethod: 'manual'
       })
       .where(eq(resources.id, resourceId))
       .returning();
@@ -13316,24 +13340,11 @@ export class DatabaseStorage implements IStorage {
     // Record the drum designation in history
     await db.insert(drumAnalysisHistory).values({
       analysisType: 'manual',
-      resourcesAnalyzed: 1,
-      drumsIdentified: 1,
-      drumsUpdated: 1,
-      analysisMetrics: {
-        resourceId,
-        resourceName: updatedResource.name,
-        drumType,
-        reason: reason || 'Manual designation',
-        designatedBy: userId || 1
-      },
-      recommendations: [{
-        resourceId,
-        resourceName: updatedResource.name,
-        score: 100,
-        recommendation: reason || `Manually designated as ${drumType} drum`
-      }],
-      performedBy: 'User',
-      analysisStatus: 'completed'
+      resourceId: resourceId,
+      utilizationPercentage: '95',
+      bottleneckScore: '100',
+      recommendation: reason || `Manually designated as ${drumType} drum`,
+      isCurrentBottleneck: true
     });
 
     return {
@@ -13343,7 +13354,7 @@ export class DatabaseStorage implements IStorage {
       isDrum: true,
       isManual: true,
       drumType,
-      designatedAt: updatedResource.drumUpdatedAt,
+      designatedAt: updatedResource.drumDesignationDate,
       designatedBy: userId || 1,
       reason: reason || 'Manual designation'
     };
