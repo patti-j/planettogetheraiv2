@@ -433,37 +433,7 @@ export default function TopMenu() {
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                <div
-                  className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const isMobileDevice = window.innerWidth < 768;
-                    console.log('🔴 LOGO CLICKED - window width:', window.innerWidth);
-                    console.log('🔴 Is mobile device:', isMobileDevice);
-                    console.log('🔴 Current location:', location);
-                    const targetPath = isMobileDevice ? "/mobile-home" : "/";
-                    console.log('🔴 Target path:', targetPath);
-                    console.log('🔴 Closing menu and navigating...');
-                    setMenuOpen(false);
-                    // Force navigation with a small delay to ensure menu closes first
-                    setTimeout(() => {
-                      console.log('🔴 Actually navigating to:', targetPath);
-                      setLocation(targetPath);
-                    }, 100);
-                  }}
-                >
-                  <img 
-                    src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
-                    alt="PlanetTogether" 
-                    className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
-                    onError={(e) => {
-                      console.error('Logo image failed to load');
-                      // Hide the image element if it fails to load
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
+                {/* Logo removed to prevent overlap with close button */}
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
