@@ -597,7 +597,10 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[90vh] overflow-y-auto z-[100000]"
+        style={{ zIndex: 100000 }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -1220,6 +1223,13 @@ export function UserProfileDialog({ open: externalOpen, onOpenChange: externalOn
   // Use external state if provided, otherwise use internal state
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = externalOnOpenChange || setInternalOpen;
+
+  console.log('🎯 UserProfileDialog state check:', {
+    externalOpen,
+    internalOpen,
+    isOpen,
+    hasExternalOnChange: !!externalOnOpenChange
+  });
 
   return (
     <>
