@@ -383,6 +383,7 @@ export default function TopMenu() {
       <FloatingHamburgerMenu
         onToggle={(newState) => {
           console.log('Hamburger menu toggled, new state:', newState);
+          console.log('Previous menuOpen state:', menuOpen);
           setMenuOpen(newState);
         }}
         isOpen={menuOpen}
