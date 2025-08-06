@@ -391,9 +391,9 @@ export default function TopMenu() {
         isOpen={menuOpen}
       />
       
-      {/* Persistent Theme Toggle - Always visible except in mobile view - positioned to avoid hamburger menu */}
+      {/* Persistent Theme Toggle - Always visible except in mobile view - positioned to the left of hamburger menu */}
       {!menuOpen && currentView !== "mobile" && (
-        <div className="fixed top-4 right-16 z-50">
+        <div className="fixed top-4 right-20 z-50">
           <ThemeToggle />
         </div>
       )}
