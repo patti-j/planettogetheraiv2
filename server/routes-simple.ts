@@ -52,34 +52,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
     try {
       const authHeader = req.headers.authorization;
       
+      // SECURITY FIX: Return 401 for unauthenticated requests
+      // Never return demo_user by default as it allows unauthorized access
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.json({
-          id: "demo_user",
-          username: "demo_user", 
-          email: "demo@example.com",
-          firstName: "Demo",
-          lastName: "User",
-          isActive: true,
-          roles: [{
-            id: 2,
-            name: "Production Scheduler",
-            description: "Production Scheduler with basic permissions",
-            permissions: [
-              { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
-              { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
-              { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
-              { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
-              { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
-              { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
-              { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
-              { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
-              { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
-              { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
-              { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
-              { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
-            ]
-          }]
-        });
+        return res.status(401).json({ message: "Not authenticated" });
       }
       
       const token = authHeader.replace('Bearer ', '');
@@ -160,35 +136,9 @@ export function registerSimpleRoutes(app: express.Application): Server {
         }
       }
       
-      // Default fallback
-      console.log("Falling back to demo user - token did not match expected pattern or user lookup failed");
-      return res.json({
-        id: "demo_user",
-        username: "demo_user", 
-        email: "demo@example.com",
-        firstName: "Demo",
-        lastName: "User",
-        isActive: true,
-        roles: [{
-          id: 2,
-          name: "Production Scheduler",
-          description: "Production Scheduler with basic permissions",
-          permissions: [
-            { id: 1, name: "schedule-view", feature: "schedule", action: "view", description: "View schedules" },
-            { id: 2, name: "schedule-create", feature: "schedule", action: "create", description: "Create schedules" },
-            { id: 3, name: "schedule-edit", feature: "schedule", action: "edit", description: "Edit schedules" },
-            { id: 4, name: "schedule-delete", feature: "schedule", action: "delete", description: "Delete schedules" },
-            { id: 5, name: "scheduling-optimizer-view", feature: "scheduling-optimizer", action: "view", description: "View scheduling optimizer" },
-            { id: 6, name: "shop-floor-view", feature: "shop-floor", action: "view", description: "View shop floor" },
-            { id: 7, name: "boards-view", feature: "boards", action: "view", description: "View boards" },
-            { id: 8, name: "erp-import-view", feature: "erp-import", action: "view", description: "View ERP import" },
-            { id: 9, name: "analytics-view", feature: "analytics", action: "view", description: "View analytics" },
-            { id: 10, name: "reports-view", feature: "reports", action: "view", description: "View reports" },
-            { id: 11, name: "ai-assistant-view", feature: "ai-assistant", action: "view", description: "Use AI assistant" },
-            { id: 12, name: "feedback-view", feature: "feedback", action: "view", description: "View feedback" }
-          ]
-        }]
-      });
+      // SECURITY FIX: Return 401 for invalid tokens instead of demo user
+      console.log("Authentication failed - token did not match expected pattern or user lookup failed");
+      return res.status(401).json({ message: "Invalid authentication token" });
     } catch (error) {
       console.error("Error in /api/auth/me:", error);
       return res.status(500).json({ message: "Internal server error" });

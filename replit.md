@@ -44,6 +44,12 @@ Note on concurrent work:
 - Solution: Clear auth token immediately at start of logout, before server requests
 - Result: Users properly see landing page after logout + refresh, complete session cleanup
 
+**CRITICAL SECURITY FIX (Aug 6, 2025):**
+- ✅ FIXED: Authentication bypass vulnerability allowing unauthenticated access to production scheduling
+- Root cause: /api/auth/me endpoint returning demo_user by default instead of 401 Unauthorized
+- Solution: Removed all demo_user fallbacks, now returns 401 for any unauthenticated request
+- Result: Unauthenticated users properly redirected to login page, no unauthorized access to protected routes
+
 **UI IMPROVEMENTS (Aug 6, 2025):**
 - ✅ MOVED: Desktop hamburger menu button to right side
 - Changed positioning from left-4 to right-4 in FloatingHamburgerMenu component
