@@ -26,6 +26,12 @@ Note on concurrent work:
 - ✅ All API endpoints receive correct authenticated user data with real database permissions
 - ✅ Complete access to schedule (view/create/edit/delete), analytics (view/create/edit), reports (view/create)
 
+**MOBILE NAVIGATION FIX COMPLETED (Aug 6, 2025):**
+- ✅ RESOLVED: Mobile logo navigation issue - was redirecting to production-schedule instead of mobile-home
+- Root cause: Race condition in device detection causing premature redirect on /mobile-home route
+- Solution: Direct window width check (< 768px) instead of relying on useDeviceType hook
+- Result: Logo click on mobile now correctly navigates to /mobile-home page
+
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
 - **Note**: The dev URL changes when the workspace restarts, always check console logs for the current URL
