@@ -55,8 +55,6 @@ const featureGroups = [
     bgColor: "bg-purple-50 dark:bg-purple-950/20",
     borderColor: "border-purple-200 dark:border-purple-800",
     features: [
-      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
-      { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
     ]
@@ -134,6 +132,8 @@ const featureGroups = [
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
+      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
+      { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "tenant-admin", action: "view", color: "bg-purple-600" }
     ]
   }
@@ -472,6 +472,23 @@ export default function TopMenu() {
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                {/* Moved buttons from right side - MobileViewToggle and Logout */}
+                <div className="flex items-center space-x-1">
+                  <MobileViewToggle />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      console.log("Logout button clicked");
+                      logout();
+                    }}
+                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 ring-2 ring-red-200"
+                    title="Logout"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </div>
+                
                 {/* User Profile Section */}
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
@@ -499,19 +516,6 @@ export default function TopMenu() {
                         onOpenChange={setUserProfileOpen}
                       />
                       <ThemeToggle />
-                      <MobileViewToggle />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          console.log("Logout button clicked");
-                          logout();
-                        }}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 ring-2 ring-red-200"
-                        title="Logout"
-                      >
-                        <LogOut className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 </div>
