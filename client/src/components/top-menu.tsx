@@ -390,14 +390,12 @@ export default function TopMenu() {
         }}
         isOpen={menuOpen}
       />
-      
       {/* Persistent Theme Toggle - Always visible except in mobile view - moved left to avoid hamburger overlap */}
       {!menuOpen && currentView !== "mobile" && (
         <div className="fixed top-3 left-3 z-50">
           <ThemeToggle />
         </div>
       )}
-
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
@@ -431,7 +429,7 @@ export default function TopMenu() {
             }}
           >
             {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Logo removed to prevent overlap with close button */}
               </div>
@@ -744,7 +742,7 @@ export default function TopMenu() {
               {!searchFilter.trim() && (
                 useCardLayout ? (
                 // Card layout for when content exceeds viewport
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {getVisibleGroups().map((group, groupIndex) => {
                     const isExpanded = expandedCategories.has(group.title);
                     const Icon = isExpanded ? ChevronDown : ChevronRight;
@@ -831,10 +829,10 @@ export default function TopMenu() {
                       </div>
                     );
                   })}
-                </div>
+                </div>)
               ) : (
                 // Expanded layout when content fits comfortably
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+                (<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                   {getVisibleGroups().map((group, groupIndex) => (
                     <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`}>
                       <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center uppercase tracking-wide">
@@ -895,7 +893,7 @@ export default function TopMenu() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div>)
                 )
               )}
             </div>
@@ -922,7 +920,6 @@ export default function TopMenu() {
           />
         </div>
       )}
-
       {/* Tour Selection Dialog */}
       <TourSelectionDialog 
         open={tourSelectionOpen} 
