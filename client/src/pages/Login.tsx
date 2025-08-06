@@ -235,6 +235,7 @@ export default function Login() {
                   placeholder="Enter username"
                   required
                   disabled={loading}
+                  autoComplete="username"
                 />
               </div>
 
@@ -252,6 +253,7 @@ export default function Login() {
                     required
                     disabled={loading}
                     className="pr-10"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
