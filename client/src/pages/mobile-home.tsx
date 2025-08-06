@@ -1552,9 +1552,21 @@ export default function MobileHomePage() {
             </div>
           </div>
 
-          {/* Right Actions - Removed duplicate buttons since hamburger menu provides all actions */}
+          {/* Right Actions - Library button restored */}
           <div className="flex items-center gap-2 flex-shrink-0 mr-10">
-            {/* All buttons removed - actions available in hamburger menu */}
+            <Button
+              onClick={() => {
+                const dialog = document.getElementById('library-dialog');
+                if (dialog) {
+                  dialog.style.display = 'flex';
+                }
+              }}
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 touch-manipulation"
+            >
+              <Library className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
