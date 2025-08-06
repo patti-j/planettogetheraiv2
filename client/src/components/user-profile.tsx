@@ -498,9 +498,13 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<UserProfile>) => {
-      return await apiRequest("PUT", `/api/auth/profile`, data);
+      console.log("Sending profile update request with data:", data);
+      const response = await apiRequest("PUT", `/api/auth/profile`, data);
+      console.log("Profile update response:", response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Profile update successful:", data);
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
@@ -510,10 +514,11 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
       setSelectedFile(null);
       setPreviewUrl(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error?.message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     },
@@ -674,9 +679,9 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
               <CardContent>
                 {profileLoading ? (
                   <div className="space-y-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                   </div>
                 ) : (
                   <form 

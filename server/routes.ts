@@ -275,6 +275,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not authenticated' });
       }
 
+      // Convert userId to number if it's a valid numeric string
+      let numericUserId: number;
+      if (typeof userId === 'string') {
+        numericUserId = parseInt(userId, 10);
+        if (isNaN(numericUserId)) {
+          console.log("Non-numeric user ID, cannot update profile:", userId);
+          return res.status(400).json({ message: 'Cannot update profile for demo users' });
+        }
+      } else {
+        numericUserId = userId;
+      }
+
+      console.log("Updating user with numeric ID:", numericUserId);
+
       // Extract profile data from request body
       const { 
         firstName, 
@@ -289,7 +303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user in database
       try {
-        const updatedUser = await storage.updateUser(userId, {
+        const updatedUser = await storage.updateUser(numericUserId, {
           firstName,
           lastName,
           email,
@@ -299,6 +313,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phoneNumber,
           avatar
         });
+
+        if (!updatedUser) {
+          console.error('No user returned after update');
+          return res.status(404).json({ message: 'User not found' });
+        }
 
         console.log("Profile updated successfully:", updatedUser);
 
