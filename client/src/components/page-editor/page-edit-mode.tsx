@@ -279,7 +279,7 @@ export default function PageEditMode({
         {/* Edit Mode Controls Bar - Only show when in edit mode */}
         {isEditMode && (
           <div className={`
-            fixed ${isMobile ? 'bottom-4 left-4' : 'top-4 left-4'} 
+            fixed ${isMobile ? 'bottom-4 right-4' : 'top-4 right-4'} 
             z-30 bg-white/95 backdrop-blur-sm border rounded-lg shadow-lg ring-2 ring-blue-500
             ${isMobile ? 'p-2' : 'p-2'}
           `}>
