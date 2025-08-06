@@ -76,6 +76,9 @@ Note on concurrent work:
 - ✅ ENHANCED: Theme toggle button visibility in light mode
 - Added borders and better positioning at right-16 to avoid hamburger menu collision
 - Button now clearly visible with proper contrast in both light and dark modes
+- ✅ FIXED: Theme button overlap with hamburger menu close button
+- Moved persistent theme toggle from left-6 to left-3 for better spacing
+- Prevents overlap between theme button and hamburger close button
 
 ## Development Environment
 - **Current Dev URL**: `https://61f90aef-5f5e-408c-ad3b-e3b748561a5b-00-32gbdm20d8sja.picard.replit.dev`
