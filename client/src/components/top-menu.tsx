@@ -466,6 +466,11 @@ export default function TopMenu() {
                     src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
                     alt="PlanetTogether" 
                     className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
+                    onError={(e) => {
+                      console.error('Logo image failed to load');
+                      // Hide the image element if it fails to load
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
                   />
                 </div>
               </div>
