@@ -232,6 +232,7 @@ function Router() {
   if (deviceType === 'mobile' && mobileRoutes.includes(location)) {
     return (
       <div className="h-screen bg-gray-50">
+        <TopMenu />
         <SmartHomeWrapper />
       </div>
     );
@@ -554,7 +555,12 @@ function Router() {
               <DashboardsPage />
             </ProtectedRoute>
           </Route>
-          <Route path="/mobile" component={MobileHomePage} />
+          <Route path="/mobile" component={() => (
+            <>
+              <TopMenu />
+              <MobileHomePage />
+            </>
+          )} />
           <Route path="/mobile-home" component={() => {
             // Check window width directly to avoid race condition
             const isMobile = window.innerWidth < 768;
@@ -562,7 +568,12 @@ function Router() {
               // Only redirect if we're actually on desktop
               return <Redirect to="/production-schedule" />;
             }
-            return <MobileHomePage />;
+            return (
+              <>
+                <TopMenu />
+                <MobileHomePage />
+              </>
+            );
           }} />
           <Route path="/widgets/:id" component={MobileWidgetView} />
           <Route path="/dashboards/:id" component={MobileDashboardView} />

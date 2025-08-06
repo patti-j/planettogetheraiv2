@@ -1,6 +1,7 @@
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useLocation, Redirect } from "wouter";
 import MobileHomePage from "@/pages/mobile-home";
+import TopMenu from "@/components/top-menu";
 
 export function SmartHomeWrapper() {
   const deviceType = useDeviceType();
@@ -15,7 +16,12 @@ export function SmartHomeWrapper() {
     // Double-check that we're actually on mobile before loading mobile page
     console.log('Loading MobileHomePage for mobile device');
     // Pass the location as a prop so mobile home can react to route changes
-    return <MobileHomePage key={location} />;
+    return (
+      <>
+        <TopMenu />
+        <MobileHomePage key={location} />
+      </>
+    );
   }
   
   // On desktop, redirect root route to production schedule
