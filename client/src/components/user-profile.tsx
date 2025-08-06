@@ -523,6 +523,8 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
       queryClient.invalidateQueries({ queryKey: [`/api/auth/me`] });
       setSelectedFile(null);
       setPreviewUrl(null);
+      // Close the dialog after successful save
+      onOpenChange(false);
     },
     onError: (error: any) => {
       console.error("Profile update error:", error);
@@ -582,12 +584,19 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
       lastName: formData.get('lastName') as string,
       email: formData.get('email') as string,
       username: formData.get('username') as string,
-      jobTitle: formData.get('jobTitle') as string,
-      department: formData.get('department') as string,
-      phoneNumber: formData.get('phoneNumber') as string,
+      jobTitle: formData.get('jobTitle') as string || '',
+      department: formData.get('department') as string || '',
+      phoneNumber: formData.get('phoneNumber') as string || '',
     };
 
-    console.log("Form data collected:", data);
+    // Debug log to see exact values being sent
+    console.log("Form data collected with values:", {
+      ...data,
+      jobTitleValue: formData.get('jobTitle'),
+      departmentValue: formData.get('department'),
+      phoneNumberValue: formData.get('phoneNumber'),
+    });
+    
     updateProfileMutation.mutate(data);
   };
 

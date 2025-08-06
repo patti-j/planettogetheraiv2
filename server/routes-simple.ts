@@ -371,25 +371,28 @@ export function registerSimpleRoutes(app: express.Application): Server {
       const userId = req.user?.id;
       const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId;
       
-      // Map from camelCase (API) to snake_case (database)
-      const updateData: any = {};
+      console.log("Profile update request body:", req.body);
       
-      if (req.body.firstName !== undefined) updateData.first_name = req.body.firstName;
-      if (req.body.lastName !== undefined) updateData.last_name = req.body.lastName;
+      // Build update data using Drizzle field references directly
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+      
+      if (req.body.firstName !== undefined) updateData.firstName = req.body.firstName;
+      if (req.body.lastName !== undefined) updateData.lastName = req.body.lastName;
       if (req.body.email !== undefined) updateData.email = req.body.email;
       if (req.body.username !== undefined) updateData.username = req.body.username;
-      if (req.body.jobTitle !== undefined) updateData.job_title = req.body.jobTitle;
+      if (req.body.jobTitle !== undefined) updateData.jobTitle = req.body.jobTitle;
       if (req.body.department !== undefined) updateData.department = req.body.department;
-      if (req.body.phoneNumber !== undefined) updateData.phone_number = req.body.phoneNumber;
+      if (req.body.phoneNumber !== undefined) updateData.phoneNumber = req.body.phoneNumber;
       if (req.body.avatar !== undefined) updateData.avatar = req.body.avatar;
+      
+      console.log("Update data being sent to database:", updateData);
       
       // Update user in database
       const result = await db
         .update(schema.users)
-        .set({
-          ...updateData,
-          updated_at: new Date()
-        })
+        .set(updateData)
         .where(eq(schema.users.id, numericUserId))
         .returning();
       
