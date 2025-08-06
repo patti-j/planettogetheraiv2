@@ -399,7 +399,7 @@ export default function TopMenu() {
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 z-50 bg-black bg-opacity-25"
+          className="fixed inset-0 z-[9998] bg-black bg-opacity-25"
           style={{ touchAction: 'none' }}
           onTouchStart={(e) => {
             e.preventDefault();
@@ -416,7 +416,7 @@ export default function TopMenu() {
           }}
         >
           <div 
-            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-screen overflow-hidden flex flex-col z-[9998]"
             style={{ touchAction: 'pan-y' }}
             onTouchStart={(e) => {
               e.stopPropagation();
