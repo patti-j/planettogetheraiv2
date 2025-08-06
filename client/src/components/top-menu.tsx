@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -376,6 +376,20 @@ export default function TopMenu() {
   };
 
   const { currentView } = useViewMode();
+
+  // Add/remove body class to communicate menu state globally
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.classList.add('hamburger-menu-open');
+    } else {
+      document.body.classList.remove('hamburger-menu-open');
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('hamburger-menu-open');
+    };
+  }, [menuOpen]);
 
   return (
     <>
