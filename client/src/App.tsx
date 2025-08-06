@@ -231,15 +231,11 @@ function Router() {
   // This ensures mobile users always start at the mobile home page
   if (deviceType === 'mobile' && mobileRoutes.includes(location)) {
     console.log('Mobile user accessing desktop route, redirecting to mobile-home');
-    return (
-      <>
-        <TopMenu />
-        <Redirect to="/mobile-home" />
-      </>
-    );
+    return <Redirect to="/mobile-home" />;
   }
 
-  if (isLoading && !isTourActive) {
+  // Skip loading screen for mobile users - they'll get redirected immediately
+  if (isLoading && !isTourActive && deviceType !== 'mobile') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -556,12 +552,7 @@ function Router() {
               <DashboardsPage />
             </ProtectedRoute>
           </Route>
-          <Route path="/mobile" component={() => (
-            <>
-              <TopMenu />
-              <MobileHomePage />
-            </>
-          )} />
+          <Route path="/mobile" component={MobileHomePage} />
           <Route path="/mobile-home" component={() => {
             // Check window width directly to avoid race condition
             const isMobile = window.innerWidth < 768;
@@ -569,12 +560,7 @@ function Router() {
               // Only redirect if we're actually on desktop
               return <Redirect to="/production-schedule" />;
             }
-            return (
-              <>
-                <TopMenu />
-                <MobileHomePage />
-              </>
-            );
+            return <MobileHomePage />;
           }} />
           <Route path="/widgets/:id" component={MobileWidgetView} />
           <Route path="/dashboards/:id" component={MobileDashboardView} />
