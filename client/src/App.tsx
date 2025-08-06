@@ -526,6 +526,11 @@ function Router() {
               <ProductionCockpit />
             </ProtectedRoute>
           </Route>
+          <Route path="/production-cockpit">
+            <ProtectedRoute feature="production-cockpit" action="view">
+              <ProductionCockpit />
+            </ProtectedRoute>
+          </Route>
           <Route path="/scheduling-history">
             <ProtectedRoute feature="optimization-studio" action="view">
               <SchedulingHistory />
