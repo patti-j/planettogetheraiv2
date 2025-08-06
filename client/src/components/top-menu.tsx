@@ -497,7 +497,12 @@ export default function TopMenu() {
                     type="text"
                     placeholder="Search"
                     value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      console.log('=== MOBILE SEARCH INPUT CHANGED ===');
+                      console.log('New search value:', newValue);
+                      setSearchFilter(newValue);
+                    }}
                     className="pl-9 pr-8 py-2 w-full text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                   {searchFilter && (
@@ -529,7 +534,12 @@ export default function TopMenu() {
                     type="text"
                     placeholder="Search menu items..."
                     value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      console.log('=== SEARCH INPUT CHANGED ===');
+                      console.log('New search value:', newValue);
+                      setSearchFilter(newValue);
+                    }}
                     className="pl-9 pr-4 py-2 w-full text-sm border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   />
                   {searchFilter && (
@@ -656,7 +666,12 @@ export default function TopMenu() {
               )}
 
               {/* Search Results Section - Show individual menu items when searching */}
-              {searchFilter.trim() && getSearchResults().length > 0 && (
+              {searchFilter.trim() && getSearchResults().length > 0 && (() => {
+                console.log('=== RENDERING SEARCH RESULTS ===');
+                console.log('Search filter:', searchFilter);
+                console.log('Results count:', getSearchResults().length);
+                return true;
+              })() && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
@@ -708,7 +723,12 @@ export default function TopMenu() {
               )}
               
               {/* No Results Message */}
-              {searchFilter.trim() && getSearchResults().length === 0 && (
+              {searchFilter.trim() && getSearchResults().length === 0 && (() => {
+                console.log('=== NO SEARCH RESULTS ===');
+                console.log('Search filter:', searchFilter);
+                console.log('All searchable items:', getAllSearchableItems().length);
+                return true;
+              })() && (
                 <div className="p-8 text-center">
                   <Search className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3" />
                   <p className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-1">
