@@ -39,7 +39,11 @@ export function FloatingHamburgerMenu({
         }}
         variant="ghost"
         size="icon"
-        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md border border-gray-200 dark:border-gray-700"
+        className={`shadow-md border transition-all duration-200 ${
+          isOpen 
+            ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
+            : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-500'
+        }`}
         aria-label={isOpen ? "Close menu" : "Open menu"}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

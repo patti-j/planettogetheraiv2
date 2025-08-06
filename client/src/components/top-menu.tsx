@@ -433,15 +433,6 @@ export default function TopMenu() {
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                {/* Close Button - moved to left side */}
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setMenuOpen(false)}
-                  className="p-1.5 hover:bg-gray-100 flex-shrink-0 rounded-lg"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
                 <div
                   className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={(e) => {
