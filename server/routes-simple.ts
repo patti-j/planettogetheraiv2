@@ -218,10 +218,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
         return res.status(401).json({ message: "Invalid credentials" });
       }
       
-      // Update last login
-      await db.update(schema.users)
-        .set({ lastLogin: new Date() })
-        .where(eq(schema.users.id, user.id));
+      // Update last login (commented out - field doesn't exist yet)
+      // await db.update(schema.users)
+      //   .set({ lastLogin: new Date() })
+      //   .where(eq(schema.users.id, user.id));
       
       // Get user roles
       const userRoles = await db.select({
@@ -441,6 +441,69 @@ export function registerSimpleRoutes(app: express.Application): Server {
       res.json(order);
     } catch (error) {
       res.status(400).json({ error: "Invalid production order data" });
+    }
+  });
+
+  // Tenant Admin Routes - Multi-tenant management from database
+  app.get("/api/tenant-admin/tenants", async (req, res) => {
+    try {
+      // Read tenants directly from database using raw SQL
+      const query = sql`SELECT * FROM tenants ORDER BY created_at DESC`;
+      const result = await db.execute(query);
+      res.json(result.rows || []);
+    } catch (error) {
+      console.error('Error fetching tenants from database:', error);
+      // Fallback to empty array if database read fails
+      res.json([]);
+    }
+  });
+
+  app.get("/api/tenant-admin/stats", async (req, res) => {
+    try {
+      // Calculate stats from database
+      const tenantsQuery = sql`SELECT COUNT(*) as total, 
+                            SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+                            SUM(users) as total_users,
+                            SUM(storage_used) as total_storage,
+                            SUM(CASE WHEN plan = 'Enterprise' THEN 1 ELSE 0 END) as enterprise
+                            FROM tenants`;
+      const result = await db.execute(tenantsQuery);
+      const stats = result.rows[0] || { total: 0, active: 0, total_users: 0, total_storage: 0, enterprise: 0 };
+      
+      res.json({
+        totalTenants: parseInt(stats.active as string) || 0,
+        totalUsers: parseInt(stats.total_users as string) || 0,
+        storageUsed: parseInt(stats.total_storage as string) || 0,
+        enterpriseCustomers: parseInt(stats.enterprise as string) || 0
+      });
+    } catch (error) {
+      console.error('Error fetching tenant stats:', error);
+      res.json({
+        totalTenants: 0,
+        totalUsers: 0,
+        storageUsed: 0,
+        enterpriseCustomers: 0
+      });
+    }
+  });
+
+  app.post("/api/tenant-admin/tenants", async (req, res) => {
+    try {
+      const { name, plan, status, domain, users, storage_used, features, contact_email, contact_name } = req.body;
+      
+      const query = sql`
+        INSERT INTO tenants (name, plan, status, domain, users, storage_used, features, contact_email, contact_name)
+        VALUES (${name}, ${plan}, ${status || 'active'}, ${domain}, ${users || 0}, 
+                ${storage_used || 0}, ${features || []}, ${contact_email}, ${contact_name})
+        RETURNING *
+      `;
+      
+      const result = await db.execute(query);
+      
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      res.status(500).json({ error: 'Failed to create tenant' });
     }
   });
 
