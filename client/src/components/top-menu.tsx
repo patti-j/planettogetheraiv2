@@ -441,12 +441,17 @@ export default function TopMenu() {
                 >
                   <X className="w-5 h-5" />
                 </Button>
-                <img 
-                  src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
-                  alt="PlanetTogether" 
-                  className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
-                />
-                <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
+                <Link href={currentView === "mobile" ? "/mobile-home" : "/"} 
+                  className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <img 
+                    src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
+                    alt="PlanetTogether" 
+                    className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 object-contain"
+                  />
+                  <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 truncate">PlanetTogether</h1>
+                </Link>
               </div>
               
               <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
