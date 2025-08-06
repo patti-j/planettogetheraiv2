@@ -63,6 +63,7 @@ interface UserSecret {
   isActive: boolean;
   lastUsed?: string;
   expiresAt?: string;
+  encryptedValue?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,17 +77,14 @@ function SecretsManagementTab() {
   const queryClient = useQueryClient();
 
   // Fetch user secrets
-  const { data: secrets = [], isLoading: secretsLoading } = useQuery({
+  const { data: secrets = [], isLoading: secretsLoading } = useQuery<UserSecret[]>({
     queryKey: ['/api/user-secrets'],
   });
 
   // Create secret mutation
   const createSecretMutation = useMutation({
     mutationFn: async (data: { name: string; key: string; description?: string; category: string; encryptedValue: string }) => {
-      return apiRequest('/api/user-secrets', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('POST', '/api/user-secrets', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
@@ -108,10 +106,7 @@ function SecretsManagementTab() {
   // Update secret mutation
   const updateSecretMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<UserSecret> }) => {
-      return apiRequest(`/api/user-secrets/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      });
+      return apiRequest('PUT', `/api/user-secrets/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
@@ -133,9 +128,7 @@ function SecretsManagementTab() {
   // Delete secret mutation
   const deleteSecretMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/user-secrets/${id}`, {
-        method: 'DELETE',
-      });
+      return apiRequest('DELETE', `/api/user-secrets/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-secrets'] });
