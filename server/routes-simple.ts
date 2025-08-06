@@ -331,27 +331,78 @@ export function registerSimpleRoutes(app: express.Application): Server {
   });
 
   // User Preferences
-  app.get("/api/user-preferences/:userId", async (req, res) => {
+  app.get("/api/user-preferences/:userId", requireAuth, async (req, res) => {
     try {
-      const { userId } = req.params;
-      // Return empty preferences for now - this will prevent the JSON error
-      const preferences = {
-        dashboardLayout: {
-          recentPages: [],
-          lastVisitedRoute: null
-        }
-      };
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+
+      // Query user preferences from database
+      const prefsResult = await db.select().from(schema.userPreferences).where(eq(schema.userPreferences.userId, userId));
+      
+      let preferences;
+      if (prefsResult.length === 0) {
+        // Create default preferences if they don't exist
+        const defaultPreferences = {
+          userId,
+          dashboardLayout: {
+            recentPages: [],
+            lastVisitedRoute: null
+          }
+        };
+        
+        const [newPrefs] = await db
+          .insert(schema.userPreferences)
+          .values(defaultPreferences)
+          .returning();
+        
+        preferences = newPrefs;
+      } else {
+        preferences = prefsResult[0];
+      }
+
       res.json(preferences);
     } catch (error) {
+      console.error("Error fetching user preferences:", error);
       res.status(500).json({ error: "Failed to fetch user preferences" });
     }
   });
 
-  app.put("/api/user-preferences", async (req, res) => {
+  app.put("/api/user-preferences", requireAuth, async (req, res) => {
     try {
-      // Just acknowledge the update for now
-      res.json({ success: true });
+      console.log("User preferences update request - User:", req.user);
+      console.log("User preferences update request - Body:", req.body);
+      
+      const userId = req.user?.id;
+      if (!userId) {
+        console.error("No user ID found in request");
+        return res.status(401).json({ error: "User not authenticated" });
+      }
+      
+      // Clean the request body to only include fields that should be updated
+      const { id, createdAt, updatedAt, ...updateData } = req.body;
+      
+      // Upsert user preferences
+      const [preferences] = await db
+        .insert(schema.userPreferences)
+        .values({
+          userId,
+          ...updateData
+        })
+        .onConflictDoUpdate({
+          target: schema.userPreferences.userId,
+          set: {
+            ...updateData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      console.log("User preferences updated successfully:", preferences);
+      res.json(preferences);
     } catch (error) {
+      console.error("Error updating user preferences:", error);
       res.status(500).json({ error: "Failed to update user preferences" });
     }
   });
