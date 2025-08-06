@@ -595,11 +595,12 @@ export default function Analytics() {
   return (
     <>
       {/* Maximize button positioned to avoid hamburger menu */}
-      <div className="fixed top-2 right-16 z-50">
+      <div className="fixed right-16 z-50 top-3 md:top-4">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setIsMaximized(!isMaximized)}
+          className="shadow-md border"
         >
           {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>

@@ -161,7 +161,7 @@ export default function Boards() {
       {!isMobile && (
         <button
           onClick={handleToggleMaximize}
-          className="fixed top-2 right-16 z-10 bg-white shadow-md hover:shadow-lg border border-gray-200 rounded-md p-2 transition-all duration-200"
+          className="fixed right-16 z-10 top-3 md:top-4 bg-white shadow-md hover:shadow-lg border border-gray-200 rounded-md p-2 transition-all duration-200"
           title={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
