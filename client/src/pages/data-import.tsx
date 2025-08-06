@@ -27,6 +27,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigation } from '@/contexts/NavigationContext';
 
 interface ImportStatus {
   type: string;
@@ -41,6 +42,12 @@ function DataImport() {
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
   const [recommendedDataTypes, setRecommendedDataTypes] = useState<string[]>([]);
   const [onboardingFeatures, setOnboardingFeatures] = useState<string[]>([]);
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/data-import', 'Master Data Setup', 'Database');
+  }, [addRecentPage]);
   
   // Smart filtering state
   const [showAllDataTypes, setShowAllDataTypes] = useState(false);

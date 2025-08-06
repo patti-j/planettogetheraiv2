@@ -45,6 +45,7 @@ import {
 import { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 interface CustomerOrder {
   id: number;
@@ -122,6 +123,12 @@ export default function CustomerService() {
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [contactNote, setContactNote] = useState("");
   const { toast } = useToast();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/customer-service', 'Customer Service', 'Headphones');
+  }, [addRecentPage]);
 
   // Fetch production data for integration
   const { data: jobs = [] } = useQuery<Job[]>({

@@ -53,6 +53,7 @@ import type { ProductionOrder, DiscreteOperation, Resource, Capability, Optimiza
 import { ScheduleEvaluationSystem } from '@/components/schedule-evaluation-system';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { usePermissions } from '@/hooks/useAuth';
+import { useNavigation } from '@/contexts/NavigationContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { AlgorithmFeedbackButton } from '@/components/algorithm-feedback-button';
@@ -452,6 +453,12 @@ const SchedulingOptimizer: React.FC = () => {
 
 
   const { hasPermission } = usePermissions();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/scheduling-optimizer', 'Scheduling Optimizer', 'Sparkles');
+  }, [addRecentPage]);
 
   // Auto-scroll to evaluation system when it becomes visible
   useEffect(() => {

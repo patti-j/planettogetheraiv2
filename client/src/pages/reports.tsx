@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 import { 
   Plus, 
@@ -58,6 +59,12 @@ export default function Reports() {
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
   const { isMaxOpen } = useMaxDock();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/reports', 'Reports', 'FileText');
+  }, [addRecentPage]);
 
   const { data: reportConfigs = [] } = useQuery({
     queryKey: ['/api/report-configs'],

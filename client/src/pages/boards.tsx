@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useNavigation } from "@/contexts/NavigationContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -52,6 +53,12 @@ export default function Boards() {
   const [aiPrompt, setAiPrompt] = useState("");
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/boards', 'Boards', 'Columns3');
+  }, [addRecentPage]);
 
   // AI Event Listeners for form opening
   useEffect(() => {

@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useNavigation } from "@/contexts/NavigationContext";
 import type { Resource, Capability } from "@shared/schema";
 
 interface AnalyticsWidget {
@@ -264,6 +265,12 @@ export default function Analytics() {
   const queryClient = useQueryClient();
   const isMobile = useMobile();
   const { isMaxOpen } = useMaxDock();
+  const { addRecentPage } = useNavigation();
+
+  // Register this page in recent pages when component mounts
+  useEffect(() => {
+    addRecentPage('/analytics', 'Analytics', 'BarChart3');
+  }, [addRecentPage]);
 
   // AI Event Listeners for analytics actions
   useEffect(() => {
