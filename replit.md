@@ -51,8 +51,8 @@ Note on concurrent work:
 - Result: Unauthenticated users properly redirected to login page, no unauthorized access to protected routes
 
 **UI IMPROVEMENTS (Aug 6, 2025):**
-- ✅ MOVED: Desktop hamburger menu button to right side (right-20 to avoid overlap)
-- Positioned at right-20 to avoid conflicts with refresh buttons (right-2) and maximize buttons (right-16)
+- ✅ MOVED: Desktop hamburger menu button to right side (right-32 to avoid all overlaps)
+- Positioned at right-32 to completely avoid conflicts with Export, Refresh, and Maximize buttons on all pages
 - Provides better UI balance and follows modern design conventions
 - ✅ UNIFIED: Single hamburger menu for all devices
 - Removed mobile-specific hamburger menu, desktop menu now shows on all screen sizes
