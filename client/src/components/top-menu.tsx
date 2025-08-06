@@ -143,6 +143,11 @@ export default function TopMenu() {
   const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  
+  // Debug userProfileOpen state changes
+  useEffect(() => {
+    console.log('userProfileOpen state changed to:', userProfileOpen);
+  }, [userProfileOpen]);
   const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [useCardLayout, setUseCardLayout] = useState(false);
@@ -420,17 +425,24 @@ export default function TopMenu() {
             bottom: 0
           }}
           onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            // Only prevent touch events to stop background scrolling
+            if (e.type === 'touchstart') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
           onTouchMove={(e) => {
             // Prevent background scrolling when touching outside menu content
-            e.preventDefault();
-            e.stopPropagation();
+            if (e.type === 'touchmove') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
           onTouchEnd={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            if (e.type === 'touchend') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
         >
           <div 
@@ -478,9 +490,11 @@ export default function TopMenu() {
                   <div className="flex items-center space-x-2">
                     <Avatar 
                       className="w-6 h-6 sm:w-8 sm:h-8 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all duration-200"
-                      onClick={() => {
-                        console.log('🎯 Avatar clicked! Opening profile dialog...');
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('🎯 Avatar clicked! Opening profile dialog...', { userProfileOpen });
                         setUserProfileOpen(true);
+                        console.log('After setting userProfileOpen to true');
                       }}
                     >
                       <AvatarFallback className="bg-blue-500 text-white text-xs sm:text-sm">
@@ -489,9 +503,11 @@ export default function TopMenu() {
                     </Avatar>
                     <div 
                       className="hidden md:block text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors duration-200"
-                      onClick={() => {
-                        console.log('🎯 Name clicked! Opening profile dialog...');
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('🎯 Name clicked! Opening profile dialog...', { userProfileOpen });
                         setUserProfileOpen(true);
+                        console.log('After setting userProfileOpen to true');
                       }}
                     >
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.firstName || user?.username}</p>
@@ -500,7 +516,10 @@ export default function TopMenu() {
                     <div className="flex items-center space-x-1">
                       <UserProfileDialog 
                         open={userProfileOpen}
-                        onOpenChange={setUserProfileOpen}
+                        onOpenChange={(newOpen) => {
+                          console.log('UserProfileDialog onOpenChange called with:', newOpen);
+                          setUserProfileOpen(newOpen);
+                        }}
                       />
                       <ThemeToggle />
                       {/* Close Menu Button - Red X since menu is open */}
