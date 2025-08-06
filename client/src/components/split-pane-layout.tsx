@@ -228,7 +228,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
               </div>
             </div>
             <div className={`absolute inset-0 transition-opacity duration-300 ${!isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-              <div className="h-full overflow-auto">
+              <div className="h-full">
                 {children}
               </div>
             </div>
@@ -294,7 +294,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
             </div>
           </div>
           <div className={`absolute inset-0 transition-opacity duration-300 ${!isCanvasVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            <div className="h-full overflow-auto">
+            <div className="h-full">
               {children}
             </div>
           </div>
