@@ -555,7 +555,14 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/mobile" component={MobileHomePage} />
-          <Route path="/mobile-home" component={MobileHomePage} />
+          <Route path="/mobile-home" component={() => {
+            // Redirect desktop users away from mobile-home to production schedule
+            const deviceType = useDeviceType();
+            if (deviceType === 'desktop') {
+              return <Redirect to="/production-schedule" />;
+            }
+            return <MobileHomePage />;
+          }} />
           <Route path="/widgets/:id" component={MobileWidgetView} />
           <Route path="/dashboards/:id" component={MobileDashboardView} />
           <Route path="/product-development">
