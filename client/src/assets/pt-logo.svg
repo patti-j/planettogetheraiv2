@@ -1,0 +1,13 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- PlanetTogether Logo: Gray and Blue Intertwined Circles -->
+  <g>
+    <!-- Blue circle (left/bottom) -->
+    <circle cx="9" cy="15" r="7" fill="#3B82F6" opacity="0.8"/>
+    
+    <!-- Gray circle (right/top) -->
+    <circle cx="15" cy="9" r="7" fill="#6B7280" opacity="0.8"/>
+    
+    <!-- Intersection highlight -->
+    <path d="M 9 8 A 7 7 0 0 1 16 15 A 7 7 0 0 1 9 8" fill="#1E40AF" opacity="0.6"/>
+  </g>
+</svg>

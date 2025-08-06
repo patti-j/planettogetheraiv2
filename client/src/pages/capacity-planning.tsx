@@ -977,7 +977,11 @@ export default function CapacityPlanning() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
           <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-            <Factory className="w-6 h-6 mr-2" />
+            <svg className="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="none">
+              <circle cx="9" cy="15" r="7" fill="#3B82F6" opacity="0.8"/>
+              <circle cx="15" cy="9" r="7" fill="#6B7280" opacity="0.8"/>
+              <path d="M 9 8 A 7 7 0 0 1 16 15 A 7 7 0 0 1 9 8" fill="#1E40AF" opacity="0.6"/>
+            </svg>
             Resource Capacity Analysis
           </h1>
           <p className="text-sm md:text-base text-gray-600">Monitor resource capacity, utilization, shifts, and overtime across all manufacturing operations</p>
