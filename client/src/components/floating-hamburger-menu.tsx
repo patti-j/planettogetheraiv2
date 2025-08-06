@@ -26,7 +26,7 @@ export function FloatingHamburgerMenu({
 
   // Always show on all devices (removed device-specific visibility logic)
   return (
-    <div className="fixed top-4 right-4 z-[100] pointer-events-auto">
+    <div className="fixed top-4 right-4 z-[9999] pointer-events-auto">
       <Button
         onClick={() => {
           console.log("🍔 Hamburger button clicked");
@@ -34,10 +34,14 @@ export function FloatingHamburgerMenu({
         }}
         variant="ghost"
         size="icon"
-        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-md border border-gray-200 dark:border-gray-700"
+        className="bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg border-2 border-gray-300 dark:border-gray-600"
+        style={{ 
+          backgroundColor: isOpen ? '#ef4444' : '#3b82f6',
+          color: 'white'
+        }}
         aria-label={isOpen ? "Close menu" : "Open menu"}
       >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {isOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
       </Button>
     </div>
   );
