@@ -1310,9 +1310,15 @@ export default function GanttChart({
             </div>
             {/* Resize Divider */}
             <div 
-              className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
+              className={`relative w-2 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-all group ${isResizing ? 'bg-blue-500 dark:bg-blue-400 w-3' : ''}`}
               onMouseDown={handleResizeMouseDown}
-            />
+              title="Drag to resize"
+            >
+              {/* Visual grip indicator */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="w-0.5 h-8 bg-gray-400 dark:bg-gray-500 rounded-full" />
+              </div>
+            </div>
             <div 
               data-timeline-container
               className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-x-auto cursor-grab active:cursor-grabbing"
@@ -1907,9 +1913,15 @@ export default function GanttChart({
             </div>
             {/* Resize Divider */}
             <div 
-              className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
+              className={`relative w-2 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-all group ${isResizing ? 'bg-blue-500 dark:bg-blue-400 w-3' : ''}`}
               onMouseDown={handleResizeMouseDown}
-            />
+              title="Drag to resize"
+            >
+              {/* Visual grip indicator */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="w-0.5 h-8 bg-gray-400 dark:bg-gray-500 rounded-full" />
+              </div>
+            </div>
             <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-2 py-2">
               <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
                 <Tooltip>
@@ -2095,10 +2107,16 @@ export default function GanttChart({
             </div>
           </div>
           {/* Resize Divider */}
-          <div 
-            className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
-            onMouseDown={handleResizeMouseDown}
-          />
+            <div 
+              className={`relative w-2 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-all group ${isResizing ? 'bg-blue-500 dark:bg-blue-400 w-3' : ''}`}
+              onMouseDown={handleResizeMouseDown}
+              title="Drag to resize"
+            >
+              {/* Visual grip indicator */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="w-0.5 h-8 bg-gray-400 dark:bg-gray-500 rounded-full" />
+              </div>
+            </div>
           <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-1 md:px-2 py-2">
             <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
               <Tooltip>
