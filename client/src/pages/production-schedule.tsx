@@ -210,15 +210,12 @@ export default function ProductionSchedulePage() {
                 size="sm" 
                 className="gap-2"
                 onClick={() => {
-                  console.log("🎯🎯🎯 EXPORT BUTTON CLICKED! 🎯🎯🎯");
-                  const ganttElement = document.getElementById('gantt-chart-container');
-                  console.log("🎯 EXPORT - Found gantt container:", !!ganttElement);
-                  if (ganttElement) {
-                    console.log("🎯 EXPORT - Would export PDF here");
-                    alert("Export functionality coming soon! Container found successfully.");
+                  // Click the working export button in the resource panel
+                  const resourcePanelExportButton = document.querySelector('button[title="Export PDF"]') as HTMLButtonElement;
+                  if (resourcePanelExportButton) {
+                    resourcePanelExportButton.click();
                   } else {
-                    console.error("🎯 EXPORT ERROR - Gantt container not found");
-                    alert("Error: Could not find Gantt chart container");
+                    alert("Please switch to the Gantt Chart tab to use export functionality");
                   }
                 }}
               >
