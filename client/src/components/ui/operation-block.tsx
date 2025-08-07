@@ -117,39 +117,40 @@ export default function OperationBlock({
     // For day/shift views, we want accurate proportional widths
     const operationDurationHours = operationDurationMs / (60 * 60 * 1000);
     
-    // Calculate pixels per hour based on the time unit
-    // dayWidth represents the width of one time unit period
-    let pixelsPerHour: number;
-    switch (timeUnit) {
-      case "hour":
-        pixelsPerHour = dayWidth; // dayWidth is width of 1 hour
-        break;
-      case "shift":
-        pixelsPerHour = dayWidth / 8; // dayWidth is width of 8 hours
-        break;
-      case "day":
-        pixelsPerHour = dayWidth / 24; // dayWidth is width of 24 hours
-        break;
-      case "week":
-        pixelsPerHour = dayWidth / (7 * 24); // dayWidth is width of 168 hours
-        break;
-      case "month":
-        pixelsPerHour = dayWidth / (30 * 24); // dayWidth is width of 720 hours
-        break;
-      default:
-        pixelsPerHour = dayWidth / 24;
+    // For "day" time unit, dayWidth is the width of one full day (24 hours)
+    // We need to calculate the width based on the actual operation duration
+    let width: number;
+    
+    if (timeUnit === "day" || timeUnit === "shift") {
+      // For day view, calculate width as a proportion of the day
+      // dayWidth = width of one full day period
+      const hoursInPeriod = timeUnit === "day" ? 24 : 8;
+      const widthPerHour = dayWidth / hoursInPeriod;
+      width = operationDurationHours * widthPerHour;
+      
+      console.log(`Operation ${operation.operationName}: duration=${operationDurationHours}h, widthPerHour=${widthPerHour}, width=${width}, dayWidth=${dayWidth}`);
+    } else {
+      // For other time units, use the existing calculation
+      let pixelsPerHour: number;
+      switch (timeUnit) {
+        case "hour":
+          pixelsPerHour = dayWidth;
+          break;
+        case "week":
+          pixelsPerHour = dayWidth / (7 * 24);
+          break;
+        case "month":
+          pixelsPerHour = dayWidth / (30 * 24);
+          break;
+        default:
+          pixelsPerHour = dayWidth / 24;
+      }
+      width = operationDurationHours * pixelsPerHour;
     }
     
-    // Calculate width based on actual duration in hours
-    // Ensure proportional widths for different operation durations
-    const calculatedWidth = operationDurationHours * pixelsPerHour;
-    
-    // Log for debugging width calculation
-    console.log(`Operation ${operation.operationName}: duration=${operationDurationHours}h, pixelsPerHour=${pixelsPerHour}, calculatedWidth=${calculatedWidth}, dayWidth=${dayWidth}, timeUnit=${timeUnit}`);
-    
-    // Use different minimum widths based on time unit to ensure visibility
-    const minWidth = timeUnit === "month" ? 20 : timeUnit === "week" ? 25 : 30;
-    const width = Math.max(calculatedWidth, minWidth);
+    // Ensure minimum width for visibility
+    const minWidth = 40; // Minimum width to show text
+    width = Math.max(width, minWidth);
     
     // Calculate left position
     const left = startOffset * dayWidth;
