@@ -48,7 +48,7 @@ export default function OperationBlock({
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
     item: (monitor) => {
-      console.log("Starting drag for operation:", operation.operationName);
+      console.log("🚀 Starting drag for operation:", operation.operationName, "with type: operation");
       // Store the initial mouse position relative to the element
       const initialOffset = monitor.getInitialClientOffset();
       const elementRect = monitor.getInitialSourceClientOffset();
@@ -61,7 +61,7 @@ export default function OperationBlock({
       };
     },
     end: (item, monitor) => {
-      console.log("Ending drag for operation:", operation.operationName, "dropped:", monitor.didDrop());
+      console.log("🏁 Ending drag for operation:", operation.operationName, "dropped:", monitor.didDrop(), "dropResult:", monitor.getDropResult());
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),

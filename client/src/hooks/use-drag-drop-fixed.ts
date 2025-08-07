@@ -84,7 +84,7 @@ export function useOperationDrop(
   });
 
   const [{ isOver, canDrop }, drop] = useDrop({
-    accept: ["operation"], // Array format for better compatibility
+    accept: "operation", // Must match exactly with useDrag type
     canDrop: (item: any) => {
       console.log("🎯 CAN DROP CHECK - TRIGGERED:", {
         itemType: typeof item,
