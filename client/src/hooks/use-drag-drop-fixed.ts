@@ -83,15 +83,17 @@ export function useOperationDrop(
     },
   });
 
-  const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
-    accept: "operation",
-    canDrop: (item) => {
-      const result = safeCanDrop(item, resource, "gantt-chart");
-      console.log("🎯 CAN DROP CHECK:", { 
-        operationName: item.operation.operationName,
-        resourceName: resource.name,
-        canDrop: result
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: ["operation"], // Array format for better compatibility
+    canDrop: (item: any) => {
+      console.log("🎯 CAN DROP CHECK - TRIGGERED:", {
+        itemType: typeof item,
+        hasOperation: !!item?.operation,
+        operationName: item?.operation?.operationName,
+        resourceName: resource.name
       });
+      const result = safeCanDrop(item, resource, "gantt-chart");
+      console.log("🎯 CAN DROP RESULT:", result);
       return result;
     },
     drop: (item, monitor) => {
@@ -212,10 +214,17 @@ export function useOperationDrop(
         }
       }
     },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
+    collect: (monitor) => {
+      const isOver = monitor.isOver();
+      const canDrop = monitor.canDrop();
+      console.log("🎯 DROP MONITOR:", {
+        resourceName: resource.name,
+        isOver,
+        canDrop,
+        itemType: monitor.getItemType()
+      });
+      return { isOver, canDrop };
+    },
   });
 
   return { drop, isOver, canDrop };
