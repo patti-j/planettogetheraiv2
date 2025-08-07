@@ -551,7 +551,7 @@ export default function OptimizationStudio() {
       <div className="relative min-h-screen bg-gray-50">
         <Button
           onClick={() => setIsMaximized(!isMaximized)}
-          className="fixed top-2 right-16 z-50"
+          className="hidden sm:flex fixed top-2 right-16 z-50"
           size="icon"
           variant="outline"
         >
@@ -574,7 +574,7 @@ export default function OptimizationStudio() {
       <div className="relative min-h-screen bg-gray-50">
         <Button
           onClick={() => setIsMaximized(!isMaximized)}
-          className="fixed top-2 right-16 z-50"
+          className="hidden sm:flex fixed top-2 right-16 z-50"
           size="icon"
           variant="outline"
         >
@@ -593,7 +593,7 @@ export default function OptimizationStudio() {
       {/* Maximize/Minimize Button */}
       <Button
         onClick={() => setIsMaximized(!isMaximized)}
-        className="fixed top-2 right-16 z-50"
+        className="hidden sm:flex fixed top-2 right-16 z-50"
         size="icon"
         variant="outline"
       >
