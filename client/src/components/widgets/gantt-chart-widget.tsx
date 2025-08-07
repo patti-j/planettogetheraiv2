@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, User, AlertTriangle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import GanttChart from '@/components/ui/gantt-chart';
 
 interface GanttChartWidgetProps {
   configuration?: {
@@ -27,9 +28,17 @@ export default function GanttChartWidget({
   isMobile = false, 
   compact = false 
 }: GanttChartWidgetProps) {
-  // Fetch real operations data from the API
+  // Fetch all required data for the Gantt chart
   const { data: operations, isLoading: operationsLoading } = useQuery({
     queryKey: ['/api/operations']
+  });
+  
+  const { data: productionOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/production-orders']
+  });
+  
+  const { data: resources, isLoading: resourcesLoading } = useQuery({
+    queryKey: ['/api/resources']
   });
 
   // Transform operations data to match the expected format
@@ -69,136 +78,28 @@ export default function GanttChartWidget({
     }
   };
 
-  if (operationsLoading) {
+  if (operationsLoading || ordersLoading || resourcesLoading) {
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-sm text-muted-foreground">Loading operations...</p>
+          <p className="text-sm text-muted-foreground">Loading Gantt chart...</p>
         </div>
       </div>
     );
   }
 
-  if (compact) {
-    return (
-      <div className={`space-y-2 ${className}`}>
-        {transformedData.slice(0, 3).map((order) => (
-          <div key={order.id} className="flex items-center justify-between p-2 bg-muted rounded">
-            <div className="flex items-center gap-2">
-              {getPriorityIcon(order.priority)}
-              <span className="font-medium text-sm">{order.orderNumber}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`} />
-              <span className="text-xs text-muted-foreground">{order.progress}%</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
+  // Use the actual GanttChart component for proper operation grouping
   return (
-    <div className={`w-full ${className}`}>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Production Timeline</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">Today</Button>
-          <Button variant="outline" size="sm">Week</Button>
-          <Button variant="outline" size="sm">Month</Button>
-        </div>
-      </div>
-
-      {/* Timeline Header */}
-      <div className="grid grid-cols-8 gap-1 mb-2 text-xs text-muted-foreground font-medium">
-        <div>Order</div>
-        <div>Item</div>
-        <div>Resource</div>
-        <div>Status</div>
-        <div>Priority</div>
-        <div>Progress</div>
-        <div>Start</div>
-        <div>End</div>
-      </div>
-
-      {/* Timeline Content */}
-      <div className="space-y-2">
-        {transformedData.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No operations found</p>
-          </Card>
-        ) : (
-          transformedData.map((order) => (
-            <Card key={order.id} className="p-3 mb-2 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="grid grid-cols-8 gap-2 items-center text-sm">
-                <div className="font-medium">{order.orderNumber}</div>
-                <div>{order.item}</div>
-                <div className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  {order.resource}
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`} />
-                  <span className="capitalize">{order.status}</span>
-                </div>
-                <div>{getPriorityIcon(order.priority)}</div>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${getStatusColor(order.status)}`}
-                      style={{ width: `${order.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-xs">{order.progress}%</span>
-                </div>
-                <div className="text-xs">
-                  {order.startDate.toLocaleDateString()}
-                </div>
-                <div className="text-xs">
-                  {order.endDate.toLocaleDateString()}
-                </div>
-              </div>
-
-              {/* Gantt Bar Visualization - Fixed overlap issue */}
-              <div className="mt-3 relative">
-                <div className="w-full h-6 bg-gray-100 rounded relative overflow-hidden">
-                  <div 
-                    className={`absolute top-0 h-full rounded ${getStatusColor(order.status)} opacity-90 z-10`}
-                    style={{ 
-                      left: '0%', 
-                      width: `${Math.max(order.progress, 5)}%` 
-                    }}
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center text-xs font-medium z-20 mix-blend-difference">
-                    {order.quantity.toLocaleString()} units • {order.startDate.toLocaleDateString()} - {order.endDate.toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
-          <span>Completed</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span>In Progress</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-yellow-500" />
-          <span>Scheduled</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-red-500" />
-          <span>Delayed</span>
-        </div>
-      </div>
+    <div className={`w-full ${className}`} style={{ height: isMobile ? '300px' : '400px' }}>
+      <GanttChart 
+        jobs={(productionOrders as any) || []}
+        operations={(operations as any) || []}
+        resources={(resources as any) || []}
+        capabilities={[]}
+        view="operations"  // Use operations view to group by production orders
+        rowHeight={compact || isMobile ? 40 : 60}
+      />
     </div>
   );
 }
