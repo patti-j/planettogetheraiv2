@@ -1234,22 +1234,48 @@ export default function GanttChart({
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Header */}
-        <div className="flex-none bg-white border-b border-gray-200 z-10">
+        <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
           <div className="flex">
-            <div className="w-80 bg-gray-50 border-r border-gray-200">
+            <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="font-medium text-gray-700">Jobs & Operations</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Jobs & Operations</span>
                 <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="sm" onClick={zoomOut} disabled={timeUnit === "decade"} title="Zoom Out">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomOut} 
+                    disabled={timeUnit === "decade"} 
+                    title="Zoom Out"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                  >
                     <ZoomOut className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={resetZoom} title="Reset Zoom">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={resetZoom} 
+                    title="Reset Zoom"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                  >
                     <span className="text-xs">{timeUnit}</span>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={zoomIn} disabled={timeUnit === "hour"} title="Zoom In">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={zoomIn} 
+                    disabled={timeUnit === "hour"} 
+                    title="Zoom In"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                  >
                     <ZoomIn className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={handleScrollToToday} title="Scroll to Today">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleScrollToToday} 
+                    title="Scroll to Today"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                  >
                     <Calendar className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1257,7 +1283,7 @@ export default function GanttChart({
             </div>
             <div 
               data-timeline-container
-              className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
+              className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-x-auto cursor-grab active:cursor-grabbing"
               onMouseDown={handleTimelineMouseDown}
               onScroll={handleTimelineScroll}
               ref={timelineRef}
@@ -1267,9 +1293,9 @@ export default function GanttChart({
                 style={{ width: `${timelineWidth}px` }}
               >
                 {timeScale.periods.map((period, index) => (
-                  <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
-                    <div className="text-xs font-medium text-gray-500">{period.label}</div>
-                    <div className="text-xs text-gray-400">{period.subLabel}</div>
+                  <div key={index} className="border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
+                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400">{period.label}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500">{period.subLabel}</div>
                   </div>
                 ))}
               </div>
@@ -1289,9 +1315,9 @@ export default function GanttChart({
           return (
             <div key={job.id}>
               {/* Job Row */}
-              <div className="border-b border-gray-100">
+              <div className="border-b border-gray-100 dark:border-gray-800">
                 <div className="flex">
-                  <div className="w-80 bg-gray-50 border-r border-gray-200">
+                  <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
                     <div className="flex items-center px-4 py-3">
                       <Button
                         variant="ghost"
@@ -1300,13 +1326,13 @@ export default function GanttChart({
                         onClick={() => toggleJobExpansion(job.id)}
                       >
                         {isExpanded ? 
-                          <ChevronDown className="w-4 h-4 text-gray-400" /> : 
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                          <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : 
+                          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                         }
                       </Button>
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800">{job.name}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="font-medium text-gray-800 dark:text-gray-200">{job.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           Customer: {job.customerId} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
                         </div>
                       </div>
@@ -1315,7 +1341,7 @@ export default function GanttChart({
                       </Badge>
                     </div>
                   </div>
-                  <div className="flex-1 bg-blue-50 border-r border-gray-100 overflow-x-hidden" style={{ minHeight: '60px' }}>
+                  <div className="flex-1 bg-blue-50 dark:bg-blue-950/30 border-r border-gray-100 dark:border-gray-800 overflow-x-hidden" style={{ minHeight: '60px' }}>
                     <div style={{ width: `${timelineWidth}px` }}>
                       {/* Job level timeline background */}
                     </div>
@@ -1325,14 +1351,14 @@ export default function GanttChart({
 
               {/* Operation Rows */}
               {isExpanded && jobOperations.map((operation) => (
-                <div key={operation.id} className="border-b border-gray-100">
+                <div key={operation.id} className="border-b border-gray-100 dark:border-gray-800">
                   <div className="flex">
-                    <div className="w-80 border-r border-gray-200">
+                    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
                       <div className="flex items-center ml-6 px-4 py-3">
-                        <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
+                        <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></div>
                         <div className="flex-1">
-                          <div className="text-sm text-gray-700">{operation.operationName}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-700 dark:text-gray-300">{operation.operationName}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             Duration: {operation.processTime || 0}h
                           </div>
                         </div>
@@ -1449,23 +1475,23 @@ export default function GanttChart({
     return (
       <div 
         ref={preview}
-        className={`border-b border-gray-100 ${isDragging ? 'opacity-50' : ''}`}
+        className={`border-b border-gray-100 dark:border-gray-800 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="flex">
-          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex items-center h-full px-4">
               {canReorder && (
                 <div 
                   ref={drag}
-                  className="mr-2 cursor-move text-gray-400 hover:text-gray-600"
+                  className="mr-2 cursor-move text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
                   title="Drag to reorder resources"
                 >
                   <GripVertical className="w-4 h-4" />
                 </div>
               )}
               <div className="flex-1">
-                <div className="font-medium text-gray-800">{resource.name}</div>
-                <div className="text-xs text-gray-500 flex items-center gap-2">
+                <div className="font-medium text-gray-800 dark:text-gray-200">{resource.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                   {getResourceTypeIcon(resource.type)}
                   <span>
                     {resource.capabilities?.map(capId => 
@@ -1523,7 +1549,7 @@ export default function GanttChart({
             ref={combinedRef}
             data-resource-id={resource.id}
             className={`flex-1 relative p-2 overflow-hidden ${
-              isOver && canDrop ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+              isOver && canDrop ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : ''
             }`}
             style={{ minHeight: `${rowHeight}px` }}
           >
@@ -1562,13 +1588,13 @@ export default function GanttChart({
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
 
     return (
-      <div className="border-b border-gray-100">
+      <div className="border-b border-gray-100 dark:border-gray-800">
         <div className="flex">
-          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex items-center h-full px-4">
               <div className="flex-1">
-                <div className="font-medium text-gray-800">{resource.name}</div>
-                <div className="text-xs text-gray-500 flex items-center gap-2">
+                <div className="font-medium text-gray-800 dark:text-gray-200">{resource.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                   {getResourceTypeIcon(resource.type)}
                   <span>
                     {resource.capabilities?.map(capId => 
@@ -1588,7 +1614,7 @@ export default function GanttChart({
             ref={drop}
             data-resource-id={resource.id}
             className={`flex-1 relative p-2 transition-colors overflow-hidden ${
-              isOver ? (canDrop ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200") : ""
+              isOver ? (canDrop ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-600" : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-600") : ""
             }`}
             style={{ minHeight: `${rowHeight}px` }}
           >
@@ -1658,8 +1684,8 @@ export default function GanttChart({
       return (
         <div key={customer}>
           {/* Customer Header Row */}
-          <div className="flex bg-gray-50 border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
-            <div className="w-80 border-r border-gray-200">
+          <div className="flex bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" style={{ height: `${rowHeight}px` }}>
+            <div className="w-80 border-r border-gray-200 dark:border-gray-700">
               <div className="flex items-center px-4 py-2">
                 <Button
                 variant="ghost"
@@ -1670,8 +1696,8 @@ export default function GanttChart({
                 {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </Button>
               <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-blue-600" />
-                <span className="font-medium text-gray-900">{customer}</span>
+                <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="font-medium text-gray-900 dark:text-gray-100">{customer}</span>
                 <Badge variant="secondary" className="text-xs">
                   {customerJobs.length} jobs
                 </Badge>
@@ -1680,22 +1706,22 @@ export default function GanttChart({
             </div>
             <div className="flex-1 relative overflow-hidden">
               <div
-                className="absolute inset-0 flex items-center bg-gray-50"
+                className="absolute inset-0 flex items-center bg-gray-50 dark:bg-gray-800"
                 style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
               >
-                <div className="bg-gray-100 h-full flex-1 border-r border-gray-300"></div>
+                <div className="bg-gray-100 dark:bg-gray-700 h-full flex-1 border-r border-gray-300 dark:border-gray-600"></div>
               </div>
             </div>
           </div>
 
           {/* Customer Jobs (when expanded) */}
           {isExpanded && customerJobs.map(job => (
-            <div key={job.id} className="flex border-b border-gray-200" style={{ height: `${rowHeight}px` }}>
-              <div className="w-80 border-r border-gray-200">
+            <div key={job.id} className="flex border-b border-gray-200 dark:border-gray-700" style={{ height: `${rowHeight}px` }}>
+              <div className="w-80 border-r border-gray-200 dark:border-gray-700">
                 <div className="flex items-center px-4 py-2 relative">
                 <div className="ml-6 flex items-center space-x-2 flex-1 pr-8">
-                  <Calendar className="w-4 h-4 text-green-600" />
-                  <span className="font-medium text-gray-800">{job.name}</span>
+                  <Calendar className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{job.name}</span>
                   <Badge variant="outline" className="text-xs">
                     {job.priority}
                   </Badge>
@@ -1760,12 +1786,12 @@ export default function GanttChart({
     return (
       <div className="flex flex-col h-full">
         {/* Fixed Header */}
-        <div className="flex-none bg-white border-b border-gray-200 z-10">
+        <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
           <div className="flex">
-            <div className="w-80 px-4 py-2 bg-gray-50 border-r border-gray-200">
+            <div className="w-80 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Customer Timeline</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Timeline</span>
                   <div className="flex items-center space-x-1 text-xs text-gray-500">
                     <span>H:</span>
                     <input
@@ -1833,8 +1859,8 @@ export default function GanttChart({
                 </div>
               </div>
             </div>
-            <div className="w-auto bg-gray-50 border-r border-gray-200 px-2 py-2">
-              <div className="flex items-center bg-white border rounded-md">
+            <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-2 py-2">
+              <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
@@ -1842,7 +1868,7 @@ export default function GanttChart({
                       size="sm" 
                       onClick={zoomOut} 
                       disabled={timeUnit === "decade"} 
-                      className="h-6 px-1.5 border-r rounded-r-none"
+                      className="h-6 px-1.5 border-r border-gray-300 dark:border-gray-600 rounded-r-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                     >
                       <ZoomOut className="w-3 h-3" />
                     </Button>
@@ -1858,7 +1884,7 @@ export default function GanttChart({
                       size="sm" 
                       onClick={zoomIn} 
                       disabled={timeUnit === "hour"} 
-                      className="h-6 px-1.5 border-r rounded-r-none"
+                      className="h-6 px-1.5 border-r border-gray-300 dark:border-gray-600 rounded-r-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                     >
                       <ZoomIn className="w-3 h-3" />
                     </Button>
@@ -1867,16 +1893,16 @@ export default function GanttChart({
                     <p>Zoom in to view shorter time periods</p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="text-xs text-gray-600 px-2 capitalize">{timeUnit}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 px-2 capitalize">{timeUnit}</span>
               </div>
             </div>
-            <div className="flex-1 bg-gray-50 border-r border-gray-200 overflow-hidden">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden">
               <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
-                <div className="flex h-full bg-gray-50 border-b border-gray-200">
+                <div className="flex h-full bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   {timeScale.periods.map((period, index) => (
-                    <div key={index} className="flex-none border-r border-gray-300 px-2 py-2 text-center" style={{ width: `${periodWidth}px` }}>
-                      <div className="text-xs font-medium text-gray-700">{period.label}</div>
-                      <div className="text-xs text-gray-500">{period.subLabel}</div>
+                    <div key={index} className="flex-none border-r border-gray-300 dark:border-gray-600 px-2 py-2 text-center" style={{ width: `${periodWidth}px` }}>
+                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{period.label}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{period.subLabel}</div>
                     </div>
                   ))}
                 </div>
@@ -1904,9 +1930,9 @@ export default function GanttChart({
   const renderResourcesView = () => (
     <div className="flex flex-col h-full">
       {/* Fixed Header */}
-      <div className="flex-none bg-white border-b border-gray-200 z-10">
+      <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
         <div className="flex">
-          <div className="w-80 bg-gray-50 border-r border-gray-200">
+          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
             <div className="flex flex-col space-y-2 px-2 md:px-4 py-2">
               <div className="flex items-center space-x-2">
                 <Select 
@@ -2002,8 +2028,8 @@ export default function GanttChart({
               </div>
             </div>
           </div>
-          <div className="w-auto bg-gray-50 border-r border-gray-200 px-1 md:px-2 py-2">
-            <div className="flex items-center bg-white border rounded-md">
+          <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-1 md:px-2 py-2">
+            <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
@@ -2011,7 +2037,7 @@ export default function GanttChart({
                     size="sm" 
                     onClick={zoomOut} 
                     disabled={timeUnit === "decade"} 
-                    className="h-6 px-1 md:px-1.5 border-r rounded-r-none"
+                    className="h-6 px-1 md:px-1.5 border-r border-gray-300 dark:border-gray-600 rounded-r-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <ZoomOut className="w-3 h-3" />
                   </Button>
@@ -2027,7 +2053,7 @@ export default function GanttChart({
                     size="sm" 
                     onClick={zoomIn} 
                     disabled={timeUnit === "hour"} 
-                    className="h-6 px-1 md:px-1.5 border-r rounded-none"
+                    className="h-6 px-1 md:px-1.5 border-r border-gray-300 dark:border-gray-600 rounded-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <ZoomIn className="w-3 h-3" />
                   </Button>
@@ -2042,7 +2068,7 @@ export default function GanttChart({
                     variant="ghost" 
                     size="sm" 
                     onClick={resetZoom} 
-                    className="h-6 px-1 md:px-2 border-r rounded-none"
+                    className="h-6 px-1 md:px-2 border-r border-gray-300 dark:border-gray-600 rounded-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <span className="text-xs font-medium">{timeUnit}</span>
                   </Button>
@@ -2057,7 +2083,7 @@ export default function GanttChart({
                     variant="ghost" 
                     size="sm" 
                     onClick={handleScrollToToday} 
-                    className="h-6 px-1 md:px-1.5 rounded-l-none"
+                    className="h-6 px-1 md:px-1.5 rounded-l-none hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   >
                     <Calendar className="w-3 h-3" />
                   </Button>
@@ -2069,7 +2095,7 @@ export default function GanttChart({
             </div>
           </div>
           <div 
-            className="flex-1 bg-gray-50 border-r border-gray-200 overflow-x-auto cursor-grab active:cursor-grabbing"
+            className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-x-auto cursor-grab active:cursor-grabbing"
             onMouseDown={handleTimelineMouseDown}
             onScroll={handleTimelineScroll}
             ref={timelineRef}
@@ -2079,9 +2105,9 @@ export default function GanttChart({
               style={{ width: `${timelineWidth}px` }}
             >
               {timeScale.periods.map((period, index) => (
-                <div key={index} className="border-r border-gray-200 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
-                  <div className="text-xs font-medium text-gray-500">{period.label}</div>
-                  <div className="text-xs text-gray-400">{period.subLabel}</div>
+                <div key={index} className="border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">{period.label}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">{period.subLabel}</div>
                 </div>
               ))}
             </div>
@@ -2104,11 +2130,11 @@ export default function GanttChart({
       </div>
 
       {/* Unscheduled Operations */}
-      <div className="border-t border-gray-200 bg-gray-50" style={{ minHeight: `${rowHeight}px` }}>
+      <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" style={{ minHeight: `${rowHeight}px` }}>
         <div className="flex">
-          <div className="w-80 bg-gray-50 border-r border-gray-200" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex items-center h-full px-4">
-              <div className="font-medium text-gray-800">Unscheduled Operations</div>
+              <div className="font-medium text-gray-800 dark:text-gray-200">Unscheduled Operations</div>
             </div>
           </div>
           <div className="flex-1 p-2 overflow-x-auto" style={{ minHeight: `${rowHeight}px` }}>
@@ -2116,12 +2142,12 @@ export default function GanttChart({
               {unscheduledOperations.map((operation) => (
                 <div 
                   key={operation.id} 
-                  className="flex-shrink-0 bg-white border border-gray-200 rounded px-2 py-1 shadow-sm cursor-move"
+                  className="flex-shrink-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 shadow-sm cursor-move"
                   draggable
                   onDragStart={(e) => handleOperationDrag(e, operation)}
                 >
-                  <div className="text-xs font-medium text-gray-800">{operation.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.name}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {operation.requiredCapabilities?.map(capId => 
                       getCapabilityName(capId)
                     ).join(", ") || "No requirements"}
