@@ -82,6 +82,8 @@ export default function GanttChart({
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
   const [defaultTextLabeling, setDefaultTextLabeling] = useState("");
   const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default width in pixels
+  const [isResizing, setIsResizing] = useState(false);
   
   // New states for enhanced Gantt features
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('week');
@@ -789,6 +791,29 @@ export default function GanttChart({
     }
   }, []);
 
+  // Resize handlers for the movable divider
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = leftPanelWidth;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(200, Math.min(600, startWidth + delta)); // Min 200px, Max 600px
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [leftPanelWidth]);
+
   // Set up global mouse event listeners
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
@@ -1236,7 +1261,7 @@ export default function GanttChart({
         {/* Fixed Header */}
         <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
           <div className="flex">
-            <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+            <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
               <div className="flex items-center justify-between px-4 py-2">
                 <span className="font-medium text-gray-700 dark:text-gray-300">Jobs & Operations</span>
                 <div className="flex items-center space-x-1">
@@ -1281,6 +1306,11 @@ export default function GanttChart({
                 </div>
               </div>
             </div>
+            {/* Resize Divider */}
+            <div 
+              className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
+              onMouseDown={handleResizeMouseDown}
+            />
             <div 
               data-timeline-container
               className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-x-auto cursor-grab active:cursor-grabbing"
@@ -1317,7 +1347,7 @@ export default function GanttChart({
               {/* Job Row */}
               <div className="border-b border-gray-100 dark:border-gray-800">
                 <div className="flex">
-                  <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+                  <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
                     <div className="flex items-center px-4 py-3">
                       <Button
                         variant="ghost"
@@ -1353,7 +1383,7 @@ export default function GanttChart({
               {isExpanded && jobOperations.map((operation) => (
                 <div key={operation.id} className="border-b border-gray-100 dark:border-gray-800">
                   <div className="flex">
-                    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                    <div className="border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900" style={{ width: `${leftPanelWidth}px` }}>
                       <div className="flex items-center ml-6 px-4 py-3">
                         <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></div>
                         <div className="flex-1">
@@ -1395,11 +1425,11 @@ export default function GanttChart({
                       style={{ minHeight: `${rowHeight}px` }}
                     >
                       <div
-                        className="absolute inset-0 p-2"
-                        style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
+                        data-timeline-content
+                        className="absolute inset-0"
+                        style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}
                       >
-                        <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
-                          <OperationBlock
+                        <OperationBlock
                           operation={operation}
                           resourceName={getResourceName(operation.workCenterId || 0)}
                           jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
@@ -1419,7 +1449,6 @@ export default function GanttChart({
                             setOperationDialogOpen(true);
                           }}
                         />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1478,7 +1507,7 @@ export default function GanttChart({
         className={`border-b border-gray-100 dark:border-gray-800 ${isDragging ? 'opacity-50' : ''}`}
       >
         <div className="flex">
-          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px`, width: `${leftPanelWidth}px` }}>
             <div className="flex items-center h-full px-4">
               {canReorder && (
                 <div 
@@ -1685,7 +1714,7 @@ export default function GanttChart({
         <div key={customer}>
           {/* Customer Header Row */}
           <div className="flex bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" style={{ height: `${rowHeight}px` }}>
-            <div className="w-80 border-r border-gray-200 dark:border-gray-700">
+            <div className="border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
               <div className="flex items-center px-4 py-2">
                 <Button
                 variant="ghost"
@@ -1717,7 +1746,7 @@ export default function GanttChart({
           {/* Customer Jobs (when expanded) */}
           {isExpanded && customerJobs.map(job => (
             <div key={job.id} className="flex border-b border-gray-200 dark:border-gray-700" style={{ height: `${rowHeight}px` }}>
-              <div className="w-80 border-r border-gray-200 dark:border-gray-700">
+              <div className="border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
                 <div className="flex items-center px-4 py-2 relative">
                 <div className="ml-6 flex items-center space-x-2 flex-1 pr-8">
                   <Calendar className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -1788,7 +1817,7 @@ export default function GanttChart({
         {/* Fixed Header */}
         <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
           <div className="flex">
-            <div className="w-80 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
               <div className="flex flex-col space-y-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Timeline</span>
@@ -1859,6 +1888,11 @@ export default function GanttChart({
                 </div>
               </div>
             </div>
+            {/* Resize Divider */}
+            <div 
+              className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
+              onMouseDown={handleResizeMouseDown}
+            />
             <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-2 py-2">
               <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
                 <Tooltip>
@@ -1932,7 +1966,7 @@ export default function GanttChart({
       {/* Fixed Header */}
       <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
         <div className="flex">
-          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+          <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
             <div className="flex flex-col space-y-2 px-2 md:px-4 py-2">
               <div className="flex items-center space-x-2">
                 <Select 
@@ -2028,6 +2062,11 @@ export default function GanttChart({
               </div>
             </div>
           </div>
+          {/* Resize Divider */}
+          <div 
+            className={`w-1 bg-gray-300 dark:bg-gray-600 hover:bg-blue-500 dark:hover:bg-blue-400 cursor-col-resize transition-colors ${isResizing ? 'bg-blue-500 dark:bg-blue-400' : ''}`}
+            onMouseDown={handleResizeMouseDown}
+          />
           <div className="w-auto bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-1 md:px-2 py-2">
             <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
               <Tooltip>
@@ -2132,7 +2171,7 @@ export default function GanttChart({
       {/* Unscheduled Operations */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" style={{ minHeight: `${rowHeight}px` }}>
         <div className="flex">
-          <div className="w-80 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px` }}>
+          <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px`, width: `${leftPanelWidth}px` }}>
             <div className="flex items-center h-full px-4">
               <div className="font-medium text-gray-800 dark:text-gray-200">Unscheduled Operations</div>
             </div>
