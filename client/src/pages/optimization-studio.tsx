@@ -83,6 +83,9 @@ export default function OptimizationStudio() {
   const [selectedAlgorithmForDev, setSelectedAlgorithmForDev] = useState<OptimizationAlgorithm | null>(null);
   const [feedbackFilter, setFeedbackFilter] = useState("all");
   const [expandedFeedback, setExpandedFeedback] = useState<Set<number>>(new Set());
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [showCodePreview, setShowCodePreview] = useState(false);
+  const [showExamplesLibrary, setShowExamplesLibrary] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -237,16 +240,45 @@ export default function OptimizationStudio() {
     setCurrentAlgorithmDraft(null);
     setAiSessionStep(1);
     setAiPrompt("");
+    setSelectedTemplate(null);
   };
 
   // Start AI collaboration session
-  const startAISession = () => {
+  const startAISession = (template?: string) => {
     setAiSessionActive(true);
+    let initialMessage = "Hello! I'm here to help you develop a custom optimization algorithm step by step.";
+    
+    if (template) {
+      setSelectedTemplate(template);
+      initialMessage += `\n\nI see you've selected the **${template}** template as your starting point. This template provides a proven foundation for ${getTemplateDescription(template)}.\n\n`;
+    } else {
+      initialMessage += "\n\n";
+    }
+    
+    initialMessage += "**Step 1: Problem Definition**\n\nCould you describe the optimization problem you're trying to solve? For example:\n- What type of manufacturing process needs optimization?\n- What are your main objectives (minimize cost, maximize throughput, reduce setup times, etc.)?\n- Are there any specific constraints or limitations I should know about?";
+    
+    if (template) {
+      initialMessage += `\n\n*Note: Since you're using the ${template} template, I'll adapt the standard approach to better fit your specific needs.*`;
+    }
+    
     setAiSessionMessages([{
       role: 'assistant',
-      content: "Hello! I'm here to help you develop a custom optimization algorithm step by step. Let's start by understanding your specific requirements.\n\n**Step 1: Problem Definition**\n\nCould you describe the optimization problem you're trying to solve? For example:\n- What type of manufacturing process needs optimization?\n- What are your main objectives (minimize cost, maximize throughput, reduce setup times, etc.)?\n- Are there any specific constraints or limitations I should know about?"
+      content: initialMessage
     }]);
     setAiSessionStep(1);
+  };
+  
+  // Get template description
+  const getTemplateDescription = (template: string) => {
+    const templates: Record<string, string> = {
+      'scheduling': 'optimizing production schedules to minimize makespan and tardiness',
+      'inventory': 'balancing inventory levels to reduce holding costs while preventing stockouts',
+      'capacity': 'maximizing resource utilization while meeting demand requirements',
+      'routing': 'determining optimal production paths through work centers',
+      'sequencing': 'ordering jobs to minimize changeover times and setup costs',
+      'forecasting': 'predicting demand patterns to improve planning accuracy'
+    };
+    return templates[template] || 'general optimization problems';
   };
 
   // Filter algorithms based on category and search
@@ -522,13 +554,86 @@ export default function OptimizationStudio() {
                         </div>
                       </Card>
                       
-                      <div className="flex justify-center">
-                        <Button 
-                          onClick={startAISession}
-                          className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 px-8 py-2"
+                      {/* Algorithm Templates */}
+                      <Card className="p-4">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          Choose a Starting Point
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession()}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <Plus className="w-5 h-5 mb-1" />
+                            <span className="text-xs">From Scratch</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession('scheduling')}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <Clock className="w-5 h-5 mb-1" />
+                            <span className="text-xs">Scheduling</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession('inventory')}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <Package className="w-5 h-5 mb-1" />
+                            <span className="text-xs">Inventory</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession('capacity')}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <Cpu className="w-5 h-5 mb-1" />
+                            <span className="text-xs">Capacity</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession('routing')}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <ArrowRight className="w-5 h-5 mb-1" />
+                            <span className="text-xs">Routing</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => startAISession('sequencing')}
+                            className="flex flex-col items-center p-3 h-auto"
+                          >
+                            <Layers className="w-5 h-5 mb-1" />
+                            <span className="text-xs">Sequencing</span>
+                          </Button>
+                        </div>
+                      </Card>
+                      
+                      {/* Quick Actions */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowExamplesLibrary(true)}
+                          className="flex-1"
                         >
-                          <Brain className="w-4 h-4 mr-2" />
-                          Start Collaborative Development
+                          <Lightbulb className="w-4 h-4 mr-2" />
+                          View Example Algorithms
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            if (algorithms.length > 0) {
+                              setSelectedAlgorithmForDev(algorithms[0]);
+                              setSelectedTab('development');
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Modify Existing Algorithm
                         </Button>
                       </div>
                     </div>
@@ -585,17 +690,42 @@ export default function OptimizationStudio() {
                       {/* Current Algorithm Draft Preview */}
                       {currentAlgorithmDraft && (
                         <Card className="p-4 bg-green-50 border-green-200">
-                          <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
-                            <Target className="w-4 h-4" />
-                            Current Algorithm Draft
-                          </h4>
-                          <div className="text-sm space-y-1">
-                            <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
-                            <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
-                            <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
-                            {currentAlgorithmDraft.parameters && (
-                              <div><strong>Parameters:</strong> {Object.keys(currentAlgorithmDraft.parameters).length} configured</div>
-                            )}
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                                <Target className="w-4 h-4" />
+                                Current Algorithm Draft
+                              </h4>
+                              <div className="text-sm space-y-1">
+                                <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
+                                <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
+                                <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
+                                {currentAlgorithmDraft.parameters && (
+                                  <div><strong>Parameters:</strong> {Object.keys(currentAlgorithmDraft.parameters).length} configured</div>
+                                )}
+                                {currentAlgorithmDraft.constraints && (
+                                  <div><strong>Constraints:</strong> {currentAlgorithmDraft.constraints.length} defined</div>
+                                )}
+                                {selectedTemplate && (
+                                  <div><strong>Template:</strong> {selectedTemplate}</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowCodePreview(true)}
+                              >
+                                <Code2 className="w-3 h-3 mr-1" />
+                                View Code
+                              </Button>
+                              {currentAlgorithmDraft.performanceEstimate && (
+                                <Badge className="text-xs">
+                                  Est. {currentAlgorithmDraft.performanceEstimate}% faster
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </Card>
                       )}
@@ -652,6 +782,227 @@ export default function OptimizationStudio() {
                       </div>
                     </div>
                   )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Code Preview Dialog */}
+            <Dialog open={showCodePreview} onOpenChange={setShowCodePreview}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Code2 className="w-5 h-5" />
+                    Algorithm Code Preview
+                  </DialogTitle>
+                  <DialogDescription>
+                    Generated algorithm code based on your specifications
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {currentAlgorithmDraft && (
+                    <div className="space-y-3">
+                      <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                        <pre className="text-sm">
+                          <code>{`// Algorithm: ${currentAlgorithmDraft.name}
+// Category: ${currentAlgorithmDraft.category}
+// Objective: ${currentAlgorithmDraft.objective}
+
+class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
+  constructor(parameters) {
+    this.parameters = parameters;
+    ${currentAlgorithmDraft.constraints?.map((c: any) => `this.constraints.push('${c}');`).join('\n    ') || ''}
+  }
+
+  async optimize(data) {
+    // Step 1: Validate input data
+    if (!this.validateInput(data)) {
+      throw new Error('Invalid input data');
+    }
+
+    // Step 2: Apply constraints
+    const constrainedData = this.applyConstraints(data);
+
+    // Step 3: Execute optimization logic
+    const solution = await this.executeOptimization(constrainedData);
+
+    // Step 4: Validate solution
+    if (!this.validateSolution(solution)) {
+      throw new Error('Solution violates constraints');
+    }
+
+    return solution;
+  }
+
+  validateInput(data) {
+    // Implement input validation logic
+    return data && data.length > 0;
+  }
+
+  applyConstraints(data) {
+    // Apply algorithm-specific constraints
+    return data;
+  }
+
+  async executeOptimization(data) {
+    // Main optimization logic goes here
+    ${selectedTemplate === 'scheduling' ? `
+    // Scheduling optimization logic
+    const sortedJobs = this.sortByPriority(data);
+    const schedule = this.createSchedule(sortedJobs);
+    return this.optimizeSchedule(schedule);` : 
+      selectedTemplate === 'inventory' ? `
+    // Inventory optimization logic
+    const demand = this.forecastDemand(data);
+    const optimalLevels = this.calculateOptimalLevels(demand);
+    return this.generateOrders(optimalLevels);` : `
+    // Custom optimization logic
+    const processedData = this.processData(data);
+    return this.findOptimalSolution(processedData);`}
+  }
+
+  validateSolution(solution) {
+    // Validate that solution meets all constraints
+    return solution !== null;
+  }
+}`}</code>
+                        </pre>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowCodePreview(false)}>
+                          Close
+                        </Button>
+                        <Button onClick={() => {
+                          navigator.clipboard.writeText(currentAlgorithmDraft.code || 'No code generated');
+                          toast({ title: "Code copied to clipboard" });
+                        }}>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy Code
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Examples Library Dialog */}
+            <Dialog open={showExamplesLibrary} onOpenChange={setShowExamplesLibrary}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5" />
+                    Algorithm Examples Library
+                  </DialogTitle>
+                  <DialogDescription>
+                    Browse example algorithms to understand different optimization approaches
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Example 1: FIFO Scheduling */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">FIFO Scheduling</CardTitle>
+                        <CardDescription>First In, First Out scheduling algorithm</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Type:</strong> Simple Scheduling</div>
+                          <div><strong>Best for:</strong> Fair processing, simple queues</div>
+                          <div><strong>Pros:</strong> Easy to implement, predictable</div>
+                          <div><strong>Cons:</strong> May not optimize for priorities</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => {
+                            setShowExamplesLibrary(false);
+                            startAISession('scheduling');
+                          }}
+                        >
+                          Use as Template
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Example 2: EOQ Inventory */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">EOQ Inventory</CardTitle>
+                        <CardDescription>Economic Order Quantity optimization</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Type:</strong> Inventory Management</div>
+                          <div><strong>Best for:</strong> Minimizing ordering costs</div>
+                          <div><strong>Pros:</strong> Reduces total inventory costs</div>
+                          <div><strong>Cons:</strong> Assumes constant demand</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => {
+                            setShowExamplesLibrary(false);
+                            startAISession('inventory');
+                          }}
+                        >
+                          Use as Template
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Example 3: Bottleneck Analysis */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Bottleneck Analysis</CardTitle>
+                        <CardDescription>Theory of Constraints optimization</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Type:</strong> Capacity Optimization</div>
+                          <div><strong>Best for:</strong> Identifying constraints</div>
+                          <div><strong>Pros:</strong> Focuses on critical resources</div>
+                          <div><strong>Cons:</strong> Requires accurate data</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => {
+                            setShowExamplesLibrary(false);
+                            startAISession('capacity');
+                          }}
+                        >
+                          Use as Template
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Example 4: Least Setup Time */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Least Setup Time</CardTitle>
+                        <CardDescription>Minimize changeover times between jobs</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          <div><strong>Type:</strong> Sequencing Optimization</div>
+                          <div><strong>Best for:</strong> Reducing setup costs</div>
+                          <div><strong>Pros:</strong> Increases throughput</div>
+                          <div><strong>Cons:</strong> May delay urgent orders</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full mt-3"
+                          onClick={() => {
+                            setShowExamplesLibrary(false);
+                            startAISession('sequencing');
+                          }}
+                        >
+                          Use as Template
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
