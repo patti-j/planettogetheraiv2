@@ -63,7 +63,8 @@ export default function GanttChart({
     operationsWithWorkCenterId: operations?.filter(op => op.workCenterId)?.length,
     operationsWithTimes: operations?.filter(op => op.startTime && op.endTime)?.length
   });
-  const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
+  // Auto-expand all jobs by default to show operations
+  const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set(jobs.map(j => j.id)));
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
@@ -1405,7 +1406,7 @@ export default function GanttChart({
                         <div className="flex-1">
                           <div className="text-sm text-gray-700 dark:text-gray-300">{operation.operationName}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Duration: {operation.processTime || 0}h
+                            Duration: {operation.standardDuration || 0} min
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">

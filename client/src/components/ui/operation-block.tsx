@@ -48,7 +48,7 @@ export default function OperationBlock({
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
     item: (monitor) => {
-      console.log("Starting drag for operation:", operation.name);
+      console.log("Starting drag for operation:", operation.operationName || operation.name);
       // Store the initial mouse position relative to the element
       const initialOffset = monitor.getInitialClientOffset();
       const elementRect = monitor.getInitialSourceClientOffset();
@@ -61,7 +61,7 @@ export default function OperationBlock({
       };
     },
     end: (item, monitor) => {
-      console.log("Ending drag for operation:", operation.name, "dropped:", monitor.didDrop());
+      console.log("Ending drag for operation:", operation.operationName || operation.name, "dropped:", monitor.didDrop());
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -149,7 +149,7 @@ export default function OperationBlock({
           "bg-teal-500",
           "bg-red-500",
         ];
-        return jobColors[operation.jobId % jobColors.length];
+        return jobColors[(operation.productionOrderId || 0) % jobColors.length];
       
       case "priority":
       case "by_priority":
@@ -171,7 +171,7 @@ export default function OperationBlock({
       
       case "by_operation_type":
         // Generate color based on operation name hash
-        const hash = operation.name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hash = (operation.operationName || "").split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const typeColors = [
           "bg-cyan-500",
           "bg-emerald-500",
@@ -196,12 +196,12 @@ export default function OperationBlock({
           "bg-amber-500",
           "bg-yellow-500",
         ];
-        return resourceColors[(operation.assignedResourceId || 0) % resourceColors.length];
+        return resourceColors[(operation.workCenterId || 0) % resourceColors.length];
       
       case "duration":
       case "by_duration":
         // Color based on duration ranges
-        const duration = operation.duration || 0;
+        const duration = operation.standardDuration || 0;
         if (duration <= 2) return "bg-green-500";
         if (duration <= 4) return "bg-yellow-500";
         if (duration <= 8) return "bg-orange-500";
@@ -215,10 +215,10 @@ export default function OperationBlock({
   const getTextForLabel = (labelType: string) => {
     switch (labelType) {
       case "operation_name":
-        return operation.name;
+        return operation.operationName || operation.name;
       
       case "job_name":
-        return jobName || `Job ${operation.jobId}`;
+        return jobName || `Job ${operation.productionOrderId}`;
       
       case "due_date":
         return job?.dueDate ? new Date(job.dueDate).toLocaleDateString() : "No due date";
@@ -230,7 +230,7 @@ export default function OperationBlock({
         return operation.status;
       
       case "duration":
-        return `${operation.duration}h`;
+        return `${operation.standardDuration || 0}h`;
       
       case "progress":
         // Calculate progress based on status
@@ -304,7 +304,7 @@ export default function OperationBlock({
         return "0%";
       
       default:
-        return operation.name;
+        return operation.operationName || operation.name || "Operation";
     }
   };
 
