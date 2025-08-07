@@ -401,8 +401,8 @@ export default function OperationBlock({
               <div className="h-full flex flex-col">
                 {/* Blue header with WO and operation name */}
                 <div className="bg-blue-600 text-white px-2 py-1 text-xs font-medium border-b border-blue-700" style={{ height: '60%' }}>
-                  <div className="truncate">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
-                  <div className="truncate">Operation name: {operation.operationName || "Operation"}</div>
+                  <div className="truncate">WO-{job?.orderNumber || operation.productionOrderId}</div>
+                  <div className="truncate">{operation.operationName || "Operation"}</div>
                 </div>
                 {/* Status bar - orange for waiting (unscheduled operations are waiting) */}
                 <div className="bg-orange-500 flex-1 px-2 flex items-center text-xs text-white font-medium">
@@ -465,8 +465,8 @@ export default function OperationBlock({
             <div className="h-full flex flex-col relative">
               {/* Blue header with WO and operation name */}
               <div className="bg-blue-600 text-white px-2 py-0.5 text-xs font-medium border-b border-blue-700" style={{ minHeight: '55%' }}>
-                <div className="truncate leading-tight">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
-                <div className="truncate leading-tight">Operation name: {operation.operationName?.substring(0, 20) || "Op"}</div>
+                <div className="truncate leading-tight">WO-{job?.orderNumber || operation.productionOrderId}</div>
+                <div className="truncate leading-tight">{operation.operationName?.substring(0, 20) || "Op"}</div>
               </div>
               {/* Status bar - green for ready, orange for waiting */}
               <div className={`flex-1 px-2 flex items-center text-xs text-white font-medium ${
