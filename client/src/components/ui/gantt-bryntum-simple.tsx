@@ -108,6 +108,7 @@ export function SimpleBryntumGantt({
           console.log('🔍 Window bryntum object:', (window as any).bryntum);
           
           if (BryntumGantt) {
+            console.log('🔄 Calling initializeGantt...');
             initializeGantt();
           } else {
             console.error('❌ Bryntum Gantt class not found in window object');
@@ -124,6 +125,13 @@ export function SimpleBryntumGantt({
     };
 
     const initializeGantt = async () => {
+      console.log('🔍 initializeGantt called - checking conditions...');
+      console.log('ganttRef.current:', !!ganttRef.current);
+      console.log('ganttInstanceRef.current:', !!ganttInstanceRef.current);  
+      console.log('BryntumGantt:', !!BryntumGantt);
+      console.log('operations length:', operations?.length || 0);
+      console.log('resources length:', resources?.length || 0);
+      
       if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
           console.log('🏗️ Initializing Bryntum Gantt with data:');
