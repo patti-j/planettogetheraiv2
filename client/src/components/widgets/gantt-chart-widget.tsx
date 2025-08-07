@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, User, AlertTriangle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 interface GanttChartWidgetProps {
   configuration?: {
@@ -26,44 +27,28 @@ export default function GanttChartWidget({
   isMobile = false, 
   compact = false 
 }: GanttChartWidgetProps) {
-  const mockData = [
-    {
-      id: 1,
-      orderNumber: "PO-2024-001",
-      item: "Widget A",
-      quantity: 1000,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: "in-progress",
-      priority: "high",
-      progress: 45,
-      resource: "Line 1"
-    },
-    {
-      id: 2,
-      orderNumber: "PO-2024-002", 
-      item: "Widget B",
-      quantity: 500,
-      startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      status: "scheduled",
-      priority: "medium",
-      progress: 0,
-      resource: "Line 2"
-    },
-    {
-      id: 3,
-      orderNumber: "PO-2024-003",
-      item: "Widget C", 
-      quantity: 2000,
-      startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      status: "delayed",
-      priority: "critical",
-      progress: 20,
-      resource: "Line 1"
-    }
-  ];
+  // Fetch real operations data from the API
+  const { data: operations, isLoading: operationsLoading } = useQuery({
+    queryKey: ['/api/operations']
+  });
+
+  // Transform operations data to match the expected format
+  const transformedData = React.useMemo(() => {
+    if (!operations || !Array.isArray(operations)) return [];
+    
+    return operations.map((op: any) => ({
+      id: op.id,
+      orderNumber: `OP-${op.id}`,
+      item: op.operationName || `Operation ${op.id}`,
+      quantity: op.standardDuration || 0,
+      startDate: op.startTime ? new Date(op.startTime) : new Date(),
+      endDate: op.endTime ? new Date(op.endTime) : new Date(Date.now() + 2 * 60 * 60 * 1000),
+      status: op.status || "scheduled",
+      priority: op.priority === 1 ? "critical" : op.priority <= 3 ? "high" : op.priority <= 7 ? "medium" : "low",
+      progress: op.completionPercentage || 0,
+      resource: `Work Center ${op.workCenterId || 1}`
+    }));
+  }, [operations]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -84,10 +69,21 @@ export default function GanttChartWidget({
     }
   };
 
+  if (operationsLoading) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading operations...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (compact) {
     return (
       <div className={`space-y-2 ${className}`}>
-        {mockData.slice(0, 3).map((order) => (
+        {transformedData.slice(0, 3).map((order) => (
           <div key={order.id} className="flex items-center justify-between p-2 bg-muted rounded">
             <div className="flex items-center gap-2">
               {getPriorityIcon(order.priority)}
@@ -128,54 +124,60 @@ export default function GanttChartWidget({
 
       {/* Timeline Content */}
       <div className="space-y-2">
-        {mockData.map((order) => (
-          <Card key={order.id} className="p-3">
-            <div className="grid grid-cols-8 gap-1 items-center text-sm">
-              <div className="font-medium">{order.orderNumber}</div>
-              <div>{order.item}</div>
-              <div className="flex items-center gap-1">
-                <User className="w-3 h-3" />
-                {order.resource}
-              </div>
-              <div className="flex items-center gap-1">
-                <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`} />
-                <span className="capitalize">{order.status}</span>
-              </div>
-              <div>{getPriorityIcon(order.priority)}</div>
-              <div className="flex items-center gap-2">
-                <div className="w-16 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getStatusColor(order.status)}`}
-                    style={{ width: `${order.progress}%` }}
-                  />
-                </div>
-                <span className="text-xs">{order.progress}%</span>
-              </div>
-              <div className="text-xs">
-                {order.startDate.toLocaleDateString()}
-              </div>
-              <div className="text-xs">
-                {order.endDate.toLocaleDateString()}
-              </div>
-            </div>
-
-            {/* Gantt Bar Visualization */}
-            <div className="mt-3 relative">
-              <div className="w-full h-6 bg-gray-100 rounded relative">
-                <div 
-                  className={`absolute top-0 h-full rounded ${getStatusColor(order.status)} opacity-80`}
-                  style={{ 
-                    left: '10%', 
-                    width: `${Math.max(order.progress, 10)}%` 
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center text-xs text-white mix-blend-difference">
-                  {order.quantity.toLocaleString()} units
-                </div>
-              </div>
-            </div>
+        {transformedData.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">No operations found</p>
           </Card>
-        ))}
+        ) : (
+          transformedData.map((order) => (
+            <Card key={order.id} className="p-3">
+              <div className="grid grid-cols-8 gap-1 items-center text-sm">
+                <div className="font-medium">{order.orderNumber}</div>
+                <div>{order.item}</div>
+                <div className="flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  {order.resource}
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`} />
+                  <span className="capitalize">{order.status}</span>
+                </div>
+                <div>{getPriorityIcon(order.priority)}</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${getStatusColor(order.status)}`}
+                      style={{ width: `${order.progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs">{order.progress}%</span>
+                </div>
+                <div className="text-xs">
+                  {order.startDate.toLocaleDateString()}
+                </div>
+                <div className="text-xs">
+                  {order.endDate.toLocaleDateString()}
+                </div>
+              </div>
+
+              {/* Gantt Bar Visualization */}
+              <div className="mt-3 relative">
+                <div className="w-full h-6 bg-gray-100 rounded relative">
+                  <div 
+                    className={`absolute top-0 h-full rounded ${getStatusColor(order.status)} opacity-80`}
+                    style={{ 
+                      left: '10%', 
+                      width: `${Math.max(order.progress, 10)}%` 
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center text-xs text-white mix-blend-difference">
+                    {order.quantity.toLocaleString()} units
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Legend */}
