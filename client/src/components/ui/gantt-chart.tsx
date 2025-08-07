@@ -37,6 +37,7 @@ interface GanttChartProps {
   onResourceViewChange?: (viewId: number | null) => void;
   rowHeight?: number;
   onRowHeightChange?: (height: number) => void;
+  onExportReady?: (exportHandler: () => Promise<void>) => void;
 }
 
 type TimeUnit = "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
@@ -50,7 +51,8 @@ export default function GanttChart({
   selectedResourceViewId: externalSelectedResourceViewId,
   onResourceViewChange,
   rowHeight = 60,
-  onRowHeightChange
+  onRowHeightChange,
+  onExportReady
 }: GanttChartProps) {
   
   // Debug: Log the received props to understand data structure
@@ -1207,6 +1209,13 @@ export default function GanttChart({
     if (!ganttContainerRef.current) return;
     GanttExportUtility.printGantt(ganttContainerRef.current, 'Production Schedule');
   }, []);
+  
+  // Register the export handler with parent component
+  useEffect(() => {
+    if (onExportReady) {
+      onExportReady(handleExportPDF);
+    }
+  }, [onExportReady, handleExportPDF]);
   
   // Toolbar handlers
   const handleJobSearch = useCallback((query: string) => {

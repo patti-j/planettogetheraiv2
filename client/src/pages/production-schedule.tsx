@@ -76,6 +76,7 @@ export default function ProductionSchedulePage() {
 
   const [activeTab, setActiveTab] = useState('gantt');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [exportHandler, setExportHandler] = useState<(() => Promise<void>) | null>(null);
 
   // Check permissions
   const canViewSchedule = hasPermission('schedule', 'view');
@@ -209,13 +210,11 @@ export default function ProductionSchedulePage() {
                 variant="outline" 
                 size="sm" 
                 className="gap-2"
-                onClick={() => {
-                  // Click the working export button in the resource panel
-                  const resourcePanelExportButton = document.querySelector('button[title="Export PDF"]') as HTMLButtonElement;
-                  if (resourcePanelExportButton) {
-                    resourcePanelExportButton.click();
+                onClick={async () => {
+                  if (exportHandler) {
+                    await exportHandler();
                   } else {
-                    alert("Please switch to the Gantt Chart tab to use export functionality");
+                    alert("Please wait for the Gantt Chart to load");
                   }
                 }}
               >
@@ -511,6 +510,7 @@ export default function ProductionSchedulePage() {
                   capabilities={[]}
                   view="operations"
                   rowHeight={isMobile ? 40 : 60}
+                  onExportReady={setExportHandler}
                 />
               ) : (
                 <Card className="h-full">
