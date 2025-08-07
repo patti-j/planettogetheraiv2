@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { users } from "../shared/schema-simple";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // Basic storage using direct SQL queries to bypass Drizzle connection issues
 export class BasicStorage {
@@ -545,22 +545,34 @@ export class BasicStorage {
 
   async createCustomConstraint(data: any) {
     try {
-      const result = await db.execute(`
+      // Use sql template literal for proper parameter binding
+      const query = sql`
         INSERT INTO custom_constraints (
           name, description, constraint_type, severity, category, impact_area,
           is_active, enforce_in_scheduling, enforce_in_optimization,
           monitoring_frequency, violation_action, violation_threshold,
           created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ) VALUES (
+          ${data.name}, 
+          ${data.description}, 
+          ${data.constraintType}, 
+          ${data.severity},
+          ${data.category || null}, 
+          ${data.impactArea || null}, 
+          ${data.isActive ?? true},
+          ${data.enforceInScheduling ?? false}, 
+          ${data.enforceInOptimization ?? false},
+          ${data.monitoringFrequency || null}, 
+          ${data.violationAction || null}, 
+          ${data.violationThreshold || null},
+          ${1}
+        )
         RETURNING *
-      `, [
-        data.name, data.description, data.constraintType, data.severity,
-        data.category, data.impactArea, data.isActive ?? true,
-        data.enforceInScheduling ?? false, data.enforceInOptimization ?? false,
-        data.monitoringFrequency, data.violationAction, data.violationThreshold,
-        1 // Default user ID
-      ]);
+      `;
       
+      console.log("Creating constraint with data:", data);
+      
+      const result = await db.execute(query);
       return result.rows[0];
     } catch (error) {
       console.error("Error creating custom constraint:", error);
@@ -570,23 +582,26 @@ export class BasicStorage {
 
   async updateCustomConstraint(id: number, data: any) {
     try {
-      const result = await db.execute(`
+      const query = sql`
         UPDATE custom_constraints
-        SET name = $1, description = $2, constraint_type = $3, severity = $4,
-            category = $5, impact_area = $6, is_active = $7,
-            enforce_in_scheduling = $8, enforce_in_optimization = $9,
-            monitoring_frequency = $10, violation_action = $11, violation_threshold = $12,
+        SET name = ${data.name}, 
+            description = ${data.description}, 
+            constraint_type = ${data.constraintType}, 
+            severity = ${data.severity},
+            category = ${data.category || null}, 
+            impact_area = ${data.impactArea || null}, 
+            is_active = ${data.isActive ?? true},
+            enforce_in_scheduling = ${data.enforceInScheduling ?? false}, 
+            enforce_in_optimization = ${data.enforceInOptimization ?? false},
+            monitoring_frequency = ${data.monitoringFrequency || null}, 
+            violation_action = ${data.violationAction || null}, 
+            violation_threshold = ${data.violationThreshold || null},
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = $13
+        WHERE id = ${id}
         RETURNING *
-      `, [
-        data.name, data.description, data.constraintType, data.severity,
-        data.category, data.impactArea, data.isActive ?? true,
-        data.enforceInScheduling ?? false, data.enforceInOptimization ?? false,
-        data.monitoringFrequency, data.violationAction, data.violationThreshold,
-        id
-      ]);
+      `;
       
+      const result = await db.execute(query);
       return result.rows[0];
     } catch (error) {
       console.error("Error updating custom constraint:", error);
@@ -596,7 +611,7 @@ export class BasicStorage {
 
   async deleteCustomConstraint(id: number) {
     try {
-      await db.execute('DELETE FROM custom_constraints WHERE id = $1', [id]);
+      await db.execute(sql`DELETE FROM custom_constraints WHERE id = ${id}`);
       return true;
     } catch (error) {
       console.error("Error deleting custom constraint:", error);
