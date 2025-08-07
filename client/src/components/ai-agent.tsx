@@ -781,12 +781,12 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                 className={`flex gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div className={`flex gap-2 max-w-[80%] ${message.type === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden ${
                     message.type === "user" ? "bg-blue-500" : aiTheme.gradient
                   }`}>
                     {message.type === "user" ? 
-                      <User className="w-4 h-4 text-white" /> : 
-                      <Bot className="w-4 h-4 text-white" />
+                      <User className="w-4 h-4 text-white flex-shrink-0" /> : 
+                      <Bot className="w-4 h-4 text-white flex-shrink-0" />
                     }
                   </div>
                   
@@ -848,8 +848,8 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
             {(textCommandMutation.isPending || voiceCommandMutation.isPending) && (
               <div className="flex gap-3 justify-start">
                 <div className="flex gap-2 max-w-[80%]">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${aiTheme.gradient}`}>
-                    <Bot className="w-4 h-4 text-white" />
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden ${aiTheme.gradient}`}>
+                    <Bot className="w-4 h-4 text-white flex-shrink-0" />
                   </div>
                   <div className="rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
                     <p className="text-sm">Processing your command...</p>

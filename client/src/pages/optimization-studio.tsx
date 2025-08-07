@@ -670,8 +670,8 @@ export default function OptimizationStudio() {
                     <div className="flex-1 overflow-y-auto space-y-4 p-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                       <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
                         <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
-                            <Brain className="w-5 h-5 text-white" />
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <Brain className="w-5 h-5 text-white flex-shrink-0" />
                           </div>
                           <div className="space-y-2">
                             <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Let's Build Your Algorithm Together</h3>
