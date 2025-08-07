@@ -208,7 +208,7 @@ export default function GanttChart({
 
     resources.forEach(resource => {
       const resourceOperations = operations.filter(op => 
-        op.assignedResourceId === resource.id && op.startTime && op.endTime
+        op.workCenterId === resource.id && op.startTime && op.endTime
       );
 
       // Calculate scheduled hours for this resource
@@ -891,14 +891,14 @@ export default function GanttChart({
     // Small delay to ensure DOM elements are rendered
     const updateConnections = () => {
       const jobOperations = getOperationsByJob(hoveredJobId)
-        .filter(op => op.startTime && op.endTime && op.assignedResourceId)
+        .filter(op => op.startTime && op.endTime && op.workCenterId)
         .sort((a, b) => new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime());
 
       console.log('Connection lines debug:', {
         hoveredJobId,
         totalOperations: getOperationsByJob(hoveredJobId).length,
         scheduledOperations: jobOperations.length,
-        operations: jobOperations.map(op => ({ id: op.id, name: op.name, hasTime: !!op.startTime && !!op.endTime, hasResource: !!op.assignedResourceId }))
+        operations: jobOperations.map(op => ({ id: op.id, name: op.operationName, hasTime: !!op.startTime && !!op.endTime, hasResource: !!op.workCenterId }))
       });
 
       if (jobOperations.length < 2) {
@@ -979,7 +979,7 @@ export default function GanttChart({
     return connectionLines;
   };
 
-  const unscheduledOperations = operations.filter(op => !op.assignedResourceId);
+  const unscheduledOperations = operations.filter(op => !op.workCenterId);
 
   const handleViewSettingChange = async (newValue: string, settingType: "colorScheme" | "textLabeling") => {
     if (!selectedResourceView) {
@@ -1170,7 +1170,7 @@ export default function GanttChart({
                         <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
                           <OperationBlock
                           operation={operation}
-                          resourceName={getResourceName(operation.assignedResourceId || 0)}
+                          resourceName={getResourceName(operation.workCenterId || 0)}
                           jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
                           job={jobs.find(job => job.id === operation.productionOrderId)}
                           timelineWidth={timelineWidth}
@@ -1210,7 +1210,7 @@ export default function GanttChart({
 
   // Draggable resource row component for reordering
   const DraggableResourceRow = ({ resource, index }: { resource: Resource; index: number }) => {
-    const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
+    const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
     
     // Can only drag if we have a selected resource view
@@ -1353,7 +1353,7 @@ export default function GanttChart({
 
   // Create a separate component to handle the drop zone for each resource (fallback)
   const ResourceRow = ({ resource }: { resource: Resource }) => {
-    const resourceOperations = operations.filter(op => op.assignedResourceId === resource.id);
+    const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
 
     return (
@@ -1523,7 +1523,7 @@ export default function GanttChart({
                         <OperationBlock
                           key={operation.id}
                           operation={operation}
-                          resourceName={resources.find(r => r.id === operation.assignedResourceId)?.name || "Unassigned"}
+                          resourceName={resources.find(r => r.id === operation.workCenterId)?.name || "Unassigned"}
                           jobName={job.name}
                           job={job}
                           timelineWidth={timelineWidth}
