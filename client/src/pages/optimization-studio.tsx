@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -381,6 +381,18 @@ export default function OptimizationStudio() {
     };
     return templates[template] || 'general optimization problems';
   };
+  
+  // Initialize AI session with message when dialog opens but messages are empty
+  useEffect(() => {
+    if (showAICreateDialog && aiSessionActive && aiSessionMessages.length === 0) {
+      // If session is active but no messages, add initial message
+      const initialMessage = selectedTemplate 
+        ? `Hello! I see you've selected the **${selectedTemplate}** template. This is a great starting point for ${getTemplateDescription(selectedTemplate)}.\n\n**Step 1: Problem Definition**\n\nCould you describe the specific optimization challenge you're facing? What makes this problem unique for your operation?`
+        : `Hello! I'm here to help you create a custom optimization algorithm tailored to your needs.\n\n**Step 1: Problem Definition**\n\nLet's start by understanding your optimization challenge. Could you describe:\n• What process or operation needs optimization?\n• What are your main objectives (cost, time, quality)?\n• Any specific constraints or limitations?`;
+      
+      setAiSessionMessages([{ role: 'assistant', content: initialMessage }]);
+    }
+  }, [showAICreateDialog, aiSessionActive, selectedTemplate]);
 
   // Filter algorithms based on category and search
   const filteredAlgorithms = algorithms.filter((algo: OptimizationAlgorithm) => {
@@ -757,34 +769,46 @@ export default function OptimizationStudio() {
 
                       {/* Conversation Area */}
                       <div 
-                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-gray-50" 
+                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-white" 
                         style={{ 
                           WebkitOverflowScrolling: 'touch',
                           overscrollBehavior: 'contain',
                           touchAction: 'pan-y',
-                          minHeight: 0
+                          minHeight: '200px'
                         }}
                       >
-                        {aiSessionMessages.map((message, index) => (
-                          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${
-                              message.role === 'user' 
-                                ? 'bg-blue-500 text-white' 
-                                : 'bg-white border shadow-sm'
-                            }`}>
-                              <div className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</div>
+                        {aiSessionMessages.length === 0 ? (
+                          <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500">
+                            <div className="text-center p-4">
+                              <Brain className="w-8 h-8 mx-auto mb-2 text-purple-400" />
+                              <p className="text-sm">Starting AI collaboration session...</p>
+                              <p className="text-xs mt-1">Please wait a moment while I prepare.</p>
                             </div>
                           </div>
-                        ))}
-                        {aiCollaborateSession.isPending && (
-                          <div className="flex justify-start">
-                            <div className="bg-white border shadow-sm p-3 rounded-lg">
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
-                                AI is thinking...
+                        ) : (
+                          <>
+                            {aiSessionMessages.map((message, index) => (
+                              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${
+                                  message.role === 'user' 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-gray-100 border border-gray-200 shadow-sm'
+                                }`}>
+                                  <div className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
+                            ))}
+                            {aiCollaborateSession.isPending && (
+                              <div className="flex justify-start">
+                                <div className="bg-gray-100 border border-gray-200 shadow-sm p-3 rounded-lg">
+                                  <div className="flex items-center gap-2 text-gray-600">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                                    AI is thinking...
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
 
