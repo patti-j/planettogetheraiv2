@@ -48,7 +48,7 @@ export default function OperationBlock({
   const [{ isDragging }, drag] = useDrag({
     type: "operation",
     item: (monitor) => {
-      console.log("Starting drag for operation:", operation.operationName || operation.name);
+      console.log("Starting drag for operation:", operation.operationName);
       // Store the initial mouse position relative to the element
       const initialOffset = monitor.getInitialClientOffset();
       const elementRect = monitor.getInitialSourceClientOffset();
@@ -61,7 +61,7 @@ export default function OperationBlock({
       };
     },
     end: (item, monitor) => {
-      console.log("Ending drag for operation:", operation.operationName || operation.name, "dropped:", monitor.didDrop());
+      console.log("Ending drag for operation:", operation.operationName, "dropped:", monitor.didDrop());
     },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -244,7 +244,7 @@ export default function OperationBlock({
         return resourceName || "Unassigned";
       
       case "customer":
-        return job?.customer || "Unknown";
+        return job?.customerId?.toString() || "Unknown";
       
       case "job_description":
         return job?.description || "No description";
@@ -257,7 +257,7 @@ export default function OperationBlock({
         return "Machine"; // placeholder
       
       case "capabilities":
-        return operation.requiredCapabilities?.join(", ") || "None";
+        return operation.requiredCapabilityIds?.join(", ") || "None";
       
       case "start_time":
         return operation.startTime ? new Date(operation.startTime).toLocaleString() : "Not scheduled";
@@ -307,7 +307,7 @@ export default function OperationBlock({
         return "0%";
       
       default:
-        return operation.operationName || operation.name || "Operation";
+        return operation.operationName || "Operation";
     }
   };
 
@@ -340,7 +340,7 @@ export default function OperationBlock({
       }
     }
     // Fallback to operation name if no custom label
-    return operation.name;
+    return operation.operationName || "Operation";
   };
 
   const getTooltipContent = () => {

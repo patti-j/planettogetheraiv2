@@ -2,11 +2,11 @@ import { useDrop } from 'react-dnd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { Resource, Operation } from '@shared/schema';
+import type { Resource, DiscreteOperation } from '@shared/schema';
 import { safeCanDrop, safeCanAssignOperation, logDragDropError } from '@/lib/drag-drop-error-handler';
 
 interface DragItem {
-  operation: Operation;
+  operation: DiscreteOperation;
   cursorOffsetX?: number; // How far from the left edge of the block the cursor is
 }
 
