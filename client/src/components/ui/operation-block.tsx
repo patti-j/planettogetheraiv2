@@ -128,7 +128,7 @@ export default function OperationBlock({
       const widthPerHour = dayWidth / hoursInPeriod;
       width = operationDurationHours * widthPerHour;
       
-      console.log(`Operation ${operation.operationName}: duration=${operationDurationHours}h, widthPerHour=${widthPerHour}, width=${width}, dayWidth=${dayWidth}`);
+      // Width calculation will be handled by Bryntum Gantt library
     } else {
       // For other time units, use the existing calculation
       let pixelsPerHour: number;
@@ -148,7 +148,7 @@ export default function OperationBlock({
       width = operationDurationHours * pixelsPerHour;
     }
     
-    // Ensure minimum width for visibility
+    // Ensure minimum width for visibility (Bryntum will handle this automatically)
     const minWidth = 40; // Minimum width to show text
     width = Math.max(width, minWidth);
     
