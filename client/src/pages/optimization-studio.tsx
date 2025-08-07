@@ -504,8 +504,8 @@ export default function OptimizationStudio() {
       <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <div className="flex-1">
-            <CardTitle className="text-base sm:text-lg leading-tight">{algorithm.displayName}</CardTitle>
-            <CardDescription className="mt-1 text-sm line-clamp-2">{algorithm.description}</CardDescription>
+            <CardTitle className="text-base sm:text-lg leading-tight text-gray-900 dark:text-gray-100">{algorithm.displayName}</CardTitle>
+            <CardDescription className="mt-1 text-sm line-clamp-2 text-gray-600 dark:text-gray-400">{algorithm.description}</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2 sm:flex-col sm:ml-4">
             <Badge className={`${getStatusColor(algorithm.status)} text-white text-xs`}>
@@ -521,15 +521,15 @@ export default function OptimizationStudio() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-3">
           <span className="capitalize truncate">{algorithm.category.replace('_', ' ')}</span>
           <span className="text-xs ml-2">v{algorithm.version}</span>
         </div>
         
         {algorithm.performance && Object.keys(algorithm.performance).length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2 text-xs">
-            <div className="flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-green-600" />
+            <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+              <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
               <span>Performance: {algorithm.performance.score || 'N/A'}</span>
             </div>
           </div>
@@ -573,7 +573,7 @@ export default function OptimizationStudio() {
   // Show algorithm architecture view if selected
   if (showArchitectureView) {
     return (
-      <div className="relative min-h-screen bg-gray-50">
+      <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
         <Button
           onClick={() => setIsMaximized(!isMaximized)}
           className="hidden sm:flex fixed top-2 right-16 z-50"
@@ -596,7 +596,7 @@ export default function OptimizationStudio() {
   // Show backwards scheduling algorithm if selected
   if (showBackwardsScheduling) {
     return (
-      <div className="relative min-h-screen bg-gray-50">
+      <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
         <Button
           onClick={() => setIsMaximized(!isMaximized)}
           className="hidden sm:flex fixed top-2 right-16 z-50"
@@ -614,7 +614,7 @@ export default function OptimizationStudio() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Maximize/Minimize Button */}
       <Button
         onClick={() => setIsMaximized(!isMaximized)}
@@ -633,7 +633,7 @@ export default function OptimizationStudio() {
               <Target className="w-6 h-6" />
               Optimization Studio
             </h1>
-            <p className="text-sm md:text-base text-gray-600 mt-1">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
               Define, customize, test, and deploy optimization algorithms across manufacturing functions
             </p>
           </div>
@@ -1611,7 +1611,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                 <h2 className="text-lg font-semibold">Featured Algorithm</h2>
                 <Badge variant="outline">Production Scheduling</Badge>
               </div>
-              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 hover:shadow-lg transition-shadow cursor-pointer"
+              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-800 hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => setShowBackwardsScheduling(true)}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -1638,7 +1638,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <span>Production Scheduling</span>
                     <span>v1.0.0</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-xs text-blue-600 dark:text-blue-400">
+                  <div className="grid grid-cols-3 gap-4 text-xs text-blue-700 dark:text-blue-200">
                     <div className="flex items-center gap-1">
                       <Target className="w-3 h-3" />
                       <span>Due Date Focus</span>
