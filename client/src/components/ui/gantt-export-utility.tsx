@@ -26,9 +26,14 @@ export class GanttExportUtility {
     } = options;
 
     try {
+      console.log("EXPORT UTILITY: Starting PDF export process");
+      console.log("EXPORT UTILITY: Gantt element received:", ganttElement);
+      
       // Create a copy of the element to avoid modifying the original
       const clonedElement = ganttElement.cloneNode(true) as HTMLElement;
+      console.log("EXPORT UTILITY: Cloned element created");
       document.body.appendChild(clonedElement);
+      console.log("EXPORT UTILITY: Cloned element added to DOM");
       
       // Apply export-specific styles
       clonedElement.style.position = 'absolute';
@@ -43,12 +48,14 @@ export class GanttExportUtility {
       }
       
       // Capture the element as canvas
+      console.log("EXPORT UTILITY: Starting html2canvas capture");
       const canvas = await html2canvas(clonedElement, {
         scale: 2,
         useCORS: true,
-        logging: false,
+        logging: true, // Enable logging to debug canvas issues
         backgroundColor: '#ffffff'
       });
+      console.log("EXPORT UTILITY: Canvas capture completed, size:", canvas.width + "x" + canvas.height);
       
       // Remove cloned element
       document.body.removeChild(clonedElement);
@@ -76,7 +83,10 @@ export class GanttExportUtility {
       pdf.addImage(imgData, 'PNG', 0, includeHeaders ? 25 : 0, imgWidth, imgHeight);
       
       // Save the PDF
-      pdf.save(`${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      const fileName = `${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      console.log("EXPORT UTILITY: Saving PDF as:", fileName);
+      pdf.save(fileName);
+      console.log("EXPORT UTILITY: PDF export completed successfully");
     } catch (error) {
       console.error('Failed to export PDF:', error);
       throw error;

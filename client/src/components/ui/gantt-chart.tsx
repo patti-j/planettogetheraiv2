@@ -1159,9 +1159,17 @@ export default function GanttChart({
   
   // Export handlers
   const handleExportPDF = useCallback(async () => {
-    if (!ganttContainerRef.current) return;
+    console.log("EXPORT CLICKED - Starting export process");
+    if (!ganttContainerRef.current) {
+      console.error("EXPORT ERROR: Gantt container ref is null");
+      toast({ title: 'Export failed: Unable to find Gantt chart', variant: 'destructive' });
+      return;
+    }
+    
+    console.log("EXPORT: Gantt container found, proceeding with export");
     
     try {
+      console.log("EXPORT: Calling GanttExportUtility.exportToPDF");
       await GanttExportUtility.exportToPDF(
         ganttContainerRef.current,
         'Production Schedule',
@@ -1170,8 +1178,10 @@ export default function GanttChart({
           includeHeaders: true
         }
       );
+      console.log("EXPORT: PDF export completed successfully");
       toast({ title: 'PDF exported successfully' });
     } catch (error) {
+      console.error('EXPORT ERROR:', error);
       toast({ title: 'Failed to export PDF', variant: 'destructive' });
     }
   }, [toast]);
@@ -2295,7 +2305,7 @@ export default function GanttChart({
   return (
     <DndProvider backend={HTML5Backend}>
       <TooltipProvider>
-        <div className="h-full">
+        <div className="h-full" ref={ganttContainerRef}>
           {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
           
           {/* Operation Dialog */}
