@@ -77,6 +77,7 @@ export default function ProductionSchedulePage() {
   const [activeTab, setActiveTab] = useState('gantt');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
+  const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
 
   // Check permissions
   const canViewSchedule = hasPermission('schedule', 'view');
@@ -509,7 +510,8 @@ export default function ProductionSchedulePage() {
                   resources={(resources as any) || []}
                   capabilities={[]}
                   view="operations"
-                  rowHeight={isMobile ? 40 : 60}
+                  rowHeight={ganttRowHeight}
+                  onRowHeightChange={setGanttRowHeight}
                   onExportReady={(handler) => {
                     exportHandlerRef.current = handler;
                   }}

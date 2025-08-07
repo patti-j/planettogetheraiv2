@@ -118,29 +118,38 @@ export default function OperationBlock({
     const operationDurationHours = operationDurationMs / (60 * 60 * 1000);
     
     // Calculate pixels per hour based on the time unit
+    // dayWidth represents the width of one time unit period
     let pixelsPerHour: number;
     switch (timeUnit) {
       case "hour":
-        pixelsPerHour = dayWidth; // dayWidth is actually hourWidth in this case
+        pixelsPerHour = dayWidth; // dayWidth is width of 1 hour
         break;
       case "shift":
-        pixelsPerHour = dayWidth / 8; // 8 hours per shift
+        pixelsPerHour = dayWidth / 8; // dayWidth is width of 8 hours
         break;
       case "day":
-        pixelsPerHour = dayWidth / 24; // 24 hours per day
+        pixelsPerHour = dayWidth / 24; // dayWidth is width of 24 hours
         break;
       case "week":
-        pixelsPerHour = dayWidth / (7 * 24); // 168 hours per week
+        pixelsPerHour = dayWidth / (7 * 24); // dayWidth is width of 168 hours
         break;
       case "month":
-        pixelsPerHour = dayWidth / (30 * 24); // 720 hours per month
+        pixelsPerHour = dayWidth / (30 * 24); // dayWidth is width of 720 hours
         break;
       default:
         pixelsPerHour = dayWidth / 24;
     }
     
     // Calculate width based on actual duration in hours
-    const width = Math.max(operationDurationHours * pixelsPerHour, 30); // Minimum 30px for visibility
+    // Ensure proportional widths for different operation durations
+    const calculatedWidth = operationDurationHours * pixelsPerHour;
+    
+    // Log for debugging width calculation
+    console.log(`Operation ${operation.operationName}: duration=${operationDurationHours}h, pixelsPerHour=${pixelsPerHour}, calculatedWidth=${calculatedWidth}, dayWidth=${dayWidth}, timeUnit=${timeUnit}`);
+    
+    // Use different minimum widths based on time unit to ensure visibility
+    const minWidth = timeUnit === "month" ? 20 : timeUnit === "week" ? 25 : 30;
+    const width = Math.max(calculatedWidth, minWidth);
     
     // Calculate left position
     const left = startOffset * dayWidth;
