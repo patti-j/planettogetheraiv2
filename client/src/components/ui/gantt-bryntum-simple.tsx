@@ -90,10 +90,18 @@ export function SimpleBryntumGantt({
   useEffect(() => {
     const loadBryntum = async () => {
       // Check if already loaded
-      if ((window as any).bryntum?.gantt?.Gantt) {
-        BryntumGantt = (window as any).bryntum.gantt.Gantt;
-        initializeGantt();
-        return;
+      const win = window as any;
+      
+      // Try multiple paths to find Bryntum
+      if (win.bryntum?.gantt?.Gantt || win.bryntum?.gantt || win.gantt?.Gantt) {
+        console.log('✅ Bryntum already loaded, accessing Gantt class...');
+        BryntumGantt = win.bryntum?.gantt?.Gantt || win.bryntum?.gantt || win.gantt?.Gantt || win.Gantt;
+        
+        if (BryntumGantt) {
+          console.log('📊 Found Bryntum Gantt class:', BryntumGantt);
+          initializeGantt();
+          return;
+        }
       }
 
       // Load script
@@ -103,18 +111,32 @@ export function SimpleBryntumGantt({
       script.onload = () => {
         console.log('📜 Bryntum script loaded, checking for Gantt class...');
         setTimeout(() => {
-          BryntumGantt = (window as any).bryntum?.gantt?.Gantt || (window as any).Gantt;
-          console.log('🎯 Bryntum Gantt class available:', !!BryntumGantt);
-          console.log('🔍 Window bryntum object:', (window as any).bryntum);
+          const win = window as any;
+          
+          // Log what's available
+          console.log('🔍 Window properties after load:');
+          console.log('window.bryntum:', win.bryntum);
+          console.log('window.gantt:', win.gantt); 
+          console.log('window.Gantt:', win.Gantt);
+          
+          // Try all possible paths
+          BryntumGantt = win.bryntum?.gantt?.Gantt || 
+                         win.bryntum?.Gantt ||
+                         win.gantt?.Gantt ||
+                         win.Gantt;
+          
+          console.log('🎯 Bryntum Gantt class found:', !!BryntumGantt);
           
           if (BryntumGantt) {
             console.log('🔄 Calling initializeGantt...');
+            console.log('Gantt constructor:', BryntumGantt);
             initializeGantt();
           } else {
-            console.error('❌ Bryntum Gantt class not found in window object');
+            console.error('❌ Bryntum Gantt class not found in any expected location');
+            console.error('Available window properties:', Object.keys(win).filter(k => k.includes('bryntum') || k.includes('gantt') || k.includes('Gantt')));
             setIsReady(false);
           }
-        }, 200); // Increase timeout slightly
+        }, 500); // Give more time for script to fully load
       };
       script.onerror = (error) => {
         console.error('❌ Failed to load Bryntum script:', error);
