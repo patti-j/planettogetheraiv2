@@ -215,7 +215,7 @@ export default function OperationBlock({
   const getTextForLabel = (labelType: string) => {
     switch (labelType) {
       case "operation_name":
-        return operation.operationName || operation.name;
+        return operation.operationName;
       
       case "job_name":
         return jobName || `J${operation.productionOrderId}`;
@@ -395,7 +395,7 @@ export default function OperationBlock({
                 minWidth: "120px",
                 padding: "0 8px",
               }}
-              onMouseEnter={() => onHoverStart?.(operation.jobId)}
+              onMouseEnter={() => onHoverStart?.(operation.productionOrderId)}
               onMouseLeave={() => onHoverEnd?.()}
             >
               <div className="h-full flex items-center justify-between text-white text-xs relative">

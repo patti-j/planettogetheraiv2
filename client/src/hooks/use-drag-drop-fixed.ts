@@ -233,18 +233,17 @@ export function useOperationDrop(
 export function useTimelineDrop(
   resource: Resource,
   timelineWidth: number,
-  timeScale: any[],
+  timeScale: any,
   timeUnit: TimeUnit,
   timelineScrollLeft: number,
-  timelineBaseDate: Date,
-  onDropSuccess?: () => void
+  timelineBaseDate: Date
 ) {
-  return useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft, timelineBaseDate, onDropSuccess);
+  return useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft, timelineBaseDate);
 }
 
 export function useCapabilityValidation() {
   return {
-    canAssignOperation: (operation: Operation, resource: Resource) => 
+    canAssignOperation: (operation: any, resource: Resource) => 
       safeCanAssignOperation(operation, resource, "capability-validation")
   };
 }
