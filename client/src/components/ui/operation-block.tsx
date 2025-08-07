@@ -387,20 +387,26 @@ export default function OperationBlock({
               ref={drag}
               data-operation-block
               data-operation-id={operation.id}
-              className={`inline-block mr-2 mb-2 rounded-md border-2 border-white shadow-sm cursor-move transition-all duration-200 ${
+              className={`inline-block mr-2 mb-2 rounded shadow-sm cursor-move transition-all duration-200 overflow-hidden ${
                 isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
-              } ${getBlockColor()}`}
+              }`}
               style={{
                 height: `${blockHeight}px`,
                 minWidth: "120px",
-                padding: "0 8px",
+                border: "1px solid #333",
               }}
               onMouseEnter={() => onHoverStart?.(operation.productionOrderId)}
               onMouseLeave={() => onHoverEnd?.()}
             >
-              <div className="h-full flex items-center justify-between text-white text-xs relative">
-                <div className="flex-1 truncate pr-6">
-                  <div className="font-medium truncate">{getBlockText()}</div>
+              <div className="h-full flex flex-col">
+                {/* Blue header with WO and operation name */}
+                <div className="bg-blue-600 text-white px-2 py-1 text-xs font-medium border-b border-blue-700" style={{ height: '60%' }}>
+                  <div className="truncate">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
+                  <div className="truncate">Operation name: {operation.operationName || "Operation"}</div>
+                </div>
+                {/* Orange/yellow status bar */}
+                <div className="bg-orange-500 flex-1 px-2 flex items-center text-xs text-white font-medium">
+                  <span className="truncate">Waiting</span>
                 </div>
                 {onViewDetails && (
                   <Button
@@ -442,22 +448,39 @@ export default function OperationBlock({
             ref={drag}
             data-operation-block
             data-operation-id={operation.id}
-            className={`absolute z-10 rounded-md border-2 border-white shadow-md cursor-move transition-all duration-200 ${
+            className={`absolute z-10 rounded shadow-md cursor-move transition-all duration-200 overflow-hidden ${
               isDragging ? "opacity-50 scale-95" : "opacity-100 scale-100"
-            } ${getBlockColor()}`}
+            }`}
             style={{
               left: `${position.left}px`,
               width: `${position.width}px`,
               height: `${blockHeight}px`,
               minWidth: "80px",
               top: "8px", // Center vertically with 8px margin
+              border: "1px solid #333",
             }}
             onMouseEnter={() => onHoverStart?.(operation.productionOrderId)}
             onMouseLeave={() => onHoverEnd?.()}
           >
-            <div className="h-full flex items-center justify-between px-2 text-white text-xs relative">
-              <div className="flex-1 truncate pr-6">
-                <div className="font-medium truncate">{getBlockText()}</div>
+            <div className="h-full flex flex-col relative">
+              {/* Blue header with WO and operation name */}
+              <div className="bg-blue-600 text-white px-2 py-0.5 text-xs font-medium border-b border-blue-700" style={{ minHeight: '55%' }}>
+                <div className="truncate leading-tight">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
+                <div className="truncate leading-tight">Operation name: {operation.operationName?.substring(0, 20) || "Op"}</div>
+              </div>
+              {/* Orange/yellow status bar based on operation status */}
+              <div className={`flex-1 px-2 flex items-center text-xs text-white font-medium ${
+                operation.status === 'completed' ? 'bg-green-600' :
+                operation.status === 'in_progress' ? 'bg-yellow-600' :
+                operation.status === 'scheduled' ? 'bg-orange-500' :
+                'bg-orange-500'
+              }`}>
+                <span className="truncate">
+                  {operation.status === 'completed' ? 'Completed' :
+                   operation.status === 'in_progress' ? 'In Progress' :
+                   operation.status === 'scheduled' ? 'Waiting' :
+                   'Waiting'}
+                </span>
               </div>
               {onViewDetails && (
                 <Button
