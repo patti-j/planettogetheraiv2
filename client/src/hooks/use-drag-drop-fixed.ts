@@ -217,12 +217,14 @@ export function useOperationDrop(
     collect: (monitor) => {
       const isOver = monitor.isOver();
       const canDrop = monitor.canDrop();
-      console.log("🎯 DROP MONITOR:", {
-        resourceName: resource.name,
-        isOver,
-        canDrop,
-        itemType: monitor.getItemType()
-      });
+      if (isOver) {
+        console.log("🎯🎯🎯 DROP ZONE ACTIVE! 🎯🎯🎯", {
+          resourceName: resource.name,
+          isOver,
+          canDrop,
+          itemType: monitor.getItemType()
+        });
+      }
       return { isOver, canDrop };
     },
   });
