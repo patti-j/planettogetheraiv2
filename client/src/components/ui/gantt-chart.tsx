@@ -2228,7 +2228,7 @@ export default function GanttChart({
                   draggable
                   onDragStart={(e) => handleOperationDrag(e, operation)}
                 >
-                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.name}</div>
+                  <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.operationName || operation.description}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {operation.requiredCapabilities?.map(capId => 
                       getCapabilityName(capId)
@@ -2275,56 +2275,58 @@ export default function GanttChart({
   );
 
   return (
-    <TooltipProvider>
-      <div className="h-full">
-        {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
-        
-        {/* Operation Dialog */}
-        <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Operation</DialogTitle>
-            </DialogHeader>
-            {selectedOperation && (
-              <OperationForm
-                operation={selectedOperation}
-                jobs={jobs}
-                resources={resources}
-                capabilities={capabilities}
-                onSuccess={() => setOperationDialogOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+    <DndProvider backend={HTML5Backend}>
+      <TooltipProvider>
+        <div className="h-full">
+          {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
+          
+          {/* Operation Dialog */}
+          <Dialog open={operationDialogOpen} onOpenChange={setOperationDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Operation</DialogTitle>
+              </DialogHeader>
+              {selectedOperation && (
+                <OperationForm
+                  operation={selectedOperation}
+                  jobs={jobs}
+                  resources={resources}
+                  capabilities={capabilities}
+                  onSuccess={() => setOperationDialogOpen(false)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
-        {/* Resource Dialog */}
-        <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Resource</DialogTitle>
-            </DialogHeader>
-            {selectedResource && (
-              <ResourceForm
-                resource={selectedResource}
-                capabilities={capabilities}
-                onSuccess={() => setResourceDialogOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+          {/* Resource Dialog */}
+          <Dialog open={resourceDialogOpen} onOpenChange={setResourceDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Resource</DialogTitle>
+              </DialogHeader>
+              {selectedResource && (
+                <ResourceForm
+                  resource={selectedResource}
+                  capabilities={capabilities}
+                  onSuccess={() => setResourceDialogOpen(false)}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
-        {/* Job Details Dialog */}
-        {selectedJob && (
-          <JobDetailsDialog
-            job={selectedJob}
-            operations={operations.filter(op => op.productionOrderId === selectedJob.id)}
-            resources={resources}
-            capabilities={capabilities}
-            open={jobDialogOpen}
-            onOpenChange={setJobDialogOpen}
-          />
-        )}
-      </div>
-    </TooltipProvider>
+          {/* Job Details Dialog */}
+          {selectedJob && (
+            <JobDetailsDialog
+              job={selectedJob}
+              operations={operations.filter(op => op.productionOrderId === selectedJob.id)}
+              resources={resources}
+              capabilities={capabilities}
+              open={jobDialogOpen}
+              onOpenChange={setJobDialogOpen}
+            />
+          )}
+        </div>
+      </TooltipProvider>
+    </DndProvider>
   );
 }
