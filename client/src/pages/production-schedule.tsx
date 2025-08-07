@@ -118,7 +118,7 @@ export default function ProductionSchedulePage() {
             <CardTitle className="text-center text-red-600">Access Denied</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-center text-muted-foreground">
+            <p className="text-center text-muted-foreground dark:text-muted-foreground">
               You don't have permission to view the production schedule.
             </p>
           </CardContent>
@@ -188,7 +188,7 @@ export default function ProductionSchedulePage() {
                 variant="ghost"
                 size="sm"
                 onClick={toggleEditMode}
-                className={`${isMobile ? 'w-5 h-5 p-0' : 'w-6 h-6 p-0'} opacity-40 hover:opacity-70 transition-opacity text-gray-400 hover:text-gray-600`}
+                className={`${isMobile ? 'w-5 h-5 p-0' : 'w-6 h-6 p-0'} opacity-40 hover:opacity-70 transition-opacity text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400`}
               >
                 <Edit className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
               </Button>
@@ -225,7 +225,7 @@ export default function ProductionSchedulePage() {
 
       {/* Filters and Controls */}
       {layoutConfig.showFilters && (
-        <div className={`bg-muted/50 border-b ${isMobile ? 'p-2' : 'p-4'}`}>
+        <div className={`bg-muted/50 dark:bg-muted/30 border-b ${isMobile ? 'p-2' : 'p-4'}`}>
           {isMobile ? (
             // Mobile: Collapsible filters
             <div className="space-y-3">

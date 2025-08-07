@@ -163,12 +163,12 @@ function DraggableDashboardCard({
       className={`${isDragging ? 'opacity-50 scale-105' : ''} ${isOver ? 'ring-2 ring-blue-500' : ''} relative transition-all duration-200 resize-smooth ${isResizing ? 'resizing' : ''} group cursor-move w-full h-full`}
       style={{ minWidth: '500px', minHeight: '400px', width: size.width, height: size.height }}
     >
-      <Card className="border border-gray-200 shadow-sm h-full">
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm h-full">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="cursor-move">
-                <GripVertical className="h-4 w-4 text-gray-400" />
+                <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
               <div>
                 <div className="flex items-center gap-2">

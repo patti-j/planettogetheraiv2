@@ -168,7 +168,7 @@ export default function Boards() {
       {!isMobile && (
         <button
           onClick={handleToggleMaximize}
-          className="fixed right-12 z-10 top-3 md:top-4 bg-white shadow-md hover:shadow-lg border border-gray-200 rounded-md h-8 w-8 flex items-center justify-center transition-all duration-200"
+          className="fixed right-12 z-10 top-3 md:top-4 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700 rounded-md h-8 w-8 flex items-center justify-center transition-all duration-200"
           title={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}
         >
           {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -176,19 +176,19 @@ export default function Boards() {
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">
+      <header className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700 p-3 sm:p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100 flex items-center">
               <Columns3 className="w-6 h-6 mr-2" />
               Boards
             </h1>
-            <p className="text-sm md:text-base text-gray-600">Organize jobs, operations, and resources using customizable board views</p>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Organize jobs, operations, and resources using customizable board views</p>
           </div>
         </div>
       </header>
       
-      <main className="flex-1 overflow-hidden bg-white">
+      <main className="flex-1 overflow-hidden bg-white dark:bg-gray-900">
         <KanbanBoard
           jobs={jobs}
           operations={operations}
@@ -210,7 +210,7 @@ export default function Boards() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="fixed inset-0 bg-white z-40">
+        <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40">
           <PageContent />
           
           {/* Dialogs for maximized view */}

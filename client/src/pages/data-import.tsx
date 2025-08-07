@@ -1024,7 +1024,7 @@ function DataImport() {
                   const categoryTypes = supportedDataTypes.filter(dt => dt.category === category);
                   return (
                     <div key={category}>
-                      <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide border-b bg-gray-50">
+                      <div className="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b bg-gray-50 dark:bg-gray-800/50">
                         {category}
                       </div>
                       {categoryTypes.map((dataType) => (
@@ -1171,7 +1171,7 @@ function DataImport() {
 
             {/* Empty State */}
             {entries.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 <Grid3X3 className="h-8 w-8 mx-auto mb-2" />
                 <p className="text-sm">Click "Add Row" to start entering {selectedDataType || 'data'}</p>
               </div>
@@ -1181,7 +1181,7 @@ function DataImport() {
 
         {/* Data Type Not Selected */}
         {!selectedDataType && (
-          <div className="border rounded-lg p-8 text-center text-gray-500">
+          <div className="border rounded-lg p-8 text-center text-gray-500 dark:text-gray-400">
             <ClipboardList className="h-8 w-8 mx-auto mb-2" />
             <p className="text-sm">Select a data type above to start entering data</p>
           </div>
@@ -1685,7 +1685,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       };
 
       return (
-        <TableRow className={`relative ${isSelected && bulkSelectMode ? 'bg-blue-50' : ''}`}>
+        <TableRow className={`relative ${isSelected && bulkSelectMode ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
           <TableCell className="font-medium p-0">
             <div className="flex min-h-[60px]">
               {/* Checkbox for bulk selection mode */}
@@ -1708,7 +1708,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 <div className="flex items-center gap-2">
                   <span>{item.name}</span>
                 </div>
-                <div className="text-sm text-gray-500 sm:hidden">
+                <div className="text-sm text-gray-500 dark:text-gray-400 sm:hidden">
                   {getItemDetails(item, dataType)}
                 </div>
               </div>
@@ -2802,14 +2802,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
       <div className="border rounded-lg overflow-hidden">
         {/* Filter Status Bar */}
         {(Object.keys(columnFilters).some(key => columnFilters[key]?.trim()) || sortConfig) && (
-          <div className="bg-blue-50 border-b px-4 py-2 flex items-center justify-between text-sm">
+          <div className="bg-blue-50 dark:bg-blue-950/30 border-b px-4 py-2 flex items-center justify-between text-sm">
             <div className="flex items-center gap-4">
-              <span className="text-blue-700 font-medium">Active Filters:</span>
+              <span className="text-blue-700 dark:text-blue-300 font-medium">Active Filters:</span>
               <div className="flex items-center gap-2">
                 {Object.entries(columnFilters).map(([field, value]) => {
                   if (!value?.trim()) return null;
                   return (
-                    <Badge key={field} variant="secondary" className="bg-blue-100 text-blue-800">
+                    <Badge key={field} variant="secondary" className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300">
                       {field}: "{value}"
                       <Button
                         variant="ghost"
@@ -2823,7 +2823,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
                   );
                 })}
                 {sortConfig && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
                     Sorted by {sortConfig.field} ({sortConfig.direction})
                     <Button
                       variant="ghost"
@@ -2853,7 +2853,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b">
               <tr>
                 {fields.map(field => (
                   <th key={field} className="text-left px-4 py-3 font-medium text-sm text-gray-900 min-w-[120px]">
@@ -2901,7 +2901,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <tbody>
               {/* New Row */}
               {showNewRow && (
-                <tr className="border-b bg-blue-50">
+                <tr className="border-b bg-blue-50 dark:bg-blue-950/30">
                   {fields.map((field, colIndex) => (
                     <td key={field} className="border-r">
                       {renderCell(null, field, true, true, 0, colIndex)}
@@ -3094,13 +3094,13 @@ Create authentic manufacturing data that reflects this company's operations.`;
         ${isMaxOpen ? 'md:ml-0 md:mr-0' : 'md:ml-12 md:mr-12'}
       `}>
         {recommendedDataTypes.length > 0 && (
-          <Card className="border-blue-200 bg-blue-50">
+          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
+            <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-300">
               <Lightbulb className="h-5 w-5" />
               Recommended Data for Your Selected Features
             </CardTitle>
-            <CardDescription className="text-blue-700">
+            <CardDescription className="text-blue-700 dark:text-blue-400">
               Based on your onboarding feature selections, these data elements are recommended to get started quickly.
             </CardDescription>
           </CardHeader>
@@ -3108,12 +3108,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-blue-800">Selected Features:</h4>
+                  <h4 className="font-medium text-blue-800 dark:text-blue-300">Selected Features:</h4>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={openFeatureDialog}
-                    className="text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2 py-1 h-auto"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 px-2 py-1 h-auto"
                     title="Edit feature selections"
                   >
                     <Settings className="h-4 w-4" />
@@ -3122,19 +3122,19 @@ Create authentic manufacturing data that reflects this company's operations.`;
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {onboardingFeatures.map((feature) => (
-                    <Badge key={feature} variant="outline" className="border-blue-300 text-blue-800">
+                    <Badge key={feature} variant="outline" className="border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300">
                       {feature.replace('-', ' ')}
                     </Badge>
                   ))}
                 </div>
               </div>
               <div>
-                <h4 className="font-medium text-blue-800 mb-2">Recommended data types: {recommendedDataTypes.length} types</h4>
+                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">Recommended data types: {recommendedDataTypes.length} types</h4>
                 <div className="flex flex-wrap gap-2">
                   {recommendedDataTypes.map((type) => {
                     const dataType = supportedDataTypes.find(dt => dt.key === type);
                     return dataType ? (
-                      <Badge key={type} className="bg-blue-100 text-blue-800 border-blue-300">
+                      <Badge key={type} className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700">
                         {dataType.label}
                       </Badge>
                     ) : null;
