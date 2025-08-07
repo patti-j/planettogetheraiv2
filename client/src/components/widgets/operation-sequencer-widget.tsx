@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowUp, ArrowDown, Play, Pause, Check, Clock, AlertTriangle, Settings } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useQuery } from '@tanstack/react-query';
 
 interface OperationSequencerWidgetProps {
   configuration?: {
@@ -177,56 +178,42 @@ export default function OperationSequencerWidget({
     showOptimizationFlags = true
   } = configuration;
 
-  const [operations, setOperations] = useState<Operation[]>([
-    {
-      id: 1,
-      orderNumber: "PO-2024-001",
-      operationName: "Material Preparation",
-      resource: "Prep Station 1",
-      estimatedDuration: 2,
-      status: 'completed',
-      priority: 'high',
-      dependencies: [],
-      isOptimized: true,
-      setupTime: 0.5
-    },
-    {
-      id: 2,
-      orderNumber: "PO-2024-001",
-      operationName: "Mixing Process",
-      resource: "Mixer A",
-      estimatedDuration: 4,
-      status: 'in-progress',
-      priority: 'high',
-      dependencies: [1],
-      isOptimized: true,
-      setupTime: 1
-    },
-    {
-      id: 3,
-      orderNumber: "PO-2024-002",
-      operationName: "Quality Check",
-      resource: "QC Lab",
-      estimatedDuration: 1,
-      status: 'pending',
-      priority: 'medium',
-      dependencies: [2],
-      isOptimized: false,
-      setupTime: 0.25
-    },
-    {
-      id: 4,
-      orderNumber: "PO-2024-002",
-      operationName: "Packaging",
-      resource: "Pack Line 1",
-      estimatedDuration: 3,
-      status: 'blocked',
-      priority: 'critical',
-      dependencies: [3],
-      isOptimized: true,
-      setupTime: 0.75
+  // Fetch real operations data from the API
+  const { data: apiOperations, isLoading: operationsLoading } = useQuery({
+    queryKey: ['/api/operations']
+  });
+
+  // Transform API data to match the expected format
+  const transformedOperations = React.useMemo(() => {
+    if (!apiOperations || !Array.isArray(apiOperations)) return [];
+    
+    return apiOperations.map((op: any) => ({
+      id: op.id,
+      orderNumber: `OP-${op.id}`,
+      operationName: op.operationName || `Operation ${op.id}`,
+      resource: `Work Center ${op.workCenterId || 1}`,
+      estimatedDuration: Math.round((op.standardDuration || 60) / 60 * 100) / 100, // Convert minutes to hours
+      actualDuration: op.actualDuration ? Math.round(op.actualDuration / 60 * 100) / 100 : undefined,
+      status: op.status === 'scheduled' ? 'pending' : 
+              op.status === 'in_progress' ? 'in-progress' : 
+              op.status || 'pending' as 'pending' | 'in-progress' | 'completed' | 'blocked',
+      priority: op.priority === 1 ? 'critical' : 
+                op.priority <= 3 ? 'high' : 
+                op.priority <= 7 ? 'medium' : 'low' as 'low' | 'medium' | 'high' | 'critical',
+      dependencies: [], // Could be enhanced with actual dependency data
+      isOptimized: op.priority <= 5, // Mark higher priority operations as optimized
+      setupTime: 0.25 // Default setup time
+    }));
+  }, [apiOperations]);
+
+  const [operations, setOperations] = useState<Operation[]>([]);
+
+  // Update local state when API data changes
+  React.useEffect(() => {
+    if (transformedOperations.length > 0) {
+      setOperations(transformedOperations);
     }
-  ]);
+  }, [transformedOperations]);
 
   const [filters, setFilters] = useState({
     resource: 'all',
@@ -253,6 +240,25 @@ export default function OperationSequencerWidget({
 
   const uniqueResources = [...new Set(operations.map(op => op.resource))];
   const uniqueStatuses = [...new Set(operations.map(op => op.status))];
+
+  if (operationsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading operations...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (operations.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <p className="text-muted-foreground">No operations found</p>
+      </Card>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
