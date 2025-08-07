@@ -2240,7 +2240,7 @@ export default function GanttChart({
                   >
                     <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.operationName || operation.description}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Duration: {operation.duration}min
+                      Duration: {operation.estimatedDuration || 0}min
                     </div>
                   </div>
                 );
