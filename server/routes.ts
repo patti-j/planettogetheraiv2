@@ -3473,15 +3473,8 @@ Return ONLY a valid JSON object with this exact structure:
         });
       }
 
-      // Validate API key format
+      // Get the API key
       const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey.startsWith('sk-') && !apiKey.startsWith('sk-proj-')) {
-        console.error('Invalid OPENAI_API_KEY format');
-        return res.status(500).json({ 
-          error: 'Invalid API key format. Please check your OpenAI API key configuration.',
-          details: 'API key should start with "sk-" or "sk-proj-"'
-        });
-      }
 
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({
