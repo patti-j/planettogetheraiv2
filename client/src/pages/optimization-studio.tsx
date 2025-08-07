@@ -229,7 +229,22 @@ export default function OptimizationStudio() {
           ...sessionData
         })
       });
-      if (!response.ok) throw new Error('Failed to process AI collaboration');
+      
+      if (!response.ok) {
+        // Try to parse the error response
+        try {
+          const errorData = await response.json();
+          const error = new Error(errorData.error || 'Failed to process AI collaboration');
+          (error as any).details = errorData.details;
+          throw error;
+        } catch (e) {
+          if (e instanceof Error && e.message) {
+            throw e;
+          }
+          throw new Error('Failed to process AI collaboration');
+        }
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
@@ -257,7 +272,17 @@ export default function OptimizationStudio() {
       setAiPrompt("");
     },
     onError: (error: any) => {
-      toast({ title: "AI collaboration error", description: error.message, variant: "destructive" });
+      console.error('AI collaboration error:', error);
+      
+      // Extract error message and details
+      const errorMessage = error.message || 'Failed to process AI collaboration';
+      const errorDetails = error.details || 'Please check your OpenAI API key configuration and try again.';
+      
+      toast({ 
+        title: errorMessage, 
+        description: errorDetails, 
+        variant: "destructive" 
+      });
     }
   });
 

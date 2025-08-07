@@ -3463,9 +3463,28 @@ Return ONLY a valid JSON object with this exact structure:
     try {
       const { message, sessionMessages, currentDraft, step } = req.body;
 
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY) {
+        console.error('OPENAI_API_KEY is not configured');
+        return res.status(500).json({ 
+          error: 'AI service is not configured. Please ensure the OPENAI_API_KEY is set.',
+          details: 'Missing API key configuration'
+        });
+      }
+
+      // Validate API key format
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey.startsWith('sk-') && !apiKey.startsWith('sk-proj-')) {
+        console.error('Invalid OPENAI_API_KEY format');
+        return res.status(500).json({ 
+          error: 'Invalid API key format. Please check your OpenAI API key configuration.',
+          details: 'API key should start with "sk-" or "sk-proj-"'
+        });
+      }
+
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: apiKey,
       });
 
       // Build comprehensive context for AI collaboration
@@ -3512,15 +3531,48 @@ Manufacturing Context Available:
 - Throughput maximization
 - Cost optimization strategies`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500
-      });
+      let response;
+      try {
+        response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 1500
+        });
+      } catch (openaiError: any) {
+        console.error('OpenAI API call failed:', openaiError);
+        
+        // Handle specific OpenAI errors
+        if (openaiError.error?.type === 'invalid_request_error') {
+          return res.status(500).json({ 
+            error: 'Invalid request to AI service',
+            details: openaiError.error?.message || 'The request format was invalid'
+          });
+        } else if (openaiError.error?.type === 'authentication_error') {
+          return res.status(500).json({ 
+            error: 'AI service authentication failed',
+            details: 'Please check your OpenAI API key configuration'
+          });
+        } else if (openaiError.status === 429) {
+          return res.status(500).json({ 
+            error: 'AI service rate limit exceeded',
+            details: 'Too many requests. Please try again in a moment.'
+          });
+        } else if (openaiError.message?.includes('pattern')) {
+          return res.status(500).json({ 
+            error: 'AI service configuration error',
+            details: 'The API key or request format is invalid. Please check your OpenAI configuration.'
+          });
+        } else {
+          return res.status(500).json({ 
+            error: 'Failed to communicate with AI service',
+            details: openaiError.message || 'Unknown error occurred'
+          });
+        }
+      }
 
       const aiResponse = response.choices[0].message.content;
       
@@ -3552,9 +3604,17 @@ Manufacturing Context Available:
 
       res.json(responseData);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI collaboration error:', error);
-      res.status(500).json({ error: 'Failed to process AI collaboration request', details: error.message });
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        body: req.body
+      });
+      res.status(500).json({ 
+        error: 'Failed to process AI collaboration request', 
+        details: error.message || 'Unknown error occurred'
+      });
     }
   });
 
