@@ -614,7 +614,7 @@ export default function OptimizationStudio() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Maximize/Minimize Button */}
       <Button
         onClick={() => setIsMaximized(!isMaximized)}
@@ -625,7 +625,7 @@ export default function OptimizationStudio() {
         {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
       </Button>
 
-      <div className={`p-3 sm:p-6 space-y-4 sm:space-y-6 ${isMaximized ? '' : ''}`}>
+      <div className={`p-2 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 ${isMaximized ? '' : ''}`}>
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -1502,26 +1502,26 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
         </div>
 
         {/* Main Content */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-5 text-xs sm:text-sm">
-              <TabsTrigger value="algorithms" className="px-2 sm:px-4">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <TabsList className="grid w-full sm:w-auto grid-cols-5 text-xs sm:text-sm h-9 sm:h-10 p-1">
+              <TabsTrigger value="algorithms" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Algorithms</span>
                 <span className="sm:hidden">Algo</span>
               </TabsTrigger>
-              <TabsTrigger value="development" className="px-2 sm:px-4">
+              <TabsTrigger value="development" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Development</span>
                 <span className="sm:hidden">Dev</span>
               </TabsTrigger>
-              <TabsTrigger value="testing" className="px-2 sm:px-4">
+              <TabsTrigger value="testing" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Testing</span>
                 <span className="sm:hidden">Test</span>
               </TabsTrigger>
-              <TabsTrigger value="deployments" className="px-2 sm:px-4">
+              <TabsTrigger value="deployments" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Deployments</span>
                 <span className="sm:hidden">Deploy</span>
               </TabsTrigger>
-              <TabsTrigger value="extensions" className="px-2 sm:px-4">
+              <TabsTrigger value="extensions" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Extensions</span>
                 <span className="sm:hidden">Ext</span>
               </TabsTrigger>
@@ -1557,47 +1557,47 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
           <TabsContent value="algorithms" className="space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2 sm:p-4">
                   <div className="flex items-center gap-2">
                     <Code className="w-4 h-4 text-blue-500" />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Algorithms</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.length}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Algorithms</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.length}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2 sm:p-4">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-yellow-500" />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Standard</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.isStandard).length}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Standard</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.isStandard).length}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2 sm:p-4">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Deployed</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'deployed').length}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Deployed</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'deployed').length}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
+                <CardContent className="p-2 sm:p-4">
                   <div className="flex items-center gap-2">
                     <TestTube className="w-4 h-4 text-purple-500" />
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">In Testing</p>
-                      <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'testing').length}</p>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">In Testing</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'testing').length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1614,15 +1614,15 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-800 hover:shadow-lg transition-shadow cursor-pointer"
                     onClick={() => setShowBackwardsScheduling(true)}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                     <div className="flex-1">
-                      <CardTitle className="text-lg text-blue-900 dark:text-blue-100">Backwards Scheduling Algorithm</CardTitle>
-                      <CardDescription className="mt-1 text-blue-700 dark:text-blue-300">
+                      <CardTitle className="text-base sm:text-lg text-blue-900 dark:text-blue-100">Backwards Scheduling Algorithm</CardTitle>
+                      <CardDescription className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                         Advanced backwards scheduling that starts from job due dates and works backwards to optimize start times, 
                         reducing WIP inventory and improving cash flow while ensuring due date compliance.
                       </CardDescription>
                     </div>
-                    <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex flex-row sm:flex-col gap-2 sm:ml-4">
                       <Badge className="bg-green-500 dark:bg-green-600 text-white">
                         approved
                       </Badge>
@@ -1638,7 +1638,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <span>Production Scheduling</span>
                     <span>v1.0.0</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 text-xs text-blue-700 dark:text-blue-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-blue-700 dark:text-blue-200">
                     <div className="flex items-center gap-1">
                       <Target className="w-3 h-3" />
                       <span>Due Date Focus</span>
@@ -1673,7 +1673,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   <h2 className="text-lg font-semibold">Standard Algorithms</h2>
                   <Badge variant="outline">AI-Powered</Badge>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {standardAlgorithms.slice(0, 6).map((algorithm: OptimizationAlgorithm) => (
                     <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
                   ))}
@@ -1689,7 +1689,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </div>
               
               {algorithmsLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {[...Array(6)].map((_, i) => (
                     <Card key={i} className="animate-pulse">
                       <CardHeader>
@@ -1718,7 +1718,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   </Button>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {filteredAlgorithms.filter((algo: OptimizationAlgorithm) => !algo.isStandard).map((algorithm: OptimizationAlgorithm) => (
                     <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
                   ))}
@@ -1737,7 +1737,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             </div>
 
             {/* Development Dashboard */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               
               {/* Algorithm Selection Panel */}
               <div className="lg:col-span-1 space-y-4">
