@@ -20,7 +20,7 @@ interface CustomTextLabelManagerProps {
 }
 
 interface TextLabel {
-  type: "operation_name" | "job_name" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
+  type: "operation_name" | "job_name" | "job_number" | "due_date" | "priority" | "status" | "duration" | "progress" | "resource_name" | "customer" | "job_description" | "operation_description" | "resource_type" | "capabilities" | "start_time" | "end_time" | "slack_days" | "days_late" | "completion_percent";
   enabled: boolean;
   order: number;
   fontSize: number;
@@ -72,6 +72,7 @@ const DraggableTextLabel = ({ label, index, onMove, onToggle, onRemove, onUpdate
     const displayNames = {
       operation_name: "Operation Name",
       job_name: "Job Name",
+      job_number: "Job #",
       due_date: "Due Date",
       priority: "Priority",
       status: "Status",
@@ -189,7 +190,7 @@ const CustomTextLabelForm = ({ onSave, onCancel, initialName = "", initialConfig
   );
 
   const availableTypes = [
-    "operation_name", "job_name", "due_date", "priority", "status", "duration", "progress",
+    "operation_name", "job_name", "job_number", "due_date", "priority", "status", "duration", "progress",
     "resource_name", "customer", "job_description", "operation_description", "resource_type",
     "capabilities", "start_time", "end_time", "slack_days", "days_late", "completion_percent"
   ];

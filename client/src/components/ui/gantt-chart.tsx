@@ -80,7 +80,7 @@ export default function GanttChart({
   const [textConfigDialogOpen, setTextConfigDialogOpen] = useState(false);
   const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
-  const [defaultTextLabeling, setDefaultTextLabeling] = useState("");
+  const [defaultTextLabeling, setDefaultTextLabeling] = useState("job_number");
   const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default width in pixels
   const [isResizing, setIsResizing] = useState(false);
@@ -995,6 +995,7 @@ export default function GanttChart({
     const displayNames: { [key: string]: string } = {
       "operation_name": "Operation",
       "job_name": "Job",
+      "job_number": "Job #",
       "both": "Both",
       "duration": "Duration",
       "progress": "Progress",

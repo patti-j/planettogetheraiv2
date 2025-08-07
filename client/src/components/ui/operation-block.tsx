@@ -1,4 +1,4 @@
-import { type Operation, type Job } from "@shared/schema";
+import { type DiscreteOperation, type ProductionOrder } from "@shared/schema";
 import { useDrag } from "react-dnd";
 import { useEffect, useState, useMemo } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 
 
 interface OperationBlockProps {
-  operation: Operation;
+  operation: DiscreteOperation;
   resourceName: string;
   jobName?: string;
-  job?: Job;
+  job?: ProductionOrder;
   timelineWidth: number;
   dayWidth: number;
   timeUnit: "hour" | "shift" | "day" | "week" | "month" | "quarter" | "year" | "decade";
@@ -21,7 +21,7 @@ interface OperationBlockProps {
   rowHeight?: number;
   onHoverStart?: (jobId: number) => void;
   onHoverEnd?: () => void;
-  onViewDetails?: (operation: Operation) => void;
+  onViewDetails?: (operation: DiscreteOperation) => void;
 }
 
 export default function OperationBlock({
@@ -218,7 +218,10 @@ export default function OperationBlock({
         return operation.operationName || operation.name;
       
       case "job_name":
-        return jobName || `Job ${operation.productionOrderId}`;
+        return jobName || `J${operation.productionOrderId}`;
+        
+      case "job_number":
+        return `J${operation.productionOrderId}`;
       
       case "due_date":
         return job?.dueDate ? new Date(job.dueDate).toLocaleDateString() : "No due date";
