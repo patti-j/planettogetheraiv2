@@ -30,12 +30,15 @@ export function useOperationDrop(
       startTime?: string;
       endTime?: string;
     }) => {
-      const updateData: any = { assignedResourceId: resourceId };
+      // Use the correct field name for work center ID (matches database schema)
+      const updateData: any = { workCenterId: resourceId };
       if (startTime) updateData.startTime = startTime;
       if (endTime) updateData.endTime = endTime;
       
+      console.log("DRAG DROP API CALL:", { operationId, updateData });
       const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
       const result = await response.json();
+      console.log("DRAG DROP API RESPONSE:", result);
       return result;
     },
     onMutate: async ({ operationId, resourceId, startTime, endTime }) => {
@@ -50,7 +53,7 @@ export function useOperationDrop(
           if (op.id === operationId) {
             return {
               ...op,
-              assignedResourceId: resourceId,
+              workCenterId: resourceId,
               startTime: startTime || op.startTime,
               endTime: endTime || op.endTime
             };
@@ -84,6 +87,13 @@ export function useOperationDrop(
     accept: "operation",
     canDrop: (item) => safeCanDrop(item, resource, "gantt-chart"),
     drop: (item, monitor) => {
+      console.log("DROP OPERATION:", { 
+        operationId: item.operation.id, 
+        resourceId: resource.id,
+        operationName: item.operation.operationName,
+        resourceName: resource.name 
+      });
+      
       const clientOffset = monitor.getClientOffset();
       
       if (clientOffset) {
