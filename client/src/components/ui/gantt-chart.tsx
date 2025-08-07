@@ -1493,6 +1493,14 @@ export default function GanttChart({
     const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
     
+    console.log("🔧 DraggableResourceRow setup:", {
+      resourceName: resource.name,
+      resourceId: resource.id,
+      isOver,
+      canDrop,
+      hasDropFunction: !!drop
+    });
+    
     // Can only drag if we have a selected resource view
     const canReorder = selectedResourceView && selectedResourceView.resourceSequence.length > 1;
     
@@ -1598,7 +1606,8 @@ export default function GanttChart({
             ref={combinedRef}
             data-resource-id={resource.id}
             className={`flex-1 relative p-2 overflow-hidden ${
-              isOver && canDrop ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : ''
+              isOver && canDrop ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : 
+              isOver && !canDrop ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-600 border-dashed' : ''
             }`}
             style={{ minHeight: `${rowHeight}px` }}
           >
