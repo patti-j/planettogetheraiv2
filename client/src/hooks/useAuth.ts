@@ -115,6 +115,32 @@ export function useAuth() {
     staleTime: 0, // Always refetch to get fresh role data
     refetchOnWindowFocus: true,
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
+    // Handle 401 errors gracefully - treat as not authenticated rather than error
+    queryFn: async ({ queryKey }) => {
+      const token = localStorage.getItem('authToken');
+      const headers: HeadersInit = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+        headers,
+      });
+
+      if (res.status === 401) {
+        // Return null for unauthenticated users instead of throwing
+        return null;
+      }
+
+      if (!res.ok) {
+        const text = (await res.text()) || res.statusText;
+        throw new Error(`${res.status}: ${text}`);
+      }
+
+      return await res.json();
+    },
   });
 
   const loginMutation = useMutation({
