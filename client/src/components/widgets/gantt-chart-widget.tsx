@@ -130,8 +130,8 @@ export default function GanttChartWidget({
           </Card>
         ) : (
           transformedData.map((order) => (
-            <Card key={order.id} className="p-3">
-              <div className="grid grid-cols-8 gap-1 items-center text-sm">
+            <Card key={order.id} className="p-3 mb-2 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="grid grid-cols-8 gap-2 items-center text-sm">
                 <div className="font-medium">{order.orderNumber}</div>
                 <div>{order.item}</div>
                 <div className="flex items-center gap-1">
@@ -160,18 +160,18 @@ export default function GanttChartWidget({
                 </div>
               </div>
 
-              {/* Gantt Bar Visualization */}
+              {/* Gantt Bar Visualization - Fixed overlap issue */}
               <div className="mt-3 relative">
-                <div className="w-full h-6 bg-gray-100 rounded relative">
+                <div className="w-full h-6 bg-gray-100 rounded relative overflow-hidden">
                   <div 
-                    className={`absolute top-0 h-full rounded ${getStatusColor(order.status)} opacity-80`}
+                    className={`absolute top-0 h-full rounded ${getStatusColor(order.status)} opacity-90 z-10`}
                     style={{ 
-                      left: '10%', 
-                      width: `${Math.max(order.progress, 10)}%` 
+                      left: '0%', 
+                      width: `${Math.max(order.progress, 5)}%` 
                     }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-white mix-blend-difference">
-                    {order.quantity.toLocaleString()} units
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-medium z-20 mix-blend-difference">
+                    {order.quantity.toLocaleString()} units • {order.startDate.toLocaleDateString()} - {order.endDate.toLocaleDateString()}
                   </div>
                 </div>
               </div>

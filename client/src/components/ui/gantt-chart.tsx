@@ -47,6 +47,17 @@ export default function GanttChart({
   rowHeight = 60,
   onRowHeightChange
 }: GanttChartProps) {
+  
+  // Debug: Log the received props to understand data structure
+  console.log('GanttChart received props:', {
+    jobsCount: jobs?.length,
+    operationsCount: operations?.length,
+    resourcesCount: resources?.length,
+    firstOperation: operations?.[0],
+    firstResource: resources?.[0],
+    operationsWithWorkCenterId: operations?.filter(op => op.workCenterId)?.length,
+    operationsWithTimes: operations?.filter(op => op.startTime && op.endTime)?.length
+  });
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);

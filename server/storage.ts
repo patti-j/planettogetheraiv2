@@ -139,6 +139,7 @@ export interface Operation {
   description?: string;
   duration?: number; // standardDuration for backward compatibility
   jobId?: number; // productionOrderId for backward compatibility (from processOperations)
+  productionOrderId?: number; // Added for GanttChart compatibility
   order: number; // sequenceNumber 
   status: string;
   assignedResourceId?: number;
@@ -1900,10 +1901,116 @@ export class MemStorage implements Partial<IStorage> {
     return this.resources.delete(id);
   }
 
-  // Operations
+  // Operations - Enhanced method with production order join
   async getOperations(): Promise<Operation[]> {
-    return await db.select().from(discreteOperations);
+    console.log("Fetching operations for Gantt chart...");
+    try {
+      console.log("Query: " + `select "id", "routing_id", "operation_name", "description", "status", "standard_duration", "actual_duration", "start_time", "end_time", "sequence_number", "work_center_id", "priority", "completion_percentage", "quality_check_required", "quality_status", "notes", "production_order_id", "created_at", "updated_at" from "discrete_operations"`);
+      
+      // Query discrete operations directly - now includes productionOrderId field
+      const discreteOpsQuery = await db
+        .select()
+        .from(discreteOperations);
+      
+      console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
+      
+      console.log("Querying process operations...");
+      const processOps = await db.select().from(processOperations);
+      console.log("Process operations count:", processOps.length);
+      
+      // Convert both types to the legacy Operation interface for backwards compatibility
+      console.log("Converting operations to legacy format...");
+      const combinedOps: Operation[] = [
+        ...discreteOpsQuery.map(op => ({
+          id: op.id,
+          name: op.operationName,
+          description: op.description,
+          duration: op.standardDuration,
+          jobId: op.productionOrderId, // Now includes production order ID from JOIN
+          productionOrderId: op.productionOrderId, // Add this for GanttChart compatibility
+          order: op.sequenceNumber,
+          status: op.status,
+          assignedResourceId: op.workCenterId,
+          startTime: op.startTime,
+          endTime: op.endTime,
+          routingId: op.routingId,
+          operationName: op.operationName,
+          standardDuration: op.standardDuration,
+          actualDuration: op.actualDuration,
+          workCenterId: op.workCenterId,
+          priority: op.priority,
+          completionPercentage: op.completionPercentage,
+          qualityCheckRequired: op.qualityCheckRequired,
+          qualityStatus: op.qualityStatus,
+          notes: op.notes,
+          createdAt: op.createdAt,
+          updatedAt: op.updatedAt
+        } as Operation)),
+        ...processOps.map(op => ({
+          id: op.id,
+          name: op.operationName,
+          description: op.description,
+          duration: op.standardDuration,
+          jobId: op.productionOrderId,
+          productionOrderId: op.productionOrderId,
+          order: op.sequenceNumber,
+          status: op.status,
+          assignedResourceId: op.workCenterId,
+          startTime: op.startTime,
+          endTime: op.endTime,
+          routingId: op.routingId,
+          operationName: op.operationName,
+          standardDuration: op.standardDuration,
+          actualDuration: op.actualDuration,
+          workCenterId: op.workCenterId,
+          priority: op.priority,
+          completionPercentage: op.completionPercentage,
+          qualityCheckRequired: op.qualityCheckRequired,
+          qualityStatus: op.qualityStatus,
+          notes: op.notes,
+          createdAt: op.createdAt,
+          updatedAt: op.updatedAt
+        } as Operation))
+      ];
+      
+      console.log("Successfully combined operations, total:", combinedOps.length);
+      return combinedOps;
+    } catch (error) {
+      console.error("Error in enhanced getOperations:", error);
+      console.error("Error stack:", error.stack);
+      
+      // Fallback to simple discrete operations if JOIN fails
+      console.log("Falling back to simple discrete operations query...");
+      const simpleOps = await db.select().from(discreteOperations);
+      return simpleOps.map(op => ({
+        id: op.id,
+        name: op.operationName,
+        description: op.description,
+        duration: op.standardDuration,
+        jobId: null, // No production order link available
+        productionOrderId: null,
+        order: op.sequenceNumber,
+        status: op.status,
+        assignedResourceId: op.workCenterId,
+        startTime: op.startTime,
+        endTime: op.endTime,
+        routingId: op.routingId,
+        operationName: op.operationName,
+        standardDuration: op.standardDuration,
+        actualDuration: op.actualDuration,
+        workCenterId: op.workCenterId,
+        priority: op.priority,
+        completionPercentage: op.completionPercentage,
+        qualityCheckRequired: op.qualityCheckRequired,
+        qualityStatus: op.qualityStatus,
+        notes: op.notes,
+        createdAt: op.createdAt,
+        updatedAt: op.updatedAt
+      } as Operation));
+    }
   }
+
+
 
   async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
     return await db.select().from(discreteOperations)
@@ -2246,12 +2353,24 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // Backwards-compatible operations methods that combine discrete and process operations
+  // Operations - Enhanced method with production order join for DatabaseStorage class
   async getOperations(): Promise<Operation[]> {
+    console.log("DEBUG: DatabaseStorage.getOperations called - starting enhanced version...");
     try {
-      console.log("Starting getOperations - querying discrete operations...");
-      const discreteOps = await db.select().from(discreteOperations);
-      console.log("Discrete operations count:", discreteOps.length);
+      console.log("Starting getOperations - querying discrete operations with production order relationship...");
+      
+      // Query discrete operations with JOIN to get production order info through routing
+      const discreteOpsQuery = await db
+        .select({
+          ...discreteOperations,
+          productionOrderId: productionOrders.id,
+          productionOrderName: productionOrders.name,
+          productionOrderNumber: productionOrders.orderNumber
+        })
+        .from(discreteOperations)
+        .leftJoin(productionOrders, eq(discreteOperations.routingId, productionOrders.routingId));
+      
+      console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
       
       console.log("Querying process operations...");
       const processOps = await db.select().from(processOperations);
@@ -2260,12 +2379,13 @@ export class DatabaseStorage implements IStorage {
       // Convert both types to the legacy Operation interface for backwards compatibility
       console.log("Converting operations to legacy format...");
       const combinedOps: Operation[] = [
-        ...discreteOps.map(op => ({
+        ...discreteOpsQuery.map(op => ({
           id: op.id,
           name: op.operationName,
           description: op.description,
           duration: op.standardDuration,
-          jobId: null, // Discrete operations don't have direct production order link
+          jobId: op.productionOrderId, // Now includes production order ID from JOIN
+          productionOrderId: op.productionOrderId, // Add this for GanttChart compatibility
           order: op.sequenceNumber,
           status: op.status,
           assignedResourceId: op.workCenterId,
@@ -2290,6 +2410,7 @@ export class DatabaseStorage implements IStorage {
           description: op.description,
           duration: op.standardDuration,
           jobId: op.productionOrderId,
+          productionOrderId: op.productionOrderId,
           order: op.sequenceNumber,
           status: op.status,
           assignedResourceId: op.workCenterId,
@@ -2313,9 +2434,37 @@ export class DatabaseStorage implements IStorage {
       console.log("Successfully combined operations, total:", combinedOps.length);
       return combinedOps;
     } catch (error) {
-      console.error("Error in getOperations:", error);
+      console.error("Error in enhanced DatabaseStorage.getOperations:", error);
       console.error("Error stack:", error.stack);
-      throw error;
+      
+      // Fallback to simple discrete operations if JOIN fails
+      console.log("Falling back to simple discrete operations query...");
+      const simpleOps = await db.select().from(discreteOperations);
+      return simpleOps.map(op => ({
+        id: op.id,
+        name: op.operationName,
+        description: op.description,
+        duration: op.standardDuration,
+        jobId: null, // No production order link available
+        productionOrderId: null,
+        order: op.sequenceNumber,
+        status: op.status,
+        assignedResourceId: op.workCenterId,
+        startTime: op.startTime,
+        endTime: op.endTime,
+        routingId: op.routingId,
+        operationName: op.operationName,
+        standardDuration: op.standardDuration,
+        actualDuration: op.actualDuration,
+        workCenterId: op.workCenterId,
+        priority: op.priority,
+        completionPercentage: op.completionPercentage,
+        qualityCheckRequired: op.qualityCheckRequired,
+        qualityStatus: op.qualityStatus,
+        notes: op.notes,
+        createdAt: op.createdAt,
+        updatedAt: op.updatedAt
+      } as Operation));
     }
   }
 

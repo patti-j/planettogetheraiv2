@@ -750,6 +750,7 @@ export const productionVersions = pgTable("production_versions", {
 export const discreteOperations = pgTable("discrete_operations", {
   id: serial("id").primaryKey(),
   routingId: integer("routing_id").references(() => routings.id).notNull(),
+  productionOrderId: integer("production_order_id").references(() => productionOrders.id),
   operationName: text("operation_name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("planned"),
