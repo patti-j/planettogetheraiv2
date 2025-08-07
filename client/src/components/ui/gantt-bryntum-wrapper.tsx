@@ -357,21 +357,19 @@ export function GanttBryntumWrapper({
   useEffect(() => {
     const loadBryntumScript = () => {
       // Check if Bryntum is already loaded globally
-      // @ts-ignore
-      if (window.bryntum?.gantt?.Gantt) {
-        // @ts-ignore
-        BryntumGantt = window.bryntum.gantt.Gantt;
+      if ((window as any).bryntum?.gantt?.Gantt) {
+        BryntumGantt = (window as any).bryntum.gantt.Gantt;
         initializeGantt();
         return;
       }
       
       // Load Bryntum script if not already loaded
-      const existingScript = document.querySelector('script[src="/gantt.module.js"]');
+      const existingScript = document.querySelector('script[src="/gantt.umd.js"]');
       if (existingScript) {
         // Script already exists, wait for it to load
         existingScript.addEventListener('load', () => {
           // @ts-ignore
-          BryntumGantt = window.bryntum?.gantt?.Gantt;
+          BryntumGantt = (window as any).bryntum?.gantt?.Gantt;
           initializeGantt();
         });
         return;
@@ -379,19 +377,27 @@ export function GanttBryntumWrapper({
       
       // Create and load the script
       const script = document.createElement('script');
-      script.src = '/gantt.module.js';
-      script.type = 'module';
+      script.src = '/gantt.umd.js';
+      // UMD doesn't need type="module"
       script.onload = () => {
         console.log('Bryntum script loaded');
         // Wait a moment for module to initialize
         setTimeout(() => {
-          // @ts-ignore
-          BryntumGantt = window.bryntum?.gantt?.Gantt;
-          if (!BryntumGantt) {
-            // Try different global paths
-            // @ts-ignore
-            BryntumGantt = window.Gantt || window.bryntum?.Gantt;
+          // @ts-ignore - Try multiple possible paths for Bryntum Gantt
+          BryntumGantt = (window as any).bryntum?.gantt?.Gantt || 
+                         (window as any).bryntum?.Gantt || 
+                         (window as any).Gantt || 
+                         (window as any).bryntum;
+          
+          console.log('Available window properties:', Object.keys(window).filter(k => k.includes('bryntum') || k.includes('Gantt')));
+          console.log('Bryntum object:', (window as any).bryntum);
+          
+          if (BryntumGantt && typeof BryntumGantt === 'function') {
+            console.log('Found Bryntum Gantt constructor:', BryntumGantt.name);
+          } else {
+            console.log('BryntumGantt found but not a constructor:', typeof BryntumGantt);
           }
+          
           initializeGantt();
         }, 100);
       };
@@ -406,6 +412,8 @@ export function GanttBryntumWrapper({
     const initializeGantt = () => {
       if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
+          console.log('Initializing Bryntum Gantt with config:', ganttConfig);
+          
           // Create Bryntum Gantt instance
           ganttInstanceRef.current = new BryntumGantt({
             appendTo: ganttRef.current,
@@ -413,6 +421,7 @@ export function GanttBryntumWrapper({
           });
           
           console.log('Bryntum Gantt initialized successfully');
+          setIsReady(true);
           
           toast({
             title: "Bryntum Gantt Loaded",
@@ -420,6 +429,7 @@ export function GanttBryntumWrapper({
           });
         } catch (error) {
           console.error('Failed to initialize Bryntum Gantt:', error);
+          console.error('Error details:', error);
           setIsReady(false);
         }
       } else if (!BryntumGantt) {
@@ -489,22 +499,17 @@ export function GanttBryntumWrapper({
       <div className="h-full w-full flex items-center justify-center bg-muted/10 rounded-lg border-2 border-dashed">
         <div className="text-center max-w-2xl p-8">
           <h3 className="text-lg font-semibold mb-4">Ready for Bryntum Gantt</h3>
-          <div className="space-y-3 text-left">
-            <p className="text-muted-foreground">
-              To activate the professional Gantt chart:
-            </p>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-              <li>Download the trial from bryntum.com/download/gantt/</li>
-              <li>Extract the zip file</li>
-              <li>Upload the <code className="px-1 bg-muted rounded">build</code> folder to <code className="px-1 bg-muted rounded">bryntum-trial/</code></li>
-              <li>Upload the React wrapper from <code className="px-1 bg-muted rounded">lib/</code></li>
-              <li>I'll handle the integration automatically</li>
-            </ol>
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/50 rounded-md">
-              <p className="text-sm">
-                <strong>Note:</strong> The trial includes all features. Only difference is a small watermark.
-              </p>
+          <div className="space-y-3 text-center">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+              <span className="text-muted-foreground">Loading Professional Gantt Chart...</span>
             </div>
+            <p className="text-sm text-muted-foreground">
+              Check browser console for loading status...
+            </p>
+            <p className="text-xs text-muted-foreground mt-4">
+              The system is trying to load the professional Bryntum Gantt chart.
+            </p>
           </div>
         </div>
       </div>
