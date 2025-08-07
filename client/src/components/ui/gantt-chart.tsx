@@ -20,6 +20,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useToast } from "@/hooks/use-toast";
+import GanttToolbar, { ZoomLevel, FadeMode } from "./gantt-toolbar";
+import ActivityBlockSegments, { ActivitySegment } from "./activity-block-segments";
+import GanttActivityLinks, { ActivityLink } from "./gantt-activity-links";
+import GanttSchedulingHints, { SchedulingHint, generateSchedulingHints } from "./gantt-scheduling-hints";
+import { GanttExportUtility } from "./gantt-export-utility";
 import type { ProductionOrder, DiscreteOperation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
@@ -77,6 +82,25 @@ export default function GanttChart({
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
   const [defaultTextLabeling, setDefaultTextLabeling] = useState("");
   const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
+  
+  // New states for enhanced Gantt features
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('week');
+  const [fadeMode, setFadeMode] = useState<FadeMode>('none');
+  const [showTooltips, setShowTooltips] = useState(true);
+  const [showActivityLinks, setShowActivityLinks] = useState(false);
+  const [showSchedulingHints, setShowSchedulingHints] = useState(false);
+  const [dailyView, setDailyView] = useState(false);
+  const [variableZoom, setVariableZoom] = useState(false);
+  const [variableZoomFactor, setVariableZoomFactor] = useState(2);
+  const [anchorOnDrop, setAnchorOnDrop] = useState(false);
+  const [lockOnDrop, setLockOnDrop] = useState(false);
+  const [expediteSuccessors, setExpediteSuccessors] = useState(false);
+  const [selectedActivityId, setSelectedActivityId] = useState<number | null>(null);
+  const [highlightedActivities, setHighlightedActivities] = useState<Set<number>>(new Set());
+  const [activityLinks, setActivityLinks] = useState<ActivityLink[]>([]);
+  const [schedulingHints, setSchedulingHints] = useState<SchedulingHint[]>([]);
+  const ganttContainerRef = useRef<HTMLDivElement>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -97,6 +121,91 @@ export default function GanttChart({
 
   // Create a truly stable base date that never changes
   const timelineBaseDate = useMemo(() => new Date(2025, 6, 13, 7, 0, 0, 0), []); // Fixed to July 13, 2025 07:00:00
+  
+  // Generate activity links from operations
+  useEffect(() => {
+    const links: ActivityLink[] = [];
+    const opsByJob = new Map<number, DiscreteOperation[]>();
+    
+    // Group operations by job
+    operations.forEach(op => {
+      if (op.productionOrderId) {
+        if (!opsByJob.has(op.productionOrderId)) {
+          opsByJob.set(op.productionOrderId, []);
+        }
+        opsByJob.get(op.productionOrderId)!.push(op);
+      }
+    });
+    
+    // Generate links for operations in the same job
+    opsByJob.forEach((jobOps, jobId) => {
+      const sortedOps = jobOps.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+      
+      for (let i = 0; i < sortedOps.length - 1; i++) {
+        if (sortedOps[i].startTime && sortedOps[i + 1].startTime) {
+          links.push({
+            fromId: sortedOps[i].id,
+            toId: sortedOps[i + 1].id,
+            type: 'finish-to-start',
+            lag: 0,
+            critical: false // Could be calculated based on critical path analysis
+          });
+        }
+      }
+    });
+    
+    setActivityLinks(links);
+  }, [operations]);
+  
+  // Generate scheduling hints
+  useEffect(() => {
+    if (showSchedulingHints) {
+      const hints = generateSchedulingHints(operations, resources, activityLinks);
+      setSchedulingHints(hints);
+    } else {
+      setSchedulingHints([]);
+    }
+  }, [operations, resources, activityLinks, showSchedulingHints]);
+  
+  // Apply fade effect based on mode
+  useEffect(() => {
+    if (fadeMode === 'none' || !selectedActivityId) {
+      setHighlightedActivities(new Set());
+      return;
+    }
+    
+    const highlighted = new Set<number>();
+    const selectedOp = operations.find(op => op.id === selectedActivityId);
+    
+    if (!selectedOp) return;
+    
+    switch (fadeMode) {
+      case 'activity':
+        highlighted.add(selectedActivityId);
+        break;
+      case 'job':
+        operations
+          .filter(op => op.productionOrderId === selectedOp.productionOrderId)
+          .forEach(op => highlighted.add(op.id));
+        break;
+      case 'operation':
+        operations
+          .filter(op => op.operationName === selectedOp.operationName)
+          .forEach(op => highlighted.add(op.id));
+        break;
+      case 'all-relations':
+        // Add all connected operations
+        activityLinks
+          .filter(link => link.fromId === selectedActivityId || link.toId === selectedActivityId)
+          .forEach(link => {
+            highlighted.add(link.fromId);
+            highlighted.add(link.toId);
+          });
+        break;
+    }
+    
+    setHighlightedActivities(highlighted);
+  }, [fadeMode, selectedActivityId, operations, activityLinks]);
   
   // Mutation to update resource view sequence
   const updateResourceViewMutation = useMutation({
@@ -794,7 +903,7 @@ export default function GanttChart({
   }, []);
 
   const getOperationsByJob = useCallback((jobId: number) => {
-    return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.order || 0) - (b.order || 0));
+    return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
   }, [operations]);
 
   const getJobStatusColor = (status: string) => {
@@ -991,6 +1100,93 @@ export default function GanttChart({
   };
 
   const unscheduledOperations = operations.filter(op => !op.workCenterId);
+  
+  // Function to get operation position for activity links and scheduling hints
+  const getOperationPosition = useCallback((operationId: number): { x: number; y: number; width: number; height: number } | null => {
+    const element = document.querySelector(`[data-operation-id="${operationId}"]`) as HTMLElement;
+    if (!element || !ganttContainerRef.current) return null;
+    
+    const containerRect = ganttContainerRef.current.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    
+    return {
+      x: elementRect.left - containerRect.left,
+      y: elementRect.top - containerRect.top,
+      width: elementRect.width,
+      height: elementRect.height
+    };
+  }, []);
+  
+  // Export handlers
+  const handleExportPDF = useCallback(async () => {
+    if (!ganttContainerRef.current) return;
+    
+    try {
+      await GanttExportUtility.exportToPDF(
+        ganttContainerRef.current,
+        'Production Schedule',
+        {
+          orientation: 'landscape',
+          includeHeaders: true
+        }
+      );
+      toast({ title: 'PDF exported successfully' });
+    } catch (error) {
+      toast({ title: 'Failed to export PDF', variant: 'destructive' });
+    }
+  }, [toast]);
+  
+  const handleExportExcel = useCallback(async () => {
+    try {
+      await GanttExportUtility.exportToExcel(
+        jobs,
+        operations,
+        resources,
+        'Production Schedule',
+        {
+          selectedResources: selectedResourceView?.resourceSequence
+        }
+      );
+      toast({ title: 'Excel exported successfully' });
+    } catch (error) {
+      toast({ title: 'Failed to export Excel', variant: 'destructive' });
+    }
+  }, [jobs, operations, resources, selectedResourceView, toast]);
+  
+  const handlePrint = useCallback(() => {
+    if (!ganttContainerRef.current) return;
+    GanttExportUtility.printGantt(ganttContainerRef.current, 'Production Schedule');
+  }, []);
+  
+  // Toolbar handlers
+  const handleJobSearch = useCallback((query: string) => {
+    // Implement job search functionality
+    console.log('Searching for job:', query);
+  }, []);
+  
+  const handleResourceSearch = useCallback((query: string) => {
+    // Implement resource search functionality
+    console.log('Searching for resource:', query);
+  }, []);
+  
+  const handleResizeToFit = useCallback(() => {
+    // Implement resize to fit functionality
+    const optimalHeight = Math.max(40, Math.min(80, 600 / resources.length));
+    onRowHeightChange?.(optimalHeight);
+  }, [resources.length, onRowHeightChange]);
+  
+  const handleDisplaySettings = useCallback(() => {
+    // Open display settings dialog
+    setTextConfigDialogOpen(true);
+  }, []);
+  
+  const handleSchedulingHintClick = useCallback((hint: SchedulingHint) => {
+    // Handle scheduling hint click
+    toast({
+      title: hint.message,
+      description: hint.suggestion
+    });
+  }, [toast]);
 
   const handleViewSettingChange = async (newValue: string, settingType: "colorScheme" | "textLabeling") => {
     if (!selectedResourceView) {
@@ -1135,11 +1331,9 @@ export default function GanttChart({
                       <div className="flex items-center ml-6 px-4 py-3">
                         <div className="w-2 h-2 bg-gray-300 rounded-full mr-2"></div>
                         <div className="flex-1">
-                          <div className="text-sm text-gray-700">{operation.name}</div>
+                          <div className="text-sm text-gray-700">{operation.operationName}</div>
                           <div className="text-xs text-gray-500">
-                            {operation.requiredCapabilities?.map(capId => 
-                              getCapabilityName(capId)
-                            ).join(", ") || "No requirements"}
+                            Duration: {operation.processTime || 0}h
                           </div>
                         </div>
                         <div className="flex items-center space-x-1">
