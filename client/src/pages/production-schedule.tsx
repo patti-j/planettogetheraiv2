@@ -212,11 +212,11 @@ export default function ProductionSchedulePage() {
                 onClick={() => {
                   console.log("🎯🎯🎯 EXPORT BUTTON CLICKED! 🎯🎯🎯");
                   alert("Export button clicked! Check console for logs.");
-                  const ganttElement = document.querySelector('[data-gantt-container]');
+                  const ganttElement = document.getElementById('gantt-chart-container');
                   console.log("🎯 EXPORT - Found gantt container:", !!ganttElement);
                   if (ganttElement) {
                     console.log("🎯 EXPORT - Would export PDF here (functionality to be implemented)");
-                    alert("Export functionality coming soon!");
+                    alert("Export functionality coming soon! Container found successfully.");
                   } else {
                     console.error("🎯 EXPORT ERROR - Gantt container not found");
                     alert("Error: Could not find Gantt chart container");

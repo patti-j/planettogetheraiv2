@@ -1526,9 +1526,13 @@ export default function GanttChart({
     // Combine the operation drop ref with the resource drop ref
     const combinedRef = useCallback((node: HTMLDivElement | null) => {
       console.log("📌 Setting combinedRef for resource:", resource.name, "node:", !!node);
-      drop(node);
-      dropResource(node);
-    }, [drop, dropResource]);
+      if (node) {
+        // Force the drop ref to be set
+        drop(node);
+        dropResource(node);
+        console.log("✅ Drop zones attached to resource:", resource.name);
+      }
+    }, [drop, dropResource, resource.name]);
     
     return (
       <div 
@@ -1611,6 +1615,8 @@ export default function GanttChart({
               isOver && !canDrop ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-600 border-dashed' : ''
             }`}
             style={{ minHeight: `${rowHeight}px` }}
+            onMouseEnter={() => console.log("🎯 MOUSE ENTERED DROP ZONE:", resource.name)}
+            onMouseLeave={() => console.log("🎯 MOUSE LEFT DROP ZONE:", resource.name)}
           >
             <div data-timeline-content style={{ width: `${timelineWidth}px` }}>
               {resourceOperations.map((operation) => (
@@ -2315,7 +2321,7 @@ export default function GanttChart({
   return (
     <DndProvider backend={HTML5Backend}>
       <TooltipProvider>
-        <div className="h-full" ref={ganttContainerRef}>
+        <div id="gantt-chart-container" className="h-full" ref={ganttContainerRef}>
           {view === "operations" ? renderOperationsView() : view === "customers" ? renderCustomersView() : renderResourcesView()}
           
           {/* Operation Dialog */}

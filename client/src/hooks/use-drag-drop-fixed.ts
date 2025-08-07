@@ -92,9 +92,9 @@ export function useOperationDrop(
         operationName: item?.operation?.operationName,
         resourceName: resource.name
       });
-      const result = safeCanDrop(item, resource, "gantt-chart");
-      console.log("🎯 CAN DROP RESULT:", result);
-      return result;
+      // Always return true for now to debug
+      console.log("🎯 FORCING CAN DROP TO TRUE FOR DEBUG");
+      return true;
     },
     drop: (item, monitor) => {
       console.log("💥💥💥 DROP HANDLER TRIGGERED! 💥💥💥");
