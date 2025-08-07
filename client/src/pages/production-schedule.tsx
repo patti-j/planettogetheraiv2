@@ -13,6 +13,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
+import GanttChart from '@/components/ui/gantt-chart';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -488,24 +489,27 @@ export default function ProductionSchedulePage() {
           </TabsContent>
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
-            <Card>
-              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
-                <CardTitle className={`${isMobile ? 'text-base' : ''}`}>Production Gantt Chart</CardTitle>
-                {!isMobile && (
-                  <p className="text-sm text-muted-foreground">
-                    Visual timeline of all production orders and operations
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <GanttChartWidget 
-                  configuration={filteredWidgetConfig}
-                  className={`${isMobile ? 'h-64' : 'h-[600px]'}`}
-                  isMobile={isMobile}
-                  compact={isMobile}
+            <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
+              {!ordersLoading && !operationsLoading && !resourcesLoading ? (
+                <GanttChart 
+                  jobs={(productionOrders as any) || []}
+                  operations={(operations as any) || []}
+                  resources={(resources as any) || []}
+                  capabilities={[]}
+                  view="operations"
+                  rowHeight={isMobile ? 40 : 60}
                 />
-              </CardContent>
-            </Card>
+              ) : (
+                <Card className="h-full">
+                  <CardContent className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading Gantt chart...</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="sequencer" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>

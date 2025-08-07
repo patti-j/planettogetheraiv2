@@ -20,11 +20,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useToast } from "@/hooks/use-toast";
-import type { ProductionOrder, Operation, Resource, Capability, ResourceView } from "@shared/schema";
+import type { ProductionOrder, DiscreteOperation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
   jobs: ProductionOrder[];
-  operations: Operation[];
+  operations: DiscreteOperation[];
   resources: Resource[];
   capabilities: Capability[];
   view: "operations" | "resources" | "customers";
@@ -49,7 +49,7 @@ export default function GanttChart({
 }: GanttChartProps) {
   const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set());
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
-  const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
+  const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
@@ -1100,7 +1100,7 @@ export default function GanttChart({
                       <div className="flex-1">
                         <div className="font-medium text-gray-800">{job.name}</div>
                         <div className="text-xs text-gray-500">
-                          Customer: {job.customer} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
+                          Customer: {job.customerId} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
                         </div>
                       </div>
                       <Badge className={`text-xs ${getJobStatusColor(job.status)}`}>
@@ -1428,7 +1428,7 @@ export default function GanttChart({
     const customerGroups = useMemo(() => {
       const groups: { [customer: string]: ProductionOrder[] } = {};
       jobs.forEach(job => {
-        const customer = job.customer || "Unknown Customer";
+        const customer = job.customerId?.toString() || "Unknown Customer";
         if (!groups[customer]) {
           groups[customer] = [];
         }
