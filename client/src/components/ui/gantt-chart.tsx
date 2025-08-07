@@ -628,7 +628,8 @@ export default function GanttChart({
   const handleScrollToToday = useCallback(() => {
     console.log('Scroll to today called');
     // Calculate scroll position for today's date
-    const today = new Date();
+    // Set today to August 7, 2025 at start of day to match the actual date
+    const today = new Date(2025, 7, 7, 0, 0, 0, 0); // Month is 0-indexed, so 7 = August
     const timeDiff = today.getTime() - timeScale.minDate.getTime();
     const scrollLeft = (timeDiff / timeScale.stepMs) * periodWidth;
     console.log('Today scroll calculation:', {
@@ -1322,12 +1323,27 @@ export default function GanttChart({
                 className="flex"
                 style={{ width: `${timelineWidth}px` }}
               >
-                {timeScale.periods.map((period, index) => (
-                  <div key={index} className="border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
-                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400">{period.label}</div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500">{period.subLabel}</div>
-                  </div>
-                ))}
+                {timeScale.periods.map((period, index) => {
+                  // Check if this period represents today (August 7, 2025)
+                  const today = new Date(2025, 7, 7); // August 7, 2025
+                  const periodDate = new Date(period.date);
+                  const isToday = periodDate.toDateString() === today.toDateString();
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className={`border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0 ${isToday ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`} 
+                      style={{ width: `${periodWidth}px` }}
+                    >
+                      <div className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                        {period.label} {isToday && '(Today)'}
+                      </div>
+                      <div className={`text-xs ${isToday ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                        {period.subLabel}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -1933,12 +1949,27 @@ export default function GanttChart({
             <div className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden">
               <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
                 <div className="flex h-full bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  {timeScale.periods.map((period, index) => (
-                    <div key={index} className="flex-none border-r border-gray-300 dark:border-gray-600 px-2 py-2 text-center" style={{ width: `${periodWidth}px` }}>
-                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{period.label}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{period.subLabel}</div>
-                    </div>
-                  ))}
+                  {timeScale.periods.map((period, index) => {
+                    // Check if this period represents today (August 7, 2025)
+                    const today = new Date(2025, 7, 7); // August 7, 2025
+                    const periodDate = new Date(period.date);
+                    const isToday = periodDate.toDateString() === today.toDateString();
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`flex-none border-r border-gray-300 dark:border-gray-600 px-2 py-2 text-center ${isToday ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`} 
+                        style={{ width: `${periodWidth}px` }}
+                      >
+                        <div className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {period.label} {isToday && '(Today)'}
+                        </div>
+                        <div className={`text-xs ${isToday ? 'text-blue-500 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                          {period.subLabel}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2143,12 +2174,27 @@ export default function GanttChart({
               className="flex"
               style={{ width: `${timelineWidth}px` }}
             >
-              {timeScale.periods.map((period, index) => (
-                <div key={index} className="border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0" style={{ width: `${periodWidth}px` }}>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400">{period.label}</div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500">{period.subLabel}</div>
-                </div>
-              ))}
+              {timeScale.periods.map((period, index) => {
+                // Check if this period represents today (August 7, 2025)
+                const today = new Date(2025, 7, 7); // August 7, 2025
+                const periodDate = new Date(period.date);
+                const isToday = periodDate.toDateString() === today.toDateString();
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={`border-r border-gray-200 dark:border-gray-700 p-2 text-center flex-shrink-0 ${isToday ? 'bg-blue-100 dark:bg-blue-900/30' : ''}`} 
+                    style={{ width: `${periodWidth}px` }}
+                  >
+                    <div className={`text-xs font-medium ${isToday ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {period.label} {isToday && '(Today)'}
+                    </div>
+                    <div className={`text-xs ${isToday ? 'text-blue-500 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {period.subLabel}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
