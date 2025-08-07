@@ -63,8 +63,7 @@ export default function GanttChart({
     operationsWithWorkCenterId: operations?.filter(op => op.workCenterId)?.length,
     operationsWithTimes: operations?.filter(op => op.startTime && op.endTime)?.length
   });
-  // Auto-expand all jobs by default to show operations
-  const [expandedJobs, setExpandedJobs] = useState<Set<number>>(new Set(jobs.map(j => j.id)));
+  // Note: No longer using expandedJobs since we show resources directly
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
   const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
@@ -917,17 +916,7 @@ export default function GanttChart({
     // Just let the native scroll happen, no state synchronization needed
   }, []);
 
-  const toggleJobExpansion = useCallback((jobId: number) => {
-    setExpandedJobs(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(jobId)) {
-        newSet.delete(jobId);
-      } else {
-        newSet.add(jobId);
-      }
-      return newSet;
-    });
-  }, []);
+  // Note: toggleJobExpansion removed - no longer needed for resource-based layout
 
   const getOperationsByJob = useCallback((jobId: number) => {
     return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
@@ -1265,7 +1254,7 @@ export default function GanttChart({
           <div className="flex">
             <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="font-medium text-gray-700 dark:text-gray-300">Jobs & Operations</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">Resources</span>
                 <div className="flex items-center space-x-1">
                   <Button 
                     variant="ghost" 
@@ -1361,100 +1350,65 @@ export default function GanttChart({
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
-        {jobs.map((job) => {
-          const jobOperations = getOperationsByJob(job.id);
-          const isExpanded = expandedJobs.has(job.id);
-
+        {getOrderedResources().map((resource) => {
+          const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
+          
           return (
-            <div key={job.id}>
-              {/* Job Row */}
+            <div key={resource.id}>
+              {/* Resource Row */}
               <div className="border-b border-gray-100 dark:border-gray-800">
                 <div className="flex">
                   <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
                     <div className="flex items-center px-4 py-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="p-0 h-auto mr-2"
-                        onClick={() => toggleJobExpansion(job.id)}
-                      >
-                        {isExpanded ? 
-                          <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" /> : 
-                          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        }
-                      </Button>
                       <div className="flex-1">
-                        <div className="font-medium text-gray-800 dark:text-gray-200">{job.name}</div>
+                        <div className="font-medium text-gray-800 dark:text-gray-200">{resource.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Customer: {job.customerId} | Priority: {job.priority} | Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : "N/A"}
+                          Type: {resource.type} | Operations: {resourceOperations.length}
                         </div>
                       </div>
-                      <Badge className={`text-xs ${getJobStatusColor(job.status)}`}>
-                        {job.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex-1 bg-blue-50 dark:bg-blue-950/30 border-r border-gray-100 dark:border-gray-800 overflow-x-hidden" style={{ minHeight: '60px' }}>
-                    <div style={{ width: `${timelineWidth}px` }}>
-                      {/* Job level timeline background */}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Operation Rows */}
-              {isExpanded && jobOperations.map((operation) => (
-                <div key={operation.id} className="border-b border-gray-100 dark:border-gray-800">
-                  <div className="flex">
-                    <div className="border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900" style={{ width: `${leftPanelWidth}px` }}>
-                      <div className="flex items-center ml-6 px-4 py-3">
-                        <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></div>
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">{operation.operationName}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            Duration: {operation.standardDuration || 0} min
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Badge className={`text-xs ${getOperationStatusColor(operation.status)}`}>
-                            {operation.status}
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                setSelectedOperation(operation);
-                                setOperationDialogOpen(true);
-                              }}>
-                                Edit Operation
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                View Dependencies
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600">
-                                Delete Operation
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                      <div className="flex items-center space-x-1">
+                        <Badge className={`text-xs ${resource.isDrum ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'}`}>
+                          {resource.isDrum ? 'Drum' : 'Available'}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedResource(resource);
+                              setResourceDialogOpen(true);
+                            }}>
+                              Edit Resource
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              View Capacity
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              Mark as Drum
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                    <div 
-                      className="flex-1 relative overflow-hidden"
-                      style={{ minHeight: `${rowHeight}px` }}
+                  </div>
+                  <div 
+                    className="flex-1 relative overflow-hidden bg-gray-25 dark:bg-gray-900/50"
+                    style={{ minHeight: `${rowHeight}px` }}
+                  >
+                    <div
+                      data-timeline-content
+                      className="absolute inset-0"
+                      style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}
                     >
-                      <div
-                        data-timeline-content
-                        className="absolute inset-0"
-                        style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}
-                      >
+                      {/* Render all operations for this resource */}
+                      {resourceOperations.map((operation) => (
                         <OperationBlock
+                          key={operation.id}
                           operation={operation}
-                          resourceName={getResourceName(operation.workCenterId || 0)}
+                          resourceName={resource.name}
                           jobName={jobs.find(job => job.id === operation.productionOrderId)?.name}
                           job={jobs.find(job => job.id === operation.productionOrderId)}
                           timelineWidth={timelineWidth}
@@ -1472,11 +1426,11 @@ export default function GanttChart({
                             setOperationDialogOpen(true);
                           }}
                         />
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           );
         })}
