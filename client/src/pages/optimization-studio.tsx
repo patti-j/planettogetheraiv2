@@ -39,6 +39,46 @@ interface OptimizationAlgorithm {
   approvals: any;
   createdBy: number;
   createdAt: string;
+  profile?: AlgorithmProfile;
+}
+
+interface AlgorithmProfile {
+  id?: number;
+  name: string;
+  algorithmId?: number;
+  scope: {
+    timeHorizon: string; // '1_day', '1_week', '1_month', 'custom'
+    includeHistoricalData: boolean;
+    dataWindow: number; // days
+    resourceSelection: 'all' | 'specific' | 'by_type';
+    selectedResources?: string[];
+  };
+  objectives: {
+    primary: string; // 'minimize_makespan', 'maximize_throughput', 'minimize_cost', etc.
+    secondary?: string[];
+    weights: Record<string, number>; // objective weights for multi-objective optimization
+    tradeOffs: {
+      speedVsAccuracy: number; // 0-100 scale
+      feasibilityVsOptimality: number; // 0-100 scale
+    };
+  };
+  runtimeOptions: {
+    maxExecutionTime: number; // seconds
+    maxIterations?: number;
+    parallelProcessing: boolean;
+    incrementalMode: boolean;
+    warmStart: boolean;
+  };
+  constraints: {
+    enabled: string[]; // list of constraint IDs to apply
+    customRules?: any[];
+    strictness: 'relaxed' | 'moderate' | 'strict';
+  };
+  outputSettings: {
+    format: 'detailed' | 'summary' | 'metrics_only';
+    includeVisualization: boolean;
+    exportFormats: string[];
+  };
 }
 
 interface AlgorithmTest {
@@ -86,6 +126,8 @@ export default function OptimizationStudio() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [showCodePreview, setShowCodePreview] = useState(false);
   const [showExamplesLibrary, setShowExamplesLibrary] = useState(false);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [currentProfileDraft, setCurrentProfileDraft] = useState<AlgorithmProfile | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -200,8 +242,16 @@ export default function OptimizationStudio() {
         setCurrentAlgorithmDraft(data.algorithmDraft);
       }
       
+      if (data.profileDraft) {
+        setCurrentProfileDraft(data.profileDraft);
+      }
+      
       if (data.nextStep) {
         setAiSessionStep(data.nextStep);
+        // Auto-generate profile at step 4
+        if (data.nextStep === 4 && !currentProfileDraft && data.algorithmDraft) {
+          generateDefaultProfile(data.algorithmDraft);
+        }
       }
       
       setAiPrompt("");
@@ -214,10 +264,16 @@ export default function OptimizationStudio() {
   // Finalize AI algorithm creation
   const finalizeAIAlgorithmMutation = useMutation({
     mutationFn: async (finalAlgorithm: any) => {
+      // Include the profile with the algorithm
+      const algorithmWithProfile = {
+        ...finalAlgorithm,
+        profile: currentProfileDraft
+      };
+      
       const response = await fetch('/api/optimization/algorithms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalAlgorithm)
+        body: JSON.stringify(algorithmWithProfile)
       });
       if (!response.ok) throw new Error('Failed to create final algorithm');
       return response.json();
@@ -226,7 +282,10 @@ export default function OptimizationStudio() {
       queryClient.invalidateQueries({ queryKey: ['/api/optimization/algorithms'] });
       setShowAICreateDialog(false);
       resetAISession();
-      toast({ title: "Algorithm created successfully", description: "Your AI-developed algorithm is ready for testing!" });
+      toast({ 
+        title: "Algorithm created successfully", 
+        description: "Your AI-developed algorithm and runtime profile are ready for testing!" 
+      });
     },
     onError: (error: any) => {
       toast({ title: "Error creating algorithm", description: error.message, variant: "destructive" });
@@ -238,9 +297,51 @@ export default function OptimizationStudio() {
     setAiSessionMessages([]);
     setAiSessionActive(false);
     setCurrentAlgorithmDraft(null);
+    setCurrentProfileDraft(null);
     setAiSessionStep(1);
     setAiPrompt("");
     setSelectedTemplate(null);
+  };
+  
+  // Generate default profile based on algorithm
+  const generateDefaultProfile = (algorithm: any) => {
+    const profile: AlgorithmProfile = {
+      name: `${algorithm.name}_default_profile`,
+      scope: {
+        timeHorizon: algorithm.category === 'scheduling' ? '1_week' : '1_month',
+        includeHistoricalData: true,
+        dataWindow: 30,
+        resourceSelection: 'all',
+        selectedResources: []
+      },
+      objectives: {
+        primary: algorithm.objective || 'minimize_cost',
+        secondary: [],
+        weights: { [algorithm.objective || 'minimize_cost']: 1.0 },
+        tradeOffs: {
+          speedVsAccuracy: 70,
+          feasibilityVsOptimality: 60
+        }
+      },
+      runtimeOptions: {
+        maxExecutionTime: 300,
+        maxIterations: 1000,
+        parallelProcessing: true,
+        incrementalMode: false,
+        warmStart: false
+      },
+      constraints: {
+        enabled: algorithm.constraints || [],
+        customRules: [],
+        strictness: 'moderate'
+      },
+      outputSettings: {
+        format: 'detailed',
+        includeVisualization: true,
+        exportFormats: ['json', 'csv']
+      }
+    };
+    setCurrentProfileDraft(profile);
   };
 
   // Start AI collaboration session
@@ -545,7 +646,7 @@ export default function OptimizationStudio() {
                               <li><strong>Objective Definition:</strong> Clarifying what you want to optimize for</li>
                               <li><strong>Constraint Identification:</strong> Mapping out limitations and requirements</li>
                               <li><strong>Algorithm Design:</strong> Creating the optimization logic and parameters</li>
-                              <li><strong>Testing Strategy:</strong> Planning how to validate the algorithm performance</li>
+                              <li><strong>Runtime Profile:</strong> Configuring execution scope, objectives, and performance settings</li>
                             </ul>
                             <p className="text-sm text-gray-600 mt-3">
                               The process typically takes 10-15 minutes and results in a production-ready algorithm.
@@ -687,48 +788,79 @@ export default function OptimizationStudio() {
                         )}
                       </div>
 
-                      {/* Current Algorithm Draft Preview */}
-                      {currentAlgorithmDraft && (
-                        <Card className="p-4 bg-green-50 border-green-200">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
-                                <Target className="w-4 h-4" />
-                                Current Algorithm Draft
-                              </h4>
-                              <div className="text-sm space-y-1">
-                                <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
-                                <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
-                                <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
-                                {currentAlgorithmDraft.parameters && (
-                                  <div><strong>Parameters:</strong> {Object.keys(currentAlgorithmDraft.parameters).length} configured</div>
-                                )}
-                                {currentAlgorithmDraft.constraints && (
-                                  <div><strong>Constraints:</strong> {currentAlgorithmDraft.constraints.length} defined</div>
-                                )}
-                                {selectedTemplate && (
-                                  <div><strong>Template:</strong> {selectedTemplate}</div>
-                                )}
+                      {/* Current Algorithm & Profile Preview */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        {currentAlgorithmDraft && (
+                          <Card className="p-4 bg-green-50 border-green-200">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                                  <Target className="w-4 h-4" />
+                                  Algorithm Draft
+                                </h4>
+                                <div className="text-sm space-y-1">
+                                  <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
+                                  <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
+                                  <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
+                                  {currentAlgorithmDraft.parameters && (
+                                    <div><strong>Parameters:</strong> {Object.keys(currentAlgorithmDraft.parameters).length} configured</div>
+                                  )}
+                                  {currentAlgorithmDraft.constraints && (
+                                    <div><strong>Constraints:</strong> {currentAlgorithmDraft.constraints.length} defined</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowCodePreview(true)}
+                                >
+                                  <Code2 className="w-3 h-3 mr-1" />
+                                  View Code
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowCodePreview(true)}
-                              >
-                                <Code2 className="w-3 h-3 mr-1" />
-                                View Code
-                              </Button>
-                              {currentAlgorithmDraft.performanceEstimate && (
-                                <Badge className="text-xs">
-                                  Est. {currentAlgorithmDraft.performanceEstimate}% faster
-                                </Badge>
-                              )}
+                          </Card>
+                        )}
+                        
+                        {currentProfileDraft && (
+                          <Card className="p-4 bg-blue-50 border-blue-200">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                                  <Settings className="w-4 h-4" />
+                                  Runtime Profile
+                                </h4>
+                                <div className="text-sm space-y-1">
+                                  <div><strong>Scope:</strong> {currentProfileDraft.scope.timeHorizon.replace('_', ' ')}</div>
+                                  <div><strong>Primary Goal:</strong> {currentProfileDraft.objectives.primary.replace(/_/g, ' ')}</div>
+                                  <div><strong>Max Time:</strong> {currentProfileDraft.runtimeOptions.maxExecutionTime}s</div>
+                                  <div><strong>Constraints:</strong> {currentProfileDraft.constraints.strictness}</div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <div className="text-xs">
+                                      <span className="font-medium">Speed:</span> {currentProfileDraft.objectives.tradeOffs.speedVsAccuracy}%
+                                    </div>
+                                    <div className="text-xs">
+                                      <span className="font-medium">Accuracy:</span> {100 - currentProfileDraft.objectives.tradeOffs.speedVsAccuracy}%
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setShowProfileEditor(true)}
+                                >
+                                  <Edit3 className="w-3 h-3 mr-1" />
+                                  Edit
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </Card>
-                      )}
+                          </Card>
+                        )}
+                      </div>
 
                       {/* Input Area */}
                       <div className="space-y-3">
@@ -767,14 +899,14 @@ export default function OptimizationStudio() {
                             >
                               Send
                             </Button>
-                            {aiSessionStep >= 5 && currentAlgorithmDraft && (
+                            {aiSessionStep >= 5 && currentAlgorithmDraft && currentProfileDraft && (
                               <Button 
                                 size="sm"
                                 onClick={() => finalizeAIAlgorithmMutation.mutate(currentAlgorithmDraft)}
                                 disabled={finalizeAIAlgorithmMutation.isPending}
                                 className="bg-gradient-to-r from-green-500 to-emerald-600"
                               >
-                                {finalizeAIAlgorithmMutation.isPending ? "Creating..." : "Create Algorithm"}
+                                {finalizeAIAlgorithmMutation.isPending ? "Creating..." : "Create Algorithm & Profile"}
                               </Button>
                             )}
                           </div>
@@ -882,6 +1014,316 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     </div>
                   )}
                 </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Profile Editor Dialog */}
+            <Dialog open={showProfileEditor} onOpenChange={setShowProfileEditor}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5" />
+                    Algorithm Runtime Profile Configuration
+                  </DialogTitle>
+                  <DialogDescription>
+                    Configure how the algorithm executes at runtime - scope, objectives, and performance settings
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {currentProfileDraft && (
+                  <div className="space-y-6">
+                    {/* Scope Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Execution Scope</CardTitle>
+                        <CardDescription>Define what data the algorithm will process</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Time Horizon</Label>
+                            <Select 
+                              value={currentProfileDraft.scope.timeHorizon}
+                              onValueChange={(value) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                scope: { ...currentProfileDraft.scope, timeHorizon: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1_day">1 Day</SelectItem>
+                                <SelectItem value="1_week">1 Week</SelectItem>
+                                <SelectItem value="2_weeks">2 Weeks</SelectItem>
+                                <SelectItem value="1_month">1 Month</SelectItem>
+                                <SelectItem value="3_months">3 Months</SelectItem>
+                                <SelectItem value="custom">Custom Range</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div>
+                            <Label>Data Window (days)</Label>
+                            <Input 
+                              type="number" 
+                              value={currentProfileDraft.scope.dataWindow}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                scope: { ...currentProfileDraft.scope, dataWindow: parseInt(e.target.value) || 30 }
+                              })}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label>Resource Selection</Label>
+                          <Select 
+                            value={currentProfileDraft.scope.resourceSelection}
+                            onValueChange={(value: any) => setCurrentProfileDraft({
+                              ...currentProfileDraft,
+                              scope: { ...currentProfileDraft.scope, resourceSelection: value }
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Resources</SelectItem>
+                              <SelectItem value="specific">Specific Resources</SelectItem>
+                              <SelectItem value="by_type">By Resource Type</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Objectives Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Optimization Objectives</CardTitle>
+                        <CardDescription>Set priorities and trade-offs for the algorithm</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Primary Objective</Label>
+                          <Select 
+                            value={currentProfileDraft.objectives.primary}
+                            onValueChange={(value) => setCurrentProfileDraft({
+                              ...currentProfileDraft,
+                              objectives: { ...currentProfileDraft.objectives, primary: value }
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="minimize_makespan">Minimize Makespan</SelectItem>
+                              <SelectItem value="maximize_throughput">Maximize Throughput</SelectItem>
+                              <SelectItem value="minimize_cost">Minimize Cost</SelectItem>
+                              <SelectItem value="minimize_tardiness">Minimize Tardiness</SelectItem>
+                              <SelectItem value="maximize_utilization">Maximize Utilization</SelectItem>
+                              <SelectItem value="minimize_inventory">Minimize Inventory</SelectItem>
+                              <SelectItem value="balance_workload">Balance Workload</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Label>Performance Trade-offs</Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Speed vs Accuracy</span>
+                              <span className="text-sm font-medium">{currentProfileDraft.objectives.tradeOffs.speedVsAccuracy}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={currentProfileDraft.objectives.tradeOffs.speedVsAccuracy}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                objectives: {
+                                  ...currentProfileDraft.objectives,
+                                  tradeOffs: {
+                                    ...currentProfileDraft.objectives.tradeOffs,
+                                    speedVsAccuracy: parseInt(e.target.value)
+                                  }
+                                }
+                              })}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>More Accurate</span>
+                              <span>Faster</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Feasibility vs Optimality</span>
+                              <span className="text-sm font-medium">{currentProfileDraft.objectives.tradeOffs.feasibilityVsOptimality}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={currentProfileDraft.objectives.tradeOffs.feasibilityVsOptimality}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                objectives: {
+                                  ...currentProfileDraft.objectives,
+                                  tradeOffs: {
+                                    ...currentProfileDraft.objectives.tradeOffs,
+                                    feasibilityVsOptimality: parseInt(e.target.value)
+                                  }
+                                }
+                              })}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>More Feasible</span>
+                              <span>More Optimal</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Runtime Options */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Runtime Options</CardTitle>
+                        <CardDescription>Configure execution parameters</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Max Execution Time (seconds)</Label>
+                            <Input 
+                              type="number" 
+                              value={currentProfileDraft.runtimeOptions.maxExecutionTime}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                runtimeOptions: { 
+                                  ...currentProfileDraft.runtimeOptions, 
+                                  maxExecutionTime: parseInt(e.target.value) || 300 
+                                }
+                              })}
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label>Max Iterations</Label>
+                            <Input 
+                              type="number" 
+                              value={currentProfileDraft.runtimeOptions.maxIterations || ''}
+                              placeholder="Unlimited"
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                runtimeOptions: { 
+                                  ...currentProfileDraft.runtimeOptions, 
+                                  maxIterations: parseInt(e.target.value) || undefined
+                                }
+                              })}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={currentProfileDraft.runtimeOptions.parallelProcessing}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                runtimeOptions: { 
+                                  ...currentProfileDraft.runtimeOptions, 
+                                  parallelProcessing: e.target.checked 
+                                }
+                              })}
+                            />
+                            Enable Parallel Processing
+                          </Label>
+                          
+                          <Label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={currentProfileDraft.runtimeOptions.incrementalMode}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                runtimeOptions: { 
+                                  ...currentProfileDraft.runtimeOptions, 
+                                  incrementalMode: e.target.checked 
+                                }
+                              })}
+                            />
+                            Incremental Mode (process changes only)
+                          </Label>
+                          
+                          <Label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={currentProfileDraft.runtimeOptions.warmStart}
+                              onChange={(e) => setCurrentProfileDraft({
+                                ...currentProfileDraft,
+                                runtimeOptions: { 
+                                  ...currentProfileDraft.runtimeOptions, 
+                                  warmStart: e.target.checked 
+                                }
+                              })}
+                            />
+                            Warm Start (use previous solution)
+                          </Label>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Constraints Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Constraint Management</CardTitle>
+                        <CardDescription>Control how constraints are applied</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Constraint Strictness</Label>
+                          <Select 
+                            value={currentProfileDraft.constraints.strictness}
+                            onValueChange={(value: any) => setCurrentProfileDraft({
+                              ...currentProfileDraft,
+                              constraints: { ...currentProfileDraft.constraints, strictness: value }
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="relaxed">Relaxed (allow violations with penalties)</SelectItem>
+                              <SelectItem value="moderate">Moderate (minimize violations)</SelectItem>
+                              <SelectItem value="strict">Strict (no violations allowed)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setShowProfileEditor(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          toast({ title: "Profile updated", description: "Runtime profile has been configured" });
+                          setShowProfileEditor(false);
+                        }}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600"
+                      >
+                        Save Profile
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
 
