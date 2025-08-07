@@ -205,7 +205,22 @@ export default function ProductionSchedulePage() {
         <div className="flex items-center gap-2 flex-shrink-0 pr-24">
           {!isMobile && (
             <>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => {
+                  console.log("🎯 EXPORT BUTTON CLICKED!");
+                  const ganttElement = document.querySelector('[data-gantt-container]');
+                  console.log("🎯 EXPORT - Found gantt container:", !!ganttElement);
+                  if (ganttElement) {
+                    console.log("🎯 EXPORT - Would export PDF here (functionality to be implemented)");
+                    // TODO: Implement actual PDF export
+                  } else {
+                    console.error("🎯 EXPORT ERROR - Gantt container not found");
+                  }
+                }}
+              >
                 <Download className="w-4 h-4" />
                 Export
               </Button>

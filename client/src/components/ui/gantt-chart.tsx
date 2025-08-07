@@ -1525,6 +1525,7 @@ export default function GanttChart({
     
     // Combine the operation drop ref with the resource drop ref
     const combinedRef = useCallback((node: HTMLDivElement | null) => {
+      console.log("📌 Setting combinedRef for resource:", resource.name, "node:", !!node);
       drop(node);
       dropResource(node);
     }, [drop, dropResource]);
