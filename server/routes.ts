@@ -2235,6 +2235,7 @@ Rules:
       console.log("Fetching operations...");
       const operations = await storage.getOperations();
       console.log("Operations fetched successfully:", operations.length);
+      console.log("First operation sample:", operations[0]);
       res.json(operations);
     } catch (error) {
       console.error("Error fetching operations:", error);

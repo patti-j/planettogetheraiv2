@@ -732,6 +732,50 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // ==================== OPERATIONS ====================
+  
+  // Get all operations (for Gantt chart)
+  app.get("/api/operations", async (req, res) => {
+    try {
+      console.log("Fetching operations for Gantt chart...");
+      const operations = await db.select().from(schema.discreteOperations);
+      console.log("Operations fetched successfully:", operations.length);
+      if (operations.length > 0) {
+        console.log("First operation sample:", operations[0]);
+      }
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching operations:", error);
+      res.status(500).json({ message: "Failed to fetch operations" });
+    }
+  });
+
+  // Get production orders (for Gantt chart jobs)
+  app.get("/api/production-orders", async (req, res) => {
+    try {
+      console.log("Fetching production orders for Gantt chart...");
+      const orders = await db.select().from(schema.productionOrders);
+      console.log("Production orders fetched successfully:", orders.length);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching production orders:", error);
+      res.status(500).json({ message: "Failed to fetch production orders" });
+    }
+  });
+
+  // Get resources (for Gantt chart)
+  app.get("/api/resources", async (req, res) => {
+    try {
+      console.log("Fetching resources for Gantt chart...");
+      const resources = await db.select().from(schema.resources);
+      console.log("Resources fetched successfully:", resources.length);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+      res.status(500).json({ message: "Failed to fetch resources" });
+    }
+  });
+
   const server = createServer(app);
   return server;
 }
