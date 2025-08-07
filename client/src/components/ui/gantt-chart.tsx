@@ -480,7 +480,7 @@ export default function GanttChart({
   const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Handle operation drag start for unscheduled operations
-  const handleOperationDrag = useCallback((e: React.DragEvent, operation: Operation) => {
+  const handleOperationDrag = useCallback((e: React.DragEvent, operation: DiscreteOperation) => {
     e.dataTransfer.setData("application/json", JSON.stringify({
       type: "operation",
       operation: operation
@@ -491,11 +491,11 @@ export default function GanttChart({
   // Generate dynamic time scale based on time unit and operations
   const timeScale = useMemo(() => {
     const periods = [];
-    const now = timelineBaseDate;
+    const today = new Date(2025, 7, 7); // August 7, 2025 - today
     
-    // Calculate the date range based on operations
-    let minDate = now;
-    let maxDate = now;
+    // Calculate the date range centered on today/this week
+    let minDate = today;
+    let maxDate = today;
     
     // Find the earliest and latest operation dates
     operations.forEach(op => {
@@ -510,9 +510,20 @@ export default function GanttChart({
       }
     });
     
-    // Add padding to the range
-    const paddingMs = 30 * 24 * 60 * 60 * 1000; // 30 days padding
-    minDate = new Date(Math.min(minDate.getTime() - paddingMs, now.getTime()));
+    // Always include at least this week - ensure we show current week
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // End of week (Saturday)
+    
+    // Expand range to include this week minimum
+    minDate = new Date(Math.min(minDate.getTime(), weekStart.getTime()));
+    maxDate = new Date(Math.max(maxDate.getTime(), weekEnd.getTime()));
+    
+    // Add reasonable padding based on time unit
+    const paddingDays = timeUnit === 'day' ? 7 : timeUnit === 'week' ? 14 : 30;
+    const paddingMs = paddingDays * 24 * 60 * 60 * 1000; 
+    minDate = new Date(minDate.getTime() - paddingMs);
     maxDate = new Date(maxDate.getTime() + paddingMs);
     
     let stepMs: number;
@@ -706,6 +717,18 @@ export default function GanttChart({
       window.removeEventListener('aiScrollToToday', handleScrollToToday);
     };
   }, [timelineWidth, timeScale, periodWidth]);
+
+  // Auto-scroll to today on initial load
+  useEffect(() => {
+    // Wait for timeline to be rendered then scroll to today
+    const timer = setTimeout(() => {
+      if (timelineRef.current && periodWidth > 0) {
+        handleScrollToToday();
+      }
+    }, 500); // Give enough time for rendering
+    
+    return () => clearTimeout(timer);
+  }, [timeScale.minDate, periodWidth, handleScrollToToday]);
 
   // Zoom functions
   const zoomIn = useCallback(() => {
@@ -919,7 +942,7 @@ export default function GanttChart({
   // Note: toggleJobExpansion removed - no longer needed for resource-based layout
 
   const getOperationsByJob = useCallback((jobId: number) => {
-    return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+    return operations.filter(op => op.productionOrderId === jobId).sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
   }, [operations]);
 
   const getJobStatusColor = (status: string) => {
