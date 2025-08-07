@@ -169,9 +169,9 @@ export function useOperationDrop(
           const preciseStartTime = periodStartTime + (fractionWithinPeriod * stepMs);
           const operationStartTime = new Date(preciseStartTime);
           
-          // Calculate end time based on operation duration
-          const operationDuration = item.operation.duration || 8; // Default 8 hours
-          const operationEndTime = new Date(operationStartTime.getTime() + (operationDuration * 60 * 60 * 1000));
+          // Calculate end time based on operation duration (in minutes, convert to milliseconds)
+          const operationDurationMinutes = item.operation.standardDuration || 480; // Default 8 hours (480 minutes)
+          const operationEndTime = new Date(operationStartTime.getTime() + (operationDurationMinutes * 60 * 1000));
           
           // DEBUG: Log the final time calculation
           console.log("FINAL TIME CALCULATION:", {
@@ -183,9 +183,16 @@ export function useOperationDrop(
             preciseStartTime: new Date(preciseStartTime).toISOString(),
             operationStartTime: operationStartTime.toISOString(),
             operationEndTime: operationEndTime.toISOString(),
-            operationDuration
+            operationDurationMinutes
           });
             
+          console.log("ABOUT TO MUTATE:", {
+            operationId: item.operation.id,
+            resourceId: resource.id,
+            startTime: operationStartTime.toISOString(),
+            endTime: operationEndTime.toISOString()
+          });
+          
           // Update the operation with the new timing
           updateOperationMutation.mutate({
             operationId: item.operation.id,
