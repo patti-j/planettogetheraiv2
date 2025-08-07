@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +76,7 @@ export default function ProductionSchedulePage() {
 
   const [activeTab, setActiveTab] = useState('gantt');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [exportHandler, setExportHandler] = useState<(() => Promise<void>) | null>(null);
+  const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
 
   // Check permissions
   const canViewSchedule = hasPermission('schedule', 'view');
@@ -211,8 +211,8 @@ export default function ProductionSchedulePage() {
                 size="sm" 
                 className="gap-2"
                 onClick={async () => {
-                  if (exportHandler) {
-                    await exportHandler();
+                  if (exportHandlerRef.current) {
+                    await exportHandlerRef.current();
                   } else {
                     alert("Please wait for the Gantt Chart to load");
                   }
@@ -510,7 +510,9 @@ export default function ProductionSchedulePage() {
                   capabilities={[]}
                   view="operations"
                   rowHeight={isMobile ? 40 : 60}
-                  onExportReady={setExportHandler}
+                  onExportReady={(handler) => {
+                    exportHandlerRef.current = handler;
+                  }}
                 />
               ) : (
                 <Card className="h-full">
