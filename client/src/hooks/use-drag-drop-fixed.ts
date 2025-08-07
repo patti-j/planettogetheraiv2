@@ -85,7 +85,15 @@ export function useOperationDrop(
 
   const [{ isOver, canDrop }, drop] = useDrop<DragItem, void, { isOver: boolean; canDrop: boolean }>({
     accept: "operation",
-    canDrop: (item) => safeCanDrop(item, resource, "gantt-chart"),
+    canDrop: (item) => {
+      const result = safeCanDrop(item, resource, "gantt-chart");
+      console.log("🎯 CAN DROP CHECK:", { 
+        operationName: item.operation.operationName,
+        resourceName: resource.name,
+        canDrop: result
+      });
+      return result;
+    },
     drop: (item, monitor) => {
       console.log("🎯 DROP HANDLER TRIGGERED!");
       console.log("DROP OPERATION:", { 
