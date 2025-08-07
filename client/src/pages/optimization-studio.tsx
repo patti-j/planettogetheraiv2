@@ -634,7 +634,7 @@ export default function OptimizationStudio() {
                       </Badge>
                     )}
                   </DialogTitle>
-                  <DialogDescription>
+                  <DialogDescription className="text-gray-600 dark:text-gray-400">
                     Work collaboratively with AI to develop a sophisticated optimization algorithm tailored to your specific needs
                   </DialogDescription>
                 </DialogHeader>
@@ -643,24 +643,24 @@ export default function OptimizationStudio() {
                   {!aiSessionActive ? (
                     /* Initial Introduction */
                     <div className="flex-1 overflow-y-auto space-y-4 p-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
-                      <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+                      <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
                         <div className="flex items-start gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
                             <Brain className="w-5 h-5 text-white" />
                           </div>
                           <div className="space-y-2">
-                            <h3 className="font-semibold text-lg">Let's Build Your Algorithm Together</h3>
-                            <p className="text-gray-700">
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Let's Build Your Algorithm Together</h3>
+                            <p className="text-gray-700 dark:text-gray-300">
                               I'll guide you through a step-by-step process to understand your requirements and develop a custom optimization algorithm. This includes:
                             </p>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 ml-4">
+                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400 ml-4">
                               <li><strong>Problem Analysis:</strong> Understanding your specific optimization challenges</li>
                               <li><strong>Objective Definition:</strong> Clarifying what you want to optimize for</li>
                               <li><strong>Constraint Identification:</strong> Mapping out limitations and requirements</li>
                               <li><strong>Algorithm Design:</strong> Creating the optimization logic and parameters</li>
                               <li><strong>Runtime Profile:</strong> Configuring execution scope, objectives, and performance settings</li>
                             </ul>
-                            <p className="text-sm text-gray-600 mt-3">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
                               The process typically takes 10-15 minutes and results in a production-ready algorithm.
                             </p>
                           </div>
@@ -669,7 +669,7 @@ export default function OptimizationStudio() {
                       
                       {/* Algorithm Templates */}
                       <Card className="p-4">
-                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <h4 className="font-semibold mb-3 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                           <Package className="w-4 h-4" />
                           Choose a Starting Point
                         </h4>
@@ -754,12 +754,12 @@ export default function OptimizationStudio() {
                     /* Active Session Interface */
                     <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
                       {/* Progress Indicator */}
-                      <div className="bg-gray-50 p-4 rounded-lg flex-shrink-0">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex-shrink-0">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Development Progress</span>
-                          <span className="text-sm text-gray-600">{aiSessionStep}/5 Steps Complete</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Development Progress</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{aiSessionStep}/5 Steps Complete</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div 
                             className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all"
                             style={{ width: `${(aiSessionStep / 5) * 100}%` }}
@@ -769,7 +769,7 @@ export default function OptimizationStudio() {
 
                       {/* Conversation Area */}
                       <div 
-                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-white" 
+                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" 
                         style={{ 
                           WebkitOverflowScrolling: 'touch',
                           overscrollBehavior: 'contain',
@@ -778,7 +778,7 @@ export default function OptimizationStudio() {
                         }}
                       >
                         {aiSessionMessages.length === 0 ? (
-                          <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500">
+                          <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500 dark:text-gray-400">
                             <div className="text-center p-4">
                               <Brain className="w-8 h-8 mx-auto mb-2 text-purple-400" />
                               <p className="text-sm">Starting AI collaboration session...</p>
@@ -792,7 +792,7 @@ export default function OptimizationStudio() {
                                 <div className={`max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg ${
                                   message.role === 'user' 
                                     ? 'bg-blue-500 text-white' 
-                                    : 'bg-gray-100 border border-gray-200 shadow-sm'
+                                    : 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                                 }`}>
                                   <div className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</div>
                                 </div>
@@ -800,8 +800,8 @@ export default function OptimizationStudio() {
                             ))}
                             {aiCollaborateSession.isPending && (
                               <div className="flex justify-start">
-                                <div className="bg-gray-100 border border-gray-200 shadow-sm p-3 rounded-lg">
-                                  <div className="flex items-center gap-2 text-gray-600">
+                                <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm p-3 rounded-lg">
+                                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
                                     AI is thinking...
                                   </div>
@@ -815,14 +815,14 @@ export default function OptimizationStudio() {
                       {/* Current Algorithm & Profile Preview */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         {currentAlgorithmDraft && (
-                          <Card className="p-4 bg-green-50 border-green-200">
+                          <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                                <h4 className="font-medium text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
                                   <Target className="w-4 h-4" />
                                   Algorithm Draft
                                 </h4>
-                                <div className="text-sm space-y-1">
+                                <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
                                   <div><strong>Name:</strong> {currentAlgorithmDraft.name}</div>
                                   <div><strong>Objective:</strong> {currentAlgorithmDraft.objective}</div>
                                   <div><strong>Category:</strong> {currentAlgorithmDraft.category}</div>
@@ -849,14 +849,14 @@ export default function OptimizationStudio() {
                         )}
                         
                         {currentProfileDraft && (
-                          <Card className="p-4 bg-blue-50 border-blue-200">
+                          <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
-                                <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
                                   <Settings className="w-4 h-4" />
                                   Runtime Profile
                                 </h4>
-                                <div className="text-sm space-y-1">
+                                <div className="text-sm space-y-1 text-gray-700 dark:text-gray-300">
                                   <div><strong>Scope:</strong> {currentProfileDraft.scope.timeHorizon.replace('_', ' ')}</div>
                                   <div><strong>Primary Goal:</strong> {currentProfileDraft.objectives.primary.replace(/_/g, ' ')}</div>
                                   <div><strong>Max Time:</strong> {currentProfileDraft.runtimeOptions.maxExecutionTime}s</div>
@@ -893,7 +893,7 @@ export default function OptimizationStudio() {
                           value={aiPrompt}
                           onChange={(e) => setAiPrompt(e.target.value)}
                           rows={2}
-                          className="resize-none text-sm"
+                          className="resize-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -904,7 +904,7 @@ export default function OptimizationStudio() {
                           }}
                         />
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             Press Enter to send, Shift+Enter for new line
                           </div>
                           <div className="flex gap-2 w-full sm:w-auto">
