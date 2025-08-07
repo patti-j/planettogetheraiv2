@@ -1685,7 +1685,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Custom Algorithms</h2>
-                <Badge variant="outline">{filteredAlgorithms.length} algorithms</Badge>
+                <Badge variant="outline">{filteredAlgorithms.filter((algo: OptimizationAlgorithm) => !algo.isStandard).length} custom</Badge>
               </div>
               
               {algorithmsLoading ? (
@@ -1702,14 +1702,14 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     </Card>
                   ))}
                 </div>
-              ) : filteredAlgorithms.length === 0 ? (
+              ) : filteredAlgorithms.filter((algo: OptimizationAlgorithm) => !algo.isStandard).length === 0 ? (
                 <Card className="p-8 text-center">
                   <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">No algorithms found</h3>
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">No custom algorithms found</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
                     {searchQuery || selectedCategory !== "all" 
-                      ? "Try adjusting your search or filter criteria"
-                      : "Create your first optimization algorithm to get started"
+                      ? "No custom algorithms match your search criteria"
+                      : "Create your first custom optimization algorithm to get started"
                     }
                   </p>
                   <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
@@ -1719,7 +1719,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredAlgorithms.map((algorithm: OptimizationAlgorithm) => (
+                  {filteredAlgorithms.filter((algo: OptimizationAlgorithm) => !algo.isStandard).map((algorithm: OptimizationAlgorithm) => (
                     <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
                   ))}
                 </div>
