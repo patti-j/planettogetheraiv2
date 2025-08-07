@@ -97,17 +97,26 @@ export function SimpleBryntumGantt({
       }
 
       // Load script
+      console.log('📦 Loading Bryntum script from /gantt.umd.js...');
       const script = document.createElement('script');
       script.src = '/gantt.umd.js';
       script.onload = () => {
+        console.log('📜 Bryntum script loaded, checking for Gantt class...');
         setTimeout(() => {
           BryntumGantt = (window as any).bryntum?.gantt?.Gantt || (window as any).Gantt;
-          console.log('Bryntum loaded:', !!BryntumGantt);
-          initializeGantt();
-        }, 100);
+          console.log('🎯 Bryntum Gantt class available:', !!BryntumGantt);
+          console.log('🔍 Window bryntum object:', (window as any).bryntum);
+          
+          if (BryntumGantt) {
+            initializeGantt();
+          } else {
+            console.error('❌ Bryntum Gantt class not found in window object');
+            setIsReady(false);
+          }
+        }, 200); // Increase timeout slightly
       };
-      script.onerror = () => {
-        console.error('Failed to load Bryntum');
+      script.onerror = (error) => {
+        console.error('❌ Failed to load Bryntum script:', error);
         setIsReady(false);
       };
       
@@ -117,9 +126,15 @@ export function SimpleBryntumGantt({
     const initializeGantt = async () => {
       if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
+          console.log('🏗️ Initializing Bryntum Gantt with data:');
           const tasks = transformToTasks();
           const ganttResources = transformToResources();
+          
+          console.log(`📊 Tasks: ${tasks.length}, Resources: ${ganttResources.length}`);
+          console.log('📋 Sample task:', tasks[0]);
+          console.log('🏭 Sample resource:', ganttResources[0]);
 
+          console.log('🚀 Creating Bryntum Gantt instance...');
           ganttInstanceRef.current = new BryntumGantt({
             appendTo: ganttRef.current,
             ...ganttConfig,
@@ -127,15 +142,17 @@ export function SimpleBryntumGantt({
             resources: ganttResources
           });
 
-          console.log('Bryntum Gantt initialized successfully');
+          console.log('✅ Bryntum Gantt initialized successfully!');
+          console.log('📈 Gantt instance:', ganttInstanceRef.current);
           setIsReady(true);
 
           toast({
             title: "Professional Gantt Loaded",
-            description: "Bryntum Gantt chart is now active",
+            description: `${tasks.length} operations displayed in Bryntum Gantt`,
           });
         } catch (error) {
-          console.error('Failed to initialize Bryntum Gantt:', error);
+          console.error('❌ Failed to initialize Bryntum Gantt:', error);
+          console.error('Error details:', error.message);
           setIsReady(false);
         }
       }
