@@ -113,23 +113,37 @@ export default function OperationBlock({
     const startOffset = (startTime.getTime() - baseDate.getTime()) / stepMs;
     const operationDurationMs = endTime.getTime() - startTime.getTime();
     
-    // Calculate width based on the operation's actual duration relative to the time unit
-    // Convert operation duration to hours and calculate what fraction of the time unit it represents
+    // Calculate width based on the operation's actual duration
+    // For day/shift views, we want accurate proportional widths
     const operationDurationHours = operationDurationMs / (60 * 60 * 1000);
-    const timeUnitHours = stepMs / (60 * 60 * 1000);
     
-    // The width should be proportional to how much of the time unit the operation takes
-    // For example: 6 hours in a month (720 hours) = 6/720 = 0.0083 of the month width
-    const durationRatio = operationDurationHours / timeUnitHours;
+    // Calculate pixels per hour based on the time unit
+    let pixelsPerHour: number;
+    switch (timeUnit) {
+      case "hour":
+        pixelsPerHour = dayWidth; // dayWidth is actually hourWidth in this case
+        break;
+      case "shift":
+        pixelsPerHour = dayWidth / 8; // 8 hours per shift
+        break;
+      case "day":
+        pixelsPerHour = dayWidth / 24; // 24 hours per day
+        break;
+      case "week":
+        pixelsPerHour = dayWidth / (7 * 24); // 168 hours per week
+        break;
+      case "month":
+        pixelsPerHour = dayWidth / (30 * 24); // 720 hours per month
+        break;
+      default:
+        pixelsPerHour = dayWidth / 24;
+    }
     
-    // Operation width scales proportionally with zoom level - zoomed out = smaller blocks
+    // Calculate width based on actual duration in hours
+    const width = Math.max(operationDurationHours * pixelsPerHour, 30); // Minimum 30px for visibility
     
-    // Calculate width based on timeline width and the operation duration ratio
+    // Calculate left position
     const left = startOffset * dayWidth;
-    
-    // Adaptive minimum width based on zoom level - tighter constraints for zoomed out views
-    const minWidth = timeUnit === "month" ? 2 : timeUnit === "week" ? 4 : timeUnit === "day" ? 8 : 12;
-    const width = Math.max(durationRatio * dayWidth, minWidth);
     
     return { left, width };
   }, [operation.startTime, operation.endTime, dayWidth, timeUnit, timelineBaseDate]);
