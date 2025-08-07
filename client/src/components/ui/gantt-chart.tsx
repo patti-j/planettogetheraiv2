@@ -1523,16 +1523,15 @@ export default function GanttChart({
       },
     });
     
-    // Combine the operation drop ref with the resource drop ref
-    const combinedRef = useCallback((node: HTMLDivElement | null) => {
-      console.log("📌 Setting combinedRef for resource:", resource.name, "node:", !!node);
+    // Use only the operation drop ref (don't combine with resource reorder)
+    const dropRef = useCallback((node: HTMLDivElement | null) => {
+      console.log("📌 Setting dropRef for resource:", resource.name, "node:", !!node);
       if (node) {
-        // Force the drop ref to be set
+        // Only attach the operation drop zone
         drop(node);
-        dropResource(node);
-        console.log("✅ Drop zones attached to resource:", resource.name);
+        console.log("✅ Operation drop zone attached to resource:", resource.name);
       }
-    }, [drop, dropResource, resource.name]);
+    }, [drop, resource.name]);
     
     return (
       <div 
@@ -1608,11 +1607,10 @@ export default function GanttChart({
             </div>
           </div>
           <div 
-            ref={combinedRef}
+            ref={dropRef}
             data-resource-id={resource.id}
             className={`flex-1 relative p-2 overflow-hidden ${
-              isOver && canDrop ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : 
-              isOver && !canDrop ? 'bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-600 border-dashed' : ''
+              isOver ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : ''
             }`}
             style={{ minHeight: `${rowHeight}px` }}
             onMouseEnter={() => console.log("🎯 MOUSE ENTERED DROP ZONE:", resource.name)}

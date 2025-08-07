@@ -240,10 +240,9 @@ export function useTimelineDrop(
   timelineWidth: number,
   timeScale: any,
   timeUnit: TimeUnit,
-  timelineScrollLeft: number,
   timelineBaseDate: Date
 ) {
-  return useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineScrollLeft, timelineBaseDate);
+  return useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timelineBaseDate);
 }
 
 export function useCapabilityValidation() {

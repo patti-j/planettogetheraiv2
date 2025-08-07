@@ -211,11 +211,10 @@ export default function ProductionSchedulePage() {
                 className="gap-2"
                 onClick={() => {
                   console.log("🎯🎯🎯 EXPORT BUTTON CLICKED! 🎯🎯🎯");
-                  alert("Export button clicked! Check console for logs.");
                   const ganttElement = document.getElementById('gantt-chart-container');
                   console.log("🎯 EXPORT - Found gantt container:", !!ganttElement);
                   if (ganttElement) {
-                    console.log("🎯 EXPORT - Would export PDF here (functionality to be implemented)");
+                    console.log("🎯 EXPORT - Would export PDF here");
                     alert("Export functionality coming soon! Container found successfully.");
                   } else {
                     console.error("🎯 EXPORT ERROR - Gantt container not found");
