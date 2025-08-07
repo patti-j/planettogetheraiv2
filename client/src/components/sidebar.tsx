@@ -100,6 +100,7 @@ export default function Sidebar() {
   }> = [
     // Max AI Assistant at the top with AI branding - only show when closed
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
+    { icon: Home, label: "Home", href: "/", active: location === "/", feature: "", action: "" },
     { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "", action: "" },
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
@@ -144,8 +145,9 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
-    // Always show Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and temporarily Constraints Management
+    // Always show Home, Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and temporarily Constraints Management
     const isAlwaysVisible = item.href === "#" || 
+      item.href === "/" ||  // Always show Home page
       item.href === "/production-schedule" || 
       item.href === "/canvas" ||
       item.href === "#max" ||

@@ -92,6 +92,12 @@ Note on concurrent work:
 - Removed "Menu" text from header for cleaner look
 - Close button positioned after theme toggle on right side of menu header
 
+**NAVIGATION IMPROVEMENTS (Aug 7, 2025):**
+- ✅ ADDED: Home page link in main hamburger menu
+- Home link now appears as first item after Max AI Assistant (if visible)
+- Provides easy navigation back to home/landing page from anywhere in the app
+- Home link always visible to all users regardless of permissions
+
 **PROFILE DIALOG FIXES (Aug 6, 2025):**
 - ✅ FIXED: Profile dialog now opens correctly when clicking avatar in hamburger menu
 - Root cause: Event propagation was being blocked by menu overlay
