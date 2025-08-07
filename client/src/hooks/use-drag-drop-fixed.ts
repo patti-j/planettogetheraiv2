@@ -97,7 +97,8 @@ export function useOperationDrop(
       return result;
     },
     drop: (item, monitor) => {
-      console.log("🎯 DROP HANDLER TRIGGERED!");
+      console.log("💥💥💥 DROP HANDLER TRIGGERED! 💥💥💥");
+      alert(`Dropping ${item.operation.operationName} on ${resource.name}`);
       console.log("DROP OPERATION:", { 
         operationId: item.operation.id, 
         resourceId: resource.id,
@@ -197,12 +198,14 @@ export function useOperationDrop(
             operationDurationMinutes
           });
             
-          console.log("ABOUT TO MUTATE:", {
+          console.log("💥 ABOUT TO MUTATE OPERATION:", {
             operationId: item.operation.id,
             resourceId: resource.id,
             startTime: operationStartTime.toISOString(),
             endTime: operationEndTime.toISOString()
           });
+          
+          alert(`Moving operation to ${resource.name}`);
           
           // Update the operation with the new timing
           updateOperationMutation.mutate({
