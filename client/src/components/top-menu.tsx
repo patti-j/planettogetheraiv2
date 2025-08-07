@@ -732,7 +732,7 @@ export default function TopMenu() {
                       Search Results ({getSearchResults().length})
                     </h3>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                     {getSearchResults().map((item, index) => (
                       <Link 
                         key={`search-${index}`}
@@ -740,24 +740,24 @@ export default function TopMenu() {
                         onClick={() => handleFeatureClick(item.feature)}
                       >
                         <div className={`
-                          w-full min-h-[80px] h-[80px] 
+                          w-full min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
                           border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 
-                          hover:shadow-md rounded-xl p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
-                          flex flex-col items-center justify-center text-center space-y-2
+                          hover:shadow-md rounded-xl p-2 sm:p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                          flex flex-col items-center justify-center text-center space-y-1
                           ${location === item.feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700'}
                           ${item.feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
                         `}>
                           <div className={`
                             ${item.feature.isAI ? getThemeClasses(false) : item.feature.color} 
-                            p-2 rounded-lg flex items-center justify-center flex-shrink-0
+                            p-1.5 sm:p-2 rounded-lg flex items-center justify-center flex-shrink-0
                           `}>
-                            <item.feature.icon className="w-4 h-4 text-white" strokeWidth={1.5} fill="none" />
+                            <item.feature.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={1.5} fill="none" />
                           </div>
-                          <div className="space-y-1">
-                            <span className="text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                          <div className="space-y-0.5">
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                               {item.feature.label}
                             </span>
-                            <span className={`text-xs ${
+                            <span className={`text-[9px] sm:text-xs ${
                               item.groupColor === 'blue' ? 'text-blue-600 dark:text-blue-400' :
                               item.groupColor === 'purple' ? 'text-purple-600 dark:text-purple-400' :
                               item.groupColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
