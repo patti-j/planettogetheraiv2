@@ -648,8 +648,8 @@ export default function OptimizationStudio() {
                   AI Collaborate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] w-[95vw] sm:w-full flex flex-col overflow-hidden" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
-                <DialogHeader>
+              <DialogContent className="max-w-4xl h-[70vh] sm:h-[85vh] max-h-[70vh] sm:max-h-[85vh] w-[95vw] sm:w-full flex flex-col overflow-hidden" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+                <DialogHeader className="flex-shrink-0 pb-2">
                   <DialogTitle className="flex items-center gap-2">
                     <Brain className="w-5 h-5" />
                     AI Algorithm Development Assistant
@@ -664,7 +664,7 @@ export default function OptimizationStudio() {
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+                <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                   {!aiSessionActive ? (
                     /* Initial Introduction */
                     <div className="flex-1 overflow-y-auto space-y-4 p-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
@@ -777,12 +777,12 @@ export default function OptimizationStudio() {
                     </div>
                   ) : (
                     /* Active Session Interface */
-                    <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
+                    <div className="flex flex-col h-full overflow-hidden">
                       {/* Progress Indicator */}
-                      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex-shrink-0">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 rounded-lg flex-shrink-0 mb-2">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Development Progress</span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">{aiSessionStep}/5 Steps Complete</span>
+                          <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100">Development Progress</span>
+                          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{aiSessionStep}/5 Steps Complete</span>
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div 
@@ -792,14 +792,15 @@ export default function OptimizationStudio() {
                         </div>
                       </div>
 
-                      {/* Conversation Area */}
+                      {/* Conversation Area - Mobile optimized with fixed height */}
                       <div 
-                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" 
+                        className="flex-1 overflow-y-auto border rounded-lg p-2 sm:p-4 space-y-4 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 mb-2" 
                         style={{ 
                           WebkitOverflowScrolling: 'touch',
                           overscrollBehavior: 'contain',
                           touchAction: 'pan-y',
-                          minHeight: '200px'
+                          minHeight: '100px',
+                          maxHeight: 'calc(100% - 250px)'  // Reserve space for input area
                         }}
                       >
                         {aiSessionMessages.length === 0 ? (
@@ -837,8 +838,8 @@ export default function OptimizationStudio() {
                         )}
                       </div>
 
-                      {/* Current Algorithm & Profile Preview */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {/* Current Algorithm & Profile Preview - Hidden on mobile to save space */}
+                      <div className="hidden sm:grid grid-cols-1 lg:grid-cols-2 gap-3 mb-2">
                         {currentAlgorithmDraft && (
                           <Card className="p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                             <div className="flex items-start justify-between">
@@ -911,14 +912,14 @@ export default function OptimizationStudio() {
                         )}
                       </div>
 
-                      {/* Input Area */}
-                      <div className="space-y-3">
+                      {/* Input Area - Fixed at bottom with proper mobile styling */}
+                      <div className="flex-shrink-0 bg-white dark:bg-gray-900 border-t dark:border-gray-700 pt-2 space-y-2">
                         <Textarea
                           placeholder="Type your response or ask questions about the algorithm development..."
                           value={aiPrompt}
                           onChange={(e) => setAiPrompt(e.target.value)}
-                          rows={2}
-                          className="resize-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                          rows={window.innerWidth < 640 ? 2 : 3}
+                          className="resize-none text-xs sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -927,9 +928,13 @@ export default function OptimizationStudio() {
                               }
                             }
                           }}
+                          style={{ 
+                            WebkitAppearance: 'none',
+                            fontSize: '16px'  // Prevents zoom on iOS
+                          }}
                         />
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="hidden sm:block text-xs text-gray-500 dark:text-gray-400">
                             Press Enter to send, Shift+Enter for new line
                           </div>
                           <div className="flex gap-2 w-full sm:w-auto">
@@ -937,6 +942,7 @@ export default function OptimizationStudio() {
                               variant="outline" 
                               size="sm"
                               onClick={resetAISession}
+                              className="text-xs sm:text-sm"
                             >
                               Start Over
                             </Button>
@@ -944,7 +950,7 @@ export default function OptimizationStudio() {
                               size="sm"
                               onClick={() => aiCollaborateSession.mutate({ message: aiPrompt, sessionData: {} })}
                               disabled={!aiPrompt.trim() || aiCollaborateSession.isPending}
-                              className="bg-gradient-to-r from-purple-500 to-pink-600"
+                              className="bg-gradient-to-r from-purple-500 to-pink-600 text-xs sm:text-sm flex-1 sm:flex-initial"
                             >
                               Send
                             </Button>
@@ -953,9 +959,9 @@ export default function OptimizationStudio() {
                                 size="sm"
                                 onClick={() => finalizeAIAlgorithmMutation.mutate(currentAlgorithmDraft)}
                                 disabled={finalizeAIAlgorithmMutation.isPending}
-                                className="bg-gradient-to-r from-green-500 to-emerald-600"
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 text-xs sm:text-sm"
                               >
-                                {finalizeAIAlgorithmMutation.isPending ? "Creating..." : "Create Algorithm & Profile"}
+                                {finalizeAIAlgorithmMutation.isPending ? "Creating..." : "Create"}
                               </Button>
                             )}
                           </div>
