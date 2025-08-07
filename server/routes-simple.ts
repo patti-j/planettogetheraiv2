@@ -618,6 +618,120 @@ export function registerSimpleRoutes(app: express.Application): Server {
     }
   });
 
+  // ==================== TOC DRUM ENDPOINTS ====================
+  
+  // Get current drums
+  app.get("/api/toc/drums", requireAuth, async (req, res) => {
+    try {
+      const drums = await storage.getDrumResources();
+      res.json(drums);
+    } catch (error) {
+      console.error("Error fetching drums:", error);
+      res.status(500).json({ error: "Failed to fetch drums" });
+    }
+  });
+
+  // Designate resource as drum
+  app.post("/api/toc/drums/designate", requireAuth, async (req, res) => {
+    try {
+      const { resourceId, drumType, reason } = req.body;
+      
+      if (!resourceId || !drumType) {
+        return res.status(400).json({ error: "resourceId and drumType are required" });
+      }
+      
+      const drum = await storage.designateResourceAsDrum(
+        resourceId, 
+        drumType, 
+        reason, 
+        req.user?.id || 1
+      );
+      
+      res.json(drum);
+    } catch (error) {
+      console.error("Error designating drum:", error);
+      res.status(500).json({ error: "Failed to designate drum" });
+    }
+  });
+
+  // Get drum analysis history
+  app.get("/api/toc/drums/history", requireAuth, async (req, res) => {
+    try {
+      const analysis = await storage.getDrumAnalysisHistory();
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching drum analysis:", error);
+      res.status(500).json({ error: "Failed to fetch drum analysis" });
+    }
+  });
+
+  // Run automated drum analysis
+  app.post("/api/toc/drums/analyze", requireAuth, async (req, res) => {
+    try {
+      const results = await storage.runDrumAnalysis();
+      res.json(results);
+    } catch (error) {
+      console.error("Error running drum analysis:", error);
+      res.status(500).json({ error: "Failed to run drum analysis" });
+    }
+  });
+
+  // ==================== CUSTOM CONSTRAINTS ====================
+  
+  // Get custom constraints
+  app.get("/api/toc/constraints", requireAuth, async (req, res) => {
+    try {
+      const { isActive, constraintType, severity, category } = req.query;
+      const filters: any = {};
+      
+      if (isActive !== undefined) filters.isActive = isActive === 'true';
+      if (constraintType) filters.constraintType = constraintType as string;
+      if (severity) filters.severity = severity as string;
+      if (category) filters.category = category as string;
+      
+      const constraints = await storage.getCustomConstraints(filters);
+      res.json(constraints);
+    } catch (error) {
+      console.error("Error fetching custom constraints:", error);
+      res.status(500).json({ error: "Failed to fetch custom constraints" });
+    }
+  });
+
+  // Create custom constraint
+  app.post("/api/toc/constraints", requireAuth, async (req, res) => {
+    try {
+      const constraint = await storage.createCustomConstraint(req.body);
+      res.json(constraint);
+    } catch (error) {
+      console.error("Error creating custom constraint:", error);
+      res.status(500).json({ error: "Failed to create custom constraint" });
+    }
+  });
+
+  // Update custom constraint
+  app.put("/api/toc/constraints/:id", requireAuth, async (req, res) => {
+    try {
+      const constraintId = parseInt(req.params.id);
+      const constraint = await storage.updateCustomConstraint(constraintId, req.body);
+      res.json(constraint);
+    } catch (error) {
+      console.error("Error updating custom constraint:", error);
+      res.status(500).json({ error: "Failed to update custom constraint" });
+    }
+  });
+
+  // Delete custom constraint
+  app.delete("/api/toc/constraints/:id", requireAuth, async (req, res) => {
+    try {
+      const constraintId = parseInt(req.params.id);
+      await storage.deleteCustomConstraint(constraintId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting custom constraint:", error);
+      res.status(500).json({ error: "Failed to delete custom constraint" });
+    }
+  });
+
   const server = createServer(app);
   return server;
 }

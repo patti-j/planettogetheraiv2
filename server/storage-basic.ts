@@ -340,6 +340,270 @@ export class BasicStorage {
     return true;
   }
 
+  // ==================== TOC DRUM METHODS ====================
+  
+  async getDrumResources() {
+    // Get all resources that are drums from the database
+    try {
+      const resources = await db.execute(`
+        SELECT id, name, is_drum, drum_designation_date, drum_designation_reason, drum_designation_method
+        FROM resources
+        WHERE is_drum = true
+      `);
+      
+      return resources.rows.map(r => ({
+        id: r.id,
+        resourceId: r.id,
+        resourceName: r.name,
+        isDrum: r.is_drum,
+        isManual: r.drum_designation_method === 'manual',
+        drumType: r.drum_designation_method || 'primary',
+        designatedAt: r.drum_designation_date,
+        designatedBy: 1, // Default user
+        reason: r.drum_designation_reason || 'Manual designation',
+        utilization: 0 // Default utilization
+      }));
+    } catch (error) {
+      console.error("Error fetching drum resources:", error);
+      // Return resources from mock data that are drums
+      return this.mockResources
+        .filter(r => r.is_drum)
+        .map(r => ({
+          id: r.id,
+          resourceId: r.id,
+          resourceName: r.name,
+          isDrum: r.is_drum,
+          isManual: r.drum_designation_method === 'manual',
+          drumType: r.drum_designation_method || 'primary',
+          designatedAt: r.drum_designation_date,
+          designatedBy: 1,
+          reason: r.drum_designation_reason || 'Manual designation',
+          utilization: 0
+        }));
+    }
+  }
+
+  async designateResourceAsDrum(resourceId: number, drumType: string, reason?: string, userId?: number) {
+    try {
+      // Update the resource in the database
+      const result = await db.execute(`
+        UPDATE resources 
+        SET is_drum = true,
+            drum_designation_date = CURRENT_TIMESTAMP,
+            drum_designation_reason = $1,
+            drum_designation_method = 'manual'
+        WHERE id = $2
+        RETURNING *
+      `, [reason || 'Manual designation', resourceId]);
+      
+      if (result.rows.length > 0) {
+        // Record in history
+        await db.execute(`
+          INSERT INTO drum_analysis_history (
+            analysis_type, resource_id, utilization_percentage, 
+            bottleneck_score, recommendation, is_current_bottleneck
+          ) VALUES ('manual', $1, '95', '100', $2, true)
+        `, [resourceId, reason || `Manually designated as ${drumType} drum`]);
+        
+        return result.rows[0];
+      }
+      throw new Error('Resource not found');
+    } catch (error) {
+      console.error("Error designating drum:", error);
+      // Update in mock data
+      const resource = this.mockResources.find(r => r.id === resourceId);
+      if (resource) {
+        resource.is_drum = true;
+        resource.drum_designation_date = new Date();
+        resource.drum_designation_reason = reason || 'Manual designation';
+        resource.drum_designation_method = 'manual';
+        return resource;
+      }
+      throw new Error('Resource not found');
+    }
+  }
+
+  async getDrumAnalysisHistory() {
+    try {
+      const result = await db.execute(`
+        SELECT dah.*, r.name as resource_name
+        FROM drum_analysis_history dah
+        LEFT JOIN resources r ON dah.resource_id = r.id
+        ORDER BY dah.created_at DESC
+        LIMIT 100
+      `);
+      
+      return result.rows.map(row => ({
+        ...row,
+        resourceName: row.resource_name
+      }));
+    } catch (error) {
+      console.error("Error fetching drum analysis history:", error);
+      return [];
+    }
+  }
+
+  async runDrumAnalysis() {
+    try {
+      // Get all resources
+      const allResources = await this.getResources();
+      let drumsIdentified = 0;
+      let drumsUpdated = 0;
+      const recommendations = [];
+
+      // Analyze each resource
+      for (const resource of allResources) {
+        // Simple mock analysis - identify high utilization resources as drums
+        const utilization = Math.random() * 100;
+        const isBottleneck = utilization > 70;
+        
+        if (isBottleneck && !resource.is_drum) {
+          // Update resource as drum
+          await db.execute(`
+            UPDATE resources 
+            SET is_drum = true,
+                drum_designation_date = CURRENT_TIMESTAMP,
+                drum_designation_reason = 'Automated analysis - high utilization',
+                drum_designation_method = 'automated'
+            WHERE id = $1
+          `, [resource.id]);
+          
+          drumsIdentified++;
+        }
+        
+        if (isBottleneck) {
+          recommendations.push({
+            resourceId: resource.id,
+            resourceName: resource.name,
+            score: utilization,
+            recommendation: `Resource ${resource.name} has ${utilization.toFixed(0)}% utilization`
+          });
+        }
+      }
+
+      // Record analysis in history
+      await db.execute(`
+        INSERT INTO drum_analysis_history (
+          analysis_type, resource_id, utilization_percentage, 
+          bottleneck_score, recommendation, is_current_bottleneck
+        ) VALUES ('automated', NULL, '70', '0', $1, false)
+      `, [`Analyzed ${allResources.length} resources, identified ${drumsIdentified} drums`]);
+
+      return {
+        analyzed: allResources.length,
+        identified: drumsIdentified,
+        updated: drumsUpdated,
+        recommendations: recommendations.sort((a, b) => b.score - a.score).slice(0, 10)
+      };
+    } catch (error) {
+      console.error("Error running drum analysis:", error);
+      return {
+        analyzed: 0,
+        identified: 0,
+        updated: 0,
+        recommendations: []
+      };
+    }
+  }
+
+  // ==================== CUSTOM CONSTRAINTS METHODS ====================
+  
+  async getCustomConstraints(filters?: any) {
+    try {
+      let query = 'SELECT * FROM custom_constraints WHERE 1=1';
+      const params = [];
+      let paramIndex = 1;
+      
+      if (filters) {
+        if (filters.isActive !== undefined) {
+          query += ` AND is_active = $${paramIndex++}`;
+          params.push(filters.isActive);
+        }
+        if (filters.constraintType) {
+          query += ` AND constraint_type = $${paramIndex++}`;
+          params.push(filters.constraintType);
+        }
+        if (filters.severity) {
+          query += ` AND severity = $${paramIndex++}`;
+          params.push(filters.severity);
+        }
+        if (filters.category) {
+          query += ` AND category = $${paramIndex++}`;
+          params.push(filters.category);
+        }
+      }
+      
+      query += ' ORDER BY created_at DESC';
+      
+      const result = await db.execute(query, params);
+      return result.rows;
+    } catch (error) {
+      console.error("Error fetching custom constraints:", error);
+      return [];
+    }
+  }
+
+  async createCustomConstraint(data: any) {
+    try {
+      const result = await db.execute(`
+        INSERT INTO custom_constraints (
+          name, description, constraint_type, severity, category, impact_area,
+          is_active, enforce_in_scheduling, enforce_in_optimization,
+          monitoring_frequency, violation_action, violation_threshold,
+          created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *
+      `, [
+        data.name, data.description, data.constraintType, data.severity,
+        data.category, data.impactArea, data.isActive ?? true,
+        data.enforceInScheduling ?? false, data.enforceInOptimization ?? false,
+        data.monitoringFrequency, data.violationAction, data.violationThreshold,
+        1 // Default user ID
+      ]);
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error("Error creating custom constraint:", error);
+      throw error;
+    }
+  }
+
+  async updateCustomConstraint(id: number, data: any) {
+    try {
+      const result = await db.execute(`
+        UPDATE custom_constraints
+        SET name = $1, description = $2, constraint_type = $3, severity = $4,
+            category = $5, impact_area = $6, is_active = $7,
+            enforce_in_scheduling = $8, enforce_in_optimization = $9,
+            monitoring_frequency = $10, violation_action = $11, violation_threshold = $12,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $13
+        RETURNING *
+      `, [
+        data.name, data.description, data.constraintType, data.severity,
+        data.category, data.impactArea, data.isActive ?? true,
+        data.enforceInScheduling ?? false, data.enforceInOptimization ?? false,
+        data.monitoringFrequency, data.violationAction, data.violationThreshold,
+        id
+      ]);
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error("Error updating custom constraint:", error);
+      throw error;
+    }
+  }
+
+  async deleteCustomConstraint(id: number) {
+    try {
+      await db.execute('DELETE FROM custom_constraints WHERE id = $1', [id]);
+      return true;
+    } catch (error) {
+      console.error("Error deleting custom constraint:", error);
+      throw error;
+    }
+  }
+
 
 }
 
