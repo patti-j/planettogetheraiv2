@@ -14,6 +14,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
+import { GanttBryntumWrapper } from '@/components/ui/gantt-bryntum-wrapper';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -504,14 +505,19 @@ export default function ProductionSchedulePage() {
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <GanttChart 
-                  jobs={(productionOrders as any) || []}
+                <GanttBryntumWrapper 
                   operations={(operations as any) || []}
+                  productionOrders={(productionOrders as any) || []}
                   resources={(resources as any) || []}
-                  capabilities={[]}
-                  view="operations"
                   rowHeight={ganttRowHeight}
-                  onRowHeightChange={setGanttRowHeight}
+                  onOperationUpdate={async (operation) => {
+                    // TODO: Implement operation update API call
+                    console.log('Update operation:', operation);
+                  }}
+                  onOperationMove={async (operationId, newResourceId, newStartTime) => {
+                    // TODO: Implement operation move API call
+                    console.log('Move operation:', operationId, 'to resource:', newResourceId, 'at:', newStartTime);
+                  }}
                   onExportReady={(handler) => {
                     exportHandlerRef.current = handler;
                   }}

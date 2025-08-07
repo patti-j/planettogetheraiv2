@@ -1,6 +1,46 @@
 /* React Flow styles */
 @import 'reactflow/dist/style.css';
 
+/* Bryntum Gantt styles */
+@import url('/gantt.stockholm.css');
+
+/* Custom Bryntum theme integration */
+.bryntum-gantt-container {
+  --b-theme-background-color: var(--background);
+  --b-theme-text-color: var(--foreground);
+  --b-theme-accent-color: var(--primary);
+  --b-theme-border-color: var(--border);
+  --b-theme-header-background-color: var(--muted);
+}
+
+/* Operation task styling to match our design */
+.bryntum-gantt-container .b-gantt-task {
+  border-radius: 6px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+/* Status-based colors for operations */
+.bryntum-gantt-container .task-completed {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border-color: #059669 !important;
+}
+
+.bryntum-gantt-container .task-in_progress {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  border-color: #2563eb !important;
+}
+
+.bryntum-gantt-container .task-scheduled,
+.bryntum-gantt-container .task-waiting {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border-color: #d97706 !important;
+}
+
+.bryntum-gantt-container .task-ready {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  border-color: #059669 !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

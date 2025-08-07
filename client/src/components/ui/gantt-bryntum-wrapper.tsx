@@ -6,9 +6,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// TODO: After uploading trial, uncomment these imports:
-// import { BryntumGantt } from '@bryntum/gantt-react';
-// import '@bryntum/gantt/gantt.stockholm.css';
+// Dynamic import for Bryntum Gantt from local trial files
+let BryntumGantt: any = null;
 
 interface GanttBryntumWrapperProps {
   operations: any[];
@@ -29,9 +28,10 @@ export function GanttBryntumWrapper({
   onOperationMove,
   onExportReady
 }: GanttBryntumWrapperProps) {
-  const ganttRef = useRef<any>(null);
+  const ganttRef = useRef<HTMLDivElement>(null);
+  const ganttInstanceRef = useRef<any>(null);
   const { toast } = useToast();
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(true); // Bryntum is available
 
   // Transform operations to Bryntum task format
   const transformToTasks = () => {
@@ -353,23 +353,124 @@ export function GanttBryntumWrapper({
     }
   };
 
-  // Export handler
+  // Load Bryntum library via script tag and initialize
   useEffect(() => {
-    if (onExportReady && ganttRef.current) {
-      const exportHandler = async () => {
+    const loadBryntumScript = () => {
+      // Check if Bryntum is already loaded globally
+      // @ts-ignore
+      if (window.bryntum?.gantt?.Gantt) {
+        // @ts-ignore
+        BryntumGantt = window.bryntum.gantt.Gantt;
+        initializeGantt();
+        return;
+      }
+      
+      // Load Bryntum script if not already loaded
+      const existingScript = document.querySelector('script[src="/gantt.module.js"]');
+      if (existingScript) {
+        // Script already exists, wait for it to load
+        existingScript.addEventListener('load', () => {
+          // @ts-ignore
+          BryntumGantt = window.bryntum?.gantt?.Gantt;
+          initializeGantt();
+        });
+        return;
+      }
+      
+      // Create and load the script
+      const script = document.createElement('script');
+      script.src = '/gantt.module.js';
+      script.type = 'module';
+      script.onload = () => {
+        console.log('Bryntum script loaded');
+        // Wait a moment for module to initialize
+        setTimeout(() => {
+          // @ts-ignore
+          BryntumGantt = window.bryntum?.gantt?.Gantt;
+          if (!BryntumGantt) {
+            // Try different global paths
+            // @ts-ignore
+            BryntumGantt = window.Gantt || window.bryntum?.Gantt;
+          }
+          initializeGantt();
+        }, 100);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Bryntum script');
+        setIsReady(false);
+      };
+      
+      document.head.appendChild(script);
+    };
+    
+    const initializeGantt = () => {
+      if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
-          // TODO: Implement export with Bryntum
-          // const result = await ganttRef.current.features.pdfExport.export({
-          //   filename: 'production-schedule',
-          //   format: 'A3',
-          //   orientation: 'landscape'
-          // });
+          // Create Bryntum Gantt instance
+          ganttInstanceRef.current = new BryntumGantt({
+            appendTo: ganttRef.current,
+            ...ganttConfig
+          });
+          
+          console.log('Bryntum Gantt initialized successfully');
           
           toast({
-            title: "Export Complete",
-            description: "Schedule exported successfully",
+            title: "Bryntum Gantt Loaded",
+            description: "Professional Gantt chart is now active",
           });
         } catch (error) {
+          console.error('Failed to initialize Bryntum Gantt:', error);
+          setIsReady(false);
+        }
+      } else if (!BryntumGantt) {
+        console.log('Bryntum Gantt class not found, falling back to placeholder');
+        setIsReady(false);
+      }
+    };
+    
+    loadBryntumScript();
+    
+    // Cleanup on unmount
+    return () => {
+      if (ganttInstanceRef.current) {
+        ganttInstanceRef.current.destroy();
+        ganttInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update data when operations/resources change
+  useEffect(() => {
+    if (ganttInstanceRef.current) {
+      const tasks = transformToTasks();
+      const resources = transformToResources();
+      
+      ganttInstanceRef.current.project.loadInlineData({
+        tasks,
+        resources
+      });
+    }
+  }, [operations, productionOrders, resources]);
+
+  // Export handler
+  useEffect(() => {
+    if (onExportReady && ganttInstanceRef.current) {
+      const exportHandler = async () => {
+        try {
+          if (ganttInstanceRef.current.features.pdfExport) {
+            await ganttInstanceRef.current.features.pdfExport.export({
+              filename: 'production-schedule',
+              format: 'A3',
+              orientation: 'landscape'
+            });
+            
+            toast({
+              title: "Export Complete",
+              description: "Schedule exported successfully",
+            });
+          }
+        } catch (error) {
+          console.error('Export failed:', error);
           toast({
             title: "Export Failed",
             description: "Could not export schedule",
@@ -410,8 +511,12 @@ export function GanttBryntumWrapper({
     );
   }
 
-  // TODO: Return actual Bryntum component when installed
-  // return <BryntumGantt ref={ganttRef} {...ganttConfig} />;
-  
-  return null;
+  // Return the container div for Bryntum Gantt
+  return (
+    <div 
+      ref={ganttRef} 
+      className="h-full w-full bryntum-gantt-container"
+      style={{ height: '100%', width: '100%' }}
+    />
+  );
 }
