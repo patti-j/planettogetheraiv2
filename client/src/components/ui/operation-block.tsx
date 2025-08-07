@@ -404,7 +404,7 @@ export default function OperationBlock({
                   <div className="truncate">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
                   <div className="truncate">Operation name: {operation.operationName || "Operation"}</div>
                 </div>
-                {/* Orange/yellow status bar */}
+                {/* Status bar - orange for waiting (unscheduled operations are waiting) */}
                 <div className="bg-orange-500 flex-1 px-2 flex items-center text-xs text-white font-medium">
                   <span className="truncate">Waiting</span>
                 </div>
@@ -468,16 +468,16 @@ export default function OperationBlock({
                 <div className="truncate leading-tight">Name: WO-{job?.orderNumber || operation.productionOrderId}</div>
                 <div className="truncate leading-tight">Operation name: {operation.operationName?.substring(0, 20) || "Op"}</div>
               </div>
-              {/* Orange/yellow status bar based on operation status */}
+              {/* Status bar - green for ready, orange for waiting */}
               <div className={`flex-1 px-2 flex items-center text-xs text-white font-medium ${
                 operation.status === 'completed' ? 'bg-green-600' :
-                operation.status === 'in_progress' ? 'bg-yellow-600' :
+                operation.status === 'in_progress' ? 'bg-green-600' :
                 operation.status === 'scheduled' ? 'bg-orange-500' :
                 'bg-orange-500'
               }`}>
                 <span className="truncate">
                   {operation.status === 'completed' ? 'Completed' :
-                   operation.status === 'in_progress' ? 'In Progress' :
+                   operation.status === 'in_progress' ? 'Ready' :
                    operation.status === 'scheduled' ? 'Waiting' :
                    'Waiting'}
                 </span>
