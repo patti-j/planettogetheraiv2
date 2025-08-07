@@ -257,7 +257,7 @@ export default function OperationBlock({
         return "Machine"; // placeholder
       
       case "capabilities":
-        return operation.requiredCapabilityIds?.join(", ") || "None";
+        return "None"; // TODO: Add capability display when schema is finalized
       
       case "start_time":
         return operation.startTime ? new Date(operation.startTime).toLocaleString() : "Not scheduled";
@@ -352,20 +352,20 @@ export default function OperationBlock({
     return (
       <div className="space-y-2 text-sm">
         <div className="font-semibold border-b border-gray-200 pb-1">
-          {operation.name}
+          {operation.operationName || `Operation ${operation.id}`}
         </div>
         <div className="space-y-1">
-          <div><strong>Job:</strong> {jobName || `Job ${operation.jobId}`}</div>
-          {job?.customer && <div><strong>Customer:</strong> {job.customer}</div>}
+          <div><strong>Job:</strong> {jobName || `Job ${operation.productionOrderId}`}</div>
+          {job?.customerId && <div><strong>Customer:</strong> {job.customerId}</div>}
           {job?.priority && <div><strong>Priority:</strong> {job.priority}</div>}
           <div><strong>Status:</strong> {operation.status}</div>
-          {operation.duration && <div><strong>Duration:</strong> {operation.duration}h</div>}
+          {operation.standardDuration && <div><strong>Duration:</strong> {operation.standardDuration}h</div>}
           <div><strong>Resource:</strong> {resourceName || "Unassigned"}</div>
         </div>
         {(operation.startTime || operation.endTime) && (
           <div className="space-y-1 border-t border-gray-200 pt-1">
-            <div><strong>Start:</strong> {formatDate(operation.startTime)}</div>
-            <div><strong>End:</strong> {formatDate(operation.endTime)}</div>
+            <div><strong>Start:</strong> {formatDate(operation.startTime?.toString() || null)}</div>
+            <div><strong>End:</strong> {formatDate(operation.endTime?.toString() || null)}</div>
           </div>
         )}
         {(operation.description || job?.description) && (
@@ -452,7 +452,7 @@ export default function OperationBlock({
               minWidth: "80px",
               top: "8px", // Center vertically with 8px margin
             }}
-            onMouseEnter={() => onHoverStart?.(operation.jobId)}
+            onMouseEnter={() => onHoverStart?.(operation.productionOrderId)}
             onMouseLeave={() => onHoverEnd?.()}
           >
             <div className="h-full flex items-center justify-between px-2 text-white text-xs relative">

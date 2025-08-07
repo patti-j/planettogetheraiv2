@@ -1318,6 +1318,15 @@ export default function GanttChart({
                   >
                     <Calendar className="w-4 h-4" />
                   </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleExportPDF} 
+                    title="Export PDF"
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+                  >
+                    Export
+                  </Button>
                 </div>
               </div>
             </div>
