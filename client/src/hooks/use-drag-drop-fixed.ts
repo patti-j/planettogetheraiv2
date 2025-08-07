@@ -87,6 +87,7 @@ export function useOperationDrop(
     accept: "operation",
     canDrop: (item) => safeCanDrop(item, resource, "gantt-chart"),
     drop: (item, monitor) => {
+      console.log("🎯 DROP HANDLER TRIGGERED!");
       console.log("DROP OPERATION:", { 
         operationId: item.operation.id, 
         resourceId: resource.id,
