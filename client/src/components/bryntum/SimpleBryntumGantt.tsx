@@ -73,21 +73,6 @@ export function SimpleBryntumGantt({
       return;
     }
 
-    // Wait for container to be available in the DOM
-    const checkContainerAndInit = () => {
-      if (!containerRef.current) {
-        console.log('SimpleBryntumGantt: Container not ready, waiting...');
-        setTimeout(checkContainerAndInit, 100);
-        return;
-      }
-      
-      console.log('SimpleBryntumGantt: Container ready, initializing...');
-      initializeGantt();
-    };
-
-    // Start the initialization process
-    setTimeout(checkContainerAndInit, 50);
-
     const initializeGantt = async () => {
       if (!containerRef.current) {
         console.error('SimpleBryntumGantt: Container ref is null during initialization');
@@ -353,6 +338,21 @@ export function SimpleBryntumGantt({
       }
     };
 
+    // Wait for container to be available in the DOM
+    const checkContainerAndInit = () => {
+      if (!containerRef.current) {
+        console.log('SimpleBryntumGantt: Container not ready, waiting...');
+        setTimeout(checkContainerAndInit, 100);
+        return;
+      }
+      
+      console.log('SimpleBryntumGantt: Container ready, initializing...');
+      initializeGantt();
+    };
+
+    // Start the initialization process
+    setTimeout(checkContainerAndInit, 50);
+
     return () => {
       if (ganttRef.current) {
         try {
@@ -438,12 +438,17 @@ export function SimpleBryntumGantt({
       <CardContent className="p-0">
         <div 
           ref={containerRef} 
+          id="bryntum-gantt-container"
           className="bryntum-gantt-container"
           style={{ 
             height: 'calc(100vh - 250px)',
-            minHeight: '600px'
+            minHeight: '600px',
+            width: '100%',
+            position: 'relative'
           }}
-        />
+        >
+          {/* Bryntum Gantt will be rendered here */}
+        </div>
       </CardContent>
     </Card>
   );
