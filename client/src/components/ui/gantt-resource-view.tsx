@@ -108,7 +108,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   };
   
   const timeRange = getTimeRange();
-  const totalHours = timeRange.hours / zoomLevel;
+  const totalHours = timeRange.hours; // Don't divide by zoomLevel - this is the base timeline
 
   // Group operations by resource - use processedOperations
   const operationsByResource = resources.map(resource => ({
@@ -125,9 +125,12 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     const hoursFromStart = (start.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60);
     const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     
-    // Convert to percentage
-    const left = (hoursFromStart / totalHours) * 100;
-    const width = (duration / totalHours) * 100;
+    // Use the base time range (before zoom) for percentage calculations
+    const baseHours = timeRange.hours; // This is the actual hours in the timeline
+    
+    // Convert to percentage based on the base timeline, not the zoomed timeline
+    const left = (hoursFromStart / baseHours) * 100;
+    const width = (duration / baseHours) * 100;
     
     // Debug logging
     console.log(`Operation ${op.id} position:`, {
@@ -136,6 +139,9 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
       endTime: op.endTime,
       hoursFromStart,
       duration,
+      baseHours,
+      totalHours,
+      zoomLevel,
       left: `${Math.max(0, left)}%`,
       width: `${Math.min(100 - left, width)}%`,
     });
@@ -172,13 +178,14 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   // Generate time markers based on view mode
   const generateTimeMarkers = () => {
     const markers = [];
-    const totalDays = Math.ceil(totalHours / 24);
+    const baseHours = timeRange.hours; // Use base hours, not zoomed
+    const baseDays = Math.ceil(baseHours / 24);
     
-    if (totalDays <= 1 || viewMode === 'hourly') {
+    if (baseDays <= 1 || viewMode === 'hourly') {
       // Show hourly markers for single day or hourly view
       const startHour = timeRange.start.getHours();
-      const hoursToShow = Math.ceil(totalHours);
-      const hourStep = hoursToShow > 12 ? 2 : 1;
+      const hoursToShow = Math.ceil(baseHours);
+      const hourStep = Math.max(1, Math.floor(hoursToShow / 8)); // Adjust step based on zoom
       
       for (let i = 0; i <= hoursToShow; i += hourStep) {
         const currentHour = startHour + i;
@@ -196,7 +203,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
       // Show daily markers for multi-day view
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       
-      for (let i = 0; i < totalDays; i++) {
+      for (let i = 0; i < baseDays; i++) {
         const date = new Date(timeRange.start);
         date.setDate(date.getDate() + i);
         
@@ -391,8 +398,16 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
         {/* Timeline header */}
         <div className="flex border-b border-border pb-2 mb-4">
           <div className="w-48 pr-4 text-sm font-medium">Resources</div>
-          <div className="flex-1 flex">
-            {timeMarkers}
+          <div className="flex-1 overflow-x-auto">
+            <div 
+              className="flex min-w-full"
+              style={{ 
+                width: `${100 * zoomLevel}%`,
+                minWidth: '100%'
+              }}
+            >
+              {timeMarkers}
+            </div>
           </div>
         </div>
 

@@ -514,93 +514,106 @@ export default function ProductionSchedulePage() {
                   resources={resources as any || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
-                    // Find the original operation to preserve its duration
-                    const originalOp = operations?.find(op => op.id === operationId);
-                    let duration = 60; // Default 60 minutes
-                    
-                    if (originalOp) {
-                      // Calculate original duration in milliseconds
-                      const originalStart = new Date(originalOp.startTime);
-                      const originalEnd = new Date(originalOp.endTime);
-                      duration = (originalEnd.getTime() - originalStart.getTime()) / 60000; // Convert to minutes
-                    }
-                    
-                    const endTime = new Date(newStartTime.getTime() + duration * 60000);
-                    
-                    // Call API to update the operation using apiRequest
-                    console.log('Sending PUT request to:', `/api/operations/${operationId}`, {
-                      workCenterId: newResourceId,
-                      startTime: newStartTime.toISOString(),
-                      endTime: endTime.toISOString()
-                    });
-                    
-                    const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
-                      workCenterId: newResourceId,
-                      startTime: newStartTime.toISOString(),
-                      endTime: endTime.toISOString()
-                    });
-                    
-                    console.log('PUT response:', response.status, response.ok);
-                    
-                    if (!response.ok) {
-                      const contentType = response.headers.get("content-type");
-                      if (contentType && contentType.indexOf("application/json") !== -1) {
-                        const error = await response.json();
-                        throw new Error(error.message || 'Failed to reschedule operation');
-                      } else {
-                        throw new Error('Server error: Invalid response format');
+                    try {
+                      // Find the original operation to preserve its duration
+                      const originalOp = operations?.find(op => op.id === operationId);
+                      let duration = 60; // Default 60 minutes
+                      
+                      if (originalOp) {
+                        // Calculate original duration in milliseconds
+                        const originalStart = new Date(originalOp.startTime);
+                        const originalEnd = new Date(originalOp.endTime);
+                        duration = (originalEnd.getTime() - originalStart.getTime()) / 60000; // Convert to minutes
                       }
+                      
+                      const endTime = new Date(newStartTime.getTime() + duration * 60000);
+                      
+                      // Call API to update the operation using apiRequest
+                      console.log('Sending PUT request to:', `/api/operations/${operationId}`, {
+                        workCenterId: newResourceId,
+                        startTime: newStartTime.toISOString(),
+                        endTime: endTime.toISOString()
+                      });
+                      
+                      const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
+                        workCenterId: newResourceId,
+                        startTime: newStartTime.toISOString(),
+                        endTime: endTime.toISOString()
+                      });
+                      
+                      console.log('PUT response:', response.status, response.ok);
+                      
+                      if (!response.ok) {
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                          const error = await response.json();
+                          throw new Error(error.message || 'Failed to reschedule operation');
+                        } else {
+                          throw new Error('Server error: Invalid response format');
+                        }
+                      }
+                      
+                      // Check if response is JSON before parsing
+                      const contentType = response.headers.get("content-type");
+                      let result = {};
+                      if (contentType && contentType.indexOf("application/json") !== -1) {
+                        result = await response.json();
+                      }
+                      
+                      console.log('Operation updated on server:', result);
+                      console.log('Current operations before refetch:', operations?.map(op => ({
+                        id: op.id,
+                        name: op.operationName,
+                        start: op.startTime,
+                        end: op.endTime,
+                        resource: op.workCenterId
+                      })));
+                      
+                      // Invalidate and remove all cached data for operations
+                      queryClient.removeQueries({ queryKey: ['/api/operations'] });
+                      await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                      
+                      // Wait a bit for the cache to clear
+                      await new Promise(resolve => setTimeout(resolve, 200));
+                      
+                      // Force immediate refresh of operations data with fresh data
+                      const refetchResult = await refetchOperations();
+                      console.log('Refetch completed:', refetchResult.status);
+                      console.log('Operations after refetch:', refetchResult.data?.map(op => ({
+                        id: op.id,
+                        name: op.operationName,
+                        start: op.startTime,
+                        end: op.endTime,
+                        resource: op.workCenterId
+                      })));
+                      
+                      // Double-check that the specific operation was updated
+                      const updatedOp = refetchResult.data?.find(op => op.id === operationId);
+                      console.log('Updated operation details:', updatedOp ? {
+                        id: updatedOp.id,
+                        name: updatedOp.operationName,
+                        newStart: updatedOp.startTime,
+                        newEnd: updatedOp.endTime,
+                        newResource: updatedOp.workCenterId,
+                        expectedResource: newResourceId,
+                        expectedStart: newStartTime.toISOString()
+                      } : 'NOT FOUND');
+                      
+                      // Force complete re-mount of the Gantt component with a delay
+                      setTimeout(() => {
+                        setGanttKey(Date.now());
+                      }, 200);
+                    } catch (error) {
+                      console.error('ERROR in onOperationMove:', error);
+                      console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        operationId,
+                        newResourceId,
+                        newStartTime
+                      });
+                      throw error; // Re-throw to preserve original error handling
                     }
-                    
-                    // Check if response is JSON before parsing
-                    const contentType = response.headers.get("content-type");
-                    let result = {};
-                    if (contentType && contentType.indexOf("application/json") !== -1) {
-                      result = await response.json();
-                    }
-                    
-                    console.log('Operation updated on server:', result);
-                    console.log('Current operations before refetch:', operations?.map(op => ({
-                      id: op.id,
-                      name: op.operationName,
-                      start: op.startTime,
-                      end: op.endTime,
-                      resource: op.workCenterId
-                    })));
-                    
-                    // Invalidate the cache completely before refetching
-                    await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                    
-                    // Wait a bit for the invalidation to complete
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    // Force immediate refresh of operations data
-                    const refetchResult = await refetchOperations();
-                    console.log('Refetch completed:', refetchResult.status);
-                    console.log('Operations after refetch:', refetchResult.data?.map(op => ({
-                      id: op.id,
-                      name: op.operationName,
-                      start: op.startTime,
-                      end: op.endTime,
-                      resource: op.workCenterId
-                    })));
-                    
-                    // Double-check that the specific operation was updated
-                    const updatedOp = refetchResult.data?.find(op => op.id === operationId);
-                    console.log('Updated operation details:', updatedOp ? {
-                      id: updatedOp.id,
-                      name: updatedOp.operationName,
-                      newStart: updatedOp.startTime,
-                      newEnd: updatedOp.endTime,
-                      newResource: updatedOp.workCenterId,
-                      expectedResource: newResourceId,
-                      expectedStart: newStartTime.toISOString()
-                    } : 'NOT FOUND');
-                    
-                    // Force complete re-mount of the Gantt component with a delay
-                    setTimeout(() => {
-                      setGanttKey(Date.now());
-                    }, 200);
                   }}
                 />
               ) : (

@@ -1471,14 +1471,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
   // Fetch record counts for all supported data types (async, doesn't block render)
   const { data: recordCountsData } = useQuery({
     queryKey: ['/api/data-management/record-counts'],
-    queryFn: async () => {
-      const authToken = localStorage.getItem('authToken');
-      const response = await fetch('/api/data-management/record-counts', {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch record counts');
-      return response.json();
-    },
+    // Use default fetcher which handles authentication automatically
     staleTime: 30000, // Cache for 30 seconds
     enabled: !!user // Only fetch when user is available
   });

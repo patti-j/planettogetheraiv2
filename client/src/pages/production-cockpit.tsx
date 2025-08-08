@@ -40,7 +40,8 @@ import {
   Wand2,
   Brain,
   Zap,
-  FolderOpen
+  FolderOpen,
+  Search
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Maximize } from "lucide-react";
@@ -314,6 +315,7 @@ export default function ProductionCockpit() {
 
   const [widgetLibraryDialog, setWidgetLibraryDialog] = useState(false);
   const [dashboardLibraryDialog, setDashboardLibraryDialog] = useState(false);
+  const [widgetSearchTerm, setWidgetSearchTerm] = useState("");
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
