@@ -3498,8 +3498,20 @@ Return ONLY a valid JSON object with this exact structure:
 
   // Enhanced AI collaborative algorithm development endpoint
   app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
-    console.log('Collaborative algorithm development request received');
-    console.log('Request body:', req.body);
+    console.log('=== COLLABORATIVE ALGORITHM DEV REQUEST ===');
+    console.log('Headers:', req.headers);
+    console.log('Body:', JSON.stringify(req.body));
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    
+    // Early return to test if endpoint is reached
+    if (!req.body.message) {
+      console.log('No message in request body, returning error');
+      return res.status(400).json({
+        error: 'Message is required',
+        details: 'Please provide a message to continue the conversation'
+      });
+    }
     
     try {
       const { message, sessionMessages = [], currentDraft, step } = req.body;
