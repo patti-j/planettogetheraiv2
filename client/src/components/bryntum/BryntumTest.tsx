@@ -28,9 +28,9 @@ export function BryntumTest() {
       }
       
       setStatus('✅ Bryntum Gantt is available!');
-      console.log('✅ Bryntum Gantt is available!', window.bryntum.gantt.Gantt);
+      console.log('✅ Bryntum Gantt is available!');
       
-      // Try to create a simple gantt
+      // Try to create a simple gantt without logging the full object (causes Helpers.toJSON error)
       try {
         if (containerRef.current) {
           const { Gantt } = window.bryntum.gantt;
@@ -47,7 +47,7 @@ export function BryntumTest() {
           });
           
           setStatus('✅ Simple Gantt created successfully!');
-          console.log('Simple Gantt created:', gantt);
+          console.log('Simple Gantt created successfully');
         }
       } catch (error) {
         setStatus(`❌ Failed to create Gantt: ${error.message}`);
