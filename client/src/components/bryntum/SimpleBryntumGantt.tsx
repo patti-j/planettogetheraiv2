@@ -231,14 +231,28 @@ export function SimpleBryntumGantt({
 
         console.log('Task-Resource assignments:', assignments);
 
-        // Create Gantt with standard view (we'll group by resources)
+        // Create tasks with parent-child structure for resources
+        const resourceTasks = bryntumResources.map(resource => ({
+          id: `resource-${resource.id}`,
+          name: resource.name,
+          startDate: new Date('2025-08-06'),
+          endDate: new Date('2025-08-10'),
+          expanded: true,
+          children: tasks.filter(t => t.resourceId === resource.id),
+          cls: 'resource-parent',
+          resourceId: resource.id,
+          isResource: true,
+          type: resource.type
+        }));
+
+        // Create Gantt with resource hierarchy
         const gantt = new Gantt({
           appendTo: containerRef.current,
           
-          // Use project model for data
+          // Use hierarchical task structure
           project: {
-            tasksData: tasks,
-            resourcesData: bryntumResources, 
+            tasksData: resourceTasks,
+            resourcesData: bryntumResources,
             assignmentsData: assignments
           },
           
@@ -247,22 +261,18 @@ export function SimpleBryntumGantt({
           rowHeight: 50,
           barMargin: 5,
           
-          // Columns for grouped view
+          // Columns for resource hierarchy view
           columns: [
             { 
               type: 'name', 
               field: 'name', 
-              text: 'Task / Resource',
+              text: 'Resource / Task',
               width: 300,
               htmlEncode: false, // Allow HTML in renderer
               renderer: ({ record }: any) => {
-                // For grouped rows, check if this is a group header
-                if (record.meta?.groupRowFor !== undefined) {
-                  const resource = bryntumResources.find(r => r.id === record.meta.groupRowFor);
-                  if (resource) {
-                    return `<strong>${resource.name}</strong> <em>(${resource.type || 'Resource'})</em>`;
-                  }
-                  return `Resource ${record.meta.groupRowFor}`;
+                // Check if this is a resource parent row
+                if (record.isResource) {
+                  return `<strong>${record.name}</strong> <em style="font-size: 0.9em; opacity: 0.7;">(${record.type || 'Resource'})</em>`;
                 }
                 // Regular task
                 return record.name;
@@ -290,12 +300,8 @@ export function SimpleBryntumGantt({
             }
           ],
           
-          // Features for resource-based view with grouping
+          // Features for hierarchical resource view
           features: {
-            group: {
-              field: 'resourceId',
-              disabled: false // Ensure grouping is enabled
-            },
             taskDrag: {
               constrainDragToTimeline: false,
               showTooltip: true,
@@ -415,12 +421,6 @@ export function SimpleBryntumGantt({
         });
 
         ganttRef.current = gantt;
-        
-        // Enable grouping by resource after initialization
-        if (gantt.features.group) {
-          gantt.store.group('resourceId');
-        }
-        
         setIsInitialized(true);
         setIsLoading(false);
 

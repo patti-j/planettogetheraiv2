@@ -43,6 +43,22 @@
   color: var(--b-text-color);
 }
 
+/* Hide resource parent bars in timeline */
+.b-gantt-task.resource-parent {
+  display: none !important;
+}
+
+/* Style resource parent rows in the grid */
+.b-grid-row.b-parent > .b-grid-cell {
+  background-color: rgba(0, 0, 0, 0.03);
+  font-weight: 600;
+}
+
+/* Indent child tasks */
+.b-tree-parent-row + .b-grid-row .b-grid-cell[data-column="name"] {
+  padding-left: 30px;
+}
+
 /* Status badges in the grid */
 .status-badge {
   padding: 2px 8px;
