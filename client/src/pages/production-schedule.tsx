@@ -93,7 +93,7 @@ export default function ProductionSchedulePage() {
     enabled: canViewSchedule
   });
 
-  const { data: operations, isLoading: operationsLoading } = useQuery({
+  const { data: operations, isLoading: operationsLoading, refetch: refetchOperations } = useQuery({
     queryKey: ['/api/operations'],
     enabled: canViewSchedule
   });
@@ -540,11 +540,13 @@ export default function ProductionSchedulePage() {
                       result = await response.json();
                     }
                     
-                    // Force refresh the operations data with a small delay to ensure server update is complete
-                    setTimeout(async () => {
-                      await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                      await queryClient.refetchQueries({ queryKey: ['/api/operations'] });
-                    }, 100);
+                    console.log('Operation updated on server:', result);
+                    console.log('Current operations before refetch:', operations);
+                    
+                    // Force immediate refresh of operations data
+                    const refetchResult = await refetchOperations();
+                    console.log('Refetch result:', refetchResult);
+                    console.log('Operations after refetch:', refetchResult.data);
                   }}
                 />
               ) : (

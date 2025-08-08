@@ -2292,6 +2292,8 @@ Rules:
   app.put("/api/operations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      console.log(`Updating operation ${id} with data:`, req.body);
+      
       // Handle the date conversion before validation
       const requestData = { ...req.body };
       
@@ -2302,12 +2304,18 @@ Rules:
         requestData.endTime = new Date(requestData.endTime);
       }
       
+      console.log('Parsed request data:', requestData);
+      
       // Default to discrete operations for backward compatibility  
       const operation = insertDiscreteOperationSchema.partial().parse(requestData);
+      console.log('Validated operation data:', operation);
+      
       const updatedOperation = await storage.updateDiscreteOperation(id, operation);
       if (!updatedOperation) {
         return res.status(404).json({ message: "Operation not found" });
       }
+      
+      console.log('Updated operation:', updatedOperation);
       res.json(updatedOperation);
     } catch (error: any) {
       console.error('Operation update error:', error);
