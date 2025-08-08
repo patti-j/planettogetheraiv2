@@ -191,9 +191,11 @@ export function SimpleBryntumGantt({
 
     const initializeGantt = async () => {
       console.log('🔍 initializeGantt called - checking conditions...');
-      console.log('ganttRef.current:', !!ganttRef.current);
-      console.log('ganttInstanceRef.current:', !!ganttInstanceRef.current);  
-      console.log('BryntumGantt:', !!BryntumGantt);
+      console.log('ganttRef.current:', ganttRef.current);
+      console.log('ganttRef.current exists:', !!ganttRef.current);
+      console.log('ganttInstanceRef.current:', ganttInstanceRef.current);  
+      console.log('BryntumGantt:', BryntumGantt);
+      console.log('BryntumGantt type:', typeof BryntumGantt);
       console.log('operations length:', operations?.length || 0);
       console.log('resources length:', resources?.length || 0);
       
