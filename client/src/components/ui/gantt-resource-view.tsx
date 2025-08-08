@@ -42,11 +42,16 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
   const [localOperations, setLocalOperations] = useState<Operation[]>(operations);
   
-  // Update local operations when props change
+  // Update local operations when props change - create new objects to force re-render
   useEffect(() => {
     console.log('GanttResourceView: Operations prop changed', operations);
-    setLocalOperations([...operations]);
+    // Create completely new objects to ensure React detects the change
+    const newOps = operations.map(op => ({...op}));
+    setLocalOperations(newOps);
   }, [operations]);
+  
+  // Force re-render when operations change by tracking a key
+  const operationsKey = operations.map(op => `${op.id}-${op.workCenterId}-${op.startTime}`).join(',');
   
   // Calculate total hours based on zoom and view mode
   const getTimeRange = () => {
@@ -65,10 +70,10 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const timeRange = getTimeRange();
   const totalHours = timeRange.hours / zoomLevel;
 
-  // Group operations by resource
+  // Group operations by resource - use operations directly instead of localOperations
   const operationsByResource = resources.map(resource => ({
     resource,
-    operations: localOperations.filter(op => op.workCenterId === resource.id)
+    operations: operations.filter(op => op.workCenterId === resource.id)
   }));
 
   // Calculate position and width for an operation
@@ -395,7 +400,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
                 
                 return (
                   <div
-                    key={op.id}
+                    key={`${op.id}-${op.workCenterId}-${op.startTime}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, op)}
                     onDragEnd={handleDragEnd}
