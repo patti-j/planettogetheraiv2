@@ -218,6 +218,13 @@ export default function OptimizationStudio() {
   // AI collaborative session mutation
   const aiCollaborateSession = useMutation({
     mutationFn: async ({ message, sessionData }: { message: string; sessionData: any }) => {
+      console.log('Sending collaborative algorithm request:', {
+        message,
+        sessionMessages: aiSessionMessages,
+        currentDraft: currentAlgorithmDraft,
+        step: aiSessionStep
+      });
+      
       const response = await fetch('/api/ai-agent/collaborative-algorithm-development', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,10 +237,14 @@ export default function OptimizationStudio() {
         })
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
       if (!response.ok) {
         // Try to parse the error response
         try {
           const errorData = await response.json();
+          console.log('Error response data:', errorData);
           const error = new Error(errorData.error || 'Failed to process AI collaboration');
           (error as any).details = errorData.details;
           throw error;
