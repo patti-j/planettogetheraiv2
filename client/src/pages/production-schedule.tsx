@@ -512,13 +512,18 @@ export default function ProductionSchedulePage() {
                   resources={(resources as any) || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
-                    // Call API to reschedule the operation
-                    const response = await fetch(`/api/operations/${operationId}/reschedule`, {
+                    // Calculate end time based on default duration
+                    const duration = 60; // Default 60 minutes
+                    const endTime = new Date(newStartTime.getTime() + duration * 60000);
+                    
+                    // Call API to update the operation
+                    const response = await fetch(`/api/operations/${operationId}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        resourceId: newResourceId,
-                        startTime: newStartTime.toISOString()
+                        workCenterId: newResourceId,
+                        startTime: newStartTime.toISOString(),
+                        endTime: endTime.toISOString()
                       })
                     });
                     
