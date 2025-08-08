@@ -12349,7 +12349,7 @@ export class DatabaseStorage implements IStorage {
       resources,
       capabilities,
       production_orders: productionOrders,
-      operations,
+      operations: discreteOperations,
       vendors,
       customers,
       stock_items: stockItems
