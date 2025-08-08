@@ -88,6 +88,17 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     const left = (hoursFromStart / totalHours) * 100;
     const width = (duration / totalHours) * 100;
     
+    // Debug logging
+    console.log(`Operation ${op.id} position:`, {
+      operationId: op.id,
+      startTime: op.startTime,
+      endTime: op.endTime,
+      hoursFromStart,
+      duration,
+      left: `${Math.max(0, left)}%`,
+      width: `${Math.min(100 - left, width)}%`,
+    });
+    
     return {
       left: `${Math.max(0, left)}%`,
       width: `${Math.min(100 - left, width)}%`,
@@ -397,16 +408,25 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
                 const statusColor = getStatusColor(op.status);
                 const isDragging = draggedOperation?.id === op.id;
                 
+                // Force unique key with position data to ensure re-render
+                const uniqueKey = `${op.id}-${op.workCenterId}-${new Date(op.startTime).getTime()}-${style.left}-${style.width}`;
+                
                 return (
                   <div
-                    key={`${op.id}-${op.workCenterId}-${op.startTime}`}
+                    key={uniqueKey}
                     draggable
                     onDragStart={(e) => handleDragStart(e, op)}
                     onDragEnd={handleDragEnd}
                     className={`absolute top-0 h-full rounded overflow-hidden cursor-move hover:z-10 hover:shadow-lg transition-all duration-200 ${statusColor} ${
                       isDragging ? 'opacity-50 ring-2 ring-blue-500' : ''
                     } hover:ring-2 hover:ring-blue-400`}
-                    style={style}
+                    style={{
+                      position: 'absolute',
+                      left: style.left,
+                      width: style.width,
+                      top: 0,
+                      height: '100%'
+                    }}
                     title={`${op.operationName} - PO-${op.productionOrderId}
 Start: ${new Date(op.startTime).toLocaleString()}
 End: ${new Date(op.endTime).toLocaleString()}
