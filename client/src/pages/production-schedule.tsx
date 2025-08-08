@@ -528,11 +528,19 @@ export default function ProductionSchedulePage() {
                     const endTime = new Date(newStartTime.getTime() + duration * 60000);
                     
                     // Call API to update the operation using apiRequest
+                    console.log('Sending PUT request to:', `/api/operations/${operationId}`, {
+                      workCenterId: newResourceId,
+                      startTime: newStartTime.toISOString(),
+                      endTime: endTime.toISOString()
+                    });
+                    
                     const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
                       workCenterId: newResourceId,
                       startTime: newStartTime.toISOString(),
                       endTime: endTime.toISOString()
                     });
+                    
+                    console.log('PUT response:', response.status, response.ok);
                     
                     if (!response.ok) {
                       const contentType = response.headers.get("content-type");
