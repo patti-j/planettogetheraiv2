@@ -27,6 +27,19 @@ declare global {
   }
 }
 
+// Type definitions for Bryntum Gantt
+interface BryntumGanttConfig {
+  appendTo: HTMLElement;
+  project: any;
+  viewPreset: string;
+  rowHeight: number;
+  barMargin: number;
+  columns: any[];
+  features: any;
+  tbar?: any;
+  listeners?: any;
+}
+
 interface BryntumGanttProps {
   operations: any[];
   resources: any[];
@@ -53,7 +66,13 @@ export function BryntumGantt({
   useEffect(() => {
     if (!containerRef.current || !window.bryntum || isInitialized) return;
 
-    const { Gantt, ProjectModel, StringHelper } = window.bryntum.gantt;
+    // Check if Bryntum is properly loaded
+    if (!window.bryntum.gantt) {
+      console.error('Bryntum Gantt not properly loaded');
+      return;
+    }
+
+    const { Gantt, ProjectModel } = window.bryntum.gantt;
 
     // Transform operations to Bryntum task format
     const tasks = operations.map(op => ({
@@ -240,21 +259,21 @@ export function BryntumGantt({
             </div>
           `
         },
-        // Undo/Redo
-        undo: true,
-        // Search
-        search: true,
+        // Undo/Redo - disable for now as it requires separate import
+        // undo: true,
+        // Search - disable for now
+        // search: true,
         // Column lines
         columnLines: true,
         // Sorting
         sort: 'name',
         // Filtering
         filter: true,
-        // Export features
-        pdfExport: {
-          exportServer: '/api/export' // You'll need to implement this endpoint
-        },
-        excelExporter: true
+        // Export features - disable for now
+        // pdfExport: {
+        //   exportServer: '/api/export'
+        // },
+        // excelExporter: true
       },
 
       // Toolbar configuration
@@ -307,18 +326,19 @@ export function BryntumGantt({
             }
           },
           '|',
-          {
-            type: 'button',
-            text: 'Undo',
-            icon: 'b-fa-undo',
-            onAction: () => gantt.features.undo.undo()
-          },
-          {
-            type: 'button',
-            text: 'Redo',
-            icon: 'b-fa-redo',
-            onAction: () => gantt.features.undo.redo()
-          },
+          // Undo/Redo buttons disabled for now
+          // {
+          //   type: 'button',
+          //   text: 'Undo',
+          //   icon: 'b-fa-undo',
+          //   onAction: () => gantt.features.undo.undo()
+          // },
+          // {
+          //   type: 'button',
+          //   text: 'Redo',
+          //   icon: 'b-fa-redo',
+          //   onAction: () => gantt.features.undo.redo()
+          // },
           '|',
           {
             type: 'buttongroup',

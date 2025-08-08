@@ -99,36 +99,44 @@
 }
 
 /* Task tooltip styling */
-.b-gantt-task-tooltip {
+.b-gantt-task-tooltip,
+.gantt-tooltip {
   padding: 12px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
 }
 
-.dark .b-gantt-task-tooltip {
+.dark .b-gantt-task-tooltip,
+.dark .gantt-tooltip {
   background: #1f2937;
   color: white;
+  border-color: #374151;
 }
 
-.b-gantt-task-tooltip h4 {
+.b-gantt-task-tooltip h4,
+.gantt-tooltip h4 {
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 600;
   color: #111827;
 }
 
-.dark .b-gantt-task-tooltip h4 {
+.dark .b-gantt-task-tooltip h4,
+.dark .gantt-tooltip h4 {
   color: #f3f4f6;
 }
 
-.b-gantt-task-tooltip p {
+.b-gantt-task-tooltip p,
+.gantt-tooltip p {
   margin: 4px 0;
   font-size: 14px;
   color: #4b5563;
 }
 
-.dark .b-gantt-task-tooltip p {
+.dark .b-gantt-task-tooltip p,
+.dark .gantt-tooltip p {
   color: #d1d5db;
 }
 
