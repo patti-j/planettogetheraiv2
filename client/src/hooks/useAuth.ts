@@ -255,37 +255,18 @@ export function usePermissions() {
   const { user } = useAuth();
 
   const hasPermission = (feature: string, action: string): boolean => {
-    if (!user) {
-      console.log("hasPermission: no user");
-      return false;
-    }
-
-    console.log("hasPermission check:", { 
-      feature, 
-      action, 
-      user: { 
-        id: user.id,
-        username: user.username,
-        roles: user.roles ? user.roles.length : 'undefined',
-        rolesStructure: user.roles ? user.roles.map(r => ({ name: r.name, permissionCount: r.permissions?.length || 0 })) : 'no roles'
-      } 
-    });
+    if (!user) return false;
 
     // All users now use the roles array structure
     if (!user.roles || !Array.isArray(user.roles)) {
-      console.log("No roles array found on user object");
       return false;
     }
 
-    const result = user.roles.some(role =>
+    return user.roles.some(role =>
       role.permissions?.some(permission =>
         permission.feature === feature && permission.action === action
       )
     );
-    
-    console.log("Permission check result:", result, "for feature-action:", `${feature}-${action}`);
-    
-    return result;
   };
 
   const hasAnyPermission = (permissions: Array<{ feature: string; action: string }>): boolean => {

@@ -44,9 +44,9 @@ export function SimpleBryntumGantt({
         setIsLoading(true);
         
         // Wait for Bryntum to be fully loaded
-        if (!window.bryntum.gantt?.Gantt) {
+        if (!window.bryntum?.gantt?.Gantt) {
           console.warn('Bryntum Gantt not available, retrying...');
-          setTimeout(() => setIsLoading(false), 1000);
+          setTimeout(initializeGantt, 500); // Retry after 500ms
           return;
         }
 
@@ -242,7 +242,7 @@ export function SimpleBryntumGantt({
         setIsInitialized(true);
         setIsLoading(false);
 
-        console.log('Bryntum Gantt initialized successfully');
+        console.log('SimpleBryntumGantt: Initialized with', tasks.length, 'operations and', bryntumResources.length, 'resources');
 
       } catch (error) {
         console.error('Error initializing Bryntum Gantt:', error);
@@ -256,7 +256,7 @@ export function SimpleBryntumGantt({
     };
 
     // Delay initialization to ensure DOM is ready
-    const timeout = setTimeout(initializeGantt, 100);
+    const timeout = setTimeout(initializeGantt, 300);
 
     return () => {
       clearTimeout(timeout);

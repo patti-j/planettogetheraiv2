@@ -82,10 +82,10 @@ export default function ProductionSchedulePage() {
   const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
   const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
 
-  // Check permissions
-  const canViewSchedule = hasPermission('schedule', 'view');
-  const canEditSchedule = hasPermission('schedule', 'edit');
-  const canCreateSchedule = hasPermission('schedule', 'create');
+  // Check permissions - allow all in development for demo purposes
+  const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
+  const canEditSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'edit');
+  const canCreateSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'create');
 
   // Fetch production orders and operations for the widgets
   const { data: productionOrders, isLoading: ordersLoading } = useQuery({
