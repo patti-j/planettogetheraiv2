@@ -3459,10 +3459,47 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
+  // Test OpenAI API endpoint
+  app.get('/api/ai-agent/test-openai', requireAuth, async (req, res) => {
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key not configured',
+          keyExists: false
+        });
+      }
+
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+
+      // Simple test call
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: "Say 'API working'" }],
+        max_tokens: 10
+      });
+
+      res.json({ 
+        success: true, 
+        message: completion.choices[0]?.message?.content || 'Test successful',
+        keyExists: true
+      });
+    } catch (error: any) {
+      console.error('OpenAI test error:', error);
+      res.status(500).json({ 
+        error: error.message || 'OpenAI API test failed',
+        keyExists: true,
+        details: error.error?.message || error.message
+      });
+    }
+  });
+
   // Enhanced AI collaborative algorithm development endpoint
   app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
     try {
-      const { message, sessionMessages, currentDraft, step } = req.body;
+      const { message, sessionMessages = [], currentDraft, step } = req.body;
 
       // Check if OpenAI API key is configured
       if (!process.env.OPENAI_API_KEY) {
@@ -3473,12 +3510,10 @@ Return ONLY a valid JSON object with this exact structure:
         });
       }
 
-      // Get the API key
-      const apiKey = process.env.OPENAI_API_KEY;
-
+      // Import and initialize OpenAI
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({
-        apiKey: apiKey,
+        apiKey: process.env.OPENAI_API_KEY,
       });
 
       // Build comprehensive context for AI collaboration
@@ -3528,7 +3563,7 @@ Manufacturing Context Available:
       let response;
       try {
         response = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: "gpt-3.5-turbo", // Using a more stable model
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: message }
@@ -3538,17 +3573,24 @@ Manufacturing Context Available:
         });
       } catch (openaiError: any) {
         console.error('OpenAI API call failed:', openaiError);
+        console.error('Error details:', {
+          message: openaiError.message,
+          type: openaiError.error?.type,
+          status: openaiError.status,
+          code: openaiError.code,
+          stack: openaiError.stack
+        });
         
         // Handle specific OpenAI errors
-        if (openaiError.error?.type === 'invalid_request_error') {
+        if (openaiError.message?.includes('did not match the expected pattern')) {
           return res.status(500).json({ 
-            error: 'Invalid request to AI service',
-            details: openaiError.error?.message || 'The request format was invalid'
+            error: 'Invalid OpenAI API key format',
+            details: 'Please check your OpenAI API key configuration and try again.'
           });
-        } else if (openaiError.error?.type === 'authentication_error') {
+        } else if (openaiError.message?.includes('401')) {
           return res.status(500).json({ 
             error: 'AI service authentication failed',
-            details: 'Please check your OpenAI API key configuration'
+            details: 'Please check your OpenAI API key configuration and ensure it is valid'
           });
         } else if (openaiError.status === 429) {
           return res.status(500).json({ 
@@ -3568,7 +3610,7 @@ Manufacturing Context Available:
         }
       }
 
-      const aiResponse = response.choices[0].message.content;
+      const aiResponse = response?.choices?.[0]?.message?.content || '';
       
       // Try to extract JSON from response
       let responseData = {
@@ -3605,10 +3647,23 @@ Manufacturing Context Available:
         stack: error.stack,
         body: req.body
       });
-      res.status(500).json({ 
-        error: 'Failed to process AI collaboration request', 
-        details: error.message || 'Unknown error occurred'
-      });
+      // Provide more specific error messages
+      if (error.message?.includes('did not match the expected pattern')) {
+        res.status(500).json({ 
+          error: 'The string did not match the expected pattern.',
+          details: 'Please check your OpenAI API key configuration and try again.'
+        });
+      } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        res.status(500).json({ 
+          error: 'OpenAI API authentication failed',
+          details: 'Please verify your OpenAI API key is valid and has not expired.'
+        });
+      } else {
+        res.status(500).json({ 
+          error: 'Failed to process AI collaboration request', 
+          details: error.message || 'Unknown error occurred'
+        });
+      }
     }
   });
 
