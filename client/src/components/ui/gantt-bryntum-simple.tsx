@@ -119,21 +119,30 @@ export function SimpleBryntumGantt({
           console.log('window.gantt:', win.gantt); 
           console.log('window.Gantt:', win.Gantt);
           
-          // Try all possible paths
-          BryntumGantt = win.bryntum?.gantt?.Gantt || 
-                         win.bryntum?.Gantt ||
-                         win.gantt?.Gantt ||
-                         win.Gantt;
+          // Based on console output, Bryntum is at window.bryntum
+          // The Gantt class should be at window.bryntum.gantt.Gantt
+          if (win.bryntum && win.bryntum.gantt) {
+            console.log('✅ Found bryntum.gantt object');
+            BryntumGantt = win.bryntum.gantt.Gantt;
+          } else if (win.bryntum) {
+            console.log('⚠️ Found bryntum but not gantt, searching...');
+            // Search for Gantt in bryntum object
+            for (const key in win.bryntum) {
+              if (key.toLowerCase().includes('gantt')) {
+                console.log(`Found gantt-related key: ${key}`);
+              }
+            }
+          }
           
           console.log('🎯 Bryntum Gantt class found:', !!BryntumGantt);
           
           if (BryntumGantt) {
             console.log('🔄 Calling initializeGantt...');
-            console.log('Gantt constructor:', BryntumGantt);
+            console.log('Gantt constructor type:', typeof BryntumGantt);
             initializeGantt();
           } else {
-            console.error('❌ Bryntum Gantt class not found in any expected location');
-            console.error('Available window properties:', Object.keys(win).filter(k => k.includes('bryntum') || k.includes('gantt') || k.includes('Gantt')));
+            console.error('❌ Bryntum Gantt class not found');
+            console.error('Bryntum structure:', win.bryntum);
             setIsReady(false);
           }
         }, 500); // Give more time for script to fully load
