@@ -510,6 +510,13 @@ export default function ProductionSchedulePage() {
                   operations={(operations as any) || []}
                   resources={(resources as any) || []}
                   className="h-full"
+                  onOperationMove={async (operationId, newResourceId, newStartTime) => {
+                    // TODO: Implement API call to update operation
+                    console.log('Move operation:', operationId, 'to resource:', newResourceId, 'at:', newStartTime);
+                    
+                    // For now, just show success message
+                    return Promise.resolve();
+                  }}
                 />
               ) : (
                 <Card className="h-full">

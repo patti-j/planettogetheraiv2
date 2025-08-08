@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ZoomIn, ZoomOut, Maximize2, Calendar, Clock } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Calendar, Clock, GripVertical } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Operation {
   id: number;
@@ -27,14 +28,18 @@ interface GanttResourceViewProps {
   operations: Operation[];
   resources: Resource[];
   className?: string;
+  onOperationMove?: (operationId: number, newResourceId: number, newStartTime: Date) => Promise<void>;
 }
 
-export function GanttResourceView({ operations, resources, className = '' }: GanttResourceViewProps) {
+export function GanttResourceView({ operations, resources, className = '', onOperationMove }: GanttResourceViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const [zoomLevel, setZoomLevel] = useState(1); // 1 = default, 2 = zoomed in, 0.5 = zoomed out
   const [viewMode, setViewMode] = useState<'hourly' | 'daily' | 'weekly'>('hourly');
   const [timelineStart, setTimelineStart] = useState(new Date(2025, 7, 7, 7, 0)); // Aug 7, 7 AM
   const [timelineEnd, setTimelineEnd] = useState(new Date(2025, 7, 7, 21, 0)); // Aug 7, 9 PM
+  const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
   
   // Calculate total hours based on zoom and view mode
   const getTimeRange = () => {
@@ -153,6 +158,75 @@ export function GanttResourceView({ operations, resources, className = '' }: Gan
   
   const timeMarkers = generateTimeMarkers();
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, operation: Operation) => {
+    setDraggedOperation(operation);
+    e.dataTransfer.effectAllowed = 'move';
+    
+    // Add visual feedback
+    const target = e.target as HTMLElement;
+    target.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const target = e.target as HTMLElement;
+    target.style.opacity = '1';
+    setDraggedOperation(null);
+    setDropTarget(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, resourceId: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Calculate time based on mouse position
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const hoursOffset = totalHours * percentage;
+    
+    const newTime = new Date(timeRange.start);
+    newTime.setHours(newTime.getHours() + Math.floor(hoursOffset));
+    
+    setDropTarget({ resourceId, time: newTime });
+  };
+
+  const handleDrop = async (e: React.DragEvent, resourceId: number) => {
+    e.preventDefault();
+    
+    if (!draggedOperation || !onOperationMove) return;
+    
+    // Calculate drop time
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const hoursOffset = totalHours * percentage;
+    
+    const newStartTime = new Date(timeRange.start);
+    newStartTime.setHours(newStartTime.getHours() + Math.floor(hoursOffset));
+    
+    // Round to nearest 30 minutes
+    const minutes = newStartTime.getMinutes();
+    newStartTime.setMinutes(minutes < 15 ? 0 : minutes < 45 ? 30 : 60);
+    
+    try {
+      await onOperationMove(draggedOperation.id, resourceId, newStartTime);
+      toast({
+        title: "Operation Rescheduled",
+        description: `${draggedOperation.operationName} moved to ${newStartTime.toLocaleString()}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reschedule operation",
+        variant: "destructive",
+      });
+    }
+    
+    setDraggedOperation(null);
+    setDropTarget(null);
+  };
+
   return (
     <Card className={`p-4 ${className}`}>
       <div className="mb-4 flex items-center justify-between">
@@ -247,20 +321,41 @@ export function GanttResourceView({ operations, resources, className = '' }: Gan
             </div>
 
             {/* Timeline with operations */}
-            <div className="flex-1 relative h-12">
+            <div 
+              className="flex-1 relative h-12"
+              onDragOver={(e) => handleDragOver(e, resource.id)}
+              onDrop={(e) => handleDrop(e, resource.id)}
+            >
+              {/* Drop indicator */}
+              {dropTarget && dropTarget.resourceId === resource.id && draggedOperation && (
+                <div
+                  className="absolute top-0 h-full w-1 bg-blue-500 z-20 pointer-events-none"
+                  style={{
+                    left: `${((dropTarget.time.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60) / totalHours) * 100}%`
+                  }}
+                />
+              )}
+              
               {resourceOps.map((op) => {
                 const style = getOperationStyle(op);
                 const statusColor = getStatusColor(op.status);
+                const isDragging = draggedOperation?.id === op.id;
                 
                 return (
                   <div
                     key={op.id}
-                    className={`absolute top-0 h-full rounded overflow-hidden cursor-pointer hover:z-10 hover:shadow-lg transition-shadow ${statusColor}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, op)}
+                    onDragEnd={handleDragEnd}
+                    className={`absolute top-0 h-full rounded overflow-hidden cursor-move hover:z-10 hover:shadow-lg transition-shadow ${statusColor} ${
+                      isDragging ? 'opacity-50' : ''
+                    }`}
                     style={style}
                     title={`${op.operationName} - PO-${op.productionOrderId}`}
                   >
-                    <div className="h-1/2 bg-black/20 px-1 text-[10px] text-white font-bold flex items-center">
-                      PO-{op.productionOrderId}
+                    <div className="h-1/2 bg-black/20 px-1 text-[10px] text-white font-bold flex items-center justify-between">
+                      <span>PO-{op.productionOrderId}</span>
+                      <GripVertical className="w-3 h-3" />
                     </div>
                     <div className="h-1/2 px-1 text-[10px] text-white flex items-center">
                       {op.operationName.split(' ')[0]}
