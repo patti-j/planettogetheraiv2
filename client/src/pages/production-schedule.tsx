@@ -11,7 +11,7 @@ import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
-import { queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
@@ -516,20 +516,21 @@ export default function ProductionSchedulePage() {
                     const duration = 60; // Default 60 minutes
                     const endTime = new Date(newStartTime.getTime() + duration * 60000);
                     
-                    // Call API to update the operation
-                    const response = await fetch(`/api/operations/${operationId}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        workCenterId: newResourceId,
-                        startTime: newStartTime.toISOString(),
-                        endTime: endTime.toISOString()
-                      })
+                    // Call API to update the operation using apiRequest
+                    const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
+                      workCenterId: newResourceId,
+                      startTime: newStartTime.toISOString(),
+                      endTime: endTime.toISOString()
                     });
                     
                     if (!response.ok) {
-                      const error = await response.json();
-                      throw new Error(error.message || 'Failed to reschedule operation');
+                      const contentType = response.headers.get("content-type");
+                      if (contentType && contentType.indexOf("application/json") !== -1) {
+                        const error = await response.json();
+                        throw new Error(error.message || 'Failed to reschedule operation');
+                      } else {
+                        throw new Error('Server error: Invalid response format');
+                      }
                     }
                     
                     // Refresh the operations data
