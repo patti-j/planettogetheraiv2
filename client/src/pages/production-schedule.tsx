@@ -15,6 +15,7 @@ import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
 import { SimpleBryntumGantt } from '@/components/ui/gantt-bryntum-simple';
+import { GanttResourceView } from '@/components/ui/gantt-resource-view';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -505,22 +506,10 @@ export default function ProductionSchedulePage() {
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <SimpleBryntumGantt 
+                <GanttResourceView
                   operations={(operations as any) || []}
-                  productionOrders={(productionOrders as any) || []}
                   resources={(resources as any) || []}
-                  rowHeight={ganttRowHeight}
-                  onOperationUpdate={async (operation) => {
-                    // TODO: Implement operation update API call
-                    console.log('Update operation:', operation);
-                  }}
-                  onOperationMove={async (operationId, newResourceId, newStartTime) => {
-                    // TODO: Implement operation move API call
-                    console.log('Move operation:', operationId, 'to resource:', newResourceId, 'at:', newStartTime);
-                  }}
-                  onExportReady={(handler) => {
-                    exportHandlerRef.current = handler;
-                  }}
+                  className="h-full"
                 />
               ) : (
                 <Card className="h-full">

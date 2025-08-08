@@ -252,6 +252,9 @@ export function SimpleBryntumGantt({
             console.log('📊 Loading tasks into Gantt:', tasks);
             console.log('📊 Loading resources into Gantt:', ganttResources);
             
+            // Check if we can use ResourceHistogram or Scheduler mode
+            const isSchedulerMode = (window as any).bryntum?.gantt?.ResourceHistogram || false;
+            
             const ganttInstance = new BryntumGantt({
               appendTo: ganttRef.current,
               height: 600,
@@ -265,16 +268,15 @@ export function SimpleBryntumGantt({
               endDate: new Date(2025, 7, 7, 20, 0),   // August 7, 2025 at 8 PM
               viewPreset: 'hourAndDay',
               
+              // Use resource mode to show resources in rows
+              resourceTimeRanges: true,
+              
               columns: [
                 { 
                   text: 'Resources', 
                   field: 'name', 
                   width: 200,
-                  renderer: ({ record }) => {
-                    const drumIcon = record.isDrum ? '🥁 ' : '';
-                    const opCount = record.operations || 0;
-                    return `${drumIcon}${record.name}`;
-                  }
+                  tree: false
                 },
                 { 
                   text: 'Type', 
@@ -289,9 +291,16 @@ export function SimpleBryntumGantt({
                 }
               ],
               
-              // Load data
-              tasks: tasks,
-              resources: ganttResources,
+              // Configure for resource-based view
+              project: {
+                resourcesData: ganttResources,
+                tasksData: tasks,
+                assignmentsData: tasks.map(t => ({
+                  id: `${t.id}-assign`,
+                  event: t.id,
+                  resource: t.resourceId
+                }))
+              },
               
               // Enable basic features
               features: {
@@ -302,18 +311,12 @@ export function SimpleBryntumGantt({
                 dependencies: false,
                 rollups: false,
                 baselines: false,
-                progressLine: false
+                progressLine: false,
+                resourceTimeRanges: true
               },
               
-              // Simple project configuration
-              project: {
-                autoLoad: true,
-                transport: {
-                  load: {
-                    url: 'data:,'  // Empty URL to prevent auto-loading
-                  }
-                }
-              }
+              // Display resources in rows
+              displayResourcesInRows: true
             });
             
             console.log('🔨 Gantt instance created:', ganttInstance);
