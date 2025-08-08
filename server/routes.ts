@@ -2302,6 +2302,10 @@ Rules:
   });
 
   app.put("/api/operations/:id", async (req, res) => {
+    console.log(`====== PUT /api/operations/${req.params.id} CALLED ======`);
+    console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
+    console.log('Request body:', req.body);
     try {
       const id = parseInt(req.params.id);
       console.log(`Updating operation ${id} with data:`, req.body);

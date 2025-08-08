@@ -2635,10 +2635,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDiscreteOperation(id: number, operation: Partial<InsertDiscreteOperation>): Promise<DiscreteOperation | undefined> {
+    console.log(`Storage: Updating discrete operation ${id} with:`, operation);
+    
+    // First verify the operation exists
+    const existing = await this.getDiscreteOperation(id);
+    if (!existing) {
+      console.log(`Storage: Operation ${id} not found`);
+      return undefined;
+    }
+    console.log(`Storage: Found existing operation:`, existing);
+    
     const [updated] = await db.update(discreteOperations)
-      .set(operation)
+      .set({
+        ...operation,
+        updatedAt: new Date()
+      })
       .where(eq(discreteOperations.id, id))
       .returning();
+    
+    console.log(`Storage: Updated operation result:`, updated);
+    
+    // Verify the update was actually persisted
+    const verification = await this.getDiscreteOperation(id);
+    console.log(`Storage: Verification after update:`, verification);
+    
     return updated || undefined;
   }
 
