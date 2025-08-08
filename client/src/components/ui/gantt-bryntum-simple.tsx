@@ -122,19 +122,33 @@ export function SimpleBryntumGantt({
             console.log('✅ Found bryntum namespace');
             console.log('🔍 Bryntum keys:', Object.keys(win.bryntum).slice(0, 20));
             
-            // Check for Gantt with capital G directly on bryntum
-            if (win.bryntum.Gantt) {
+            // First check for lowercase gantt namespace with capital Gantt class
+            if (win.bryntum.gantt && win.bryntum.gantt.Gantt) {
+              BryntumGantt = win.bryntum.gantt.Gantt;
+              console.log('✅ Found Gantt at window.bryntum.gantt.Gantt!');
+            }
+            // Then check for Gantt with capital G directly on bryntum
+            else if (win.bryntum.Gantt) {
               BryntumGantt = win.bryntum.Gantt;
               console.log('✅ Found Gantt at window.bryntum.Gantt!');
             }
-            // Check gantt namespace
+            // Check gantt namespace exists
             else if (win.bryntum.gantt) {
-              console.log('🔍 Found gantt namespace, checking for Gantt class...');
-              console.log('🔍 gantt keys:', Object.keys(win.bryntum.gantt).slice(0, 20));
+              console.log('🔍 Found gantt namespace, keys:', Object.keys(win.bryntum.gantt).slice(0, 20));
+              // The gantt namespace is a module, let's check if it has default export or named exports
+              console.log('🔍 Gantt module type:', typeof win.bryntum.gantt);
+              console.log('🔍 Checking for default export:', win.bryntum.gantt.default);
               
-              if (win.bryntum.gantt.Gantt) {
-                BryntumGantt = win.bryntum.gantt.Gantt;
-                console.log('✅ Found Gantt at window.bryntum.gantt.Gantt!');
+              // Based on Bryntum docs, in UMD the Gantt should be at bryntum.gantt.Gantt
+              // But it seems to be a Proxy, let's try to access it anyway
+              try {
+                const GanttClass = win.bryntum.gantt.Gantt;
+                if (GanttClass) {
+                  BryntumGantt = GanttClass;
+                  console.log('✅ Found Gantt class via bryntum.gantt.Gantt (from Proxy)');
+                }
+              } catch (e) {
+                console.error('Error accessing Gantt from Proxy:', e);
               }
             }
             
