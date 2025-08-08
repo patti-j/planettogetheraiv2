@@ -638,7 +638,7 @@ export default function TopMenu() {
                     maxVisibleCardsDesktop={3}
                     showMoreText="Show More"
                     showLessText="Show Less"
-                    gridClassName="grid grid-cols-3 gap-3 auto-rows-fr"
+                    gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr"
                     cards={recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
@@ -677,9 +677,9 @@ export default function TopMenu() {
                               }}
                             >
                               <div className={`
-                                w-full aspect-square min-h-[60px] h-[60px] min-w-[60px] md:min-h-[70px] md:h-[70px] md:min-w-[70px] 
+                                w-full aspect-square min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
                                 border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
-                                flex flex-col items-center justify-center text-center space-y-1 relative
+                                flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden
                                 ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                               `}>
@@ -687,9 +687,9 @@ export default function TopMenu() {
                                   ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
                                   p-1.5 rounded-full flex items-center justify-center flex-shrink-0
                                 `}>
-                                  <IconComponent className={`w-4 h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
                                 </div>
-                                <span className="text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
                                   {page.label}
                                 </span>
                                 {/* Pin/Unpin Button - Bottom Right Corner */}

@@ -2305,7 +2305,9 @@ Rules:
     console.log(`====== PUT /api/operations/${req.params.id} CALLED ======`);
     console.log('Request method:', req.method);
     console.log('Request URL:', req.url);
+    console.log('Request headers:', req.headers);
     console.log('Request body:', req.body);
+    console.log('Request body type:', typeof req.body);
     try {
       const id = parseInt(req.params.id);
       console.log(`Updating operation ${id} with data:`, req.body);
