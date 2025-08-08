@@ -108,6 +108,12 @@ function requireAuth(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware is configured in index.ts
+  
+  // Debug: Log all API requests to ensure they hit the right routes
+  app.all('/api/*', (req, res, next) => {
+    console.log(`[API] ${req.method} ${req.originalUrl} - Body:`, req.body ? Object.keys(req.body) : 'none');
+    next();
+  });
 
   // Create trial account endpoint
   app.post("/api/auth/create-trial", async (req, res) => {
