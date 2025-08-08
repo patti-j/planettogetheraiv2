@@ -48,15 +48,33 @@
   display: none !important;
 }
 
+/* Hide project start/end labels */
+.b-gantt-project-start,
+.b-gantt-project-end {
+  display: none !important;
+}
+
 /* Style resource parent rows in the grid */
 .b-grid-row.b-parent > .b-grid-cell {
   background-color: rgba(0, 0, 0, 0.03);
   font-weight: 600;
 }
 
+/* Fix expand/collapse icon positioning */
+.b-tree-expander {
+  position: relative !important;
+  transform: none !important;
+}
+
 /* Indent child tasks */
 .b-tree-parent-row + .b-grid-row .b-grid-cell[data-column="name"] {
   padding-left: 30px;
+}
+
+/* Fix scrolling issues with icons */
+.b-grid-cell .b-tree-expander,
+.b-grid-cell .b-icon {
+  position: relative !important;
 }
 
 /* Status badges in the grid */

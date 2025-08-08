@@ -242,19 +242,25 @@ export function SimpleBryntumGantt({
           cls: 'resource-parent',
           resourceId: resource.id,
           isResource: true,
-          type: resource.type
+          type: resource.type,
+          manuallyScheduled: true, // Prevent automatic scheduling
+          showInTimeline: false // Hide resource rows in timeline
         }));
 
         // Create Gantt with resource hierarchy
         const gantt = new Gantt({
           appendTo: containerRef.current,
           
-          // Use hierarchical task structure
+          // Use hierarchical task structure without dependencies
           project: {
             tasksData: resourceTasks,
             resourcesData: bryntumResources,
-            assignmentsData: assignments
+            assignmentsData: assignments,
+            dependenciesData: [] // Explicitly set empty dependencies
           },
+          
+          // Disable dependency-related features
+          dependencyIdField: null,
           
           // Layout
           viewPreset: 'dayAndWeek',
@@ -324,16 +330,16 @@ export function SimpleBryntumGantt({
                 </div>
               `
             },
-            dependencies: true,
+            dependencies: false, // Disable dependency arrows
             columnLines: true,
             progressLine: {
-              disabled: false,
-              statusDate: new Date()
+              disabled: true // Disable progress line
             },
             // Resource histogram view
             resourceTimeRanges: false,
-            nonWorkingTime: true,
-            timeRanges: true
+            nonWorkingTime: false,
+            timeRanges: false,
+            projectLines: false // Disable project start/end lines
           },
           
           // Configure for resource scheduling
