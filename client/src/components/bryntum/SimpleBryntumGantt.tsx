@@ -105,28 +105,46 @@ export function SimpleBryntumGantt({
         
         const bryntumGantt = bryntum.gantt;
 
-        console.log('SimpleBryntumGantt: Bryntum Gantt classes found, initializing with data:', { 
+        console.log('SimpleBryntumGantt: Checking Bryntum structure:', {
+          bryntumKeys: Object.keys(bryntum),
+          ganttKeys: Object.keys(bryntumGantt),
           operations: operations.length, 
-          resources: resources.length,
-          sampleOperation: operations[0],
-          sampleResource: resources[0],
-          GanttClass: typeof Gantt,
-          ProjectModelClass: typeof ProjectModel
+          resources: resources.length
         });
         
         console.log('Raw operations data:', operations);
         console.log('Raw resources data:', resources);
 
-        // Get the Gantt class from the library
-        const Gantt = bryntumGantt.Gantt || bryntumGantt.gantt?.Gantt;
-        const ProjectModel = bryntumGantt.ProjectModel || bryntumGantt.gantt?.ProjectModel;
+        // Try different ways to get the Gantt class
+        let Gantt, ProjectModel;
         
-        if (!Gantt || !ProjectModel) {
-          console.error('Bryntum Gantt classes not found:', {
-            hasGantt: !!Gantt,
-            hasProjectModel: !!ProjectModel,
-            bryntumGanttKeys: Object.keys(bryntumGantt || {})
+        // Try direct access
+        if (bryntumGantt.Gantt) {
+          Gantt = bryntumGantt.Gantt;
+          ProjectModel = bryntumGantt.ProjectModel;
+        } 
+        // Try accessing through default export
+        else if (bryntumGantt.default) {
+          Gantt = bryntumGantt.default.Gantt;
+          ProjectModel = bryntumGantt.default.ProjectModel;
+        }
+        // Try accessing through the bryntum object directly
+        else if (bryntum.Gantt) {
+          Gantt = bryntum.Gantt;
+          ProjectModel = bryntum.ProjectModel;
+        }
+        
+        if (!Gantt) {
+          console.error('Bryntum Gantt class not found. Available properties:', {
+            bryntumGanttKeys: Object.keys(bryntumGantt || {}),
+            bryntumGanttProps: Object.getOwnPropertyNames(bryntumGantt || {}),
+            bryntumKeys: Object.keys(bryntum || {})
           });
+          
+          // Log the actual structure
+          console.log('Bryntum object:', bryntum);
+          console.log('Bryntum gantt object:', bryntumGantt);
+          
           setTimeout(initializeGantt, 500);
           return;
         }
