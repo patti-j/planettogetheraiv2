@@ -3496,6 +3496,12 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
+  // Test endpoint to verify routing
+  app.post('/api/ai-agent/test-collaborative', requireAuth, async (req, res) => {
+    console.log('TEST ENDPOINT HIT');
+    res.json({ message: 'Test endpoint works', body: req.body });
+  });
+
   // Enhanced AI collaborative algorithm development endpoint
   app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
     console.log('=== COLLABORATIVE ALGORITHM DEV REQUEST ===');
