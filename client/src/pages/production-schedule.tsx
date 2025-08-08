@@ -15,7 +15,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
-import { GanttResourceView } from '@/components/ui/gantt-resource-view';
+import { BryntumGantt } from '@/components/bryntum/BryntumGantt';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -507,37 +507,25 @@ export default function ProductionSchedulePage() {
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <GanttResourceView
+                <BryntumGantt
                   key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
                   operations={operations as any || []}
                   resources={resources as any || []}
                   className="h-full"
-                  onOperationMove={async (operationId, newResourceId, newStartTime) => {
+                  onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
                     try {
-                      // Find the original operation to preserve its duration
-                      const originalOp = (operations as any)?.find(op => op.id === operationId);
-                      let duration = 60; // Default 60 minutes
-                      
-                      if (originalOp) {
-                        // Calculate original duration in milliseconds
-                        const originalStart = new Date(originalOp.startTime);
-                        const originalEnd = new Date(originalOp.endTime);
-                        duration = (originalEnd.getTime() - originalStart.getTime()) / 60000; // Convert to minutes
-                      }
-                      
-                      const endTime = new Date(newStartTime.getTime() + duration * 60000);
                       
                       // Call API to update the operation using apiRequest
                       console.log('Sending PUT request to:', `/api/operations/${operationId}`, {
                         workCenterId: newResourceId,
                         startTime: newStartTime.toISOString(),
-                        endTime: endTime.toISOString()
+                        endTime: newEndTime.toISOString()
                       });
                       
                       const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
                         workCenterId: newResourceId,
                         startTime: newStartTime.toISOString(),
-                        endTime: endTime.toISOString()
+                        endTime: newEndTime.toISOString()
                       });
                       
                       console.log('PUT response:', response.status, response.ok);

@@ -1,0 +1,214 @@
+/* Bryntum Gantt Custom Styles */
+
+/* Status badges in the grid */
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+.status-badge.completed {
+  background-color: #10b981;
+  color: white;
+}
+
+.status-badge.in-progress {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.status-badge.scheduled {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.status-badge.delayed {
+  background-color: #ef4444;
+  color: white;
+}
+
+.status-badge.on-hold {
+  background-color: #6b7280;
+  color: white;
+}
+
+.status-badge.pending {
+  background-color: #a855f7;
+  color: white;
+}
+
+/* Task bar colors based on status */
+.b-gantt-task.status-completed .b-gantt-task-content {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.b-gantt-task.status-in-progress .b-gantt-task-content {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.b-gantt-task.status-scheduled .b-gantt-task-content {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.b-gantt-task.status-delayed .b-gantt-task-content {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.b-gantt-task.status-on-hold .b-gantt-task-content {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.b-gantt-task.status-pending .b-gantt-task-content {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+/* Drum task highlighting for TOC */
+.b-gantt-task.drum-task {
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.b-gantt-task.drum-task .b-gantt-task-content {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+/* Critical path highlighting */
+.b-gantt-task.b-critical .b-gantt-task-content {
+  border: 2px solid #dc2626;
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
+}
+
+/* Dependency lines */
+.b-gantt-dependency {
+  stroke: #6b7280;
+  stroke-width: 2;
+}
+
+.b-gantt-dependency.b-critical {
+  stroke: #dc2626;
+  stroke-width: 3;
+}
+
+/* Progress bar styling */
+.b-gantt-task-percent-bar {
+  background: rgba(16, 185, 129, 0.7);
+}
+
+/* Task tooltip styling */
+.b-gantt-task-tooltip {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .b-gantt-task-tooltip {
+  background: #1f2937;
+  color: white;
+}
+
+.b-gantt-task-tooltip h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dark .b-gantt-task-tooltip h4 {
+  color: #f3f4f6;
+}
+
+.b-gantt-task-tooltip p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.dark .b-gantt-task-tooltip p {
+  color: #d1d5db;
+}
+
+/* Toolbar styling */
+.b-toolbar {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px;
+}
+
+.dark .b-toolbar {
+  background: #1f2937;
+  border-bottom-color: #374151;
+}
+
+/* Grid styling */
+.b-grid-header {
+  background: #f3f4f6;
+  border-bottom: 2px solid #d1d5db;
+}
+
+.dark .b-grid-header {
+  background: #374151;
+  border-bottom-color: #4b5563;
+}
+
+.b-grid-row:hover {
+  background: #f9fafb;
+}
+
+.dark .b-grid-row:hover {
+  background: #374151;
+}
+
+/* Container styling */
+.bryntum-gantt-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dark .bryntum-gantt-container {
+  border-color: #374151;
+}
+
+/* Dark theme adjustments */
+.dark .b-theme-classic-dark {
+  --b-base-color: #1f2937;
+  --b-light-color: #374151;
+  --b-lighter-color: #4b5563;
+  --b-lightest-color: #6b7280;
+  --b-text-color: #f3f4f6;
+  --b-text-color-light: #d1d5db;
+}
+
+/* Zoom controls */
+.b-button.b-zoom-in,
+.b-button.b-zoom-out {
+  background: #3b82f6;
+  color: white;
+}
+
+.b-button.b-zoom-in:hover,
+.b-button.b-zoom-out:hover {
+  background: #2563eb;
+}
+
+/* Algorithm selector highlight */
+.b-combo[data-ref="algorithmCombo"] .b-field-inner {
+  background: linear-gradient(135deg, #3b82f6 0%, #a855f7 100%);
+  color: white;
+}
+
+/* Reschedule button */
+.b-button.b-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.b-button.b-green:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
