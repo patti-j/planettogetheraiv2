@@ -35,13 +35,37 @@ export function SimpleBryntumGantt({
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Add logging to track when component receives data
+  useEffect(() => {
+    console.log('SimpleBryntumGantt: Component mounted/updated with:', {
+      operationsCount: operations?.length || 0,
+      resourcesCount: resources?.length || 0,
+      isInitialized,
+      hasContainer: !!containerRef.current
+    });
+  }, [operations, resources, isInitialized]);
+
   // Initialize Bryntum Gantt
   useEffect(() => {
+    console.log('SimpleBryntumGantt: useEffect triggered - checking initialization conditions:', {
+      hasContainer: !!containerRef.current,
+      isInitialized,
+      hasOperations: !!(operations && operations.length > 0),
+      hasResources: !!(resources && resources.length > 0)
+    });
+    
     if (!containerRef.current || isInitialized) return;
     
     // Verify we have data before trying to initialize
     if (!operations || operations.length === 0 || !resources || resources.length === 0) {
-      console.log('Waiting for data...', { operations: operations?.length, resources: resources?.length });
+      console.log('SimpleBryntumGantt: Waiting for data...', { 
+        operations: operations?.length, 
+        resources: resources?.length,
+        operationsType: typeof operations,
+        resourcesType: typeof resources,
+        operationsArray: Array.isArray(operations),
+        resourcesArray: Array.isArray(resources)
+      });
       setIsLoading(false); // Don't keep showing loading if we're just waiting for data
       return;
     }
@@ -61,11 +85,13 @@ export function SimpleBryntumGantt({
           return;
         }
 
-        console.log('Bryntum Gantt available, initializing with data:', { 
+        console.log('SimpleBryntumGantt: Bryntum Gantt available, initializing with data:', { 
           operations: operations.length, 
           resources: resources.length,
           sampleOperation: operations[0],
-          sampleResource: resources[0]
+          sampleResource: resources[0],
+          allOperations: operations,
+          allResources: resources
         });
 
         const { Gantt, ProjectModel } = window.bryntum.gantt;
