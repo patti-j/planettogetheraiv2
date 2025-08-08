@@ -261,8 +261,8 @@ export function SimpleBryntumGantt({
               theme: document.documentElement.classList.contains('dark') ? 'stockholm-dark' : 'stockholm',
               
               // Timeline configuration - match data dates
-              startDate: new Date(2025, 7, 7, 0, 0), // August 7, 2025 at midnight
-              endDate: new Date(2025, 7, 8, 0, 0),   // August 8, 2025 at midnight
+              startDate: new Date(2025, 7, 7, 8, 0), // August 7, 2025 at 8 AM
+              endDate: new Date(2025, 7, 7, 20, 0),   // August 7, 2025 at 8 PM
               viewPreset: 'hourAndDay',
               
               columns: [
@@ -289,27 +289,9 @@ export function SimpleBryntumGantt({
                 }
               ],
               
-              // Load data directly
+              // Load data
               tasks: tasks,
               resources: ganttResources,
-              
-              // Custom event renderer for dual-color blocks
-              eventRenderer: ({ eventRecord, renderData }) => {
-                const orderNum = eventRecord.orderNumber || 'PO-???';
-                const opName = eventRecord.name || 'Operation';
-                const shortOp = opName.split(' ')[0]; // First word of operation
-                
-                return `
-                  <div class="operation-block" style="height: 100%;">
-                    <div style="background: rgba(0,0,0,0.15); padding: 2px 4px; font-size: 10px; font-weight: bold; color: white;">
-                      ${orderNum}
-                    </div>
-                    <div style="padding: 2px 4px; font-size: 10px; color: white;">
-                      ${shortOp}
-                    </div>
-                  </div>
-                `;
-              },
               
               // Enable basic features
               features: {
