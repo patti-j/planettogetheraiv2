@@ -38,31 +38,72 @@
 }
 
 /* Operation task styling to match our design */
-.bryntum-gantt-container .b-gantt-task {
+.bryntum-gantt-container .b-gantt-task,
+.bryntum-gantt-container .b-sch-event {
   border-radius: 6px;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+}
+
+/* Dual-color operation blocks */
+.bryntum-gantt-container .b-sch-event-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bryntum-gantt-container .b-sch-event-content::before {
+  content: attr(data-order);
+  display: block;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bryntum-gantt-container .b-sch-event-content::after {
+  content: attr(data-operation);
+  display: block;
+  padding: 2px 4px;
+  flex: 1;
 }
 
 /* Status-based colors for operations */
+.bryntum-gantt-container .operation-completed,
 .bryntum-gantt-container .task-completed {
-  background: linear-gradient(135deg, #10b981, #059669) !important;
-  border-color: #059669 !important;
+  background: linear-gradient(180deg, #22c55e 50%, #16a34a 50%) !important;
+  border: 1px solid #15803d !important;
 }
 
+.bryntum-gantt-container .operation-in_progress,
 .bryntum-gantt-container .task-in_progress {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-  border-color: #2563eb !important;
+  background: linear-gradient(180deg, #3b82f6 50%, #2563eb 50%) !important;
+  border: 1px solid #1d4ed8 !important;
 }
 
+.bryntum-gantt-container .operation-scheduled,
 .bryntum-gantt-container .task-scheduled,
+.bryntum-gantt-container .operation-waiting,
 .bryntum-gantt-container .task-waiting {
-  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-  border-color: #d97706 !important;
+  background: linear-gradient(180deg, #f59e0b 50%, #d97706 50%) !important;
+  border: 1px solid #b45309 !important;
 }
 
+.bryntum-gantt-container .operation-ready,
 .bryntum-gantt-container .task-ready {
-  background: linear-gradient(135deg, #10b981, #059669) !important;
-  border-color: #059669 !important;
+  background: linear-gradient(180deg, #22c55e 50%, #16a34a 50%) !important;
+  border: 1px solid #15803d !important;
+}
+
+/* Drum resource indicator */
+.bryntum-gantt-container .drum-resource {
+  font-weight: bold;
+  background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.1) 100%);
 }
 
 @tailwind base;

@@ -35,31 +35,42 @@ export function SimpleBryntumGantt({
   const { toast } = useToast();
   const [isReady, setIsReady] = useState(false);
 
-  // Transform operations to simple Bryntum tasks
-  const transformToTasks = () => {
-    const tasks = operations.map((op, index) => ({
+  // Transform operations to Bryntum events (for resource scheduling view)
+  const transformToEvents = () => {
+    const events = operations.map((op, index) => ({
       id: op.id,
       name: `${op.operationName}`,
+      resourceId: op.workCenterId || 1,
       startDate: new Date(op.startTime || Date.now()),
       endDate: new Date(op.endTime || Date.now()),
-      duration: Math.max(1, (op.standardDuration || 60) / 60), // Convert minutes to hours, minimum 1 hour
-      percentDone: op.completionPercentage || 0,
-      resourceId: op.workCenterId || 1,
+      // Custom fields for styling
+      orderNumber: `PO-${op.productionOrderId}`,
+      operationType: op.operationName?.toLowerCase().includes('waiting') ? 'waiting' : 
+                     op.operationName?.toLowerCase().includes('setup') ? 'setup' :
+                     op.operationName?.toLowerCase().includes('assembly') ? 'assembly' : 
+                     'production',
       status: op.status || 'scheduled',
-      // Additional fields for better visibility
-      manuallyScheduled: true,
-      leaf: true // Indicates this is a task, not a parent
+      completionPercentage: op.completionPercentage || 0,
+      // Styling classes
+      eventColor: op.status === 'completed' ? 'green' : 
+                  op.status === 'in_progress' ? 'blue' : 
+                  'orange',
+      cls: `operation-${op.status || 'scheduled'}`
     }));
-    console.log('📊 Transformed tasks for Gantt:', tasks);
-    return tasks;
+    console.log('📊 Transformed events for Gantt:', events);
+    return events;
   };
 
-  // Transform resources to simple format
+  // Transform resources to scheduler format with drum indicators
   const transformToResources = () => {
     return resources.map(resource => ({
       id: resource.id,
       name: resource.name,
-      type: resource.type || 'resource'
+      type: resource.type || 'resource',
+      operations: operations.filter(op => op.workCenterId === resource.id).length,
+      isDrum: resource.isDrum || false,
+      drumIcon: resource.isDrum ? 'Drum' : '',
+      cls: resource.isDrum ? 'drum-resource' : ''
     }));
   };
 
@@ -217,7 +228,7 @@ export function SimpleBryntumGantt({
       if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
           console.log('🏗️ Initializing Bryntum Gantt with data:');
-          const tasks = transformToTasks();
+          const tasks = transformToEvents();  // Using events for scheduler view
           const ganttResources = transformToResources();
           
           console.log(`📊 Tasks: ${tasks.length}, Resources: ${ganttResources.length}`);
@@ -255,14 +266,50 @@ export function SimpleBryntumGantt({
               viewPreset: 'hourAndDay',
               
               columns: [
-                { text: 'Task', field: 'name', width: 250 },
-                { text: 'Start', field: 'startDate', width: 120, type: 'date', format: 'MM/DD HH:mm' },
-                { text: 'Duration', field: 'duration', width: 80 }
+                { 
+                  text: 'Resources', 
+                  field: 'name', 
+                  width: 200,
+                  renderer: ({ record }) => {
+                    const drumIcon = record.isDrum ? '🥁 ' : '';
+                    const opCount = record.operations || 0;
+                    return `${drumIcon}${record.name}`;
+                  }
+                },
+                { 
+                  text: 'Type', 
+                  field: 'type', 
+                  width: 100 
+                },
+                { 
+                  text: 'Operations', 
+                  field: 'operations',
+                  width: 80,
+                  align: 'center'
+                }
               ],
               
               // Load data directly
               tasks: tasks,
               resources: ganttResources,
+              
+              // Custom event renderer for dual-color blocks
+              eventRenderer: ({ eventRecord, renderData }) => {
+                const orderNum = eventRecord.orderNumber || 'PO-???';
+                const opName = eventRecord.name || 'Operation';
+                const shortOp = opName.split(' ')[0]; // First word of operation
+                
+                return `
+                  <div class="operation-block" style="height: 100%;">
+                    <div style="background: rgba(0,0,0,0.15); padding: 2px 4px; font-size: 10px; font-weight: bold; color: white;">
+                      ${orderNum}
+                    </div>
+                    <div style="padding: 2px 4px; font-size: 10px; color: white;">
+                      ${shortOp}
+                    </div>
+                  </div>
+                `;
+              },
               
               // Enable basic features
               features: {
@@ -352,7 +399,7 @@ export function SimpleBryntumGantt({
   useEffect(() => {
     if (ganttInstanceRef.current && isReady) {
       try {
-        const tasks = transformToTasks();
+        const tasks = transformToEvents();
         const ganttResources = transformToResources();
         
         ganttInstanceRef.current.project.loadInlineData({
