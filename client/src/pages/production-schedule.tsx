@@ -509,7 +509,7 @@ export default function ProductionSchedulePage() {
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                 <GanttResourceView
-                  key={ganttKey}
+                  key={`${ganttKey}-${JSON.stringify(operations?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
                   operations={operations as any || []}
                   resources={resources as any || []}
                   className="h-full"

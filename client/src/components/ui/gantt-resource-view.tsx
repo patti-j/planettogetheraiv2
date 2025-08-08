@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,18 +40,17 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const [timelineEnd, setTimelineEnd] = useState(new Date(2025, 7, 7, 21, 0)); // Aug 7, 9 PM
   const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
   const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
-  const [localOperations, setLocalOperations] = useState<Operation[]>(operations);
   
-  // Update local operations when props change - create new objects to force re-render
-  useEffect(() => {
-    console.log('GanttResourceView: Operations prop changed', operations);
-    // Create completely new objects to ensure React detects the change
-    const newOps = operations.map(op => ({...op}));
-    setLocalOperations(newOps);
+  // Process operations to ensure they're fresh objects with parsed dates
+  const processedOperations = useMemo(() => {
+    return operations.map(op => ({
+      ...op,
+      startTime: typeof op.startTime === 'string' ? op.startTime : op.startTime.toISOString(),
+      endTime: typeof op.endTime === 'string' ? op.endTime : op.endTime.toISOString()
+    }));
   }, [operations]);
   
-  // Force re-render when operations change by tracking a key
-  const operationsKey = operations.map(op => `${op.id}-${op.workCenterId}-${op.startTime}`).join(',');
+  console.log('GanttResourceView: Processed operations', processedOperations);
   
   // Calculate total hours based on zoom and view mode
   const getTimeRange = () => {
@@ -70,10 +69,10 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const timeRange = getTimeRange();
   const totalHours = timeRange.hours / zoomLevel;
 
-  // Group operations by resource - use operations directly instead of localOperations
+  // Group operations by resource - use processedOperations
   const operationsByResource = resources.map(resource => ({
     resource,
-    operations: operations.filter(op => op.workCenterId === resource.id)
+    operations: processedOperations.filter(op => op.workCenterId === resource.id)
   }));
 
   // Calculate position and width for an operation
@@ -276,7 +275,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           📅 Production Timeline
-          <Badge variant="secondary">{operations.length} Operations</Badge>
+          <Badge variant="secondary">{processedOperations.length} Operations</Badge>
         </h3>
         
         {/* View Mode and Zoom Controls */}
