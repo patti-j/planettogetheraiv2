@@ -237,34 +237,53 @@ export function SimpleBryntumGantt({
             console.log('🔨 Attempting to create Gantt with BryntumGantt:', typeof BryntumGantt);
             console.log('🔨 Container element:', ganttRef.current);
             
+            // Log the data being loaded
+            console.log('📊 Loading tasks into Gantt:', tasks);
+            console.log('📊 Loading resources into Gantt:', ganttResources);
+            
             const ganttInstance = new BryntumGantt({
               appendTo: ganttRef.current,
               height: 600,
               width: '100%',
               
-              // Timeline configuration
-              startDate: new Date(2025, 7, 1), // August 1, 2025
-              endDate: new Date(2025, 7, 31),   // August 31, 2025
-              viewPreset: 'dayAndWeek',
+              // Apply dark theme based on current mode
+              theme: document.documentElement.classList.contains('dark') ? 'stockholm-dark' : 'stockholm',
+              
+              // Timeline configuration - match data dates
+              startDate: new Date(2025, 7, 7, 0, 0), // August 7, 2025 at midnight
+              endDate: new Date(2025, 7, 8, 0, 0),   // August 8, 2025 at midnight
+              viewPreset: 'hourAndDay',
               
               columns: [
-                { text: 'Name', field: 'name', width: 250, type: 'name' },
-                { text: 'Start', field: 'startDate', width: 120, type: 'startdate' },
-                { text: 'Duration', field: 'duration', width: 80, type: 'duration' }
+                { text: 'Task', field: 'name', width: 250 },
+                { text: 'Start', field: 'startDate', width: 120, type: 'date', format: 'MM/DD HH:mm' },
+                { text: 'Duration', field: 'duration', width: 80 }
               ],
               
-              // Load data via project model
-              project: {
-                tasks: tasks,
-                resources: ganttResources,
-                calendar: 'general'
+              // Load data directly
+              tasks: tasks,
+              resources: ganttResources,
+              
+              // Enable basic features
+              features: {
+                taskEdit: false,
+                taskDrag: true,
+                taskResize: true,
+                timeRanges: false,
+                dependencies: false,
+                rollups: false,
+                baselines: false,
+                progressLine: false
               },
               
-              // Disable advanced features for trial
-              features: {
-                taskEdit: true,
-                taskDrag: true,
-                taskResize: true
+              // Simple project configuration
+              project: {
+                autoLoad: true,
+                transport: {
+                  load: {
+                    url: 'data:,'  // Empty URL to prevent auto-loading
+                  }
+                }
               }
             });
             

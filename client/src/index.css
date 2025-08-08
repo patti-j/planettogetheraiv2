@@ -13,6 +13,30 @@
   --b-theme-header-background-color: var(--muted);
 }
 
+/* Bryntum dark theme overrides */
+.dark .b-theme-stockholm-dark {
+  background: #0a0a0a !important;
+}
+
+.dark .b-grid-header {
+  background: #18181b !important;
+  color: #fafafa !important;
+}
+
+.dark .b-grid-row {
+  background: #0a0a0a !important;
+  color: #fafafa !important;
+}
+
+.dark .b-grid-cell {
+  border-color: #27272a !important;
+}
+
+.dark .b-sch-timeaxis-cell {
+  background: #09090b !important;
+  border-color: #27272a !important;
+}
+
 /* Operation task styling to match our design */
 .bryntum-gantt-container .b-gantt-task {
   border-radius: 6px;
