@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
@@ -511,11 +512,24 @@ export default function ProductionSchedulePage() {
                   resources={(resources as any) || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
-                    // TODO: Implement API call to update operation
-                    console.log('Move operation:', operationId, 'to resource:', newResourceId, 'at:', newStartTime);
+                    // Call API to reschedule the operation
+                    const response = await fetch(`/api/operations/${operationId}/reschedule`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        resourceId: newResourceId,
+                        startTime: newStartTime.toISOString()
+                      })
+                    });
                     
-                    // For now, just show success message
-                    return Promise.resolve();
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.message || 'Failed to reschedule operation');
+                    }
+                    
+                    // Refresh the operations data
+                    queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                    return response.json();
                   }}
                 />
               ) : (

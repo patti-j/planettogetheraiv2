@@ -2333,6 +2333,44 @@ Rules:
     }
   });
 
+  // Reschedule operation endpoint for drag-and-drop
+  app.put("/api/operations/:id/reschedule", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { resourceId, startTime } = req.body;
+      
+      // Validate inputs
+      if (!resourceId || !startTime) {
+        return res.status(400).json({ error: 'Resource ID and start time are required' });
+      }
+      
+      // Get the operation to determine duration
+      const operations = await storage.getOperations();
+      const operation = operations.find(op => op.id === id);
+      
+      if (!operation) {
+        return res.status(404).json({ error: 'Operation not found' });
+      }
+      
+      // Calculate end time based on standard duration
+      const duration = operation.standardDuration || 60; // Default 60 minutes
+      const start = new Date(startTime);
+      const end = new Date(start.getTime() + duration * 60000);
+      
+      // Update the operation
+      const updatedOperation = await storage.updateDiscreteOperation(id, {
+        workCenterId: resourceId,
+        startTime: start,
+        endTime: end
+      });
+      
+      res.json(updatedOperation);
+    } catch (error: any) {
+      console.error('Operation reschedule error:', error);
+      res.status(500).json({ message: "Failed to reschedule operation", error: error.message });
+    }
+  });
+
   // Optimization flags for operations
   app.patch("/api/operations/:id/optimization-flags", async (req, res) => {
     try {

@@ -164,13 +164,18 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     e.dataTransfer.effectAllowed = 'move';
     
     // Add visual feedback
-    const target = e.target as HTMLElement;
+    const target = e.currentTarget as HTMLElement;
     target.style.opacity = '0.5';
+    target.style.cursor = 'grabbing';
+    
+    // Store the operation data in dataTransfer
+    e.dataTransfer.setData('operation', JSON.stringify(operation));
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    const target = e.target as HTMLElement;
+    const target = e.currentTarget as HTMLElement;
     target.style.opacity = '1';
+    target.style.cursor = 'move';
     setDraggedOperation(null);
     setDropTarget(null);
   };
@@ -196,6 +201,26 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     
     if (!draggedOperation || !onOperationMove) return;
     
+    // Don't allow dropping on same resource
+    if (draggedOperation.workCenterId === resourceId) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = x / rect.width;
+      const hoursOffset = totalHours * percentage;
+      
+      const newStartTime = new Date(timeRange.start);
+      newStartTime.setHours(newStartTime.getHours() + Math.floor(hoursOffset));
+      
+      // Check if time is significantly different (at least 30 minutes)
+      const oldStart = new Date(draggedOperation.startTime);
+      const timeDiff = Math.abs(newStartTime.getTime() - oldStart.getTime());
+      if (timeDiff < 30 * 60 * 1000) {
+        setDraggedOperation(null);
+        setDropTarget(null);
+        return; // No significant change
+      }
+    }
+    
     // Calculate drop time
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -205,20 +230,20 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     const newStartTime = new Date(timeRange.start);
     newStartTime.setHours(newStartTime.getHours() + Math.floor(hoursOffset));
     
-    // Round to nearest 30 minutes
+    // Round to nearest 15 minutes for more precision
     const minutes = newStartTime.getMinutes();
-    newStartTime.setMinutes(minutes < 15 ? 0 : minutes < 45 ? 30 : 60);
+    newStartTime.setMinutes(Math.round(minutes / 15) * 15);
     
     try {
       await onOperationMove(draggedOperation.id, resourceId, newStartTime);
       toast({
-        title: "Operation Rescheduled",
+        title: "✓ Operation Rescheduled",
         description: `${draggedOperation.operationName} moved to ${newStartTime.toLocaleString()}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to reschedule operation",
+        title: "Failed to Reschedule",
+        description: error.message || "Could not move the operation. Please try again.",
         variant: "destructive",
       });
     }
@@ -322,18 +347,31 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
 
             {/* Timeline with operations */}
             <div 
-              className="flex-1 relative h-12"
+              className={`flex-1 relative h-12 ${
+                draggedOperation ? 'bg-gray-50 dark:bg-gray-900/50' : ''
+              } transition-colors duration-200`}
               onDragOver={(e) => handleDragOver(e, resource.id)}
               onDrop={(e) => handleDrop(e, resource.id)}
             >
-              {/* Drop indicator */}
+              {/* Drop indicator with time preview */}
               {dropTarget && dropTarget.resourceId === resource.id && draggedOperation && (
-                <div
-                  className="absolute top-0 h-full w-1 bg-blue-500 z-20 pointer-events-none"
-                  style={{
-                    left: `${((dropTarget.time.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60) / totalHours) * 100}%`
-                  }}
-                />
+                <>
+                  <div
+                    className="absolute top-0 h-full w-1 bg-blue-500 z-20 pointer-events-none animate-pulse"
+                    style={{
+                      left: `${((dropTarget.time.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60) / totalHours) * 100}%`
+                    }}
+                  />
+                  <div
+                    className="absolute -top-6 bg-blue-500 text-white text-xs px-2 py-1 rounded z-20 pointer-events-none"
+                    style={{
+                      left: `${((dropTarget.time.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60) / totalHours) * 100}%`,
+                      transform: 'translateX(-50%)'
+                    }}
+                  >
+                    {dropTarget.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </>
               )}
               
               {resourceOps.map((op) => {
@@ -347,18 +385,22 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
                     draggable
                     onDragStart={(e) => handleDragStart(e, op)}
                     onDragEnd={handleDragEnd}
-                    className={`absolute top-0 h-full rounded overflow-hidden cursor-move hover:z-10 hover:shadow-lg transition-shadow ${statusColor} ${
-                      isDragging ? 'opacity-50' : ''
-                    }`}
+                    className={`absolute top-0 h-full rounded overflow-hidden cursor-move hover:z-10 hover:shadow-lg transition-all duration-200 ${statusColor} ${
+                      isDragging ? 'opacity-50 ring-2 ring-blue-500' : ''
+                    } hover:ring-2 hover:ring-blue-400`}
                     style={style}
-                    title={`${op.operationName} - PO-${op.productionOrderId}`}
+                    title={`${op.operationName} - PO-${op.productionOrderId}
+Start: ${new Date(op.startTime).toLocaleString()}
+End: ${new Date(op.endTime).toLocaleString()}
+Duration: ${op.standardDuration} min
+Status: ${op.status}`}
                   >
                     <div className="h-1/2 bg-black/20 px-1 text-[10px] text-white font-bold flex items-center justify-between">
-                      <span>PO-{op.productionOrderId}</span>
-                      <GripVertical className="w-3 h-3" />
+                      <span className="truncate">PO-{op.productionOrderId}</span>
+                      <GripVertical className="w-3 h-3 flex-shrink-0" />
                     </div>
                     <div className="h-1/2 px-1 text-[10px] text-white flex items-center">
-                      {op.operationName.split(' ')[0]}
+                      <span className="truncate">{op.operationName.split(' ')[0]}</span>
                     </div>
                   </div>
                 );
@@ -368,8 +410,8 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="mt-4 flex gap-4 text-xs">
+      {/* Legend and Instructions */}
+      <div className="mt-4 flex flex-wrap gap-4 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-orange-500 rounded"></div>
           <span>Scheduled</span>
@@ -381,6 +423,16 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 bg-green-500 rounded"></div>
           <span>Completed</span>
+        </div>
+        {resources.some(r => r.isDrum) && (
+          <div className="flex items-center gap-1">
+            <span className="text-red-500">🥁</span>
+            <span>Bottleneck Resource</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1 ml-auto text-muted-foreground">
+          <GripVertical className="w-3 h-3" />
+          <span>Drag operations to reschedule</span>
         </div>
       </div>
     </Card>
