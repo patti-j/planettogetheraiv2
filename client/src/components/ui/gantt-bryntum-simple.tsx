@@ -199,6 +199,15 @@ export function SimpleBryntumGantt({
       console.log('operations length:', operations?.length || 0);
       console.log('resources length:', resources?.length || 0);
       
+      // Wait for DOM ref to be ready if it's not
+      if (!ganttRef.current && BryntumGantt) {
+        console.log('⏳ Waiting for DOM ref to be ready...');
+        setTimeout(() => {
+          initializeGantt();
+        }, 100);
+        return;
+      }
+      
       if (ganttRef.current && !ganttInstanceRef.current && BryntumGantt) {
         try {
           console.log('🏗️ Initializing Bryntum Gantt with data:');
@@ -310,27 +319,30 @@ export function SimpleBryntumGantt({
     }
   }, [operations, resources, isReady]);
 
-  if (!isReady) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-muted/10 rounded-lg border-2 border-dashed">
-        <div className="text-center p-8">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
-            <span className="text-lg font-semibold">Loading Bryntum Gantt...</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Initializing professional Gantt chart with trial features
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div 
-      ref={ganttRef} 
-      className="h-full w-full bryntum-gantt-container"
-      style={{ height: '100%', width: '100%' }}
-    />
+    <>
+      {!isReady && (
+        <div className="h-full w-full flex items-center justify-center bg-muted/10 rounded-lg border-2 border-dashed absolute inset-0 z-10">
+          <div className="text-center p-8">
+            <div className="flex items-center justify-center space-x-2 mb-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+              <span className="text-lg font-semibold">Loading Bryntum Gantt...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Initializing professional Gantt chart with trial features
+            </p>
+          </div>
+        </div>
+      )}
+      <div 
+        ref={ganttRef}
+        className="h-full w-full bryntum-gantt-container"
+        style={{ 
+          display: isReady ? 'block' : 'none',
+          height: '100%', 
+          width: '100%' 
+        }}
+      />
+    </>
   );
 }
