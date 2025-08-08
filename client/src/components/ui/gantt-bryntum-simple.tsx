@@ -195,7 +195,12 @@ export function SimpleBryntumGantt({
             ganttInstanceRef.current = ganttInstance;
             console.log('✅ Bryntum Gantt initialized successfully!');
             console.log('📈 Gantt instance:', ganttInstanceRef.current);
-            setIsReady(true);
+            
+            // Force state update
+            setTimeout(() => {
+              setIsReady(true);
+              console.log('🎨 Gantt UI should now be visible');
+            }, 100);
 
             toast({
               title: "Professional Gantt Loaded",
@@ -219,7 +224,10 @@ export function SimpleBryntumGantt({
             });
             ganttInstanceRef.current = minimalGantt;
             console.log('✅ Minimal Gantt created');
-            setIsReady(true);
+            setTimeout(() => {
+              setIsReady(true);
+              console.log('🎨 Minimal Gantt UI should now be visible');
+            }, 100);
           } catch (minimalError) {
             console.error('❌ Even minimal config failed:', minimalError);
             setIsReady(false);
