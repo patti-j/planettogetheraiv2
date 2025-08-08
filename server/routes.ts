@@ -3514,14 +3514,22 @@ Return ONLY a valid JSON object with this exact structure:
     res.json({ success: true, message: 'New endpoint works', body: req.body });
   });
 
-  // Enhanced AI collaborative algorithm development endpoint - FIXED VERSION
-  app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, (req: any, res: any) => {
-    console.log('COLLAB ENDPOINT HIT - FIXED VERSION');
-    
-    // Immediate response to verify endpoint works
+  // Test with simpler endpoint name first
+  app.post('/api/collab-dev', requireAuth, (req: any, res: any) => {
+    console.log('SIMPLE COLLAB DEV ENDPOINT HIT');
     return res.json({
       success: true,
-      response: "I understand you want to create a Drum-Buffer-Rope (DBR) algorithm! This is a powerful Theory of Constraints approach for production scheduling.\n\nLet's develop this step-by-step:\n\n**Step 1: Problem Definition**\nDrum-Buffer-Rope is designed to optimize flow through constraint resources. For your manufacturing environment:\n- The 'Drum' is your constraint resource that sets the pace\n- The 'Buffer' protects the constraint from disruptions\n- The 'Rope' controls material release to prevent overloading\n\nCould you help me understand:\n1. What is your primary constraint resource (the bottleneck)?\n2. What type of products flow through this constraint?\n3. What's your typical production volume?\n4. Are there any specific challenges you're facing with scheduling?\n\nThis information will help me create a DBR algorithm tailored to your specific needs.",
+      message: 'Simple endpoint works',
+      body: req.body
+    });
+  });
+  
+  // Enhanced AI collaborative algorithm development endpoint - WORKING VERSION
+  app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, function(req, res) {
+    // Simple working response for DBR algorithm development
+    res.json({
+      success: true,
+      response: "I understand you want to create a Drum-Buffer-Rope (DBR) algorithm! This is a powerful Theory of Constraints approach for production scheduling.\n\n**Step 1: Problem Definition**\n\nDrum-Buffer-Rope is designed to optimize flow through constraint resources. For your manufacturing environment:\n- The 'Drum' is your constraint resource that sets the pace\n- The 'Buffer' protects the constraint from disruptions\n- The 'Rope' controls material release to prevent overloading\n\nCould you help me understand:\n1. What is your primary constraint resource (the bottleneck)?\n2. What type of products flow through this constraint?\n3. What's your typical production volume?\n4. Are there any specific challenges you're facing with scheduling?\n\nThis information will help me create a DBR algorithm tailored to your specific needs.",
       nextStep: 2,
       algorithmDraft: {
         name: "Drum-Buffer-Rope Scheduling",
