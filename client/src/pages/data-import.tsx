@@ -1249,15 +1249,15 @@ function DataImport() {
 
   // Load recommended data types from onboarding features
   useEffect(() => {
-    console.log('Master Data Setup effect triggered with onboarding data:', onboardingData);
-    
+    // Only run once, and only if onboardingData actually exists
     if (onboardingData && typeof onboardingData === 'object' && 'selectedFeatures' in onboardingData && (onboardingData as any).selectedFeatures) {
       const features = (onboardingData as any).selectedFeatures;
       setOnboardingFeatures(features);
       calculateRecommendedDataTypes(features);
       console.log('Recommended data types based on features:', features);
     }
-  }, [onboardingData]);
+    // Don't run if onboardingData is null - just ignore it
+  }, [onboardingData, calculateRecommendedDataTypes]);
 
   const handleGenerateAISampleData = () => {
     const companyInfo = (userPreferences as any)?.companyInfo || null;
