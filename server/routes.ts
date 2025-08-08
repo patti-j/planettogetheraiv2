@@ -20463,7 +20463,7 @@ Response must be valid JSON:
         storage.getDataWithPagination('capabilities', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('production_orders', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         // Direct SQL count for operations since it's not in data management API yet
-        db.select({ count: sql`count(*)` }).from(schema.discreteOperations).then(r => r[0].count),
+        db.select({ count: sql<number>`count(*)::int` }).from(schema.discreteOperations).then(r => r[0].count),
         storage.getDataWithPagination('vendors', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total),
         storage.getDataWithPagination('customers', { pagination: { page: 1, limit: 1 } }).then(r => r.pagination.total)
       ]);
