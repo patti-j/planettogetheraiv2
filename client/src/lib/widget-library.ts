@@ -528,6 +528,25 @@ export const WIDGET_TEMPLATES: WidgetTemplate[] = [
     targetSystems: ['cockpit', 'analytics', 'canvas'],
     complexity: 'basic'
   },
+  // Gantt & Timeline Templates
+  {
+    id: 'gantt-schedule',
+    name: 'Gantt Schedule View',
+    description: 'Visual timeline of operations and resources with drag-and-drop scheduling',
+    category: 'operations',
+    type: 'timeline',
+    icon: Calendar,
+    defaultConfig: {
+      type: 'timeline',
+      chartType: 'gantt',
+      dataSource: 'operations',
+      groupBy: 'work_center_id',
+      xAxis: 'start_time',
+      size: { width: 600, height: 400 }
+    },
+    targetSystems: ['cockpit', 'analytics'],
+    complexity: 'advanced'
+  },
   // Chart Templates
   {
     id: 'bar-chart',

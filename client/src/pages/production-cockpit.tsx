@@ -877,9 +877,28 @@ export default function ProductionCockpit() {
                     Add Widget from Library
                   </DialogTitle>
                 </DialogHeader>
+                <div className="px-4 pt-2 pb-0">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search widgets..." 
+                      value={widgetSearchTerm}
+                      onChange={(e) => setWidgetSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
                 <ScrollArea className="max-h-[60vh]">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                    {WIDGET_TEMPLATES.filter(template => template.targetSystems.includes('cockpit')).map((template) => (
+                    {WIDGET_TEMPLATES
+                      .filter(template => template.targetSystems.includes('cockpit'))
+                      .filter(template => 
+                        widgetSearchTerm === '' ||
+                        template.name.toLowerCase().includes(widgetSearchTerm.toLowerCase()) ||
+                        template.description.toLowerCase().includes(widgetSearchTerm.toLowerCase()) ||
+                        template.category.toLowerCase().includes(widgetSearchTerm.toLowerCase())
+                      )
+                      .map((template) => (
                       <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
                         handleAddWidgetFromTemplate(template);
                         setWidgetLibraryDialog(false);

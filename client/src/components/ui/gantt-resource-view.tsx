@@ -336,7 +336,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
         </div>
       </div>
 
-      <div ref={containerRef} className="relative" key={operationsKey}>
+      <div ref={containerRef} className="relative">
         {/* Timeline header */}
         <div className="flex border-b border-border pb-2 mb-4">
           <div className="w-48 pr-4 text-sm font-medium">Resources</div>
