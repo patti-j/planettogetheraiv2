@@ -126,63 +126,11 @@ export function SimpleBryntumGantt({
         console.log('Raw operations data:', operations);
         console.log('Raw resources data:', resources);
 
-        // The UMD build structure is different - classes are directly on bryntum.gantt
-        // Let's iterate through the gantt object to find the constructors
-        let Gantt = null;
-        let ProjectModel = null;
+        // The Gantt class should be directly on bryntum.gantt
+        const Gantt = bryntumGantt.Gantt;
         
-        // Deep exploration of the Bryntum object structure
-        console.log('Exploring Bryntum structure:');
-        
-        // Check what's directly on bryntum
-        console.log('Direct bryntum properties:', Object.keys(bryntum));
-        
-        // Check each property of bryntum
-        for (const key in bryntum) {
-          const value = bryntum[key];
-          console.log(`bryntum.${key}:`, typeof value, value);
-          
-          // If it's an object, check its properties
-          if (typeof value === 'object' && value !== null) {
-            const subKeys = Object.keys(value);
-            console.log(`  Sub-properties of bryntum.${key}:`, subKeys.slice(0, 10));
-            
-            // Check for Gantt in sub-objects
-            if (value.Gantt) {
-              console.log(`  Found Gantt at bryntum.${key}.Gantt!`);
-              Gantt = value.Gantt;
-            }
-            if (value.ProjectModel) {
-              console.log(`  Found ProjectModel at bryntum.${key}.ProjectModel!`);
-              ProjectModel = value.ProjectModel;
-            }
-          }
-        }
-        
-        // Specifically check gantt namespace
-        if (bryntumGantt) {
-          console.log('bryntum.gantt type:', typeof bryntumGantt);
-          console.log('bryntum.gantt constructor:', bryntumGantt.constructor?.name);
-          
-          // Check for nested modules
-          if (bryntumGantt.lib) {
-            console.log('Found bryntum.gantt.lib:', Object.keys(bryntumGantt.lib).slice(0, 10));
-            Gantt = bryntumGantt.lib?.Gantt;
-            ProjectModel = bryntumGantt.lib?.ProjectModel;
-          }
-        }
-        
-        // If not found, check for different naming conventions
-        if (!Gantt) {
-          // Try accessing via constructor property or prototype chain
-          const ganttProto = Object.getPrototypeOf(bryntumGantt);
-          console.log('Gantt prototype:', ganttProto);
-          
-          // Check if it's a module with exports
-          if (bryntumGantt.Gantt || bryntumGantt.gantt) {
-            Gantt = bryntumGantt.Gantt || bryntumGantt.gantt;
-          }
-        }
+        console.log('Gantt constructor found:', !!Gantt);
+        console.log('Gantt type:', typeof Gantt);
         
         // For now, let's create a simple mock to test the rest of our code
         if (!Gantt) {
@@ -283,17 +231,14 @@ export function SimpleBryntumGantt({
 
         console.log('Task-Resource assignments:', assignments);
 
-        // Create project model
-        const project = new ProjectModel({
-          tasksData: tasks,
-          resourcesData: bryntumResources,
-          assignmentsData: assignments
-        });
-
-        // Create Gantt with minimal configuration
+        // Create Gantt with inline data (without ProjectModel)
         const gantt = new Gantt({
           appendTo: containerRef.current,
-          project,
+          
+          // Pass data directly to the Gantt
+          tasks: tasks,
+          resources: bryntumResources,
+          assignments: assignments,
           
           // Layout
           viewPreset: 'dayAndWeek',
@@ -512,40 +457,7 @@ export function SimpleBryntumGantt({
     }
   }, [isInitialized]);
 
-  if (isLoading) {
-    return (
-      <Card className={`h-full ${className}`}>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Production Schedule - Gantt View</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading Gantt Chart...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show data status when not loading
-  if (!operations || operations.length === 0 || !resources || resources.length === 0) {
-    return (
-      <Card className={`h-full ${className}`}>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Production Schedule - Gantt View</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-muted-foreground">
-              Waiting for data... Operations: {operations?.length || 0}, Resources: {resources?.length || 0}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Always render the container, but show loading overlay when needed
   return (
     <Card className={`h-full ${className}`}>
       <CardHeader className="pb-4">
@@ -554,10 +466,10 @@ export function SimpleBryntumGantt({
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="px-3 py-1">
               <Clock className="w-4 h-4 mr-1" />
-              {operations.length} Operations
+              {operations?.length || 0} Operations
             </Badge>
             <Badge variant="outline" className="px-3 py-1">
-              {resources.length} Resources
+              {resources?.length || 0} Resources
             </Badge>
             <Badge className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white">
               Bryntum Professional
@@ -577,6 +489,25 @@ export function SimpleBryntumGantt({
             position: 'relative'
           }}
         >
+          {/* Show loading overlay if still loading */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading Gantt Chart...</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Show data status if no data */}
+          {!isLoading && (!operations || operations.length === 0 || !resources || resources.length === 0) && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-muted-foreground">
+                Waiting for data... Operations: {operations?.length || 0}, Resources: {resources?.length || 0}
+              </p>
+            </div>
+          )}
+          
           {/* Bryntum Gantt will be rendered here */}
         </div>
       </CardContent>
