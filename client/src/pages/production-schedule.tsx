@@ -535,14 +535,12 @@ export default function ProductionSchedulePage() {
                     
                     // Check if response is JSON before parsing
                     const contentType = response.headers.get("content-type");
-                    let result = {};
                     if (contentType && contentType.indexOf("application/json") !== -1) {
-                      result = await response.json();
+                      await response.json();
                     }
                     
                     // Refresh the operations data
                     queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                    return result;
                   }}
                 />
               ) : (
