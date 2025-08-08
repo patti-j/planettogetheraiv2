@@ -254,23 +254,18 @@ export function SimpleBryntumGantt({
               field: 'name', 
               text: 'Task / Resource',
               width: 300,
-              renderer: ({ record, isFirstColumn }: any) => {
-                if (record.isLeaf) {
-                  // This is a task
-                  return `<div class="task-name">${record.name}</div>`;
-                } else {
-                  // This is a resource (group header)
-                  const resource = bryntumResources.find(r => r.id === record.meta?.groupRowFor);
+              htmlEncode: false, // Allow HTML in renderer
+              renderer: ({ record }: any) => {
+                // For grouped rows, check if this is a group header
+                if (record.meta?.groupRowFor !== undefined) {
+                  const resource = bryntumResources.find(r => r.id === record.meta.groupRowFor);
                   if (resource) {
-                    return `
-                      <div class="resource-group-header">
-                        <div class="resource-name">${resource.name}</div>
-                        <div class="resource-type">${resource.type || 'Resource'}</div>
-                      </div>
-                    `;
+                    return `<strong>${resource.name}</strong> <em>(${resource.type || 'Resource'})</em>`;
                   }
-                  return record.name;
+                  return `Resource ${record.meta.groupRowFor}`;
                 }
+                // Regular task
+                return record.name;
               }
             },
             { 
@@ -299,13 +294,7 @@ export function SimpleBryntumGantt({
           features: {
             group: {
               field: 'resourceId',
-              renderer: ({ groupRowFor, record }: any) => {
-                const resource = bryntumResources.find(r => r.id === groupRowFor);
-                if (resource) {
-                  return `${resource.name} (${resource.type})`;
-                }
-                return `Resource ${groupRowFor}`;
-              }
+              disabled: false // Ensure grouping is enabled
             },
             taskDrag: {
               constrainDragToTimeline: false,
@@ -426,6 +415,12 @@ export function SimpleBryntumGantt({
         });
 
         ganttRef.current = gantt;
+        
+        // Enable grouping by resource after initialization
+        if (gantt.features.group) {
+          gantt.store.group('resourceId');
+        }
+        
         setIsInitialized(true);
         setIsLoading(false);
 
