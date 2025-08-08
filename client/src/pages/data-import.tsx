@@ -1257,7 +1257,7 @@ function DataImport() {
       console.log('Recommended data types based on features:', features);
     }
     // Don't run if onboardingData is null - just ignore it
-  }, [onboardingData, calculateRecommendedDataTypes]);
+  }, [onboardingData]); // Removed calculateRecommendedDataTypes from dependencies
 
   const handleGenerateAISampleData = () => {
     const companyInfo = (userPreferences as any)?.companyInfo || null;
@@ -1891,7 +1891,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
       if (dataType) {
         loadMoreData(1);
       }
-    }, [debouncedSearchTerm, dataType]);
+    }, [debouncedSearchTerm, dataType]); // loadMoreData should be stable
 
     // Scroll detection for infinite scroll
     React.useEffect(() => {
@@ -1909,7 +1909,7 @@ Create authentic manufacturing data that reflects this company's operations.`;
 
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
-    }, [currentPage, hasMoreData, isLoadingMore, initialLoading]);
+    }, [currentPage, hasMoreData, isLoadingMore, initialLoading]); // Dependencies look correct
 
     // Update mutation with optimistic updates
     const updateMutation = useMutation({
