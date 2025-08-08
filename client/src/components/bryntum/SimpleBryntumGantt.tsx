@@ -34,6 +34,8 @@ export function SimpleBryntumGantt({
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 10;
 
   // Add logging to track when component receives data
   useEffect(() => {
@@ -82,9 +84,11 @@ export function SimpleBryntumGantt({
 
     const initializeGantt = async () => {
       if (!containerRef.current) {
-        console.error('SimpleBryntumGantt: Container ref is null during initialization');
+        console.log('SimpleBryntumGantt: Container not ready, waiting...');
+        // Don't retry here - let the effect handle it
         return;
       }
+      
       try {
         setIsLoading(true);
         
@@ -93,14 +97,21 @@ export function SimpleBryntumGantt({
         
         // Wait for Bryntum to be fully loaded
         if (!bryntum || !bryntum.gantt) {
-          console.warn('Bryntum Gantt not available, retrying...', {
-            hasBryntum: !!bryntum,
-            hasGantt: !!bryntum?.gantt,
-            bryntumType: typeof bryntum
-          });
-          
-          setTimeout(initializeGantt, 500); // Retry after 500ms
-          return;
+          if (retryCount < MAX_RETRIES) {
+            console.warn(`Bryntum Gantt not available, retry ${retryCount + 1}/${MAX_RETRIES}...`, {
+              hasBryntum: !!bryntum,
+              hasGantt: !!bryntum?.gantt,
+              bryntumType: typeof bryntum
+            });
+            
+            setRetryCount(prev => prev + 1);
+            setTimeout(initializeGantt, 500); // Retry after 500ms
+            return;
+          } else {
+            console.error('Failed to load Bryntum after maximum retries');
+            setIsLoading(false);
+            return;
+          }
         }
         
         const bryntumGantt = bryntum.gantt;
@@ -449,10 +460,19 @@ export function SimpleBryntumGantt({
     };
 
     // Wait for container to be available in the DOM
+    let containerCheckCount = 0;
+    const MAX_CONTAINER_CHECKS = 20;
+    
     const checkContainerAndInit = () => {
       if (!containerRef.current) {
-        console.log('SimpleBryntumGantt: Container not ready, waiting...');
-        setTimeout(checkContainerAndInit, 100);
+        containerCheckCount++;
+        if (containerCheckCount < MAX_CONTAINER_CHECKS) {
+          console.log(`SimpleBryntumGantt: Container not ready, check ${containerCheckCount}/${MAX_CONTAINER_CHECKS}...`);
+          setTimeout(checkContainerAndInit, 100);
+        } else {
+          console.error('SimpleBryntumGantt: Container never became ready after maximum checks');
+          setIsLoading(false);
+        }
         return;
       }
       
