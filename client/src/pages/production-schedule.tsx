@@ -510,11 +510,11 @@ export default function ProductionSchedulePage() {
               {import.meta.env.DEV ? (
                 <div className="space-y-4">
                   <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                    <p><strong>Data Status:</strong> Operations: {operations?.length || 0}, Resources: {resources?.length || 0}</p>
-                    {operations && operations.length > 0 && (
+                    <p><strong>Data Status:</strong> Operations: {Array.isArray(operations) ? operations.length : 0}, Resources: {Array.isArray(resources) ? resources.length : 0}</p>
+                    {Array.isArray(operations) && operations.length > 0 && (
                       <p><strong>Sample Operation:</strong> {operations[0]?.operationName} ({operations[0]?.status}) - Start: {operations[0]?.startTime}</p>
                     )}
-                    {resources && resources.length > 0 && (
+                    {Array.isArray(resources) && resources.length > 0 && (
                       <p><strong>Sample Resource:</strong> {resources[0]?.name} ({resources[0]?.type})</p>
                     )}
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
