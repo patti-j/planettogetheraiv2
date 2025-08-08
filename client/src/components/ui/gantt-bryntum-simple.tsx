@@ -37,15 +37,21 @@ export function SimpleBryntumGantt({
 
   // Transform operations to simple Bryntum tasks
   const transformToTasks = () => {
-    return operations.map((op, index) => ({
+    const tasks = operations.map((op, index) => ({
       id: op.id,
       name: `${op.operationName}`,
       startDate: new Date(op.startTime || Date.now()),
+      endDate: new Date(op.endTime || Date.now()),
       duration: Math.max(1, (op.standardDuration || 60) / 60), // Convert minutes to hours, minimum 1 hour
       percentDone: op.completionPercentage || 0,
       resourceId: op.workCenterId || 1,
-      status: op.status || 'scheduled'
+      status: op.status || 'scheduled',
+      // Additional fields for better visibility
+      manuallyScheduled: true,
+      leaf: true // Indicates this is a task, not a parent
     }));
+    console.log('📊 Transformed tasks for Gantt:', tasks);
+    return tasks;
   };
 
   // Transform resources to simple format
@@ -235,10 +241,31 @@ export function SimpleBryntumGantt({
               appendTo: ganttRef.current,
               height: 600,
               width: '100%',
+              
+              // Timeline configuration
+              startDate: new Date(2025, 7, 1), // August 1, 2025
+              endDate: new Date(2025, 7, 31),   // August 31, 2025
+              viewPreset: 'dayAndWeek',
+              
               columns: [
-                { text: 'Name', field: 'name', width: 250 }
+                { text: 'Name', field: 'name', width: 250, type: 'name' },
+                { text: 'Start', field: 'startDate', width: 120, type: 'startdate' },
+                { text: 'Duration', field: 'duration', width: 80, type: 'duration' }
               ],
-              tasks: tasks
+              
+              // Load data via project model
+              project: {
+                tasks: tasks,
+                resources: ganttResources,
+                calendar: 'general'
+              },
+              
+              // Disable advanced features for trial
+              features: {
+                taskEdit: true,
+                taskDrag: true,
+                taskResize: true
+              }
             });
             
             console.log('🔨 Gantt instance created:', ganttInstance);
