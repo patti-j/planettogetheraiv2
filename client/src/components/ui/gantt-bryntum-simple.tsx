@@ -116,20 +116,40 @@ export function SimpleBryntumGantt({
           // Log what's available
           console.log('🔍 Window properties after load:');
           console.log('window.bryntum:', win.bryntum);
-          console.log('window.gantt:', win.gantt); 
-          console.log('window.Gantt:', win.Gantt);
           
-          // Based on console output, Bryntum is at window.bryntum
-          // The Gantt class should be at window.bryntum.gantt.Gantt
-          if (win.bryntum && win.bryntum.gantt) {
-            console.log('✅ Found bryntum.gantt object');
-            BryntumGantt = win.bryntum.gantt.Gantt;
-          } else if (win.bryntum) {
-            console.log('⚠️ Found bryntum but not gantt, searching...');
-            // Search for Gantt in bryntum object
-            for (const key in win.bryntum) {
-              if (key.toLowerCase().includes('gantt')) {
-                console.log(`Found gantt-related key: ${key}`);
+          // Check all possible locations for Gantt class
+          if (win.bryntum) {
+            console.log('✅ Found bryntum namespace');
+            console.log('🔍 Bryntum keys:', Object.keys(win.bryntum).slice(0, 20));
+            
+            // Check for Gantt with capital G directly on bryntum
+            if (win.bryntum.Gantt) {
+              BryntumGantt = win.bryntum.Gantt;
+              console.log('✅ Found Gantt at window.bryntum.Gantt!');
+            }
+            // Check gantt namespace
+            else if (win.bryntum.gantt) {
+              console.log('🔍 Found gantt namespace, checking for Gantt class...');
+              console.log('🔍 gantt keys:', Object.keys(win.bryntum.gantt).slice(0, 20));
+              
+              if (win.bryntum.gantt.Gantt) {
+                BryntumGantt = win.bryntum.gantt.Gantt;
+                console.log('✅ Found Gantt at window.bryntum.gantt.Gantt!');
+              }
+            }
+            
+            // Try looking for any key containing Gantt
+            if (!BryntumGantt) {
+              console.log('🔍 Searching for Gantt in all bryntum properties...');
+              for (const key of Object.keys(win.bryntum)) {
+                if (key.includes('Gantt') || key.includes('gantt')) {
+                  console.log(`Found potential Gantt key: ${key}`, typeof win.bryntum[key]);
+                  if (typeof win.bryntum[key] === 'function') {
+                    BryntumGantt = win.bryntum[key];
+                    console.log(`✅ Using ${key} as Gantt class`);
+                    break;
+                  }
+                }
               }
             }
           }
