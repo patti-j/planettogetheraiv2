@@ -88,39 +88,48 @@ export function SimpleBryntumGantt({
       try {
         setIsLoading(true);
         
-        // Check multiple ways to access Bryntum
-        const bryntumGantt = window.bryntum?.gantt || (window as any).bryntumGantt || (window as any).BryntumGantt;
+        // Access Bryntum from window
+        const bryntum = (window as any).bryntum;
         
         // Wait for Bryntum to be fully loaded
-        if (!bryntumGantt?.Gantt) {
+        if (!bryntum || !bryntum.gantt) {
           console.warn('Bryntum Gantt not available, retrying...', {
-            bryntum: !!window.bryntum,
-            gantt: !!window.bryntum?.gantt,
-            Gantt: !!window.bryntum?.gantt?.Gantt,
-            windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('bryntum')),
-            scriptLoaded: !!document.querySelector('script[src*="gantt.umd.js"]'),
-            alternativeBryntum: !!(window as any).bryntumGantt,
-            alternativeBryntumGantt: !!(window as any).BryntumGantt
+            hasBryntum: !!bryntum,
+            hasGantt: !!bryntum?.gantt,
+            bryntumType: typeof bryntum
           });
-          
-          // Also log all global variables that might be Bryntum
-          console.log('Window object keys containing "gantt":', Object.keys(window).filter(k => k.toLowerCase().includes('gantt')));
           
           setTimeout(initializeGantt, 500); // Retry after 500ms
           return;
         }
+        
+        const bryntumGantt = bryntum.gantt;
 
-        console.log('SimpleBryntumGantt: Bryntum Gantt available, initializing with data:', { 
+        console.log('SimpleBryntumGantt: Bryntum Gantt classes found, initializing with data:', { 
           operations: operations.length, 
           resources: resources.length,
           sampleOperation: operations[0],
-          sampleResource: resources[0]
+          sampleResource: resources[0],
+          GanttClass: typeof Gantt,
+          ProjectModelClass: typeof ProjectModel
         });
         
         console.log('Raw operations data:', operations);
         console.log('Raw resources data:', resources);
 
-        const { Gantt, ProjectModel } = bryntumGantt;
+        // Get the Gantt class from the library
+        const Gantt = bryntumGantt.Gantt || bryntumGantt.gantt?.Gantt;
+        const ProjectModel = bryntumGantt.ProjectModel || bryntumGantt.gantt?.ProjectModel;
+        
+        if (!Gantt || !ProjectModel) {
+          console.error('Bryntum Gantt classes not found:', {
+            hasGantt: !!Gantt,
+            hasProjectModel: !!ProjectModel,
+            bryntumGanttKeys: Object.keys(bryntumGantt || {})
+          });
+          setTimeout(initializeGantt, 500);
+          return;
+        }
 
         // Transform operations to Bryntum task format
         const tasks = operations.map((op, index) => {
