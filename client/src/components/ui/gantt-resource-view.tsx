@@ -240,7 +240,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
       // Get the selected algorithm for the success message
       const selectedAlgorithm = localStorage.getItem('selectedRescheduleAlgorithm');
       const algorithmMessage = selectedAlgorithm 
-        ? ` using ${selectedAlgorithm.replace('-', ' ').toUpperCase()} algorithm`
+        ? ` using ${selectedAlgorithm.replace(/-/g, ' ').toUpperCase()} algorithm`
         : '';
       
       toast({

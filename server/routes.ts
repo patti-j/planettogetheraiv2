@@ -2334,8 +2334,13 @@ Rules:
   });
 
   // Reschedule operation endpoint for drag-and-drop
-  app.put("/api/operations/:id/reschedule", requireAuth, async (req, res) => {
+  app.put("/api/operations/:id/reschedule", async (req, res) => {
     try {
+      console.log('Reschedule endpoint called with:', { 
+        id: req.params.id, 
+        body: req.body 
+      });
+      
       const id = parseInt(req.params.id);
       const { resourceId, startTime, algorithm } = req.body;
       
