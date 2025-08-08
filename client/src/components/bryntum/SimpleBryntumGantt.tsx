@@ -231,38 +231,56 @@ export function SimpleBryntumGantt({
 
         console.log('Task-Resource assignments:', assignments);
 
-        // Create Gantt with project model
+        // Create Gantt with standard view (we'll group by resources)
         const gantt = new Gantt({
           appendTo: containerRef.current,
           
           // Use project model for data
           project: {
             tasksData: tasks,
-            resourcesData: bryntumResources,
+            resourcesData: bryntumResources, 
             assignmentsData: assignments
           },
           
           // Layout
           viewPreset: 'dayAndWeek',
-          rowHeight: 45,
-          barMargin: 8,
+          rowHeight: 50,
+          barMargin: 5,
           
-          // Columns
+          // Columns for grouped view
           columns: [
             { 
               type: 'name', 
               field: 'name', 
-              text: 'Operation',
-              width: 250
-            },
-            { 
-              type: 'resourceassignment',
-              text: 'Resource',
-              width: 150
+              text: 'Task / Resource',
+              width: 300,
+              renderer: ({ record, isFirstColumn }: any) => {
+                if (record.isLeaf) {
+                  // This is a task
+                  return `<div class="task-name">${record.name}</div>`;
+                } else {
+                  // This is a resource (group header)
+                  const resource = bryntumResources.find(r => r.id === record.meta?.groupRowFor);
+                  if (resource) {
+                    return `
+                      <div class="resource-group-header">
+                        <div class="resource-name">${resource.name}</div>
+                        <div class="resource-type">${resource.type || 'Resource'}</div>
+                      </div>
+                    `;
+                  }
+                  return record.name;
+                }
+              }
             },
             { 
               type: 'startdate',
               text: 'Start',
+              width: 100
+            },
+            { 
+              type: 'enddate',
+              text: 'End',
               width: 100
             },
             { 
@@ -276,12 +294,26 @@ export function SimpleBryntumGantt({
               width: 80
             }
           ],
-
-          // Basic features only
+          
+          // Features for resource-based view with grouping
           features: {
+            group: {
+              field: 'resourceId',
+              renderer: ({ groupRowFor, record }: any) => {
+                const resource = bryntumResources.find(r => r.id === groupRowFor);
+                if (resource) {
+                  return `${resource.name} (${resource.type})`;
+                }
+                return `Resource ${groupRowFor}`;
+              }
+            },
             taskDrag: {
               constrainDragToTimeline: false,
-              showTooltip: true
+              showTooltip: true,
+              validatorFn: ({ draggedRecords, newResource }: any) => {
+                // Allow dragging tasks between resources
+                return true;
+              }
             },
             taskResize: {
               showTooltip: true
@@ -302,8 +334,17 @@ export function SimpleBryntumGantt({
             progressLine: {
               disabled: false,
               statusDate: new Date()
-            }
+            },
+            // Resource histogram view
+            resourceTimeRanges: false,
+            nonWorkingTime: true,
+            timeRanges: true
           },
+          
+          // Configure for resource scheduling
+          resourceImagePath: '',
+          showRollupTasks: false,
+          enableEventAnimations: true,
 
           // Simple toolbar
           tbar: [

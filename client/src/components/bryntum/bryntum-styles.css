@@ -1,5 +1,48 @@
 /* Bryntum Gantt Custom Styles */
 
+/* Resource cell styling */
+.resource-cell {
+  padding: 4px 0;
+}
+
+.resource-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--b-text-color);
+}
+
+.resource-type {
+  font-size: 12px;
+  color: var(--b-text-color-secondary);
+  opacity: 0.7;
+  text-transform: capitalize;
+}
+
+/* Resource group header styling */
+.resource-group-header {
+  padding: 4px 0;
+}
+
+.resource-group-header .resource-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--b-text-color);
+}
+
+.resource-group-header .resource-type {
+  font-size: 12px;
+  color: var(--b-text-color-secondary);
+  opacity: 0.7;
+  text-transform: capitalize;
+  font-style: italic;
+}
+
+/* Task name styling */
+.task-name {
+  font-size: 13px;
+  color: var(--b-text-color);
+}
+
 /* Status badges in the grid */
 .status-badge {
   padding: 2px 8px;
