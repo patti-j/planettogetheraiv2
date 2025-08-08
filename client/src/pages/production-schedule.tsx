@@ -15,7 +15,6 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
-import { SimpleBryntumGantt } from '@/components/ui/gantt-bryntum-simple';
 import { GanttResourceView } from '@/components/ui/gantt-resource-view';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
@@ -509,14 +508,14 @@ export default function ProductionSchedulePage() {
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                 <GanttResourceView
-                  key={`${ganttKey}-${JSON.stringify(operations?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
+                  key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
                   operations={operations as any || []}
                   resources={resources as any || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
                     try {
                       // Find the original operation to preserve its duration
-                      const originalOp = operations?.find(op => op.id === operationId);
+                      const originalOp = (operations as any)?.find(op => op.id === operationId);
                       let duration = 60; // Default 60 minutes
                       
                       if (originalOp) {
@@ -561,7 +560,7 @@ export default function ProductionSchedulePage() {
                       }
                       
                       console.log('Operation updated on server:', result);
-                      console.log('Current operations before refetch:', operations?.map(op => ({
+                      console.log('Current operations before refetch:', (operations as any)?.map(op => ({
                         id: op.id,
                         name: op.operationName,
                         start: op.startTime,
@@ -579,7 +578,7 @@ export default function ProductionSchedulePage() {
                       // Force immediate refresh of operations data with fresh data
                       const refetchResult = await refetchOperations();
                       console.log('Refetch completed:', refetchResult.status);
-                      console.log('Operations after refetch:', refetchResult.data?.map(op => ({
+                      console.log('Operations after refetch:', (refetchResult.data as any)?.map(op => ({
                         id: op.id,
                         name: op.operationName,
                         start: op.startTime,
@@ -588,7 +587,7 @@ export default function ProductionSchedulePage() {
                       })));
                       
                       // Double-check that the specific operation was updated
-                      const updatedOp = refetchResult.data?.find(op => op.id === operationId);
+                      const updatedOp = (refetchResult.data as any)?.find(op => op.id === operationId);
                       console.log('Updated operation details:', updatedOp ? {
                         id: updatedOp.id,
                         name: updatedOp.operationName,
