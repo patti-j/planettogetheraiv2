@@ -25,7 +25,7 @@ import {
 
 export interface WidgetConfig {
   id: string;
-  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status' | 'reports' | 'schedule-tradeoff-analyzer';
+  type: 'kpi' | 'chart' | 'table' | 'alert' | 'progress' | 'gauge' | 'list' | 'timeline' | 'button' | 'text' | 'schedule-optimization' | 'atp-ctp' | 'atp-ctp-calculator' | 'available-to-promise' | 'capable-to-promise' | 'sales-order-status' | 'reports' | 'schedule-tradeoff-analyzer' | 'gantt';
   title: string;
   subtitle?: string;
   dataSource: 'productionOrders' | 'operations' | 'resources' | 'customers' | 'vendors' | 'plants' | 'capabilities' | 'recipes' | 'productionVersions' | 'plannedOrders' | 'users' | 'metrics' | 'alerts' | 'optimization' | 'salesOrders' | 'reports' | 'schedule-analysis';
