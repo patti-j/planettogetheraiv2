@@ -3502,8 +3502,23 @@ Return ONLY a valid JSON object with this exact structure:
     res.json({ message: 'Test endpoint works', body: req.body });
   });
 
+  // Simple test without auth to check if endpoint is reachable
+  app.post('/api/ai-agent/collaborative-test-simple', async (req, res) => {
+    console.log('SIMPLE TEST HIT - NO AUTH');
+    res.json({ test: 'success', body: req.body });
+  });
+
   // Enhanced AI collaborative algorithm development endpoint
   app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
+    // Immediate test response to verify endpoint is reached
+    res.status(200).json({ 
+      success: false,
+      error: 'Test response - endpoint reached',
+      body: req.body,
+      timestamp: new Date().toISOString()
+    });
+    return;
+    
     console.log('=== COLLABORATIVE ALGORITHM DEV REQUEST ===');
     console.log('Headers:', req.headers);
     console.log('Body:', JSON.stringify(req.body));
