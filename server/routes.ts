@@ -2232,10 +2232,16 @@ Rules:
   // Operations
   app.get("/api/operations", async (req, res) => {
     try {
-      console.log("Fetching operations...");
+      console.log("Fetching operations for Gantt chart...");
       const operations = await storage.getOperations();
-      console.log("Operations fetched successfully:", operations.length);
-      console.log("First operation sample:", operations[0]);
+      console.log(`Operations fetched successfully: ${operations.length}`);
+      if (operations.length > 0) {
+        console.log("First operation sample:", operations[0]);
+      }
+      // Add cache-control headers to prevent caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.json(operations);
     } catch (error) {
       console.error("Error fetching operations:", error);
@@ -2316,6 +2322,16 @@ Rules:
       }
       
       console.log('Updated operation:', updatedOperation);
+      
+      // Immediately fetch the operation again to verify the update
+      const verifyOperation = await storage.getDiscreteOperation(id);
+      console.log('Verification - operation after update:', verifyOperation);
+      
+      // Add cache-control headers to prevent caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.json(updatedOperation);
     } catch (error: any) {
       console.error('Operation update error:', error);

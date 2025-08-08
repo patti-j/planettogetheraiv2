@@ -552,15 +552,47 @@ export default function ProductionSchedulePage() {
                     }
                     
                     console.log('Operation updated on server:', result);
-                    console.log('Current operations before refetch:', operations);
+                    console.log('Current operations before refetch:', operations?.map(op => ({
+                      id: op.id,
+                      name: op.operationName,
+                      start: op.startTime,
+                      end: op.endTime,
+                      resource: op.workCenterId
+                    })));
+                    
+                    // Invalidate the cache completely before refetching
+                    await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                    
+                    // Wait a bit for the invalidation to complete
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     
                     // Force immediate refresh of operations data
                     const refetchResult = await refetchOperations();
-                    console.log('Refetch result:', refetchResult);
-                    console.log('Operations after refetch:', refetchResult.data);
+                    console.log('Refetch completed:', refetchResult.status);
+                    console.log('Operations after refetch:', refetchResult.data?.map(op => ({
+                      id: op.id,
+                      name: op.operationName,
+                      start: op.startTime,
+                      end: op.endTime,
+                      resource: op.workCenterId
+                    })));
                     
-                    // Force complete re-mount of the Gantt component
-                    setGanttKey(Date.now());
+                    // Double-check that the specific operation was updated
+                    const updatedOp = refetchResult.data?.find(op => op.id === operationId);
+                    console.log('Updated operation details:', updatedOp ? {
+                      id: updatedOp.id,
+                      name: updatedOp.operationName,
+                      newStart: updatedOp.startTime,
+                      newEnd: updatedOp.endTime,
+                      newResource: updatedOp.workCenterId,
+                      expectedResource: newResourceId,
+                      expectedStart: newStartTime.toISOString()
+                    } : 'NOT FOUND');
+                    
+                    // Force complete re-mount of the Gantt component with a delay
+                    setTimeout(() => {
+                      setGanttKey(Date.now());
+                    }, 200);
                   }}
                 />
               ) : (

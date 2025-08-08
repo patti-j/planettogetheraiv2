@@ -41,11 +41,20 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   
   // Process operations to ensure they're fresh objects with parsed dates
   const processedOperations = useMemo(() => {
-    return operations.map(op => ({
+    console.log('Processing operations, raw count:', operations.length);
+    const processed = operations.map(op => ({
       ...op,
       startTime: typeof op.startTime === 'string' ? op.startTime : op.startTime.toISOString(),
       endTime: typeof op.endTime === 'string' ? op.endTime : op.endTime.toISOString()
     }));
+    console.log('Processed operations:', processed.map(op => ({
+      id: op.id,
+      name: op.operationName,
+      start: op.startTime,
+      end: op.endTime,
+      resource: op.workCenterId
+    })));
+    return processed;
   }, [operations]);
   
   // Calculate timeline range based on actual operations

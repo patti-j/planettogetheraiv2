@@ -2360,6 +2360,7 @@ export class DatabaseStorage implements IStorage {
       console.log("Starting getOperations - querying discrete operations with production order relationship...");
       
       // Query discrete operations with JOIN to get production order info through routing
+      // Order by ID to ensure consistent results
       const discreteOpsQuery = await db
         .select({
           ...discreteOperations,
@@ -2368,9 +2369,20 @@ export class DatabaseStorage implements IStorage {
           productionOrderNumber: productionOrders.orderNumber
         })
         .from(discreteOperations)
-        .leftJoin(productionOrders, eq(discreteOperations.routingId, productionOrders.routingId));
+        .leftJoin(productionOrders, eq(discreteOperations.routingId, productionOrders.routingId))
+        .orderBy(discreteOperations.id);
       
       console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
+      // Log the specific operation that was updated (ID 14)
+      const op14 = discreteOpsQuery.find(op => op.id === 14);
+      if (op14) {
+        console.log("Operation 14 details:", {
+          id: op14.id,
+          startTime: op14.startTime,
+          endTime: op14.endTime,
+          workCenterId: op14.workCenterId
+        });
+      }
       
       console.log("Querying process operations...");
       const processOps = await db.select().from(processOperations);
