@@ -535,12 +535,16 @@ export default function ProductionSchedulePage() {
                     
                     // Check if response is JSON before parsing
                     const contentType = response.headers.get("content-type");
+                    let result = {};
                     if (contentType && contentType.indexOf("application/json") !== -1) {
-                      await response.json();
+                      result = await response.json();
                     }
                     
-                    // Refresh the operations data
-                    queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                    // Force refresh the operations data with a small delay to ensure server update is complete
+                    setTimeout(async () => {
+                      await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                      await queryClient.refetchQueries({ queryKey: ['/api/operations'] });
+                    }, 100);
                   }}
                 />
               ) : (

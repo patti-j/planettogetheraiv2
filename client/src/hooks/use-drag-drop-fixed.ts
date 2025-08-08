@@ -86,9 +86,10 @@ export function useOperationDrop(
       
       return { previousOperations };
     },
-    onSuccess: () => {
-      // Only invalidate operations query to get fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+    onSuccess: async () => {
+      // Force refresh operations query to get fresh data and update UI
+      await queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
       // Get the selected algorithm for the success message
