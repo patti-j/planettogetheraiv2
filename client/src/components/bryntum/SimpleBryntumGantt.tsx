@@ -89,24 +89,39 @@ export function SimpleBryntumGantt({
           operations: operations.length, 
           resources: resources.length,
           sampleOperation: operations[0],
-          sampleResource: resources[0],
-          allOperations: operations,
-          allResources: resources
+          sampleResource: resources[0]
         });
+        
+        console.log('Raw operations data:', operations);
+        console.log('Raw resources data:', resources);
 
         const { Gantt, ProjectModel } = window.bryntum.gantt;
 
         // Transform operations to Bryntum task format
-        const tasks = operations.map(op => {
+        const tasks = operations.map((op, index) => {
+          console.log(`Processing operation ${index + 1}:`, op);
+          
+          const startDate = new Date(op.startTime);
+          const endDate = new Date(op.endTime);
+          
+          console.log(`Operation ${op.id} dates:`, {
+            startTime: op.startTime,
+            endTime: op.endTime,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            isValidStart: !isNaN(startDate.getTime()),
+            isValidEnd: !isNaN(endDate.getTime())
+          });
+          
           const task = {
             id: op.id,
             name: op.operationName || `Operation ${op.id}`,
-            startDate: new Date(op.startTime),
-            endDate: new Date(op.endTime),
-            duration: op.standardDuration || 60,
+            startDate: startDate,
+            endDate: endDate,
+            duration: Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60))), // Calculate duration in minutes
             durationUnit: 'minute',
             percentDone: op.completionPercentage || 0,
-            cls: `status-${op.status}`,
+            cls: `status-${op.status || 'scheduled'}`,
             // Resource assignment
             resourceId: op.workCenterId,
             // Custom data
@@ -114,11 +129,12 @@ export function SimpleBryntumGantt({
             status: op.status || 'scheduled',
             priority: op.priority || 5
           };
-          console.log('Created task:', task);
+          console.log(`Created task ${index + 1}:`, task);
           return task;
         });
 
         console.log('All tasks created:', tasks);
+        console.log('Tasks summary:', tasks.map(t => ({ id: t.id, name: t.name, start: t.startDate, end: t.endDate, resource: t.resourceId })));
 
         // Transform resources to Bryntum format
         const bryntumResources = resources.map(res => ({
@@ -128,6 +144,7 @@ export function SimpleBryntumGantt({
         }));
 
         console.log('Bryntum resources:', bryntumResources);
+        console.log('Resources summary:', bryntumResources.map(r => ({ id: r.id, name: r.name })));
 
         // Create assignments
         const assignments = tasks.map(task => ({
