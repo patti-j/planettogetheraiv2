@@ -120,17 +120,44 @@ export function SimpleBryntumGantt({
         let Gantt = null;
         let ProjectModel = null;
         
-        // Log all available constructors in bryntum.gantt
-        console.log('Looking for constructors in bryntum.gantt:');
-        for (const key in bryntumGantt) {
-          if (typeof bryntumGantt[key] === 'function') {
-            console.log(`  Found function: ${key}`);
-            if (key === 'Gantt' || key.includes('Gantt')) {
-              Gantt = bryntumGantt[key];
+        // Deep exploration of the Bryntum object structure
+        console.log('Exploring Bryntum structure:');
+        
+        // Check what's directly on bryntum
+        console.log('Direct bryntum properties:', Object.keys(bryntum));
+        
+        // Check each property of bryntum
+        for (const key in bryntum) {
+          const value = bryntum[key];
+          console.log(`bryntum.${key}:`, typeof value, value);
+          
+          // If it's an object, check its properties
+          if (typeof value === 'object' && value !== null) {
+            const subKeys = Object.keys(value);
+            console.log(`  Sub-properties of bryntum.${key}:`, subKeys.slice(0, 10));
+            
+            // Check for Gantt in sub-objects
+            if (value.Gantt) {
+              console.log(`  Found Gantt at bryntum.${key}.Gantt!`);
+              Gantt = value.Gantt;
             }
-            if (key === 'ProjectModel' || key.includes('ProjectModel')) {
-              ProjectModel = bryntumGantt[key];
+            if (value.ProjectModel) {
+              console.log(`  Found ProjectModel at bryntum.${key}.ProjectModel!`);
+              ProjectModel = value.ProjectModel;
             }
+          }
+        }
+        
+        // Specifically check gantt namespace
+        if (bryntumGantt) {
+          console.log('bryntum.gantt type:', typeof bryntumGantt);
+          console.log('bryntum.gantt constructor:', bryntumGantt.constructor?.name);
+          
+          // Check for nested modules
+          if (bryntumGantt.lib) {
+            console.log('Found bryntum.gantt.lib:', Object.keys(bryntumGantt.lib).slice(0, 10));
+            Gantt = bryntumGantt.lib?.Gantt;
+            ProjectModel = bryntumGantt.lib?.ProjectModel;
           }
         }
         
