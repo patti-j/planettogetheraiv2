@@ -231,14 +231,16 @@ export function SimpleBryntumGantt({
 
         console.log('Task-Resource assignments:', assignments);
 
-        // Create Gantt with inline data (without ProjectModel)
+        // Create Gantt with project model
         const gantt = new Gantt({
           appendTo: containerRef.current,
           
-          // Pass data directly to the Gantt
-          tasks: tasks,
-          resources: bryntumResources,
-          assignments: assignments,
+          // Use project model for data
+          project: {
+            tasksData: tasks,
+            resourcesData: bryntumResources,
+            assignmentsData: assignments
+          },
           
           // Layout
           viewPreset: 'dayAndWeek',
@@ -441,20 +443,42 @@ export function SimpleBryntumGantt({
     };
   }, [operations, resources, onOperationMove]);
 
-  // Apply dark theme
+  // Apply theme and update CSS link
   useEffect(() => {
-    if (ganttRef.current) {
+    const updateTheme = () => {
       const isDark = document.documentElement.classList.contains('dark');
-      const ganttElement = ganttRef.current.element;
+      const linkElement = document.getElementById('bryntum-theme') as HTMLLinkElement;
       
-      if (isDark) {
-        ganttElement.classList.add('b-theme-classic-dark');
-        ganttElement.classList.remove('b-theme-classic-light');
-      } else {
-        ganttElement.classList.add('b-theme-classic-light');
-        ganttElement.classList.remove('b-theme-classic-dark');
+      // Update CSS file
+      if (linkElement) {
+        linkElement.href = isDark ? '/gantt.classic-dark.css' : '/gantt.classic-light.css';
+        console.log('Updated Bryntum CSS to:', isDark ? 'dark' : 'light');
       }
-    }
+      
+      // Update Gantt element classes
+      if (ganttRef.current && ganttRef.current.element) {
+        const ganttElement = ganttRef.current.element;
+        if (isDark) {
+          ganttElement.classList.add('b-theme-classic-dark');
+          ganttElement.classList.remove('b-theme-classic-light');
+        } else {
+          ganttElement.classList.add('b-theme-classic-light');
+          ganttElement.classList.remove('b-theme-classic-dark');
+        }
+      }
+    };
+    
+    // Initial update
+    updateTheme();
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(() => updateTheme());
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
   }, [isInitialized]);
 
   // Always render the container, but show loading overlay when needed
