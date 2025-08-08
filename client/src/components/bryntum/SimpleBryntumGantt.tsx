@@ -62,28 +62,36 @@ export function SimpleBryntumGantt({
 
         console.log('Bryntum Gantt available, initializing with data:', { 
           operations: operations.length, 
-          resources: resources.length 
+          resources: resources.length,
+          sampleOperation: operations[0],
+          sampleResource: resources[0]
         });
 
         const { Gantt, ProjectModel } = window.bryntum.gantt;
 
         // Transform operations to Bryntum task format
-        const tasks = operations.map(op => ({
-          id: op.id,
-          name: op.operationName || `Operation ${op.id}`,
-          startDate: new Date(op.startTime),
-          endDate: new Date(op.endTime),
-          duration: op.standardDuration || 60,
-          durationUnit: 'minute',
-          percentDone: op.completionPercentage || 0,
-          cls: `status-${op.status}`,
-          // Resource assignment
-          resourceId: op.workCenterId,
-          // Custom data
-          productionOrderId: op.productionOrderId,
-          status: op.status || 'scheduled',
-          priority: op.priority || 5
-        }));
+        const tasks = operations.map(op => {
+          const task = {
+            id: op.id,
+            name: op.operationName || `Operation ${op.id}`,
+            startDate: new Date(op.startTime),
+            endDate: new Date(op.endTime),
+            duration: op.standardDuration || 60,
+            durationUnit: 'minute',
+            percentDone: op.completionPercentage || 0,
+            cls: `status-${op.status}`,
+            // Resource assignment
+            resourceId: op.workCenterId,
+            // Custom data
+            productionOrderId: op.productionOrderId,
+            status: op.status || 'scheduled',
+            priority: op.priority || 5
+          };
+          console.log('Created task:', task);
+          return task;
+        });
+
+        console.log('All tasks created:', tasks);
 
         // Transform resources to Bryntum format
         const bryntumResources = resources.map(res => ({
@@ -92,12 +100,16 @@ export function SimpleBryntumGantt({
           type: res.type
         }));
 
+        console.log('Bryntum resources:', bryntumResources);
+
         // Create assignments
         const assignments = tasks.map(task => ({
           id: `${task.id}-${task.resourceId}`,
           event: task.id,
           resource: task.resourceId
         }));
+
+        console.log('Task-Resource assignments:', assignments);
 
         // Create project model
         const project = new ProjectModel({
