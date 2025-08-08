@@ -3498,23 +3498,44 @@ Return ONLY a valid JSON object with this exact structure:
 
   // Enhanced AI collaborative algorithm development endpoint
   app.post('/api/ai-agent/collaborative-algorithm-development', requireAuth, async (req, res) => {
+    console.log('Collaborative algorithm development request received');
+    console.log('Request body:', req.body);
+    
     try {
       const { message, sessionMessages = [], currentDraft, step } = req.body;
 
       // Check if OpenAI API key is configured
-      if (!process.env.OPENAI_API_KEY) {
-        console.error('OPENAI_API_KEY is not configured');
+      const apiKey = process.env.OPENAI_API_KEY;
+      console.log('API Key check - exists:', !!apiKey);
+      console.log('API Key format:', apiKey ? apiKey.substring(0, 10) + '...' : 'missing');
+      
+      if (!apiKey) {
+        console.error('OPENAI_API_KEY is not configured - returning error response');
         return res.status(500).json({ 
-          error: 'AI service is not configured. Please ensure the OPENAI_API_KEY is set.',
-          details: 'Missing API key configuration'
+          error: 'AI service is not configured',
+          details: 'OPENAI_API_KEY environment variable is missing.'
         });
       }
 
+      console.log('OpenAI API key is configured, initializing client...');
+      
       // Import and initialize OpenAI
       const OpenAI = (await import('openai')).default;
-      const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-      });
+      
+      let openai;
+      try {
+        openai = new OpenAI({
+          apiKey: apiKey.trim(),  // Ensure no whitespace
+        });
+        console.log('OpenAI client initialized successfully');
+      } catch (initError: any) {
+        console.error('Failed to initialize OpenAI client:', initError);
+        console.error('Error details:', initError.message);
+        return res.status(500).json({ 
+          error: 'Failed to initialize AI service',
+          details: initError.message || 'Invalid API key format'
+        });
+      }
 
       // Build comprehensive context for AI collaboration
       const systemPrompt = `You are an expert AI optimization algorithm development assistant. Your role is to collaboratively work with users to develop sophisticated manufacturing optimization algorithms through a structured 5-step process:
@@ -3562,6 +3583,7 @@ Manufacturing Context Available:
 
       let response;
       try {
+        console.log('Making OpenAI API call...');
         response = await openai.chat.completions.create({
           model: "gpt-3.5-turbo", // Using a more stable model
           messages: [
@@ -3571,6 +3593,7 @@ Manufacturing Context Available:
           temperature: 0.7,
           max_tokens: 1500
         });
+        console.log('OpenAI API call successful');
       } catch (openaiError: any) {
         console.error('OpenAI API call failed:', openaiError);
         console.error('Error details:', {

@@ -57,6 +57,14 @@ app.use((req, res, next) => {
 (async () => {
   log("🚀 Starting PlanetTogether Manufacturing ERP...");
   
+  // Log OpenAI API key status on startup
+  const hasApiKey = !!process.env.OPENAI_API_KEY;
+  if (hasApiKey) {
+    log("✅ OpenAI API key configured");
+  } else {
+    log("⚠️  OpenAI API key not configured - AI features will be limited");
+  }
+  
   // Register API routes
   const server = registerSimpleRoutes(app);
 
