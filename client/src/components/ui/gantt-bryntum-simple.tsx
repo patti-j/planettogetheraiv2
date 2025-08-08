@@ -322,7 +322,7 @@ export function SimpleBryntumGantt({
   return (
     <>
       {!isReady && (
-        <div className="h-full w-full flex items-center justify-center bg-muted/10 rounded-lg border-2 border-dashed absolute inset-0 z-10">
+        <div className="h-full w-full flex items-center justify-center bg-background/95 backdrop-blur rounded-lg border-2 border-dashed absolute inset-0 z-10">
           <div className="text-center p-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
               <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
