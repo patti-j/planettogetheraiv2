@@ -479,8 +479,16 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
                       height: '100%'
                     }}
                     title={`${op.operationName} - PO-${op.productionOrderId}
-Start: ${new Date(op.startTime).toLocaleString()}
-End: ${new Date(op.endTime).toLocaleString()}
+Start: ${new Date(op.startTime).toLocaleString('en-US', { 
+  year: 'numeric', month: 'short', day: 'numeric', 
+  hour: '2-digit', minute: '2-digit', hour12: false,
+  timeZone: 'UTC'
+})} UTC
+End: ${new Date(op.endTime).toLocaleString('en-US', { 
+  year: 'numeric', month: 'short', day: 'numeric', 
+  hour: '2-digit', minute: '2-digit', hour12: false,
+  timeZone: 'UTC'
+})} UTC
 Duration: ${op.standardDuration} min
 Status: ${op.status}`}
                   >
