@@ -16,7 +16,7 @@ import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
 import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
-import { BryntumTest } from '@/components/bryntum/BryntumTest';
+// import { BryntumTest } from '@/components/bryntum/BryntumTest'; // Removed to avoid conflicts
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -519,7 +519,6 @@ export default function ProductionSchedulePage() {
                     )}
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
                   </div>
-                  <BryntumTest />
                   {!ordersLoading && !operationsLoading && !resourcesLoading && (
                     <SimpleBryntumGantt
                       key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
