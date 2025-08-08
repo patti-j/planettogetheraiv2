@@ -43,6 +43,7 @@ export default function ProductionSchedulePage() {
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
   const { addRecentPage } = useNavigation();
+  const [ganttKey, setGanttKey] = useState(Date.now());
   
   // Add this page to recent pages when component mounts
   useEffect(() => {
@@ -508,9 +509,9 @@ export default function ProductionSchedulePage() {
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                 <GanttResourceView
-                  key={JSON.stringify(operations?.map((op: any) => ({ id: op.id, startTime: op.startTime, workCenterId: op.workCenterId })))}
-                  operations={[...(operations as any || [])]}
-                  resources={[...(resources as any || [])]}
+                  key={ganttKey}
+                  operations={operations as any || []}
+                  resources={resources as any || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
                     // Calculate end time based on default duration
@@ -548,6 +549,9 @@ export default function ProductionSchedulePage() {
                     const refetchResult = await refetchOperations();
                     console.log('Refetch result:', refetchResult);
                     console.log('Operations after refetch:', refetchResult.data);
+                    
+                    // Force complete re-mount of the Gantt component
+                    setGanttKey(Date.now());
                   }}
                 />
               ) : (

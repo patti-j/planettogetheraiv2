@@ -40,11 +40,12 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const [timelineEnd, setTimelineEnd] = useState(new Date(2025, 7, 7, 21, 0)); // Aug 7, 9 PM
   const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
   const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
-  const [operationsKey, setOperationsKey] = useState(0); // Force re-render when operations change
+  const [localOperations, setLocalOperations] = useState<Operation[]>(operations);
   
-  // Force re-render when operations change
+  // Update local operations when props change
   useEffect(() => {
-    setOperationsKey(prev => prev + 1);
+    console.log('GanttResourceView: Operations prop changed', operations);
+    setLocalOperations([...operations]);
   }, [operations]);
   
   // Calculate total hours based on zoom and view mode
@@ -67,7 +68,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   // Group operations by resource
   const operationsByResource = resources.map(resource => ({
     resource,
-    operations: operations.filter(op => op.workCenterId === resource.id)
+    operations: localOperations.filter(op => op.workCenterId === resource.id)
   }));
 
   // Calculate position and width for an operation

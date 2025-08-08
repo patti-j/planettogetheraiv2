@@ -743,6 +743,10 @@ export function registerSimpleRoutes(app: express.Application): Server {
       if (operations.length > 0) {
         console.log("First operation sample:", operations[0]);
       }
+      // Disable caching to ensure fresh data after updates
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       res.json(operations);
     } catch (error) {
       console.error("Error fetching operations:", error);
