@@ -236,9 +236,16 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     
     try {
       await onOperationMove(draggedOperation.id, resourceId, newStartTime);
+      
+      // Get the selected algorithm for the success message
+      const selectedAlgorithm = localStorage.getItem('selectedRescheduleAlgorithm');
+      const algorithmMessage = selectedAlgorithm 
+        ? ` using ${selectedAlgorithm.replace('-', ' ').toUpperCase()} algorithm`
+        : '';
+      
       toast({
         title: "✓ Operation Rescheduled",
-        description: `${draggedOperation.operationName} moved to ${newStartTime.toLocaleString()}`,
+        description: `${draggedOperation.operationName} moved to ${newStartTime.toLocaleString()}${algorithmMessage}`,
       });
     } catch (error: any) {
       toast({

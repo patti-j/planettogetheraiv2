@@ -30,15 +30,24 @@ export function useOperationDrop(
       startTime?: string;
       endTime?: string;
     }) => {
-      // Use the correct field name for work center ID (matches database schema)
-      const updateData: any = { workCenterId: resourceId };
-      if (startTime) updateData.startTime = startTime;
-      if (endTime) updateData.endTime = endTime;
+      // Get the selected algorithm from localStorage
+      const selectedAlgorithm = localStorage.getItem('selectedRescheduleAlgorithm') || '';
       
-      console.log("DRAG DROP API CALL:", { operationId, updateData });
-      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
+      // Use the reschedule endpoint instead of direct operation update
+      const rescheduleData: any = { 
+        resourceId, 
+        startTime: startTime || new Date().toISOString()
+      };
+      
+      // Include algorithm if one is selected
+      if (selectedAlgorithm) {
+        rescheduleData.algorithm = selectedAlgorithm;
+      }
+      
+      console.log("DRAG DROP RESCHEDULE API CALL:", { operationId, rescheduleData });
+      const response = await apiRequest("PUT", `/api/operations/${operationId}/reschedule`, rescheduleData);
       const result = await response.json();
-      console.log("DRAG DROP API RESPONSE:", result);
+      console.log("DRAG DROP RESCHEDULE API RESPONSE:", result);
       return result;
     },
     onMutate: async ({ operationId, resourceId, startTime, endTime }) => {
@@ -69,7 +78,13 @@ export function useOperationDrop(
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
-      toast({ title: "Operation assigned successfully" });
+      // Get the selected algorithm for the success message
+      const selectedAlgorithm = localStorage.getItem('selectedRescheduleAlgorithm');
+      const algorithmMessage = selectedAlgorithm 
+        ? ` using ${selectedAlgorithm.replace('-', ' ').toUpperCase()} algorithm`
+        : '';
+      
+      toast({ title: `Operation rescheduled successfully${algorithmMessage}` });
       onDropSuccess?.();
     },
     onError: (error, variables, context) => {

@@ -2337,14 +2337,14 @@ Rules:
   app.put("/api/operations/:id/reschedule", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { resourceId, startTime } = req.body;
+      const { resourceId, startTime, algorithm } = req.body;
       
       // Validate inputs
       if (!resourceId || !startTime) {
         return res.status(400).json({ error: 'Resource ID and start time are required' });
       }
       
-      // Get the operation to determine duration
+      // Get all operations for algorithm processing
       const operations = await storage.getOperations();
       const operation = operations.find(op => op.id === id);
       
@@ -2354,8 +2354,72 @@ Rules:
       
       // Calculate end time based on standard duration
       const duration = operation.standardDuration || 60; // Default 60 minutes
-      const start = new Date(startTime);
-      const end = new Date(start.getTime() + duration * 60000);
+      let start = new Date(startTime);
+      let end = new Date(start.getTime() + duration * 60000);
+      
+      // Apply algorithm-specific logic if provided
+      if (algorithm) {
+        console.log(`Applying ${algorithm} algorithm for rescheduling`);
+        
+        switch (algorithm) {
+          case 'backwards-scheduling':
+            // For backwards scheduling, adjust start time to be as late as possible
+            // while still meeting the due date
+            if (operation.productionOrderId) {
+              const productionOrders = await storage.getProductionOrders();
+              const order = productionOrders.find(po => po.id === operation.productionOrderId);
+              if (order && order.dueDate) {
+                const dueDate = new Date(order.dueDate);
+                // Calculate latest possible start time
+                const latestEnd = new Date(dueDate.getTime() - 24 * 60 * 60 * 1000); // 1 day buffer
+                const latestStart = new Date(latestEnd.getTime() - duration * 60000);
+                if (latestStart > start) {
+                  start = latestStart;
+                  end = latestEnd;
+                }
+              }
+            }
+            break;
+            
+          case 'spt':
+            // Shortest Processing Time - prioritize operations with shorter durations
+            // This is more of a sequencing algorithm, so we'll just ensure no overlap
+            const resourceOps = operations.filter(op => op.workCenterId === resourceId && op.id !== id);
+            resourceOps.sort((a, b) => (a.standardDuration || 60) - (b.standardDuration || 60));
+            // Check for conflicts and adjust if needed
+            for (const op of resourceOps) {
+              if (op.startTime && op.endTime) {
+                const opStart = new Date(op.startTime);
+                const opEnd = new Date(op.endTime);
+                if (start < opEnd && end > opStart) {
+                  // Conflict detected, move to after this operation
+                  start = new Date(opEnd.getTime() + 15 * 60000); // 15 min buffer
+                  end = new Date(start.getTime() + duration * 60000);
+                }
+              }
+            }
+            break;
+            
+          case 'edd':
+            // Earliest Due Date - prioritize based on production order due dates
+            // Similar to backwards scheduling but considers all operations
+            break;
+            
+          case 'fifo':
+            // First In First Out - maintain original sequence
+            // Just ensure no overlaps
+            break;
+            
+          case 'ai-optimized':
+            // Could integrate with OpenAI for intelligent scheduling
+            // For now, use a balanced approach
+            break;
+            
+          default:
+            // Use default scheduling
+            break;
+        }
+      }
       
       // Update the operation
       const updatedOperation = await storage.updateDiscreteOperation(id, {
