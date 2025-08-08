@@ -16,6 +16,7 @@ import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
 import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
+import { BryntumTest } from '@/components/bryntum/BryntumTest';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -506,112 +507,63 @@ export default function ProductionSchedulePage() {
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
-              {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <SimpleBryntumGantt
-                  key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
-                  operations={operations as any || []}
-                  resources={resources as any || []}
-                  className="h-full"
-                  onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
-                    try {
-                      
-                      // Call API to update the operation using apiRequest
-                      console.log('Sending PUT request to:', `/api/operations/${operationId}`, {
-                        workCenterId: newResourceId,
-                        startTime: newStartTime.toISOString(),
-                        endTime: newEndTime.toISOString()
-                      });
-                      
+              {import.meta.env.DEV ? (
+                <div className="space-y-4">
+                  <BryntumTest />
+                  {!ordersLoading && !operationsLoading && !resourcesLoading && (
+                    <SimpleBryntumGantt
+                      key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
+                      operations={operations as any || []}
+                      resources={resources as any || []}
+                      className="h-full"
+                      onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
+                        try {
+                          const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
+                            workCenterId: newResourceId,
+                            startTime: newStartTime.toISOString(),
+                            endTime: newEndTime.toISOString()
+                          });
+                          if (!response.ok) throw new Error('Failed to reschedule operation');
+                          queryClient.removeQueries({ queryKey: ['/api/operations'] });
+                          await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                          setTimeout(() => setGanttKey(Date.now()), 200);
+                        } catch (error) {
+                          console.error('ERROR in onOperationMove:', error);
+                          throw error;
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                !ordersLoading && !operationsLoading && !resourcesLoading ? (
+                  <SimpleBryntumGantt
+                    key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
+                    operations={operations as any || []}
+                    resources={resources as any || []}
+                    className="h-full"
+                    onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
                       const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
                         workCenterId: newResourceId,
                         startTime: newStartTime.toISOString(),
                         endTime: newEndTime.toISOString()
                       });
-                      
-                      console.log('PUT response:', response.status, response.ok);
-                      
-                      if (!response.ok) {
-                        const contentType = response.headers.get("content-type");
-                        if (contentType && contentType.indexOf("application/json") !== -1) {
-                          const error = await response.json();
-                          throw new Error(error.message || 'Failed to reschedule operation');
-                        } else {
-                          throw new Error('Server error: Invalid response format');
-                        }
-                      }
-                      
-                      // Check if response is JSON before parsing
-                      const contentType = response.headers.get("content-type");
-                      let result = {};
-                      if (contentType && contentType.indexOf("application/json") !== -1) {
-                        result = await response.json();
-                      }
-                      
-                      console.log('Operation updated on server:', result);
-                      console.log('Current operations before refetch:', (operations as any)?.map(op => ({
-                        id: op.id,
-                        name: op.operationName,
-                        start: op.startTime,
-                        end: op.endTime,
-                        resource: op.workCenterId
-                      })));
-                      
-                      // Invalidate and remove all cached data for operations
+                      if (!response.ok) throw new Error('Failed to reschedule operation');
                       queryClient.removeQueries({ queryKey: ['/api/operations'] });
                       await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                      
-                      // Wait a bit for the cache to clear
-                      await new Promise(resolve => setTimeout(resolve, 200));
-                      
-                      // Force immediate refresh of operations data with fresh data
-                      const refetchResult = await refetchOperations();
-                      console.log('Refetch completed:', refetchResult.status);
-                      console.log('Operations after refetch:', (refetchResult.data as any)?.map(op => ({
-                        id: op.id,
-                        name: op.operationName,
-                        start: op.startTime,
-                        end: op.endTime,
-                        resource: op.workCenterId
-                      })));
-                      
-                      // Double-check that the specific operation was updated
-                      const updatedOp = (refetchResult.data as any)?.find(op => op.id === operationId);
-                      console.log('Updated operation details:', updatedOp ? {
-                        id: updatedOp.id,
-                        name: updatedOp.operationName,
-                        newStart: updatedOp.startTime,
-                        newEnd: updatedOp.endTime,
-                        newResource: updatedOp.workCenterId,
-                        expectedResource: newResourceId,
-                        expectedStart: newStartTime.toISOString()
-                      } : 'NOT FOUND');
-                      
-                      // Force complete re-mount of the Gantt component with a delay
-                      setTimeout(() => {
-                        setGanttKey(Date.now());
-                      }, 200);
-                    } catch (error) {
-                      console.error('ERROR in onOperationMove:', error);
-                      console.error('Error details:', {
-                        message: error.message,
-                        stack: error.stack,
-                        operationId,
-                        newResourceId,
-                        newStartTime
-                      });
-                      throw error; // Re-throw to preserve original error handling
-                    }
-                  }}
-                />
-              ) : (
-                <Card className="h-full">
-                  <CardContent className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading Gantt chart...</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                      setTimeout(() => setGanttKey(Date.now()), 200);
+                    }}
+                  />
+                ) : (
+                  <Card className="h-full">
+                    <CardContent className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Loading Gantt chart...</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
               )}
             </div>
           </TabsContent>

@@ -37,7 +37,13 @@ export function SimpleBryntumGantt({
 
   // Initialize Bryntum Gantt
   useEffect(() => {
-    if (!containerRef.current || !window.bryntum || isInitialized) return;
+    if (!containerRef.current || isInitialized) return;
+    
+    // Verify we have data before trying to initialize
+    if (!operations || operations.length === 0 || !resources || resources.length === 0) {
+      console.log('Waiting for data...', { operations: operations?.length, resources: resources?.length });
+      return;
+    }
 
     const initializeGantt = async () => {
       try {
@@ -45,10 +51,19 @@ export function SimpleBryntumGantt({
         
         // Wait for Bryntum to be fully loaded
         if (!window.bryntum?.gantt?.Gantt) {
-          console.warn('Bryntum Gantt not available, retrying...');
+          console.warn('Bryntum Gantt not available, retrying...', {
+            bryntum: !!window.bryntum,
+            gantt: !!window.bryntum?.gantt,
+            Gantt: !!window.bryntum?.gantt?.Gantt
+          });
           setTimeout(initializeGantt, 500); // Retry after 500ms
           return;
         }
+
+        console.log('Bryntum Gantt available, initializing with data:', { 
+          operations: operations.length, 
+          resources: resources.length 
+        });
 
         const { Gantt, ProjectModel } = window.bryntum.gantt;
 
@@ -247,16 +262,21 @@ export function SimpleBryntumGantt({
       } catch (error) {
         console.error('Error initializing Bryntum Gantt:', error);
         setIsLoading(false);
+        
+        // Try to provide more specific error information
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Detailed error:', errorMsg);
+        
         toast({
           title: "Gantt Loading Error",
-          description: "Failed to initialize the Gantt chart. Please refresh the page.",
+          description: `Failed to initialize: ${errorMsg}`,
           variant: "destructive"
         });
       }
     };
 
     // Delay initialization to ensure DOM is ready
-    const timeout = setTimeout(initializeGantt, 300);
+    const timeout = setTimeout(initializeGantt, 500);
 
     return () => {
       clearTimeout(timeout);
