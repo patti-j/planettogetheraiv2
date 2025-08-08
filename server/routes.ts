@@ -20466,8 +20466,8 @@ Response must be valid JSON:
     }
   });
 
-  // Get record counts for all supported data types
-  app.get("/api/data-management/record-counts", authenticateUser, async (req, res) => {
+  // Get record counts for all supported data types (public endpoint for loading state)
+  app.get("/api/data-management/record-counts", async (req, res) => {
     try {
       // Simple hardcoded counts for now to fix the data-import page
       const recordCounts = {

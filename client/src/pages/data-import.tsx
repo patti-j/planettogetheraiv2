@@ -37,6 +37,7 @@ interface ImportStatus {
 }
 
 function DataImport() {
+  const { user } = useAuth();
   const [importStatuses, setImportStatuses] = useState<ImportStatus[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
@@ -1193,7 +1194,6 @@ function DataImport() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
-  const { user } = useAuth();
 
   // Fetch available capabilities for dropdown
   const { data: capabilities = [] } = useQuery({
