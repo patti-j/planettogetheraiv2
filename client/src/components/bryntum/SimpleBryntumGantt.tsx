@@ -54,7 +54,10 @@ export function SimpleBryntumGantt({
       hasResources: !!(resources && resources.length > 0)
     });
     
-    if (!containerRef.current || isInitialized) return;
+    if (isInitialized) {
+      console.log('SimpleBryntumGantt: Already initialized, skipping');
+      return;
+    }
     
     // Verify we have data before trying to initialize
     if (!operations || operations.length === 0 || !resources || resources.length === 0) {
@@ -70,7 +73,26 @@ export function SimpleBryntumGantt({
       return;
     }
 
+    // Wait for container to be available in the DOM
+    const checkContainerAndInit = () => {
+      if (!containerRef.current) {
+        console.log('SimpleBryntumGantt: Container not ready, waiting...');
+        setTimeout(checkContainerAndInit, 100);
+        return;
+      }
+      
+      console.log('SimpleBryntumGantt: Container ready, initializing...');
+      initializeGantt();
+    };
+
+    // Start the initialization process
+    setTimeout(checkContainerAndInit, 50);
+
     const initializeGantt = async () => {
+      if (!containerRef.current) {
+        console.error('SimpleBryntumGantt: Container ref is null during initialization');
+        return;
+      }
       try {
         setIsLoading(true);
         
@@ -331,11 +353,7 @@ export function SimpleBryntumGantt({
       }
     };
 
-    // Delay initialization to ensure DOM is ready
-    const timeout = setTimeout(initializeGantt, 500);
-
     return () => {
-      clearTimeout(timeout);
       if (ganttRef.current) {
         try {
           ganttRef.current.destroy();
