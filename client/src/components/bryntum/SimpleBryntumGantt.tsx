@@ -42,6 +42,7 @@ export function SimpleBryntumGantt({
     // Verify we have data before trying to initialize
     if (!operations || operations.length === 0 || !resources || resources.length === 0) {
       console.log('Waiting for data...', { operations: operations?.length, resources: resources?.length });
+      setIsLoading(false); // Don't keep showing loading if we're just waiting for data
       return;
     }
 
@@ -330,6 +331,24 @@ export function SimpleBryntumGantt({
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading Gantt Chart...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show data status when not loading
+  if (!operations || operations.length === 0 || !resources || resources.length === 0) {
+    return (
+      <Card className={`h-full ${className}`}>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Production Schedule - Gantt View</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              Waiting for data... Operations: {operations?.length || 0}, Resources: {resources?.length || 0}
+            </p>
           </div>
         </CardContent>
       </Card>
