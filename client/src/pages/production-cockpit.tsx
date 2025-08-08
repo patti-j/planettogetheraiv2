@@ -294,6 +294,15 @@ export default function ProductionCockpit() {
     auto_refresh: true,
     refresh_interval: 30
   });
+  
+  // Missing dialog states
+  const [newWidgetDialog, setNewWidgetDialog] = useState(false);
+  const [newWidgetData, setNewWidgetData] = useState({
+    type: "metrics",
+    title: "",
+    sub_title: "",
+    position: { x: 0, y: 0, w: 4, h: 3 }
+  });
 
   const [aiLayoutData, setAiLayoutData] = useState({
     description: "",
@@ -421,12 +430,10 @@ export default function ProductionCockpit() {
 
   // Create layout mutation
   const createLayoutMutation = useMutation({
-    mutationFn: (layoutData: any) =>
-      fetch("/api/cockpit/layouts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(layoutData)
-      }).then(res => res.json()),
+    mutationFn: async (layoutData: any) => {
+      const response = await apiRequest('POST', '/api/cockpit/layouts', layoutData);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cockpit/layouts"] });
       setNewLayoutDialog(false);
@@ -443,12 +450,10 @@ export default function ProductionCockpit() {
 
   // Create widget mutation
   const createWidgetMutation = useMutation({
-    mutationFn: (widgetData: any) =>
-      fetch("/api/cockpit/widgets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(widgetData)
-      }).then(res => res.json()),
+    mutationFn: async (widgetData: any) => {
+      const response = await apiRequest('POST', '/api/cockpit/widgets', widgetData);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cockpit/widgets", selectedLayout] });
       setNewWidgetDialog(false);
