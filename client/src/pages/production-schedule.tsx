@@ -508,8 +508,9 @@ export default function ProductionSchedulePage() {
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                 <GanttResourceView
-                  operations={(operations as any) || []}
-                  resources={(resources as any) || []}
+                  key={JSON.stringify(operations?.map((op: any) => ({ id: op.id, startTime: op.startTime, workCenterId: op.workCenterId })))}
+                  operations={[...(operations as any || [])]}
+                  resources={[...(resources as any || [])]}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
                     // Calculate end time based on default duration
