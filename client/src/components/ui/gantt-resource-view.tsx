@@ -40,6 +40,12 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const [timelineEnd, setTimelineEnd] = useState(new Date(2025, 7, 7, 21, 0)); // Aug 7, 9 PM
   const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
   const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
+  const [operationsKey, setOperationsKey] = useState(0); // Force re-render when operations change
+  
+  // Force re-render when operations change
+  useEffect(() => {
+    setOperationsKey(prev => prev + 1);
+  }, [operations]);
   
   // Calculate total hours based on zoom and view mode
   const getTimeRange = () => {
@@ -329,7 +335,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
         </div>
       </div>
 
-      <div ref={containerRef} className="relative">
+      <div ref={containerRef} className="relative" key={operationsKey}>
         {/* Timeline header */}
         <div className="flex border-b border-border pb-2 mb-4">
           <div className="w-48 pr-4 text-sm font-medium">Resources</div>
