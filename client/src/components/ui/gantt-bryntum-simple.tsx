@@ -183,24 +183,35 @@ export function SimpleBryntumGantt({
           
           try {
             // Try creating the Gantt instance
+            console.log('🔨 Attempting to create Gantt with BryntumGantt:', typeof BryntumGantt);
+            console.log('🔨 Container element:', ganttRef.current);
+            
             const ganttInstance = new BryntumGantt({
               appendTo: ganttRef.current,
-              ...ganttConfig,
-              project: {
-                tasks: tasks,
-                resources: ganttResources
-              }
+              height: 600,
+              width: '100%',
+              columns: [
+                { text: 'Name', field: 'name', width: 250 }
+              ],
+              tasks: tasks
             });
+            
+            console.log('🔨 Gantt instance created:', ganttInstance);
+            console.log('🔨 Instance element:', ganttInstance.element);
+            console.log('🔨 Instance rendered:', ganttInstance.rendered);
             
             ganttInstanceRef.current = ganttInstance;
             console.log('✅ Bryntum Gantt initialized successfully!');
-            console.log('📈 Gantt instance:', ganttInstanceRef.current);
             
-            // Force state update
+            // Force render and state update
             setTimeout(() => {
+              if (ganttInstance.element) {
+                console.log('🎨 Gantt element exists, making visible');
+                ganttInstance.element.style.display = 'block';
+              }
               setIsReady(true);
-              console.log('🎨 Gantt UI should now be visible');
-            }, 100);
+              console.log('🎨 State updated - Gantt UI should now be visible');
+            }, 500);
 
             toast({
               title: "Professional Gantt Loaded",
