@@ -43,6 +43,13 @@ export function SimpleBryntumGantt({
       isInitialized,
       hasContainer: !!containerRef.current
     });
+    
+    // Check for Bryntum availability on mount
+    console.log('Checking for Bryntum on window:', {
+      hasBryntum: !!(window as any).bryntum,
+      hasBryntumGantt: !!(window as any).bryntum?.gantt,
+      windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('bryntum') || k.toLowerCase().includes('gantt'))
+    });
   }, [operations, resources, isInitialized]);
 
   // Initialize Bryntum Gantt
@@ -81,13 +88,24 @@ export function SimpleBryntumGantt({
       try {
         setIsLoading(true);
         
+        // Check multiple ways to access Bryntum
+        const bryntumGantt = window.bryntum?.gantt || (window as any).bryntumGantt || (window as any).BryntumGantt;
+        
         // Wait for Bryntum to be fully loaded
-        if (!window.bryntum?.gantt?.Gantt) {
+        if (!bryntumGantt?.Gantt) {
           console.warn('Bryntum Gantt not available, retrying...', {
             bryntum: !!window.bryntum,
             gantt: !!window.bryntum?.gantt,
-            Gantt: !!window.bryntum?.gantt?.Gantt
+            Gantt: !!window.bryntum?.gantt?.Gantt,
+            windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('bryntum')),
+            scriptLoaded: !!document.querySelector('script[src*="gantt.umd.js"]'),
+            alternativeBryntum: !!(window as any).bryntumGantt,
+            alternativeBryntumGantt: !!(window as any).BryntumGantt
           });
+          
+          // Also log all global variables that might be Bryntum
+          console.log('Window object keys containing "gantt":', Object.keys(window).filter(k => k.toLowerCase().includes('gantt')));
+          
           setTimeout(initializeGantt, 500); // Retry after 500ms
           return;
         }
@@ -102,7 +120,7 @@ export function SimpleBryntumGantt({
         console.log('Raw operations data:', operations);
         console.log('Raw resources data:', resources);
 
-        const { Gantt, ProjectModel } = window.bryntum.gantt;
+        const { Gantt, ProjectModel } = bryntumGantt;
 
         // Transform operations to Bryntum task format
         const tasks = operations.map((op, index) => {
