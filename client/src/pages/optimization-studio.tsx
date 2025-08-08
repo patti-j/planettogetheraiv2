@@ -225,7 +225,7 @@ export default function OptimizationStudio() {
         step: aiSessionStep
       });
       
-      const response = await fetch('/api/ai-agent/collaborative-algorithm-development', {
+      const response = await fetch('/api/algorithm-collaborate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
