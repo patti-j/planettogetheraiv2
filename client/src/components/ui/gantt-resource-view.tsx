@@ -35,9 +35,7 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [zoomLevel, setZoomLevel] = useState(1); // 1 = default, 2 = zoomed in, 0.5 = zoomed out
-  const [viewMode, setViewMode] = useState<'hourly' | 'daily' | 'weekly'>('hourly');
-  const [timelineStart, setTimelineStart] = useState(new Date(2025, 7, 7, 7, 0)); // Aug 7, 7 AM
-  const [timelineEnd, setTimelineEnd] = useState(new Date(2025, 7, 7, 21, 0)); // Aug 7, 9 PM
+  const [viewMode, setViewMode] = useState<'hourly' | 'daily' | 'weekly'>('daily');
   const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
   const [dropTarget, setDropTarget] = useState<{ resourceId: number; time: Date } | null>(null);
   
@@ -50,20 +48,54 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
     }));
   }, [operations]);
   
+  // Calculate timeline range based on actual operations
+  const timelineRange = useMemo(() => {
+    if (processedOperations.length === 0) {
+      // Default range if no operations
+      return {
+        start: new Date(2025, 7, 7, 0, 0), // Aug 7, midnight
+        end: new Date(2025, 7, 14, 0, 0) // Aug 14, midnight (1 week)
+      };
+    }
+    
+    // Find min and max dates from operations
+    let minDate = new Date(processedOperations[0].startTime);
+    let maxDate = new Date(processedOperations[0].endTime);
+    
+    processedOperations.forEach(op => {
+      const start = new Date(op.startTime);
+      const end = new Date(op.endTime);
+      if (start < minDate) minDate = start;
+      if (end > maxDate) maxDate = end;
+    });
+    
+    // Add padding: start at beginning of day, end at end of day
+    const rangeStart = new Date(minDate);
+    rangeStart.setHours(0, 0, 0, 0);
+    
+    const rangeEnd = new Date(maxDate);
+    rangeEnd.setHours(23, 59, 59, 999);
+    
+    // If same day, show hourly view, otherwise daily
+    if (rangeStart.toDateString() === rangeEnd.toDateString()) {
+      rangeStart.setHours(6, 0, 0, 0); // Start at 6 AM
+      rangeEnd.setHours(22, 0, 0, 0); // End at 10 PM
+    }
+    
+    return { start: rangeStart, end: rangeEnd };
+  }, [processedOperations]);
+  
+  console.log('GanttResourceView: Timeline range', timelineRange);
   console.log('GanttResourceView: Processed operations', processedOperations);
   
-  // Calculate total hours based on zoom and view mode
+  // Calculate total hours based on timeline range
   const getTimeRange = () => {
-    switch(viewMode) {
-      case 'hourly':
-        return { hours: 14, start: new Date(2025, 7, 7, 7, 0), end: new Date(2025, 7, 7, 21, 0) };
-      case 'daily':
-        return { hours: 24 * 7, start: new Date(2025, 7, 4, 0, 0), end: new Date(2025, 7, 11, 0, 0) }; // Week view
-      case 'weekly':
-        return { hours: 24 * 30, start: new Date(2025, 7, 1, 0, 0), end: new Date(2025, 7, 31, 0, 0) }; // Month view
-      default:
-        return { hours: 14, start: new Date(2025, 7, 7, 7, 0), end: new Date(2025, 7, 7, 21, 0) };
-    }
+    const hours = (timelineRange.end.getTime() - timelineRange.start.getTime()) / (1000 * 60 * 60);
+    return { 
+      hours, 
+      start: timelineRange.start, 
+      end: timelineRange.end 
+    };
   };
   
   const timeRange = getTimeRange();
@@ -131,45 +163,40 @@ export function GanttResourceView({ operations, resources, className = '', onOpe
   // Generate time markers based on view mode
   const generateTimeMarkers = () => {
     const markers = [];
+    const totalDays = Math.ceil(totalHours / 24);
     
-    if (viewMode === 'hourly') {
+    if (totalDays <= 1 || viewMode === 'hourly') {
+      // Show hourly markers for single day or hourly view
+      const startHour = timeRange.start.getHours();
       const hoursToShow = Math.ceil(totalHours);
-      const hourStep = zoomLevel < 0.5 ? 2 : 1;
+      const hourStep = hoursToShow > 12 ? 2 : 1;
       
       for (let i = 0; i <= hoursToShow; i += hourStep) {
-        const hour = 7 + (i * zoomLevel);
-        if (hour > 21) break;
+        const currentHour = startHour + i;
+        if (currentHour >= 24) break;
         
-        const displayHour = hour > 12 ? `${hour - 12} PM` : hour === 12 ? '12 PM' : `${hour} AM`;
+        const displayHour = currentHour === 0 ? '12 AM' : currentHour === 12 ? '12 PM' : 
+                          currentHour > 12 ? `${currentHour - 12} PM` : `${currentHour} AM`;
         markers.push(
           <div key={i} className="flex-1 text-center text-xs text-muted-foreground border-l border-border">
             {displayHour}
           </div>
         );
       }
-    } else if (viewMode === 'daily') {
-      // Show days of the week
+    } else {
+      // Show daily markers for multi-day view
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const daysToShow = Math.min(7, Math.ceil(totalHours / 24));
       
-      for (let i = 0; i < daysToShow; i++) {
+      for (let i = 0; i < totalDays; i++) {
         const date = new Date(timeRange.start);
         date.setDate(date.getDate() + i);
+        
+        if (date > timeRange.end) break;
+        
         markers.push(
           <div key={i} className="flex-1 text-center text-xs text-muted-foreground border-l border-border">
             <div>{days[date.getDay()]}</div>
             <div className="text-[10px]">{date.getMonth() + 1}/{date.getDate()}</div>
-          </div>
-        );
-      }
-    } else if (viewMode === 'weekly') {
-      // Show weeks of the month
-      const weeksToShow = Math.min(4, Math.ceil(totalHours / (24 * 7)));
-      
-      for (let i = 0; i < weeksToShow; i++) {
-        markers.push(
-          <div key={i} className="flex-1 text-center text-xs text-muted-foreground border-l border-border">
-            Week {i + 1}
           </div>
         );
       }

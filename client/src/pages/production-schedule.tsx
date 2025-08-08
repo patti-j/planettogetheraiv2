@@ -514,8 +514,17 @@ export default function ProductionSchedulePage() {
                   resources={resources as any || []}
                   className="h-full"
                   onOperationMove={async (operationId, newResourceId, newStartTime) => {
-                    // Calculate end time based on default duration
-                    const duration = 60; // Default 60 minutes
+                    // Find the original operation to preserve its duration
+                    const originalOp = operations?.find(op => op.id === operationId);
+                    let duration = 60; // Default 60 minutes
+                    
+                    if (originalOp) {
+                      // Calculate original duration in milliseconds
+                      const originalStart = new Date(originalOp.startTime);
+                      const originalEnd = new Date(originalOp.endTime);
+                      duration = (originalEnd.getTime() - originalStart.getTime()) / 60000; // Convert to minutes
+                    }
+                    
                     const endTime = new Date(newStartTime.getTime() + duration * 60000);
                     
                     // Call API to update the operation using apiRequest
