@@ -174,25 +174,56 @@ export function SimpleBryntumGantt({
           console.log('🏭 Sample resource:', ganttResources[0]);
 
           console.log('🚀 Creating Bryntum Gantt instance...');
-          ganttInstanceRef.current = new BryntumGantt({
+          console.log('Config being passed:', {
             appendTo: ganttRef.current,
             ...ganttConfig,
-            tasks: tasks,
-            resources: ganttResources
+            tasksLength: tasks.length,
+            resourcesLength: ganttResources.length
           });
+          
+          try {
+            // Try creating the Gantt instance
+            const ganttInstance = new BryntumGantt({
+              appendTo: ganttRef.current,
+              ...ganttConfig,
+              project: {
+                tasks: tasks,
+                resources: ganttResources
+              }
+            });
+            
+            ganttInstanceRef.current = ganttInstance;
+            console.log('✅ Bryntum Gantt initialized successfully!');
+            console.log('📈 Gantt instance:', ganttInstanceRef.current);
+            setIsReady(true);
 
-          console.log('✅ Bryntum Gantt initialized successfully!');
-          console.log('📈 Gantt instance:', ganttInstanceRef.current);
-          setIsReady(true);
-
-          toast({
-            title: "Professional Gantt Loaded",
-            description: `${tasks.length} operations displayed in Bryntum Gantt`,
-          });
+            toast({
+              title: "Professional Gantt Loaded",
+              description: `${tasks.length} operations displayed in Bryntum Gantt`,
+            });
+          } catch (innerError) {
+            console.error('❌ Error during Gantt instantiation:', innerError);
+            console.error('Stack trace:', innerError.stack);
+            throw innerError;
+          }
         } catch (error) {
           console.error('❌ Failed to initialize Bryntum Gantt:', error);
           console.error('Error details:', error.message);
-          setIsReady(false);
+          console.error('Error stack:', error.stack);
+          
+          // Try a minimal configuration
+          console.log('🔧 Attempting minimal configuration...');
+          try {
+            const minimalGantt = new BryntumGantt({
+              appendTo: ganttRef.current
+            });
+            ganttInstanceRef.current = minimalGantt;
+            console.log('✅ Minimal Gantt created');
+            setIsReady(true);
+          } catch (minimalError) {
+            console.error('❌ Even minimal config failed:', minimalError);
+            setIsReady(false);
+          }
         }
       }
     };
