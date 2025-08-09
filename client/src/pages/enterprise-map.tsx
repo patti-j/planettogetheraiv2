@@ -112,7 +112,10 @@ export default function EnterpriseMapPage() {
   const [showMetrics, setShowMetrics] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('efficiency');
   const [zoom, setZoom] = useState(1.2);
-  const [center, setCenter] = useState<[number, number]>([0, 20]);
+  const [center, setCenter] = useState<{ coordinates: [number, number], zoom: number }>({ 
+    coordinates: [0, 20], 
+    zoom: 1.2 
+  });
   const [viewMode, setViewMode] = useState<'world' | 'region'>('world');
   const [showConnections, setShowConnections] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('all');
@@ -218,7 +221,7 @@ export default function EnterpriseMapPage() {
 
   const resetView = () => {
     setZoom(1.2);
-    setCenter([0, 20]);
+    setCenter({ coordinates: [0, 20], zoom: 1.2 });
     setViewMode('world');
   };
 
@@ -231,7 +234,7 @@ export default function EnterpriseMapPage() {
     };
     
     if (regionCenters[region]) {
-      setCenter(regionCenters[region]);
+      setCenter({ coordinates: regionCenters[region], zoom: 2.5 });
       setZoom(2.5);
       setViewMode('region');
     }
@@ -544,11 +547,14 @@ export default function EnterpriseMapPage() {
                       projection="geoMercator"
                       projectionConfig={{
                         scale: 147,
-                        center: center,
+                        center: center.coordinates,
                       }}
                       className="w-full h-full"
                     >
-                      <ZoomableGroup zoom={zoom} center={center} onMoveEnd={setCenter}>
+                      <ZoomableGroup 
+                        zoom={zoom} 
+                        center={center.coordinates}
+                        onMoveEnd={(geo: { coordinates: [number, number], zoom: number }) => setCenter(geo)}>
                         {/* Base Map */}
                         <Geographies geography={geoUrl}>
                           {({ geographies }) =>
