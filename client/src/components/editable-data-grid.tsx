@@ -337,6 +337,7 @@ export function EditableDataGrid({
                 setEditValue(checked);
                 saveCell(rowIndex, column.key);
               }}
+              className="h-3 w-3 sm:h-4 sm:w-4"
             />
           );
         case 'select':
@@ -348,7 +349,7 @@ export function EditableDataGrid({
                 saveCell(rowIndex, column.key);
               }}
             >
-              <SelectTrigger className="h-8">
+              <SelectTrigger className="h-6 sm:h-8 text-xs sm:text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -368,7 +369,7 @@ export function EditableDataGrid({
               onChange={(e) => setEditValue(e.target.value ? Number(e.target.value) : '')}
               onKeyDown={(e) => handleKeyDown(e, rowIndex, column.key)}
               onBlur={() => saveCell(rowIndex, column.key)}
-              className="h-8"
+              className="h-6 sm:h-8 text-xs sm:text-sm px-1 sm:px-2"
               autoFocus
             />
           );
@@ -380,7 +381,7 @@ export function EditableDataGrid({
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, rowIndex, column.key)}
               onBlur={() => saveCell(rowIndex, column.key)}
-              className="h-8"
+              className="h-6 sm:h-8 text-xs sm:text-sm px-1 sm:px-2"
               autoFocus
             />
           );
@@ -389,17 +390,17 @@ export function EditableDataGrid({
 
     // Display mode
     if (column.type === 'boolean') {
-      return <Checkbox checked={!!value} disabled />;
+      return <Checkbox checked={!!value} disabled className="h-3 w-3 sm:h-4 sm:w-4" />;
     } else if (column.type === 'json') {
       return (
-        <span className="text-xs font-mono truncate">
+        <span className="text-[10px] sm:text-xs font-mono truncate block max-w-[100px] sm:max-w-[150px]">
           {value ? JSON.stringify(value) : '{}'}
         </span>
       );
     } else {
       return (
         <div
-          className="cursor-pointer px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
+          className="cursor-pointer px-1 sm:px-2 py-0.5 sm:py-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded text-xs sm:text-sm"
           onClick={() => startEditing(rowIndex, column.key, value)}
         >
           {value ?? <span className="text-gray-400">--</span>}
@@ -409,18 +410,18 @@ export function EditableDataGrid({
   };
 
   return (
-    <div className={cn("flex flex-col space-y-4", className)}>
+    <div className={cn("flex flex-col space-y-2 sm:space-y-4", className)}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 rounded-lg border">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 bg-white dark:bg-gray-900 p-2 sm:p-4 rounded-lg border">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
             <Input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-64"
+              className="pl-7 sm:pl-9 w-full sm:w-48 md:w-64 h-8 sm:h-10 text-xs sm:text-sm"
             />
           </div>
           
@@ -430,9 +431,11 @@ export function EditableDataGrid({
               size="sm"
               onClick={deleteSelectedRows}
               disabled={isLoading}
+              className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
             >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Delete {selectedRows.size} rows
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Delete {selectedRows.size} rows</span>
+              <span className="sm:hidden">Delete ({selectedRows.size})</span>
             </Button>
           )}
         </div>
@@ -444,9 +447,11 @@ export function EditableDataGrid({
               size="sm"
               onClick={addNewRow}
               disabled={isLoading}
+              className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 flex-1 sm:flex-none"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Row
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Add Row</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           )}
           
@@ -456,9 +461,11 @@ export function EditableDataGrid({
               size="sm"
               onClick={saveAllChanges}
               disabled={isLoading}
+              className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9 flex-1 sm:flex-none"
             >
-              <Save className="h-4 w-4 mr-1" />
-              Save All Changes
+              <Save className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Save All Changes</span>
+              <span className="sm:hidden">Save</span>
             </Button>
           )}
         </div>
@@ -467,39 +474,40 @@ export function EditableDataGrid({
       {/* Grid */}
       <div className="border rounded-lg overflow-hidden bg-white dark:bg-gray-900">
         <div className="overflow-auto" style={{ maxHeight: gridHeight }}>
-          <table className="w-full">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
               <tr>
                 {allowBulkEdit && (
-                  <th className="p-2 text-left border-b">
+                  <th className="p-1 sm:p-2 text-left border-b">
                     <Checkbox
                       checked={selectedRows.size === sortedData.length && sortedData.length > 0}
                       onCheckedChange={toggleAllSelection}
+                      className="h-3 w-3 sm:h-4 sm:w-4"
                     />
                   </th>
                 )}
                 {columns.map(column => (
                   <th
                     key={column.key}
-                    className="p-2 text-left border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="p-1 sm:p-2 text-left border-b cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                     style={{ width: column.width }}
                     onClick={() => handleSort(column.key)}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">
+                      <span className="font-medium text-xs sm:text-sm">
                         {column.header}
                         {column.required && <span className="text-red-500 ml-1">*</span>}
                       </span>
                       {sortConfig?.key === column.key && (
                         sortConfig.direction === 'asc' ? 
-                          <ChevronUp className="h-4 w-4" /> : 
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4" /> : 
+                          <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                       )}
                     </div>
                   </th>
                 ))}
                 {allowDelete && (
-                  <th className="p-2 text-left border-b w-20">Actions</th>
+                  <th className="p-1 sm:p-2 text-left border-b w-12 sm:w-20 text-xs sm:text-sm">Actions</th>
                 )}
               </tr>
             </thead>
@@ -513,27 +521,29 @@ export function EditableDataGrid({
                   )}
                 >
                   {allowBulkEdit && (
-                    <td className="p-2">
+                    <td className="p-1 sm:p-2">
                       <Checkbox
                         checked={selectedRows.has(rowIndex)}
                         onCheckedChange={() => toggleRowSelection(rowIndex)}
+                        className="h-3 w-3 sm:h-4 sm:w-4"
                       />
                     </td>
                   )}
                   {columns.map(column => (
-                    <td key={column.key} className="p-2">
+                    <td key={column.key} className="p-1 sm:p-2 text-xs sm:text-sm">
                       {renderCell(row, column, rowIndex)}
                     </td>
                   ))}
                   {allowDelete && (
-                    <td className="p-2">
+                    <td className="p-1 sm:p-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteRow(rowIndex)}
                         disabled={isLoading}
+                        className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
                       </Button>
                     </td>
                   )}
@@ -543,7 +553,7 @@ export function EditableDataGrid({
                 <tr>
                   <td
                     colSpan={columns.length + (allowBulkEdit ? 1 : 0) + (allowDelete ? 1 : 0)}
-                    className="p-8 text-center text-gray-500"
+                    className="p-4 sm:p-8 text-center text-gray-500 text-xs sm:text-sm"
                   >
                     No data available
                   </td>
@@ -555,13 +565,13 @@ export function EditableDataGrid({
       </div>
 
       {/* Status bar */}
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm text-gray-500 gap-1">
         <span>
           Showing {sortedData.length} of {data.length} rows
           {selectedRows.size > 0 && ` (${selectedRows.size} selected)`}
         </span>
         {hasChanges && (
-          <span className="text-orange-500">
+          <span className="text-orange-500 text-xs sm:text-sm">
             Unsaved changes
           </span>
         )}

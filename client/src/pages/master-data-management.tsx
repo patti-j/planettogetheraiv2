@@ -388,20 +388,49 @@ export default function MasterDataManagement() {
   }, {} as Record<string, typeof masterDataTables>);
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Database className="h-8 w-8" />
-          Master Data Management
+    <div className="container mx-auto p-3 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <Database className="h-6 w-6 sm:h-8 sm:w-8" />
+          <span className="hidden sm:inline">Master Data Management</span>
+          <span className="sm:hidden">Master Data</span>
         </h1>
-        <p className="text-gray-600 mt-2">
-          Manage all master data tables with AI-powered editing and spreadsheet-like interface
+        <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">
+          <span className="hidden sm:inline">Manage all master data tables with AI-powered editing and spreadsheet-like interface</span>
+          <span className="sm:hidden">Manage and edit master data</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Table Selector Sidebar */}
-        <div className="lg:col-span-1">
+      {/* Mobile Table Selector - Dropdown on small screens */}
+      <div className="block lg:hidden mb-4">
+        <Select value={selectedTable} onValueChange={setSelectedTable}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a table" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(tablesByCategory).map(([category, tables]) => (
+              <div key={category}>
+                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">{category}</div>
+                {tables.map(table => {
+                  const Icon = table.icon;
+                  return (
+                    <SelectItem key={table.id} value={table.id}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        <span>{table.name}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </div>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Desktop Table Selector Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Data Tables</CardTitle>
@@ -441,73 +470,80 @@ export default function MasterDataManagement() {
         {/* Main Content Area */}
         <div className="lg:col-span-3">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                     {currentTableConfig && (
                       <>
-                        {React.createElement(currentTableConfig.icon, { className: "h-5 w-5" })}
-                        {currentTableConfig.name}
+                        {React.createElement(currentTableConfig.icon, { className: "h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" })}
+                        <span className="truncate">{currentTableConfig.name}</span>
                       </>
                     )}
                   </CardTitle>
-                  <CardDescription>{currentTableConfig?.description}</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm mt-1">
+                    {currentTableConfig?.description}
+                  </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 sm:gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => refetch()}
                     disabled={isLoading}
+                    className="px-2 sm:px-3"
                   >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline ml-1">Refresh</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={exportData}
+                    className="px-2 sm:px-3"
                   >
-                    <Download className="h-4 w-4 mr-1" />
-                    Export
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Export</span>
                   </Button>
                   <Button
                     variant="default"
                     size="sm"
                     onClick={() => setShowAIDialog(true)}
+                    className="px-2 sm:px-3"
                   >
-                    <Sparkles className="h-4 w-4 mr-1" />
-                    AI Edit
+                    <Sparkles className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">AI Edit</span>
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-6 sm:pt-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : currentTableConfig ? (
-                <EditableDataGrid
-                  columns={currentTableConfig.columns}
-                  data={tableData}
-                  onSave={(data) => saveMutation.mutate(data)}
-                  onRowUpdate={(index, row) => updateRowMutation.mutate({ index, row })}
-                  onRowDelete={(index) => {
-                    const row = tableData[index];
-                    if (row?.id) deleteRowMutation.mutate(row.id);
-                  }}
-                  onRowAdd={(row) => addRowMutation.mutate(row)}
-                  allowAdd={true}
-                  allowDelete={true}
-                  allowBulkEdit={true}
-                  gridHeight="calc(100vh - 400px)"
-                />
+                <div className="overflow-x-auto">
+                  <EditableDataGrid
+                    columns={currentTableConfig.columns}
+                    data={tableData}
+                    onSave={(data) => saveMutation.mutate(data)}
+                    onRowUpdate={(index, row) => updateRowMutation.mutate({ index, row })}
+                    onRowDelete={(index) => {
+                      const row = tableData[index];
+                      if (row?.id) deleteRowMutation.mutate(row.id);
+                    }}
+                    onRowAdd={(row) => addRowMutation.mutate(row)}
+                    allowAdd={true}
+                    allowDelete={true}
+                    allowBulkEdit={true}
+                    gridHeight="calc(100vh - 300px)"
+                  />
+                </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <Table className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>Select a table to view and edit data</p>
+                <div className="text-center py-8 sm:py-12 text-gray-500">
+                  <Table className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                  <p className="text-sm sm:text-base">Select a table to view and edit data</p>
                 </div>
               )}
             </CardContent>
@@ -517,32 +553,33 @@ export default function MasterDataManagement() {
 
       {/* AI Edit Dialog */}
       <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              AI-Powered Data Modification
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">AI-Powered Data Modification</span>
+              <span className="sm:hidden">AI Data Edit</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Describe how you want to modify the {currentTableConfig?.name} data. The AI will process your request and update the data accordingly.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="text-sm font-medium">Your Prompt</label>
+              <label className="text-xs sm:text-sm font-medium">Your Prompt</label>
               <Textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Example: Update all inactive resources to active status, or add 10% to all standard costs..."
-                className="mt-1 min-h-[120px]"
+                className="mt-1 min-h-[100px] sm:min-h-[120px] text-sm"
               />
             </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 sm:p-3 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                <div className="text-sm text-blue-600 dark:text-blue-400">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                   <p className="font-medium mb-1">AI Capabilities:</p>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
+                  <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
                     <li>Bulk update fields based on conditions</li>
                     <li>Generate sample data for testing</li>
                     <li>Clean and standardize data formats</li>
@@ -553,17 +590,19 @@ export default function MasterDataManagement() {
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setShowAIDialog(false)}
               disabled={isProcessing}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               onClick={processAIPrompt}
               disabled={isProcessing || !aiPrompt.trim()}
+              className="w-full sm:w-auto"
             >
               {isProcessing ? (
                 <>
