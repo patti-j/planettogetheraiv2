@@ -1047,7 +1047,7 @@ export default function OnboardingPage() {
                   <Link href="/data-import">
                     <Button variant="outline" className="w-full justify-start">
                       <Upload className="w-4 h-4 mr-2" />
-                      Go to Master Data Setup
+                      Go to Master Data Import
                     </Button>
                   </Link>
                 </div>

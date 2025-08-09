@@ -30,7 +30,7 @@ function DataImportSimple() {
 
   // Register this page in recent pages when component mounts
   useEffect(() => {
-    addRecentPage('/data-import', 'Master Data Setup', 'Database');
+    addRecentPage('/data-import', 'Master Data Import', 'Database');
   }, []);
 
   // Available data types for import
@@ -204,7 +204,7 @@ function DataImportSimple() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Master Data Setup</h1>
+        <h1 className="text-3xl font-bold">Master Data Import</h1>
         <p className="text-gray-600">Import your master data using CSV or Excel files</p>
       </div>
 

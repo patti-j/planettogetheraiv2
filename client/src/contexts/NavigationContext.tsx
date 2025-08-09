@@ -58,7 +58,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/onboarding': { label: 'Getting Started', icon: 'BookOpen' },
   '/training': { label: 'Training', icon: 'GraduationCap' },
   '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
-  '/data-import': { label: 'Master Data Setup', icon: 'Database' },
+  '/data-import': { label: 'Master Data Import', icon: 'Database' },
   '/data-validation': { label: 'Data Validation', icon: 'Shield' },
   '/data-schema': { label: 'Data Schema View', icon: 'Database' },
   '/data-relationships': { label: 'Data Relationships', icon: 'Database' },
