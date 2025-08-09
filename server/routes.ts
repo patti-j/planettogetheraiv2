@@ -420,6 +420,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data import routes - Enhanced with batching and error handling
+  // Simple data import endpoints for each data type
+  app.post('/api/data-import/resources', requireAuth, async (req, res) => {
+    const { data } = req.body;
+    try {
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ message: 'Data must be an array' });
+      }
+      
+      const results = [];
+      for (const item of data) {
+        const resource = await storage.createResource({
+          name: item.name || 'Unnamed Resource',
+          type: item.type || 'generic',
+          status: item.status || 'active',
+          description: item.description || ''
+        });
+        results.push(resource);
+      }
+      
+      res.json({ imported: results.length, data: results });
+    } catch (error: any) {
+      console.error('Resource import error:', error);
+      res.status(500).json({ message: error.message || 'Import failed' });
+    }
+  });
+
+  app.post('/api/data-import/plants', requireAuth, async (req, res) => {
+    const { data } = req.body;
+    try {
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ message: 'Data must be an array' });
+      }
+      
+      const results = [];
+      for (const item of data) {
+        const plant = await storage.createPlant({
+          name: item.name || 'Unnamed Plant',
+          location: item.location || '',
+          timezone: item.timezone || 'UTC',
+          description: item.description || ''
+        });
+        results.push(plant);
+      }
+      
+      res.json({ imported: results.length, data: results });
+    } catch (error: any) {
+      console.error('Plant import error:', error);
+      res.status(500).json({ message: error.message || 'Import failed' });
+    }
+  });
+
+  app.post('/api/data-import/items', requireAuth, async (req, res) => {
+    const { data } = req.body;
+    try {
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ message: 'Data must be an array' });
+      }
+      
+      const results = [];
+      for (const item of data) {
+        const newItem = await storage.createStockItem({
+          name: item.name || 'Unnamed Item',
+          description: item.description || '',
+          category: item.category || 'component',
+          unitOfMeasure: item.unitOfMeasure || 'Each',
+          standardCost: item.standardCost || '0.00',
+          sku: item.sku || item.name || 'SKU'
+        });
+        results.push(newItem);
+      }
+      
+      res.json({ imported: results.length, data: results });
+    } catch (error: any) {
+      console.error('Item import error:', error);
+      res.status(500).json({ message: error.message || 'Import failed' });
+    }
+  });
+
+  app.post('/api/data-import/users', requireAuth, async (req, res) => {
+    const { data } = req.body;
+    try {
+      if (!Array.isArray(data)) {
+        return res.status(400).json({ message: 'Data must be an array' });
+      }
+      
+      const results = [];
+      for (const item of data) {
+        const user = await storage.createUser({
+          username: item.username || item.name || 'user',
+          email: item.email || `${item.username || 'user'}@company.com`,
+          firstName: item.firstName || item.first_name || 'First',
+          lastName: item.lastName || item.last_name || 'Last',
+          jobTitle: item.jobTitle || item.job_title || '',
+          department: item.department || '',
+          passwordHash: await bcrypt.hash('defaultpassword', 12) // Users should change this
+        });
+        results.push(user);
+      }
+      
+      res.json({ imported: results.length, data: results });
+    } catch (error: any) {
+      console.error('User import error:', error);
+      res.status(500).json({ message: error.message || 'Import failed' });
+    }
+  });
+
   app.post('/api/data-import/bulk', requireAuth, async (req, res) => {
     try {
       const { type, data } = req.body;

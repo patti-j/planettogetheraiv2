@@ -83,7 +83,7 @@ import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
 import WidgetsPage from "@/pages/widgets";
 import DashboardsPage from "@/pages/dashboards";
-import DataImportPage from "@/pages/data-import";
+import DataImportPage from "@/pages/data-import-simple";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
