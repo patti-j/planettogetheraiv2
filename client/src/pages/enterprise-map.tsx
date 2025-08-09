@@ -85,8 +85,8 @@ import {
   Route
 } from 'lucide-react';
 
-// World map topology URL
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@3.2/world/110m.json";
+// World map topology URL - using reliable CDN source
+const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
 interface Plant {
   id: number;
@@ -529,7 +529,17 @@ export default function EnterpriseMapPage() {
                 </CardHeader>
                 
                 <CardContent>
-                  <div className="w-full h-[500px] border rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
+                  <div className="w-full h-[500px] border rounded-lg overflow-hidden relative" 
+                    style={{
+                      background: 'linear-gradient(to bottom right, #f0f9ff, #e0f2fe)',
+                      backgroundImage: `
+                        linear-gradient(to bottom right, #f0f9ff, #e0f2fe),
+                        linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+                      `,
+                      backgroundSize: '100% 100%, 50px 50px, 50px 50px'
+                    }}
+                  >
                     <ComposableMap
                       projection="geoMercator"
                       projectionConfig={{
@@ -539,18 +549,40 @@ export default function EnterpriseMapPage() {
                       className="w-full h-full"
                     >
                       <ZoomableGroup zoom={zoom} center={center} onMoveEnd={setCenter}>
+                        {/* Base Map */}
                         <Geographies geography={geoUrl}>
                           {({ geographies }) =>
-                            geographies.map((geo) => (
+                            geographies ? geographies.map((geo) => (
                               <Geography
                                 key={geo.rsmKey}
                                 geography={geo}
-                                fill={heatmapEnabled ? "#e0f2fe" : "#f8fafc"}
-                                stroke="#cbd5e1"
+                                fill={heatmapEnabled ? "#e0f2fe" : "#f0f9ff"}
+                                stroke="#94a3b8"
                                 strokeWidth={0.5}
-                                className="hover:fill-blue-100 dark:hover:fill-blue-900 transition-colors duration-200"
+                                style={{
+                                  default: {
+                                    fill: heatmapEnabled ? "#e0f2fe" : "#f0f9ff",
+                                    outline: "none"
+                                  },
+                                  hover: {
+                                    fill: "#dbeafe",
+                                    outline: "none"
+                                  },
+                                  pressed: {
+                                    fill: "#bfdbfe",
+                                    outline: "none"
+                                  }
+                                }}
                               />
-                            ))
+                            )) : (
+                              // Fallback simple world representation
+                              <g>
+                                <rect x="-180" y="-90" width="360" height="180" fill="#f0f9ff" stroke="#94a3b8" strokeWidth="0.5" />
+                                <text x="0" y="0" textAnchor="middle" fill="#64748b" fontSize="14">
+                                  Loading world map...
+                                </text>
+                              </g>
+                            )
                           }
                         </Geographies>
                         
@@ -586,30 +618,53 @@ export default function EnterpriseMapPage() {
                               onClick={() => setSelectedPlant(plant)}
                             >
                               <g className="cursor-pointer group">
+                                {/* Outer glow effect */}
                                 <circle
-                                  r={10}
+                                  r={15}
+                                  fill={markerColor}
+                                  fillOpacity={0.2}
+                                  className="animate-ping"
+                                />
+                                {/* Main marker */}
+                                <circle
+                                  r={12}
                                   fill={markerColor}
                                   stroke="#ffffff"
-                                  strokeWidth={2}
-                                  className="group-hover:r-12 transition-all duration-200"
-                                  fillOpacity={0.9}
+                                  strokeWidth={3}
+                                  className="transition-all duration-200"
+                                  fillOpacity={0.95}
+                                  filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
                                 />
                                 {heatmapEnabled && (
                                   <circle
-                                    r={30}
+                                    r={35}
                                     fill={markerColor}
-                                    fillOpacity={0.2}
+                                    fillOpacity={0.15}
                                     className="animate-pulse"
                                   />
                                 )}
                                 <Factory
-                                  x={-6}
-                                  y={-6}
-                                  width={12}
-                                  height={12}
+                                  x={-7}
+                                  y={-7}
+                                  width={14}
+                                  height={14}
                                   fill="white"
                                   className="pointer-events-none"
                                 />
+                                {/* Plant name label */}
+                                <text
+                                  y={25}
+                                  textAnchor="middle"
+                                  fill="#1e293b"
+                                  fontSize="11"
+                                  fontWeight="600"
+                                  className="pointer-events-none"
+                                  style={{
+                                    filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
+                                  }}
+                                >
+                                  {plant.name}
+                                </text>
                               </g>
                             </Marker>
                           );
