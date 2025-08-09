@@ -233,10 +233,7 @@ export default function MasterDataManagement() {
   // Mutation for saving data changes
   const saveMutation = useMutation({
     mutationFn: async (updatedData: any[]) => {
-      return await apiRequest(`/api/master-data/${selectedTable}`, {
-        method: 'PUT',
-        body: JSON.stringify({ data: updatedData })
-      });
+      return await apiRequest('PUT', `/api/master-data/${selectedTable}`, { data: updatedData });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
@@ -257,10 +254,7 @@ export default function MasterDataManagement() {
   // Mutation for individual row updates
   const updateRowMutation = useMutation({
     mutationFn: async ({ index, row }: { index: number; row: any }) => {
-      return await apiRequest(`/api/master-data/${selectedTable}/${row.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(row)
-      });
+      return await apiRequest('PATCH', `/api/master-data/${selectedTable}/${row.id}`, row);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
@@ -277,9 +271,7 @@ export default function MasterDataManagement() {
   // Mutation for deleting rows
   const deleteRowMutation = useMutation({
     mutationFn: async (rowId: number) => {
-      return await apiRequest(`/api/master-data/${selectedTable}/${rowId}`, {
-        method: 'DELETE'
-      });
+      return await apiRequest('DELETE', `/api/master-data/${selectedTable}/${rowId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
@@ -296,10 +288,7 @@ export default function MasterDataManagement() {
   // Mutation for adding new rows
   const addRowMutation = useMutation({
     mutationFn: async (newRow: any) => {
-      return await apiRequest(`/api/master-data/${selectedTable}`, {
-        method: 'POST',
-        body: JSON.stringify(newRow)
-      });
+      return await apiRequest('POST', `/api/master-data/${selectedTable}`, newRow);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
@@ -319,20 +308,18 @@ export default function MasterDataManagement() {
     
     setIsProcessing(true);
     try {
-      const response = await apiRequest('/api/master-data/ai-modify', {
-        method: 'POST',
-        body: JSON.stringify({
-          table: selectedTable,
-          prompt: aiPrompt,
-          currentData: tableData
-        })
+      const response = await apiRequest('POST', '/api/master-data/ai-modify', {
+        table: selectedTable,
+        prompt: aiPrompt,
+        currentData: tableData
       });
 
-      if (response.success) {
+      const result = await response.json();
+      if (result.success) {
         await refetch();
         toast({
           title: "AI Processing Complete",
-          description: response.message || "Data has been modified successfully"
+          description: result.message || "Data has been modified successfully"
         });
         setShowAIDialog(false);
         setAiPrompt('');
