@@ -1,26 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ComposableMap,
   Geographies,
   Geography,
   Marker,
-  ZoomableGroup
+  ZoomableGroup,
+  Line
 } from 'react-simple-maps';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Tooltip,
@@ -28,6 +31,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  LineChart,
+  Line as RechartsLine,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+  RadialBarChart,
+  RadialBar,
+} from 'recharts';
 import { 
   Factory, 
   MapPin, 
@@ -43,10 +65,27 @@ import {
   Globe,
   ZoomIn,
   ZoomOut,
-  Home
+  Home,
+  Truck,
+  DollarSign,
+  BarChart3,
+  Gauge,
+  Building,
+  Network,
+  ArrowUpRight,
+  ArrowDownRight,
+  Info,
+  Filter,
+  Download,
+  Settings,
+  Layers,
+  Eye,
+  EyeOff,
+  Maximize2,
+  Route
 } from 'lucide-react';
 
-// World map topology URL (you can also use a local file)
+// World map topology URL
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@3.2/world/110m.json";
 
 interface Plant {
@@ -68,118 +107,134 @@ interface Plant {
   createdAt: string;
 }
 
-interface MapMetric {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  getValue: (plant: Plant) => number | string;
-  getColor: (value: number | string) => string;
-  format: (value: number | string) => string;
-}
-
-// Define available metrics for plants
-const mapMetrics: MapMetric[] = [
-  {
-    id: 'efficiency',
-    name: 'Efficiency',
-    icon: TrendingUp,
-    getValue: (plant) => plant.operationalMetrics?.efficiency || 85,
-    getColor: (value) => {
-      const num = typeof value === 'number' ? value : 85;
-      if (num >= 90) return '#10b981'; // green
-      if (num >= 75) return '#f59e0b'; // yellow
-      return '#ef4444'; // red
-    },
-    format: (value) => `${value}%`
-  },
-  {
-    id: 'utilization',
-    name: 'Utilization',
-    icon: Activity,
-    getValue: (plant) => plant.operationalMetrics?.utilization || 78,
-    getColor: (value) => {
-      const num = typeof value === 'number' ? value : 78;
-      if (num >= 85) return '#10b981';
-      if (num >= 70) return '#f59e0b';
-      return '#ef4444';
-    },
-    format: (value) => `${value}%`
-  },
-  {
-    id: 'capacity',
-    name: 'Capacity',
-    icon: Package,
-    getValue: (plant) => plant.capacity?.total || 1000,
-    getColor: () => '#3b82f6', // blue
-    format: (value) => `${typeof value === 'number' ? value.toLocaleString() : value} units`
-  },
-  {
-    id: 'workforce',
-    name: 'Workforce',
-    icon: Users,
-    getValue: (plant) => plant.operationalMetrics?.workforce || 150,
-    getColor: () => '#8b5cf6', // purple
-    format: (value) => `${value} employees`
-  },
-  {
-    id: 'status',
-    name: 'Status',
-    icon: CheckCircle,
-    getValue: (plant) => plant.isActive ? 'Active' : 'Inactive',
-    getColor: (value) => value === 'Active' ? '#10b981' : '#ef4444',
-    format: (value) => String(value)
-  }
-];
-
-export default function EnterprisePage() {
-  const [selectedMetric, setSelectedMetric] = useState<string>('efficiency');
-  const [showMetrics, setShowMetrics] = useState(true);
-  const [mapProjection, setMapProjection] = useState<'world' | 'usa'>('world');
+export default function EnterpriseMapPage() {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
-  const [zoom, setZoom] = useState(1);
+  const [showMetrics, setShowMetrics] = useState(true);
+  const [selectedMetric, setSelectedMetric] = useState('efficiency');
+  const [zoom, setZoom] = useState(1.2);
   const [center, setCenter] = useState<[number, number]>([0, 20]);
+  const [viewMode, setViewMode] = useState<'world' | 'region'>('world');
+  const [showConnections, setShowConnections] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [timeRange, setTimeRange] = useState('24h');
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
 
+  // Fetch plants data
   const { data: plants = [], isLoading } = useQuery<Plant[]>({
     queryKey: ['/api/plants'],
   });
 
-  // Determine geographic scope based on plant locations
-  const geographicScope = useMemo(() => {
-    if (!plants.length) return 'world';
-    
-    const countries = [...new Set(plants.map(plant => plant.country).filter(Boolean))];
-    const hasInternational = countries.length > 1 || countries.some(c => c && c.toLowerCase() !== 'usa' && c.toLowerCase() !== 'united states');
-    
-    return hasInternational ? 'world' : 'usa';
-  }, [plants]);
+  // Mock supply chain connections
+  const supplyChainConnections = [
+    { from: [41.8781, -87.6298], to: [48.1351, 11.5820], type: 'materials' }, // Chicago to Munich
+    { from: [31.2304, 121.4737], to: [35.6762, 139.6503], type: 'products' }, // Shanghai to Tokyo
+    { from: [19.4326, -99.1332], to: [-23.5505, -46.6333], type: 'materials' }, // Mexico City to São Paulo
+  ];
 
-  // Get current metric definition
-  const currentMetric = mapMetrics.find(m => m.id === selectedMetric) || mapMetrics[0];
+  // Performance data for charts
+  const performanceData = [
+    { time: '00:00', efficiency: 88, utilization: 82, quality: 95 },
+    { time: '04:00', efficiency: 90, utilization: 85, quality: 96 },
+    { time: '08:00', efficiency: 92, utilization: 88, quality: 94 },
+    { time: '12:00', efficiency: 94, utilization: 90, quality: 97 },
+    { time: '16:00', efficiency: 91, utilization: 87, quality: 96 },
+    { time: '20:00', efficiency: 93, utilization: 86, quality: 95 },
+  ];
+
+  const regionalDistribution = [
+    { region: 'North America', plants: 2, value: 35, color: '#3B82F6' },
+    { region: 'Europe', plants: 1, value: 20, color: '#10B981' },
+    { region: 'Asia Pacific', plants: 2, value: 30, color: '#F59E0B' },
+    { region: 'Latin America', plants: 2, value: 15, color: '#8B5CF6' },
+  ];
+
+  const plantStatusData = plants.map(plant => ({
+    name: plant.name,
+    efficiency: plant.operationalMetrics?.efficiency || Math.floor(Math.random() * 20) + 80,
+    utilization: plant.operationalMetrics?.utilization || Math.floor(Math.random() * 20) + 75,
+    quality: plant.operationalMetrics?.quality || Math.floor(Math.random() * 10) + 90,
+  }));
 
   // Calculate aggregated metrics
   const aggregatedMetrics = useMemo(() => {
-    if (!plants.length) return {};
-    
     const activePlants = plants.filter(p => p.isActive);
-    const totalCapacity = activePlants.reduce((sum, plant) => sum + (plant.capacity?.total || 0), 0);
-    const avgEfficiency = activePlants.reduce((sum, plant) => sum + (plant.operationalMetrics?.efficiency || 0), 0) / activePlants.length;
-    const avgUtilization = activePlants.reduce((sum, plant) => sum + (plant.operationalMetrics?.utilization || 0), 0) / activePlants.length;
-    const totalWorkforce = activePlants.reduce((sum, plant) => sum + (plant.operationalMetrics?.workforce || 0), 0);
+    const totalEfficiency = activePlants.reduce((sum, p) => 
+      sum + (p.operationalMetrics?.efficiency || 85), 0
+    );
+    const totalUtilization = activePlants.reduce((sum, p) => 
+      sum + (p.operationalMetrics?.utilization || 78), 0
+    );
+    const totalWorkforce = plants.reduce((sum, p) => 
+      sum + (p.operationalMetrics?.workforce || 150), 0
+    );
+    const totalCapacity = plants.reduce((sum, p) => 
+      sum + (p.capacity?.total || 1000), 0
+    );
 
     return {
       totalPlants: plants.length,
       activePlants: activePlants.length,
-      totalCapacity,
-      avgEfficiency: Math.round(avgEfficiency),
-      avgUtilization: Math.round(avgUtilization),
+      avgEfficiency: activePlants.length ? Math.round(totalEfficiency / activePlants.length) : 0,
+      avgUtilization: activePlants.length ? Math.round(totalUtilization / activePlants.length) : 0,
       totalWorkforce,
+      totalCapacity,
       countries: [...new Set(plants.map(p => p.country).filter(Boolean))].length,
+      regions: [...new Set(plants.map(p => getRegion(p.country)))].length,
     };
   }, [plants]);
 
+  // Helper function to determine region from country
+  function getRegion(country?: string): string {
+    if (!country) return 'Unknown';
+    const regionMap: Record<string, string> = {
+      'USA': 'North America',
+      'Canada': 'North America',
+      'Germany': 'Europe',
+      'France': 'Europe',
+      'China': 'Asia Pacific',
+      'Japan': 'Asia Pacific',
+      'Brazil': 'Latin America',
+      'Mexico': 'Latin America',
+    };
+    return regionMap[country] || 'Other';
+  }
+
+  // Get marker color based on metric
+  const getMarkerColor = (plant: Plant) => {
+    if (!showMetrics) return '#3B82F6';
+    
+    const metricValue = selectedMetric === 'efficiency' 
+      ? plant.operationalMetrics?.efficiency || 85
+      : selectedMetric === 'utilization'
+      ? plant.operationalMetrics?.utilization || 78
+      : selectedMetric === 'status'
+      ? (plant.isActive ? 100 : 0)
+      : 85;
+
+    if (metricValue >= 90) return '#10B981'; // green
+    if (metricValue >= 75) return '#F59E0B'; // yellow
+    return '#EF4444'; // red
+  };
+
   const resetView = () => {
-    setZoom(1);
+    setZoom(1.2);
     setCenter([0, 20]);
+    setViewMode('world');
+  };
+
+  const focusRegion = (region: string) => {
+    const regionCenters: Record<string, [number, number]> = {
+      'north-america': [-100, 45],
+      'europe': [10, 50],
+      'asia-pacific': [110, 20],
+      'latin-america': [-70, -15],
+    };
+    
+    if (regionCenters[region]) {
+      setCenter(regionCenters[region]);
+      setZoom(2.5);
+      setViewMode('region');
+    }
   };
 
   if (isLoading) {
@@ -188,7 +243,7 @@ export default function EnterprisePage() {
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -199,376 +254,606 @@ export default function EnterprisePage() {
   }
 
   return (
-    <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-            Enterprise Map
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Global overview of plant operations and performance metrics
-          </p>
-        </div>
-        
-        {/* Controls */}
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="show-metrics">Show Metrics</Label>
-            <Switch
-              id="show-metrics"
-              checked={showMetrics}
-              onCheckedChange={setShowMetrics}
-            />
-          </div>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950">
+        <div className="container mx-auto p-4 lg:p-6 space-y-6">
           
-          <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {mapMetrics.map((metric) => (
-                <SelectItem key={metric.id} value={metric.id}>
-                  <div className="flex items-center space-x-2">
-                    <metric.icon className="w-4 h-4" />
-                    <span>{metric.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Factory className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Plants</p>
-                <p className="text-xl font-bold">{aggregatedMetrics.totalPlants || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
-                <p className="text-xl font-bold">{aggregatedMetrics.activePlants || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Globe className="w-5 h-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Countries</p>
-                <p className="text-xl font-bold">{aggregatedMetrics.countries || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Efficiency</p>
-                <p className="text-xl font-bold">{aggregatedMetrics.avgEfficiency || 0}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Activity className="w-5 h-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Utilization</p>
-                <p className="text-xl font-bold">{aggregatedMetrics.avgUtilization || 0}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Workforce</p>
-                <p className="text-xl font-bold">{(aggregatedMetrics.totalWorkforce || 0).toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Map */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <CardTitle className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5" />
-              <span>Plant Locations</span>
-              {showMetrics && (
-                <Badge variant="outline" className="ml-2">
-                  {currentMetric.name}
-                </Badge>
-              )}
-            </CardTitle>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.min(zoom * 1.5, 8))}
-                disabled={zoom >= 8}
-              >
-                <ZoomIn className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZoom(Math.max(zoom / 1.5, 0.5))}
-                disabled={zoom <= 0.5}
-              >
-                <ZoomOut className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetView}
-              >
-                <Home className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="w-full h-96 lg:h-[500px] border rounded-lg overflow-hidden">
-            <TooltipProvider>
-              <ComposableMap
-                projection="geoMercator"
-                projectionConfig={{
-                  scale: geographicScope === 'usa' ? 1000 : 147,
-                  center: geographicScope === 'usa' ? [-100, 40] : center,
-                }}
-                className="w-full h-full"
-              >
-                <ZoomableGroup zoom={zoom} center={center} onMoveEnd={setCenter}>
-                  <Geographies geography={geoUrl}>
-                    {({ geographies }) =>
-                      geographies.map((geo) => (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill="#f3f4f6"
-                          stroke="#e5e7eb"
-                          strokeWidth={0.5}
-                          className="hover:fill-gray-200 transition-colors duration-200"
-                        />
-                      ))
-                    }
-                  </Geographies>
-                  
-                  {/* Plant Markers */}
-                  {plants.map((plant) => {
-                    if (!plant.latitude || !plant.longitude) return null;
-                    
-                    const lat = parseFloat(plant.latitude);
-                    const lng = parseFloat(plant.longitude);
-                    
-                    if (isNaN(lat) || isNaN(lng)) return null;
-                    
-                    const metricValue = currentMetric.getValue(plant);
-                    const markerColor = showMetrics ? currentMetric.getColor(metricValue) : '#3b82f6';
-                    
-                    return (
-                      <Tooltip key={plant.id}>
-                        <TooltipTrigger asChild>
-                          <Marker coordinates={[lng, lat]} onClick={() => setSelectedPlant(plant)}>
-                            <circle
-                              r={8}
-                              fill={markerColor}
-                              stroke="#ffffff"
-                              strokeWidth={2}
-                              className="hover:r-10 transition-all duration-200 cursor-pointer"
-                            />
-                            <Factory
-                              x={-6}
-                              y={-6}
-                              width={12}
-                              height={12}
-                              fill="white"
-                              className="pointer-events-none"
-                            />
-                          </Marker>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1">
-                            <p className="font-semibold">{plant.name}</p>
-                            <p className="text-sm text-gray-600">
-                              {plant.city && plant.country ? `${plant.city}, ${plant.country}` : plant.location}
-                            </p>
-                            {showMetrics && (
-                              <p className="text-sm">
-                                <span className="font-medium">{currentMetric.name}:</span> {currentMetric.format(metricValue)}
-                              </p>
-                            )}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </ZoomableGroup>
-              </ComposableMap>
-            </TooltipProvider>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Plant Detail Dialog */}
-      <Dialog open={!!selectedPlant} onOpenChange={() => setSelectedPlant(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Factory className="w-5 h-5" />
-              <span>{selectedPlant?.name}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Detailed plant information and operational metrics
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedPlant && (
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
+          {/* Enhanced Header */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg">
+                  <Globe className="w-8 h-8 text-white" />
+                </div>
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Location</h4>
-                  <p className="text-sm">
-                    {selectedPlant.city && selectedPlant.country 
-                      ? `${selectedPlant.city}, ${selectedPlant.state || ''} ${selectedPlant.country}`.trim()
-                      : selectedPlant.location || 'Not specified'
-                    }
+                  <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                    Global Enterprise Map
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">
+                    Real-time visualization of worldwide operations and supply chain network
                   </p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Type</h4>
-                  <Badge variant="outline">
-                    {selectedPlant.plantType || 'Manufacturing'}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Status</h4>
-                  <Badge variant={selectedPlant.isActive ? "default" : "secondary"}>
-                    {selectedPlant.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Timezone</h4>
-                  <p className="text-sm">{selectedPlant.timezone}</p>
-                </div>
               </div>
+              
+              <div className="flex flex-wrap items-center gap-3">
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1h">Last Hour</SelectItem>
+                    <SelectItem value="24h">Last 24 Hours</SelectItem>
+                    <SelectItem value="7d">Last 7 Days</SelectItem>
+                    <SelectItem value="30d">Last 30 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button variant="outline" size="icon">
+                  <Download className="w-4 h-4" />
+                </Button>
+                
+                <Button variant="outline" size="icon">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
-              {/* Metrics */}
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300 mb-3">Operational Metrics</h4>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mapMetrics.map((metric) => {
-                    const value = metric.getValue(selectedPlant);
-                    const color = metric.getColor(value);
+          {/* Enhanced KPI Dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Total Plants</p>
+                    <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{aggregatedMetrics.totalPlants}</p>
+                  </div>
+                  <Factory className="w-5 h-5 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400">Active</p>
+                    <p className="text-2xl font-bold text-green-800 dark:text-green-300">{aggregatedMetrics.activePlants}</p>
+                  </div>
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-400">Countries</p>
+                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{aggregatedMetrics.countries}</p>
+                  </div>
+                  <Globe className="w-5 h-5 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Efficiency</p>
+                    <p className="text-2xl font-bold text-amber-800 dark:text-amber-300">{aggregatedMetrics.avgEfficiency}%</p>
+                  </div>
+                  <TrendingUp className="w-5 h-5 text-amber-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200 dark:border-cyan-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400">Utilization</p>
+                    <p className="text-2xl font-bold text-cyan-800 dark:text-cyan-300">{aggregatedMetrics.avgUtilization}%</p>
+                  </div>
+                  <Activity className="w-5 h-5 text-cyan-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400">Workforce</p>
+                    <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-300">{(aggregatedMetrics.totalWorkforce / 1000).toFixed(1)}K</p>
+                  </div>
+                  <Users className="w-5 h-5 text-indigo-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-rose-700 dark:text-rose-400">Capacity</p>
+                    <p className="text-2xl font-bold text-rose-800 dark:text-rose-300">{(aggregatedMetrics.totalCapacity / 1000).toFixed(0)}K</p>
+                  </div>
+                  <Package className="w-5 h-5 text-rose-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 border-gray-200 dark:border-gray-800">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-400">Regions</p>
+                    <p className="text-2xl font-bold text-gray-800 dark:text-gray-300">{aggregatedMetrics.regions}</p>
+                  </div>
+                  <Network className="w-5 h-5 text-gray-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Map Section - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="w-5 h-5" />
+                        Global Operations Network
+                      </CardTitle>
+                      {showMetrics && (
+                        <Badge variant="outline" className="ml-2">
+                          Showing: {selectedMetric}
+                        </Badge>
+                      )}
+                    </div>
                     
-                    return (
-                      <div key={metric.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <metric.icon className="w-5 h-5" style={{ color }} />
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{metric.name}</p>
-                          <p className="font-semibold" style={{ color }}>
-                            {metric.format(value)}
-                          </p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={showConnections ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setShowConnections(!showConnections)}
+                            >
+                              <Route className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Toggle supply chain routes</TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={heatmapEnabled ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setHeatmapEnabled(!heatmapEnabled)}
+                            >
+                              <Layers className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Toggle heatmap overlay</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setZoom(Math.min(zoom * 1.5, 8))}
+                          disabled={zoom >= 8}
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setZoom(Math.max(zoom / 1.5, 0.5))}
+                          disabled={zoom <= 0.5}
+                        >
+                          <ZoomOut className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={resetView}
+                        >
+                          <Home className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3 mt-4">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="show-metrics" className="text-sm">Show Metrics</Label>
+                      <Switch
+                        id="show-metrics"
+                        checked={showMetrics}
+                        onCheckedChange={setShowMetrics}
+                      />
+                    </div>
+                    
+                    <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+                      <SelectTrigger className="w-36">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="efficiency">Efficiency</SelectItem>
+                        <SelectItem value="utilization">Utilization</SelectItem>
+                        <SelectItem value="status">Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('north-america')}
+                      >
+                        NA
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('europe')}
+                      >
+                        EU
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('asia-pacific')}
+                      >
+                        APAC
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('latin-america')}
+                      >
+                        LATAM
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="w-full h-[500px] border rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
+                    <ComposableMap
+                      projection="geoMercator"
+                      projectionConfig={{
+                        scale: 147,
+                        center: center,
+                      }}
+                      className="w-full h-full"
+                    >
+                      <ZoomableGroup zoom={zoom} center={center} onMoveEnd={setCenter}>
+                        <Geographies geography={geoUrl}>
+                          {({ geographies }) =>
+                            geographies.map((geo) => (
+                              <Geography
+                                key={geo.rsmKey}
+                                geography={geo}
+                                fill={heatmapEnabled ? "#e0f2fe" : "#f8fafc"}
+                                stroke="#cbd5e1"
+                                strokeWidth={0.5}
+                                className="hover:fill-blue-100 dark:hover:fill-blue-900 transition-colors duration-200"
+                              />
+                            ))
+                          }
+                        </Geographies>
+                        
+                        {/* Supply Chain Connections */}
+                        {showConnections && supplyChainConnections.map((connection, index) => (
+                          <Line
+                            key={index}
+                            from={connection.from}
+                            to={connection.to}
+                            stroke="#3B82F6"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeDasharray="5,5"
+                            className="animate-pulse"
+                          />
+                        ))}
+                        
+                        {/* Plant Markers */}
+                        {plants.map((plant) => {
+                          if (!plant.latitude || !plant.longitude) return null;
+                          
+                          const lat = parseFloat(plant.latitude);
+                          const lng = parseFloat(plant.longitude);
+                          
+                          if (isNaN(lat) || isNaN(lng)) return null;
+                          
+                          const markerColor = getMarkerColor(plant);
+                          
+                          return (
+                            <Marker 
+                              key={plant.id} 
+                              coordinates={[lng, lat]}
+                              onClick={() => setSelectedPlant(plant)}
+                            >
+                              <g className="cursor-pointer group">
+                                <circle
+                                  r={10}
+                                  fill={markerColor}
+                                  stroke="#ffffff"
+                                  strokeWidth={2}
+                                  className="group-hover:r-12 transition-all duration-200"
+                                  fillOpacity={0.9}
+                                />
+                                {heatmapEnabled && (
+                                  <circle
+                                    r={30}
+                                    fill={markerColor}
+                                    fillOpacity={0.2}
+                                    className="animate-pulse"
+                                  />
+                                )}
+                                <Factory
+                                  x={-6}
+                                  y={-6}
+                                  width={12}
+                                  height={12}
+                                  fill="white"
+                                  className="pointer-events-none"
+                                />
+                              </g>
+                            </Marker>
+                          );
+                        })}
+                      </ZoomableGroup>
+                    </ComposableMap>
+                  </div>
+                  
+                  {/* Map Legend */}
+                  <div className="flex items-center justify-center gap-6 mt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Optimal (≥90%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Good (75-89%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Needs Attention (&lt;75%)</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Analytics Panel */}
+            <div className="space-y-6">
+              {/* Regional Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Regional Distribution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={regionalDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {regionalDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2 mt-4">
+                    {regionalDistribution.map((region) => (
+                      <div key={region.region} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: region.color }}></div>
+                          <span className="text-sm">{region.region}</span>
+                        </div>
+                        <span className="text-sm font-medium">{region.plants} plants</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Performance Trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <RechartsLine type="monotone" dataKey="efficiency" stroke="#3B82F6" strokeWidth={2} />
+                      <RechartsLine type="monotone" dataKey="utilization" stroke="#10B981" strokeWidth={2} />
+                      <RechartsLine type="monotone" dataKey="quality" stroke="#F59E0B" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Plant List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Plant Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {plants.map((plant) => (
+                        <div
+                          key={plant.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                          onClick={() => setSelectedPlant(plant)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              plant.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                            }`}></div>
+                            <div>
+                              <p className="font-medium text-sm">{plant.name}</p>
+                              <p className="text-xs text-gray-500">{plant.city}, {plant.country}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {plant.operationalMetrics?.efficiency || 85}%
+                            </p>
+                            <p className="text-xs text-gray-500">efficiency</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Plant Details Dialog */}
+          <Dialog open={!!selectedPlant} onOpenChange={() => setSelectedPlant(null)}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Factory className="w-5 h-5" />
+                  {selectedPlant?.name}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedPlant?.city}, {selectedPlant?.country}
+                </DialogDescription>
+              </DialogHeader>
+              
+              {selectedPlant && (
+                <div className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Status</p>
+                      <Badge variant={selectedPlant.isActive ? "default" : "secondary"}>
+                        {selectedPlant.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Type</p>
+                      <p className="font-medium">{selectedPlant.plantType || 'Manufacturing'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Timezone</p>
+                      <p className="font-medium">{selectedPlant.timezone}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Capacity</p>
+                      <p className="font-medium">{selectedPlant.capacity?.total || 1000} units</p>
+                    </div>
+                  </div>
+                  
+                  <Tabs defaultValue="metrics" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="metrics">Metrics</TabsTrigger>
+                      <TabsTrigger value="performance">Performance</TabsTrigger>
+                      <TabsTrigger value="details">Details</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="metrics" className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm">Efficiency</span>
+                            <span className="text-sm font-medium">
+                              {selectedPlant.operationalMetrics?.efficiency || 85}%
+                            </span>
+                          </div>
+                          <Progress value={selectedPlant.operationalMetrics?.efficiency || 85} />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm">Utilization</span>
+                            <span className="text-sm font-medium">
+                              {selectedPlant.operationalMetrics?.utilization || 78}%
+                            </span>
+                          </div>
+                          <Progress value={selectedPlant.operationalMetrics?.utilization || 78} />
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Additional Details */}
-              {selectedPlant.address && (
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-300">Full Address</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedPlant.address}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Legend */}
-      {showMetrics && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Legend - {currentMetric.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              {currentMetric.id === 'efficiency' || currentMetric.id === 'utilization' ? (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                    <span className="text-sm">
-                      {currentMetric.id === 'efficiency' ? '≥90%' : '≥85%'} - Excellent
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-                    <span className="text-sm">
-                      {currentMetric.id === 'efficiency' ? '75-89%' : '70-84%'} - Good
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                    <span className="text-sm">
-                      {currentMetric.id === 'efficiency' ? '<75%' : '<70%'} - Needs Attention
-                    </span>
-                  </div>
-                </>
-              ) : currentMetric.id === 'status' ? (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                    <span className="text-sm">Active</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                    <span className="text-sm">Inactive</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-                  <span className="text-sm">Plant Location</span>
+                    </TabsContent>
+                    
+                    <TabsContent value="performance" className="mt-4">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={[
+                          { metric: 'Efficiency', value: selectedPlant.operationalMetrics?.efficiency || 85 },
+                          { metric: 'Utilization', value: selectedPlant.operationalMetrics?.utilization || 78 },
+                          { metric: 'Quality', value: 95 },
+                          { metric: 'OEE', value: 82 },
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="metric" />
+                          <YAxis />
+                          <RechartsTooltip />
+                          <Bar dataKey="value" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </TabsContent>
+                    
+                    <TabsContent value="details" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500">Address</span>
+                          <span className="text-sm">{selectedPlant.address || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500">Workforce</span>
+                          <span className="text-sm">
+                            {selectedPlant.operationalMetrics?.workforce || 150} employees
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500">Created</span>
+                          <span className="text-sm">
+                            {new Date(selectedPlant.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 }
