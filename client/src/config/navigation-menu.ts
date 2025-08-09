@@ -44,7 +44,8 @@ export const navigationGroups = [
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Layout, label: "Dashboards", href: "/dashboards", feature: "systems-management", action: "view", color: "bg-green-500" },
       { icon: Puzzle, label: "Widgets", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
-      { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", feature: "systems-management", action: "view", color: "bg-indigo-500" }
+      { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", feature: "systems-management", action: "view", color: "bg-indigo-500" },
+      { icon: Layers, label: "Canvas", href: "/canvas", feature: "", action: "", color: "bg-purple-600" }
     ]
   },
   {
@@ -92,7 +93,6 @@ export const navigationGroups = [
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
       { icon: FileSearch, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" },
       { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", feature: "constraints-management", action: "view", color: "bg-orange-600" },
-      { icon: Layers, label: "Canvas", href: "/canvas", feature: "", action: "", color: "bg-purple-600" },
       { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "tenant-admin", action: "view", color: "bg-purple-600" }
     ]
   },
