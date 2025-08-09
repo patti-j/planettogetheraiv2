@@ -11,6 +11,16 @@ import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   LineChart,
   Line,
@@ -49,25 +59,101 @@ import {
   Sparkles,
   TrendingDown,
   Shield,
-  DollarSign
+  DollarSign,
+  Power,
+  Factory,
+  MapPin,
+  ToggleLeft,
+  ToggleRight,
+  Sliders
 } from "lucide-react";
+
+interface PlantOptimizationSettings {
+  [plantId: number]: {
+    enabled: boolean;
+    profile: string;
+    priority: number;
+    constraints: {
+      maxUtilization: number;
+      minQuality: number;
+      maxCost: number;
+    };
+  };
+}
 
 export default function AutonomousOptimizationPage() {
   const [selectedProfile, setSelectedProfile] = useState("standard");
   const [globalOptimizationEnabled, setGlobalOptimizationEnabled] = useState(false);
   const [timeRange, setTimeRange] = useState("24h");
+  const [showPlantSettings, setShowPlantSettings] = useState(false);
+  const [plantSettings, setPlantSettings] = useState<PlantOptimizationSettings>({});
   
   // Fetch plants data
   const { data: plants = [] } = useQuery({
     queryKey: ["/api/plants"],
   });
 
+  // Initialize plant settings when plants data is loaded
+  useEffect(() => {
+    if (plants.length > 0 && Object.keys(plantSettings).length === 0) {
+      const initialSettings: PlantOptimizationSettings = {};
+      plants.forEach((plant: any) => {
+        initialSettings[plant.id] = {
+          enabled: plant.isActive || false,
+          profile: "standard",
+          priority: 1,
+          constraints: {
+            maxUtilization: 90,
+            minQuality: 95,
+            maxCost: 105
+          }
+        };
+      });
+      setPlantSettings(initialSettings);
+    }
+  }, [plants]);
+
+  // Toggle plant optimization
+  const togglePlantOptimization = (plantId: number) => {
+    setPlantSettings(prev => ({
+      ...prev,
+      [plantId]: {
+        ...prev[plantId],
+        enabled: !prev[plantId]?.enabled
+      }
+    }));
+  };
+
+  // Update plant profile
+  const updatePlantProfile = (plantId: number, profile: string) => {
+    setPlantSettings(prev => ({
+      ...prev,
+      [plantId]: {
+        ...prev[plantId],
+        profile
+      }
+    }));
+  };
+
+  // Update plant priority
+  const updatePlantPriority = (plantId: number, priority: number) => {
+    setPlantSettings(prev => ({
+      ...prev,
+      [plantId]: {
+        ...prev[plantId],
+        priority
+      }
+    }));
+  };
+
   // Mock metrics data
   const currentMetrics = {
     totalOptimizations: 1847,
     successRate: 94.2,
     averageImprovement: 12.8,
-    costSavings: 485000
+    costSavings: 485000,
+    activePlants: Object.values(plantSettings).filter(s => s?.enabled).length,
+    totalPlants: plants.length
   };
 
   // Performance data for charts
@@ -149,6 +235,19 @@ export default function AutonomousOptimizationPage() {
                     <SelectItem value="30d">Last 30 Days</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPlantSettings(true)}
+                  className="relative"
+                >
+                  <Sliders className="w-4 h-4 mr-2" />
+                  Plant Settings
+                  {currentMetrics.activePlants > 0 && (
+                    <Badge variant="default" className="ml-2 bg-green-500">
+                      {currentMetrics.activePlants}/{currentMetrics.totalPlants}
+                    </Badge>
+                  )}
+                </Button>
                 <Button
                   variant={globalOptimizationEnabled ? "default" : "outline"}
                   className={globalOptimizationEnabled ? "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700" : ""}
@@ -414,6 +513,55 @@ export default function AutonomousOptimizationPage() {
 
             {/* Side Panel */}
             <div className="space-y-6">
+              {/* Plant Optimization Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Factory className="w-5 h-5" />
+                    Plant Status
+                  </CardTitle>
+                  <CardDescription>
+                    {currentMetrics.activePlants} of {currentMetrics.totalPlants} plants optimized
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-2">
+                      {plants.map((plant: any) => {
+                        const settings = plantSettings[plant.id];
+                        return (
+                          <div 
+                            key={plant.id} 
+                            className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                            onClick={() => setShowPlantSettings(true)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${
+                                settings?.enabled ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
+                              }`} />
+                              <div>
+                                <p className="font-medium text-sm">{plant.name}</p>
+                                <p className="text-xs text-gray-500">{plant.city}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {settings?.enabled && (
+                                <Badge variant="outline" className="text-xs">
+                                  {settings.profile}
+                                </Badge>
+                              )}
+                              <Power className={`w-4 h-4 ${
+                                settings?.enabled ? 'text-green-600' : 'text-gray-400'
+                              }`} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
               {/* AI Insights */}
               <Card>
                 <CardHeader>
@@ -484,6 +632,238 @@ export default function AutonomousOptimizationPage() {
               </Card>
             </div>
           </div>
+
+          {/* Plant Settings Dialog */}
+          <Dialog open={showPlantSettings} onOpenChange={setShowPlantSettings}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Factory className="w-5 h-5" />
+                  Plant Optimization Settings
+                </DialogTitle>
+                <DialogDescription>
+                  Configure autonomous optimization for individual plants
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Label>Quick Actions:</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newSettings = { ...plantSettings };
+                        Object.keys(newSettings).forEach(id => {
+                          newSettings[parseInt(id)].enabled = true;
+                        });
+                        setPlantSettings(newSettings);
+                      }}
+                    >
+                      Enable All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newSettings = { ...plantSettings };
+                        Object.keys(newSettings).forEach(id => {
+                          newSettings[parseInt(id)].enabled = false;
+                        });
+                        setPlantSettings(newSettings);
+                      }}
+                    >
+                      Disable All
+                    </Button>
+                  </div>
+                  <Badge variant="default" className="bg-green-500">
+                    {Object.values(plantSettings).filter(s => s?.enabled).length} of {plants.length} Active
+                  </Badge>
+                </div>
+
+                <ScrollArea className="h-[50vh] pr-4">
+                  <div className="space-y-4">
+                    {plants.map((plant: any) => {
+                      const settings = plantSettings[plant.id];
+                      if (!settings) return null;
+                      
+                      return (
+                        <Card key={plant.id} className={settings.enabled ? "border-green-500" : ""}>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Switch
+                                  checked={settings.enabled}
+                                  onCheckedChange={() => togglePlantOptimization(plant.id)}
+                                />
+                                <div>
+                                  <CardTitle className="text-base flex items-center gap-2">
+                                    <MapPin className="w-4 h-4" />
+                                    {plant.name}
+                                  </CardTitle>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {plant.city}, {plant.country}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={settings.enabled ? "default" : "secondary"}>
+                                {settings.enabled ? "Enabled" : "Disabled"}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          
+                          {settings.enabled && (
+                            <CardContent className="pt-0">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                  <Label className="text-sm">Optimization Profile</Label>
+                                  <Select 
+                                    value={settings.profile} 
+                                    onValueChange={(value) => updatePlantProfile(plant.id, value)}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="standard">Standard</SelectItem>
+                                      <SelectItem value="aggressive">Aggressive</SelectItem>
+                                      <SelectItem value="quality">Quality-First</SelectItem>
+                                      <SelectItem value="cost">Cost-Optimized</SelectItem>
+                                      <SelectItem value="balanced">Balanced</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label className="text-sm">Priority Level</Label>
+                                  <Select 
+                                    value={settings.priority.toString()} 
+                                    onValueChange={(value) => updatePlantPriority(plant.id, parseInt(value))}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1">High Priority</SelectItem>
+                                      <SelectItem value="2">Medium Priority</SelectItem>
+                                      <SelectItem value="3">Low Priority</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <Label className="text-sm">Current Status</Label>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${plant.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                                    <span className="text-sm">
+                                      {plant.operationalMetrics?.efficiency || 85}% Efficiency
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="mt-4 space-y-3">
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-xs">Max Utilization</Label>
+                                    <span className="text-xs text-gray-500">{settings.constraints.maxUtilization}%</span>
+                                  </div>
+                                  <Slider
+                                    value={[settings.constraints.maxUtilization]}
+                                    onValueChange={(value) => {
+                                      setPlantSettings(prev => ({
+                                        ...prev,
+                                        [plant.id]: {
+                                          ...prev[plant.id],
+                                          constraints: {
+                                            ...prev[plant.id].constraints,
+                                            maxUtilization: value[0]
+                                          }
+                                        }
+                                      }));
+                                    }}
+                                    max={100}
+                                    step={5}
+                                    className="h-1"
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-xs">Min Quality</Label>
+                                    <span className="text-xs text-gray-500">{settings.constraints.minQuality}%</span>
+                                  </div>
+                                  <Slider
+                                    value={[settings.constraints.minQuality]}
+                                    onValueChange={(value) => {
+                                      setPlantSettings(prev => ({
+                                        ...prev,
+                                        [plant.id]: {
+                                          ...prev[plant.id],
+                                          constraints: {
+                                            ...prev[plant.id].constraints,
+                                            minQuality: value[0]
+                                          }
+                                        }
+                                      }));
+                                    }}
+                                    max={100}
+                                    step={1}
+                                    className="h-1"
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-xs">Max Cost Increase</Label>
+                                    <span className="text-xs text-gray-500">{settings.constraints.maxCost - 100}%</span>
+                                  </div>
+                                  <Slider
+                                    value={[settings.constraints.maxCost - 100]}
+                                    onValueChange={(value) => {
+                                      setPlantSettings(prev => ({
+                                        ...prev,
+                                        [plant.id]: {
+                                          ...prev[plant.id],
+                                          constraints: {
+                                            ...prev[plant.id].constraints,
+                                            maxCost: value[0] + 100
+                                          }
+                                        }
+                                      }));
+                                    }}
+                                    max={20}
+                                    step={1}
+                                    className="h-1"
+                                  />
+                                </div>
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+                
+                <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setShowPlantSettings(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-blue-500 to-purple-600"
+                    onClick={() => {
+                      // In a real app, this would save to the backend
+                      setShowPlantSettings(false);
+                    }}
+                  >
+                    Apply Settings
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </TooltipProvider>
