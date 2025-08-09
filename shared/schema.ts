@@ -9,8 +9,17 @@ export const plants = pgTable("plants", {
   name: text("name").notNull(),
   location: text("location"),
   address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  postalCode: text("postal_code"),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   timezone: text("timezone").notNull().default("UTC"),
   isActive: boolean("is_active").default(true),
+  plantType: text("plant_type").default("manufacturing"), // manufacturing, distribution, warehouse, office
+  capacity: jsonb("capacity").$type<Record<string, any>>().default({}),
+  operationalMetrics: jsonb("operational_metrics").$type<Record<string, any>>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

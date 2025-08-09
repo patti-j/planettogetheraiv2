@@ -5,7 +5,7 @@ import {
   Shield, GraduationCap, UserCheck, BookOpen, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
-  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch
+  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -81,6 +81,19 @@ export const navigationGroups = [
     ]
   },
   {
+    title: "Business Management", 
+    priority: "medium",
+    color: "blue",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    features: [
+      { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
+      { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
+      { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" }
+    ]
+  },
+  {
     title: "Management & Administration",
     priority: "low",
     color: "gray",
@@ -88,7 +101,6 @@ export const navigationGroups = [
     borderColor: "border-gray-200 dark:border-gray-600",
     features: [
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
-      { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
       { icon: FileSearch, label: "Logs", href: "/error-logs", feature: "systems-management", action: "view", color: "bg-red-500" },

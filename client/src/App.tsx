@@ -98,6 +98,7 @@ import ConstraintsPage from "@/pages/constraints";
 import ClearNavigation from "@/pages/clear-navigation";
 import KPIPage from "@/pages/kpi";
 import TenantAdminPage from "@/pages/tenant-admin";
+import EnterpriseMapPage from "@/pages/enterprise-map";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -438,6 +439,11 @@ function Router() {
           <Route path="/plants-management">
             <ProtectedRoute feature="systems-management" action="view">
               <PlantsManagementPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/enterprise-map">
+            <ProtectedRoute feature="systems-management" action="view">
+              <EnterpriseMapPage />
             </ProtectedRoute>
           </Route>
           <Route path="/extension-studio">
