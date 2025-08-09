@@ -45,8 +45,7 @@ const featureGroups = [
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" },
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" },
-      { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
-      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" }
+      { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" }
     ]
   },
   {
@@ -56,8 +55,14 @@ const featureGroups = [
     bgColor: "bg-purple-50 dark:bg-purple-950/20",
     borderColor: "border-purple-200 dark:border-purple-800",
     features: [
+      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
+      { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
+      { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
-      { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" }
+      { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
+      { icon: Layout, label: "Dashboards", href: "/dashboards", feature: "systems-management", action: "view", color: "bg-green-500" },
+      { icon: Puzzle, label: "Widgets", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
+      { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", feature: "systems-management", action: "view", color: "bg-indigo-500" }
     ]
   },
   {
@@ -96,8 +101,6 @@ const featureGroups = [
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
-      { icon: Puzzle, label: "Widgets", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
-      { icon: Layout, label: "Dashboards", href: "/dashboards", feature: "systems-management", action: "view", color: "bg-green-500" },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" },
       { icon: Layers, label: "Product Development", href: "/product-development", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
@@ -133,7 +136,6 @@ const featureGroups = [
     features: [
       { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "", action: "", color: "bg-emerald-500", requiresOnboarding: false },
       { icon: PlayCircle, label: "Take a Guided Tour", href: "#tour", feature: "", action: "", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true },
-      { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: Settings, label: "Tenant Administration", href: "/tenant-admin", feature: "tenant-admin", action: "view", color: "bg-purple-600" }
     ]
