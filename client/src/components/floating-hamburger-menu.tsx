@@ -37,13 +37,14 @@ export function FloatingHamburgerMenu({
       }}
       variant="outline"
       size="sm"
-      className={`fixed z-[9999] pointer-events-auto shadow-md border transition-all duration-200 ${
+      className={`fixed pointer-events-auto shadow-md border transition-all duration-200 ${
         isMobile ? 'right-2 top-3' : 'right-8 top-4'
       } ${
         isOpen 
           ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
           : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:border-blue-500'
       }`}
+      style={{ zIndex: 2147483646 }}
       aria-label={isOpen ? "Close menu" : "Open menu"}>
       {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
     </Button>
