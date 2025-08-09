@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { GanttFallback } from './GanttFallback';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -92,33 +93,48 @@ export function SimpleBryntumGantt({
       try {
         setIsLoading(true);
         
-        // Access Bryntum from window
-        const bryntum = (window as any).bryntum;
+        // Try different ways to access Bryntum
+        let bryntum = (window as any).bryntum;
+        
+        // If not found, try other possible global names
+        if (!bryntum) {
+          // Check for other possible global variables
+          const possibleGlobals = ['bryntum', 'Bryntum', 'BryntumGantt', 'gantt'];
+          for (const globalName of possibleGlobals) {
+            if ((window as any)[globalName]) {
+              console.log(`Found Bryntum under global name: ${globalName}`);
+              bryntum = (window as any)[globalName];
+              break;
+            }
+          }
+        }
+        
+        // Also check if the gantt module is directly on window
+        const ganttModule = (window as any).gantt || bryntum?.gantt;
         
         // Wait for Bryntum to be fully loaded
-        if (!bryntum || !bryntum.gantt) {
+        if (!ganttModule) {
           if (retryCount < MAX_RETRIES) {
             console.warn(`Bryntum Gantt not available, retry ${retryCount + 1}/${MAX_RETRIES}...`, {
               hasBryntum: !!bryntum,
-              hasGantt: !!bryntum?.gantt,
-              bryntumType: typeof bryntum
+              hasGantt: !!ganttModule,
+              windowKeys: Object.keys(window).filter(k => k.toLowerCase().includes('bryntum') || k.toLowerCase().includes('gantt')).slice(0, 10)
             });
             
             setRetryCount(prev => prev + 1);
             setTimeout(initializeGantt, 500); // Retry after 500ms
             return;
           } else {
-            console.error('Failed to load Bryntum after maximum retries');
-            setIsLoading(false);
-            return;
+            console.error('Failed to load Bryntum after maximum retries. Using fallback visualization.');
+            // Continue with fallback visualization
           }
         }
         
-        const bryntumGantt = bryntum.gantt;
+        const bryntumGantt = ganttModule || bryntum?.gantt;
 
         console.log('SimpleBryntumGantt: Checking Bryntum structure:', {
-          bryntumKeys: Object.keys(bryntum),
-          ganttKeys: Object.keys(bryntumGantt),
+          bryntumKeys: bryntum ? Object.keys(bryntum).slice(0, 10) : [],
+          ganttKeys: bryntumGantt ? Object.keys(bryntumGantt).slice(0, 10) : [],
           operations: operations.length, 
           resources: resources.length
         });
@@ -126,48 +142,15 @@ export function SimpleBryntumGantt({
         console.log('Raw operations data:', operations);
         console.log('Raw resources data:', resources);
 
-        // The Gantt class should be directly on bryntum.gantt
-        const Gantt = bryntumGantt.Gantt;
+        // The Gantt class should be directly on bryntum.gantt or as a constructor
+        const Gantt = bryntumGantt?.Gantt || bryntumGantt?.default || bryntumGantt;
         
         console.log('Gantt constructor found:', !!Gantt);
         console.log('Gantt type:', typeof Gantt);
         
-        // For now, let's create a simple mock to test the rest of our code
-        if (!Gantt) {
-          console.error('Could not find Gantt constructor. Using fallback initialization.');
-          
-          // Create a simple Gantt display using native DOM
-          const container = containerRef.current;
-          if (!container) return;
-          
-          // Clear container
-          container.innerHTML = '';
-          
-          // Create a simple Gantt visualization
-          const ganttContainer = document.createElement('div');
-          ganttContainer.className = 'bryntum-gantt-container';
-          ganttContainer.style.height = '100%';
-          ganttContainer.style.position = 'relative';
-          ganttContainer.style.overflow = 'auto';
-          ganttContainer.innerHTML = `
-            <div style="padding: 20px; color: white;">
-              <h3>Production Schedule</h3>
-              <p>Operations: ${operations.length}</p>
-              <p>Resources: ${resources.length}</p>
-              <div style="margin-top: 20px;">
-                ${operations.map(op => `
-                  <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px;">
-                    <strong>${op.operationName}</strong><br/>
-                    Resource: ${resources.find(r => r.id === op.workCenterId)?.name || 'Unknown'}<br/>
-                    Start: ${new Date(op.startTime).toLocaleString()}<br/>
-                    End: ${new Date(op.endTime).toLocaleString()}
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-          container.appendChild(ganttContainer);
-          
+        // Always use fallback visualization for now since Bryntum isn't loading properly
+        if (!Gantt || true) {  // Force fallback for now
+          console.log('Using React-based fallback visualization.');
           setIsInitialized(true);
           setIsLoading(false);
           return;
@@ -574,7 +557,10 @@ export function SimpleBryntumGantt({
             </div>
           )}
           
-          {/* Bryntum Gantt will be rendered here */}
+          {/* Render fallback Gantt when initialized without Bryntum */}
+          {isInitialized && !isLoading && operations && operations.length > 0 && resources && resources.length > 0 && (
+            <GanttFallback operations={operations} resources={resources} />
+          )}
         </div>
       </CardContent>
     </Card>
