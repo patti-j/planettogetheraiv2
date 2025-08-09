@@ -111,12 +111,21 @@ export default function Sidebar() {
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
     { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", active: location === "/inventory-optimization", feature: "inventory-optimization", action: "view" },
+    
+    // Data Management
+    { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
+    { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
+    { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
     { icon: Database, label: "System Integration", href: "/systems-integration", active: location === "/systems-integration", feature: "systems-integration", action: "view" },
+    
+    // Shop Floor Operations
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
     { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
     { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", active: location === "/forklift-driver", feature: "forklift-driver", action: "view" },
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
     { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", active: location === "/disruption-management", feature: "disruption-management", action: "view" },
+    
+    // Management & Administration
     { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
@@ -125,9 +134,6 @@ export default function Sidebar() {
     { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
     { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
-    { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
-    { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
-    { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
     { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", active: location === "/constraints", feature: "constraints-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: Shield, label: "User & Access Management", href: "/user-access-management", active: location === "/user-access-management" || location === "/role-management" || location === "/user-role-assignments-page", feature: "user-management", action: "view" },
@@ -230,12 +236,21 @@ export default function Sidebar() {
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
     { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", active: location === "/inventory-optimization", feature: "inventory-optimization", action: "view" },
+    
+    // Data Management
+    { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
+    { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
+    { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
     { icon: Database, label: "System Integration", href: "/systems-integration", active: location === "/systems-integration", feature: "systems-integration", action: "view" },
+    
+    // Shop Floor Operations
     { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", active: location === "/shop-floor", feature: "shop-floor", action: "view" },
     { icon: Settings, label: "Operator", href: "/operator-dashboard", active: location === "/operator-dashboard", feature: "operator-dashboard", action: "view" },
     { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", active: location === "/forklift-driver", feature: "forklift-driver", action: "view" },
     { icon: Wrench, label: "Maintenance", href: "/maintenance", active: location === "/maintenance", feature: "maintenance", action: "view" },
     { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", active: location === "/disruption-management", feature: "disruption-management", action: "view" },
+    
+    // Management & Administration
     { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
@@ -244,9 +259,6 @@ export default function Sidebar() {
     { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
     { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
-    { icon: Database, label: "Data Schema View", href: "/data-schema", active: location === "/data-schema", feature: "systems-management", action: "view" },
-    { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", active: location === "/table-field-viewer", feature: "systems-management", action: "view" },
-    { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
     { icon: Building, label: "Industry Templates", href: "/industry-templates", active: location === "/industry-templates", feature: "industry-templates", action: "view" },
