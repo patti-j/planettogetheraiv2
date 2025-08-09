@@ -4,7 +4,8 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { 
-  Menu, ChevronDown, ChevronRight, User, LogOut, X, Pin, PinOff, Search, History
+  Menu, ChevronDown, ChevronRight, User, LogOut, X, Pin, PinOff, Search, History,
+  FileText, Calendar, Home, BookOpen, PlayCircle
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
