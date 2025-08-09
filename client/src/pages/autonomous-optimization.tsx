@@ -65,14 +65,29 @@ import {
   MapPin,
   ToggleLeft,
   ToggleRight,
-  Sliders
+  Sliders,
+  Package,
+  Users,
+  Truck
 } from "lucide-react";
+
+interface OptimizationModules {
+  scheduling: boolean;
+  productionPlanning: boolean;
+  demandPlanning: boolean;
+  inventoryOptimization: boolean;
+  resourceAllocation: boolean;
+  qualityControl: boolean;
+  maintenancePlanning: boolean;
+  supplyChain: boolean;
+}
 
 interface PlantOptimizationSettings {
   [plantId: number]: {
     enabled: boolean;
     profile: string;
     priority: number;
+    modules: OptimizationModules;
     constraints: {
       maxUtilization: number;
       minQuality: number;
@@ -102,6 +117,16 @@ export default function AutonomousOptimizationPage() {
           enabled: plant.isActive || false,
           profile: "standard",
           priority: 1,
+          modules: {
+            scheduling: true,
+            productionPlanning: true,
+            demandPlanning: true,
+            inventoryOptimization: false,
+            resourceAllocation: true,
+            qualityControl: false,
+            maintenancePlanning: false,
+            supplyChain: false
+          },
           constraints: {
             maxUtilization: 90,
             minQuality: 95,
@@ -715,130 +740,328 @@ export default function AutonomousOptimizationPage() {
                           
                           {settings.enabled && (
                             <CardContent className="pt-0">
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                  <Label className="text-sm">Optimization Profile</Label>
-                                  <Select 
-                                    value={settings.profile} 
-                                    onValueChange={(value) => updatePlantProfile(plant.id, value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="standard">Standard</SelectItem>
-                                      <SelectItem value="aggressive">Aggressive</SelectItem>
-                                      <SelectItem value="quality">Quality-First</SelectItem>
-                                      <SelectItem value="cost">Cost-Optimized</SelectItem>
-                                      <SelectItem value="balanced">Balanced</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                              <Tabs defaultValue="general" className="w-full">
+                                <TabsList className="grid w-full grid-cols-3">
+                                  <TabsTrigger value="general">General</TabsTrigger>
+                                  <TabsTrigger value="modules">Modules</TabsTrigger>
+                                  <TabsTrigger value="constraints">Constraints</TabsTrigger>
+                                </TabsList>
                                 
-                                <div className="space-y-2">
-                                  <Label className="text-sm">Priority Level</Label>
-                                  <Select 
-                                    value={settings.priority.toString()} 
-                                    onValueChange={(value) => updatePlantPriority(plant.id, parseInt(value))}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="1">High Priority</SelectItem>
-                                      <SelectItem value="2">Medium Priority</SelectItem>
-                                      <SelectItem value="3">Low Priority</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
+                                <TabsContent value="general" className="space-y-4 mt-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">Optimization Profile</Label>
+                                      <Select 
+                                        value={settings.profile} 
+                                        onValueChange={(value) => updatePlantProfile(plant.id, value)}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="standard">Standard</SelectItem>
+                                          <SelectItem value="aggressive">Aggressive</SelectItem>
+                                          <SelectItem value="quality">Quality-First</SelectItem>
+                                          <SelectItem value="cost">Cost-Optimized</SelectItem>
+                                          <SelectItem value="balanced">Balanced</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">Priority Level</Label>
+                                      <Select 
+                                        value={settings.priority.toString()} 
+                                        onValueChange={(value) => updatePlantPriority(plant.id, parseInt(value))}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="1">High Priority</SelectItem>
+                                          <SelectItem value="2">Medium Priority</SelectItem>
+                                          <SelectItem value="3">Low Priority</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                      <Label className="text-sm">Current Status</Label>
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${plant.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                                        <span className="text-sm">
+                                          {plant.operationalMetrics?.efficiency || 85}% Efficiency
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TabsContent>
                                 
-                                <div className="space-y-2">
-                                  <Label className="text-sm">Current Status</Label>
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${plant.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                                    <span className="text-sm">
-                                      {plant.operationalMetrics?.efficiency || 85}% Efficiency
-                                    </span>
+                                <TabsContent value="modules" className="space-y-4 mt-4">
+                                  <div className="space-y-3">
+                                    <Label className="text-sm font-medium">Active Optimization Modules</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="w-4 h-4 text-blue-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Production Scheduling</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.scheduling || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  scheduling: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Factory className="w-4 h-4 text-green-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Production Planning</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.productionPlanning || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  productionPlanning: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <TrendingUp className="w-4 h-4 text-purple-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Demand Planning</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.demandPlanning || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  demandPlanning: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Package className="w-4 h-4 text-orange-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Inventory Optimization</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.inventoryOptimization || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  inventoryOptimization: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Users className="w-4 h-4 text-cyan-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Resource Allocation</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.resourceAllocation || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  resourceAllocation: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Quality Control</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.qualityControl || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  qualityControl: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Settings className="w-4 h-4 text-gray-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Maintenance Planning</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.maintenancePlanning || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  maintenancePlanning: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                          <Truck className="w-4 h-4 text-indigo-600" />
+                                          <Label className="text-sm font-normal cursor-pointer">Supply Chain</Label>
+                                        </div>
+                                        <Switch
+                                          checked={settings.modules?.supplyChain || false}
+                                          onCheckedChange={(checked) => {
+                                            setPlantSettings(prev => ({
+                                              ...prev,
+                                              [plant.id]: {
+                                                ...prev[plant.id],
+                                                modules: {
+                                                  ...prev[plant.id].modules,
+                                                  supplyChain: checked
+                                                }
+                                              }
+                                            }));
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="mt-2 text-xs text-gray-500">
+                                      {Object.values(settings.modules || {}).filter(Boolean).length} of 8 modules active
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                              
-                              <div className="mt-4 space-y-3">
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Max Utilization</Label>
-                                    <span className="text-xs text-gray-500">{settings.constraints.maxUtilization}%</span>
-                                  </div>
-                                  <Slider
-                                    value={[settings.constraints.maxUtilization]}
-                                    onValueChange={(value) => {
-                                      setPlantSettings(prev => ({
-                                        ...prev,
-                                        [plant.id]: {
-                                          ...prev[plant.id],
-                                          constraints: {
-                                            ...prev[plant.id].constraints,
-                                            maxUtilization: value[0]
-                                          }
-                                        }
-                                      }));
-                                    }}
-                                    max={100}
-                                    step={5}
-                                    className="h-1"
-                                  />
-                                </div>
+                                </TabsContent>
                                 
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Min Quality</Label>
-                                    <span className="text-xs text-gray-500">{settings.constraints.minQuality}%</span>
+                                <TabsContent value="constraints" className="space-y-4 mt-4">
+                                  <div className="space-y-3">
+                                    <div className="space-y-1">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-xs">Max Utilization</Label>
+                                        <span className="text-xs text-gray-500">{settings.constraints.maxUtilization}%</span>
+                                      </div>
+                                      <Slider
+                                        value={[settings.constraints.maxUtilization]}
+                                        onValueChange={(value) => {
+                                          setPlantSettings(prev => ({
+                                            ...prev,
+                                            [plant.id]: {
+                                              ...prev[plant.id],
+                                              constraints: {
+                                                ...prev[plant.id].constraints,
+                                                maxUtilization: value[0]
+                                              }
+                                            }
+                                          }));
+                                        }}
+                                        max={100}
+                                        step={5}
+                                        className="h-1"
+                                      />
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-xs">Min Quality</Label>
+                                        <span className="text-xs text-gray-500">{settings.constraints.minQuality}%</span>
+                                      </div>
+                                      <Slider
+                                        value={[settings.constraints.minQuality]}
+                                        onValueChange={(value) => {
+                                          setPlantSettings(prev => ({
+                                            ...prev,
+                                            [plant.id]: {
+                                              ...prev[plant.id],
+                                              constraints: {
+                                                ...prev[plant.id].constraints,
+                                                minQuality: value[0]
+                                              }
+                                            }
+                                          }));
+                                        }}
+                                        max={100}
+                                        step={1}
+                                        className="h-1"
+                                      />
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="text-xs">Max Cost Increase</Label>
+                                        <span className="text-xs text-gray-500">{settings.constraints.maxCost - 100}%</span>
+                                      </div>
+                                      <Slider
+                                        value={[settings.constraints.maxCost - 100]}
+                                        onValueChange={(value) => {
+                                          setPlantSettings(prev => ({
+                                            ...prev,
+                                            [plant.id]: {
+                                              ...prev[plant.id],
+                                              constraints: {
+                                                ...prev[plant.id].constraints,
+                                                maxCost: value[0] + 100
+                                              }
+                                            }
+                                          }));
+                                        }}
+                                        max={20}
+                                        step={1}
+                                        className="h-1"
+                                      />
+                                    </div>
                                   </div>
-                                  <Slider
-                                    value={[settings.constraints.minQuality]}
-                                    onValueChange={(value) => {
-                                      setPlantSettings(prev => ({
-                                        ...prev,
-                                        [plant.id]: {
-                                          ...prev[plant.id],
-                                          constraints: {
-                                            ...prev[plant.id].constraints,
-                                            minQuality: value[0]
-                                          }
-                                        }
-                                      }));
-                                    }}
-                                    max={100}
-                                    step={1}
-                                    className="h-1"
-                                  />
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between">
-                                    <Label className="text-xs">Max Cost Increase</Label>
-                                    <span className="text-xs text-gray-500">{settings.constraints.maxCost - 100}%</span>
-                                  </div>
-                                  <Slider
-                                    value={[settings.constraints.maxCost - 100]}
-                                    onValueChange={(value) => {
-                                      setPlantSettings(prev => ({
-                                        ...prev,
-                                        [plant.id]: {
-                                          ...prev[plant.id],
-                                          constraints: {
-                                            ...prev[plant.id].constraints,
-                                            maxCost: value[0] + 100
-                                          }
-                                        }
-                                      }));
-                                    }}
-                                    max={20}
-                                    step={1}
-                                    className="h-1"
-                                  />
-                                </div>
-                              </div>
+                                </TabsContent>
+                              </Tabs>
                             </CardContent>
                           )}
                         </Card>
