@@ -107,6 +107,7 @@ export default function Sidebar() {
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
+    
     // AI and Analytics
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
@@ -232,6 +233,7 @@ export default function Sidebar() {
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
+    
     // AI and Analytics
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
