@@ -85,6 +85,7 @@ import WidgetsPage from "@/pages/widgets";
 import DashboardsPage from "@/pages/dashboards";
 import DataImportPage from "@/pages/data-import-simple";
 import MasterDataPage from "@/pages/master-data";
+import MasterDataManagement from "@/pages/master-data-management";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
@@ -451,7 +452,7 @@ function Router() {
           </Route>
           <Route path="/master-data">
             <ProtectedRoute feature="systems-management" action="view">
-              <MasterDataPage />
+              <MasterDataManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/data-validation">
