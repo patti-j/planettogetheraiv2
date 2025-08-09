@@ -91,7 +91,11 @@ export const navigationGroups = [
       { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
       { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
-      { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" }
+      { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },
+      { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
+      { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
+      { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
+      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
     ]
   },
   {
@@ -134,19 +138,6 @@ export const navigationGroups = [
       { icon: Columns3, label: "Boards", href: "/boards", feature: "boards", action: "view", color: "bg-blue-700" },
       { icon: Factory, label: "Visual Factory", href: "/visual-factory", feature: "visual-factory", action: "view", color: "bg-indigo-500" },
       { icon: MessageSquare, label: "Feedback", href: "/feedback", feature: "feedback", action: "view", color: "bg-orange-600" }
-    ]
-  },
-  {
-    title: "Business Management",
-    priority: "medium",
-    color: "cyan",
-    bgColor: "bg-cyan-50 dark:bg-cyan-950/20",
-    borderColor: "border-cyan-200 dark:border-cyan-800",
-    features: [
-      { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
-      { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
-      { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
-      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
     ]
   }
 ];
