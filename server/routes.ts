@@ -10167,11 +10167,17 @@ Return a JSON response with this structure:
   // Database Schema API Route
   app.get('/api/database/schema', requireAuth, async (req, res) => {
     try {
-      const schemaData = await storage.getDatabaseSchema();
-      res.json(schemaData);
+      console.log('Fetching database schema...');
+      
+      // Use the proper getDatabaseSchema method from storage
+      const schema = await storage.getDatabaseSchema();
+      
+      console.log('Returning schema with', schema.length, 'tables');
+      res.status(200).json(schema);
+      
     } catch (error) {
       console.error('Error fetching database schema:', error);
-      res.status(500).json({ error: 'Failed to fetch database schema' });
+      res.status(500).json({ error: 'Failed to fetch database schema', details: error.message });
     }
   });
 
@@ -20662,126 +20668,7 @@ Response must be valid JSON:
     res.status(204).send();
   }));
 
-  // Database Schema endpoint - simplified to avoid complex queries
-  app.get("/api/database/schema", async (req, res) => {
-    try {
-      // First get table names with comments
-      const tablesQuery = `
-        SELECT 
-          t.table_name,
-          COALESCE(
-            obj_description(c.oid, 'pg_class'),
-            ''
-          ) as table_comment
-        FROM information_schema.tables t
-        LEFT JOIN pg_class c ON c.relname = t.table_name 
-          AND c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
-        WHERE t.table_schema = 'public' 
-          AND t.table_type = 'BASE TABLE'
-        ORDER BY t.table_name;
-      `;
-      
-      const tablesResult = await db.execute(tablesQuery);
-      console.log('Found tables:', tablesResult.rows.length);
-      
-      // For each table, get columns separately
-      const tables = [];
-      for (const tableRow of tablesResult.rows) {
-        const tableName = (tableRow as any).table_name;
-        
-        // Get columns for this table with comments
-        const columnsQuery = `
-          SELECT 
-            c.column_name,
-            c.data_type,
-            c.is_nullable,
-            c.column_default,
-            COALESCE(
-              col_description(pgc.oid, c.ordinal_position),
-              ''
-            ) as column_comment
-          FROM information_schema.columns c
-          LEFT JOIN pg_class pgc ON pgc.relname = c.table_name
-          WHERE c.table_schema = 'public' 
-            AND c.table_name = $1
-          ORDER BY c.ordinal_position;
-        `;
-        
-        const columnsResult = await db.execute(columnsQuery, [tableName]);
-        
-        // Get foreign key relationships for this table
-        const foreignKeysQuery = `
-          SELECT 
-            kcu.column_name,
-            ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-          FROM information_schema.table_constraints AS tc
-          JOIN information_schema.key_column_usage AS kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-          JOIN information_schema.constraint_column_usage AS ccu
-            ON ccu.constraint_name = tc.constraint_name
-            AND ccu.table_schema = tc.table_schema
-          WHERE tc.constraint_type = 'FOREIGN KEY'
-            AND tc.table_name = $1;
-        `;
-        
-        const foreignKeysResult = await db.execute(foreignKeysQuery, [tableName]);
-        
-        // Categorize table
-        let category = 'Other';
-        if (tableName.includes('user') || tableName.includes('role') || tableName.includes('auth') || tableName.includes('session')) {
-          category = 'Authentication & Users';
-        } else if (tableName.includes('production') || tableName.includes('job') || tableName.includes('order')) {
-          category = 'Production Management';
-        } else if (tableName.includes('resource') || tableName.includes('plant') || tableName.includes('capability')) {
-          category = 'Resources & Assets';
-        } else if (tableName.includes('inventory') || tableName.includes('stock') || tableName.includes('material')) {
-          category = 'Inventory & Materials';
-        } else if (tableName.includes('schedule') || tableName.includes('shift') || tableName.includes('calendar')) {
-          category = 'Scheduling & Planning';
-        } else if (tableName.includes('quality') || tableName.includes('test') || tableName.includes('inspection')) {
-          category = 'Quality Management';
-        } else if (tableName.includes('demand') || tableName.includes('forecast') || tableName.includes('planning')) {
-          category = 'Demand & Planning';
-        } else if (tableName.includes('optimization') || tableName.includes('algorithm')) {
-          category = 'Optimization & Analytics';
-        } else if (tableName.includes('config') || tableName.includes('setting') || tableName.includes('parameter')) {
-          category = 'System Configuration';
-        }
-        
-        // Create a map of foreign keys by column name
-        const foreignKeyMap = new Map();
-        foreignKeysResult.rows.forEach((fk: any) => {
-          foreignKeyMap.set(fk.column_name, {
-            table: fk.foreign_table_name,
-            column: fk.foreign_column_name
-          });
-        });
-        
-        tables.push({
-          name: tableName,
-          description: (tableRow as any).table_comment || `Database table: ${tableName}`,
-          category,
-          columns: columnsResult.rows.map((col: any) => ({
-            name: col.column_name,
-            type: col.data_type,
-            nullable: col.is_nullable === 'YES',
-            default: col.column_default,
-            comment: col.column_comment || '',
-            foreignKey: foreignKeyMap.get(col.column_name) || null
-          })),
-          relationships: [] // Will be populated later if needed
-        });
-      }
-      
-      console.log('Processed tables:', tables.length);
-      res.json(tables);
-    } catch (error) {
-      console.error("Error fetching database schema:", error);
-      res.status(500).json({ error: "Failed to fetch database schema" });
-    }
-  });
+
 
   // AI Widget Generation endpoint (main universal widget generator)
   app.post("/api/ai/generate-widget", requireAuth, async (req, res) => {

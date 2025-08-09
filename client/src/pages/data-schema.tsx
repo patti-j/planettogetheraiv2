@@ -1060,35 +1060,6 @@ function DataSchemaViewContent() {
   // Fetch database schema information only when filters are applied
   const { data: schemaData, isLoading, error } = useQuery({
     queryKey: ['/api/database/schema'],
-    queryFn: async (): Promise<SchemaTable[]> => {
-      try {
-        const response = await fetch('/api/database/schema', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Raw API response:', typeof data, data);
-        
-        // The response should be an array directly
-        if (Array.isArray(data)) {
-          console.log('Schema data processed:', data.length, 'tables');
-          return data as SchemaTable[];
-        } else {
-          console.error('Expected array but got:', typeof data);
-          return [];
-        }
-      } catch (error) {
-        console.error('Failed to fetch schema data:', error);
-        throw error;
-      }
-    },
     enabled: Boolean(hasAppliedFilters), // Always fetch schema since it's fast now
   });
 
