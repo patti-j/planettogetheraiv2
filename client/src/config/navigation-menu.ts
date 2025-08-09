@@ -27,6 +27,7 @@ export const navigationGroups = [
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" },
       { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" },
+      { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" }
     ]
@@ -86,7 +87,6 @@ export const navigationGroups = [
     bgColor: "bg-gray-50 dark:bg-gray-800",
     borderColor: "border-gray-200 dark:border-gray-600",
     features: [
-      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" },
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
@@ -133,7 +133,7 @@ export const navigationGroups = [
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
       { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
-      { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" }
+      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
     ]
   }
 ];
