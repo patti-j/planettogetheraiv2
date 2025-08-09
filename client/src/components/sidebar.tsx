@@ -107,10 +107,15 @@ export default function Sidebar() {
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
-    // AI-Powered Features
+    // AI and Analytics
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
     { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", active: location === "/inventory-optimization", feature: "inventory-optimization", action: "view" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
+    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
+    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
+    { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
+    { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
     
     // Data Management
     { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
@@ -130,9 +135,6 @@ export default function Sidebar() {
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
-    { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
-    { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
-    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: AlertTriangle, label: "Constraints Management", href: "/constraints", active: location === "/constraints", feature: "constraints-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
@@ -146,8 +148,6 @@ export default function Sidebar() {
 
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
-    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
-    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
@@ -232,10 +232,15 @@ export default function Sidebar() {
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
-    // AI-Powered Features
+    // AI and Analytics
     ...(isMaxOpen ? [] : [{ icon: Bot, label: "Max AI Assistant", href: "#max", active: false, feature: "", action: "", onClick: toggleMaxAI, isAI: true }]),
     { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", active: location === "/demand-forecasting", feature: "demand-forecasting", action: "view" },
     { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", active: location === "/inventory-optimization", feature: "inventory-optimization", action: "view" },
+    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
+    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
+    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
+    { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
+    { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
     
     // Data Management
     { icon: Database, label: "Master Data Setup", href: "/data-import", active: location === "/data-import", feature: "data-import", action: "view" },
@@ -255,9 +260,6 @@ export default function Sidebar() {
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
-    { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", active: location === "/widget-showcase", feature: "systems-management", action: "view" },
-    { icon: Puzzle, label: "Widgets", href: "/widgets", active: location === "/widgets", feature: "systems-management", action: "view" },
-    { icon: Layout, label: "Dashboards", href: "/dashboards", active: location === "/dashboards", feature: "systems-management", action: "view" },
     { icon: FileSearch, label: "Logs", href: "/error-logs", active: location === "/error-logs", feature: "systems-management", action: "view" },
     { icon: Layers, label: "Canvas", href: "/canvas", active: location === "/canvas", feature: "", action: "" },
     { icon: GraduationCap, label: "Training", href: "/training", active: location === "/training", feature: "training", action: "view" },
@@ -268,8 +270,6 @@ export default function Sidebar() {
     { icon: Factory, label: "Visual Factory", href: "/visual-factory", active: location === "/visual-factory", feature: "visual-factory", action: "view" },
     { icon: DollarSign, label: "Sales", href: "/sales", active: location === "/sales", feature: "sales", action: "view" },
     { icon: Headphones, label: "Customer Service", href: "/customer-service", active: location === "/customer-service", feature: "customer-service", action: "view" },
-    { icon: BarChart3, label: "Analytics", href: "/analytics", active: location === "/analytics", feature: "analytics", action: "view" },
-    { icon: FileText, label: "Reports", href: "/reports", active: location === "/reports", feature: "reports", action: "view" },
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
   ];
   
