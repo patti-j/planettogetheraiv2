@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { 
   Menu, ChevronDown, ChevronRight, User, LogOut, X, Pin, PinOff, Search, History,
-  FileText, Calendar, Home, BookOpen, PlayCircle
+  FileText, Calendar, Home, BookOpen, PlayCircle, Smartphone
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleSwitcher } from "./role-switcher";
