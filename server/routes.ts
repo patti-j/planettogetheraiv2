@@ -10167,17 +10167,29 @@ Return a JSON response with this structure:
   // Database Schema API Route
   app.get('/api/database/schema', requireAuth, async (req, res) => {
     try {
-      console.log('Fetching database schema...');
+      console.log('Fetching database schema for user:', req.user);
       
       // Use the proper getDatabaseSchema method from storage
       const schema = await storage.getDatabaseSchema();
       
+      console.log('getDatabaseSchema returned:', schema ? `${schema.length} tables` : 'null/undefined');
+      
+      if (!schema || !Array.isArray(schema)) {
+        console.error('Invalid schema response:', schema);
+        return res.status(500).json({ error: 'Invalid schema format' });
+      }
+      
       console.log('Returning schema with', schema.length, 'tables');
-      res.status(200).json(schema);
+      return res.json(schema);
       
     } catch (error) {
       console.error('Error fetching database schema:', error);
-      res.status(500).json({ error: 'Failed to fetch database schema', details: error.message });
+      console.error('Error stack:', error.stack);
+      return res.status(500).json({ 
+        error: 'Failed to fetch database schema', 
+        details: error.message,
+        stack: error.stack 
+      });
     }
   });
 

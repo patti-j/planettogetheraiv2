@@ -1,5 +1,5 @@
 import express from "express";
-import { registerSimpleRoutes } from "./routes-simple";
+import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -65,8 +65,8 @@ app.use((req, res, next) => {
     log("⚠️  OpenAI API key not configured - AI features will be limited");
   }
   
-  // Register API routes
-  const server = registerSimpleRoutes(app);
+  // Register API routes (registerRoutes returns a Promise<Server>)
+  const server = await registerRoutes(app);
 
   // Error handler
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -13970,40 +13970,44 @@ export class DatabaseStorage implements IStorage {
     }
 
     try {
-      // Query PostgreSQL information schema to get all tables with their columns and relationships
-      const tablesQuery = await db.execute(sql`
+      // Query PostgreSQL information schema to get all tables with their columns
+      const tablesResult = await db.execute(sql`
         SELECT 
           t.table_name,
-          t.table_schema,
-          obj_description(c.oid) as table_comment
+          t.table_schema
         FROM information_schema.tables t
-        LEFT JOIN pg_class c ON c.relname = t.table_name
         WHERE t.table_schema = 'public' 
         AND t.table_type = 'BASE TABLE'
         ORDER BY t.table_name
       `);
 
-      const columnsQuery = await db.execute(sql`
+      const columnsResult = await db.execute(sql`
         SELECT 
           c.table_name,
           c.column_name,
           c.data_type,
           c.is_nullable,
-          c.column_default,
-          tc.constraint_type
+          c.column_default
         FROM information_schema.columns c
-        LEFT JOIN information_schema.key_column_usage kcu
-          ON c.table_name = kcu.table_name 
-          AND c.column_name = kcu.column_name
-          AND c.table_schema = kcu.table_schema
-        LEFT JOIN information_schema.table_constraints tc
-          ON kcu.constraint_name = tc.constraint_name
-          AND kcu.table_schema = tc.table_schema
         WHERE c.table_schema = 'public'
         ORDER BY c.table_name, c.ordinal_position
       `);
 
-      const foreignKeysQuery = await db.execute(sql`
+      // Get primary keys
+      const primaryKeysResult = await db.execute(sql`
+        SELECT 
+          tc.table_name,
+          kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_schema = 'public'
+      `);
+
+      // Get foreign keys
+      const foreignKeysResult = await db.execute(sql`
         SELECT
           tc.table_name as from_table,
           kcu.column_name as from_column,
@@ -14021,9 +14025,26 @@ export class DatabaseStorage implements IStorage {
       `);
 
       // Process the results to build schema structure
-      const tables = tablesQuery.rows as any[];
-      const columns = columnsQuery.rows as any[];
-      const foreignKeys = foreignKeysQuery.rows as any[];
+      const tables = tablesResult.rows;
+      const columns = columnsResult.rows;
+      const primaryKeys = primaryKeysResult.rows;
+      const foreignKeys = foreignKeysResult.rows;
+
+      // Build a set of primary key columns
+      const primaryKeySet = new Set<string>();
+      primaryKeys.forEach((pk: any) => {
+        primaryKeySet.add(`${pk.table_name}.${pk.column_name}`);
+      });
+
+      // Build foreign key map
+      const foreignKeyMap = new Map<string, any>();
+      foreignKeys.forEach((fk: any) => {
+        const key = `${fk.from_table}.${fk.from_column}`;
+        foreignKeyMap.set(key, {
+          table: fk.to_table,
+          column: fk.to_column
+        });
+      });
 
       // Build a map of tables with their columns
       const schemaMap = new Map<string, any>();
@@ -14036,7 +14057,7 @@ export class DatabaseStorage implements IStorage {
         schemaMap.set(tableName, {
           name: tableName,
           category,
-          description: table.table_comment || `Table for ${this.humanizeTableName(tableName)}`,
+          description: `Table for ${this.humanizeTableName(tableName)}`,
           columns: [],
           relationships: []
         });
@@ -14046,32 +14067,26 @@ export class DatabaseStorage implements IStorage {
       columns.forEach((col: any) => {
         const table = schemaMap.get(col.table_name);
         if (table) {
+          const columnKey = `${col.table_name}.${col.column_name}`;
+          const isPrimaryKey = primaryKeySet.has(columnKey);
+          const foreignKey = foreignKeyMap.get(columnKey);
+          
           table.columns.push({
             name: col.column_name,
             type: col.data_type,
             nullable: col.is_nullable === 'YES',
-            primaryKey: col.constraint_type === 'PRIMARY KEY',
-            defaultValue: col.column_default
+            primaryKey: isPrimaryKey,
+            defaultValue: col.column_default,
+            foreignKey: foreignKey
           });
         }
       });
 
-      // Add foreign key relationships
+      // Add relationships based on foreign keys
       foreignKeys.forEach((fk: any) => {
         const fromTable = schemaMap.get(fk.from_table);
-        const toTable = schemaMap.get(fk.to_table);
         
-        if (fromTable && toTable) {
-          // Add foreign key info to column
-          const column = fromTable.columns.find((c: any) => c.name === fk.from_column);
-          if (column) {
-            column.foreignKey = {
-              table: fk.to_table,
-              column: fk.to_column
-            };
-          }
-
-          // Add relationship
+        if (fromTable) {
           fromTable.relationships.push({
             type: 'many-to-one',
             fromTable: fk.from_table,
@@ -14091,6 +14106,7 @@ export class DatabaseStorage implements IStorage {
         timestamp: Date.now()
       };
 
+      console.log(`getDatabaseSchema: Returning ${schemaArray.length} tables`);
       return schemaArray;
     } catch (error) {
       console.error('Error fetching database schema:', error);
