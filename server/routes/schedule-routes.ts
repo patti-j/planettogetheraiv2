@@ -18,7 +18,7 @@ import {
 import { eq, and, or, gte, lte, desc, asc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-export function registerScheduleRoutes(app: Express) {
+export default function registerScheduleRoutes(app: Express) {
   // Get all schedules with filtering
   app.get('/api/schedules', async (req, res) => {
     try {

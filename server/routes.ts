@@ -22374,8 +22374,8 @@ Generate a complete ${targetType} configuration that matches the user's requirem
   // Master Data Management Endpoints
   // Generic endpoints for all master data tables
   // Schedule Management endpoints
-  const scheduleRoutes = await import('./routes/schedule-routes');
-  app.use('/api', scheduleRoutes.default);
+  const { default: registerScheduleRoutes } = await import('./routes/schedule-routes-simple');
+  registerScheduleRoutes(app);
 
   const masterDataTables = {
     plants: schema.plants,
