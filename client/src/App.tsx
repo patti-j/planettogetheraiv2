@@ -61,7 +61,6 @@ import Account from "@/pages/account";
 import IndustryTemplates from "@/pages/industry-templates";
 import PlantsManagementPage from "@/pages/plants-management";
 import ExtensionStudioPage from "@/pages/extension-studio";
-import CanvasPage from "@/pages/canvas";
 import ErrorLogsPage from "@/pages/error-logs";
 import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
@@ -74,15 +73,12 @@ import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import ProductionSchedulePage from "@/pages/production-schedule";
-import WidgetShowcase from "@/pages/widget-showcase";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
-import WidgetStudio from "@/pages/widget-studio";
 import MobileHomePage from "@/pages/mobile-home";
 import MobileWidgetView from "@/pages/mobile-widget-view";
 import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
-import WidgetsPage from "@/pages/widgets";
-import DashboardsPage from "@/pages/dashboards";
+import DesignStudio from "@/pages/design-studio";
 import DataImportPage from "@/pages/data-import-simple";
 import MasterDataPage from "@/pages/master-data";
 import MasterDataManagement from "@/pages/master-data-management";
@@ -509,7 +505,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/canvas">
-            <CanvasPage />
+            <Redirect to="/design-studio" />
           </Route>
           <Route path="/error-logs">
             <ProtectedRoute feature="systems-management" action="view">
@@ -556,25 +552,23 @@ function Router() {
               <SchedulingHistory />
             </ProtectedRoute>
           </Route>
-          <Route path="/widget-showcase">
+          <Route path="/design-studio">
             <ProtectedRoute feature="systems-management" action="view">
-              <WidgetShowcase />
+              <DesignStudio />
             </ProtectedRoute>
+          </Route>
+          {/* Legacy routes redirect to Design Studio */}
+          <Route path="/widget-showcase">
+            <Redirect to="/design-studio" />
           </Route>
           <Route path="/widget-studio">
-            <ProtectedRoute feature="analytics" action="view">
-              <WidgetStudio />
-            </ProtectedRoute>
+            <Redirect to="/design-studio" />
           </Route>
           <Route path="/widgets">
-            <ProtectedRoute feature="systems-management" action="view">
-              <WidgetsPage />
-            </ProtectedRoute>
+            <Redirect to="/design-studio" />
           </Route>
           <Route path="/dashboards">
-            <ProtectedRoute feature="systems-management" action="view">
-              <DashboardsPage />
-            </ProtectedRoute>
+            <Redirect to="/design-studio" />
           </Route>
           <Route path="/mobile" component={MobileHomePage} />
           <Route path="/mobile-home" component={() => {
