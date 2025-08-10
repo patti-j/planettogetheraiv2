@@ -705,13 +705,13 @@ export default function MasterDataManagement() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Desktop Table Selector Sidebar - Hidden on mobile */}
         <div className="hidden lg:block lg:col-span-1">
-          <Card>
+          <Card className="sticky top-4">
             <CardHeader>
               <CardTitle className="text-lg">Data Tables</CardTitle>
               <CardDescription>Select a table to view and edit</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="space-y-4 pr-2">
                 {Object.entries(tablesByCategory).map(([category, tables]) => (
                   <div key={category}>
                     <h3 className="text-sm font-semibold text-gray-500 mb-2">{category}</h3>
