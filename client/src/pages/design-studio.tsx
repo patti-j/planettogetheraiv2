@@ -62,6 +62,79 @@ import {
 } from "lucide-react";
 import { WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 
+// Import all pre-built widget components
+import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
+import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
+import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
+import EquipmentStatusWidget from '@/components/widgets/equipment-status-widget';
+import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
+import InventoryTrackingWidget from '@/components/widgets/inventory-tracking-widget';
+import OperationDispatchWidget from '@/components/widgets/operation-dispatch-widget';
+import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
+import ProductionOrderStatusWidget from '@/components/widgets/production-order-status-widget';
+import QualityDashboardWidget from '@/components/widgets/quality-dashboard-widget';
+import ReportsWidget from '@/components/widgets/reports-widget';
+import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
+import { SalesOrderStatusWidget } from '@/components/widgets/sales-order-status-widget';
+import ScheduleTradeoffAnalyzerWidget from '@/components/widgets/schedule-tradeoff-analyzer-widget';
+
+// Widget Preview Component
+const WidgetPreview = ({ widget }: { widget: any }) => {
+  // Check if this is a pre-built widget with a component property
+  const componentName = widget?.data?.component || widget?.configuration?.component;
+  
+  // Map component names to actual components
+  const widgetComponents: Record<string, any> = {
+    'operation-sequencer-widget': OperationSequencerWidget,
+    'schedule-optimization-widget': ScheduleOptimizationWidget,
+    'atp-ctp-widget': AtpCtpWidget,
+    'equipment-status-widget': EquipmentStatusWidget,
+    'gantt-chart-widget': GanttChartWidget,
+    'inventory-tracking-widget': InventoryTrackingWidget,
+    'operation-dispatch-widget': OperationDispatchWidget,
+    'production-metrics-widget': ProductionMetricsWidget,
+    'production-order-status-widget': ProductionOrderStatusWidget,
+    'quality-dashboard-widget': QualityDashboardWidget,
+    'reports-widget': ReportsWidget,
+    'resource-assignment-widget': ResourceAssignmentWidget,
+    'sales-order-status-widget': SalesOrderStatusWidget,
+    'schedule-tradeoff-analyzer-widget': ScheduleTradeoffAnalyzerWidget
+  };
+
+  // If it's a pre-built widget component, render it
+  if (componentName && widgetComponents[componentName]) {
+    const WidgetComponent = widgetComponents[componentName];
+    return <WidgetComponent className="w-full" />;
+  }
+
+  // For custom widgets, use UniversalWidget with proper config
+  const widgetConfig = {
+    id: widget.id,
+    title: widget.title || 'Widget Preview',
+    type: widget.widgetType || widget.widget_type || 'chart',
+    subtype: widget.widgetSubtype || widget.widget_subtype || 'bar',
+    layout: widget.configuration?.layout || { desktop: { cols: 4, rows: 2 } },
+    refreshInterval: widget.configuration?.refreshInterval || null,
+    dataSource: widget.configuration?.dataSource || 'production-orders',
+    ...widget.configuration
+  };
+
+  return (
+    <UniversalWidget
+      config={widgetConfig}
+      data={{
+        productionOrders: [],
+        resources: [],
+        inventory: [],
+        salesOrders: []
+      }}
+      readOnly={true}
+      showControls={false}
+      className="w-full"
+    />
+  );
+};
+
 interface DesignItem {
   id: string;
   type: 'widget' | 'dashboard' | 'page' | 'menu';
@@ -799,15 +872,7 @@ export default function DesignStudio() {
             </DialogHeader>
             <div className="mt-4">
               {selectedItem?.type === 'widget' && (
-                <UniversalWidget
-                  id={selectedItem.id}
-                  type="chart"
-                  configuration={selectedItem.configuration}
-                  data={[]}
-                  onRemove={() => {}}
-                  onRefresh={() => {}}
-                  showControls={false}
-                />
+                <WidgetPreview widget={selectedItem} />
               )}
               {selectedItem?.type === 'dashboard' && (
                 <div className="p-4 bg-gray-100 rounded-lg">
