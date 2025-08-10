@@ -9637,5 +9637,8 @@ export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment, {
 export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
 export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
 
+// Export schedule schemas
+export * from './schedule-schema';
+
 
 

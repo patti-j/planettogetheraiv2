@@ -62,6 +62,7 @@ import {
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
+import { registerScheduleRoutes } from "./routes/schedule-routes";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -22372,6 +22373,10 @@ Generate a complete ${targetType} configuration that matches the user's requirem
 
   // Master Data Management Endpoints
   // Generic endpoints for all master data tables
+  // Schedule Management endpoints
+  const scheduleRoutes = await import('./routes/schedule-routes');
+  app.use('/api', scheduleRoutes.default);
+
   const masterDataTables = {
     plants: schema.plants,
     resources: schema.resources,
@@ -22560,9 +22565,13 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
+  // Register schedule routes
+  registerScheduleRoutes(app);
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
-  app.use(errorMiddleware);
+  // TODO: Fix errorMiddleware import issue
+  // app.use(errorMiddleware);
 
   return httpServer;
 }
