@@ -141,6 +141,7 @@ interface DesignItem {
   title: string;
   description?: string;
   configuration: any;
+  data?: any; // Preserve original data field for pre-built widgets
   status: 'draft' | 'active' | 'archived';
   targetPlatform: 'mobile' | 'desktop' | 'both';
   createdAt: string;
@@ -238,12 +239,13 @@ export default function DesignStudio() {
             type: 'widget' as const,
             title: widget.title || 'Untitled Widget',
             description: widget.subtitle || widget.description || '',
-            configuration: widget.config || {},
-            status: widget.isVisible ? 'active' : 'draft',
-            targetPlatform: 'both',
-            createdAt: widget.createdAt || new Date().toISOString(),
-            updatedAt: widget.updatedAt || widget.createdAt || new Date().toISOString(),
-            createdBy: widget.userId?.toString(),
+            configuration: widget.configuration || widget.config || {},
+            data: widget.data || {}, // Preserve the data field for pre-built widgets
+            status: widget.isVisible || widget.is_visible ? 'active' : 'draft',
+            targetPlatform: widget.targetPlatform || widget.target_platform || 'both',
+            createdAt: widget.createdAt || widget.created_at || new Date().toISOString(),
+            updatedAt: widget.updatedAt || widget.updated_at || widget.createdAt || new Date().toISOString(),
+            createdBy: widget.userId?.toString() || widget.user_id?.toString(),
             tags: widget.tags || []
           }));
         } else if (activeTab === 'dashboards') {
