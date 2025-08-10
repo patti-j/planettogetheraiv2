@@ -133,21 +133,67 @@ export default function DesignStudio() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: [`/api/design-studio/${activeTab}`],
     queryFn: async () => {
-      // For now, return mock data. In production, this would fetch from the API
-      const mockData: DesignItem[] = [
-        {
-          id: '1',
-          type: activeTab as any,
-          title: `Sample ${activeTab.slice(0, -1)} 1`,
-          description: `A sample ${activeTab.slice(0, -1)} for demonstration`,
-          configuration: {},
-          status: 'active',
-          targetPlatform: 'both',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+      let apiUrl = '';
+      
+      switch (activeTab) {
+        case 'widgets':
+          apiUrl = '/api/canvas/widgets';
+          break;
+        case 'dashboards':
+          apiUrl = '/api/dashboard-configs';
+          break;
+        case 'pages':
+          // Pages endpoint might not exist yet, use mock data for now
+          return [];
+        case 'menus':
+          // Menus endpoint might not exist yet, use mock data for now
+          return [];
+        default:
+          return [];
+      }
+      
+      if (!apiUrl) return [];
+      
+      try {
+        const response = await apiRequest('GET', apiUrl);
+        const data = await response.json();
+        
+        // Transform the data to match our DesignItem interface
+        if (activeTab === 'widgets') {
+          return data.map((widget: any) => ({
+            id: widget.id?.toString() || '',
+            type: 'widget' as const,
+            title: widget.title || 'Untitled Widget',
+            description: widget.subtitle || widget.description || '',
+            configuration: widget.config || {},
+            status: widget.isVisible ? 'active' : 'draft',
+            targetPlatform: 'both',
+            createdAt: widget.createdAt || new Date().toISOString(),
+            updatedAt: widget.updatedAt || widget.createdAt || new Date().toISOString(),
+            createdBy: widget.userId?.toString(),
+            tags: widget.tags || []
+          }));
+        } else if (activeTab === 'dashboards') {
+          return data.map((dashboard: any) => ({
+            id: dashboard.id?.toString() || '',
+            type: 'dashboard' as const,
+            title: dashboard.name || 'Untitled Dashboard',
+            description: dashboard.description || '',
+            configuration: dashboard.config || {},
+            status: dashboard.isActive ? 'active' : 'draft',
+            targetPlatform: 'both',
+            createdAt: dashboard.createdAt || new Date().toISOString(),
+            updatedAt: dashboard.updatedAt || dashboard.createdAt || new Date().toISOString(),
+            createdBy: dashboard.userId?.toString(),
+            tags: dashboard.tags || []
+          }));
         }
-      ];
-      return mockData;
+        
+        return [];
+      } catch (error) {
+        console.error(`Error fetching ${activeTab}:`, error);
+        return [];
+      }
     }
   });
 
@@ -163,7 +209,37 @@ export default function DesignStudio() {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data: Partial<DesignItem>) => {
-      const response = await apiRequest('POST', `/api/design-studio/${activeTab}`, data);
+      let apiUrl = '';
+      let payload: any = {};
+      
+      switch (activeTab) {
+        case 'widgets':
+          apiUrl = '/api/canvas/widgets';
+          payload = {
+            title: data.title,
+            subtitle: data.description,
+            type: 'widget',
+            config: data.configuration || {},
+            isVisible: data.status === 'active',
+            sessionId: 'design-studio',
+            position: { x: 0, y: 0 },
+            size: { width: 400, height: 300 }
+          };
+          break;
+        case 'dashboards':
+          apiUrl = '/api/dashboard-configs';
+          payload = {
+            name: data.title,
+            description: data.description,
+            config: data.configuration || {},
+            isActive: data.status === 'active'
+          };
+          break;
+        default:
+          throw new Error(`Creation not supported for ${activeTab}`);
+      }
+      
+      const response = await apiRequest('POST', apiUrl, payload);
       return response.json();
     },
     onSuccess: () => {
@@ -175,7 +251,8 @@ export default function DesignStudio() {
         description: `Your ${activeTab.slice(0, -1)} has been created.`
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Create error:', error);
       toast({
         title: "Creation Failed",
         description: "Please try again.",
@@ -187,7 +264,33 @@ export default function DesignStudio() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; updates: Partial<DesignItem> }) => {
-      const response = await apiRequest('PATCH', `/api/design-studio/${activeTab}/${data.id}`, data.updates);
+      let apiUrl = '';
+      let payload: any = {};
+      
+      switch (activeTab) {
+        case 'widgets':
+          apiUrl = `/api/canvas/widgets/${data.id}`;
+          payload = {
+            title: data.updates.title,
+            subtitle: data.updates.description,
+            config: data.updates.configuration,
+            isVisible: data.updates.status === 'active'
+          };
+          break;
+        case 'dashboards':
+          apiUrl = `/api/dashboard-configs/${data.id}`;
+          payload = {
+            name: data.updates.title,
+            description: data.updates.description,
+            config: data.updates.configuration,
+            isActive: data.updates.status === 'active'
+          };
+          break;
+        default:
+          throw new Error(`Update not supported for ${activeTab}`);
+      }
+      
+      const response = await apiRequest('PUT', apiUrl, payload);
       return response.json();
     },
     onSuccess: () => {
@@ -197,13 +300,34 @@ export default function DesignStudio() {
         title: "Updated Successfully",
         description: `Your ${activeTab.slice(0, -1)} has been updated.`
       });
+    },
+    onError: (error) => {
+      console.error('Update error:', error);
+      toast({
+        title: "Update Failed",
+        description: "Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiRequest('DELETE', `/api/design-studio/${activeTab}/${id}`);
+      let apiUrl = '';
+      
+      switch (activeTab) {
+        case 'widgets':
+          apiUrl = `/api/canvas/widgets/${id}`;
+          break;
+        case 'dashboards':
+          apiUrl = `/api/dashboard-configs/${id}`;
+          break;
+        default:
+          throw new Error(`Delete not supported for ${activeTab}`);
+      }
+      
+      const response = await apiRequest('DELETE', apiUrl);
       return response.json();
     },
     onSuccess: () => {
@@ -213,6 +337,14 @@ export default function DesignStudio() {
       toast({
         title: "Deleted Successfully",
         description: `The ${activeTab.slice(0, -1)} has been removed.`
+      });
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete Failed",
+        description: "Please try again.",
+        variant: "destructive"
       });
     }
   });
