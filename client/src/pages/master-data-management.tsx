@@ -44,7 +44,10 @@ import {
   Shield,
   MapPin,
   UserCheck,
-  ArchiveRestore
+  ArchiveRestore,
+  Grid3x3,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 
 // Master data table definitions with metadata
@@ -494,11 +497,14 @@ const masterDataTables = [
   }
 ];
 
+type ViewMode = 'spreadsheet' | 'card' | 'compressed';
+
 export default function MasterDataManagement() {
   const [selectedTable, setSelectedTable] = useState('resources');
   const [showAIDialog, setShowAIDialog] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('spreadsheet');
   const { toast } = useToast();
   const { user } = useAuth();
   const { addRecentPage } = useNavigation();
@@ -652,6 +658,145 @@ export default function MasterDataManagement() {
     URL.revokeObjectURL(url);
   };
 
+  // Render card view component
+  const renderCardView = () => {
+    if (!currentTableConfig) return null;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+        {tableData.map((item: any, index: number) => (
+          <Card key={item.id || index} className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg">
+                  {item.name || item.itemNumber || item.vendorName || item.customerName || `Item ${index + 1}`}
+                </CardTitle>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      const updatedItem = { ...item, isActive: !item.isActive };
+                      updateRowMutation.mutate({ index, row: updatedItem });
+                    }}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => deleteRowMutation.mutate(item.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {currentTableConfig.columns
+                .filter((col) => col.key !== 'id' && col.key !== 'name')
+                .slice(0, 5)
+                .map((col) => (
+                  <div key={col.key} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{col.header}:</span>
+                    <span className="font-medium text-right">
+                      {item[col.key] || '-'}
+                    </span>
+                  </div>
+                ))}
+            </CardContent>
+          </Card>
+        ))}
+        <Card className="border-dashed flex items-center justify-center min-h-[200px] cursor-pointer hover:bg-muted/50" onClick={() => addRowMutation.mutate({})}>
+          <div className="text-center">
+            <Database className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Add New Item</p>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
+  // Render compressed card view component
+  const renderCompressedView = () => {
+    if (!currentTableConfig) return null;
+    
+    return (
+      <div className="space-y-2 p-4">
+        {tableData.map((item: any, index: number) => (
+          <Card key={item.id || index} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div>
+                    <span className="text-xs text-muted-foreground">ID:</span>
+                    <p className="font-medium text-sm">{item.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      {currentTableConfig.columns[1]?.header || 'Name'}:
+                    </span>
+                    <p className="font-medium text-sm">
+                      {item[currentTableConfig.columns[1]?.key] || '-'}
+                    </p>
+                  </div>
+                  {currentTableConfig.columns[2] && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        {currentTableConfig.columns[2].header}:
+                      </span>
+                      <p className="font-medium text-sm">
+                        {item[currentTableConfig.columns[2].key] || '-'}
+                      </p>
+                    </div>
+                  )}
+                  {currentTableConfig.columns[3] && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        {currentTableConfig.columns[3].header}:
+                      </span>
+                      <p className="font-medium text-sm">
+                        {item[currentTableConfig.columns[3].key] || '-'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-1 ml-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      const updatedItem = { ...item, isActive: !item.isActive };
+                      updateRowMutation.mutate({ index, row: updatedItem });
+                    }}
+                  >
+                    <Settings className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive"
+                    onClick={() => deleteRowMutation.mutate(item.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        <Card className="border-dashed cursor-pointer hover:bg-muted/50" onClick={() => addRowMutation.mutate({})}>
+          <CardContent className="p-3 text-center">
+            <p className="text-sm text-muted-foreground">+ Add New Item</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   // Group tables by category
   const tablesByCategory = masterDataTables.reduce((acc, table) => {
     if (!acc[table.category]) {
@@ -760,6 +905,37 @@ export default function MasterDataManagement() {
                   </CardDescription>
                 </div>
                 <div className="flex gap-1 sm:gap-2">
+                  {/* View Mode Switcher */}
+                  <div className="flex rounded-lg border divide-x">
+                    <Button
+                      variant={viewMode === 'spreadsheet' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('spreadsheet')}
+                      className="rounded-r-none px-2 sm:px-3"
+                      title="Spreadsheet View"
+                    >
+                      <Grid3x3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'card' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('card')}
+                      className="rounded-none px-2 sm:px-3"
+                      title="Card View"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'compressed' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('compressed')}
+                      className="rounded-l-none px-2 sm:px-3"
+                      title="Compressed View"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -797,23 +973,29 @@ export default function MasterDataManagement() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : currentTableConfig ? (
-                <div className="overflow-x-auto">
-                  <EditableDataGrid
-                    columns={currentTableConfig.columns}
-                    data={tableData}
-                    onSave={(data) => saveMutation.mutate(data)}
-                    onRowUpdate={(index, row) => updateRowMutation.mutate({ index, row })}
-                    onRowDelete={(index) => {
-                      const row = tableData[index];
-                      if (row?.id) deleteRowMutation.mutate(row.id);
-                    }}
-                    onRowAdd={(row) => addRowMutation.mutate(row)}
-                    allowAdd={true}
-                    allowDelete={true}
-                    allowBulkEdit={true}
-                    gridHeight="calc(100vh - 300px)"
-                  />
-                </div>
+                viewMode === 'spreadsheet' ? (
+                  <div className="overflow-x-auto">
+                    <EditableDataGrid
+                      columns={currentTableConfig.columns}
+                      data={tableData}
+                      onSave={(data) => saveMutation.mutate(data)}
+                      onRowUpdate={(index, row) => updateRowMutation.mutate({ index, row })}
+                      onRowDelete={(index) => {
+                        const row = tableData[index];
+                        if (row?.id) deleteRowMutation.mutate(row.id);
+                      }}
+                      onRowAdd={(row) => addRowMutation.mutate(row)}
+                      allowAdd={true}
+                      allowDelete={true}
+                      allowBulkEdit={true}
+                      gridHeight="calc(100vh - 300px)"
+                    />
+                  </div>
+                ) : viewMode === 'card' ? (
+                  renderCardView()
+                ) : (
+                  renderCompressedView()
+                )
               ) : (
                 <div className="text-center py-8 sm:py-12 text-gray-500">
                   <Table className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
