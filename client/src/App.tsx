@@ -78,7 +78,7 @@ import MobileHomePage from "@/pages/mobile-home";
 import MobileWidgetView from "@/pages/mobile-widget-view";
 import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
-import DesignStudio from "@/pages/design-studio";
+import UIDesignStudio from "@/pages/design-studio";
 import DataImportPage from "@/pages/data-import-simple";
 import MasterDataPage from "@/pages/master-data";
 import MasterDataManagement from "@/pages/master-data-management";
@@ -554,7 +554,7 @@ function Router() {
           </Route>
           <Route path="/design-studio">
             <ProtectedRoute feature="systems-management" action="view">
-              <DesignStudio />
+              <UIDesignStudio />
             </ProtectedRoute>
           </Route>
           {/* Legacy routes redirect to Design Studio */}

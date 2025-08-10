@@ -45,7 +45,7 @@ Note on concurrent work:
 - **Inventory Management**: Stock-centric system tracking specific stock records for transfers, materials, production outputs, purchases, sales, and forecasting.
 - **Master Data Management**: Unified interface for importing, entering, and templating master data types, with AI-powered modification and validation.
 - **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms with configurable profiles, trade-off analysis, resource requirements, and constraints management (Theory of Constraints/TOC).
-- **Dashboarding & Analytics**: Universal widget design studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views.
+- **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, live data previews, and multi-dashboard views. Renamed from "Universal Design Studio" to clarify its focus on user interface elements (distinguishing from other design studios like Algorithm Design Studio).
 - **Role-Based Access Control**: Unified permission system using roles array structure with feature-action permissions.
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit for schema views, filter-specific layout persistence, comprehensive error handling, and reusable widget system.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.

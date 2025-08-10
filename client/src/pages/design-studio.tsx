@@ -164,7 +164,7 @@ interface MenuStructure {
   color?: string;
 }
 
-export default function DesignStudio() {
+export default function UIDesignStudio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { aiTheme } = useAITheme();
@@ -538,10 +538,10 @@ export default function DesignStudio() {
             </div>
             <div className="text-center sm:text-left">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Universal Design Studio
+                UI Design Studio
               </h1>
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-2 sm:px-0">
-                Create and manage widgets, dashboards, pages, and menus in one place
+                Create and manage user interface elements - widgets, dashboards, pages, and menus
               </p>
             </div>
           </div>

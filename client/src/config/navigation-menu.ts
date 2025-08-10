@@ -44,7 +44,7 @@ export const navigationGroups = [
       { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
-      { icon: Sparkles, label: "Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" }
+      { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" }
     ]
   },
   {
