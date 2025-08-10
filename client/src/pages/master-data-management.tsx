@@ -236,7 +236,7 @@ const masterDataTables = [
     name: 'Production Versions',
     description: 'Product manufacturing versions and variants',
     icon: GitBranch,
-    category: 'Manufacturing',
+    category: 'Production',
     columns: [
       { key: 'id', header: 'ID', type: 'number' as const, editable: false },
       { key: 'versionCode', header: 'Version Code', type: 'text' as const, required: true },
@@ -280,7 +280,7 @@ const masterDataTables = [
     name: 'Constraints',
     description: 'Production and scheduling constraints',
     icon: Shield,
-    category: 'Manufacturing',
+    category: 'Production',
     columns: [
       { key: 'id', header: 'ID', type: 'number' as const, editable: false },
       { key: 'name', header: 'Name', type: 'text' as const, required: true },
