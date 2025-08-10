@@ -45,8 +45,8 @@ export const navigationGroups = [
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Layout, label: "Dashboards", href: "/dashboards", feature: "systems-management", action: "view", color: "bg-green-500" },
-      { icon: Puzzle, label: "Widgets", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
-      { icon: Grid3X3, label: "Widget Showcase", href: "/widget-showcase", feature: "systems-management", action: "view", color: "bg-indigo-500" },
+      { icon: Smartphone, label: "Mobile Widget Library", href: "/widget-showcase", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
+      { icon: Puzzle, label: "Widget Studio", href: "/widgets", feature: "systems-management", action: "view", color: "bg-blue-500" },
       { icon: Layers, label: "Canvas", href: "/canvas", feature: "", action: "", color: "bg-purple-600" }
     ]
   },
