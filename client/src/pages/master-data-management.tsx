@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+
 import { Badge } from '@/components/ui/badge';
 import { EditableDataGrid } from '@/components/editable-data-grid';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { 
   Database, 
   Table, 
@@ -20,11 +20,8 @@ import {
   Download, 
   RefreshCw, 
   Settings,
-  Loader2,
-  AlertCircle,
   Check,
   X,
-  Bot,
   FileSpreadsheet,
   Layers,
   Factory,
@@ -501,13 +498,11 @@ type ViewMode = 'spreadsheet' | 'card' | 'compressed';
 
 export default function MasterDataManagement() {
   const [selectedTable, setSelectedTable] = useState('resources');
-  const [showAIDialog, setShowAIDialog] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('spreadsheet');
   const { toast } = useToast();
   const { user } = useAuth();
   const { addRecentPage } = useNavigation();
+  const { setMaxOpen, setCanvasItems } = useMaxDock();
 
   // Register this page in recent pages when component mounts
   useEffect(() => {
@@ -595,37 +590,36 @@ export default function MasterDataManagement() {
     }
   });
 
-  // AI-powered data modification
-  const processAIPrompt = async () => {
-    if (!aiPrompt.trim()) return;
+  // Open Max panel with context for AI-powered data modification
+  const openMaxForDataEdit = () => {
+    // Open the Max panel
+    setMaxOpen(true);
     
-    setIsProcessing(true);
-    try {
-      const response = await apiRequest('POST', '/api/master-data/ai-modify', {
-        table: selectedTable,
-        prompt: aiPrompt,
-        currentData: tableData
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        await refetch();
-        toast({
-          title: "AI Processing Complete",
-          description: result.message || "Data has been modified successfully"
-        });
-        setShowAIDialog(false);
-        setAiPrompt('');
+    // Set canvas items with table context
+    const tableContext = {
+      id: `table-context-${Date.now()}`,
+      type: 'custom' as const,
+      title: `Editing ${currentTableConfig?.name || 'Master Data'}`,
+      content: {
+        message: `You're now editing the "${currentTableConfig?.name}" table with ${tableData.length} records.
+        
+Ask me to:
+• Bulk update fields based on conditions
+• Generate sample data for testing  
+• Clean and standardize data formats
+• Apply business rules and validations
+• Create relationships between data
+• Export or transform the data`,
+        tableInfo: {
+          name: currentTableConfig?.name,
+          description: currentTableConfig?.description,
+          recordCount: tableData.length,
+          columns: currentTableConfig?.columns.map(col => col.header)
+        }
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process AI request",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    };
+    
+    setCanvasItems([tableContext]);
   };
 
   // Export data as CSV
@@ -958,7 +952,7 @@ export default function MasterDataManagement() {
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => setShowAIDialog(true)}
+                    onClick={openMaxForDataEdit}
                     className="px-2 sm:px-3"
                   >
                     <Sparkles className="h-4 w-4" />
@@ -1007,74 +1001,7 @@ export default function MasterDataManagement() {
         </div>
       </div>
 
-      {/* AI Edit Dialog */}
-      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">AI-Powered Data Modification</span>
-              <span className="sm:hidden">AI Data Edit</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Describe how you want to modify the {currentTableConfig?.name} data. The AI will process your request and update the data accordingly.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 sm:space-y-4">
-            <div>
-              <label className="text-xs sm:text-sm font-medium">Your Prompt</label>
-              <Textarea
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Example: Update all inactive resources to active status, or add 10% to all standard costs..."
-                className="mt-1 min-h-[100px] sm:min-h-[120px] text-sm"
-              />
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-2 sm:p-3 rounded-lg">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <div className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
-                  <p className="font-medium mb-1">AI Capabilities:</p>
-                  <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-[10px] sm:text-xs">
-                    <li>Bulk update fields based on conditions</li>
-                    <li>Generate sample data for testing</li>
-                    <li>Clean and standardize data formats</li>
-                    <li>Apply business rules and validations</li>
-                    <li>Create relationships between data</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowAIDialog(false)}
-              disabled={isProcessing}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={processAIPrompt}
-              disabled={isProcessing || !aiPrompt.trim()}
-              className="w-full sm:w-auto"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Apply Changes
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
