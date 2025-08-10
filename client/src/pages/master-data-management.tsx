@@ -34,7 +34,13 @@ import {
   ClipboardList,
   Wrench,
   GitBranch,
-  Beaker
+  Beaker,
+  Warehouse,
+  Archive,
+  Building2,
+  Clock,
+  Calendar,
+  PackageCheck
 } from 'lucide-react';
 
 // Master data table definitions with metadata
@@ -84,12 +90,141 @@ const masterDataTables = [
     columns: [
       { key: 'id', header: 'ID', type: 'number' as const, editable: false },
       { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'code', header: 'Code', type: 'text' as const, required: true },
       { key: 'description', header: 'Description', type: 'text' as const },
-      { key: 'type', header: 'Type', type: 'text' as const },
+      { key: 'departmentId', header: 'Department ID', type: 'number' as const },
       { key: 'plantId', header: 'Plant ID', type: 'number' as const },
       { key: 'capacity', header: 'Capacity', type: 'number' as const },
-      { key: 'status', header: 'Status', type: 'text' as const },
-      { key: 'costPerHour', header: 'Cost/Hour', type: 'number' as const },
+      { key: 'efficiency', header: 'Efficiency %', type: 'number' as const },
+      { key: 'costPerHour', header: 'Cost/Hour ($)', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'storageLocations',
+    name: 'Storage Locations',
+    description: 'Warehouses and storage areas',
+    icon: Warehouse,
+    category: 'Inventory',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'code', header: 'Code', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'plantId', header: 'Plant ID', type: 'number' as const },
+      { key: 'locationType', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'general', label: 'General' },
+          { value: 'finished_goods', label: 'Finished Goods' },
+          { value: 'raw_materials', label: 'Raw Materials' },
+          { value: 'work_in_process', label: 'Work in Process' }
+        ]
+      },
+      { key: 'totalCapacity', header: 'Total Capacity', type: 'number' as const },
+      { key: 'usedCapacity', header: 'Used Capacity', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'stocks',
+    name: 'Stock Levels',
+    description: 'Current inventory stock levels',
+    icon: Archive,
+    category: 'Inventory',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'itemId', header: 'Item ID', type: 'number' as const, required: true },
+      { key: 'storageLocationId', header: 'Location ID', type: 'number' as const, required: true },
+      { key: 'quantityOnHand', header: 'On Hand', type: 'number' as const },
+      { key: 'quantityReserved', header: 'Reserved', type: 'number' as const },
+      { key: 'quantityAvailable', header: 'Available', type: 'number' as const },
+      { key: 'minimumLevel', header: 'Min Level', type: 'number' as const },
+      { key: 'maximumLevel', header: 'Max Level', type: 'number' as const },
+      { key: 'unitCost', header: 'Unit Cost ($)', type: 'number' as const },
+      { key: 'status', header: 'Status', type: 'select' as const,
+        options: [
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' },
+          { value: 'blocked', label: 'Blocked' },
+          { value: 'quarantine', label: 'Quarantine' }
+        ]
+      },
+    ]
+  },
+  {
+    id: 'departments',
+    name: 'Departments',
+    description: 'Organizational departments',
+    icon: Building2,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'code', header: 'Code', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'plantId', header: 'Plant ID', type: 'number' as const },
+      { key: 'managerId', header: 'Manager ID', type: 'number' as const },
+      { key: 'costCenter', header: 'Cost Center', type: 'text' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'shifts',
+    name: 'Shifts',
+    description: 'Work shift definitions',
+    icon: Clock,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'startTime', header: 'Start Time', type: 'text' as const },
+      { key: 'endTime', header: 'End Time', type: 'text' as const },
+      { key: 'shiftType', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'day', label: 'Day' },
+          { value: 'evening', label: 'Evening' },
+          { value: 'night', label: 'Night' },
+          { value: 'rotating', label: 'Rotating' }
+        ]
+      },
+      { key: 'plantId', header: 'Plant ID', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'holidays',
+    name: 'Holidays',
+    description: 'Company holiday calendar',
+    icon: Calendar,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'date', header: 'Date', type: 'date' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'plantId', header: 'Plant ID', type: 'number' as const },
+      { key: 'isRecurring', header: 'Recurring', type: 'boolean' as const },
+      { key: 'isPaidHoliday', header: 'Paid Holiday', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'stockItems',
+    name: 'Stock Items',
+    description: 'Stock item master data',
+    icon: PackageCheck,
+    category: 'Inventory',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'itemNumber', header: 'Item Number', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const, required: true },
+      { key: 'unitOfMeasure', header: 'UOM', type: 'text' as const },
+      { key: 'reorderPoint', header: 'Reorder Point', type: 'number' as const },
+      { key: 'safetyStock', header: 'Safety Stock', type: 'number' as const },
+      { key: 'economicOrderQuantity', header: 'EOQ', type: 'number' as const },
+      { key: 'leadTime', header: 'Lead Time (days)', type: 'number' as const },
+      { key: 'standardCost', header: 'Standard Cost ($)', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
     ]
   },
   {
