@@ -62,7 +62,7 @@ import {
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
-import { registerScheduleRoutes } from "./routes/schedule-routes";
+import registerScheduleRoutes from "./routes/schedule-routes";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";

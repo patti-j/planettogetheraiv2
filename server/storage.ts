@@ -128,6 +128,17 @@ import {
   type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
   type InsertShiftCoverage, type InsertShiftUtilization, type InsertRecipeEquipment
 } from "@shared/schema";
+
+// Import schedule-related types from schedule-schema
+import {
+  schedules, scheduleAssignments, scheduleDiscussions, scheduleApprovals, 
+  scheduleComparisons, scheduleSnapshots, scheduleSubscriptions,
+  type Schedule, type ScheduleAssignment, type ScheduleDiscussion, type ScheduleApproval,
+  type ScheduleComparison, type ScheduleSnapshot, type ScheduleSubscription,
+  type InsertSchedule, type InsertScheduleAssignment, type InsertScheduleDiscussion,
+  type InsertScheduleApproval, type InsertScheduleComparison, type InsertScheduleSnapshot,
+  type InsertScheduleSubscription
+} from "@shared/schedule-schema";
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";

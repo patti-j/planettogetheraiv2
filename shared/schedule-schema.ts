@@ -388,42 +388,19 @@ export const scheduleDiscussionsRelations = relations(scheduleDiscussions, ({ on
 }));
 
 // Insert schemas
-export const insertScheduleSchema = createInsertSchema(schedules).omit({
-  id: true,
-  createdAt: true,
-  modifiedAt: true
-});
+export const insertScheduleSchema = createInsertSchema(schedules);
 
-export const insertScheduleAssignmentSchema = createInsertSchema(scheduleAssignments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
+export const insertScheduleAssignmentSchema = createInsertSchema(scheduleAssignments);
 
-export const insertScheduleDiscussionSchema = createInsertSchema(scheduleDiscussions).omit({
-  id: true,
-  createdAt: true
-});
+export const insertScheduleDiscussionSchema = createInsertSchema(scheduleDiscussions);
 
-export const insertScheduleApprovalSchema = createInsertSchema(scheduleApprovals).omit({
-  id: true,
-  requestedAt: true
-});
+export const insertScheduleApprovalSchema = createInsertSchema(scheduleApprovals);
 
-export const insertScheduleComparisonSchema = createInsertSchema(scheduleComparisons).omit({
-  id: true,
-  createdAt: true
-});
+export const insertScheduleComparisonSchema = createInsertSchema(scheduleComparisons);
 
-export const insertScheduleSnapshotSchema = createInsertSchema(scheduleSnapshots).omit({
-  id: true,
-  createdAt: true
-});
+export const insertScheduleSnapshotSchema = createInsertSchema(scheduleSnapshots);
 
-export const insertScheduleSubscriptionSchema = createInsertSchema(scheduleSubscriptions).omit({
-  id: true,
-  subscribedAt: true
-});
+export const insertScheduleSubscriptionSchema = createInsertSchema(scheduleSubscriptions);
 
 // Type exports
 export type Schedule = typeof schedules.$inferSelect;
