@@ -164,12 +164,12 @@ export default function WidgetShowcase() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Universal Widget Showcase</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Universal Widget Showcase</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Demonstration of the universal widget system with real manufacturing data
           </p>
         </div>
@@ -181,7 +181,8 @@ export default function WidgetShowcase() {
             disabled={refreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh All
+            <span className="hidden sm:inline">Refresh All</span>
+            <span className="sm:hidden">Refresh</span>
           </Button>
         </div>
       </div>
@@ -195,22 +196,22 @@ export default function WidgetShowcase() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{jobs.length}</div>
-              <div className="text-sm text-muted-foreground">Total Jobs</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="text-center p-2">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{jobs.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Total Jobs</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{operations.length}</div>
-              <div className="text-sm text-muted-foreground">Operations</div>
+            <div className="text-center p-2">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{operations.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Operations</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{resources.length}</div>
-              <div className="text-sm text-muted-foreground">Resources</div>
+            <div className="text-center p-2">
+              <div className="text-xl sm:text-2xl font-bold text-purple-600">{resources.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Resources</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{alerts.length}</div>
-              <div className="text-sm text-muted-foreground">Active Alerts</div>
+            <div className="text-center p-2">
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{alerts.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Active Alerts</div>
             </div>
           </div>
         </CardContent>
@@ -218,18 +219,18 @@ export default function WidgetShowcase() {
 
       {/* Widget Showcase */}
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="all">All Widgets</TabsTrigger>
-          <TabsTrigger value="kpi">KPI</TabsTrigger>
-          <TabsTrigger value="chart">Charts</TabsTrigger>
-          <TabsTrigger value="table">Tables</TabsTrigger>
-          <TabsTrigger value="gauge">Gauges</TabsTrigger>
-          <TabsTrigger value="alert">Alerts</TabsTrigger>
-          <TabsTrigger value="progress">Progress</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
+          <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
+          <TabsTrigger value="kpi" className="text-xs sm:text-sm">KPI</TabsTrigger>
+          <TabsTrigger value="chart" className="text-xs sm:text-sm">Charts</TabsTrigger>
+          <TabsTrigger value="table" className="text-xs sm:text-sm">Tables</TabsTrigger>
+          <TabsTrigger value="gauge" className="text-xs sm:text-sm">Gauges</TabsTrigger>
+          <TabsTrigger value="alert" className="text-xs sm:text-sm">Alerts</TabsTrigger>
+          <TabsTrigger value="progress" className="text-xs sm:text-sm">Progress</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <TabsContent value="all" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {sampleWidgets.map((widget) => (
               <div key={widget.id} className="relative">
                 <UniversalWidget
@@ -250,9 +251,11 @@ export default function WidgetShowcase() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleExportWidget(widget.id)}
+                    className="text-xs sm:text-sm"
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    Export
+                    <span className="hidden sm:inline">Export</span>
+                    <span className="sm:hidden">Save</span>
                   </Button>
                 </div>
               </div>
@@ -262,8 +265,8 @@ export default function WidgetShowcase() {
 
         {/* Individual widget type tabs */}
         {['kpi', 'chart', 'table', 'gauge', 'alert', 'progress'].map((type) => (
-          <TabsContent key={type} value={type} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <TabsContent key={type} value={type} className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {sampleWidgets.filter(w => w.type === type).map((widget) => (
                 <div key={widget.id} className="relative">
                   <UniversalWidget
@@ -279,9 +282,11 @@ export default function WidgetShowcase() {
                       variant="outline" 
                       size="sm"
                       onClick={() => handleExportWidget(widget.id)}
+                      className="text-xs sm:text-sm"
                     >
                       <Download className="h-3 w-3 mr-1" />
-                      Export
+                      <span className="hidden sm:inline">Export</span>
+                      <span className="sm:hidden">Save</span>
                     </Button>
                   </div>
                 </div>
@@ -305,14 +310,14 @@ export default function WidgetShowcase() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {Object.entries(WIDGET_TEMPLATES).map(([key, template]) => (
-              <div key={key} className="p-4 border rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline">{template.type}</Badge>
-                  <span className="font-medium">{template.title}</span>
+              <div key={key} className="p-3 sm:p-4 border rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-xs w-fit">{template.type}</Badge>
+                  <span className="font-medium text-sm sm:text-base">{template.title}</span>
                 </div>
-                <p className="text-sm text-muted-foreground">{template.subtitle || 'Widget template'}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{template.subtitle || 'Widget template'}</p>
                 <div className="mt-2 text-xs text-muted-foreground">
                   Data Source: {template.dataSource}
                 </div>
