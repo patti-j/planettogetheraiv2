@@ -40,7 +40,11 @@ import {
   Building2,
   Clock,
   Calendar,
-  PackageCheck
+  PackageCheck,
+  Shield,
+  MapPin,
+  UserCheck,
+  ArchiveRestore
 } from 'lucide-react';
 
 // Master data table definitions with metadata
@@ -224,6 +228,154 @@ const masterDataTables = [
       { key: 'economicOrderQuantity', header: 'EOQ', type: 'number' as const },
       { key: 'leadTime', header: 'Lead Time (days)', type: 'number' as const },
       { key: 'standardCost', header: 'Standard Cost ($)', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'productionVersions',
+    name: 'Production Versions',
+    description: 'Product manufacturing versions and variants',
+    icon: GitBranch,
+    category: 'Manufacturing',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'versionCode', header: 'Version Code', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'itemNumber', header: 'Item Number', type: 'text' as const, required: true },
+      { key: 'validFrom', header: 'Valid From', type: 'date' as const },
+      { key: 'validTo', header: 'Valid To', type: 'date' as const },
+      { key: 'recipeId', header: 'Recipe ID', type: 'number' as const },
+      { key: 'routingId', header: 'Routing ID', type: 'number' as const },
+      { key: 'billOfMaterialId', header: 'BOM ID', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+      { key: 'isDefault', header: 'Default', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'capabilities',
+    name: 'Capabilities',
+    description: 'Resource and work center capabilities',
+    icon: Wrench,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'type', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'skill', label: 'Skill' },
+          { value: 'certification', label: 'Certification' },
+          { value: 'equipment', label: 'Equipment' },
+          { value: 'process', label: 'Process' }
+        ]
+      },
+      { key: 'level', header: 'Level', type: 'number' as const },
+      { key: 'validFrom', header: 'Valid From', type: 'date' as const },
+      { key: 'validTo', header: 'Valid To', type: 'date' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'constraints',
+    name: 'Constraints',
+    description: 'Production and scheduling constraints',
+    icon: Shield,
+    category: 'Manufacturing',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'constraintType', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'capacity', label: 'Capacity' },
+          { value: 'material', label: 'Material' },
+          { value: 'timing', label: 'Timing' },
+          { value: 'sequence', label: 'Sequence' },
+          { value: 'resource', label: 'Resource' }
+        ]
+      },
+      { key: 'severity', header: 'Severity', type: 'select' as const,
+        options: [
+          { value: 'hard', label: 'Hard' },
+          { value: 'soft', label: 'Soft' },
+          { value: 'preference', label: 'Preference' }
+        ]
+      },
+      { key: 'value', header: 'Value', type: 'text' as const },
+      { key: 'entityType', header: 'Entity Type', type: 'text' as const },
+      { key: 'entityId', header: 'Entity ID', type: 'number' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'employees',
+    name: 'Employees',
+    description: 'Employee master records',
+    icon: UserCheck,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'employeeNumber', header: 'Employee #', type: 'text' as const, required: true },
+      { key: 'firstName', header: 'First Name', type: 'text' as const, required: true },
+      { key: 'lastName', header: 'Last Name', type: 'text' as const, required: true },
+      { key: 'email', header: 'Email', type: 'text' as const },
+      { key: 'phoneNumber', header: 'Phone', type: 'text' as const },
+      { key: 'departmentId', header: 'Department ID', type: 'number' as const },
+      { key: 'jobTitle', header: 'Job Title', type: 'text' as const },
+      { key: 'hireDate', header: 'Hire Date', type: 'date' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'sites',
+    name: 'Sites',
+    description: 'Manufacturing sites and locations',
+    icon: MapPin,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'code', header: 'Site Code', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'siteType', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'manufacturing', label: 'Manufacturing' },
+          { value: 'warehouse', label: 'Warehouse' },
+          { value: 'distribution', label: 'Distribution' },
+          { value: 'office', label: 'Office' }
+        ]
+      },
+      { key: 'address', header: 'Address', type: 'text' as const },
+      { key: 'city', header: 'City', type: 'text' as const },
+      { key: 'state', header: 'State', type: 'text' as const },
+      { key: 'country', header: 'Country', type: 'text' as const },
+      { key: 'timeZone', header: 'Time Zone', type: 'text' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
+    id: 'inventoryLots',
+    name: 'Inventory Lots',
+    description: 'Batch and lot tracking',
+    icon: ArchiveRestore,
+    category: 'Inventory',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'lotNumber', header: 'Lot Number', type: 'text' as const, required: true },
+      { key: 'itemId', header: 'Item ID', type: 'number' as const, required: true },
+      { key: 'storageLocationId', header: 'Location ID', type: 'number' as const },
+      { key: 'quantity', header: 'Quantity', type: 'number' as const },
+      { key: 'manufactureDate', header: 'Manufacture Date', type: 'date' as const },
+      { key: 'expirationDate', header: 'Expiration Date', type: 'date' as const },
+      { key: 'status', header: 'Status', type: 'select' as const,
+        options: [
+          { value: 'available', label: 'Available' },
+          { value: 'reserved', label: 'Reserved' },
+          { value: 'consumed', label: 'Consumed' },
+          { value: 'expired', label: 'Expired' },
+          { value: 'quarantine', label: 'Quarantine' }
+        ]
+      },
       { key: 'isActive', header: 'Active', type: 'boolean' as const },
     ]
   },

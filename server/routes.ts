@@ -22393,7 +22393,10 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     recipeOperations: schema.recipeOperations,
     recipePhases: schema.recipePhases,
     recipeFormulas: schema.recipeFormulas,
-    productionVersions: schema.productionVersions
+    productionVersions: schema.productionVersions,
+    constraints: schema.constraints,
+    employees: schema.employees,
+    sites: schema.sites
   };
 
   // Get all data for a specific master data table
