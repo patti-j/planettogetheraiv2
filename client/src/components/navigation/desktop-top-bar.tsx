@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Menu, Sun, Moon, Monitor } from 'lucide-react';
+import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +39,6 @@ export function DesktopTopBar() {
   const [selectedScenario, setSelectedScenario] = useState('production');
   const [selectedPlants, setSelectedPlants] = useState<string[]>(['plant-1']);
   const [dateHorizon, setDateHorizon] = useState('30-days');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
   // Fetch plants data
@@ -100,26 +99,8 @@ export function DesktopTopBar() {
     { label: 'View Notifications', action: () => document.dispatchEvent(new CustomEvent('toggle-bottom-drawer')) },
   ];
 
-  // Function to toggle main menu
-  const toggleMainMenu = () => {
-    const event = new CustomEvent('toggle-main-menu');
-    document.dispatchEvent(event);
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   return (
     <div className="h-14 bg-background border-b flex items-center px-4 gap-3 sticky top-0 z-50">
-      {/* Hamburger Menu */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleMainMenu}
-        className="flex-shrink-0"
-      >
-        <Menu className="w-5 h-5" />
-        <span className="sr-only">Toggle main menu</span>
-      </Button>
-
       {/* Global Search / Command Palette */}
       <div className="flex items-center gap-2 flex-1 max-w-md">
         <Button
