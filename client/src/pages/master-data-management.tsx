@@ -44,7 +44,8 @@ import {
   ArchiveRestore,
   Grid3x3,
   LayoutGrid,
-  List
+  List,
+  Loader2
 } from 'lucide-react';
 
 // Master data table definitions with metadata
