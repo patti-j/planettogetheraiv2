@@ -6,6 +6,7 @@ import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/logo";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -53,14 +54,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm" style={{ zIndex: 2147483646 }}>
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-            </div>
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">PlanetTogether</span>
-          </div>
+          <Logo size="small" showText={true} />
           
           {/* Max Search/Command Input */}
           <div className="flex-1 relative">
