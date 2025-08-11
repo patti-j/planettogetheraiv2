@@ -577,7 +577,7 @@ export default function Analytics() {
   return (
     <>
       {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed right-12 z-50 top-3 md:top-4">
+      <div className="fixed right-12 z-40 top-20 md:top-4">
         <Button
           variant="outline"
           size="sm"
@@ -687,7 +687,7 @@ export default function Analytics() {
 
         {/* Content */}
         {isMaximized ? (
-          <div className="fixed inset-0 bg-white z-50 flex flex-col">
+          <div className="fixed inset-0 bg-white z-40 flex flex-col pt-16 md:pt-0">
             <div className="border-b px-6 py-4">
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Analytics - Maximized</h1>

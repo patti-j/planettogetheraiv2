@@ -902,7 +902,7 @@ export default function Dashboard() {
           </div>
 
           {/* Floating AI Assistant Quick Action */}
-          <div className="fixed bottom-6 right-6 z-50">
+          <div className="fixed bottom-6 right-6 z-40">
             <div className="floating-ai-assistant rounded-lg shadow-lg border border-gray-200 p-4 max-w-md">
               <div className="flex items-center space-x-2 mb-3">
                 <Bot className="w-5 h-5 text-primary" />
@@ -937,7 +937,7 @@ export default function Dashboard() {
 
           {/* Schedule Evaluation System */}
           {showEvaluationSystem && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 mt-16 md:mt-0">
               <div className="bg-white rounded-lg shadow-xl max-w-[95vw] max-h-[90vh] overflow-hidden w-full">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">

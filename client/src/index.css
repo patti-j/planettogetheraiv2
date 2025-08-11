@@ -1163,3 +1163,28 @@ div[data-radix-tooltip-content] {
   background: hsl(var(--primary) / 0.1);
   border: 1px solid hsl(var(--primary) / 0.3);
 }
+
+/* Mobile header protection - ensure nothing covers it */
+@media (max-width: 768px) {
+  /* Ensure all fixed elements stay below mobile header z-100 */
+  .fixed:not([class*="z-\\[100\\]"]) {
+    z-index: 40 !important;
+  }
+  
+  /* Adjust maximize buttons and similar controls on mobile */
+  button.fixed[class*="top-"],
+  div.fixed[class*="top-"]:not([class*="z-\\[100\\]"]) {
+    top: 5rem !important;
+  }
+  
+  /* Full screen overlays should respect header */
+  .fixed.inset-0:not([class*="z-\\[100\\]"]) {
+    padding-top: 4rem !important;
+    z-index: 40 !important;
+  }
+  
+  /* Ensure mobile sidebar stays below header */
+  .fixed.inset-0.z-40 {
+    padding-top: 4rem !important;
+  }
+}

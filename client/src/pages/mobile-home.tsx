@@ -645,7 +645,7 @@ function MobileMenuTrigger() {
       
       {/* Simple mobile sidebar overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-40 lg:hidden pt-16">
           {/* Overlay */}
           <div 
             className="fixed inset-0 bg-black bg-opacity-50" 

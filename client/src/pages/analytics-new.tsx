@@ -595,7 +595,7 @@ export default function Analytics() {
   return (
     <>
       {/* Maximize button positioned to avoid hamburger menu */}
-      <div className="fixed right-12 z-50 top-3 md:top-4">
+      <div className="fixed right-12 z-40 top-20 md:top-4">
         <Button
           variant="outline"
           size="sm"
@@ -607,7 +607,7 @@ export default function Analytics() {
       </div>
 
       {isMaximized ? (
-        <div className="fixed inset-0 bg-white z-50">
+        <div className="fixed inset-0 bg-white z-40 pt-16 md:pt-0">
           <PageContent />
           
           {/* AI Analytics Manager */}

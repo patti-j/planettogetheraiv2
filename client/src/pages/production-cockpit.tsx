@@ -701,7 +701,7 @@ export default function ProductionCockpit() {
 
 
   return (
-    <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-50' : ''}`}>
+    <div className={`min-h-screen bg-background ${maximized ? 'fixed inset-0 z-40 pt-16 md:pt-0' : ''}`}>
       {/* Header */}
       <div className={`flex flex-col lg:flex-row lg:items-center justify-between p-3 lg:p-4 border-b bg-card gap-3 lg:gap-4 ${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
         {/* Title and Layout Selector Row */}
