@@ -18,6 +18,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { useNavigation } from "@/contexts/NavigationContext";
 import { useTour } from "@/contexts/TourContext";
 import { TourSelectionDialog } from "./tour-selection-dialog";
+import { GlobalSearchDialog } from "./global-search-dialog";
 import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -31,6 +32,7 @@ export default function TopMenu() {
   const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   
   // Debug userProfileOpen state changes
   useEffect(() => {
@@ -337,13 +339,7 @@ export default function TopMenu() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              setMenuOpen(true);
-              setTimeout(() => {
-                const searchInput = document.querySelector('.search-input') as HTMLInputElement;
-                if (searchInput) searchInput.focus();
-              }, 100);
-            }}
+            onClick={() => setSearchOpen(true)}
             className="flex flex-col items-center gap-1 p-2 h-auto"
           >
             <Search className="h-5 w-5" />
@@ -935,6 +931,18 @@ export default function TopMenu() {
       <TourSelectionDialog 
         open={tourSelectionOpen} 
         onOpenChange={setTourSelectionOpen}
+      />
+      
+      {/* Global Search Dialog */}
+      <GlobalSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+      />
+      
+      {/* User Profile Dialog */}
+      <UserProfileDialog
+        open={userProfileOpen}
+        onOpenChange={setUserProfileOpen}
       />
     </>
   );
