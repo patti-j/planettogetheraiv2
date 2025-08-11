@@ -105,6 +105,7 @@ import InboxPage from "@/pages/inbox";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
+import { DesktopLayout } from "@/components/navigation/desktop-layout";
 
 
 function DashboardWithAutoTour() {
@@ -264,8 +265,7 @@ function Router() {
   }
 
   return (
-    <div className="h-screen bg-gray-50"> {/* No top padding needed */}
-      <TopMenu />
+    <DesktopLayout>
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
         <OnboardingGate>
           <Switch>
@@ -610,7 +610,7 @@ function Router() {
         </OnboardingGate>
       </SplitPaneLayout>
       {/* Integrated AI Assistant - now integrated in SplitPaneLayout */}
-    </div>
+    </DesktopLayout>
   );
 }
 
