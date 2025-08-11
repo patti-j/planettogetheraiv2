@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,12 @@ export function AILeftPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = localStorage.getItem('ai-panel-width');
+    return saved ? parseInt(saved, 10) : 320;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -62,6 +68,43 @@ export function AILeftPanel() {
     document.addEventListener('toggle-ai-panel', handleToggle);
     return () => document.removeEventListener('toggle-ai-panel', handleToggle);
   }, [isCollapsed]);
+
+  // Handle resize
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = window.innerWidth - e.clientX;
+      const clampedWidth = Math.min(Math.max(newWidth, 280), 600);
+      setPanelWidth(clampedWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        localStorage.setItem('ai-panel-width', panelWidth.toString());
+      }
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, panelWidth]);
 
   // Mock AI insights data - in production, this would come from the backend
   const mockInsights: AIInsight[] = [
@@ -155,10 +198,32 @@ export function AILeftPanel() {
   };
 
   return (
-    <div className={cn(
-      "h-full bg-background border-l transition-all duration-300 flex flex-col",
-      isCollapsed ? "w-14" : "w-80"
-    )}>
+    <div 
+      ref={panelRef}
+      className={cn(
+        "h-full bg-background border-l flex flex-col relative",
+        isCollapsed && "transition-all duration-300"
+      )}
+      style={{
+        width: isCollapsed ? '56px' : `${panelWidth}px`,
+        transition: isCollapsed ? 'width 300ms' : undefined
+      }}
+    >
+      {/* Resize Handle */}
+      {!isCollapsed && (
+        <div
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors",
+            "flex items-center justify-center group",
+            isResizing && "bg-primary/30"
+          )}
+          onMouseDown={handleMouseDown}
+        >
+          <div className="absolute inset-y-0 left-0 w-4 -translate-x-1/2" />
+          <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      )}
+      
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between">
         {!isCollapsed && (
