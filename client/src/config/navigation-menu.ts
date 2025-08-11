@@ -9,7 +9,16 @@ import {
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
-export const navigationGroups = [
+export interface NavigationGroup {
+  title: string;
+  priority: "high" | "medium" | "low";
+  color?: string;
+  bgColor?: string;
+  borderColor?: string;
+  features: any[];
+}
+
+export const navigationGroups: NavigationGroup[] = [
   {
     title: "Planning & Scheduling",
     priority: "high",

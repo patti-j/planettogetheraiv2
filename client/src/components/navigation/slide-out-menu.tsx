@@ -122,27 +122,29 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
 
         {/* Menu Content */}
         <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
-          <div className="p-2 space-y-4">
+          <div className="py-3">
             {/* Recent Pages Section */}
             {recentPages.length > 0 && !searchFilter && (
-              <div>
-                <h3 className="px-2 text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Recent</h3>
-                <div className="space-y-0.5">
-                  {recentPages.slice(0, 5).map((page) => (
+              <div className="px-3 pb-3 mb-3 border-b">
+                <h3 className="text-[11px] font-medium text-muted-foreground/70 mb-2 uppercase tracking-wider">
+                  Recent Pages
+                </h3>
+                <div className="space-y-1">
+                  {recentPages.slice(0, 4).map((page) => (
                     <Button
                       key={page.path}
                       variant={location === page.path ? 'secondary' : 'ghost'}
-                      className="w-full justify-start group h-8 px-2"
+                      className="w-full justify-start group h-7 px-2 text-sm font-normal"
                       onClick={() => {
                         setLocation(page.path);
                         onClose();
                       }}
                     >
-                      <span className="flex-1 text-left truncate text-sm">{page.label}</span>
+                      <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
+                        className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           togglePinPage(page.path);
@@ -157,39 +159,70 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
             )}
 
             {/* Navigation Groups */}
-            {filteredGroups.map((group) => (
-              <div key={group.title}>
-                {/* Category Heading */}
-                <div className="px-2 mb-1 flex items-center gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {group.title}
-                  </h3>
-                  <Badge variant="outline" className="h-4 px-1 text-[10px]">
-                    {group.items.length}
-                  </Badge>
-                </div>
+            {filteredGroups.map((group, index) => {
+              // Define subtle background based on priority
+              const priorityBg = group.priority === 'high' 
+                ? 'bg-primary/[0.02]' 
+                : group.priority === 'medium' 
+                ? 'bg-muted/30'
+                : '';
+                
+              return (
+                <div 
+                  key={group.title} 
+                  className={cn(
+                    "px-3 py-3",
+                    index < filteredGroups.length - 1 && "border-b",
+                    priorityBg
+                  )}
+                >
+                  {/* Category Heading */}
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+                      {group.title}
+                    </h3>
+                    {group.priority === 'high' && (
+                      <span className="text-[10px] text-primary/60 font-medium">FEATURED</span>
+                    )}
+                  </div>
 
-                {/* Menu Items */}
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Button
-                        key={item.href}
-                        variant={location === item.href ? 'secondary' : 'ghost'}
-                        className="w-full justify-start text-left h-8 px-2"
-                        onClick={() => handleItemClick(item)}
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          {Icon && <Icon className="h-3.5 w-3.5 flex-shrink-0" />}
-                          <span className="truncate text-sm">{item.label}</span>
-                        </div>
-                      </Button>
-                    );
-                  })}
+                  {/* Menu Items - Grid Layout for better visual organization */}
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location === item.href;
+                      return (
+                        <Button
+                          key={item.href}
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150",
+                            isActive && "bg-accent text-accent-foreground",
+                            !isActive && "hover:bg-accent/30 hover:translate-x-0.5"
+                          )}
+                          onClick={() => handleItemClick(item)}
+                        >
+                          <div className="flex items-center gap-2.5 flex-1">
+                            {Icon && (
+                              <Icon className={cn(
+                                "h-3.5 w-3.5 flex-shrink-0",
+                                isActive ? "text-primary" : "text-muted-foreground/60"
+                              )} />
+                            )}
+                            <span className={cn(
+                              "truncate text-sm",
+                              !isActive && "text-foreground/80"
+                            )}>
+                              {item.label}
+                            </span>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
       </div>
