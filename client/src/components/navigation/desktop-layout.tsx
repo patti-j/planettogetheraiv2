@@ -13,14 +13,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const deviceType = useDeviceType();
   const isDesktop = deviceType === 'desktop';
 
-  // For mobile, keep the existing layout
+  // For mobile, render content directly without TopMenu
+  // Mobile pages should handle their own navigation
   if (!isDesktop) {
-    return (
-      <>
-        <TopMenu />
-        {children}
-      </>
-    );
+    return <>{children}</>;
   }
 
   // For desktop, use the new enhanced navigation components
