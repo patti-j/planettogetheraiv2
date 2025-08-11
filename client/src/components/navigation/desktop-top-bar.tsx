@@ -213,9 +213,9 @@ export function DesktopTopBar() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="rounded-full p-0 w-9 h-9">
-            <Avatar className="w-9 h-9">
+            <Avatar className="w-9 h-9 border-2 border-muted-foreground/20">
               <AvatarImage src={(user as any)?.avatar || undefined} />
-              <AvatarFallback className="text-xs">
+              <AvatarFallback className="text-xs bg-muted border border-border">
                 {user?.firstName?.[0]?.toUpperCase() || 'U'}
                 {user?.lastName?.[0]?.toUpperCase() || ''}
               </AvatarFallback>
