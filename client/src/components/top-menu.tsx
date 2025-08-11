@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useViewMode } from "@/hooks/use-view-mode";
-import { FloatingHamburgerMenu } from "./floating-hamburger-menu";
 import { navigationGroups } from "@/config/navigation-menu";
 
 // Use shared navigation groups
@@ -302,16 +301,24 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Floating Hamburger Menu Button - Always visible on all devices */}
-      <FloatingHamburgerMenu
-        onToggle={(newState) => {
-          console.log('🔧 Hamburger menu toggled, new state:', newState);
-          console.log('🔧 Previous menuOpen state:', menuOpen);
-          setMenuOpen(newState);
-          console.log('🔧 Menu should now be:', newState ? 'VISIBLE' : 'HIDDEN');
-        }}
-        isOpen={menuOpen}
-      />
+      {/* Mobile Hamburger Menu Button - Fixed position in header */}
+      <div className="lg:hidden fixed top-4 left-4 z-[2147483646]">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            console.log('🔧 Mobile hamburger button clicked, toggling menu');
+            setMenuOpen(!menuOpen);
+          }}
+          className="h-9 w-9 p-0 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700"
+        >
+          {menuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
 
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (

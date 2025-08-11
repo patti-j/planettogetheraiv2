@@ -25,7 +25,6 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { FloatingHamburgerMenu } from "@/components/floating-hamburger-menu";
 import { navigationGroups } from "@/config/navigation-menu";
 import {
   DropdownMenu,
