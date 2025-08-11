@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { Search, Settings, User, ChevronDown, Building2, Calendar, Layers3, Command, Menu, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -270,8 +271,14 @@ export function DesktopTopBar() {
       {/* User Profile/Settings */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <User className="w-5 h-5" />
+          <Button variant="ghost" size="icon" className="rounded-full p-0 w-9 h-9">
+            <Avatar className="w-9 h-9">
+              <AvatarImage src={(user as any)?.avatar || undefined} />
+              <AvatarFallback className="text-xs">
+                {user?.firstName?.[0]?.toUpperCase() || 'U'}
+                {user?.lastName?.[0]?.toUpperCase() || ''}
+              </AvatarFallback>
+            </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[200px]">

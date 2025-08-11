@@ -394,22 +394,6 @@ export default function TopMenu() {
                     <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Avatar 
-                      className="w-6 h-6 sm:w-8 sm:h-8 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all duration-200"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        console.log('🎯 Avatar clicked! Opening profile dialog...', { userProfileOpen });
-                        setTimeout(() => {
-                          setUserProfileOpen(true);
-                          console.log('After setting userProfileOpen to true');
-                        }, 0);
-                      }}
-                    >
-                      <AvatarFallback className="bg-blue-500 text-white text-xs sm:text-sm">
-                        {(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
                     <div 
                       className="hidden md:block text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md px-2 py-1 transition-colors duration-200"
                       onClick={(e) => {
