@@ -301,21 +301,7 @@ export function LeftRailNav() {
           </ScrollArea>
         </div>
 
-        {/* User Info (collapsed view only) */}
-        {isCollapsed && (
-          <div className="p-2 border-t">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-10 h-10 mx-auto rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                  {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{user?.firstName || user?.username}</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )}
+
         </div>
       </TooltipProvider>
     </>
