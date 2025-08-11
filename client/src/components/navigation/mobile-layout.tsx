@@ -19,12 +19,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest("/api/ai-agent/chat", {
-        method: "POST",
-        body: { message }
-      });
+      return apiRequest("POST", "/api/ai-agent/chat", { message });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       // Open Max panel to show response
       setMaxOpen(true);
       // Show canvas if AI returns visual content
