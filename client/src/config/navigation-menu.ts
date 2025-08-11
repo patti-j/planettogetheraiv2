@@ -5,7 +5,7 @@ import {
   Shield, GraduationCap, UserCheck, BookOpen, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
-  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe
+  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -26,8 +26,8 @@ export const navigationGroups: NavigationGroup[] = [
     bgColor: "bg-blue-50 dark:bg-blue-950/20",
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
-      { icon: Home, label: "Home", href: "/", feature: "", action: "" },
-      { icon: BarChart3, label: "Production Scheduling", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
+      { icon: Calendar, label: "Production Scheduling", href: "/", feature: "", action: "" },
+      { icon: BarChart3, label: "Gantt Schedule View", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
       { icon: Monitor, label: "Cockpit", href: "/cockpit", feature: "production-cockpit", action: "view", color: "bg-slate-600" },
