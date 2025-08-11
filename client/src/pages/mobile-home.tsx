@@ -1375,7 +1375,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
+    <div className="bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col">
 
       {/* Library Modal */}
             <div 
@@ -1746,56 +1746,7 @@ export default function MobileHomePage() {
               </div>
             </div>
 
-      {/* Add mobile-specific CSS overrides */}
-      <style>{`
-        /* Override fixed positioning for mobile pages */
-        .mobile-page-wrapper .fixed {
-          position: relative !important;
-        }
-        .mobile-page-wrapper .inset-0 {
-          inset: auto !important;
-        }
-        .mobile-page-wrapper .top-0 {
-          top: auto !important;
-        }
-        .mobile-page-wrapper .h-screen,
-        .mobile-page-wrapper .min-h-screen,
-        .mobile-page-wrapper .h-full,
-        .mobile-page-wrapper .min-h-full {
-          height: auto !important;
-          min-height: auto !important;
-          max-height: none !important;
-        }
-        .mobile-page-wrapper > div:first-child {
-          height: auto !important;
-          min-height: auto !important;
-          position: relative !important;
-          top: 0 !important;
-          left: 0 !important;
-          transform: none !important;
-        }
-        .mobile-page-wrapper .flex.flex-col.h-screen,
-        .mobile-page-wrapper div[class*="h-screen"],
-        .mobile-page-wrapper div[class*="min-h-screen"] {
-          height: auto !important;
-          min-height: auto !important;
-        }
-        .mobile-page-wrapper .bg-gray-50.dark\\:bg-gray-900 {
-          background: transparent !important;
-        }
-        /* Ensure mobile header stays on top with highest z-index */
-        .force-mobile-view > div:first-child {
-          z-index: 100 !important;
-        }
-        /* Prevent pages from using high z-index values */
-        .mobile-page-wrapper .z-50,
-        .mobile-page-wrapper .z-40,
-        .mobile-page-wrapper .z-30,
-        .mobile-page-wrapper .z-20,
-        .mobile-page-wrapper .z-10 {
-          z-index: 1 !important;
-        }
-      `}</style>
+
 
       {/* Main Content - Check route and render appropriate content */}
       {(() => {
