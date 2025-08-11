@@ -28,6 +28,7 @@ Note on concurrent work:
 - **Gantt Chart**: Bryntum Gantt 6.3.1 Trial for production scheduling visualization
 - **Build Tool**: Vite for development and production builds
 - **Widget System**: Comprehensive reusable components for consistent UI patterns (e.g., FilterSearchWidget, MetricsCardWidget, DataTableWidget). Two types: System widgets (non-editable, controlled by system) and User widgets (editable/customizable by users).
+- **Navigation**: Desktop features left rail navigation with integrated slide-out menu, workspace switching, recent pages, and resizable right-side AI panel. Menu slides out from left to maintain context, showing clear relationship to navigation rail.
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, and user-configurable layouts with persistence.
 
 ### Backend Architecture

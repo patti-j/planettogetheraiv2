@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Clock, ChevronDown, ChevronRight, FolderOpen, Grid, Pin, PinOff, X } from 'lucide-react';
+import { Home, Clock, ChevronDown, ChevronRight, FolderOpen, Grid, Pin, PinOff, X, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
+import { SlideOutMenu } from './slide-out-menu';
 
 interface Workspace {
   id: string;
@@ -22,6 +23,7 @@ interface Workspace {
 export function LeftRailNav() {
   const [location, setLocation] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
   const { recentPages, togglePinPage, clearRecentPages } = useNavigation();
   
@@ -60,32 +62,59 @@ export function LeftRailNav() {
   };
 
   return (
-    <TooltipProvider>
-      <div className={cn(
-        "h-full bg-background border-r transition-all duration-300 flex flex-col",
-        isCollapsed ? "w-16" : "w-64"
-      )}>
-        {/* Toggle Button */}
-        <div className="p-2 border-b">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="w-full justify-start"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <>
-                <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
-                <span className="text-sm">Collapse</span>
-              </>
+    <>
+      {/* Slide-out Menu */}
+      <SlideOutMenu 
+        isOpen={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)} 
+      />
+      
+      <TooltipProvider>
+        <div className={cn(
+          "h-full bg-background border-r transition-all duration-300 flex flex-col",
+          isCollapsed ? "w-16" : "w-64"
+        )}>
+          {/* Toggle Button & Menu Button Row */}
+          <div className="p-2 border-b flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMenuOpen(true)}
+              className={cn(
+                "flex-shrink-0",
+                isCollapsed ? "w-full justify-center" : "w-auto"
+              )}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-4 w-4" />
+              {!isCollapsed && <span className="ml-2">Menu</span>}
+            </Button>
+            
+            {!isCollapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="ml-auto"
+              >
+                <ChevronRight className="h-4 w-4 rotate-180" />
+              </Button>
             )}
-          </Button>
-        </div>
+            
+            {isCollapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="w-full justify-center"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
-        {/* Home Button */}
-        <div className="p-2 border-b">
+          {/* Home Button */}
+          <div className="p-2 border-b">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -262,7 +291,8 @@ export function LeftRailNav() {
             </Tooltip>
           </div>
         )}
-      </div>
-    </TooltipProvider>
+        </div>
+      </TooltipProvider>
+    </>
   );
 }
