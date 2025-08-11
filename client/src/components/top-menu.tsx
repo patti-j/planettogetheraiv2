@@ -298,13 +298,27 @@ export default function TopMenu() {
   };
 
   const { currentView } = useViewMode();
-
-
+  
+  // Check if we're on a mobile page
+  const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
+  
+  // State for window width detection
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Show footer on mobile pages or on small screens
+  const showMobileFooter = isMobilePage || windowWidth < 1024;
 
   return (
     <>
       {/* Mobile Bottom Navigation Bar - Footer layout for easy thumb access */}
-      <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
+      {showMobileFooter && (
+      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
         <div className="flex items-center justify-around px-2 py-2">
           {/* Home Button */}
           <Button
@@ -369,6 +383,7 @@ export default function TopMenu() {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
