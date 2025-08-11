@@ -299,92 +299,86 @@ export default function TopMenu() {
 
   const { currentView } = useViewMode();
   
-  // Check if we're on a mobile page
+  // Check if we're on a mobile page - always show footer on mobile pages
   const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
   
-  // State for window width detection
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
-  // Show footer on mobile pages or on small screens
-  const showMobileFooter = isMobilePage || windowWidth < 1024;
+  // Always show on mobile pages
+  if (isMobilePage) {
+    return (
+      <>
+        {/* Mobile Bottom Navigation Bar - Always visible on mobile pages */}
+        <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg w-full h-14" style={{ position: 'relative', zIndex: 2147483647 }}>
+          <div className="flex items-center justify-around px-2 py-2">
+            {/* Home Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/mobile-home')}
+              className="flex flex-col items-center gap-1 p-2 h-auto"
+            >
+              <Home className="h-5 w-5" />
+              <span className="text-[10px]">Home</span>
+            </Button>
+            
+            {/* Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                console.log('🔧 Mobile menu button clicked, toggling menu');
+                setMenuOpen(!menuOpen);
+              }}
+              className="flex flex-col items-center gap-1 p-2 h-auto"
+            >
+              {menuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+              <span className="text-[10px]">Menu</span>
+            </Button>
+            
+            {/* Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchOpen(true)}
+              className="flex flex-col items-center gap-1 p-2 h-auto"
+            >
+              <Search className="h-5 w-5" />
+              <span className="text-[10px]">Search</span>
+            </Button>
+            
+            {/* Recent/History Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation('/mobile-home')}
+              className="flex flex-col items-center gap-1 p-2 h-auto"
+            >
+              <History className="h-5 w-5" />
+              <span className="text-[10px]">Recent</span>
+            </Button>
+            
+            {/* Profile Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setUserProfileOpen(true)}
+              className="flex flex-col items-center gap-1 p-2 h-auto"
+            >
+              <User className="h-5 w-5" />
+              <span className="text-[10px]">Profile</span>
+            </Button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
+  // Default return for non-mobile pages
   return (
     <>
-      {/* Mobile Bottom Navigation Bar - Footer layout for easy thumb access */}
-      {showMobileFooter && (
-      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg" style={{ zIndex: 9999 }}>
-        <div className="flex items-center justify-around px-2 py-2">
-          {/* Home Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/mobile-home')}
-            className="flex flex-col items-center gap-1 p-2 h-auto"
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-[10px]">Home</span>
-          </Button>
-          
-          {/* Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              console.log('🔧 Mobile menu button clicked, toggling menu');
-              setMenuOpen(!menuOpen);
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto"
-          >
-            {menuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
-            <span className="text-[10px]">Menu</span>
-          </Button>
-          
-          {/* Search Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchOpen(true)}
-            className="flex flex-col items-center gap-1 p-2 h-auto"
-          >
-            <Search className="h-5 w-5" />
-            <span className="text-[10px]">Search</span>
-          </Button>
-          
-          {/* Recent/History Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation('/mobile-home')}
-            className="flex flex-col items-center gap-1 p-2 h-auto"
-          >
-            <History className="h-5 w-5" />
-            <span className="text-[10px]">Recent</span>
-          </Button>
-          
-          {/* Profile Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setUserProfileOpen(true)}
-            className="flex flex-col items-center gap-1 p-2 h-auto"
-          >
-            <User className="h-5 w-5" />
-            <span className="text-[10px]">Profile</span>
-          </Button>
-        </div>
-      </div>
-      )}
-
       {/* Full Screen Dropdown Menu - Show on all views */}
       {menuOpen && (
         <div 
