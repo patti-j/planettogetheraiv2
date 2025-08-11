@@ -632,20 +632,20 @@ function MobileMenuTrigger() {
             onClick={() => setIsOpen(false)}
           />
           {/* Sidebar Panel */}
-          <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+          <div className="fixed right-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-8 w-8">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
                     <AvatarFallback>{(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="text-sm font-medium">{user?.firstName || user?.username || 'User'}</p>
-                    <p className="text-xs text-gray-500">{user?.email || 'demo@example.com'}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user?.firstName || user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email || 'demo@example.com'}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center flex-shrink-0">
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -653,7 +653,7 @@ function MobileMenuTrigger() {
                       logout();
                       setIsOpen(false);
                     }}
-                    className="p-2 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    className="p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                     title="Log out"
                   >
                     <LogOut className="w-4 h-4" />
@@ -662,6 +662,7 @@ function MobileMenuTrigger() {
                     variant="ghost" 
                     size="sm" 
                     onClick={() => setIsOpen(false)}
+                    className="p-1.5"
                   >
                     <X className="w-4 h-4" />
                   </Button>
