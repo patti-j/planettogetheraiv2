@@ -75,41 +75,66 @@ export function LeftRailNav() {
           isCollapsed ? "w-16" : "w-64"
         )}>
           {/* Toggle Button & Menu Button Row */}
-          <div className="p-2 border-b flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsMenuOpen(true)}
-              className={cn(
-                "flex-shrink-0",
-                isCollapsed ? "w-full justify-center" : "w-auto"
-              )}
-              aria-label="Open navigation menu"
-            >
-              <Menu className="h-4 w-4" />
-              {!isCollapsed && <span className="ml-2">Menu</span>}
-            </Button>
-            
-            {!isCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="ml-auto"
-              >
-                <ChevronRight className="h-4 w-4 rotate-180" />
-              </Button>
-            )}
-            
-            {isCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="w-full justify-center"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+          <div className="p-2 border-b">
+            {!isCollapsed ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMenuOpen(true)}
+                  className="flex-shrink-0"
+                  aria-label="Open navigation menu"
+                >
+                  <Menu className="h-4 w-4" />
+                  <span className="ml-2">Menu</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCollapsed(true)}
+                  className="ml-auto"
+                  aria-label="Collapse navigation"
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsCollapsed(false)}
+                      className="w-full justify-center"
+                      aria-label="Expand navigation"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Expand navigation</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsMenuOpen(true)}
+                      className="w-full justify-center"
+                      aria-label="Open navigation menu"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Menu</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
           </div>
 
