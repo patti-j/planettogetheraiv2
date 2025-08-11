@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
 import { useDeviceType } from '@/hooks/useDeviceType';
@@ -21,6 +21,10 @@ import OperationSequencerWidget from '@/components/widgets/operation-sequencer-w
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface ScheduleFilters {
   dateRange: string;
@@ -418,7 +422,7 @@ export default function ProductionSchedulePage() {
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`${isMobile ? 'grid w-full grid-cols-2 h-auto gap-1 p-1' : 'grid w-full grid-cols-4'}`}>
+          <TabsList className={`${isMobile ? 'grid w-full grid-cols-3 h-auto gap-1 p-1' : 'grid w-full grid-cols-5'}`}>
             <TabsTrigger 
               value="overview" 
               className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
@@ -442,6 +446,12 @@ export default function ProductionSchedulePage() {
               className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
             >
               {isMobile ? 'Resources' : 'Resource Assignment'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="management" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Manage' : 'Schedule Management'}
             </TabsTrigger>
           </TabsList>
 
@@ -618,6 +628,209 @@ export default function ProductionSchedulePage() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="management" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
+            <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {/* Schedule Versions/Snapshots */}
+              <Card className="col-span-1">
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <History className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Schedule Versions
+                  </CardTitle>
+                  {!isMobile && (
+                    <p className="text-sm text-muted-foreground">
+                      Save and restore schedule snapshots
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full gap-2" 
+                      variant="outline"
+                      onClick={() => {
+                        // TODO: Implement save snapshot functionality
+                        alert('Save Snapshot functionality will be implemented');
+                      }}
+                    >
+                      <Save className="w-4 h-4" />
+                      Save Current Version
+                    </Button>
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <p className="text-sm font-medium">Recent Versions</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <span className="text-sm">v1.2 - Production Schedule</span>
+                          <span className="text-xs text-muted-foreground">2 hours ago</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <span className="text-sm">v1.1 - Weekly Schedule</span>
+                          <span className="text-xs text-muted-foreground">Yesterday</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Schedule Approvals */}
+              <Card className="col-span-1">
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <UserCheck className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Approval Workflow
+                  </CardTitle>
+                  {!isMobile && (
+                    <p className="text-sm text-muted-foreground">
+                      Request and manage schedule approvals
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full gap-2" 
+                      variant="outline"
+                      onClick={() => {
+                        // TODO: Implement request approval functionality
+                        alert('Request Approval functionality will be implemented');
+                      }}
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      Request Approval
+                    </Button>
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <p className="text-sm font-medium">Pending Approvals</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <div>
+                            <span className="text-sm">Schedule Update</span>
+                            <Badge variant="outline" className="ml-2 text-xs">Level 1</Badge>
+                          </div>
+                          <Badge variant="secondary">Pending</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <div>
+                            <span className="text-sm">Resource Change</span>
+                            <Badge variant="outline" className="ml-2 text-xs">Level 2</Badge>
+                          </div>
+                          <Badge variant="success">Approved</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Schedule Comparison */}
+              <Card className="col-span-1">
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <GitCompareArrows className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Schedule Comparison
+                  </CardTitle>
+                  {!isMobile && (
+                    <p className="text-sm text-muted-foreground">
+                      Compare different schedule versions
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full gap-2" 
+                      variant="outline"
+                      onClick={() => {
+                        // TODO: Implement compare functionality
+                        alert('Compare Schedules functionality will be implemented');
+                      }}
+                    >
+                      <GitCompareArrows className="w-4 h-4" />
+                      Compare Versions
+                    </Button>
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <p className="text-sm font-medium">Recent Comparisons</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <span className="text-sm">v1.2 vs v1.1</span>
+                          <Badge variant="outline">12 changes</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-2 hover:bg-muted rounded">
+                          <span className="text-sm">Current vs Baseline</span>
+                          <Badge variant="outline">5 changes</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Schedule Discussions & Notifications */}
+              <Card className="col-span-1">
+                <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                  <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
+                    <MessageCircle className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Collaboration
+                  </CardTitle>
+                  {!isMobile && (
+                    <p className="text-sm text-muted-foreground">
+                      Discussions and notifications
+                    </p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1 gap-2" 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Implement discussion functionality
+                          alert('Start Discussion functionality will be implemented');
+                        }}
+                      >
+                        <MessageCircle className="w-3 h-3" />
+                        Discuss
+                      </Button>
+                      <Button 
+                        className="flex-1 gap-2" 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Implement subscription functionality
+                          alert('Subscribe to Changes functionality will be implemented');
+                        }}
+                      >
+                        <Bell className="w-3 h-3" />
+                        Subscribe
+                      </Button>
+                    </div>
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <p className="text-sm font-medium">Recent Activity</p>
+                      <div className="space-y-1">
+                        <div className="p-2 hover:bg-muted rounded">
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-sm">John: Updated resource allocation</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-5">10 min ago</span>
+                        </div>
+                        <div className="p-2 hover:bg-muted rounded">
+                          <div className="flex items-center gap-2">
+                            <Bell className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-sm">Schedule approved by manager</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-5">1 hour ago</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
