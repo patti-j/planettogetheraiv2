@@ -27,7 +27,7 @@ Note on concurrent work:
 - **Drag & Drop**: react-dnd with HTML5 backend for operation scheduling
 - **Gantt Chart**: Bryntum Gantt 6.3.1 Trial for production scheduling visualization
 - **Build Tool**: Vite for development and production builds
-- **Widget System**: Comprehensive reusable components for consistent UI patterns (e.g., FilterSearchWidget, MetricsCardWidget, DataTableWidget).
+- **Widget System**: Comprehensive reusable components for consistent UI patterns (e.g., FilterSearchWidget, MetricsCardWidget, DataTableWidget). Two types: System widgets (non-editable, controlled by system) and User widgets (editable/customizable by users).
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, and user-configurable layouts with persistence.
 
 ### Backend Architecture
