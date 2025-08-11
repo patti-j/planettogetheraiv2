@@ -55,7 +55,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <img 
-              src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
+              src="/attached_assets/Logo PlanetTogether 2-Jul-26-2024-03-56-49-3830-PM_1754504742070.png" 
               alt="PlanetTogether" 
               className="h-8 w-8 object-contain"
             />
