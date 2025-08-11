@@ -266,10 +266,10 @@ export function AILeftPanel() {
               </div>
             </TabsContent>
 
-            {/* Other tabs with ScrollArea */}
-            <ScrollArea className="flex-1 px-4">
-
-              <TabsContent value="insights" className="mt-4 space-y-3">
+            {/* Insights Tab */}
+            <TabsContent value="insights" className="flex-1 overflow-hidden mt-0">
+              <ScrollArea className="h-full px-4">
+                <div className="space-y-3 pt-4 pb-4">
                 {mockInsights
                   .filter(i => i.type === 'insight' || i.type === 'recommendation')
                   .map(insight => (
@@ -306,9 +306,14 @@ export function AILeftPanel() {
                       </CardContent>
                     </Card>
                   ))}
-              </TabsContent>
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
-              <TabsContent value="anomalies" className="mt-4 space-y-3">
+            {/* Anomalies Tab */}
+            <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-0">
+              <ScrollArea className="h-full px-4">
+                <div className="space-y-3 pt-4 pb-4">
                 {mockInsights
                   .filter(i => i.type === 'anomaly')
                   .map(insight => (
@@ -350,9 +355,14 @@ export function AILeftPanel() {
                       </CardContent>
                     </Card>
                   ))}
-              </TabsContent>
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
-              <TabsContent value="simulations" className="mt-4 space-y-3">
+            {/* Simulations Tab */}
+            <TabsContent value="simulations" className="flex-1 overflow-hidden mt-0">
+              <ScrollArea className="h-full px-4">
+                <div className="space-y-3 pt-4 pb-4">
                 <Card className="border-dashed">
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center gap-2">
@@ -405,8 +415,9 @@ export function AILeftPanel() {
                       </CardContent>
                     </Card>
                   ))}
-              </TabsContent>
-            </ScrollArea>
+                </div>
+              </ScrollArea>
+            </TabsContent>
           </Tabs>
         </>
       )}
