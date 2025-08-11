@@ -417,7 +417,6 @@ export default function TopMenu() {
                           setUserProfileOpen(newOpen);
                         }}
                       />
-                      <ThemeToggle />
                       {/* Close Menu Button - Red X since menu is open */}
                       <Button
                         onClick={() => {
