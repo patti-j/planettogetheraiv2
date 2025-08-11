@@ -1355,18 +1355,7 @@ export default function MobileHomePage() {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
-        {/* Floating Hamburger Menu */}
-        <FloatingHamburgerMenu
-          onToggle={(isOpen) => {
-            console.log("🍔 Mobile hamburger toggled:", isOpen);
-            setDesignStudioOpen(isOpen);
-          }}
-          isOpen={designStudioOpen}
-          showOnDesktop={false}
-          showOnMobile={true}
-        />
-        
-        {/* Mobile Header - Fixed with lower z-index to allow hamburger menu */}
+        {/* Mobile Header with integrated hamburger menu */}
         <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-30 relative">
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
@@ -1430,8 +1419,8 @@ export default function MobileHomePage() {
             </div>
           </div>
 
-          {/* Right Actions - Library button restored */}
-          <div className="flex items-center gap-2 flex-shrink-0 mr-10">
+          {/* Right Actions - Library and Menu buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               onClick={() => {
                 const dialog = document.getElementById('library-dialog');
@@ -1445,6 +1434,9 @@ export default function MobileHomePage() {
             >
               <Library className="w-4 h-4" />
             </Button>
+            
+            {/* Mobile Menu Trigger */}
+            <MobileMenuTrigger />
           </div>
         </div>
       </div>
