@@ -198,7 +198,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                           className={cn(
                             "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150",
                             isActive && "bg-accent text-accent-foreground",
-                            !isActive && "hover:bg-accent/30 hover:translate-x-0.5"
+                            !isActive && "hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5"
                           )}
                           onClick={() => handleItemClick(item)}
                         >
