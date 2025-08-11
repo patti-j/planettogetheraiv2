@@ -299,11 +299,21 @@ export default function TopMenu() {
 
   const { currentView } = useViewMode();
   
-  // Check if we're on a mobile page - always show footer on mobile pages
-  const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
+  // Check if we're viewing on mobile (based on viewport width)
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   
-  // Always show on mobile pages
-  if (isMobilePage) {
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Show footer on mobile viewport (less than 768px) or on specific mobile pages
+  const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
+  const isMobileViewport = windowWidth < 768;
+  
+  // Always show on mobile viewport or mobile pages
+  if (isMobileViewport || isMobilePage) {
     return (
       <>
         {/* Mobile Bottom Navigation Bar - Always visible on mobile pages */}
