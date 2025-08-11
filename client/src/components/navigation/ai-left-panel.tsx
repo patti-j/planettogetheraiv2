@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
@@ -21,9 +23,38 @@ interface AIInsight {
   recommendation?: string;
 }
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
 export function AILeftPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState('insights');
+  const [activeTab, setActiveTab] = useState('chat');
+  const [prompt, setPrompt] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
+      timestamp: '10:00 AM'
+    },
+    {
+      id: '2',
+      role: 'user',
+      content: 'What\'s the current status of production line A?',
+      timestamp: '10:02 AM'
+    },
+    {
+      id: '3',
+      role: 'assistant',
+      content: 'Production Line A is currently operating at 77% capacity, which is 23% below expected performance. I\'ve detected an unusual delay pattern that started 2 hours ago. The issue appears to be related to material feed rate inconsistencies. Would you like me to suggest optimization strategies?',
+      timestamp: '10:02 AM'
+    }
+  ]);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Listen for toggle event from command palette
   useEffect(() => {
@@ -98,6 +129,31 @@ export function AILeftPanel() {
     }
   };
 
+  const handleSendMessage = () => {
+    if (!prompt.trim()) return;
+
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setChatMessages(prev => [...prev, newMessage]);
+    setPrompt('');
+
+    // Simulate AI response after a short delay
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'I\'m analyzing your request and will provide insights based on current production data. Let me check the system for you...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatMessages(prev => [...prev, aiResponse]);
+    }, 1000);
+  };
+
   return (
     <div className={cn(
       "h-full bg-background border-r transition-all duration-300 flex flex-col",
@@ -140,14 +196,79 @@ export function AILeftPanel() {
           </div>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid grid-cols-3 mx-4 mt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid grid-cols-4 mx-4 mt-4">
+              <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="anomalies">Anomalies</TabsTrigger>
-              <TabsTrigger value="simulations">Simulations</TabsTrigger>
+              <TabsTrigger value="simulations">Sims</TabsTrigger>
             </TabsList>
 
+            {/* Chat Tab with its own layout */}
+            <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-4 overflow-hidden">
+              <ScrollArea className="flex-1 pr-2">
+                <div className="space-y-4 pb-4">
+                  {chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={cn(
+                        "flex gap-3",
+                        message.role === 'user' && "flex-row-reverse"
+                      )}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div
+                        className={cn(
+                          "flex flex-col gap-1 max-w-[85%]",
+                          message.role === 'user' && "items-end"
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "rounded-lg px-3 py-2 text-sm",
+                            message.role === 'user'
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                          )}
+                        >
+                          {message.content}
+                        </div>
+                        <span className="text-xs text-muted-foreground px-1">
+                          {message.timestamp}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              
+              {/* Chat Input */}
+              <div className="border-t pt-4 pb-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Ask Max anything..."
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSendMessage} size="icon">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Max can help with scheduling, optimization, and insights
+                </p>
+              </div>
+            </TabsContent>
+
+            {/* Other tabs with ScrollArea */}
             <ScrollArea className="flex-1 px-4">
+
               <TabsContent value="insights" className="mt-4 space-y-3">
                 {mockInsights
                   .filter(i => i.type === 'insight' || i.type === 'recommendation')
