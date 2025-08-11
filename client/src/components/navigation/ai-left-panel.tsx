@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { useAuth } from '@/hooks/useAuth';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface AIInsight {
   id: string;
@@ -40,6 +46,31 @@ export function AILeftPanel() {
   });
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  
+  // AI Settings State - Load from localStorage if available
+  const [aiSettings, setAiSettings] = useState(() => {
+    const saved = localStorage.getItem('ai-settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fall back to defaults if parse fails
+      }
+    }
+    return {
+      model: 'gpt-4',
+      responseStyle: 'professional',
+      autoSuggestions: true,
+      showInsights: true,
+      notificationsEnabled: true,
+      soundEnabled: false,
+      contextWindow: 'standard',
+      temperature: 0.7,
+      maxTokens: 2000,
+      streamResponses: true
+    };
+  });
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -262,11 +293,10 @@ export function AILeftPanel() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-4 mx-4 mt-2">
+            <TabsList className="grid grid-cols-3 mx-4 mt-2">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="anomalies">Anomalies</TabsTrigger>
-              <TabsTrigger value="simulations">Sims</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             {/* Chat Tab with its own layout */}
@@ -480,6 +510,202 @@ export function AILeftPanel() {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
+              <ScrollArea className="h-full px-4">
+                <div className="space-y-6 pt-2 pb-4">
+                  {/* Model Settings */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        AI Model
+                      </h3>
+                      <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gpt-4">GPT-4 (Most Capable)</SelectItem>
+                          <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Faster)</SelectItem>
+                          <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Economy)</SelectItem>
+                          <SelectItem value="claude-3">Claude 3 (Alternative)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Response Style
+                      </h3>
+                      <Select value={aiSettings.responseStyle} onValueChange={(value) => setAiSettings(prev => ({ ...prev, responseStyle: value }))}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="casual">Casual</SelectItem>
+                          <SelectItem value="technical">Technical</SelectItem>
+                          <SelectItem value="concise">Concise</SelectItem>
+                          <SelectItem value="detailed">Detailed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Feature Toggles */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      AI Features
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="auto-suggestions" className="text-sm cursor-pointer">
+                        Auto-suggestions
+                      </Label>
+                      <Switch
+                        id="auto-suggestions"
+                        checked={aiSettings.autoSuggestions}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, autoSuggestions: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="show-insights" className="text-sm cursor-pointer">
+                        Show insights
+                      </Label>
+                      <Switch
+                        id="show-insights"
+                        checked={aiSettings.showInsights}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, showInsights: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="stream-responses" className="text-sm cursor-pointer">
+                        Stream responses
+                      </Label>
+                      <Switch
+                        id="stream-responses"
+                        checked={aiSettings.streamResponses}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, streamResponses: checked }))}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Notifications */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Notifications
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="notifications" className="text-sm cursor-pointer">
+                        AI notifications
+                      </Label>
+                      <Switch
+                        id="notifications"
+                        checked={aiSettings.notificationsEnabled}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, notificationsEnabled: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="sound" className="text-sm cursor-pointer">
+                        Sound alerts
+                      </Label>
+                      <Switch
+                        id="sound"
+                        checked={aiSettings.soundEnabled}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Advanced Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      Advanced
+                    </h3>
+
+                    <div>
+                      <Label htmlFor="temperature" className="text-sm">
+                        Creativity (Temperature): {aiSettings.temperature}
+                      </Label>
+                      <Slider
+                        id="temperature"
+                        min={0}
+                        max={1}
+                        step={0.1}
+                        value={[aiSettings.temperature]}
+                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, temperature: value }))}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Lower = More focused, Higher = More creative
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="max-tokens" className="text-sm">
+                        Response Length: {aiSettings.maxTokens} tokens
+                      </Label>
+                      <Slider
+                        id="max-tokens"
+                        min={500}
+                        max={4000}
+                        step={500}
+                        value={[aiSettings.maxTokens]}
+                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, maxTokens: value }))}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="context-window" className="text-sm">
+                        Context Window
+                      </Label>
+                      <Select value={aiSettings.contextWindow} onValueChange={(value) => setAiSettings(prev => ({ ...prev, contextWindow: value }))}>
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minimal">Minimal (Last 5 messages)</SelectItem>
+                          <SelectItem value="standard">Standard (Last 10 messages)</SelectItem>
+                          <SelectItem value="extended">Extended (Last 20 messages)</SelectItem>
+                          <SelectItem value="maximum">Maximum (Full conversation)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Save Button */}
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      // Save settings to localStorage and potentially to backend
+                      localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
+                      // You could also make an API call here to save to backend
+                    }}
+                  >
+                    Save Settings
+                  </Button>
                 </div>
               </ScrollArea>
             </TabsContent>
