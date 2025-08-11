@@ -2,6 +2,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { DesktopTopBar } from './desktop-top-bar';
 import { AILeftPanel } from './ai-left-panel';
 import { BottomDrawer } from './bottom-drawer';
+import { LeftRailNav } from './left-rail-nav';
 import TopMenu from '@/components/top-menu';
 
 interface DesktopLayoutProps {
@@ -28,8 +29,11 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {/* New desktop top bar */}
       <DesktopTopBar />
       
-      {/* Main content area with AI panel */}
+      {/* Main content area with left rail and AI panel */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Left Rail Navigation */}
+        <LeftRailNav />
+        
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           {/* TopMenu for navigation menu (visible but without floating hamburger on desktop) */}

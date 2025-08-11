@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Settings, User, ChevronDown, Building2, Calendar, Layers3, Command, Menu, Sun, Moon, Monitor } from 'lucide-react';
+import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Menu, Sun, Moon, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +39,6 @@ export function DesktopTopBar() {
   const [selectedScenario, setSelectedScenario] = useState('production');
   const [selectedPlants, setSelectedPlants] = useState<string[]>(['plant-1']);
   const [dateHorizon, setDateHorizon] = useState('30-days');
-  const [workspace, setWorkspace] = useState('personal');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -80,12 +79,6 @@ export function DesktopTopBar() {
     { value: '60-days', label: '60 Days' },
     { value: '90-days', label: '90 Days' },
     { value: 'custom', label: 'Custom Range' },
-  ];
-
-  const workspaces = [
-    { value: 'personal', label: 'Personal', count: 5 },
-    { value: 'team', label: 'Team', count: 12 },
-    { value: 'org-templates', label: 'Organization Templates', count: 8 },
   ];
 
   const availablePlants = [
@@ -206,39 +199,6 @@ export function DesktopTopBar() {
 
       {/* Spacer */}
       <div className="flex-1" />
-
-      {/* Workspaces */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Layers3 className="w-4 h-4 mr-2" />
-            Workspaces
-            <ChevronDown className="w-4 h-4 ml-2" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[250px]">
-          <DropdownMenuLabel>Switch Workspace</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {workspaces.map(ws => (
-            <DropdownMenuItem
-              key={ws.value}
-              onClick={() => setWorkspace(ws.value)}
-              className={workspace === ws.value ? 'bg-accent' : ''}
-            >
-              <div className="flex items-center justify-between w-full">
-                <span>{ws.label}</span>
-                <Badge variant="secondary" className="ml-2">
-                  {ws.count}
-                </Badge>
-              </div>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <span className="text-muted-foreground">Create New Workspace</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
 
       {/* Theme Toggle */}
       <DropdownMenu>
