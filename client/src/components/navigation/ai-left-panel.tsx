@@ -48,17 +48,29 @@ export function AILeftPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   
-  // AI Settings State - Load from localStorage if available
+  // Helper function to get gradient class based on theme
+  const getThemeGradient = (theme: string) => {
+    const gradients: Record<string, string> = {
+      'purple-pink': 'bg-gradient-to-r from-purple-500 to-pink-600',
+      'blue-indigo': 'bg-gradient-to-r from-blue-500 to-indigo-600',
+      'emerald-teal': 'bg-gradient-to-r from-emerald-500 to-teal-600',
+      'orange-red': 'bg-gradient-to-r from-orange-500 to-red-600',
+      'violet-purple': 'bg-gradient-to-r from-violet-500 to-purple-600',
+      'cyan-blue': 'bg-gradient-to-r from-cyan-500 to-blue-600'
+    };
+    return gradients[theme] || gradients['purple-pink'];
+  };
+  
+  // Fetch user preferences from database
+  const { data: userPreferences } = useQuery({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+  
+  // AI Settings State - Load from localStorage and merge with user preferences
   const [aiSettings, setAiSettings] = useState(() => {
     const saved = localStorage.getItem('ai-settings');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Fall back to defaults if parse fails
-      }
-    }
-    return {
+    let settings = {
       model: 'gpt-4',
       responseStyle: 'professional',
       autoSuggestions: true,
@@ -68,9 +80,35 @@ export function AILeftPanel() {
       contextWindow: 'standard',
       temperature: 0.7,
       maxTokens: 2000,
-      streamResponses: true
+      streamResponses: true,
+      // Voice Settings
+      voice: 'alloy',
+      voiceSpeed: 1.0,
+      voiceGender: 'neutral',
+      // Theme Settings
+      aiThemeColor: 'purple-pink'
     };
+    
+    if (saved) {
+      try {
+        settings = { ...settings, ...JSON.parse(saved) };
+      } catch (e) {
+        // Fall back to defaults if parse fails
+      }
+    }
+    
+    return settings;
   });
+  
+  // Update settings when user preferences are loaded
+  useEffect(() => {
+    if (userPreferences?.aiThemeColor) {
+      setAiSettings(prev => ({
+        ...prev,
+        aiThemeColor: userPreferences.aiThemeColor
+      }));
+    }
+  }, [userPreferences]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -256,10 +294,10 @@ export function AILeftPanel() {
       )}
       
       {/* Header */}
-      <div className="p-4 border-b flex items-center justify-between">
+      <div className={cn("p-4 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-primary" />
+            <Brain className="w-5 h-5 text-white" />
             <span className="font-semibold">Max AI Assistant</span>
           </div>
         )}
@@ -267,7 +305,7 @@ export function AILeftPanel() {
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn(isCollapsed && "mx-auto")}
+          className={cn("text-white hover:bg-white/20", isCollapsed && "mx-auto")}
         >
           {isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </Button>
@@ -603,6 +641,105 @@ export function AILeftPanel() {
 
                   <Separator />
 
+                  {/* Voice Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Volume2 className="w-4 h-4" />
+                      Voice Settings
+                    </h3>
+                    
+                    <div>
+                      <Label htmlFor="voice" className="text-sm">Voice</Label>
+                      <Select value={aiSettings.voice} onValueChange={(value) => setAiSettings(prev => ({ ...prev, voice: value }))}>
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                          <SelectItem value="echo">Echo (Male)</SelectItem>
+                          <SelectItem value="fable">Fable (British)</SelectItem>
+                          <SelectItem value="onyx">Onyx (Deep Male)</SelectItem>
+                          <SelectItem value="nova">Nova (Female)</SelectItem>
+                          <SelectItem value="shimmer">Shimmer (Soft Female)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="voice-speed" className="text-sm">
+                        Voice Speed: {aiSettings.voiceSpeed}x
+                      </Label>
+                      <Slider
+                        id="voice-speed"
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        value={[aiSettings.voiceSpeed]}
+                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, voiceSpeed: value }))}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Adjust the speed of voice responses
+                      </p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Theme Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Palette className="w-4 h-4" />
+                      AI Theme Color
+                    </h3>
+                    
+                    <Select value={aiSettings.aiThemeColor} onValueChange={(value) => setAiSettings(prev => ({ ...prev, aiThemeColor: value }))}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="purple-pink">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-600" />
+                            Purple Pink
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="blue-indigo">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600" />
+                            Blue Indigo
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="emerald-teal">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600" />
+                            Emerald Teal
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="orange-red">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-red-600" />
+                            Orange Red
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="violet-purple">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-violet-500 to-purple-600" />
+                            Violet Purple
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="cyan-blue">
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600" />
+                            Cyan Blue
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator />
+
                   {/* Notifications */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
@@ -698,10 +835,29 @@ export function AILeftPanel() {
                   {/* Save Button */}
                   <Button 
                     className="w-full"
-                    onClick={() => {
-                      // Save settings to localStorage and potentially to backend
+                    onClick={async () => {
+                      // Save settings to localStorage
                       localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
-                      // You could also make an API call here to save to backend
+                      
+                      // Save AI theme color to backend
+                      if (user?.id) {
+                        try {
+                          await apiRequest(`/api/user-preferences/${user.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                              aiThemeColor: aiSettings.aiThemeColor
+                            })
+                          });
+                          
+                          // Invalidate query to refresh preferences
+                          queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user.id}`] });
+                          
+                          // Show success feedback (you could add a toast here)
+                          console.log('Settings saved successfully');
+                        } catch (error) {
+                          console.error('Failed to save settings:', error);
+                        }
+                      }
                     }}
                   >
                     Save Settings
