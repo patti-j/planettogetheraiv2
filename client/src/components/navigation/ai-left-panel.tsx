@@ -156,7 +156,7 @@ export function AILeftPanel() {
 
   return (
     <div className={cn(
-      "h-full bg-background border-r transition-all duration-300 flex flex-col",
+      "h-full bg-background border-l transition-all duration-300 flex flex-col",
       isCollapsed ? "w-14" : "w-80"
     )}>
       {/* Header */}

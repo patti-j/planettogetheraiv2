@@ -30,9 +30,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Main content area with AI panel */}
       <div className="flex flex-1 overflow-hidden">
-        {/* AI Left Panel */}
-        <AILeftPanel />
-        
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           {/* TopMenu for navigation menu (visible but without floating hamburger on desktop) */}
@@ -43,6 +40,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             {children}
           </div>
         </div>
+        
+        {/* AI Right Panel */}
+        <AILeftPanel />
       </div>
       
       {/* Bottom drawer for notifications */}
