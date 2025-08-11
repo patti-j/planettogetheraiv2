@@ -18,7 +18,7 @@ export const navigationGroups = [
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
       { icon: Home, label: "Home", href: "/", feature: "", action: "" },
-      { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
+      { icon: BarChart3, label: "Production Scheduling", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
       { icon: Monitor, label: "Cockpit", href: "/cockpit", feature: "production-cockpit", action: "view", color: "bg-slate-600" },

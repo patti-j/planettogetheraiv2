@@ -1,6 +1,7 @@
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useLocation, Redirect } from "wouter";
 import MobileHomePage from "@/pages/mobile-home";
+import HomePage from "@/pages/home";
 import TopMenu from "@/components/top-menu";
 
 export function SmartHomeWrapper() {
@@ -22,10 +23,10 @@ export function SmartHomeWrapper() {
     return <MobileHomePage key={location} />;
   }
   
-  // On desktop, redirect root route to production schedule
+  // On desktop, show the new HomePage for root route
   if (location === "/" || location === "/home") {
-    console.log('Redirecting desktop root to production-schedule');
-    return <Redirect to="/production-schedule" />;
+    console.log('Loading HomePage for desktop root');
+    return <HomePage />;
   }
   
   // For other routes on desktop, let the main router handle it
