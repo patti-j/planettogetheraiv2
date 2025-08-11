@@ -136,6 +136,9 @@ import Analytics from "@/pages/analytics";
 import ShopFloor from "@/pages/shop-floor";
 import Reports from "@/pages/reports";
 import BoardsPage from "@/pages/boards";
+import DataImport from "@/pages/data-import";
+import DataSchema from "@/pages/data-schema";
+import MasterDataManagement from "@/pages/master-data-management";
 // Note: TasksPage, InboxPage, AccountSettings, DashboardManager, WidgetManager don't exist yet
 
 // Icon mapping functions
@@ -506,7 +509,7 @@ function MobileProductionSchedulePage() {
 function MobilePageContent({ location }: { location: string }) {
   // Mobile wrapper that prevents full-screen behavior and adds proper constraints
   const MobilePageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="mobile-page-wrapper w-full h-full max-h-full overflow-auto relative bg-white dark:bg-gray-900" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto' }}>
+    <div className="mobile-page-wrapper w-full overflow-auto bg-white dark:bg-gray-900" style={{ position: 'relative', zIndex: 1, pointerEvents: 'auto', minHeight: 'calc(100vh - 4rem)' }}>
       {children}
     </div>
   );
@@ -555,6 +558,24 @@ function MobilePageContent({ location }: { location: string }) {
       return (
         <MobilePageWrapper>
           <BoardsPage />
+        </MobilePageWrapper>
+      );
+    case "/data-import":
+      return (
+        <MobilePageWrapper>
+          <DataImport />
+        </MobilePageWrapper>
+      );
+    case "/data-schema":
+      return (
+        <MobilePageWrapper>
+          <DataSchema />
+        </MobilePageWrapper>
+      );
+    case "/master-data":
+      return (
+        <MobilePageWrapper>
+          <MasterDataManagement />
         </MobilePageWrapper>
       );
     case "/tasks":
@@ -1355,8 +1376,8 @@ export default function MobileHomePage() {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
-        {/* Mobile Header with integrated hamburger menu */}
-        <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 flex-shrink-0 z-30 relative">
+        {/* Mobile Header with integrated hamburger menu - Fixed position with high z-index */}
+        <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-[100]">
             <div className="flex items-center px-4 py-3 gap-3">
           {/* Logo - clickable to go home */}
           <div className="flex-shrink-0">
@@ -1812,15 +1833,15 @@ export default function MobileHomePage() {
 
       {/* Add mobile-specific CSS overrides */}
       <style>{`
-        .mobile-page-wrapper *,
-        .mobile-page-wrapper *:before,
-        .mobile-page-wrapper *:after {
-          position: static !important;
-          top: unset !important;
-          left: unset !important;
-          right: unset !important;
-          bottom: unset !important;
-          z-index: auto !important;
+        /* Override fixed positioning for mobile pages */
+        .mobile-page-wrapper .fixed {
+          position: relative !important;
+        }
+        .mobile-page-wrapper .inset-0 {
+          inset: auto !important;
+        }
+        .mobile-page-wrapper .top-0 {
+          top: auto !important;
         }
         .mobile-page-wrapper .h-screen,
         .mobile-page-wrapper .min-h-screen,
@@ -1828,6 +1849,7 @@ export default function MobileHomePage() {
         .mobile-page-wrapper .min-h-full {
           height: auto !important;
           min-height: auto !important;
+          max-height: none !important;
         }
         .mobile-page-wrapper > div:first-child {
           height: auto !important;
@@ -1846,13 +1868,17 @@ export default function MobileHomePage() {
         .mobile-page-wrapper .bg-gray-50.dark\\:bg-gray-900 {
           background: transparent !important;
         }
-        /* Ensure mobile header stays on top */
-        .mobile-header {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          z-index: 50 !important;
+        /* Ensure mobile header stays on top with highest z-index */
+        .force-mobile-view > div:first-child {
+          z-index: 100 !important;
+        }
+        /* Prevent pages from using high z-index values */
+        .mobile-page-wrapper .z-50,
+        .mobile-page-wrapper .z-40,
+        .mobile-page-wrapper .z-30,
+        .mobile-page-wrapper .z-20,
+        .mobile-page-wrapper .z-10 {
+          z-index: 1 !important;
         }
       `}</style>
 
@@ -1862,7 +1888,7 @@ export default function MobileHomePage() {
         console.log("🔍 MobileHomePage - Location check result:", shouldShowHome, "for location:", location);
         return shouldShowHome;
       })() ? (
-        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6">
+        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6 pt-20">
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -2041,8 +2067,8 @@ export default function MobileHomePage() {
             </div>
           </div>
       ) : (
-        // For other routes, render them underneath the mobile header
-        <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+        // For other routes, render them underneath the mobile header with padding
+        <div className="flex-1 overflow-auto bg-white dark:bg-gray-900 pt-16">
           <MobilePageContent location={location} />
         </div>
       )}
