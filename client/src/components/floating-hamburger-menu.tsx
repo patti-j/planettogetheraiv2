@@ -46,7 +46,7 @@ export function FloatingHamburgerMenu({
       variant="outline"
       size="sm"
       className={`fixed pointer-events-auto shadow-md border transition-all duration-200 ${
-        isMobile ? 'right-2 top-3' : 'right-8 top-4'
+        isMobile ? 'right-2 top-16' : 'right-8 top-4'
       } ${
         isOpen 
           ? 'bg-red-500 hover:bg-red-600 text-white border-red-400 dark:bg-red-600 dark:hover:bg-red-700 dark:border-red-500' 
