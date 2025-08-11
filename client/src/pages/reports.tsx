@@ -660,7 +660,7 @@ export default function Reports() {
       </div>
 
       {isMaximized ? (
-        <div className="fixed inset-0 bg-white z-40 pt-16 md:pt-0">
+        <div className="fixed inset-0 bg-white z-40">
           <PageContent />
         </div>
       ) : (

@@ -210,7 +210,7 @@ export default function Boards() {
   if (isMaximized) {
     return (
       <TooltipProvider>
-        <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40 pt-16 md:pt-0">
+        <div className="fixed inset-0 bg-white dark:bg-gray-900 z-40">
           <PageContent />
           
           {/* Dialogs for maximized view */}

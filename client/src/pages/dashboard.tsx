@@ -937,7 +937,7 @@ export default function Dashboard() {
 
           {/* Schedule Evaluation System */}
           {showEvaluationSystem && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 mt-16 md:mt-0">
+            <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg shadow-xl max-w-[95vw] max-h-[90vh] overflow-hidden w-full">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">

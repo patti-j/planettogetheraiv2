@@ -1172,19 +1172,13 @@ div[data-radix-tooltip-content] {
   }
   
   /* Adjust maximize buttons and similar controls on mobile */
-  button.fixed[class*="top-"],
-  div.fixed[class*="top-"]:not([class*="z-\\[100\\]"]) {
+  button.fixed[class*="right-"][class*="top-"]:not([class*="z-\\[100\\]"]) {
     top: 5rem !important;
   }
   
-  /* Full screen overlays should respect header */
-  .fixed.inset-0:not([class*="z-\\[100\\]"]) {
-    padding-top: 4rem !important;
-    z-index: 40 !important;
-  }
-  
-  /* Ensure mobile sidebar stays below header */
-  .fixed.inset-0.z-40 {
-    padding-top: 4rem !important;
+  /* Keep mobile header at the top with no extra padding */
+  .fixed.top-0.left-0.right-0[class*="z-\\[100\\]"] {
+    top: 0 !important;
+    padding-top: 0 !important;
   }
 }
