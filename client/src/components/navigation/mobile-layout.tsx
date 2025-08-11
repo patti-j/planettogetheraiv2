@@ -51,7 +51,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm" style={{ zIndex: 2147483646 }}>
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo */}
-          <Logo size="small" showText={true} />
+          <Logo size="small" showText={false} />
           
           {/* Max Search/Command Input */}
           <div className="flex-1 relative">
