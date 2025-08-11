@@ -1376,91 +1376,6 @@ export default function MobileHomePage() {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col overflow-hidden">
-        {/* Mobile Header with integrated hamburger menu - Fixed position with high z-index */}
-        <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-[100]">
-            <div className="flex items-center px-4 py-3 gap-3">
-          {/* Logo - clickable to go home */}
-          <div className="flex-shrink-0">
-            <div 
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("🏠 Logo clicked - forcing navigation to mobile home");
-                console.log("🔍 Current states - designStudioOpen:", designStudioOpen, "widgetStudioOpen:", widgetStudioOpen, "maxPanelOpen:", maxPanelOpen);
-                
-                // Close all overlays first
-                setDesignStudioOpen(false);
-                setWidgetStudioOpen(false);
-                setMaxPanelOpen(false);
-                setPreviewItem(null);
-                setPreviewType(null);
-                
-                // Navigate to mobile home for mobile devices
-                setLocation("/mobile-home");
-              }}
-            >
-              <Logo size="small" showText={false} />
-            </div>
-          </div>
-          
-          {/* Search/Prompt Input */}
-          <div className="flex-1">
-            <div className="relative">
-              <Search className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 transition-all duration-200 ${
-                searchQuery || isSearchFocused ? 'left-3' : 'left-3'
-              }`} />
-              <Input
-                placeholder="Search or ask Max"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                onKeyPress={async (e) => {
-                  if (e.key === 'Enter' && searchQuery.trim()) {
-                    // Handle search or AI prompt
-                    if (searchQuery.toLowerCase().includes('max') || searchQuery.includes('?') || searchQuery.includes('how') || searchQuery.includes('what') || searchQuery.includes('show') || searchQuery.includes('create')) {
-                      // This looks like an AI prompt
-                      await handleAIPrompt(searchQuery);
-                      setSearchQuery(""); // Clear after sending
-                    } else {
-                      // This looks like a search
-                      console.log('Search:', searchQuery);
-                      // TODO: Perform search functionality
-                      setSearchQuery(""); // Clear after searching
-                    }
-                  }
-                }}
-                className={`py-2 text-sm bg-gray-100 dark:bg-gray-700 border-0 rounded-full transition-all duration-200 ${
-                  searchQuery || isSearchFocused 
-                    ? 'pl-10 pr-4 text-left' 
-                    : 'pl-10 pr-4 text-left'
-                }`}
-              />
-            </div>
-          </div>
-
-          {/* Right Actions - Library and Menu buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              onClick={() => {
-                const dialog = document.getElementById('library-dialog');
-                if (dialog) {
-                  dialog.style.display = 'flex';
-                }
-              }}
-              variant="ghost"
-              size="icon"
-              className="w-9 h-9 touch-manipulation"
-            >
-              <Library className="w-4 h-4" />
-            </Button>
-            
-            {/* Mobile Menu Trigger */}
-            <MobileMenuTrigger />
-          </div>
-        </div>
-      </div>
 
       {/* Library Modal */}
             <div 
@@ -1888,7 +1803,7 @@ export default function MobileHomePage() {
         console.log("🔍 MobileHomePage - Location check result:", shouldShowHome, "for location:", location);
         return shouldShowHome;
       })() ? (
-        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6 pt-20">
+        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6">
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
