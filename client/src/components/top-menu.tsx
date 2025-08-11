@@ -37,6 +37,19 @@ export default function TopMenu() {
   useEffect(() => {
     console.log('userProfileOpen state changed to:', userProfileOpen);
   }, [userProfileOpen]);
+  
+  // Listen for toggle-main-menu event from hamburger menu
+  useEffect(() => {
+    const handleToggleMenu = () => {
+      setMenuOpen(prev => !prev);
+    };
+    
+    document.addEventListener('toggle-main-menu', handleToggleMenu);
+    
+    return () => {
+      document.removeEventListener('toggle-main-menu', handleToggleMenu);
+    };
+  }, []);
   const [tourSelectionOpen, setTourSelectionOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [useCardLayout, setUseCardLayout] = useState(false);

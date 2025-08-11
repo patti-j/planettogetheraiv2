@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useLocation } from 'wouter';
-import { ThemeToggle } from '@/components/theme-toggle';
+
 import { useDeviceType } from '@/hooks/useDeviceType';
 
 export default function HomePage() {
@@ -82,11 +82,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Theme Toggle */}
-      <div className="fixed top-4 md:top-5 right-20 z-50">
-        <ThemeToggle />
-      </div>
-      
+
       {/* Header */}
       <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
         <div className="flex items-center justify-between">
