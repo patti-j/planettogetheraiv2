@@ -14,15 +14,11 @@ import {
   Activity,
   BarChart3,
   Zap,
-  RefreshCw,
-  Home,
-  ArrowLeft
+  RefreshCw
 } from "lucide-react";
 import ScheduleTradeoffAnalyzerWidget from "@/components/widgets/schedule-tradeoff-analyzer-widget";
 import ATPCTPWidget from "@/components/widgets/atp-ctp-widget";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 
 interface DashboardWidget {
   id: string;
@@ -44,18 +40,6 @@ interface DashboardConfig {
 
 export default function ProductionSchedulerDashboard() {
   const { toast } = useToast();
-  const [location, setLocation] = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
-  
-  // Check if user is on mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const { data: dashboardConfig, isLoading, error } = useQuery<DashboardConfig>({
     queryKey: ["/api/dashboard-configs/1"], // ID 1 is our Production Scheduler Dashboard
@@ -111,34 +95,7 @@ export default function ProductionSchedulerDashboard() {
   )?.length || 0;
 
   return (
-    <div className={isMobile ? "h-screen flex flex-col" : ""}>
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 z-[100] px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/mobile-home')}
-              className="p-2"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">Scheduler Dashboard</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/mobile-home')}
-              className="p-2"
-            >
-              <Home className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      {/* Main Content */}
-      <div className={`${isMobile ? 'mt-16 overflow-y-auto flex-1' : ''} p-3 sm:p-6 space-y-4 sm:space-y-6`}>
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Dashboard Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -421,7 +378,6 @@ export default function ProductionSchedulerDashboard() {
           </Card>
         </div>
       </div>
-    </div>
     </div>
   );
 }

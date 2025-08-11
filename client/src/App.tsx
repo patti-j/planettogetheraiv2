@@ -106,6 +106,7 @@ import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { DesktopLayout } from "@/components/navigation/desktop-layout";
+import { MobileLayout } from "@/components/navigation/mobile-layout";
 
 
 function DashboardWithAutoTour() {
@@ -196,9 +197,20 @@ function Router() {
   const { isActive: isTourActive } = useTour();
   const [location, originalSetLocation] = useLocation();
   const deviceType = useDeviceType();
+  const [isMobile, setIsMobile] = useState(false);
   
   // Use normal setLocation without debug tracking
   const setLocation = originalSetLocation;
+  
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Debug logging to understand initial route and any changes
   useEffect(() => {
@@ -264,20 +276,19 @@ function Router() {
     );
   }
 
-  return (
-    <DesktopLayout>
-      <SplitPaneLayout maxPanel={<MaxSidebar />}>
-        <OnboardingGate>
-          <Switch>
-          <Route path="/marketing" component={MarketingLandingPage} />
-          <Route path="/onboarding" component={Onboarding} />
+  // Wrap routes in appropriate layout based on device
+  const routeContent = (
+    <OnboardingGate>
+      <Switch>
+        <Route path="/marketing" component={MarketingLandingPage} />
+        <Route path="/onboarding" component={Onboarding} />
 
-          <Route path="/dashboard">
-            <DashboardWithAutoTour />
-          </Route>
-          <Route path="/production-scheduler-dashboard">
-            <ProductionSchedulerDashboard />
-          </Route>
+        <Route path="/dashboard">
+          <DashboardWithAutoTour />
+        </Route>
+        <Route path="/production-scheduler-dashboard">
+          <ProductionSchedulerDashboard />
+        </Route>
           <Route path="/analytics">
             <ProtectedRoute feature="analytics" action="view">
               <Analytics />
@@ -607,9 +618,24 @@ function Router() {
           </Route>
           <Route component={NotFound} />
         </Switch>
-        </OnboardingGate>
+    </OnboardingGate>
+  );
+  
+  // Return appropriate layout based on device
+  if (isMobile) {
+    return (
+      <MobileLayout>
+        {routeContent}
+      </MobileLayout>
+    );
+  }
+  
+  // Desktop layout with SplitPane for AI panel
+  return (
+    <DesktopLayout>
+      <SplitPaneLayout maxPanel={<MaxSidebar />}>
+        {routeContent}
       </SplitPaneLayout>
-      {/* Integrated AI Assistant - now integrated in SplitPaneLayout */}
     </DesktopLayout>
   );
 }
