@@ -621,8 +621,12 @@ function Router() {
     </OnboardingGate>
   );
   
-  // Return appropriate layout based on device
-  if (isMobile) {
+  // Force mobile layout for mobile-specific routes regardless of screen width
+  const forceMobileRoutes = ['/mobile', '/mobile-home', '/widgets/', '/dashboards/'];
+  const shouldUseMobileLayout = isMobile || forceMobileRoutes.some(route => location.includes(route));
+  
+  // Return appropriate layout based on device or route
+  if (shouldUseMobileLayout) {
     return (
       <MobileLayout>
         {routeContent}
