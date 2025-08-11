@@ -173,7 +173,7 @@ export function AILeftPanel() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(isCollapsed && "mx-auto")}
         >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </Button>
       </div>
 
