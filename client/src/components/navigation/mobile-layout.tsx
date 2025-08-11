@@ -54,9 +54,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
+            <img 
+              src="/attached_assets/Copy of logo-icon_250px_1754109283906.PNG" 
+              alt="PlanetTogether" 
+              className="h-8 w-8 object-contain"
+            />
           </div>
           
           {/* Max Search/Command Input */}
