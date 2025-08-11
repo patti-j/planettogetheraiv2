@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import planetTogetherLogo from "@/assets/planet-together-logo.png";
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 interface FloatingHamburgerMenuProps {
   onToggle: (isOpen: boolean) => void;
@@ -16,6 +17,8 @@ export function FloatingHamburgerMenu({
   showOnDesktop = true, 
   showOnMobile = true 
 }: FloatingHamburgerMenuProps) {
+  const deviceType = useDeviceType();
+  
   // Log when component renders
   console.log("🍔 FloatingHamburgerMenu rendering - isOpen:", isOpen, "window width:", window.innerWidth);
   
@@ -26,6 +29,11 @@ export function FloatingHamburgerMenu({
 
   // Check if mobile device
   const isMobile = window.innerWidth < 768;
+  
+  // Hide on desktop since we have hamburger menu in desktop top bar
+  if (deviceType === 'desktop') {
+    return null;
+  }
   
   // Always show on all devices (removed device-specific visibility logic)
   // Position at right-6 on all devices to avoid scrollbar overlap

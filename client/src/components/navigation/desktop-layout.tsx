@@ -35,10 +35,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         
         {/* Main content */}
         <div className="flex-1 flex flex-col">
-          {/* Legacy TopMenu for compatibility (hidden on desktop with new nav) */}
-          <div className="hidden">
-            <TopMenu />
-          </div>
+          {/* TopMenu for navigation menu (visible but without floating hamburger on desktop) */}
+          <TopMenu />
           
           {/* Main content area */}
           <div className="flex-1 overflow-auto">
