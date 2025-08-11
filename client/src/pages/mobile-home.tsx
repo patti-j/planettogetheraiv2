@@ -1754,7 +1754,7 @@ export default function MobileHomePage() {
         console.log("🔍 MobileHomePage - Location check result:", shouldShowHome, "for location:", location);
         return shouldShowHome;
       })() ? (
-        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6">
+        <div key={`mobile-home-${location}`} className="flex-1 overflow-auto p-4 space-y-6 pb-20">
           {/* Welcome Section */}
           <div className="text-center py-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

@@ -14,7 +14,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       </div>
       
       {/* Fixed mobile footer bar - always the same on every page */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100]">
+      <div className="fixed bottom-0 left-0 right-0" style={{ zIndex: 2147483647 }}>
         <TopMenu />
       </div>
     </div>

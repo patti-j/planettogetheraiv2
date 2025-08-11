@@ -318,7 +318,7 @@ export default function TopMenu() {
     <>
       {/* Mobile Bottom Navigation Bar - Footer layout for easy thumb access */}
       {showMobileFooter && (
-      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
+      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg" style={{ zIndex: 9999 }}>
         <div className="flex items-center justify-around px-2 py-2">
           {/* Home Button */}
           <Button
