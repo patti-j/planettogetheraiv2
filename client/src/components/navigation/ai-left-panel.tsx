@@ -197,7 +197,7 @@ export function AILeftPanel() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-4 mx-4 mt-4">
+            <TabsList className="grid grid-cols-4 mx-4 mt-2">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="anomalies">Anomalies</TabsTrigger>
@@ -205,7 +205,7 @@ export function AILeftPanel() {
             </TabsList>
 
             {/* Chat Tab with its own layout */}
-            <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-4 overflow-hidden">
+            <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
               <ScrollArea className="flex-1 pr-2">
                 <div className="space-y-4 pb-4">
                   {chatMessages.map((message) => (
@@ -267,9 +267,9 @@ export function AILeftPanel() {
             </TabsContent>
 
             {/* Insights Tab */}
-            <TabsContent value="insights" className="flex-1 overflow-hidden mt-0">
+            <TabsContent value="insights" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-4 pb-4">
+                <div className="space-y-3 pt-2 pb-4">
                 {mockInsights
                   .filter(i => i.type === 'insight' || i.type === 'recommendation')
                   .map(insight => (
@@ -311,9 +311,9 @@ export function AILeftPanel() {
             </TabsContent>
 
             {/* Anomalies Tab */}
-            <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-0">
+            <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-4 pb-4">
+                <div className="space-y-3 pt-2 pb-4">
                 {mockInsights
                   .filter(i => i.type === 'anomaly')
                   .map(insight => (
@@ -360,9 +360,9 @@ export function AILeftPanel() {
             </TabsContent>
 
             {/* Simulations Tab */}
-            <TabsContent value="simulations" className="flex-1 overflow-hidden mt-0">
+            <TabsContent value="simulations" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-4 pb-4">
+                <div className="space-y-3 pt-2 pb-4">
                 <Card className="border-dashed">
                   <CardHeader>
                     <CardTitle className="text-sm flex items-center gap-2">
