@@ -18,6 +18,11 @@ Note on concurrent work:
 
 ## System Architecture
 
+### Navigation Architecture
+- **Unified Layout System**: Single consistent header/navigation for desktop (DesktopLayout), single consistent footer bar for mobile (MobileLayout). Headers/footers never change across pages.
+- **Mobile Footer Bar**: Navigation positioned at bottom of screen for optimal thumb reach, featuring Home, Menu, Search, Recent, and Profile buttons
+- **Desktop Navigation**: Left rail navigation with slide-out menu and resizable AI panel on the right
+
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
 - **UI Framework**: Shadcn/UI components built on Radix UI primitives
@@ -28,7 +33,7 @@ Note on concurrent work:
 - **Gantt Chart**: Bryntum Gantt 6.3.1 Trial for production scheduling visualization
 - **Build Tool**: Vite for development and production builds
 - **Widget System**: Comprehensive reusable components for consistent UI patterns (e.g., FilterSearchWidget, MetricsCardWidget, DataTableWidget). Two types: System widgets (non-editable, controlled by system) and User widgets (editable/customizable by users).
-- **Navigation**: Desktop features left rail navigation with integrated slide-out menu, workspace switching, recent pages, and resizable right-side AI panel. Menu slides out from left to maintain context, showing clear relationship to navigation rail. Mobile navigation uses same centralized navigation-menu.ts configuration as desktop for consistency across platforms.
+- **Navigation**: Desktop features left rail navigation with integrated slide-out menu, workspace switching, recent pages, and resizable right-side AI panel. Menu slides out from left to maintain context, showing clear relationship to navigation rail. Mobile navigation uses bottom footer bar for easier thumb access, featuring Home, Menu, Search, Recent, and Profile buttons. Uses same centralized navigation-menu.ts configuration as desktop for consistency across platforms.
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, and user-configurable layouts with persistence.
 
 ### Backend Architecture

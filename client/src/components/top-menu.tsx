@@ -301,23 +301,77 @@ export default function TopMenu() {
 
   return (
     <>
-      {/* Mobile Hamburger Menu Button - Fixed position in header */}
-      <div className="lg:hidden fixed top-4 left-4 z-[2147483646]">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            console.log('🔧 Mobile hamburger button clicked, toggling menu');
-            setMenuOpen(!menuOpen);
-          }}
-          className="h-9 w-9 p-0 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg border border-gray-200 dark:border-gray-700"
-        >
-          {menuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </Button>
+      {/* Mobile Bottom Navigation Bar - Footer layout for easy thumb access */}
+      <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
+        <div className="flex items-center justify-around px-2 py-2">
+          {/* Home Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/mobile-home')}
+            className="flex flex-col items-center gap-1 p-2 h-auto"
+          >
+            <Home className="h-5 w-5" />
+            <span className="text-[10px]">Home</span>
+          </Button>
+          
+          {/* Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              console.log('🔧 Mobile menu button clicked, toggling menu');
+              setMenuOpen(!menuOpen);
+            }}
+            className="flex flex-col items-center gap-1 p-2 h-auto"
+          >
+            {menuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+            <span className="text-[10px]">Menu</span>
+          </Button>
+          
+          {/* Search Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setMenuOpen(true);
+              setTimeout(() => {
+                const searchInput = document.querySelector('.search-input') as HTMLInputElement;
+                if (searchInput) searchInput.focus();
+              }, 100);
+            }}
+            className="flex flex-col items-center gap-1 p-2 h-auto"
+          >
+            <Search className="h-5 w-5" />
+            <span className="text-[10px]">Search</span>
+          </Button>
+          
+          {/* Recent/History Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/mobile-home')}
+            className="flex flex-col items-center gap-1 p-2 h-auto"
+          >
+            <History className="h-5 w-5" />
+            <span className="text-[10px]">Recent</span>
+          </Button>
+          
+          {/* Profile Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setUserProfileOpen(true)}
+            className="flex flex-col items-center gap-1 p-2 h-auto"
+          >
+            <User className="h-5 w-5" />
+            <span className="text-[10px]">Profile</span>
+          </Button>
+        </div>
       </div>
 
       {/* Full Screen Dropdown Menu - Show on all views */}
