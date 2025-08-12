@@ -89,6 +89,28 @@ export function SimpleBryntumGantt({
         return;
       }
       
+      // Check container dimensions to prevent negative width error
+      const containerBounds = containerRef.current.getBoundingClientRect();
+      console.log('Container dimensions:', {
+        width: containerBounds.width,
+        height: containerBounds.height,
+        hasValidDimensions: containerBounds.width > 0 && containerBounds.height > 0
+      });
+      
+      // Wait for container to have valid dimensions
+      if (containerBounds.width <= 0 || containerBounds.height <= 0) {
+        console.log('SimpleBryntumGantt: Container has invalid dimensions, retrying...');
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1);
+          setTimeout(initializeGantt, 100);
+          return;
+        } else {
+          console.error('Container never got valid dimensions');
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       try {
         setIsLoading(true);
         
@@ -247,9 +269,26 @@ export function SimpleBryntumGantt({
           showInTimeline: false // Hide resource rows in timeline
         }));
 
-        // Create Gantt with resource hierarchy
-        const gantt = new Gantt({
+        // Ensure container has proper dimensions before creating Gantt
+        const finalContainerBounds = containerRef.current.getBoundingClientRect();
+        console.log('Final container dimensions before Gantt creation:', {
+          width: finalContainerBounds.width,
+          height: finalContainerBounds.height
+        });
+        
+        // Set explicit dimensions on the container
+        containerRef.current.style.width = `${Math.max(600, finalContainerBounds.width)}px`;
+        containerRef.current.style.height = `${Math.max(400, finalContainerBounds.height)}px`;
+        
+        let gantt;
+        try {
+          // Create Gantt with resource hierarchy
+          gantt = new Gantt({
           appendTo: containerRef.current,
+          
+          // Explicit dimensions to prevent negative width
+          width: Math.max(600, finalContainerBounds.width),
+          height: Math.max(400, finalContainerBounds.height),
           
           // Use hierarchical task structure without dependencies
           project: {
@@ -425,6 +464,28 @@ export function SimpleBryntumGantt({
             }
           }
         });
+        } catch (error) {
+          console.error('Error creating Gantt instance:', error);
+          setIsLoading(false);
+          
+          // Try to provide more specific error information
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          
+          // Check if it's a dimension-related error
+          if (errorMsg.includes('width') || errorMsg.includes('Rectangle')) {
+            console.error('Dimension error detected. Container bounds:', {
+              width: containerRef.current?.getBoundingClientRect().width,
+              height: containerRef.current?.getBoundingClientRect().height
+            });
+          }
+          
+          toast({
+            title: "Gantt Initialization Error",
+            description: `Failed to create Gantt chart: ${errorMsg}`,
+            variant: "destructive"
+          });
+          return;
+        }
 
         ganttRef.current = gantt;
         setIsInitialized(true);
