@@ -113,7 +113,7 @@ export function useAuth() {
     retry: false,
     retryOnMount: false,
     staleTime: 0, // Always refetch to get fresh role data
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Disable to prevent infinite loops
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
