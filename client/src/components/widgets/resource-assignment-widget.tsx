@@ -69,13 +69,13 @@ export default function ResourceAssignmentWidget({
   }, [showOperatorDropdown]);
   
   // Fetch operators
-  const { data: operators = [], isLoading: loadingOperators } = useQuery({
+  const { data: operators = [], isLoading: loadingOperators } = useQuery<OperatorUser[]>({
     queryKey: ["/api/user-resource-assignments/operators"],
     staleTime: 30000,
   });
   
   // Fetch resources with their assignments
-  const { data: resources = [], isLoading: loadingResources } = useQuery({
+  const { data: resources = [], isLoading: loadingResources } = useQuery<ResourceWithAssignments[]>({
     queryKey: ["/api/user-resource-assignments/resources"],
     staleTime: 30000,
     refetchInterval: 60000,

@@ -55,26 +55,18 @@ export function BryntumGanttProduction({
         height: 500,
         width: '100%',
         
-        // Enable all drag-drop features
+        // Enable available features in trial version
         features: {
           taskDrag: true,
-          taskDragCreate: true,
           taskResize: true,
           taskEdit: true,
-          dependencies: true,
-          dependencyEdit: true,
-          percentDone: true,
-          progressLine: true,
           cellEdit: true,
-          columnLines: true,
-          rowLines: true,
         },
         
         columns: [
           { type: 'name', field: 'name', text: 'Task', width: 250, editor: true },
           { type: 'startdate', text: 'Start Date' },
-          { type: 'duration', text: 'Duration' },
-          { type: 'percentdone', text: 'Progress', width: 80 }
+          { type: 'duration', text: 'Duration' }
         ],
         
         listeners: {
@@ -110,7 +102,6 @@ export function BryntumGanttProduction({
             name: op.name || op.operationName || `Operation ${index + 1}`,
             startDate: op.startTime || new Date(),
             duration: op.duration || Math.ceil((new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60 * 24)) || 1,
-            percentDone: op.completionPercentage || 0,
             draggable: true,
             resizable: true,
             resourceId: op.workCenterId || op.assignedResourceId || 1
@@ -130,7 +121,7 @@ export function BryntumGanttProduction({
       }, 100);
       
     } catch (error) {
-      console.error('Failed to create Gantt:', error);
+      console.error('Failed to create Gantt:', error instanceof Error ? error.message : error);
     }
 
     // Cleanup
