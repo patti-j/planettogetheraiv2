@@ -73,8 +73,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
       
-      {/* Main content area - scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Main content area - scrollable with padding for fixed footer */}
+      <div className="flex-1 overflow-y-auto pb-20">
         {children}
       </div>
       
