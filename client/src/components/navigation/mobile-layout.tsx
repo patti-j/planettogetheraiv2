@@ -208,8 +208,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         {children}
       </div>
       
-      {/* Mobile footer bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '65px' }}>
+      {/* Mobile footer bar - always visible */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-[999999]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '65px', zIndex: 999999 }}>
         <div className="flex items-center justify-around px-2 py-2">
           {/* Home Button */}
           <button
@@ -289,14 +289,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* Mobile Menu Sidebar */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[99999] lg:hidden" style={{ zIndex: 99999 }}>
-          {/* Overlay */}
+        <div className="fixed inset-0 bottom-16 z-[99999] lg:hidden" style={{ zIndex: 99999 }}>
+          {/* Overlay - adjusted to not cover footer */}
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm" 
+            className="fixed inset-0 bottom-16 bg-black/80 backdrop-blur-sm" 
             onClick={() => setMobileMenuOpen(false)}
           />
-          {/* Sidebar Panel */}
-          <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out" style={{ zIndex: 100000 }}>
+          {/* Sidebar Panel - adjusted height to not overlap footer */}
+          <div className="fixed left-0 top-0 bottom-16 w-72 bg-white dark:bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out" style={{ zIndex: 100000 }}>
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
