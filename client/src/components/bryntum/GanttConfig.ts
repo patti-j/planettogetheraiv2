@@ -1,15 +1,19 @@
-// Gantt configuration following Bryntum React Integration Guide
+// Gantt configuration for Resource-Based Scheduling View
 // Reference: https://bryntum.com/products/gantt/docs/guide/Gantt/integration/react/guide
 export const ganttConfig = {
-  // Column configuration for task grid
+  // Column configuration for resource grid (resources in left pane)
   columns: [
-    { type: 'name', field: 'name', width: 250, text: 'Task' }
+    { type: 'name', field: 'name', width: 250, text: 'Resource' }
   ],
   
-  // View configuration
-  viewPreset: 'weekAndDayLetter',
-  barMargin: 10,
-  rowHeight: 45,
+  // View configuration for resource scheduling
+  viewPreset: 'hourAndDay',
+  barMargin: 3,
+  rowHeight: 60,
+  
+  // Enable multi-assignment view for resources
+  multiEventSelect: false,
+  managedEventSizing: true,
   
   // Features configuration (Trial limitations noted)
   features: {
@@ -30,10 +34,18 @@ export const ganttConfig = {
     criticalPaths: false      // Trial limitation
   },
   
-  // Project configuration
+  // Project configuration for resource-based scheduling
   project: {
     autoLoad: false,
-    autoSync: false
+    autoSync: false,
+    
+    // Configure stores for resource view
+    taskStore: {
+      tree: false  // Flat task list for resource view
+    },
+    resourceStore: {
+      tree: false  // Resources displayed as rows
+    }
   }
 };
 
@@ -50,7 +62,7 @@ export function formatGanttData(operations: any[], resources: any[]) {
     eventColor: resource.color || null
   }));
   
-  // Format tasks (operations) following Bryntum TaskModel structure
+  // Format tasks (operations) following Bryntum EventModel for resource scheduling
   const formattedTasks = operations.map(op => {
     // Ensure valid dates
     const startDate = op.startTime ? new Date(op.startTime) : new Date();
@@ -61,11 +73,14 @@ export function formatGanttData(operations: any[], resources: any[]) {
       name: op.name || op.operationName || `Operation ${op.id}`,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      duration: op.standardDuration || 1,
+      duration: Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 3600000)), // Duration in hours
       durationUnit: 'hour',
       
+      // Ensure resource assignment for resource-based view
+      resourceId: op.assignedResourceId || op.workCenterId || resources[0]?.id,
+      
       // Task configuration
-      manuallyScheduled: false,
+      manuallyScheduled: true, // Manual scheduling for resource view
       constraintType: null,
       constraintDate: null,
       
@@ -79,8 +94,10 @@ export function formatGanttData(operations: any[], resources: any[]) {
       resizable: true,
       cls: `task-status-${op.status || 'scheduled'}`,
       
-      // Resource assignment (deprecated - use assignments instead)
-      resourceId: op.assignedResourceId || op.workCenterId
+      // Color based on status
+      eventColor: op.status === 'completed' ? 'green' : 
+                 op.status === 'in-progress' ? 'blue' : 
+                 op.status === 'delayed' ? 'red' : 'gray'
     };
   });
   

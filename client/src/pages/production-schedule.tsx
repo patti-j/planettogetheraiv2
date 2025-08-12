@@ -47,6 +47,11 @@ export default function ProductionSchedulePage() {
   const { addRecentPage } = useNavigation();
   const [ganttKey, setGanttKey] = useState(Date.now());
   
+  // Force refresh Gantt when switching tabs
+  const refreshGantt = () => {
+    setGanttKey(Date.now());
+  };
+  
   // Add this page to recent pages when component mounts
   useEffect(() => {
     addRecentPage('/production-schedule', 'Production Schedule', 'Calendar');

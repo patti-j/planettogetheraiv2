@@ -67,7 +67,7 @@ export function BryntumGanttReact({
           assignmentCount: formattedAssignments.rows.length
         });
 
-        // Create the Gantt instance following the React quick start pattern
+        // Create the Gantt instance in resource scheduling mode
         const gantt = new Gantt({
           appendTo: containerRef.current,
           height: 500,
@@ -75,13 +75,23 @@ export function BryntumGanttReact({
           // Use configuration from ganttConfig
           ...ganttConfig,
           
+          // Configure for resource-based scheduling view
+          // Resources appear as rows, operations as timeline events
+          showRollupTasks: false,
+          scheduleByConstraints: false,
+          
           // Override project with our data
           project: {
             ...ganttConfig.project,
-            // Load inline data instead of from URL
+            // Load inline data
             resources: formattedResources.rows,
             tasks: formattedTasks.rows,
-            assignments: formattedAssignments.rows
+            assignments: formattedAssignments.rows,
+            
+            // Configure stores for resource-based view
+            taskStore: {
+              transformFlatData: true
+            }
           },
           
           // Event listeners
