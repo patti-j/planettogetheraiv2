@@ -1,19 +1,20 @@
-// Gantt configuration for Resource-Based Scheduling View
-// Reference: https://bryntum.com/products/gantt/docs/guide/Gantt/integration/react/guide
+// Scheduler-style configuration for Resource-Based View
+// Using Gantt in resource scheduling mode similar to Bryntum Scheduler
 export const ganttConfig = {
   // Column configuration for resource grid (resources in left pane)
   columns: [
     { type: 'name', field: 'name', width: 250, text: 'Resource' }
   ],
   
-  // View configuration for resource scheduling
+  // View configuration optimized for resource scheduling
   viewPreset: 'hourAndDay',
-  barMargin: 3,
-  rowHeight: 60,
+  barMargin: 5,
+  rowHeight: 70,
   
-  // Enable multi-assignment view for resources
-  multiEventSelect: false,
+  // Scheduler-like behavior
+  eventLayout: 'stack',  // Stack events vertically when they overlap
   managedEventSizing: true,
+  allowOverlap: false,
   
   // Features configuration (Trial limitations noted)
   features: {
@@ -49,20 +50,17 @@ export const ganttConfig = {
   }
 };
 
-// Format data for resource-based scheduling view
-// Reference: https://bryntum.com/products/gantt/docs/guide/Gantt/integration/react/data-binding
+// Format data for Scheduler-style resource view
+// Resources are displayed as rows with operations as timeline events
 export function formatGanttData(operations: any[], resources: any[]) {
-  // Format resources as the primary entities (rows in the grid)
+  // Format resources for display in left grid (simple flat list)
   const formattedResources = resources.map(resource => ({
     id: resource.id,
     name: resource.name || `Resource ${resource.id}`,
     type: resource.type || 'Standard',
-    // Make resources act as parent rows
-    children: [],  // Will be populated with tasks
-    expanded: true,
-    // Additional resource fields
+    capacity: resource.capacity || 100,
     calendar: resource.calendarId || null,
-    eventColor: resource.color || null
+    eventColor: resource.color || '#4CAF50'
   }));
   
   // Format tasks (operations) following Bryntum EventModel for resource scheduling
@@ -119,35 +117,11 @@ export function formatGanttData(operations: any[], resources: any[]) {
       effortUnit: 'hour'
     }));
   
-  // For resource-based view, create a hierarchical structure
-  // where resources are parent rows and their assigned tasks are children
-  const resourceTaskMap = new Map();
-  
-  // Initialize empty task arrays for each resource
-  formattedResources.forEach(resource => {
-    resourceTaskMap.set(resource.id, []);
-  });
-  
-  // Assign tasks to their resources
-  formattedTasks.forEach(task => {
-    const resourceId = task.resourceId;
-    if (resourceTaskMap.has(resourceId)) {
-      resourceTaskMap.get(resourceId).push(task);
-    }
-  });
-  
-  // Build hierarchical structure with resources as parents
-  const hierarchicalData = formattedResources.map(resource => ({
-    ...resource,
-    children: resourceTaskMap.get(resource.id) || [],
-    leaf: false,  // Resources are not leaf nodes
-    expanded: true
-  }));
-  
-  // Return in Bryntum project data format for resource view
+  // Return data in flat structure for resource scheduling view
+  // Resources are rows, tasks are events on timeline, assignments link them
   return {
     resources: { rows: formattedResources },
-    tasks: { rows: hierarchicalData },  // Use hierarchical structure
+    tasks: { rows: formattedTasks },  // Flat task list
     assignments: { rows: formattedAssignments },
     dependencies: { rows: [] }
   };
