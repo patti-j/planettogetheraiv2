@@ -231,7 +231,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setMobileMenuOpen(true);
+              setMobileMenuOpen(!mobileMenuOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -244,7 +244,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Recent Button */}
           <button
             onClick={() => {
-              setRecentDialogOpen(true);
+              setRecentDialogOpen(!recentDialogOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -257,7 +257,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Profile Button */}
           <button
             onClick={() => {
-              setProfileDialogOpen(true);
+              setProfileDialogOpen(!profileDialogOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
