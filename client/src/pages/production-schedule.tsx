@@ -533,18 +533,9 @@ export default function ProductionSchedulePage() {
                 </div>
               ) : (
                 !ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <BryntumGanttWrapper
+                  <SimpleBryntumGantt
                     operations={operations as any || []}
                     resources={resources as any || []}
-                    onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
-                      const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
-                        workCenterId: newResourceId,
-                        startTime: newStartTime.toISOString(),
-                        endTime: newEndTime.toISOString()
-                      });
-                      if (!response.ok) throw new Error('Failed to reschedule operation');
-                      await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                    }}
                   />
                 ) : (
                   <Card className="h-full">
