@@ -289,14 +289,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* Mobile Menu Sidebar */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[99999] lg:hidden" style={{ zIndex: 99999 }}>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50" 
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm" 
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sidebar Panel */}
-          <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+          <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out" style={{ zIndex: 100000 }}>
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
@@ -368,14 +368,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* Recent Pages Dialog */}
       {recentDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-[99999] flex items-end justify-center" style={{ zIndex: 99999 }}>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setRecentDialogOpen(false)}
           />
           {/* Dialog Panel */}
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t-4 border-blue-500 dark:border-blue-400 p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
             <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Pages</h3>
@@ -391,25 +391,25 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="space-y-2">
               <Button
                 variant="ghost"
-                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
                 onClick={() => {
                   setLocation('/production-schedule');
                   setRecentDialogOpen(false);
                 }}
               >
-                <Calendar className="w-5 h-5 mr-3" />
-                <span className="font-semibold">Production Schedule</span>
+                <Calendar className="w-5 h-5 mr-3 text-blue-500" />
+                <span className="font-semibold text-gray-900 dark:text-white">Production Schedule</span>
               </Button>
               <Button
                 variant="ghost"
-                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
                 onClick={() => {
                   setLocation('/onboarding');
                   setRecentDialogOpen(false);
                 }}
               >
-                <BookOpen className="w-5 h-5 mr-3" />
-                <span className="font-semibold">Getting Started</span>
+                <BookOpen className="w-5 h-5 mr-3 text-green-500" />
+                <span className="font-semibold text-gray-900 dark:text-white">Getting Started</span>
               </Button>
             </div>
           </div>
@@ -418,14 +418,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* Profile Dialog */}
       {profileDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+        <div className="fixed inset-0 z-[99999] flex items-end justify-center" style={{ zIndex: 99999 }}>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setProfileDialogOpen(false)}
           />
           {/* Dialog Panel */}
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t-4 border-purple-500 dark:border-purple-400 p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
             <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h3>
@@ -441,29 +441,29 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="space-y-2">
               <Button
                 variant="ghost"
-                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
                 onClick={() => {
                   setLocation('/account');
                   setProfileDialogOpen(false);
                 }}
               >
-                <Settings className="w-5 h-5 mr-3" />
-                <span className="font-semibold">Account Settings</span>
+                <Settings className="w-5 h-5 mr-3 text-purple-500" />
+                <span className="font-semibold text-gray-900 dark:text-white">Account Settings</span>
               </Button>
               <Button
                 variant="ghost"
-                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
                 onClick={() => {
                   setLocation('/settings');
                   setProfileDialogOpen(false);
                 }}
               >
-                <Settings className="w-5 h-5 mr-3" />
-                <span className="font-semibold">Preferences</span>
+                <Settings className="w-5 h-5 mr-3 text-gray-500" />
+                <span className="font-semibold text-gray-900 dark:text-white">Preferences</span>
               </Button>
               <Button
                 variant="destructive"
-                className="w-full text-left p-4 rounded-xl justify-start"
+                className="w-full text-left p-4 rounded-xl justify-start bg-red-500 hover:bg-red-600 text-white"
                 onClick={() => {
                   logout();
                   setProfileDialogOpen(false);
