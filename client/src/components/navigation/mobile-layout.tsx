@@ -241,24 +241,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <span className="text-[10px]">Menu</span>
           </button>
           
-          {/* Search Button */}
-          <button
-            onClick={() => {
-              // Focus on the search input in header
-              const searchInput = document.querySelector('.mobile-header-search');
-              if (searchInput) {
-                (searchInput as HTMLInputElement).focus();
-                searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="text-[10px]">Search</span>
-          </button>
-          
           {/* Recent Button */}
           <button
             onClick={() => {
