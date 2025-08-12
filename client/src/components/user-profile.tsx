@@ -489,15 +489,7 @@ function UserProfileDialogContent({ open, onOpenChange }: UserProfileDialogProps
     enabled: !!user?.id && open,
   });
   
-  console.log("Profile dialog state:", { 
-    open, 
-    user, 
-    userId: user?.id,
-    queryEnabled: !!user?.id && open,
-    profile, 
-    profileLoading, 
-    profileError 
-  });
+
 
   // Fetch user preferences
   const { data: preferences, isLoading: preferencesLoading } = useQuery<UserPreferences>({
@@ -1260,12 +1252,7 @@ export function UserProfileDialog({ open: externalOpen, onOpenChange: externalOn
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
   const setIsOpen = externalOnOpenChange || setInternalOpen;
 
-  console.log('🎯 UserProfileDialog state check:', {
-    externalOpen,
-    internalOpen,
-    isOpen,
-    hasExternalOnChange: !!externalOnOpenChange
-  });
+
 
   return (
     <>
