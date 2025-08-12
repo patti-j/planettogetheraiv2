@@ -79,7 +79,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       </div>
       
       {/* Mobile footer bar */}
-      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '65px' }}>
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '65px' }}>
         <div className="flex items-center justify-around px-2 py-2">
           {/* Home Button */}
           <button
