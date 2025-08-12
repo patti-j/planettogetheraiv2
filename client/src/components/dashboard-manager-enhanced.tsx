@@ -98,8 +98,8 @@ export function EnhancedDashboardManager({
 
   // Get all widgets from all dashboards
   const allWidgets = dashboards.flatMap(dashboard => [
-    ...dashboard.configuration.standardWidgets,
-    ...dashboard.configuration.customWidgets
+    ...(dashboard.configuration.standardWidgets || []),
+    ...(dashboard.configuration.customWidgets || [])
   ]);
 
   // Mutations

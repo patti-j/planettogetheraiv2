@@ -98,7 +98,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           
           {/* Menu Button */}
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               const event = new CustomEvent('toggleMenu');
               window.dispatchEvent(event);
             }}
