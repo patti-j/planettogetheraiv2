@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import TopMenu from "@/components/top-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { navigationGroups } from "@/config/navigation-menu";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -17,10 +20,14 @@ interface MobileLayoutProps {
 export function MobileLayout({ children }: MobileLayoutProps) {
   const [maxCommand, setMaxCommand] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentDialogOpen, setRecentDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const recognitionRef = useRef<any>(null);
+  const { user, logout } = useAuth();
   
   // Fetch user preferences for voice settings
   const { data: userPreferences } = useQuery({
@@ -197,7 +204,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       </div>
       
       {/* Main content area - with padding for fixed header and footer */}
-      <div className="pt-16 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="pt-16 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0">
         {children}
       </div>
       
@@ -224,8 +231,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const event = new CustomEvent('toggleMenu');
-              window.dispatchEvent(event);
+              setMobileMenuOpen(true);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -238,8 +244,12 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Search Button */}
           <button
             onClick={() => {
-              const event = new CustomEvent('openSearch');
-              window.dispatchEvent(event);
+              // Focus on the search input in header
+              const searchInput = document.querySelector('.mobile-header-search');
+              if (searchInput) {
+                (searchInput as HTMLInputElement).focus();
+                searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -252,9 +262,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Recent Button */}
           <button
             onClick={() => {
-              // Open recent pages menu or navigate to recent page
-              const event = new CustomEvent('openRecent');
-              window.dispatchEvent(event);
+              setRecentDialogOpen(true);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -267,8 +275,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {/* Profile Button */}
           <button
             onClick={() => {
-              const event = new CustomEvent('openProfile');
-              window.dispatchEvent(event);
+              setProfileDialogOpen(true);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
@@ -279,6 +286,196 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           </button>
         </div>
       </div>
+
+      {/* Mobile Menu Sidebar */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Sidebar Panel */}
+          <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarFallback>{(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user?.firstName || user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email || 'demo@example.com'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center flex-shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    title="Log out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Navigation Menu */}
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                {navigationGroups.map((group) => (
+                  <div key={group.title} className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      {group.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.features.slice(0, 6).map((feature) => {
+                        const Icon = feature.icon;
+                        return (
+                          <div
+                            key={feature.href}
+                            className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setMobileMenuOpen(false);
+                              setLocation(feature.href);
+                            }}
+                          >
+                            <Icon className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{feature.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Pages Dialog */}
+      {recentDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setRecentDialogOpen(false)}
+          />
+          {/* Dialog Panel */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Pages</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRecentDialogOpen(false)}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/production-schedule');
+                  setRecentDialogOpen(false);
+                }}
+              >
+                <Calendar className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Production Schedule</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/onboarding');
+                  setRecentDialogOpen(false);
+                }}
+              >
+                <BookOpen className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Getting Started</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Dialog */}
+      {profileDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setProfileDialogOpen(false)}
+          />
+          {/* Dialog Panel */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setProfileDialogOpen(false)}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/account');
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <Settings className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Account Settings</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/settings');
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <Settings className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Preferences</span>
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full text-left p-4 rounded-xl justify-start"
+                onClick={() => {
+                  logout();
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Sign Out</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
