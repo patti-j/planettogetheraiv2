@@ -83,19 +83,82 @@ export function BryntumGanttSimple({
     });
 
     try {
-      // Absolute minimal configuration
+      // Full featured configuration with drag-drop enabled
       const gantt = new Gantt({
         appendTo: containerRef.current,
         height: 500,
         width: '100%',
         
+        // CRITICAL: Enable all features including drag-drop
+        features: {
+          taskDrag: true,           // Enable task dragging - THIS IS WHAT WAS MISSING!
+          taskDragCreate: true,     // Create tasks by dragging
+          taskResize: true,         // Resize tasks by dragging
+          taskEdit: true,           // Double-click to edit
+          dependencies: true,       // Show task dependencies
+          dependencyEdit: true,     // Edit dependencies
+          percentDone: true,        // Show progress
+          progressLine: true,       // Show progress line
+          cellEdit: true,          // Edit cells in grid
+          columnLines: true,       // Show column lines
+          rowLines: true,          // Show row lines
+        },
+        
+        // Configure columns for the grid
+        columns: [
+          { type: 'name', field: 'name', text: 'Task', width: 250, editor: true },
+          { type: 'startdate', text: 'Start Date' },
+          { type: 'duration', text: 'Duration' },
+          { type: 'percentdone', text: 'Progress', width: 80 }
+        ],
+        
+        // Add event listeners to verify drag is working
+        listeners: {
+          beforeTaskDrag: ({ taskRecords }) => {
+            console.log('🎯 DRAG STARTING! Task:', taskRecords[0]?.name);
+            return true; // Allow drag
+          },
+          taskDrag: ({ context }) => {
+            console.log('🎯 DRAGGING...', context);
+          },
+          taskDrop: ({ taskRecords, targetDate }) => {
+            console.log('🎯 DROPPED! New date:', targetDate);
+            // Here we would call onOperationMove to update backend
+          },
+          taskResizeEnd: ({ taskRecord, startDate, endDate }) => {
+            console.log('🎯 RESIZED! New dates:', startDate, endDate);
+          }
+        },
+        
         project: {
           tasks: [
             {
               id: 1,
-              name: 'Test Task 1',
+              name: 'Test Task 1 - Try dragging me!',
               startDate: '2025-01-12',
-              duration: 5
+              duration: 5,
+              percentDone: 25,
+              // IMPORTANT: Enable dragging on the task itself
+              draggable: true,
+              resizable: true
+            },
+            {
+              id: 2,
+              name: 'Test Task 2 - I can be dragged too!',
+              startDate: '2025-01-19',
+              duration: 3,
+              percentDone: 50,
+              draggable: true,
+              resizable: true
+            },
+            {
+              id: 3,
+              name: 'Test Task 3 - Resize my edges!',
+              startDate: '2025-01-15',
+              duration: 4,
+              percentDone: 75,
+              draggable: true,
+              resizable: true
             }
           ]
         }
