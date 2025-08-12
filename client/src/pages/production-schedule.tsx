@@ -13,7 +13,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
-import { BryntumGanttClean } from '@/components/bryntum/BryntumGanttClean';
+import { BryntumGanttDebug } from '@/components/bryntum/BryntumGanttDebug';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -525,7 +525,7 @@ export default function ProductionSchedulePage() {
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
                   </div>
                   {!ordersLoading && !operationsLoading && !resourcesLoading && (
-                    <BryntumGanttClean
+                    <BryntumGanttDebug
                       operations={operations as any || []}
                       resources={resources as any || []}
                       className="h-full"
@@ -548,7 +548,7 @@ export default function ProductionSchedulePage() {
                 </div>
               ) : (
                 !ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <BryntumGanttClean
+                  <BryntumGanttDebug
                     operations={operations as any || []}
                     resources={resources as any || []}
                     className="h-full"
