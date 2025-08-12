@@ -274,7 +274,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         <div className="fixed inset-0 bottom-16 z-[99999] lg:hidden" style={{ zIndex: 99999 }}>
           {/* Overlay - adjusted to not cover footer */}
           <div 
-            className="fixed inset-0 bottom-16 bg-black/80 backdrop-blur-sm" 
+            className="fixed inset-0 bottom-16 bg-black/50" 
             onClick={() => setMobileMenuOpen(false)}
           />
           {/* Sidebar Panel - adjusted height to not overlap footer */}
