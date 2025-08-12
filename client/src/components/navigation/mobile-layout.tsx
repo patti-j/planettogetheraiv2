@@ -199,6 +199,15 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 )}
               </Button>
             )}
+            {/* Max AI Settings Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setMaxOpen(true)}
+              className="h-9 w-9 p-0 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
