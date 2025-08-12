@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail } from "lucide-react";
+import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail, ArrowLeft, Home } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/logo";
@@ -149,6 +149,28 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-6">
+        {/* Back to Marketing Link */}
+        <div className="flex justify-between items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation("/marketing-landing")}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Learn More
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation("/marketing-home")}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </Button>
+        </div>
+
         {/* Logo and Title */}
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
