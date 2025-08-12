@@ -150,15 +150,6 @@ export function BryntumGanttSimple({
       setTimeout(() => {
         if (gantt && gantt.element) {
           gantt.refresh();
-          console.log('Forced refresh - Gantt visible now?', gantt.isVisible);
-          console.log('Gantt DOM element exists:', !!document.querySelector('.b-gantt'));
-          console.log('Container children:', containerRef.current?.children.length);
-          
-          const ganttEl = document.querySelector('.b-gantt');
-          if (ganttEl) {
-            console.log('✅ Bryntum Gantt is in the DOM!');
-            console.log('Gantt element bounds:', ganttEl.getBoundingClientRect());
-          }
           
           // Make sure the Gantt is visible
           if (gantt.element) {
@@ -168,10 +159,7 @@ export function BryntumGanttSimple({
         }
       }, 100);
     } catch (error) {
-      console.error('BryntumGanttSimple: Failed to create Gantt');
-      console.error('Error message:', error?.message || 'Unknown error');
-      console.error('Error stack:', error?.stack || 'No stack trace');
-      console.error('Full error:', error);
+      console.error('BryntumGanttSimple: Failed to create Gantt', error);
     }
 
     // Cleanup
