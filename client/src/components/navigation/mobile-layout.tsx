@@ -48,9 +48,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   };
 
   return (
-    <div className="h-screen flex flex-col" style={{ height: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-      {/* Mobile header */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <>
+      {/* Mobile header - fixed at top */}
+      <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm z-40" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo */}
           <Logo size="small" showText={false} />
@@ -73,8 +73,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
       
-      {/* Main content area - scrollable with padding for fixed footer */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      {/* Main content area - with padding for fixed header and footer */}
+      <div className="pt-16 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
         {children}
       </div>
       
@@ -156,6 +156,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
