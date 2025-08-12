@@ -283,6 +283,7 @@ function Router() {
     <OnboardingGate>
       <Switch>
         <Route path="/marketing" component={MarketingLandingPage} />
+        <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/onboarding" component={Onboarding} />
 
         <Route path="/dashboard">
