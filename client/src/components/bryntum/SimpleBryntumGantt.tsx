@@ -154,31 +154,32 @@ export function SimpleBryntumGantt({
         console.log('Gantt constructor found:', !!Gantt);
         console.log('Gantt type:', typeof Gantt);
         
-        // For now, let's create a simple mock to test the rest of our code
+        // Only use fallback if Gantt is not available
         if (!Gantt) {
-          console.error('Could not find Gantt constructor. Using fallback initialization.');
+          console.error('Could not find Gantt constructor. Using fallback visualization.');
           
-          // Create a simple Gantt display using native DOM
+          // Create a simple fallback display using native DOM
           const container = containerRef.current;
           if (!container) return;
           
           // Clear container
           container.innerHTML = '';
           
-          // Create a simple Gantt visualization
+          // Create a simple fallback visualization
           const ganttContainer = document.createElement('div');
           ganttContainer.className = 'bryntum-gantt-container';
           ganttContainer.style.height = '100%';
           ganttContainer.style.position = 'relative';
           ganttContainer.style.overflow = 'auto';
           ganttContainer.innerHTML = `
-            <div style="padding: 20px; color: white;">
-              <h3>Production Schedule</h3>
+            <div style="padding: 20px;">
+              <h3>Production Schedule (Fallback View)</h3>
+              <p style="color: orange;">⚠️ Bryntum Gantt not loaded - showing fallback visualization</p>
               <p>Operations: ${operations.length}</p>
               <p>Resources: ${resources.length}</p>
               <div style="margin-top: 20px;">
                 ${operations.map(op => `
-                  <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                  <div style="margin: 10px 0; padding: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px;">
                     <strong>${op.operationName}</strong><br/>
                     Resource: ${resources.find(r => r.id === op.workCenterId)?.name || 'Unknown'}<br/>
                     Start: ${new Date(op.startTime).toLocaleString()}<br/>
@@ -194,6 +195,8 @@ export function SimpleBryntumGantt({
           setIsLoading(false);
           return;
         }
+        
+        console.log('Proceeding with Bryntum Gantt initialization...');
 
         // Transform operations to Bryntum task format
         const tasks = operations.map((op, index) => {
