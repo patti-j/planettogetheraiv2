@@ -92,8 +92,9 @@ export function BryntumGanttProduction({
       // Create Gantt with resource-oriented view
       const gantt = new Gantt({
         appendTo: containerRef.current,
-        height: 500,
+        height: '100%',
         width: '100%',
+        autoHeight: false,
         
         // Enable available features in trial version
         features: {
@@ -188,10 +189,12 @@ export function BryntumGanttProduction({
       <CardContent className="p-0">
         <div 
           ref={containerRef} 
+          className="bryntum-gantt-container"
           style={{ 
             height: '600px',
             width: '100%',
-            backgroundColor: '#f0f0f0'
+            position: 'relative',
+            minHeight: '400px'
           }}
         />
       </CardContent>
