@@ -24,31 +24,69 @@ export function BryntumGanttWrapper({
     let ganttInstance: any = null;
 
     const initGantt = async () => {
+      console.log('BryntumGanttWrapper: Starting initialization...');
+      
       // Wait for Bryntum to be available
       let attempts = 0;
       while (!window.bryntum && attempts < 20) {
+        console.log(`BryntumGanttWrapper: Waiting for Bryntum... attempt ${attempts + 1}`);
         await new Promise(resolve => setTimeout(resolve, 100));
         attempts++;
       }
 
       if (!window.bryntum) {
+        console.error('BryntumGanttWrapper: Bryntum library failed to load after 20 attempts');
         setError('Bryntum library failed to load');
         setIsLoading(false);
         return;
       }
 
-      // Access the Gantt constructor directly from window.bryntum.gantt
-      const { Gantt } = window.bryntum.gantt || {};
+      console.log('BryntumGanttWrapper: window.bryntum found:', window.bryntum);
+      
+      // Try different ways to access the Gantt constructor
+      let Gantt;
+      
+      // Method 1: Direct access
+      if (window.bryntum && window.bryntum.gantt && window.bryntum.gantt.Gantt) {
+        Gantt = window.bryntum.gantt.Gantt;
+        console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.gantt.Gantt');
+      }
+      // Method 2: Capital G for Gantt namespace
+      else if (window.bryntum && window.bryntum.Gantt) {
+        Gantt = window.bryntum.Gantt;
+        console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.Gantt');
+      }
+      // Method 3: Through widget namespace
+      else if (window.bryntum && window.bryntum.widget && window.bryntum.widget.Gantt) {
+        Gantt = window.bryntum.widget.Gantt;
+        console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.widget.Gantt');
+      }
       
       if (!Gantt) {
+        console.error('BryntumGanttWrapper: Gantt component not found in Bryntum library');
+        console.log('Available Bryntum properties:', Object.keys(window.bryntum || {}));
+        if (window.bryntum) {
+          if (window.bryntum.gantt) {
+            console.log('window.bryntum.gantt properties:', Object.keys(window.bryntum.gantt));
+          }
+          if (window.bryntum.widget) {
+            console.log('window.bryntum.widget properties:', Object.keys(window.bryntum.widget));
+          }
+        }
         setError('Gantt component not found in Bryntum library');
         setIsLoading(false);
         return;
       }
+      
+      console.log('BryntumGanttWrapper: Gantt constructor found, proceeding with initialization...');
 
       if (!mounted || !containerRef.current) return;
 
       try {
+        console.log('BryntumGanttWrapper: Converting data...');
+        console.log('Resources:', resources);
+        console.log('Operations:', operations);
+        
         // Convert our data to Bryntum format
         const ganttResources = resources.map(r => ({
           id: r.id,
@@ -69,21 +107,19 @@ export function BryntumGanttWrapper({
           originalData: op
         }));
 
+        console.log('BryntumGanttWrapper: Converted resources:', ganttResources);
+        console.log('BryntumGanttWrapper: Converted tasks:', ganttTasks);
+        console.log('BryntumGanttWrapper: Container ref:', containerRef.current);
+        
         // Create the Gantt instance with minimal configuration
+        console.log('BryntumGanttWrapper: Creating Gantt instance...');
+        
         ganttInstance = new Gantt({
           appendTo: containerRef.current,
           
-          // Use resource view
-          viewPreset: 'weekAndDayLetter',
-          
-          // Define columns for the left grid
+          // Start with minimal columns
           columns: [
-            { 
-              type: 'resourceInfo',
-              text: 'Resources',
-              width: 200,
-              field: 'name'
-            }
+            { text: 'Name', field: 'name', width: 200 }
           ],
 
           // Configure features - disable those not in trial
