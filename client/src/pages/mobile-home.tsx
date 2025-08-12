@@ -1517,7 +1517,7 @@ export default function MobileHomePage() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 force-mobile-view flex flex-col">
+    <>
 
       {/* Library Modal */}
             <div 
@@ -2432,6 +2432,6 @@ export default function MobileHomePage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

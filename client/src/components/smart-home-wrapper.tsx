@@ -3,6 +3,7 @@ import { useLocation, Redirect } from "wouter";
 import MobileHomePage from "@/pages/mobile-home";
 import HomePage from "@/pages/home";
 import TopMenu from "@/components/top-menu";
+import { MobileLayout } from "@/components/navigation/mobile-layout";
 
 export function SmartHomeWrapper() {
   const deviceType = useDeviceType();
@@ -18,9 +19,13 @@ export function SmartHomeWrapper() {
       console.log('Redirecting mobile user to mobile-home from:', location);
       return <Redirect to="/mobile-home" />;
     }
-    // If already on a mobile route, render the page
-    console.log('Loading MobileHomePage for mobile device');
-    return <MobileHomePage key={location} />;
+    // If already on a mobile route, render the page wrapped in MobileLayout
+    console.log('Loading MobileHomePage for mobile device with MobileLayout wrapper');
+    return (
+      <MobileLayout>
+        <MobileHomePage key={location} />
+      </MobileLayout>
+    );
   }
   
   // On desktop, show the new HomePage for root route
