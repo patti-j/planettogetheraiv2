@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
-import { LogIn } from "lucide-react";
+import { LogIn, ArrowRight, BarChart3 } from "lucide-react";
+import { Link } from "wouter";
 
 export function LoginForm() {
   const [username, setUsername] = useState("");
@@ -74,6 +75,25 @@ export function LoginForm() {
             <p className="text-xs text-blue-600 mt-2 italic">All demo accounts use the same secure password.</p>
           </div>
         </CardContent>
+        <CardFooter className="flex flex-col space-y-3 pt-0">
+          <div className="w-full flex flex-col space-y-2">
+            <Link href="/marketing-landing">
+              <Button variant="outline" className="w-full">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Learn About PlanetTogether
+              </Button>
+            </Link>
+            <Link href="/solutions-comparison">
+              <Button variant="outline" className="w-full">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Compare Solutions
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-center text-gray-500">
+            Explore our features without signing in
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );
