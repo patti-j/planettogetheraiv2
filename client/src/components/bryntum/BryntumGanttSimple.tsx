@@ -24,23 +24,43 @@ export function BryntumGanttSimple({
   const ganttRef = useRef<any>(null);
 
   useEffect(() => {
+    console.log('BryntumGanttSimple: Starting initialization');
+    
     // Clean up any existing instance
     if (ganttRef.current) {
+      console.log('BryntumGanttSimple: Cleaning up existing instance');
       ganttRef.current.destroy();
       ganttRef.current = null;
     }
 
     // Check for container and data
-    if (!containerRef.current || !operations?.length || !resources?.length) {
+    if (!containerRef.current) {
+      console.log('BryntumGanttSimple: No container ref');
+      return;
+    }
+    
+    if (!operations?.length || !resources?.length) {
+      console.log('BryntumGanttSimple: No operations or resources', { 
+        operationsCount: operations?.length || 0, 
+        resourcesCount: resources?.length || 0 
+      });
       return;
     }
 
     // Check if Bryntum is available
-    const Gantt = window.bryntum?.gantt?.Gantt;
+    const bryntumGantt = window.bryntum?.gantt;
+    console.log('BryntumGanttSimple: Checking Bryntum', { 
+      bryntum: !!window.bryntum, 
+      gantt: !!bryntumGantt 
+    });
+    
+    const Gantt = bryntumGantt?.Gantt;
     if (!Gantt) {
-      console.error('Bryntum Gantt not found');
+      console.error('BryntumGanttSimple: Bryntum Gantt constructor not found');
       return;
     }
+    
+    console.log('BryntumGanttSimple: Bryntum Gantt constructor found, proceeding with initialization');
 
     // Simple task data
     const tasks = operations.map(op => ({
