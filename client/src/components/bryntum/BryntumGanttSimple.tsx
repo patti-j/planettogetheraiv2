@@ -25,23 +25,19 @@ export function BryntumGanttSimple({
   const [instanceId] = useState(() => `gantt-${Date.now()}-${Math.random()}`);
 
   useEffect(() => {
-    console.log(`BryntumGanttSimple[${instanceId}]: Starting initialization`);
-    
     // Clean up ALL existing Gantt instances on the page
     if (window.bryntum?.gantt?.Gantt?.instances) {
-      console.log(`BryntumGanttSimple[${instanceId}]: Found existing instances, destroying all`);
       window.bryntum.gantt.Gantt.instances.forEach((instance: any) => {
         try {
           instance.destroy();
         } catch (e) {
-          console.log('Failed to destroy instance:', e);
+          // Failed to destroy instance
         }
       });
     }
     
     // Clean up our specific instance
     if (ganttRef.current) {
-      console.log(`BryntumGanttSimple[${instanceId}]: Cleaning up our instance`);
       ganttRef.current.destroy();
       ganttRef.current = null;
     }
