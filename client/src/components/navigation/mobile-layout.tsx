@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
+import { useLocation } from "wouter";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [maxCommand, setMaxCommand] = useState("");
   const { setMaxOpen, setCanvasVisible } = useMaxDock();
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -81,7 +83,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         <div className="flex items-center justify-around px-2 py-2">
           {/* Home Button */}
           <button
-            onClick={() => window.location.href = '/mobile-home'}
+            onClick={() => {
+              if (location !== '/mobile-home') {
+                setLocation('/mobile-home');
+              }
+            }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +126,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           
           {/* Recent Button */}
           <button
-            onClick={() => window.location.href = '/mobile-home'}
+            onClick={() => {
+              // Open recent pages menu or navigate to recent page
+              const event = new CustomEvent('openRecent');
+              window.dispatchEvent(event);
+            }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

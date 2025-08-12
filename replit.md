@@ -20,8 +20,9 @@ Note on concurrent work:
 
 ### Navigation Architecture
 - **Unified Layout System**: Single consistent header/navigation for desktop (DesktopLayout), single consistent footer bar for mobile (MobileLayout). Headers/footers never change across pages.
-- **Mobile Footer Bar**: Navigation positioned at bottom of screen for optimal thumb reach, featuring Home, Menu, Search, Recent, and Profile buttons
+- **Mobile Footer Bar**: Navigation positioned at bottom of screen for optimal thumb reach, featuring Home, Menu, Search, Recent, and Profile buttons. Uses flexbox layout for iOS Safari compatibility.
 - **Desktop Navigation**: Left rail navigation with slide-out menu and resizable AI panel on the right
+- **Client-Side Navigation**: Mobile navigation uses wouter for smooth client-side routing, preventing unnecessary page reloads and auth state checks
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
