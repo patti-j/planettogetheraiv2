@@ -14,6 +14,13 @@ export interface CanvasItem {
   timestamp?: string;
 }
 
+export interface Message {
+  id: string;
+  content: string;
+  role: 'user' | 'assistant';
+  timestamp: Date;
+}
+
 interface MaxDockContextType {
   isMaxOpen: boolean;
   maxWidth: number;
@@ -24,6 +31,7 @@ interface MaxDockContextType {
   canvasHeight: number;
   canvasItems: CanvasItem[];
   currentPage: string;
+  messages: Message[];
   setMaxOpen: (open: boolean) => void;
   setMaxWidth: (width: number) => void;
   setMobileLayoutMode: (mode: 'split' | 'fullscreen') => void;
@@ -32,6 +40,8 @@ interface MaxDockContextType {
   setCanvasHeight: (height: number) => void;
   setCanvasItems: (items: CanvasItem[] | ((prev: CanvasItem[]) => CanvasItem[])) => void;
   setCurrentPage: (page: string) => void;
+  addMessage: (message: Message) => void;
+  clearMessages: () => void;
 }
 
 const MaxDockContext = createContext<MaxDockContextType | undefined>(undefined);
@@ -49,6 +59,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [isCanvasVisible, setIsCanvasVisible] = useState(false);
   const [canvasHeight, setCanvasHeight] = useState(300);
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]); // Canvas items state
+  const [messages, setMessages] = useState<Message[]>([]); // Messages state
 
   // User preferences query - FIXED to prevent infinite loop
   const { data: userPreferences } = useQuery({
@@ -139,6 +150,14 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
     saveMaxState({ isCanvasVisible: visible });
   };
 
+  const addMessage = (message: Message) => {
+    setMessages(prev => [...prev, message]);
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
   return (
     <MaxDockContext.Provider
       value={{
@@ -151,6 +170,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         canvasHeight,
         canvasItems,
         currentPage,
+        messages,
         setMaxOpen,
         setMaxWidth: setMaxWidthValue,
         setMobileLayoutMode: setMobileLayoutModeValue,
@@ -159,6 +179,8 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
         setCanvasHeight: setCanvasHeightValue,
         setCanvasItems,
         setCurrentPage: setCurrentPageValue,
+        addMessage,
+        clearMessages,
       }}
     >
       {children}

@@ -1,13 +1,14 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import TopMenu from "@/components/top-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/logo";
 import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -15,23 +16,70 @@ interface MobileLayoutProps {
 
 export function MobileLayout({ children }: MobileLayoutProps) {
   const [maxCommand, setMaxCommand] = useState("");
-  const { setMaxOpen, setCanvasVisible } = useMaxDock();
+  const [isListening, setIsListening] = useState(false);
+  const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const recognitionRef = useRef<any>(null);
+  
+  // Fetch user preferences for voice settings
+  const { data: userPreferences } = useQuery({
+    queryKey: ['/api/user-preferences/' + localStorage.getItem('userId')],
+    enabled: !!localStorage.getItem('userId')
+  });
+
+  const isVoiceEnabled = userPreferences?.maxAiState?.voiceEnabled || false;
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest("POST", "/api/ai-agent/chat", { message });
+      return apiRequest("POST", "/api/ai-agent/chat", { 
+        message,
+        currentPage: location 
+      });
     },
     onSuccess: (data: any) => {
-      // Open Max panel to show response
-      setMaxOpen(true);
-      // Show canvas if AI returns visual content
-      if (data?.showCanvas) {
+      console.log("Max AI Response:", data);
+      
+      // Add message to Max panel
+      if (data?.message) {
+        addMessage({
+          id: Date.now().toString(),
+          content: data.message,
+          role: 'assistant',
+          timestamp: new Date()
+        });
+      }
+
+      // Handle navigation if action requires it
+      if (data?.navigateTo) {
+        setLocation(data.navigateTo);
+      }
+
+      // Handle specific actions
+      if (data?.actions?.includes('NAVIGATE_TO_PAGE')) {
+        const targetPage = data?.targetPage || data?.parameters?.page;
+        if (targetPage) {
+          setLocation(targetPage);
+        }
+      }
+
+      // Show canvas for visual content
+      if (data?.canvasAction || data?.actions?.includes('ADD_CANVAS_CONTENT')) {
         setCanvasVisible(true);
+        setMaxOpen(true);
+      } else if (data?.message) {
+        // Only open Max panel if there's a message
+        setMaxOpen(true);
+      }
+
+      // Handle voice response if enabled
+      if (isVoiceEnabled && data?.audioUrl) {
+        const audio = new Audio(data.audioUrl);
+        audio.play().catch(err => console.error("Failed to play audio:", err));
       }
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Max AI Error:", error);
       toast({
         title: "Error",
         description: "Failed to send message to Max. Please try again.",
@@ -40,8 +88,65 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     }
   });
 
+  // Voice input handling
+  useEffect(() => {
+    if (!isVoiceEnabled || !window.webkitSpeechRecognition) return;
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setMaxCommand(transcript);
+      sendMessageMutation.mutate(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+      toast({
+        title: "Voice Error",
+        description: "Failed to recognize speech. Please try again.",
+        variant: "destructive"
+      });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, [isVoiceEnabled]);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+      toast({
+        title: "Listening...",
+        description: "Speak your command to Max"
+      });
+    }
+  };
+
   const handleMaxCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && maxCommand.trim()) {
+      // Add user message to Max panel
+      addMessage({
+        id: Date.now().toString(),
+        content: maxCommand,
+        role: 'user',
+        timestamp: new Date()
+      });
+      
       sendMessageMutation.mutate(maxCommand);
       setMaxCommand("");
     }
@@ -56,19 +161,37 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           <Logo size="small" showText={false} />
           
           {/* Max Search/Command Input */}
-          <div className="flex-1 relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              <Search className="h-4 w-4 text-gray-400" />
+          <div className="flex-1 relative flex items-center gap-2">
+            <div className="flex-1 relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <Input
+                type="text"
+                placeholder="Ask Max anything..."
+                value={maxCommand}
+                onChange={(e) => setMaxCommand(e.target.value)}
+                onKeyDown={handleMaxCommand}
+                className="pl-12 pr-4 h-9 text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 mobile-header-search"
+                disabled={sendMessageMutation.isPending}
+              />
             </div>
-            <Input
-              type="text"
-              placeholder="Ask Max anything..."
-              value={maxCommand}
-              onChange={(e) => setMaxCommand(e.target.value)}
-              onKeyDown={handleMaxCommand}
-              className="pl-12 pr-4 h-9 text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-            />
+            {isVoiceEnabled && (
+              <Button
+                size="sm"
+                variant={isListening ? "default" : "ghost"}
+                onClick={toggleVoiceInput}
+                className={`h-9 w-9 p-0 ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                disabled={sendMessageMutation.isPending}
+              >
+                {isListening ? (
+                  <Mic className="h-4 w-4 text-white animate-pulse" />
+                ) : (
+                  <MicOff className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
