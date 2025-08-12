@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 declare global {
@@ -22,13 +22,26 @@ export function BryntumGanttSimple({
 }: BryntumGanttSimpleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const ganttRef = useRef<any>(null);
+  const [instanceId] = useState(() => `gantt-${Date.now()}-${Math.random()}`);
 
   useEffect(() => {
-    console.log('BryntumGanttSimple: Starting initialization');
+    console.log(`BryntumGanttSimple[${instanceId}]: Starting initialization`);
     
-    // Clean up any existing instance
+    // Clean up ALL existing Gantt instances on the page
+    if (window.bryntum?.gantt?.Gantt?.instances) {
+      console.log(`BryntumGanttSimple[${instanceId}]: Found existing instances, destroying all`);
+      window.bryntum.gantt.Gantt.instances.forEach((instance: any) => {
+        try {
+          instance.destroy();
+        } catch (e) {
+          console.log('Failed to destroy instance:', e);
+        }
+      });
+    }
+    
+    // Clean up our specific instance
     if (ganttRef.current) {
-      console.log('BryntumGanttSimple: Cleaning up existing instance');
+      console.log(`BryntumGanttSimple[${instanceId}]: Cleaning up our instance`);
       ganttRef.current.destroy();
       ganttRef.current = null;
     }
