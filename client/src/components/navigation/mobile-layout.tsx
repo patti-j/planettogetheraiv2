@@ -353,11 +353,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         <div className="fixed inset-0 z-[99999] flex items-end justify-center" style={{ zIndex: 99999 }}>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50"
             onClick={() => setRecentDialogOpen(false)}
           />
           {/* Dialog Panel */}
-          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t-4 border-blue-500 dark:border-blue-400 p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
+          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
             <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Pages</h3>
@@ -403,11 +403,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         <div className="fixed inset-0 z-[99999] flex items-end justify-center" style={{ zIndex: 99999 }}>
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/50"
             onClick={() => setProfileDialogOpen(false)}
           />
           {/* Dialog Panel */}
-          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl border-t-4 border-purple-500 dark:border-purple-400 p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
+          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
             <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h3>
