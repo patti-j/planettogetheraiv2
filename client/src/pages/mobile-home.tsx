@@ -735,6 +735,8 @@ export default function MobileHomePage() {
   const [currentWidgetPage, setCurrentWidgetPage] = useState(0);
   const [currentDashboardPage, setCurrentDashboardPage] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [recentDialogOpen, setRecentDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   
   // Pagination constants
   const ITEMS_PER_PAGE = 4; // Show 4 items per page for mobile
@@ -1213,109 +1215,12 @@ export default function MobileHomePage() {
 
     const handleRecentButton = () => {
       console.log("Recent button event received");
-      // Show a dialog with recent pages
-      const recentPages = [
-        { path: '/production-schedule', label: 'Production Schedule', icon: Calendar },
-        { path: '/onboarding', label: 'Getting Started', icon: BookOpen },
-      ];
-      
-      // Create and show recent pages menu
-      const dialog = document.createElement('div');
-      dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
-      dialog.innerHTML = `
-        <div class="fixed inset-0 bg-black/50" id="recent-overlay"></div>
-        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-500 p-6 w-full max-w-md pb-safe-area animate-slide-up">
-          <div class="w-12 h-1 bg-gray-300 dark:bg-gray-500 rounded-full mx-auto mb-4"></div>
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-50">Recent Pages</h3>
-            <button id="close-recent" class="p-2 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-lg transition-colors">
-              <svg class="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="space-y-2" id="recent-list"></div>
-        </div>
-      `;
-      document.body.appendChild(dialog);
-      
-      // Add recent pages to list
-      const listContainer = dialog.querySelector('#recent-list');
-      recentPages.forEach(page => {
-        const item = document.createElement('button');
-        item.className = 'w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl flex items-center gap-3 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm';
-        item.innerHTML = `
-          <span class="text-gray-900 dark:text-gray-50 font-semibold">${page.label}</span>
-        `;
-        item.onclick = () => {
-          setLocation(page.path);
-          document.body.removeChild(dialog);
-        };
-        listContainer?.appendChild(item);
-      });
-      
-      // Close handlers
-      dialog.querySelector('#close-recent')?.addEventListener('click', () => {
-        document.body.removeChild(dialog);
-      });
-      dialog.querySelector('#recent-overlay')?.addEventListener('click', () => {
-        document.body.removeChild(dialog);
-      });
+      setRecentDialogOpen(true);
     };
 
     const handleProfileButton = () => {
       console.log("Profile button event received");
-      // Show profile menu
-      const dialog = document.createElement('div');
-      dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
-      dialog.innerHTML = `
-        <div class="fixed inset-0 bg-black/50" id="profile-overlay"></div>
-        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-500 p-6 w-full max-w-md pb-safe-area animate-slide-up">
-          <div class="w-12 h-1 bg-gray-300 dark:bg-gray-500 rounded-full mx-auto mb-4"></div>
-          <div class="flex items-center justify-between mb-5">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-50">Profile</h3>
-            <button id="close-profile" class="p-2 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-lg transition-colors">
-              <svg class="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="space-y-2">
-            <button id="profile-settings" class="w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl font-semibold text-gray-900 dark:text-gray-50 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm">
-              Account Settings
-            </button>
-            <button id="profile-preferences" class="w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl font-semibold text-gray-900 dark:text-gray-50 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm">
-              Preferences
-            </button>
-            <button id="profile-logout" class="w-full text-left p-4 bg-red-50 dark:bg-red-600 hover:bg-red-100 dark:hover:bg-red-500 rounded-xl font-semibold text-red-600 dark:text-red-50 transition-all transform hover:scale-[1.02] border border-red-200 dark:border-red-400 shadow-sm">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(dialog);
-      
-      // Button handlers
-      dialog.querySelector('#profile-settings')?.addEventListener('click', () => {
-        setLocation('/account');
-        document.body.removeChild(dialog);
-      });
-      dialog.querySelector('#profile-preferences')?.addEventListener('click', () => {
-        setLocation('/settings');
-        document.body.removeChild(dialog);
-      });
-      dialog.querySelector('#profile-logout')?.addEventListener('click', () => {
-        logout();
-        document.body.removeChild(dialog);
-      });
-      
-      // Close handlers
-      dialog.querySelector('#close-profile')?.addEventListener('click', () => {
-        document.body.removeChild(dialog);
-      });
-      dialog.querySelector('#profile-overlay')?.addEventListener('click', () => {
-        document.body.removeChild(dialog);
-      });
+      setProfileDialogOpen(true);
     };
 
     // Add event listeners
@@ -2438,6 +2343,117 @@ export default function MobileHomePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Pages Dialog */}
+      {recentDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setRecentDialogOpen(false)}
+          />
+          {/* Dialog Panel */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Pages</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRecentDialogOpen(false)}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/production-schedule');
+                  setRecentDialogOpen(false);
+                }}
+              >
+                <Calendar className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Production Schedule</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/onboarding');
+                  setRecentDialogOpen(false);
+                }}
+              >
+                <BookOpen className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Getting Started</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Dialog */}
+      {profileDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setProfileDialogOpen(false)}
+          />
+          {/* Dialog Panel */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-700 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setProfileDialogOpen(false)}
+                className="p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/account');
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <Settings className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Account Settings</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-left p-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl justify-start"
+                onClick={() => {
+                  setLocation('/settings');
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <Settings className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Preferences</span>
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full text-left p-4 rounded-xl justify-start"
+                onClick={() => {
+                  logout();
+                  setProfileDialogOpen(false);
+                }}
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                <span className="font-semibold">Sign Out</span>
+              </Button>
             </div>
           </div>
         </div>
