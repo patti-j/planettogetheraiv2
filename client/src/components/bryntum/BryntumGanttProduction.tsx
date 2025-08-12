@@ -92,7 +92,7 @@ export function BryntumGanttProduction({
       // Create Gantt with resource-oriented view
       const gantt = new Gantt({
         appendTo: containerRef.current,
-        height: '100%',
+        height: 500,
         width: '100%',
         autoHeight: false,
         
@@ -150,7 +150,10 @@ export function BryntumGanttProduction({
         },
         
         project: {
-          tasks: tasksByResource
+          startDate: new Date('2025-08-01'),
+          tasks: tasksByResource,
+          autoSync: false,
+          validateResponse: false
         }
       });
 
@@ -162,6 +165,7 @@ export function BryntumGanttProduction({
           gantt.refresh();
           gantt.element.style.display = 'block';
           gantt.element.style.visibility = 'visible';
+          gantt.element.style.height = '500px';
         }
       }, 100);
       
@@ -186,7 +190,7 @@ export function BryntumGanttProduction({
           {operations.length} operations scheduled across {resources.length} resources
         </p>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-4">
         <div 
           ref={containerRef} 
           className="bryntum-gantt-container"
@@ -194,7 +198,10 @@ export function BryntumGanttProduction({
             height: '600px',
             width: '100%',
             position: 'relative',
-            minHeight: '400px'
+            minHeight: '500px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px'
           }}
         />
       </CardContent>
