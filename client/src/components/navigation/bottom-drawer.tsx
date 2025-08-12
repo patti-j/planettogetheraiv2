@@ -27,10 +27,10 @@ export function BottomDrawer() {
 
   // Listen for toggle event from command palette or other components
   useEffect(() => {
-    const handleToggle = () => setIsOpen(!isOpen);
+    const handleToggle = () => setIsOpen(prev => !prev);
     document.addEventListener('toggle-bottom-drawer', handleToggle);
     return () => document.removeEventListener('toggle-bottom-drawer', handleToggle);
-  }, [isOpen]);
+  }, []);
 
   // Mock activity data - in production, this would come from the backend
   const mockActivities: ActivityItem[] = [

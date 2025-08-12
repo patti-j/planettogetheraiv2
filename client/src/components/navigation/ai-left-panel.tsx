@@ -62,7 +62,7 @@ export function AILeftPanel() {
   };
   
   // Fetch user preferences from database
-  const { data: userPreferences } = useQuery({
+  const { data: userPreferences } = useQuery<any>({
     queryKey: [`/api/user-preferences/${user?.id}`],
     enabled: !!user?.id,
   });
@@ -133,10 +133,10 @@ export function AILeftPanel() {
 
   // Listen for toggle event from command palette
   useEffect(() => {
-    const handleToggle = () => setIsCollapsed(!isCollapsed);
+    const handleToggle = () => setIsCollapsed(prev => !prev);
     document.addEventListener('toggle-ai-panel', handleToggle);
     return () => document.removeEventListener('toggle-ai-panel', handleToggle);
-  }, [isCollapsed]);
+  }, []);
 
   // Handle resize
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -842,11 +842,8 @@ export function AILeftPanel() {
                       // Save AI theme color to backend
                       if (user?.id) {
                         try {
-                          await apiRequest(`/api/user-preferences/${user.id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({
-                              aiThemeColor: aiSettings.aiThemeColor
-                            })
+                          await apiRequest('PATCH', `/api/user-preferences/${user.id}`, {
+                            aiThemeColor: aiSettings.aiThemeColor
                           });
                           
                           // Invalidate query to refresh preferences
