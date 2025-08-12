@@ -13,8 +13,6 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
-import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
-import GanttChart from '@/components/ui/gantt-chart';
 import { BryntumGanttSimple } from '@/components/bryntum/BryntumGanttSimple';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
@@ -452,7 +450,8 @@ export default function ProductionSchedulePage() {
 
           <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : gridCols}`}>
-              {/* Gantt Chart Widget */}
+              {/* Gantt Chart Widget - Temporarily disabled to prevent conflict with Bryntum */}
+              {/* Note: The old React GanttChart was causing conflicts with Bryntum Gantt */}
               <Card className="col-span-full">
                 <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
                   <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : ''}`}>
@@ -461,12 +460,13 @@ export default function ProductionSchedulePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <GanttChartWidget 
-                    configuration={filteredWidgetConfig}
-                    className={`${isMobile ? 'h-48' : 'h-80'}`}
-                    isMobile={isMobile}
-                    compact={layoutConfig.view === 'compact' || isMobile}
-                  />
+                  <div className="flex items-center justify-center p-8 text-muted-foreground">
+                    <div className="text-center">
+                      <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Please use the Gantt Chart tab for the production timeline view</p>
+                      <p className="text-xs mt-2">The Bryntum Gantt provides advanced scheduling capabilities</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -705,7 +705,7 @@ export default function ProductionSchedulePage() {
                             <span className="text-sm">Resource Change</span>
                             <Badge variant="outline" className="ml-2 text-xs">Level 2</Badge>
                           </div>
-                          <Badge variant="success">Approved</Badge>
+                          <Badge variant="default" className="bg-green-500 text-white">Approved</Badge>
                         </div>
                       </div>
                     </div>
