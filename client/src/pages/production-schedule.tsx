@@ -15,8 +15,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
 import GanttChart from '@/components/ui/gantt-chart';
-import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
-// import { BryntumTest } from '@/components/bryntum/BryntumTest'; // Removed to avoid conflicts
+import { BryntumGanttSimple } from '@/components/bryntum/BryntumGanttSimple';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -526,8 +525,7 @@ export default function ProductionSchedulePage() {
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
                   </div>
                   {!ordersLoading && !operationsLoading && !resourcesLoading && (
-                    <SimpleBryntumGantt
-                      key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
+                    <BryntumGanttSimple
                       operations={operations as any || []}
                       resources={resources as any || []}
                       className="h-full"
@@ -539,9 +537,7 @@ export default function ProductionSchedulePage() {
                             endTime: newEndTime.toISOString()
                           });
                           if (!response.ok) throw new Error('Failed to reschedule operation');
-                          queryClient.removeQueries({ queryKey: ['/api/operations'] });
                           await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                          setTimeout(() => setGanttKey(Date.now()), 200);
                         } catch (error) {
                           console.error('ERROR in onOperationMove:', error);
                           throw error;
@@ -552,8 +548,7 @@ export default function ProductionSchedulePage() {
                 </div>
               ) : (
                 !ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <SimpleBryntumGantt
-                    key={`${ganttKey}-${JSON.stringify((operations as any)?.map(op => ({id: op.id, start: op.startTime, resource: op.workCenterId})))}`}
+                  <BryntumGanttSimple
                     operations={operations as any || []}
                     resources={resources as any || []}
                     className="h-full"
@@ -564,9 +559,7 @@ export default function ProductionSchedulePage() {
                         endTime: newEndTime.toISOString()
                       });
                       if (!response.ok) throw new Error('Failed to reschedule operation');
-                      queryClient.removeQueries({ queryKey: ['/api/operations'] });
                       await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                      setTimeout(() => setGanttKey(Date.now()), 200);
                     }}
                   />
                 ) : (
