@@ -14,6 +14,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
+import { BryntumResourceGantt } from '@/components/bryntum/BryntumResourceGantt';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -525,9 +526,23 @@ export default function ProductionSchedulePage() {
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
                   </div>
                   {!ordersLoading && !operationsLoading && !resourcesLoading && (
-                    <SimpleBryntumGantt
+                    <BryntumResourceGantt
                       operations={operations as any || []}
                       resources={resources as any || []}
+                      onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
+                        try {
+                          const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
+                            workCenterId: newResourceId,
+                            startTime: newStartTime.toISOString(),
+                            endTime: newEndTime.toISOString()
+                          });
+                          if (!response.ok) throw new Error('Failed to reschedule operation');
+                          await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
+                        } catch (error) {
+                          console.error('ERROR in onOperationMove:', error);
+                          throw error;
+                        }
+                      }}
                     />
                   )}
                 </div>
