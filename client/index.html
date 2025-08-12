@@ -41,5 +41,25 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    <script>
+      // Clear any service workers and caches that might have old code
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+            console.log('Service worker unregistered');
+          }
+        });
+      }
+      // Clear all caches
+      if (window.caches) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+            console.log('Cache cleared:', name);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

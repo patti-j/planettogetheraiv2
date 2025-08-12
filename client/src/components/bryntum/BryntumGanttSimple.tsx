@@ -74,90 +74,67 @@ export function BryntumGanttSimple({
     }
     
     console.log('BryntumGanttSimple: Bryntum Gantt constructor found, proceeding with initialization');
+    
+    // Test that Bryntum is fully loaded
+    console.log('Bryntum namespace:', {
+      hasProjectModel: !!bryntumGantt.ProjectModel,
+      hasTaskStore: !!bryntumGantt.TaskStore,
+      hasGantt: !!Gantt
+    });
 
     try {
-      // Simple task data
-      const tasks = operations.map(op => ({
-        id: op.id,
-        name: op.operationName || `Operation ${op.id}`,
-        startDate: new Date(op.startTime),
-        endDate: new Date(op.endTime),
-        resourceId: op.workCenterId
-      }));
-
-      // Simple resource data
-      const resourceData = resources.map(res => ({
-        id: res.id,
-        name: res.name
-      }));
-      
-      console.log('BryntumGanttSimple: Creating Gantt with data', {
-        tasksCount: tasks.length,
-        resourcesCount: resourceData.length,
-        container: containerRef.current
-      });
-
-      // Create Gantt with minimal configuration
+      // Absolute minimal configuration
       const gantt = new Gantt({
         appendTo: containerRef.current,
+        height: 500,
+        width: '100%',
         
-        // Data
-        tasks: tasks,
-        resources: resourceData,
-        assignments: tasks.map(t => ({
-          id: `${t.id}-${t.resourceId}`,
-          event: t.id,
-          resource: t.resourceId
-        })),
-        
-        // Basic configuration
-        viewPreset: 'weekAndDayLetter',
-        rowHeight: 45,
-        
-        // Simple columns
-        columns: [
-          { type: 'name', field: 'name', text: 'Task', width: 250 },
-          { type: 'startdate', text: 'Start', width: 100 },
-          { type: 'duration', text: 'Duration', width: 100 }
-        ],
-        
-        // Enable drag and drop
-        features: {
-          taskDrag: {
-            disabled: false
-          },
-          taskResize: {
-            disabled: false
-          }
-        },
-        
-        // Handle drag/drop events
-        listeners: {
-          taskDrop: async ({ taskRecords, targetStartDate, targetResourceRecord }) => {
-            if (onOperationMove && taskRecords.length > 0) {
-              const task = taskRecords[0];
-              const endDate = new Date(targetStartDate);
-              endDate.setTime(endDate.getTime() + (task.endDate - task.startDate));
-              
-              try {
-                await onOperationMove(
-                  task.id,
-                  targetResourceRecord?.id || task.resourceId,
-                  targetStartDate,
-                  endDate
-                );
-              } catch (error) {
-                console.error('Failed to move task:', error);
-              }
+        project: {
+          tasks: [
+            {
+              id: 1,
+              name: 'Test Task 1',
+              startDate: '2025-01-12',
+              duration: 5
             }
-          }
+          ]
         }
       });
 
-      console.log('BryntumGanttSimple: Gantt instance created successfully', gantt);
+      console.log('BryntumGanttSimple: Gantt instance created successfully');
+      console.log('Gantt instance id:', gantt?.id);
+      console.log('Gantt element:', gantt?.element);
+      console.log('Gantt is visible:', gantt?.isVisible);
+      console.log('Gantt width:', gantt?.width);
+      console.log('Gantt height:', gantt?.height);
       ganttRef.current = gantt;
+      
+      // Force render after a short delay
+      setTimeout(() => {
+        if (gantt && gantt.element) {
+          gantt.refresh();
+          console.log('Forced refresh - Gantt visible now?', gantt.isVisible);
+          console.log('Gantt DOM element exists:', !!document.querySelector('.b-gantt'));
+          console.log('Container children:', containerRef.current?.children.length);
+          
+          const ganttEl = document.querySelector('.b-gantt');
+          if (ganttEl) {
+            console.log('✅ Bryntum Gantt is in the DOM!');
+            console.log('Gantt element bounds:', ganttEl.getBoundingClientRect());
+          }
+          
+          // Make sure the Gantt is visible
+          if (gantt.element) {
+            gantt.element.style.display = 'block';
+            gantt.element.style.visibility = 'visible';
+          }
+        }
+      }, 100);
     } catch (error) {
-      console.error('BryntumGanttSimple: Failed to create Gantt', error);
+      console.error('BryntumGanttSimple: Failed to create Gantt');
+      console.error('Error message:', error?.message || 'Unknown error');
+      console.error('Error stack:', error?.stack || 'No stack trace');
+      console.error('Full error:', error);
     }
 
     // Cleanup
