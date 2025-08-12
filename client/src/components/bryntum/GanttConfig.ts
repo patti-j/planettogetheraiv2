@@ -39,24 +39,27 @@ export const ganttConfig = {
     autoLoad: false,
     autoSync: false,
     
-    // Configure stores for resource view
+    // Configure stores for hierarchical resource view
     taskStore: {
-      tree: false  // Flat task list for resource view
+      tree: true   // Enable tree to show resources with child tasks
     },
     resourceStore: {
-      tree: false  // Resources displayed as rows
+      tree: false  // Resources remain flat in resource store
     }
   }
 };
 
-// Format data following Bryntum React Data Binding documentation
+// Format data for resource-based scheduling view
 // Reference: https://bryntum.com/products/gantt/docs/guide/Gantt/integration/react/data-binding
 export function formatGanttData(operations: any[], resources: any[]) {
-  // Format resources following Bryntum ResourceModel structure
+  // Format resources as the primary entities (rows in the grid)
   const formattedResources = resources.map(resource => ({
     id: resource.id,
     name: resource.name || `Resource ${resource.id}`,
     type: resource.type || 'Standard',
+    // Make resources act as parent rows
+    children: [],  // Will be populated with tasks
+    expanded: true,
     // Additional resource fields
     calendar: resource.calendarId || null,
     eventColor: resource.color || null
@@ -116,12 +119,36 @@ export function formatGanttData(operations: any[], resources: any[]) {
       effortUnit: 'hour'
     }));
   
-  // Return in Bryntum project data format
+  // For resource-based view, create a hierarchical structure
+  // where resources are parent rows and their assigned tasks are children
+  const resourceTaskMap = new Map();
+  
+  // Initialize empty task arrays for each resource
+  formattedResources.forEach(resource => {
+    resourceTaskMap.set(resource.id, []);
+  });
+  
+  // Assign tasks to their resources
+  formattedTasks.forEach(task => {
+    const resourceId = task.resourceId;
+    if (resourceTaskMap.has(resourceId)) {
+      resourceTaskMap.get(resourceId).push(task);
+    }
+  });
+  
+  // Build hierarchical structure with resources as parents
+  const hierarchicalData = formattedResources.map(resource => ({
+    ...resource,
+    children: resourceTaskMap.get(resource.id) || [],
+    leaf: false,  // Resources are not leaf nodes
+    expanded: true
+  }));
+  
+  // Return in Bryntum project data format for resource view
   return {
     resources: { rows: formattedResources },
-    tasks: { rows: formattedTasks },
+    tasks: { rows: hierarchicalData },  // Use hierarchical structure
     assignments: { rows: formattedAssignments },
-    // Dependencies would go here if enabled (trial limitation)
     dependencies: { rows: [] }
   };
 }

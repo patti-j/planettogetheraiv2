@@ -76,9 +76,16 @@ export function BryntumGanttReact({
           ...ganttConfig,
           
           // Configure for resource-based scheduling view
-          // Resources appear as rows, operations as timeline events
+          // Resources appear as rows with child operations
           showRollupTasks: false,
           scheduleByConstraints: false,
+          
+          // Enable indentation for hierarchical view
+          subGridConfigs: {
+            locked: {
+              width: 350
+            }
+          },
           
           // Override project with our data
           project: {
