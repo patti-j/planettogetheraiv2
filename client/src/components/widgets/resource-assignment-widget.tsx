@@ -177,10 +177,10 @@ export default function ResourceAssignmentWidget({
   }
   
   // Get available operators (those not assigned to selected resource)
-  const selectedResource = resources.find(r => r.id === selectedResourceId);
-  const availableOperators = operators.filter(op => 
-    !selectedResource?.assignedOperators.some(ao => ao.userId === op.id)
-  );
+  const selectedResource = resources?.find(r => r.id === selectedResourceId);
+  const availableOperators = operators?.filter(op => 
+    !selectedResource?.assignedOperators?.some(ao => ao.userId === op.id)
+  ) || [];
   
   // Get resource type icon
   const getResourceIcon = (type: string) => {
@@ -197,10 +197,10 @@ export default function ResourceAssignmentWidget({
   };
   
   // Calculate statistics
-  const totalResources = resources.length;
-  const totalOperators = operators.length;
-  const totalAssignments = resources.reduce((sum, r) => sum + r.assignedOperators.length, 0);
-  const resourcesWithAssignments = resources.filter(r => r.assignedOperators.length > 0).length;
+  const totalResources = resources?.length || 0;
+  const totalOperators = operators?.length || 0;
+  const totalAssignments = resources?.reduce((sum, r) => sum + (r.assignedOperators?.length || 0), 0) || 0;
+  const resourcesWithAssignments = resources?.filter(r => (r.assignedOperators?.length || 0) > 0).length || 0;
   
   return (
     <div className={`space-y-4 ${className}`}>
@@ -249,7 +249,7 @@ export default function ResourceAssignmentWidget({
                 <SelectValue placeholder="Select Resource" />
               </SelectTrigger>
               <SelectContent>
-                {resources.map((resource) => (
+                {resources?.map((resource) => (
                   <SelectItem key={resource.id} value={resource.id.toString()}>
                     <div className="flex items-center gap-2">
                       {getResourceIcon(resource.type)}
@@ -257,7 +257,7 @@ export default function ResourceAssignmentWidget({
                       {resource.isDrum && <Badge variant="secondary" className="ml-2 text-xs">Drum</Badge>}
                     </div>
                   </SelectItem>
-                ))}
+                )) || <SelectItem value="">No resources available</SelectItem>}
               </SelectContent>
             </Select>
             
@@ -370,7 +370,7 @@ export default function ResourceAssignmentWidget({
           Current Assignments
         </h4>
         
-        {resources.length === 0 ? (
+        {!resources || resources.length === 0 ? (
           <Card className="p-6">
             <div className="text-center text-muted-foreground">
               <Factory className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -380,7 +380,7 @@ export default function ResourceAssignmentWidget({
         ) : (
           <ScrollArea className="h-[400px]">
             <div className="space-y-3 pr-4">
-              {resources.map((resource) => (
+              {resources?.map((resource) => (
                 <Card key={resource.id} className="p-4">
                   <div className="space-y-3">
                     {/* Resource Header */}
@@ -400,12 +400,12 @@ export default function ResourceAssignmentWidget({
                         </div>
                       </div>
                       <Badge variant="outline">
-                        {resource.assignedOperators.length} Operator{resource.assignedOperators.length !== 1 ? 's' : ''}
+                        {resource.assignedOperators?.length || 0} Operator{(resource.assignedOperators?.length || 0) !== 1 ? 's' : ''}
                       </Badge>
                     </div>
                     
                     {/* Assigned Operators */}
-                    {resource.assignedOperators.length > 0 ? (
+                    {resource.assignedOperators && resource.assignedOperators.length > 0 ? (
                       <div className="space-y-2">
                         <Separator />
                         {resource.assignedOperators.map((assignment) => (

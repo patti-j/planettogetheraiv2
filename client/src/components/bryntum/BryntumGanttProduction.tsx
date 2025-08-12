@@ -49,7 +49,47 @@ export function BryntumGanttProduction({
     }
 
     try {
-      // Create Gantt with full features enabled
+      // Group operations by resource
+      const tasksByResource: any[] = [];
+      const resourceMap = new Map();
+      
+      // Create parent tasks for each resource
+      resources.forEach((resource, index) => {
+        // Add icon based on resource type
+        const typeIcon = resource.type?.toLowerCase() === 'equipment' ? '⚙️' : 
+                        resource.type?.toLowerCase() === 'labor' ? '👷' :
+                        resource.type?.toLowerCase() === 'tool' ? '🔧' : '📦';
+        
+        const resourceTask = {
+          id: `resource-${resource.id}`,
+          name: `${typeIcon} ${resource.name} (${resource.type || 'Resource'})`,
+          expanded: true,
+          children: [],
+          manuallyScheduled: true,
+          cls: 'resource-parent'
+        };
+        tasksByResource.push(resourceTask);
+        resourceMap.set(resource.id, resourceTask);
+      });
+      
+      // Add operations as children of their assigned resources
+      operations.forEach((op) => {
+        const resourceId = op.workCenterId || op.assignedResourceId || 1;
+        const resourceTask = resourceMap.get(resourceId);
+        
+        if (resourceTask) {
+          resourceTask.children.push({
+            id: op.id,
+            name: op.name || op.operationName || 'Operation',
+            startDate: op.startTime || new Date(),
+            duration: Math.max(1, Math.ceil((new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60 * 24))),
+            draggable: true,
+            resizable: true
+          });
+        }
+      });
+      
+      // Create Gantt with resource-oriented view
       const gantt = new Gantt({
         appendTo: containerRef.current,
         height: 500,
@@ -64,31 +104,43 @@ export function BryntumGanttProduction({
         },
         
         columns: [
-          { type: 'name', field: 'name', text: 'Task', width: 250, editor: true },
+          { type: 'name', field: 'name', text: 'Resource / Operation', width: 250, editor: false },
           { type: 'startdate', text: 'Start Date' },
-          { type: 'duration', text: 'Duration' }
+          { type: 'duration', text: 'Duration (Days)' }
         ],
         
         listeners: {
-          beforeTaskDrag: () => true,
+          beforeTaskDrag: ({ taskRecords }) => {
+            // Only allow dragging of operations, not resource groups
+            return taskRecords[0] && !taskRecords[0].id.toString().startsWith('resource-');
+          },
           taskDrop: ({ taskRecords, targetDate }) => {
-            if (onOperationMove && taskRecords[0]) {
+            if (onOperationMove && taskRecords[0] && !taskRecords[0].id.toString().startsWith('resource-')) {
               const task = taskRecords[0];
               const endDate = new Date(targetDate);
               endDate.setDate(endDate.getDate() + task.duration);
+              
+              // Find the parent resource ID
+              const parentId = task.parent?.id;
+              const resourceId = parentId ? parseInt(parentId.toString().replace('resource-', '')) : 1;
+              
               onOperationMove(
                 task.id,
-                task.resourceId || 1,
+                resourceId,
                 targetDate,
                 endDate
               );
             }
           },
           taskResizeEnd: ({ taskRecord, startDate, endDate }) => {
-            if (onOperationMove && taskRecord) {
+            if (onOperationMove && taskRecord && !taskRecord.id.toString().startsWith('resource-')) {
+              // Find the parent resource ID
+              const parentId = taskRecord.parent?.id;
+              const resourceId = parentId ? parseInt(parentId.toString().replace('resource-', '')) : 1;
+              
               onOperationMove(
                 taskRecord.id,
-                taskRecord.resourceId || 1,
+                resourceId,
                 startDate,
                 endDate
               );
@@ -97,15 +149,7 @@ export function BryntumGanttProduction({
         },
         
         project: {
-          tasks: operations.map((op, index) => ({
-            id: op.id || index + 1,
-            name: op.name || op.operationName || `Operation ${index + 1}`,
-            startDate: op.startTime || new Date(),
-            duration: op.duration || Math.ceil((new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60 * 24)) || 1,
-            draggable: true,
-            resizable: true,
-            resourceId: op.workCenterId || op.assignedResourceId || 1
-          }))
+          tasks: tasksByResource
         }
       });
 
@@ -136,7 +180,10 @@ export function BryntumGanttProduction({
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Production Schedule</CardTitle>
+        <CardTitle>Production Schedule - Resource View</CardTitle>
+        <p className="text-sm text-muted-foreground mt-1">
+          {operations.length} operations scheduled across {resources.length} resources
+        </p>
       </CardHeader>
       <CardContent className="p-0">
         <div 
