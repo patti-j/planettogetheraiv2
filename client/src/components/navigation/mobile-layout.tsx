@@ -46,9 +46,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   };
 
   return (
-    <>
-      {/* Fixed mobile header - always visible */}
-      <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm" style={{ zIndex: 50, paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className="h-screen flex flex-col" style={{ height: '100vh', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+      {/* Mobile header */}
+      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="flex items-center gap-3 px-4 py-2">
           {/* Logo */}
           <Logo size="small" showText={false} />
@@ -71,14 +71,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
       
-      {/* Main content area - scrollable with padding for header and footer */}
-      <div className="h-full overflow-y-auto" style={{ paddingTop: '56px', paddingBottom: '80px' }}>
+      {/* Main content area - scrollable */}
+      <div className="flex-1 overflow-y-auto">
         {children}
       </div>
       
-      {/* Fixed mobile footer bar - always visible on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-blue-500 border-t-2 border-blue-600" style={{ zIndex: 99999, paddingBottom: 'env(safe-area-inset-bottom, 20px)', minHeight: '60px' }}>
-        <div className="flex items-center justify-around px-2 py-2">
+      {/* Mobile footer bar */}
+      <div className="bg-red-600 border-t-2 border-red-700 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '80px' }}>
+        <div className="flex items-center justify-around px-2 py-3">
           {/* Home Button */}
           <button
             onClick={() => window.location.href = '/mobile-home'}
@@ -144,6 +144,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
