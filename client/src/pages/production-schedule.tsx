@@ -14,7 +14,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
-import { BryntumResourceGantt } from '@/components/bryntum/BryntumResourceGantt';
+import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
@@ -526,7 +526,7 @@ export default function ProductionSchedulePage() {
                     <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
                   </div>
                   {!ordersLoading && !operationsLoading && !resourcesLoading && (
-                    <BryntumResourceGantt
+                    <BryntumGanttReact
                       operations={operations as any || []}
                       resources={resources as any || []}
                       onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
