@@ -27,19 +27,12 @@ export function ProtectedRoute({
     hasAccess = hasAnyPermission(permissions);
   } else if (feature && action) {
     hasAccess = hasPermission(feature, action);
-    console.log(`ProtectedRoute check: feature=${feature}, action=${action}, hasAccess=${hasAccess}`);
-    
-    // Special debug logging for training page
-    if (feature === 'training' && action === 'view') {
-      console.log(`TRAINING PAGE ACCESS CHECK: hasAccess=${hasAccess}`);
-    }
   } else {
     // No restrictions, allow access
     hasAccess = true;
   }
 
   if (!hasAccess) {
-    console.log(`ProtectedRoute BLOCKING ACCESS - showing access denied. feature=${feature}, action=${action}, hasAccess=${hasAccess}`);
     return fallback || (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="max-w-md mx-auto text-center">

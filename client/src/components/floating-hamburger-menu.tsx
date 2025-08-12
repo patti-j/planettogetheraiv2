@@ -19,11 +19,7 @@ export function FloatingHamburgerMenu({
 }: FloatingHamburgerMenuProps) {
   const deviceType = useDeviceType();
   
-  // Log when component renders
-  console.log("🍔 FloatingHamburgerMenu rendering - isOpen:", isOpen, "window width:", window.innerWidth);
-  
   const handleClick = () => {
-    console.log("🏠 FloatingHamburger logo clicked - this should not be used in mobile");
     // Don't navigate - this component conflicts with mobile navigation
   };
 
@@ -40,7 +36,6 @@ export function FloatingHamburgerMenu({
   return (
     <Button
       onClick={() => {
-        console.log("🍔 Hamburger button clicked");
         onToggle(!isOpen);
       }}
       variant="outline"

@@ -174,7 +174,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           
           // DISABLED: Load last visited route to prevent automatic navigation to stored routes
           const savedLastVisitedRoute = preferences?.dashboardLayout?.lastVisitedRoute;
-          console.log('NavigationContext - Saved last visited route (not applying):', savedLastVisitedRoute);
+          // NavigationContext - Saved last visited route (not applying)
           // Commented out to prevent automatic navigation
           // if (savedLastVisitedRoute) {
           //   setLastVisitedRouteState(savedLastVisitedRoute);

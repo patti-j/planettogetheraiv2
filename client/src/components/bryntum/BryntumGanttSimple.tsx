@@ -48,39 +48,23 @@ export function BryntumGanttSimple({
 
     // Check for container and data
     if (!containerRef.current) {
-      console.log('BryntumGanttSimple: No container ref');
+      // No container ref available
       return;
     }
     
     if (!operations?.length || !resources?.length) {
-      console.log('BryntumGanttSimple: No operations or resources', { 
-        operationsCount: operations?.length || 0, 
-        resourcesCount: resources?.length || 0 
-      });
+      // No operations or resources available
       return;
     }
 
     // Check if Bryntum is available
     const bryntumGantt = window.bryntum?.gantt;
-    console.log('BryntumGanttSimple: Checking Bryntum', { 
-      bryntum: !!window.bryntum, 
-      gantt: !!bryntumGantt 
-    });
     
     const Gantt = bryntumGantt?.Gantt;
     if (!Gantt) {
       console.error('BryntumGanttSimple: Bryntum Gantt constructor not found');
       return;
     }
-    
-    console.log('BryntumGanttSimple: Bryntum Gantt constructor found, proceeding with initialization');
-    
-    // Test that Bryntum is fully loaded
-    console.log('Bryntum namespace:', {
-      hasProjectModel: !!bryntumGantt.ProjectModel,
-      hasTaskStore: !!bryntumGantt.TaskStore,
-      hasGantt: !!Gantt
-    });
 
     try {
       // Full featured configuration with drag-drop enabled
@@ -112,21 +96,16 @@ export function BryntumGanttSimple({
           { type: 'percentdone', text: 'Progress', width: 80 }
         ],
         
-        // Add event listeners to verify drag is working
+        // Add event listeners for drag/drop functionality
         listeners: {
           beforeTaskDrag: ({ taskRecords }) => {
-            console.log('🎯 DRAG STARTING! Task:', taskRecords[0]?.name);
             return true; // Allow drag
           },
-          taskDrag: ({ context }) => {
-            console.log('🎯 DRAGGING...', context);
-          },
           taskDrop: ({ taskRecords, targetDate }) => {
-            console.log('🎯 DROPPED! New date:', targetDate);
             // Here we would call onOperationMove to update backend
           },
           taskResizeEnd: ({ taskRecord, startDate, endDate }) => {
-            console.log('🎯 RESIZED! New dates:', startDate, endDate);
+            // Handle resize completion
           }
         },
         
@@ -164,12 +143,7 @@ export function BryntumGanttSimple({
         }
       });
 
-      console.log('BryntumGanttSimple: Gantt instance created successfully');
-      console.log('Gantt instance id:', gantt?.id);
-      console.log('Gantt element:', gantt?.element);
-      console.log('Gantt is visible:', gantt?.isVisible);
-      console.log('Gantt width:', gantt?.width);
-      console.log('Gantt height:', gantt?.height);
+      // Gantt instance created successfully
       ganttRef.current = gantt;
       
       // Force render after a short delay

@@ -115,7 +115,7 @@ function DashboardWithAutoTour() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   
-  console.log('🎯 DashboardWithAutoTour rendering, current location:', location);
+  // DashboardWithAutoTour rendering
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -150,7 +150,6 @@ function DashboardWithAutoTour() {
             
             const roleKey = currentRole.name.toLowerCase().replace(/\s+/g, '-');
             const roleId = roleMapping[roleKey];
-            console.log('Starting auto tour for role:', roleKey, currentRole.name, 'roleId:', roleId);
             
             if (roleId) {
               // Start the tour with voice enabled by default and 'demo' context (external link)
@@ -188,7 +187,7 @@ function useSessionPersistence() {
   useEffect(() => {
     // Only log the available route, don't automatically redirect
     if (!isLoading && isAuthenticated && user && lastVisitedRoute) {
-      console.log('Last visited route available (not redirecting):', lastVisitedRoute);
+      // Last visited route available (not redirecting)
     }
   }, [isAuthenticated, isLoading, user, lastVisitedRoute, location, setLocation]);
 }
@@ -213,19 +212,9 @@ function Router() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Debug logging to understand initial route and any changes
+  // Track location changes
   useEffect(() => {
-    console.log('🔍 App Router - Location changed to:', location);
-    console.log('🔍 App Router - Current URL:', window.location.href);
-    console.log('🔍 App Router - Window location pathname:', window.location.pathname);
-    console.log('🔍 App Router - User authenticated:', isAuthenticated);
-    console.log('🔍 App Router - User loading:', isLoading);
-    console.log('🔍 App Router - Browser history length:', window.history.length);
-    console.log('🔍 App Router - Document referrer:', document.referrer);
-    
-    // Check for any stored navigation state
-    console.log('🔍 SessionStorage navigation keys:', Object.keys(sessionStorage).filter(k => k.includes('nav') || k.includes('route') || k.includes('location')));
-    console.log('🔍 LocalStorage navigation keys:', Object.keys(localStorage).filter(k => k.includes('nav') || k.includes('route') || k.includes('location')));
+    // Location change tracking (debug logs removed)
   }, [location, isAuthenticated, isLoading]);
   
   // Use session persistence for authenticated users
