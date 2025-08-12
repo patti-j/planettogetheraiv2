@@ -1,276 +1,311 @@
-# Bryntum Gantt Integration Guide & Troubleshooting
+# Bryntum Gantt React Integration Guide
 
-## Session Summary & Lessons Learned
+## Current Setup (UMD Build)
 
-### What We Discovered
-1. **Severe Caching Issues**: Vite and browser caching can cause deleted components to persist
-2. **Component Conflicts**: Old React-based Gantt components conflict with Bryntum
-3. **Minimal Implementation**: Current implementation only shows test data without features
-4. **Missing Features**: Drag-drop, resource management, and real data integration not configured
+We're currently using the UMD build of Bryntum Gantt for development. This guide documents both the current implementation and the production-ready NPM approach.
 
-### Current Status
-✅ **Working:**
-- Bryntum Gantt renders successfully
-- Test task displays correctly
-- Proper dimensions (732x500)
-- CSS styling loads
+## Production Setup (NPM Packages)
 
-❌ **Not Working:**
-- Drag and drop functionality
-- Real production data integration
-- Resource assignment
-- Task dependencies
-- Critical features like progress tracking
+### Prerequisites
+- Node.js 16+
+- npm 6.9.0+ or 7.11.0+ (for package aliasing)
+- React 18.0.0+ (minimum 16.0.0)
+- TypeScript 4.0.0+ (minimum 3.6.0)
 
-## Root Cause Analysis
+### Installation Steps
 
-### Why Drag-Drop Doesn't Work
-The current `BryntumGanttSimple` component uses an **absolute minimal configuration**:
+1. **Configure NPM Registry** (see `BRYNTUM_NPM_SETUP.md`)
+2. **Login to Bryntum Registry**
+3. **Install Packages**:
+   ```bash
+   npm install @bryntum/gantt@npm:@bryntum/gantt-trial@6.3.1
+   npm install @bryntum/gantt-react@6.3.1
+   ```
+
+### Vite Configuration Updates
+
+Add to `vite.config.ts` (when using NPM packages):
 ```javascript
-const gantt = new Gantt({
-  appendTo: containerRef.current,
-  height: 500,
-  width: '100%',
-  project: {
-    tasks: [{ id: 1, name: 'Test Task 1', startDate: '2025-01-12', duration: 5 }]
+{
+  optimizeDeps: {
+    include: ['@bryntum/gantt', '@bryntum/gantt-react']
+  },
+  build: {
+    rollupOptions: {
+      onLog(level, log, handler) {
+        if (log.code === 'CIRCULAR_DEPENDENCY') {
+          return; // Ignore for Bryntum thin packages
+        }
+        handler(level, log);
+      }
+    }
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'legacy-js-api']
+      }
+    }
   }
+}
+```
+
+## React Component Best Practices
+
+### 1. Component Lifecycle Management
+
+```tsx
+import { useEffect, useRef } from 'react';
+import { BryntumGantt } from '@bryntum/gantt-react';
+
+function GanttComponent() {
+  const ganttRef = useRef(null);
+
+  useEffect(() => {
+    // Access Gantt instance
+    const gantt = ganttRef.current?.instance;
+    
+    return () => {
+      // Cleanup is handled automatically by wrapper
+    };
+  }, []);
+
+  return <BryntumGantt ref={ganttRef} {...config} />;
+}
+```
+
+### 2. Data Binding
+
+```tsx
+// Use project configuration for data
+const ganttConfig = {
+  project: {
+    tasks: taskData,
+    resources: resourceData,
+    assignments: assignmentData,
+    dependencies: dependencyData
+  },
+  // Or use inline data (deprecated pattern)
+  tasks: taskData,  // Deprecated
+  resources: resourceData,  // Deprecated
+  assignments: assignmentData  // Deprecated
+};
+```
+
+### 3. Event Handling
+
+```tsx
+const handleTaskDrop = ({ context }) => {
+  console.log('Task dropped:', context.newResource);
+};
+
+const handleTaskResize = ({ taskRecord, startDate, endDate }) => {
+  console.log('Task resized:', taskRecord.name);
+};
+
+<BryntumGantt
+  onTaskDrop={handleTaskDrop}
+  onTaskResizeEnd={handleTaskResize}
+  onBeforeTaskEdit={({ taskRecord }) => {
+    // Return false to prevent editing
+    return taskRecord.editable !== false;
+  }}
+/>
+```
+
+### 4. Feature Configuration
+
+```tsx
+const ganttConfig = {
+  features: {
+    taskDrag: {
+      enabled: true,
+      showTooltip: true
+    },
+    taskResize: {
+      enabled: true,
+      showTooltip: true
+    },
+    taskEdit: {
+      enabled: true,
+      items: {
+        generalTab: {
+          items: {
+            // Avoid trial-limited features
+            percentDone: false,
+            effort: false
+          }
+        },
+        predecessorsTab: false,  // Trial limitation
+        successorsTab: false     // Trial limitation
+      }
+    },
+    criticalPaths: false,  // Trial limitation
+    progressLine: false,   // Trial limitation
+    dependencies: false    // Trial limitation
+  }
+};
+```
+
+### 5. Resource-Based View Configuration
+
+```tsx
+const ganttConfig = {
+  viewPreset: 'weekAndDayLetter',
+  barMargin: 10,
+  rowHeight: 45,
+  
+  // Configure columns for resource view
+  columns: [
+    { type: 'resourceInfo', text: 'Resource', width: 200 },
+    { type: 'name', text: 'Task', width: 200 }
+  ],
+  
+  // Enable resource histogram
+  partnerConfig: {
+    resourceHistogram: {
+      type: 'resourcehistogram',
+      height: 200
+    }
+  }
+};
+```
+
+## Common Issues and Solutions
+
+### Issue 1: React StrictMode Errors
+**Problem**: Component mounts twice in development
+**Solution**: Handle cleanup properly in useEffect
+
+### Issue 2: Missing Icons
+**Problem**: Font icons not rendering
+**Solution**: Ensure @charset "UTF-8" is preserved in CSS
+
+### Issue 3: Memory Leaks
+**Problem**: Gantt instance not destroyed
+**Solution**: Use ref cleanup or wrapper's automatic cleanup
+
+### Issue 4: Data Not Updating
+**Problem**: Changes to data not reflected
+**Solution**: Use immutable updates or project.commitAsync()
+
+### Issue 5: Trial Limitations
+**Problem**: Features not working in trial
+**Solution**: Disable percentDone, progressLine, dependencies features
+
+## Performance Optimization
+
+### 1. Large Datasets
+```tsx
+const ganttConfig = {
+  // Enable performance features
+  animateRemovingRows: false,
+  enableTextSelection: false,
+  
+  // Use paging for large datasets
+  features: {
+    paging: {
+      enabled: true,
+      pageSize: 50
+    }
+  }
+};
+```
+
+### 2. Memory Management
+```tsx
+useEffect(() => {
+  return () => {
+    // Ensure cleanup on unmount
+    if (ganttRef.current?.instance) {
+      ganttRef.current.instance.destroy();
+    }
+  };
+}, []);
+```
+
+### 3. Rendering Optimization
+```tsx
+// Use React.memo for expensive components
+const GanttWrapper = React.memo(({ data }) => {
+  return <BryntumGantt {...config} />;
+}, (prevProps, nextProps) => {
+  // Custom comparison logic
+  return prevProps.data === nextProps.data;
 });
 ```
 
-**Missing Critical Features:**
-- No `features` configuration
-- No event listeners for drag-drop
-- No resource store
-- No dependency store
-- No proper data binding
+## Styling and Theming
 
-## Full Bryntum Implementation Requirements
+### 1. Import Theme
+```tsx
+// In your main component or App.tsx
+import '@bryntum/gantt/gantt.stockholm.css';
+// Or other themes: material, classic, classic-dark, classic-light
+```
 
-### 1. Enable All Features
-```javascript
-features: {
-  // Drag and Drop
-  taskDrag: true,           // Enable task dragging
-  taskDragCreate: true,     // Create tasks by dragging
-  taskResize: true,         // Resize tasks by dragging
-  
-  // Resource Management
-  resourceAssignment: true,
-  resourceTimeRanges: true,
-  
-  // Dependencies
-  dependencies: true,
-  dependencyEdit: true,
-  
-  // UI Features
-  cellEdit: true,
-  taskEdit: true,
-  projectLines: true,
-  rollups: true,
-  progressLine: true,
-  criticalPaths: true,
-  
-  // Export/Import
-  pdfExport: true,
-  excelExporter: true
+### 2. Custom Styling
+```css
+/* Override Bryntum styles */
+.b-gantt {
+  --gantt-task-color: #3498db;
+  --gantt-task-border-color: #2980b9;
+}
+
+.b-gantt-task {
+  border-radius: 4px;
 }
 ```
 
-### 2. Configure Stores Properly
-```javascript
-project: {
-  // Resource Store
-  resourceStore: {
-    data: resources.map(r => ({
-      id: r.id,
-      name: r.name,
-      calendar: r.calendarId
-    }))
-  },
-  
-  // Assignment Store (links tasks to resources)
-  assignmentStore: {
-    data: operations.map(op => ({
-      id: `assignment-${op.id}`,
-      taskId: op.id,
-      resourceId: op.workCenterId,
-      units: 100
-    }))
-  },
-  
-  // Dependency Store
-  dependencyStore: {
-    data: [] // Add task dependencies here
-  },
-  
-  // Task Store with real data
-  taskStore: {
-    data: operations.map(op => ({
-      id: op.id,
-      name: op.operationName,
-      startDate: op.startTime,
-      endDate: op.endTime,
-      duration: op.duration,
-      percentDone: op.completionPercentage,
-      // Enable dragging for this task
-      draggable: true,
-      resizable: true
-    }))
-  }
-}
-```
+## Testing Recommendations
 
-### 3. Add Event Listeners
-```javascript
-listeners: {
-  // Task drag events
-  beforeTaskDrag: ({ taskRecords, context }) => {
-    console.log('Starting drag:', taskRecords);
-    return true; // Allow drag
-  },
-  
-  taskDrop: ({ taskRecords, targetDate, targetResource }) => {
-    console.log('Task dropped:', { taskRecords, targetDate, targetResource });
-    // Call API to update backend
-    onOperationMove?.(
-      taskRecords[0].id, 
-      targetResource?.id, 
-      targetDate,
-      taskRecords[0].endDate
-    );
-  },
-  
-  // Task resize events
-  taskResizeEnd: ({ taskRecord, startDate, endDate }) => {
-    console.log('Task resized:', { taskRecord, startDate, endDate });
-    // Update backend
-  }
-}
-```
+### 1. Unit Testing
+- Mock Bryntum components
+- Test event handlers separately
+- Use React Testing Library
 
-### 4. Configure Columns
-```javascript
-columns: [
-  { type: 'name', field: 'name', text: 'Operation', width: 250 },
-  { type: 'startdate', text: 'Start Date' },
-  { type: 'duration', text: 'Duration' },
-  { type: 'resourceassignment', text: 'Resources', width: 150 },
-  { type: 'percentdone', text: 'Progress', width: 80 },
-  { type: 'addnew' } // Add button for new tasks
-]
-```
+### 2. Integration Testing
+- Test data flow
+- Verify event emissions
+- Check feature interactions
 
-## Troubleshooting Checklist
+### 3. E2E Testing
+- Use Playwright or Cypress
+- Test drag-drop operations
+- Verify visual rendering
 
-### 1. Verify Bryntum Files
-```bash
-# Check if all required files exist
-ls -la bryntum-trial/build/gantt.module.js
-ls -la bryntum-trial/build/gantt.stockholm.css
-```
+## Migration Path
 
-### 2. Check Browser Console
-Look for these specific items:
-- `Bryntum Gantt 6.3.1 Trial` message
-- No 404 errors for Bryntum files
-- `gantt.isVisible: true`
-- No licensing errors
+### From UMD to NPM
+1. Complete NPM setup (see `BRYNTUM_NPM_SETUP.md`)
+2. Remove UMD script from index.html
+3. Update imports to use @bryntum/gantt-react
+4. Update component to use BryntumGantt wrapper
+5. Test all features thoroughly
 
-### 3. Verify CSS Loading
-```javascript
-// In console, check if Bryntum CSS classes exist
-document.querySelector('.b-gantt')
-document.querySelector('.b-gantt-task')
-document.querySelector('.b-dragging') // Should appear when dragging
-```
-
-### 4. Debug Drag-Drop
-```javascript
-// Add to Gantt config for debugging
-listeners: {
-  beforeTaskDrag: () => {
-    console.log('DRAG START - If you see this, drag is partially working');
-    return true;
-  },
-  taskDragStart: () => console.log('DRAG ACTUALLY STARTED'),
-  taskDrag: () => console.log('DRAGGING...'),
-  taskDrop: () => console.log('DROPPED!')
-}
-```
-
-## Common Issues & Solutions
-
-### Issue 1: Drag Doesn't Start
-**Symptom:** Clicking and dragging does nothing
-**Solution:** 
-- Ensure `features.taskDrag: true`
-- Check `draggable: true` on tasks
-- Verify no CSS `pointer-events: none`
-
-### Issue 2: Component Flashing
-**Symptom:** Old components appear then disappear
-**Solution:**
-- Clear Vite cache: `rm -rf node_modules/.vite`
-- Remove conflicting imports
-- Hard refresh: Ctrl+Shift+R
-
-### Issue 3: "Cannot read property of undefined"
-**Symptom:** Errors when dragging
-**Solution:**
-- Ensure all stores are properly initialized
-- Check data has required fields (id, startDate, etc.)
-
-### Issue 4: Drag Works But Doesn't Save
-**Symptom:** Task moves but snaps back
-**Solution:**
-- Implement `taskDrop` listener
-- Call backend API in the listener
-- Update local store after API success
-
-## Implementation Steps
-
-### Step 1: Update BryntumGanttSimple Component
-Replace minimal config with full feature set (see examples above)
-
-### Step 2: Connect Real Data
-Map production operations and resources to Bryntum format
-
-### Step 3: Implement Event Handlers
-Add listeners for all drag, resize, and edit events
-
-### Step 4: Test Each Feature
-1. Test drag between dates
-2. Test drag between resources
-3. Test task resize
-4. Test dependency creation
-5. Test progress updates
-
-### Step 5: Backend Integration
-Ensure all changes persist to database via API calls
-
-## Quick Test Code
-Add this to browser console to test if drag is enabled:
-```javascript
-const gantt = document.querySelector('.b-gantt')?.bryntum;
-if (gantt) {
-  console.log('Drag enabled?', gantt.features.taskDrag?.enabled);
-  console.log('Tasks draggable?', gantt.taskStore.first?.draggable);
-  console.log('Feature list:', Object.keys(gantt.features));
-}
-```
-
-## Next Actions
-1. Replace minimal test config with full feature configuration
-2. Add proper event listeners for drag-drop
-3. Connect real production data
-4. Test all interactions
-5. Implement backend persistence
+### From Trial to Licensed
+1. Update package.json dependencies
+2. Enable previously disabled features
+3. Remove trial limitation workarounds
+4. Run `npm install`
 
 ## Resources
-- [Bryntum Gantt Docs](https://bryntum.com/docs/gantt)
-- [Drag Drop Guide](https://bryntum.com/docs/gantt/#Gantt/feature/TaskDrag)
-- [React Integration](https://bryntum.com/docs/gantt/#Gantt/guides/integration/react.md)
 
----
-*Last Updated: August 12, 2025*
-*Issue: Drag-drop not working due to minimal configuration without features enabled*
+- [Official Documentation](https://bryntum.com/products/gantt/docs/)
+- [React Integration Guide](https://bryntum.com/products/gantt/docs/guide/Gantt/integration/react/guide)
+- [API Reference](https://bryntum.com/products/gantt/docs/api/Gantt/view/Gantt)
+- [Examples](https://bryntum.com/products/gantt/examples/?framework=react)
+- [Support Forum](https://forum.bryntum.com/)
+
+## Support
+
+For issues:
+1. Check troubleshooting section
+2. Review console errors
+3. Verify version compatibility
+4. Contact Bryntum support with license
+
+## License
+
+Currently using trial version with limitations.
+Production deployment requires valid Bryntum license.
