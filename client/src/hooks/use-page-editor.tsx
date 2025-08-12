@@ -54,10 +54,20 @@ export function usePageEditor(pageId?: string) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Default layout structure
+  // Default layout structure with page-specific titles
+  const getDefaultTitle = (pageId?: string) => {
+    const pageTitles: Record<string, string> = {
+      'production-schedule': 'Production Schedule',
+      'dashboard': 'Dashboard',
+      'analytics': 'Analytics',
+      'reports': 'Reports'
+    };
+    return pageTitles[pageId || ''] || 'New Page';
+  };
+
   const defaultLayout: PageLayout = {
     id: pageId || `page_${Date.now()}`,
-    title: 'New Page',
+    title: getDefaultTitle(pageId),
     description: '',
     type: 'grid',
     columns: 2,
