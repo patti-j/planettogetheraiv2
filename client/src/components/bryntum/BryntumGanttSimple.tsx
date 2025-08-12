@@ -62,79 +62,90 @@ export function BryntumGanttSimple({
     
     console.log('BryntumGanttSimple: Bryntum Gantt constructor found, proceeding with initialization');
 
-    // Simple task data
-    const tasks = operations.map(op => ({
-      id: op.id,
-      name: op.operationName || `Operation ${op.id}`,
-      startDate: new Date(op.startTime),
-      endDate: new Date(op.endTime),
-      resourceId: op.workCenterId
-    }));
+    try {
+      // Simple task data
+      const tasks = operations.map(op => ({
+        id: op.id,
+        name: op.operationName || `Operation ${op.id}`,
+        startDate: new Date(op.startTime),
+        endDate: new Date(op.endTime),
+        resourceId: op.workCenterId
+      }));
 
-    // Simple resource data
-    const resourceData = resources.map(res => ({
-      id: res.id,
-      name: res.name
-    }));
+      // Simple resource data
+      const resourceData = resources.map(res => ({
+        id: res.id,
+        name: res.name
+      }));
+      
+      console.log('BryntumGanttSimple: Creating Gantt with data', {
+        tasksCount: tasks.length,
+        resourcesCount: resourceData.length,
+        container: containerRef.current
+      });
 
-    // Create Gantt with minimal configuration
-    const gantt = new Gantt({
-      appendTo: containerRef.current,
-      
-      // Data
-      tasks: tasks,
-      resources: resourceData,
-      assignments: tasks.map(t => ({
-        id: `${t.id}-${t.resourceId}`,
-        event: t.id,
-        resource: t.resourceId
-      })),
-      
-      // Basic configuration
-      viewPreset: 'weekAndDayLetter',
-      rowHeight: 45,
-      
-      // Simple columns
-      columns: [
-        { type: 'name', field: 'name', text: 'Task', width: 250 },
-        { type: 'startdate', text: 'Start', width: 100 },
-        { type: 'duration', text: 'Duration', width: 100 }
-      ],
-      
-      // Enable drag and drop
-      features: {
-        taskDrag: {
-          disabled: false
+      // Create Gantt with minimal configuration
+      const gantt = new Gantt({
+        appendTo: containerRef.current,
+        
+        // Data
+        tasks: tasks,
+        resources: resourceData,
+        assignments: tasks.map(t => ({
+          id: `${t.id}-${t.resourceId}`,
+          event: t.id,
+          resource: t.resourceId
+        })),
+        
+        // Basic configuration
+        viewPreset: 'weekAndDayLetter',
+        rowHeight: 45,
+        
+        // Simple columns
+        columns: [
+          { type: 'name', field: 'name', text: 'Task', width: 250 },
+          { type: 'startdate', text: 'Start', width: 100 },
+          { type: 'duration', text: 'Duration', width: 100 }
+        ],
+        
+        // Enable drag and drop
+        features: {
+          taskDrag: {
+            disabled: false
+          },
+          taskResize: {
+            disabled: false
+          }
         },
-        taskResize: {
-          disabled: false
-        }
-      },
-      
-      // Handle drag/drop events
-      listeners: {
-        taskDrop: async ({ taskRecords, targetStartDate, targetResourceRecord }) => {
-          if (onOperationMove && taskRecords.length > 0) {
-            const task = taskRecords[0];
-            const endDate = new Date(targetStartDate);
-            endDate.setTime(endDate.getTime() + (task.endDate - task.startDate));
-            
-            try {
-              await onOperationMove(
-                task.id,
-                targetResourceRecord?.id || task.resourceId,
-                targetStartDate,
-                endDate
-              );
-            } catch (error) {
-              console.error('Failed to move task:', error);
+        
+        // Handle drag/drop events
+        listeners: {
+          taskDrop: async ({ taskRecords, targetStartDate, targetResourceRecord }) => {
+            if (onOperationMove && taskRecords.length > 0) {
+              const task = taskRecords[0];
+              const endDate = new Date(targetStartDate);
+              endDate.setTime(endDate.getTime() + (task.endDate - task.startDate));
+              
+              try {
+                await onOperationMove(
+                  task.id,
+                  targetResourceRecord?.id || task.resourceId,
+                  targetStartDate,
+                  endDate
+                );
+              } catch (error) {
+                console.error('Failed to move task:', error);
+              }
             }
           }
         }
-      }
-    });
+      });
 
-    ganttRef.current = gantt;
+      console.log('BryntumGanttSimple: Gantt instance created successfully', gantt);
+      ganttRef.current = gantt;
+    } catch (error) {
+      console.error('BryntumGanttSimple: Failed to create Gantt', error);
+    }
 
     // Cleanup
     return () => {
