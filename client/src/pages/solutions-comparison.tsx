@@ -10,7 +10,7 @@ interface ComparisonCategory {
   title: string;
   items: {
     feature: string;
-    standalone: string | boolean;
+    integrated: string | boolean;
     aps: string | boolean;
     oem: string | boolean;
   }[];
@@ -34,48 +34,48 @@ export default function SolutionsComparison() {
     {
       title: "Core Capabilities",
       items: [
-        { feature: "Scope", standalone: "Full supply chain management + advanced planning & scheduling in one platform", aps: "Advanced planning & scheduling only", oem: "Advanced planning & scheduling only" },
-        { feature: "Target Customer", standalone: "Mid-to-large manufacturers seeking a unified platform", aps: "Companies with ERP/SCM already in place but needing best-in-class APS", oem: "Enterprises buying a full OEM SCM suite" },
-        { feature: "Supply Chain Visibility", standalone: "End-to-end control tower across procurement, inventory, production, logistics, and demand", aps: "Limited to production scheduling visibility; relies on external SCM for supply chain view", oem: "Limited to production scheduling visibility inside OEM SCM" },
+        { feature: "Scope", integrated: "Full supply chain management + advanced planning & scheduling in one platform", aps: "Advanced planning & scheduling only", oem: "Advanced planning & scheduling only" },
+        { feature: "Target Customer", integrated: "Mid-to-large manufacturers seeking a unified platform", aps: "Companies with ERP/SCM already in place but needing best-in-class APS", oem: "Enterprises buying a full OEM SCM suite" },
+        { feature: "Supply Chain Visibility", integrated: "End-to-end control tower across procurement, inventory, production, logistics, and demand", aps: "Limited to production scheduling visibility; relies on external SCM for supply chain view", oem: "Limited to production scheduling visibility inside OEM SCM" },
       ]
     },
     {
       title: "Planning & Optimization",
       items: [
-        { feature: "Concurrent Planning", standalone: "Yes – recalculates across supply, demand, capacity in real time", aps: "Optional – can support if integrated with ERP/SCM", oem: "Yes – within OEM SCM scope" },
-        { feature: "Demand Forecasting", standalone: "AI-driven, multi-source forecasting", aps: "Not included – expects demand plan from ERP/SCM", oem: "Not included – demand handled by OEM SCM" },
-        { feature: "Inventory Optimization", standalone: "AI-driven safety stock & reorder calculations", aps: "Not included – inventory decisions handled elsewhere", oem: "Not included – inventory decisions in OEM SCM" },
-        { feature: "Finite Capacity Scheduling", standalone: true, aps: true, oem: true },
-        { feature: "Constraint-Based Optimization", standalone: true, aps: true, oem: true },
-        { feature: "AI-Optimized Sequencing", standalone: true, aps: true, oem: true },
-        { feature: "Multi-Level BOM & Routing", standalone: true, aps: true, oem: true },
+        { feature: "Concurrent Planning", integrated: "Yes – recalculates across supply, demand, capacity in real time", aps: "Optional – can support if integrated with ERP/SCM", oem: "Yes – within OEM SCM scope" },
+        { feature: "Demand Forecasting", integrated: "AI-driven, multi-source forecasting", aps: "Not included – expects demand plan from ERP/SCM", oem: "Not included – demand handled by OEM SCM" },
+        { feature: "Inventory Optimization", integrated: "AI-driven safety stock & reorder calculations", aps: "Not included – inventory decisions handled elsewhere", oem: "Not included – inventory decisions in OEM SCM" },
+        { feature: "Finite Capacity Scheduling", integrated: true, aps: true, oem: true },
+        { feature: "Constraint-Based Optimization", integrated: true, aps: true, oem: true },
+        { feature: "AI-Optimized Sequencing", integrated: true, aps: true, oem: true },
+        { feature: "Multi-Level BOM & Routing", integrated: true, aps: true, oem: true },
       ]
     },
     {
       title: "Analytics & Intelligence",
       items: [
-        { feature: "What-If Scenario Planning", standalone: "AI-powered with full supply chain & production modeling", aps: "AI-powered with production-only modeling", oem: "AI-powered with production-only modeling" },
-        { feature: "Digital Twin Simulation", standalone: "Full supply chain + production", aps: "Production network only", oem: "Production network only" },
-        { feature: "Dynamic Rescheduling", standalone: "Automatic, across supply chain & production", aps: "Automatic, production only", oem: "Automatic, production only" },
-        { feature: "Prescriptive AI Recommendations", standalone: "Yes – service, cost, inventory, production priorities", aps: "Yes – production efficiency only", oem: "Yes – production efficiency only" },
-        { feature: "Trade-Off Analytics", standalone: "Multi-objective optimization (service, cost, inventory)", aps: "Production-focused trade-offs only", oem: "Production-focused trade-offs only" },
+        { feature: "What-If Scenario Planning", integrated: "AI-powered with full supply chain & production modeling", aps: "AI-powered with production-only modeling", oem: "AI-powered with production-only modeling" },
+        { feature: "Digital Twin Simulation", integrated: "Full supply chain + production", aps: "Production network only", oem: "Production network only" },
+        { feature: "Dynamic Rescheduling", integrated: "Automatic, across supply chain & production", aps: "Automatic, production only", oem: "Automatic, production only" },
+        { feature: "Prescriptive AI Recommendations", integrated: "Yes – service, cost, inventory, production priorities", aps: "Yes – production efficiency only", oem: "Yes – production efficiency only" },
+        { feature: "Trade-Off Analytics", integrated: "Multi-objective optimization (service, cost, inventory)", aps: "Production-focused trade-offs only", oem: "Production-focused trade-offs only" },
       ]
     },
     {
       title: "Integration & Collaboration",
       items: [
-        { feature: "Integration Capabilities", standalone: "Pre-built connectors for ERP, MES, WMS, TMS, logistics, analytics", aps: "ERP/MES/WMS connectors; API-first for custom", oem: "Tight integration with OEM SCM & ERP modules" },
-        { feature: "Data Fabric", standalone: "Yes – integrates structured & unstructured data across supply chain", aps: "Yes – production scheduling data model", oem: "Within OEM ecosystem" },
-        { feature: "Collaboration Tools", standalone: "Supplier/customer portals, secure messaging, shared dashboards", aps: "Planner/scheduler collaboration, internal only", oem: "Planner/scheduler collaboration, internal only" },
-        { feature: "Compliance & Sustainability", standalone: "ISO, FDA, REACH, ESG tracking", aps: false, oem: false },
+        { feature: "Integration Capabilities", integrated: "Pre-built connectors for ERP, MES, WMS, TMS, logistics, analytics", aps: "ERP/MES/WMS connectors; API-first for custom", oem: "Tight integration with OEM SCM & ERP modules" },
+        { feature: "Data Fabric", integrated: "Yes – integrates structured & unstructured data across supply chain", aps: "Yes – production scheduling data model", oem: "Within OEM ecosystem" },
+        { feature: "Collaboration Tools", integrated: "Supplier/customer portals, secure messaging, shared dashboards", aps: "Planner/scheduler collaboration, internal only", oem: "Planner/scheduler collaboration, internal only" },
+        { feature: "Compliance & Sustainability", integrated: "ISO, FDA, REACH, ESG tracking", aps: false, oem: false },
       ]
     },
     {
       title: "Technology & Deployment",
       items: [
-        { feature: "AI Assistants & Agents", standalone: "Natural language queries, autonomous agents for SCM + APS tasks", aps: "Natural language queries, autonomous agents for APS tasks", oem: "Natural language queries, autonomous agents for APS tasks" },
-        { feature: "Deployment Options", standalone: "Cloud, on-premise, hybrid", aps: "Cloud, on-premise, hybrid", oem: "Typically follows OEM suite deployment model" },
-        { feature: "Implementation Model", standalone: "Self-implement or with consultant", aps: "Self-implement or with consultant", oem: "OEM vendor/partner services" },
+        { feature: "AI Assistants & Agents", integrated: "Natural language queries, autonomous agents for SCM + APS tasks", aps: "Natural language queries, autonomous agents for APS tasks", oem: "Natural language queries, autonomous agents for APS tasks" },
+        { feature: "Deployment Options", integrated: "Cloud, on-premise, hybrid", aps: "Cloud, on-premise, hybrid", oem: "Typically follows OEM suite deployment model" },
+        { feature: "Implementation Model", integrated: "Self-implement or with consultant", aps: "Self-implement or with consultant", oem: "OEM vendor/partner services" },
       ]
     }
   ];
@@ -97,7 +97,7 @@ export default function SolutionsComparison() {
 
   const solutionCards = [
     {
-      title: "Standalone SCM + APS",
+      title: "SCM + APS",
       subtitle: "Full Integrated Suite",
       icon: Package,
       color: "blue",
@@ -105,7 +105,7 @@ export default function SolutionsComparison() {
       bestFor: "Organizations seeking a unified, AI-driven SCM + APS platform with broad functional coverage"
     },
     {
-      title: "Standalone APS",
+      title: "APS",
       subtitle: "Non-OEM Solution",
       icon: Cpu,
       color: "green",
@@ -238,7 +238,7 @@ export default function SolutionsComparison() {
                               {item.feature}
                             </td>
                             <td className="p-4 text-center">
-                              {renderCell(item.standalone)}
+                              {renderCell(item.integrated)}
                             </td>
                             <td className="p-4 text-center">
                               {renderCell(item.aps)}
