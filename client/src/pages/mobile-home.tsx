@@ -1224,12 +1224,12 @@ export default function MobileHomePage() {
       dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
       dialog.innerHTML = `
         <div class="fixed inset-0 bg-black/50" id="recent-overlay"></div>
-        <div class="relative bg-white dark:bg-zinc-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-zinc-600 p-6 w-full max-w-md pb-safe-area animate-slide-up">
-          <div class="w-12 h-1 bg-gray-400 dark:bg-zinc-500 rounded-full mx-auto mb-4"></div>
+        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-500 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+          <div class="w-12 h-1 bg-gray-300 dark:bg-gray-500 rounded-full mx-auto mb-4"></div>
           <div class="flex items-center justify-between mb-5">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-zinc-100">Recent Pages</h3>
-            <button id="close-recent" class="p-2 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 rounded-lg transition-colors">
-              <svg class="w-5 h-5 text-gray-700 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-50">Recent Pages</h3>
+            <button id="close-recent" class="p-2 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-lg transition-colors">
+              <svg class="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -1243,9 +1243,9 @@ export default function MobileHomePage() {
       const listContainer = dialog.querySelector('#recent-list');
       recentPages.forEach(page => {
         const item = document.createElement('button');
-        item.className = 'w-full text-left p-4 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 rounded-xl flex items-center gap-3 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-zinc-600 shadow-sm';
+        item.className = 'w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl flex items-center gap-3 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm';
         item.innerHTML = `
-          <span class="text-gray-900 dark:text-zinc-100 font-semibold">${page.label}</span>
+          <span class="text-gray-900 dark:text-gray-50 font-semibold">${page.label}</span>
         `;
         item.onclick = () => {
           setLocation(page.path);
@@ -1270,24 +1270,24 @@ export default function MobileHomePage() {
       dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
       dialog.innerHTML = `
         <div class="fixed inset-0 bg-black/50" id="profile-overlay"></div>
-        <div class="relative bg-white dark:bg-zinc-800 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-zinc-600 p-6 w-full max-w-md pb-safe-area animate-slide-up">
-          <div class="w-12 h-1 bg-gray-400 dark:bg-zinc-500 rounded-full mx-auto mb-4"></div>
+        <div class="relative bg-gray-50 dark:bg-gray-700 rounded-t-2xl shadow-xl border-t-2 border-gray-200 dark:border-gray-500 p-6 w-full max-w-md pb-safe-area animate-slide-up">
+          <div class="w-12 h-1 bg-gray-300 dark:bg-gray-500 rounded-full mx-auto mb-4"></div>
           <div class="flex items-center justify-between mb-5">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-zinc-100">Profile</h3>
-            <button id="close-profile" class="p-2 bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 rounded-lg transition-colors">
-              <svg class="w-5 h-5 text-gray-700 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-50">Profile</h3>
+            <button id="close-profile" class="p-2 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-lg transition-colors">
+              <svg class="w-5 h-5 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
           <div class="space-y-2">
-            <button id="profile-settings" class="w-full text-left p-4 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 rounded-xl font-semibold text-gray-900 dark:text-zinc-100 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-zinc-600 shadow-sm">
+            <button id="profile-settings" class="w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl font-semibold text-gray-900 dark:text-gray-50 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm">
               Account Settings
             </button>
-            <button id="profile-preferences" class="w-full text-left p-4 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 rounded-xl font-semibold text-gray-900 dark:text-zinc-100 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-zinc-600 shadow-sm">
+            <button id="profile-preferences" class="w-full text-left p-4 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 rounded-xl font-semibold text-gray-900 dark:text-gray-50 transition-all transform hover:scale-[1.02] border border-gray-200 dark:border-gray-500 shadow-sm">
               Preferences
             </button>
-            <button id="profile-logout" class="w-full text-left p-4 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-xl font-semibold text-red-600 dark:text-red-300 transition-all transform hover:scale-[1.02] border border-red-200 dark:border-red-800 shadow-sm">
+            <button id="profile-logout" class="w-full text-left p-4 bg-red-50 dark:bg-red-600 hover:bg-red-100 dark:hover:bg-red-500 rounded-xl font-semibold text-red-600 dark:text-red-50 transition-all transform hover:scale-[1.02] border border-red-200 dark:border-red-400 shadow-sm">
               Sign Out
             </button>
           </div>
