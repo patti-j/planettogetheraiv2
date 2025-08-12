@@ -42,9 +42,26 @@ export function BryntumGanttProduction({
     // Try to initialize Gantt with a delay to ensure library is loaded
     const initializeGantt = () => {
       console.log('Initializing Bryntum Gantt...');
+      console.log('Window bryntum object:', window.bryntum);
       
-      // Access Gantt directly from window.bryntum
-      const Gantt = window.bryntum?.gantt?.Gantt || window.bryntum?.Gantt;
+      // Check what's available in bryntum
+      if (window.bryntum) {
+        console.log('Bryntum modules available:', Object.keys(window.bryntum));
+        if (window.bryntum.gantt) {
+          console.log('Gantt module available:', Object.keys(window.bryntum.gantt));
+        }
+      }
+      
+      // The UMD build exports everything under bryntum.gantt
+      const GanttModule = window.bryntum?.gantt;
+      if (!GanttModule) {
+        console.error('Gantt module not found in window.bryntum');
+        return;
+      }
+      
+      // The Gantt class should be available in the module
+      const Gantt = GanttModule.Gantt;
+      console.log('Gantt class found:', !!Gantt);
     
     if (!Gantt) {
       console.error('Bryntum Gantt not available - check if the library is loaded');
@@ -66,126 +83,41 @@ export function BryntumGanttProduction({
     }
 
     try {
-        // Group operations by resource
-        const tasksByResource: any[] = [];
-        const resourceMap = new Map();
+        console.log('About to create Gantt instance...');
         
-        // Create parent tasks for each resource
-        resources.forEach((resource, index) => {
-          // Add icon based on resource type
-          const typeIcon = resource.type?.toLowerCase() === 'equipment' ? '⚙️' : 
-                          resource.type?.toLowerCase() === 'labor' ? '👷' :
-                          resource.type?.toLowerCase() === 'tool' ? '🔧' : '📦';
-          
-          const resourceTask = {
-            id: `resource-${resource.id}`,
-            name: `${typeIcon} ${resource.name} (${resource.type || 'Resource'})`,
-            expanded: true,
-            children: [],
-            manuallyScheduled: true,
-            cls: 'resource-parent'
-          };
-          tasksByResource.push(resourceTask);
-          resourceMap.set(resource.id, resourceTask);
-        });
-      
-        // Add operations as children of their assigned resources
-        operations.forEach((op) => {
-          const resourceId = op.workCenterId || op.assignedResourceId || 1;
-          const resourceTask = resourceMap.get(resourceId);
-          
-          if (resourceTask) {
-            resourceTask.children.push({
-              id: op.id,
-              name: op.name || op.operationName || 'Operation',
-              startDate: op.startTime || new Date(),
-              duration: Math.max(1, Math.ceil((new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60 * 24))),
-              draggable: true,
-              resizable: true
-            });
+        // Create simple test data
+        const testTasks = [
+          {
+            id: 1,
+            name: 'Task 1',
+            startDate: '2025-08-01',
+            duration: 3,
+            durationUnit: 'day'
+          },
+          {
+            id: 2,
+            name: 'Task 2',
+            startDate: '2025-08-05',
+            duration: 2,
+            durationUnit: 'day'
           }
-        });
-      
-        // Create Gantt with resource-oriented view
+        ];
+        
+        console.log('Creating Gantt with test tasks:', testTasks);
+        
+        // Create the simplest possible Gantt configuration
         const gantt = new Gantt({
           appendTo: containerRef.current,
           height: 500,
           
-          // Enable available features in trial version
-          features: {
-            taskDrag: true,
-            taskResize: true,
-            taskEdit: false,
-            cellEdit: false,
-            timeRanges: false,
-            rollups: false,
-            baselines: false,
-            progressLine: false,
-            dependencies: false,
-            percentDone: false
-          },
-        
-        columns: [
-          { type: 'name', field: 'name', text: 'Resource / Operation', width: 250, tree: true },
-          { type: 'startdate', text: 'Start Date', width: 100 },
-          { type: 'duration', text: 'Duration', width: 80 }
-        ],
-        
-        subGridConfigs: {
-          locked: {
-            width: 450
+          columns: [
+            { type: 'name', field: 'name', text: 'Task', width: 250 }
+          ],
+          
+          project: {
+            tasks: testTasks
           }
-        },
-        
-        viewPreset: 'weekAndDayLetter',
-        startDate: new Date('2025-08-01'),
-        endDate: new Date('2025-08-31'),
-        
-        listeners: {
-          beforeTaskDrag: ({ taskRecords }) => {
-            // Only allow dragging of operations, not resource groups
-            return taskRecords[0] && !taskRecords[0].id.toString().startsWith('resource-');
-          },
-          taskDrop: ({ taskRecords, targetDate }) => {
-            if (onOperationMove && taskRecords[0] && !taskRecords[0].id.toString().startsWith('resource-')) {
-              const task = taskRecords[0];
-              const endDate = new Date(targetDate);
-              endDate.setDate(endDate.getDate() + task.duration);
-              
-              // Find the parent resource ID
-              const parentId = task.parent?.id;
-              const resourceId = parentId ? parseInt(parentId.toString().replace('resource-', '')) : 1;
-              
-              onOperationMove(
-                task.id,
-                resourceId,
-                targetDate,
-                endDate
-              );
-            }
-          },
-          taskResizeEnd: ({ taskRecord, startDate, endDate }) => {
-            if (onOperationMove && taskRecord && !taskRecord.id.toString().startsWith('resource-')) {
-              // Find the parent resource ID
-              const parentId = taskRecord.parent?.id;
-              const resourceId = parentId ? parseInt(parentId.toString().replace('resource-', '')) : 1;
-              
-              onOperationMove(
-                taskRecord.id,
-                resourceId,
-                startDate,
-                endDate
-              );
-            }
-          }
-        },
-        
-        project: {
-          tasks: tasksByResource,
-          autoSync: false,
-          validateResponse: false
-        }
-      });
+        });
 
       ganttRef.current = gantt;
       
@@ -204,8 +136,17 @@ export function BryntumGanttProduction({
     }
     };
     
-    // Call the initialization function
-    initializeGantt();
+    // Try to initialize immediately and also with a delay
+    const tryInit = () => {
+      if (window.bryntum) {
+        initializeGantt();
+      } else {
+        console.log('Bryntum not available yet, retrying in 500ms...');
+        setTimeout(tryInit, 500);
+      }
+    };
+    
+    tryInit();
 
     // Cleanup
     return () => {
