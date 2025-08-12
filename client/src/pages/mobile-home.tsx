@@ -1184,9 +1184,21 @@ export default function MobileHomePage() {
 
   // Add event listeners for mobile footer buttons
   useEffect(() => {
-    const handleMenuButton = () => {
-      console.log("Menu button event received");
-      setMobileMenuOpen(prev => !prev);  // Toggle menu state
+    const handleMenuButton = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Menu button event received, current state:", mobileMenuOpen);
+      // Just toggle the menu, no navigation
+      setMobileMenuOpen(prev => {
+        const newState = !prev;
+        console.log("Toggling menu from", prev, "to", newState);
+        // Ensure no navigation happens
+        if (newState === false) {
+          // Menu is closing, prevent any navigation
+          console.log("Menu closing - no navigation should occur");
+        }
+        return newState;
+      });
     };
 
     const handleSearchButton = () => {
@@ -2337,7 +2349,11 @@ export default function MobileHomePage() {
           {/* Overlay */}
           <div 
             className="fixed inset-0 bg-black bg-opacity-50" 
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMobileMenuOpen(false);
+            }}
           />
           {/* Sidebar Panel */}
           <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
@@ -2369,7 +2385,12 @@ export default function MobileHomePage() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log("Close button clicked - closing menu");
+                      setMobileMenuOpen(false);
+                    }}
                     className="p-1.5"
                   >
                     <X className="w-4 h-4" />
@@ -2391,7 +2412,9 @@ export default function MobileHomePage() {
                           <div
                             key={feature.href}
                             className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
                               setMobileMenuOpen(false);
                               setLocation(feature.href);
                             }}

@@ -414,10 +414,10 @@ export function EnhancedDashboardManager({
                         <CardContent>
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span>
-                              {dashboard.configuration.standardWidgets.length} standard widgets
+                              {dashboard.configuration?.standardWidgets?.length || 0} standard widgets
                             </span>
                             <span>
-                              {dashboard.configuration.customWidgets.length} custom widgets
+                              {dashboard.configuration?.customWidgets?.length || 0} custom widgets
                             </span>
                             {dashboard.isDefault && (
                               <Badge variant="secondary" className="text-xs">
