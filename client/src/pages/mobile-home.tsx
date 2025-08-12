@@ -734,6 +734,7 @@ export default function MobileHomePage() {
   const [activeLibraryTab, setActiveLibraryTab] = useState("widgets");
   const [currentWidgetPage, setCurrentWidgetPage] = useState(0);
   const [currentDashboardPage, setCurrentDashboardPage] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Pagination constants
   const ITEMS_PER_PAGE = 4; // Show 4 items per page for mobile
@@ -1180,6 +1181,135 @@ export default function MobileHomePage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [user]);
+
+  // Add event listeners for mobile footer buttons
+  useEffect(() => {
+    const handleMenuButton = () => {
+      console.log("Menu button event received");
+      setMobileMenuOpen(true);
+    };
+
+    const handleSearchButton = () => {
+      console.log("Search button event received");
+      // Focus on the search input in header
+      const searchInput = document.querySelector('.mobile-header-search input');
+      if (searchInput) {
+        (searchInput as HTMLInputElement).focus();
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    const handleRecentButton = () => {
+      console.log("Recent button event received");
+      // Show a dialog with recent pages
+      const recentPages = [
+        { path: '/production-schedule', label: 'Production Schedule', icon: Calendar },
+        { path: '/onboarding', label: 'Getting Started', icon: BookOpen },
+      ];
+      
+      // Create and show recent pages menu
+      const dialog = document.createElement('div');
+      dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
+      dialog.innerHTML = `
+        <div class="fixed inset-0 bg-black bg-opacity-50" id="recent-overlay"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-t-xl p-4 w-full max-w-sm pb-safe-area animate-slide-up">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Recent Pages</h3>
+            <button id="close-recent" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">✕</button>
+          </div>
+          <div class="space-y-2" id="recent-list"></div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+      
+      // Add recent pages to list
+      const listContainer = dialog.querySelector('#recent-list');
+      recentPages.forEach(page => {
+        const item = document.createElement('button');
+        item.className = 'w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3';
+        item.innerHTML = `
+          <span class="text-gray-600 dark:text-gray-400">${page.label}</span>
+        `;
+        item.onclick = () => {
+          setLocation(page.path);
+          document.body.removeChild(dialog);
+        };
+        listContainer?.appendChild(item);
+      });
+      
+      // Close handlers
+      dialog.querySelector('#close-recent')?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+      });
+      dialog.querySelector('#recent-overlay')?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+      });
+    };
+
+    const handleProfileButton = () => {
+      console.log("Profile button event received");
+      // Show profile menu
+      const dialog = document.createElement('div');
+      dialog.className = 'fixed inset-0 z-50 flex items-end justify-center';
+      dialog.innerHTML = `
+        <div class="fixed inset-0 bg-black bg-opacity-50" id="profile-overlay"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-t-xl p-4 w-full max-w-sm pb-safe-area animate-slide-up">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Profile</h3>
+            <button id="close-profile" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">✕</button>
+          </div>
+          <div class="space-y-2">
+            <button id="profile-settings" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+              Account Settings
+            </button>
+            <button id="profile-preferences" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+              Preferences
+            </button>
+            <button id="profile-logout" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-red-600">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dialog);
+      
+      // Button handlers
+      dialog.querySelector('#profile-settings')?.addEventListener('click', () => {
+        setLocation('/account');
+        document.body.removeChild(dialog);
+      });
+      dialog.querySelector('#profile-preferences')?.addEventListener('click', () => {
+        setLocation('/settings');
+        document.body.removeChild(dialog);
+      });
+      dialog.querySelector('#profile-logout')?.addEventListener('click', () => {
+        logout();
+        document.body.removeChild(dialog);
+      });
+      
+      // Close handlers
+      dialog.querySelector('#close-profile')?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+      });
+      dialog.querySelector('#profile-overlay')?.addEventListener('click', () => {
+        document.body.removeChild(dialog);
+      });
+    };
+
+    // Add event listeners
+    window.addEventListener('toggleMenu', handleMenuButton);
+    window.addEventListener('openSearch', handleSearchButton);
+    window.addEventListener('openRecent', handleRecentButton);
+    window.addEventListener('openProfile', handleProfileButton);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('toggleMenu', handleMenuButton);
+      window.removeEventListener('openSearch', handleSearchButton);
+      window.removeEventListener('openRecent', handleRecentButton);
+      window.removeEventListener('openProfile', handleProfileButton);
+    };
+  }, [setLocation, logout]);
 
   // When on /mobile-home route, ALWAYS show mobile view - never render desktop content
   // This prevents desktop content from showing underneath when pulling to refresh
@@ -2199,6 +2329,85 @@ export default function MobileHomePage() {
             setPreviewType(null);
           }}
         />
+      )}
+
+      {/* Mobile Menu Sidebar */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Sidebar Panel */}
+          <div className="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarFallback>{(user?.firstName || user?.username)?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{user?.firstName || user?.username || 'User'}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email || 'demo@example.com'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center flex-shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      logout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    title="Log out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-1.5"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Navigation Menu - Using Centralized Navigation Structure */}
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                {navigationGroups.map((group) => (
+                  <div key={group.title} className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      {group.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.features.slice(0, 6).map((feature) => {
+                        const Icon = feature.icon;
+                        return (
+                          <div
+                            key={feature.href}
+                            className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            onClick={() => {
+                              setMobileMenuOpen(false);
+                              setLocation(feature.href);
+                            }}
+                          >
+                            <Icon className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">{feature.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

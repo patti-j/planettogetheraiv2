@@ -923,6 +923,24 @@ div[data-radix-tooltip-content] {
   scrollbar-color: #9ca3af #f3f4f6;
 }
 
+/* Mobile dialog animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.pb-safe-area {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 .mobile-scroll-container::-webkit-scrollbar {
   height: 8px;
 }
