@@ -39,12 +39,29 @@ export function BryntumGanttProduction({
       return;
     }
 
-    // Check if Bryntum is available
-    const bryntumGantt = window.bryntum?.gantt;
-    const Gantt = bryntumGantt?.Gantt;
+    // Try to initialize Gantt with a delay to ensure library is loaded
+    const initializeGantt = () => {
+      console.log('Initializing Bryntum Gantt...');
+      
+      // Access Gantt directly from window.bryntum
+      const Gantt = window.bryntum?.gantt?.Gantt || window.bryntum?.Gantt;
     
     if (!Gantt) {
-      console.error('Bryntum Gantt not available');
+      console.error('Bryntum Gantt not available - check if the library is loaded');
+      // Try to show what's available
+      if (window.bryntum) {
+        console.log('Available Bryntum modules:', Object.keys(window.bryntum));
+      }
+      // Show a message in the container
+      if (containerRef.current) {
+        containerRef.current.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #666;">
+            <h3 style="margin-bottom: 10px;">Gantt Chart Loading...</h3>
+            <p>The Bryntum Gantt library is being initialized.</p>
+            <p style="font-size: 12px; margin-top: 20px;">If this message persists, please refresh the page.</p>
+          </div>
+        `;
+      }
       return;
     }
 
@@ -185,6 +202,10 @@ export function BryntumGanttProduction({
     } catch (error) {
       console.error('Failed to create Gantt:', error instanceof Error ? error.message : error);
     }
+    };
+    
+    // Call the initialization function
+    initializeGantt();
 
     // Cleanup
     return () => {
