@@ -5,7 +5,7 @@ import {
   Shield, GraduationCap, UserCheck, BookOpen, AlertTriangle, 
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
-  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar
+  Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -95,6 +95,7 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
       { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: GitBranch, label: "Solutions Comparison", href: "/solutions-comparison", feature: "", action: "", color: "bg-purple-600" },
       { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
       { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
       { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },

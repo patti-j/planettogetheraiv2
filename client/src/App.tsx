@@ -102,6 +102,7 @@ import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
 import TasksPage from "@/pages/tasks";
 import InboxPage from "@/pages/inbox";
+import SolutionsComparison from "@/pages/solutions-comparison";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -265,6 +266,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/pricing" component={Pricing} />
+        <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/demo-tour" component={DemoTour} />
         <Route path="/presentation" component={PresentationPage} />
         <Route path="/marketing" component={MarketingLandingPage} />
