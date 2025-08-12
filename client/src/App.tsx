@@ -103,6 +103,7 @@ import NotFound from "@/pages/not-found";
 import TasksPage from "@/pages/tasks";
 import InboxPage from "@/pages/inbox";
 import SolutionsComparison from "@/pages/solutions-comparison";
+import TestBryntumPage from "@/pages/test-bryntum";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -565,6 +566,9 @@ function Router() {
             <ProtectedRoute feature="systems-management" action="view">
               <UIDesignStudio />
             </ProtectedRoute>
+          </Route>
+          <Route path="/test-bryntum">
+            <TestBryntumPage />
           </Route>
           {/* Legacy routes redirect to Design Studio */}
           <Route path="/widget-showcase">
