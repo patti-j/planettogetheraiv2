@@ -42,6 +42,10 @@ export default function SolutionsComparison() {
     {
       title: "Planning & Optimization",
       items: [
+        { feature: "Master Production Scheduling (MPS)", integrated: true, aps: true, oem: true },
+        { feature: "Production Planning", integrated: true, aps: true, oem: true },
+        { feature: "Capacity Requirements Planning (CRP)", integrated: true, aps: true, oem: true },
+        { feature: "Material Requirements Planning (MRP)", integrated: "Full MRP with inventory integration", aps: "Limited – typically handled by ERP", oem: "Handled by OEM ERP module" },
         { feature: "Concurrent Planning", integrated: "Yes – recalculates across supply, demand, capacity in real time", aps: "Optional – can support if integrated with ERP/SCM", oem: "Yes – within OEM SCM scope" },
         { feature: "Demand Forecasting", integrated: "AI-driven, multi-source forecasting", aps: "Not included – expects demand plan from ERP/SCM", oem: "Not included – demand handled by OEM SCM" },
         { feature: "Inventory Optimization", integrated: "AI-driven safety stock & reorder calculations", aps: "Not included – inventory decisions handled elsewhere", oem: "Not included – inventory decisions in OEM SCM" },
