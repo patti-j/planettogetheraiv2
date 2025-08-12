@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Bryntum Loading</title>
+    <link rel="stylesheet" href="/gantt.classic-light.css">
+    <script src="/gantt.umd.js"></script>
+</head>
+<body>
+    <h1>Testing Bryntum Library Loading</h1>
+    <div id="test"></div>
+    <script>
+        // Wait for the library to load
+        setTimeout(() => {
+            console.log('Window bryntum:', window.bryntum);
+            if (window.bryntum) {
+                console.log('Bryntum modules:', Object.keys(window.bryntum));
+                if (window.bryntum.gantt) {
+                    console.log('Gantt module:', Object.keys(window.bryntum.gantt));
+                    document.getElementById('test').innerHTML = '<p>✓ Bryntum Gantt loaded successfully</p>';
+                    
+                    // Try to access the Gantt class
+                    const { Gantt } = window.bryntum.gantt;
+                    if (Gantt) {
+                        document.getElementById('test').innerHTML += '<p>✓ Gantt class is available</p>';
+                    } else {
+                        document.getElementById('test').innerHTML += '<p>✗ Gantt class not found</p>';
+                    }
+                } else {
+                    document.getElementById('test').innerHTML = '<p>✗ Gantt module not found</p>';
+                }
+            } else {
+                document.getElementById('test').innerHTML = '<p>✗ Bryntum not loaded</p>';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
