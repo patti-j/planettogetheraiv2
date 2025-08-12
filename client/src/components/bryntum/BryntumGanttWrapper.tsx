@@ -83,133 +83,54 @@ export function BryntumGanttWrapper({
       if (!mounted || !containerRef.current) return;
 
       try {
-        console.log('BryntumGanttWrapper: Converting data...');
-        console.log('Resources:', resources);
-        console.log('Operations:', operations);
+        console.log('BryntumGanttWrapper: Container ref available:', !!containerRef.current);
         
-        // Convert our data to Bryntum format
-        const ganttResources = resources.map(r => ({
-          id: r.id,
-          name: r.name,
-          type: r.type
-        }));
-
-        const ganttTasks = operations.map(op => ({
-          id: op.id,
-          name: op.name || op.operationName,
-          startDate: op.startTime,
-          endDate: op.endTime,
-          resourceId: op.assignedResourceId || op.workCenterId,
-          // Add status class for styling
-          cls: `status-${op.status || 'scheduled'}`,
-          status: op.status,
-          // Store original data for reference
-          originalData: op
-        }));
-
-        console.log('BryntumGanttWrapper: Converted resources:', ganttResources);
-        console.log('BryntumGanttWrapper: Converted tasks:', ganttTasks);
-        console.log('BryntumGanttWrapper: Container ref:', containerRef.current);
-        
-        // Create the Gantt instance with minimal configuration
-        console.log('BryntumGanttWrapper: Creating Gantt instance...');
-        
-        ganttInstance = new Gantt({
+        // Use the simplest possible configuration to avoid the Helpers.constructor error
+        const config = {
           appendTo: containerRef.current,
+          height: 500,
           
-          // Start with minimal columns
+          // Simple columns without special types
           columns: [
-            { text: 'Name', field: 'name', width: 200 }
+            { text: 'Name', field: 'name', width: 250 }
           ],
-
-          // Configure features - disable those not in trial
+          
+          // Minimal features configuration
           features: {
-            // Core features that should work in trial
-            cellEdit: false,
-            taskEdit: {
-              disabled: false,
-              items: {
-                generalTab: {
-                  items: {
-                    // Only show basic fields
-                    nameField: true,
-                    startDateField: true,
-                    endDateField: true,
-                    resourceField: true
-                  }
-                }
-              }
-            },
-            taskDrag: true,
-            taskResize: true,
-            
-            // Disable features not available in trial
+            taskDrag: false,  // Disable drag for now to avoid errors
+            taskResize: false,  // Disable resize for now
+            taskEdit: false,  // Disable editing for now
             percentDone: false,
             progressLine: false,
-            dependencies: false,
-            dependencyEdit: false,
-            baselines: false,
-            criticalPaths: false,
-            rollups: false,
-            summary: false
+            dependencies: false
           },
-
-          // Set up the project with inline data
+          
+          // Simple task data
+          tasks: operations.map((op, index) => ({
+            id: op.id || index + 1,
+            name: op.name || op.operationName || `Operation ${index + 1}`,
+            startDate: op.startTime || new Date(),
+            duration: op.standardDuration || 1,
+            durationUnit: 'hour'
+          })),
+          
+          // Simple resource data
+          resources: resources.map(r => ({
+            id: r.id,
+            name: r.name || `Resource ${r.id}`
+          })),
+          
+          // Minimal project configuration
           project: {
-            resourcesData: ganttResources,
-            tasksData: ganttTasks,
-            
-            // Disable auto-sync to prevent errors
-            autoSync: false,
-            autoLoad: false
-          },
-
-          // Height of the component
-          height: 500,
-
-          // Resource histogram configuration
-          resourceUtilization: {
-            disabled: true  // Disable if causing issues
-          },
-
-          // Listen to task changes
-          listeners: {
-            taskDrop: async ({ taskRecords, newResource }) => {
-              if (!onOperationMove) return;
-              
-              const task = taskRecords[0];
-              if (task) {
-                try {
-                  await onOperationMove(
-                    task.id,
-                    newResource.id,
-                    new Date(task.startDate),
-                    new Date(task.endDate)
-                  );
-                } catch (error) {
-                  console.error('Failed to move operation:', error);
-                  // Revert the change
-                  task.resourceId = task.originalData.assignedResourceId;
-                }
-              }
-            },
-
-            taskResizeEnd: async ({ taskRecord }) => {
-              if (!onOperationMove) return;
-              
-              try {
-                await onOperationMove(
-                  taskRecord.id,
-                  taskRecord.resourceId,
-                  new Date(taskRecord.startDate),
-                  new Date(taskRecord.endDate)
-                );
-              } catch (error) {
-                console.error('Failed to resize operation:', error);
-              }
-            }
+            autoLoad: false,
+            autoSync: false
           }
-        });
+        };
+        
+        console.log('BryntumGanttWrapper: Creating Gantt with config:', config);
+        
+        // Create the instance
+        ganttInstance = new Gantt(config);
 
         ganttRef.current = ganttInstance;
         setIsLoading(false);
