@@ -1186,7 +1186,7 @@ export default function MobileHomePage() {
   useEffect(() => {
     const handleMenuButton = () => {
       console.log("Menu button event received");
-      setMobileMenuOpen(true);
+      setMobileMenuOpen(prev => !prev);  // Toggle menu state
     };
 
     const handleSearchButton = () => {
