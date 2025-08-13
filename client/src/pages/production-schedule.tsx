@@ -421,7 +421,7 @@ export default function ProductionSchedulePage() {
 
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
-
+        <Tabs defaultValue="overview" className="flex-1">
           <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : gridCols}`}>
               {/* Gantt Chart Widget - Temporarily disabled to prevent conflict with Bryntum */}
