@@ -422,18 +422,29 @@ export default function ProductionSchedulePage() {
 
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
-        <Tabs defaultValue="scheduler-pro" className="flex-1">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} mb-4 gap-1`}>
-            <TabsTrigger value="scheduler-pro" className={isMobile ? 'text-xs' : ''}>
-              {isMobile ? 'Resources' : 'Resource Schedule'}
+        <Tabs defaultValue="scheduler-pro" value={activeTab} onValueChange={setActiveTab} className="flex-1">
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4 gap-1'} mb-4 p-1 h-auto`}>
+            <TabsTrigger value="scheduler-pro" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
+              <div className="flex flex-col items-center gap-1">
+                <span>{isMobile ? 'Resources' : 'Resource Schedule'}</span>
+                {resources && operations && (
+                  <div className="flex gap-1">
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{resources.length} Resources</Badge>
+                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{operations.length} Operations</Badge>
+                  </div>
+                )}
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="demo" className={`${isMobile ? 'text-xs' : ''} bg-orange-50 dark:bg-orange-950/20`}>
-              {isMobile ? 'Demo' : 'Demo Data'}
+            <TabsTrigger value="demo" className={`${isMobile ? 'text-xs p-2' : 'p-3'} bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 dark:hover:bg-orange-950/50 data-[state=active]:bg-orange-500 data-[state=active]:text-white`}>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-semibold">{isMobile ? 'Demo' : 'Demo Data'}</span>
+                <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400">Test Data</Badge>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="overview" className={isMobile ? 'text-xs' : ''}>
+            <TabsTrigger value="overview" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
               Overview
             </TabsTrigger>
-            <TabsTrigger value="gantt" className={isMobile ? 'text-xs' : ''}>
+            <TabsTrigger value="gantt" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
               {isMobile ? 'Gantt' : 'Simple Gantt'}
             </TabsTrigger>
           </TabsList>
