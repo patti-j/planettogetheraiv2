@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical } from 'lucide-react';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
@@ -422,6 +422,19 @@ export default function ProductionSchedulePage() {
 
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
+        {/* Bryntum Demo Button - Always visible */}
+        <div className="mb-4">
+          <Button
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3"
+            onClick={() => {
+              window.location.href = '/bryntum-demo';
+            }}
+          >
+            <FlaskConical className="w-5 h-5 mr-2" />
+            Open Bryntum Test Demo (5 Resources with Sample Data)
+          </Button>
+        </div>
+        
         {/* Custom tab buttons for mobile to ensure visibility */}
         {isMobile ? (
           <div className="mb-4">

@@ -110,6 +110,7 @@ import TasksPage from "@/pages/tasks";
 import InboxPage from "@/pages/inbox";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
+import BryntumDemoPage from "@/pages/bryntum-demo";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -382,6 +383,10 @@ function Router() {
             <ProtectedRoute feature="schedule" action="view">
               <ProductionSchedulePage />
             </ProtectedRoute>
+          </Route>
+          
+          <Route path="/bryntum-demo">
+            <BryntumDemoPage />
           </Route>
           
           <Route path="/planning-overview">
