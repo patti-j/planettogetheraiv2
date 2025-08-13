@@ -21,6 +21,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const { hasPermission } = usePermissions();
   const { recentPages, togglePinPage, addRecentPage } = useNavigation();
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -48,6 +49,17 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
+
+  // Auto-focus search input when menu opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      // Use a small delay to ensure the menu animation has started
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   const handleItemClick = (item: any) => {
     setLocation(item.href);
@@ -111,6 +123,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              ref={searchInputRef}
               type="text"
               placeholder="Search menu..."
               value={searchFilter}
