@@ -82,7 +82,7 @@ export default function DemoPage() {
     features: {
       eventDrag: true,
       eventResize: true,
-      eventTooltip: true
+      eventTooltip: true  // Use complete Bryntum defaults
     }
   };
   
