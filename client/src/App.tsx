@@ -654,6 +654,11 @@ function Router() {
     </OnboardingGate>
   );
   
+  // Check if we're on the demo page - it should render without any layout
+  if (location === '/demo') {
+    return <DemoPage />;
+  }
+  
   // Force mobile layout for mobile-specific routes regardless of screen width
   const forceMobileRoutes = ['/mobile', '/mobile-home', '/widgets/', '/dashboards/'];
   const shouldUseMobileLayout = isMobile || forceMobileRoutes.some(route => location.includes(route));
