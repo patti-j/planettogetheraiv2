@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
+import { useDrag, useDrop } from 'react-dnd';
 import { 
   Settings,
   BarChart3,
@@ -29,6 +30,135 @@ import { HomeDashboardCustomizer, DashboardWidget, HomeDashboardLayout } from '.
 
 interface CustomizableHomeDashboardProps {
   className?: string;
+}
+
+// Draggable Widget Component for the main dashboard
+interface DashboardWidgetProps {
+  widget: DashboardWidget;
+  onMove: (id: string, position: { x: number; y: number }) => void;
+  isEditing?: boolean;
+}
+
+function DraggableWidget({ widget, onMove, isEditing = false }: DashboardWidgetProps) {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'dashboard-widget',
+    item: { id: widget.id, position: widget.position },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+    canDrag: isEditing,
+    end: (item, monitor) => {
+      const dropResult = monitor.getDropResult<{ position: { x: number; y: number } }>();
+      if (dropResult && monitor.didDrop()) {
+        onMove(item.id, dropResult.position);
+      }
+    }
+  });
+  
+  return (
+    <Card
+      ref={drag}
+      className={`absolute transition-all ${isDragging ? 'opacity-50 z-50' : ''} ${
+        isEditing ? 'border-blue-500 cursor-move hover:border-blue-600' : ''
+      }`}
+      style={{
+        left: widget.position.x,
+        top: widget.position.y,
+        width: widget.size.width,
+        height: widget.size.height,
+        zIndex: isDragging ? 1000 : 1
+      }}
+    >
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          {widget.title}
+          {isEditing && (
+            <Badge variant="secondary" className="text-xs">
+              Drag me
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <RenderWidget widget={widget} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// Component to render widget content based on type
+function RenderWidget({ widget }: { widget: DashboardWidget }) {
+  const commonProps = { widget };
+  
+  switch (widget.type) {
+    case 'metric':
+      return <MetricWidget {...commonProps} />;
+    case 'chart':
+      return <ChartWidget {...commonProps} />;
+    case 'quick-links':
+      return <QuickLinksWidget {...commonProps} />;
+    case 'recent-activity':
+      return <RecentActivityWidget {...commonProps} />;
+    case 'alerts':
+      return <AlertsWidget {...commonProps} />;
+    default:
+      return (
+        <div className="text-center text-muted-foreground">
+          <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p>Widget type "{widget.type}" not implemented yet</p>
+        </div>
+      );
+  }
+}
+
+// Drop Zone Component for the dashboard
+interface DashboardDropZoneProps {
+  children: React.ReactNode;
+  onDrop: (item: any, position: { x: number; y: number }) => void;
+  isEditing: boolean;
+}
+
+function DashboardDropZone({ children, onDrop, isEditing }: DashboardDropZoneProps) {
+  const GRID_SIZE = 20;
+  
+  const [{ isOver }, drop] = useDrop({
+    accept: 'dashboard-widget',
+    drop: (item: any, monitor) => {
+      const clientOffset = monitor.getClientOffset();
+      const targetRef = drop as any;
+      
+      if (clientOffset && targetRef?.current) {
+        const rect = targetRef.current.getBoundingClientRect();
+        const position = {
+          x: Math.max(0, Math.round((clientOffset.x - rect.left) / GRID_SIZE) * GRID_SIZE),
+          y: Math.max(0, Math.round((clientOffset.y - rect.top) / GRID_SIZE) * GRID_SIZE)
+        };
+        
+        return { position };
+      }
+      return {};
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+    canDrop: () => isEditing
+  });
+
+  return (
+    <div
+      ref={drop}
+      className={`relative min-h-[600px] w-full ${
+        isEditing ? 'border-2 border-dashed border-gray-300 bg-gray-50/10' : ''
+      } ${isOver ? 'border-blue-500 bg-blue-50/20' : ''}`}
+      style={{
+        backgroundImage: isEditing ? 
+          `radial-gradient(circle, #cbd5e1 1px, transparent 1px)` : 'none',
+        backgroundSize: isEditing ? `${GRID_SIZE}px ${GRID_SIZE}px` : 'auto'
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 // Widget renderers for different widget types
@@ -357,6 +487,7 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [currentLayout, setCurrentLayout] = useState<HomeDashboardLayout | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Load user's dashboard layout
   const { data: layouts = [] } = useQuery({
@@ -371,12 +502,12 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
   });
 
   useEffect(() => {
-    if (layouts.length > 0) {
+    if (layouts.length > 0 && !currentLayout) {
       // Find default layout or use the first one
       const defaultLayout = layouts.find((l: HomeDashboardLayout) => l.isDefault) || layouts[0];
       setCurrentLayout(defaultLayout);
-    } else if (user?.id) {
-      // Create default layout
+    } else if (user?.id && !currentLayout && layouts.length === 0) {
+      // Create default layout only if we have no layouts and no current layout
       const defaultLayout: HomeDashboardLayout = {
         userId: user.id,
         name: 'Default Dashboard',
@@ -413,7 +544,7 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
       };
       setCurrentLayout(defaultLayout);
     }
-  }, [layouts, user?.id]);
+  }, [layouts.length, user?.id]);
 
   const handleLayoutUpdate = (updatedLayout: HomeDashboardLayout) => {
     setCurrentLayout(updatedLayout);
@@ -422,6 +553,22 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleWidgetMove = (id: string, position: { x: number; y: number }) => {
+    if (!currentLayout) return;
+    
+    const updatedWidgets = currentLayout.widgets.map(widget =>
+      widget.id === id ? { ...widget, position } : widget
+    );
+    
+    const updatedLayout = { ...currentLayout, widgets: updatedWidgets };
+    setCurrentLayout(updatedLayout);
+  };
+
+  const handleDropOnDashboard = (item: any, position: { x: number; y: number }) => {
+    // Handle drop events on the dashboard drop zone
+    console.log('Drop on dashboard:', item, position);
   };
 
   if (!currentLayout || !user) {
@@ -446,6 +593,15 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
         
         <div className="flex gap-2">
           <Button
+            variant={isEditMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setIsEditMode(!isEditMode)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {isEditMode ? 'Exit Edit' : 'Edit Layout'}
+          </Button>
+          
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
@@ -464,30 +620,21 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
         </div>
       </div>
 
-      {/* Dashboard Widgets */}
-      <div key={refreshKey} className="relative min-h-[600px]">
+      {/* Dashboard Content */}
+      <DashboardDropZone 
+        onDrop={handleDropOnDashboard}
+        isEditing={isEditMode}
+      >
+        {/* Render visible widgets */}
         {currentLayout.widgets
           .filter(widget => widget.visible)
-          .map((widget) => (
-            <Card
+          .map(widget => (
+            <DraggableWidget
               key={widget.id}
-              className="absolute shadow-sm"
-              style={{
-                left: widget.position.x,
-                top: widget.position.y,
-                width: widget.size.width,
-                height: widget.size.height
-              }}
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  {widget.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {renderWidget(widget)}
-              </CardContent>
-            </Card>
+              widget={widget}
+              onMove={handleWidgetMove}
+              isEditing={isEditMode}
+            />
           ))}
 
         {currentLayout.widgets.filter(w => w.visible).length === 0 && (
@@ -503,7 +650,7 @@ export function CustomizableHomeDashboard({ className }: CustomizableHomeDashboa
             </div>
           </div>
         )}
-      </div>
+      </DashboardDropZone>
 
       {/* Dashboard Customizer */}
       <HomeDashboardCustomizer

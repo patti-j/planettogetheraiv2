@@ -373,8 +373,9 @@ export function HomeDashboardCustomizer({
       const response = await apiRequest(method, url, layout);
       return response;
     },
-    onSuccess: (savedLayout) => {
-      if (onLayoutUpdate) {
+    onSuccess: async (response) => {
+      if (onLayoutUpdate && response.ok) {
+        const savedLayout = await response.json();
         onLayoutUpdate(savedLayout);
       }
       setIsEditing(false);
