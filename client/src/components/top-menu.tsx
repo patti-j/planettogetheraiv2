@@ -179,6 +179,12 @@ export default function TopMenu() {
       if (feature.requiresOnboarding === false) return true; // Always show items that don't require onboarding
       if (!feature.feature) return true; // Always show items without permission requirements
       
+      // Skip permission check for common menu items that should always be visible
+      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      if (alwaysVisibleItems.includes(feature.label)) {
+        return true;
+      }
+      
       // Hide features that require onboarding if not complete (except Getting Started and Take a Tour)
       if (!isOnboardingComplete && feature.href !== "/onboarding" && feature.href !== "#tour") {
         return false;

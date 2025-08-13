@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { navigationGroups } from "@/config/navigation-menu";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -29,6 +29,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [location, setLocation] = useLocation();
   const recognitionRef = useRef<any>(null);
   const { user, logout } = useAuth();
+  const { hasPermission } = usePermissions();
   
   // Fetch user preferences for voice settings
   const { data: userPreferences } = useQuery({
@@ -38,15 +39,27 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   const isVoiceEnabled = (userPreferences as any)?.maxAiState?.voiceEnabled || false;
 
-  // Filter navigation groups based on search query
-  const filteredNavigationGroups = searchQuery
-    ? navigationGroups.map((group) => ({
-        ...group,
-        features: group.features.filter((feature) =>
-          feature.label.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-      })).filter((group) => group.features.length > 0)
-    : navigationGroups;
+  // Filter navigation groups based on search query and permissions (matching desktop menu)
+  const filteredNavigationGroups = navigationGroups.map((group) => ({
+    ...group,
+    features: group.features.filter((feature) => {
+      // Skip permission check for common menu items that should always be visible
+      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      
+      // Check permissions only if not in always visible list
+      if (!alwaysVisibleItems.includes(feature.label)) {
+        if (feature.feature && feature.action && !hasPermission(feature.feature, feature.action)) {
+          return false;
+        }
+      }
+      
+      // Apply search filter if search term exists
+      if (searchQuery) {
+        return feature.label.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      return true;
+    }),
+  })).filter((group) => group.features.length > 0);
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
