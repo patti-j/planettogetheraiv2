@@ -1,5 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 interface SimpleBryntumGanttProps {
   operations: any[];
@@ -13,6 +15,24 @@ export function SimpleBryntumGantt({
   className = '' 
 }: SimpleBryntumGanttProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewDays] = useState(7); // Show 7 days by default
+
+  const navigatePrevious = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - viewDays);
+    setCurrentDate(newDate);
+  };
+
+  const navigateNext = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + viewDays);
+    setCurrentDate(newDate);
+  };
+
+  const navigateToday = () => {
+    setCurrentDate(new Date());
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -20,168 +40,350 @@ export function SimpleBryntumGantt({
     const container = containerRef.current;
     container.innerHTML = '';
     
-    // Create a resource-based Gantt visualization
-    const wrapper = document.createElement('div');
-    wrapper.style.display = 'flex';
-    wrapper.style.height = '500px';
-    wrapper.style.overflow = 'auto';
-    wrapper.style.border = '1px solid #ddd';
+    console.log('SimpleBryntumGantt - Resources:', resources.length, 'Operations:', operations.length);
+    
+    // Calculate date range
+    const startDate = new Date(currentDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + viewDays);
+    
+    // Create main wrapper
+    const mainWrapper = document.createElement('div');
+    mainWrapper.style.display = 'flex';
+    mainWrapper.style.flexDirection = 'column';
+    mainWrapper.style.height = '600px';
+    mainWrapper.style.border = '1px solid #ddd';
+    mainWrapper.style.borderRadius = '8px';
+    mainWrapper.style.overflow = 'hidden';
+    
+    // Create navigation controls
+    const controls = document.createElement('div');
+    controls.style.padding = '12px';
+    controls.style.background = '#f8f9fa';
+    controls.style.borderBottom = '2px solid #dee2e6';
+    controls.style.display = 'flex';
+    controls.style.justifyContent = 'space-between';
+    controls.style.alignItems = 'center';
+    
+    const leftControls = document.createElement('div');
+    leftControls.style.display = 'flex';
+    leftControls.style.gap = '8px';
+    leftControls.style.alignItems = 'center';
+    
+    const dateRange = document.createElement('div');
+    dateRange.style.fontWeight = '600';
+    dateRange.style.fontSize = '14px';
+    dateRange.style.color = '#212529';
+    dateRange.textContent = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    
+    leftControls.appendChild(dateRange);
+    controls.appendChild(leftControls);
+    
+    const rightControls = document.createElement('div');
+    rightControls.style.display = 'flex';
+    rightControls.style.gap = '4px';
+    controls.appendChild(rightControls);
+    
+    mainWrapper.appendChild(controls);
+    
+    // Create gantt content wrapper
+    const ganttWrapper = document.createElement('div');
+    ganttWrapper.style.display = 'flex';
+    ganttWrapper.style.flex = '1';
+    ganttWrapper.style.overflow = 'hidden';
     
     // Left pane - Resources
     const resourcePane = document.createElement('div');
-    resourcePane.style.minWidth = '200px';
-    resourcePane.style.borderRight = '2px solid #333';
-    resourcePane.style.background = '#f5f5f5';
+    resourcePane.style.minWidth = '250px';
+    resourcePane.style.maxWidth = '250px';
+    resourcePane.style.borderRight = '2px solid #dee2e6';
+    resourcePane.style.background = '#f8f9fa';
+    resourcePane.style.display = 'flex';
+    resourcePane.style.flexDirection = 'column';
     
     // Resources header
     const resourceHeader = document.createElement('div');
-    resourceHeader.style.padding = '10px';
-    resourceHeader.style.borderBottom = '1px solid #ddd';
-    resourceHeader.style.background = '#e0e0e0';
-    resourceHeader.style.fontWeight = 'bold';
-    resourceHeader.textContent = 'Resources';
+    resourceHeader.style.padding = '12px';
+    resourceHeader.style.borderBottom = '1px solid #dee2e6';
+    resourceHeader.style.background = '#e9ecef';
+    resourceHeader.style.fontWeight = '600';
+    resourceHeader.style.fontSize = '13px';
+    resourceHeader.style.color = '#495057';
+    resourceHeader.textContent = `Resources (${resources.length})`;
     resourcePane.appendChild(resourceHeader);
     
-    // Timeline header (hours/days)
-    const timelineWrapper = document.createElement('div');
-    timelineWrapper.style.flex = '1';
-    timelineWrapper.style.position = 'relative';
-    timelineWrapper.style.overflowX = 'auto';
+    // Resources list container
+    const resourceList = document.createElement('div');
+    resourceList.style.flex = '1';
+    resourceList.style.overflowY = 'auto';
+    resourcePane.appendChild(resourceList);
     
+    // Timeline container
+    const timelineContainer = document.createElement('div');
+    timelineContainer.style.flex = '1';
+    timelineContainer.style.display = 'flex';
+    timelineContainer.style.flexDirection = 'column';
+    timelineContainer.style.overflow = 'hidden';
+    
+    // Timeline header
     const timelineHeader = document.createElement('div');
-    timelineHeader.style.height = '43px';
-    timelineHeader.style.borderBottom = '1px solid #ddd';
-    timelineHeader.style.background = '#e0e0e0';
-    timelineHeader.style.display = 'flex';
-    timelineHeader.style.minWidth = '2000px';
+    timelineHeader.style.height = '44px';
+    timelineHeader.style.borderBottom = '1px solid #dee2e6';
+    timelineHeader.style.background = '#e9ecef';
+    timelineHeader.style.overflowX = 'hidden';
     
-    // Generate time slots (24 hours for simplicity)
-    for (let hour = 0; hour < 24; hour++) {
-      const timeSlot = document.createElement('div');
-      timeSlot.style.width = '80px';
-      timeSlot.style.borderRight = '1px solid #ccc';
-      timeSlot.style.padding = '10px 5px';
-      timeSlot.style.textAlign = 'center';
-      timeSlot.style.fontSize = '12px';
-      timeSlot.textContent = `${hour}:00`;
-      timelineHeader.appendChild(timeSlot);
-    }
-    timelineWrapper.appendChild(timelineHeader);
+    const timelineHeaderContent = document.createElement('div');
+    timelineHeaderContent.style.display = 'flex';
+    timelineHeaderContent.style.minWidth = `${viewDays * 200}px`;
     
-    const timelineContent = document.createElement('div');
-    timelineContent.style.position = 'relative';
-    timelineContent.style.minWidth = '2000px';
-    
-    // Create rows for each resource
-    resources.forEach((resource, index) => {
-      // Resource row in left pane
-      const resourceRow = document.createElement('div');
-      resourceRow.style.padding = '15px 10px';
-      resourceRow.style.borderBottom = '1px solid #ddd';
-      resourceRow.style.height = '50px';
-      resourceRow.style.display = 'flex';
-      resourceRow.style.alignItems = 'center';
-      resourceRow.innerHTML = `
-        <div>
-          <div style="font-weight: 500;">${resource.name || `Resource ${resource.id}`}</div>
-          <div style="font-size: 11px; color: #666;">${resource.type || 'Standard'}</div>
-        </div>
-      `;
-      resourcePane.appendChild(resourceRow);
+    // Generate day columns
+    for (let day = 0; day < viewDays; day++) {
+      const dayDate = new Date(startDate);
+      dayDate.setDate(dayDate.getDate() + day);
       
-      // Timeline row for this resource
-      const timelineRow = document.createElement('div');
-      timelineRow.style.height = '50px';
-      timelineRow.style.borderBottom = '1px solid #ddd';
-      timelineRow.style.position = 'relative';
-      timelineRow.style.background = index % 2 === 0 ? '#fff' : '#fafafa';
+      const dayColumn = document.createElement('div');
+      dayColumn.style.width = '200px';
+      dayColumn.style.borderRight = '1px solid #dee2e6';
+      dayColumn.style.padding = '8px';
+      dayColumn.style.textAlign = 'center';
+      dayColumn.style.fontSize = '12px';
+      dayColumn.style.fontWeight = '500';
+      dayColumn.style.color = '#495057';
       
-      // Add grid lines
-      for (let hour = 0; hour < 24; hour++) {
-        const gridLine = document.createElement('div');
-        gridLine.style.position = 'absolute';
-        gridLine.style.left = `${hour * 80}px`;
-        gridLine.style.top = '0';
-        gridLine.style.width = '1px';
-        gridLine.style.height = '100%';
-        gridLine.style.background = '#e0e0e0';
-        timelineRow.appendChild(gridLine);
+      const isToday = dayDate.toDateString() === new Date().toDateString();
+      if (isToday) {
+        dayColumn.style.background = '#fff3cd';
+        dayColumn.style.color = '#856404';
       }
       
-      // Find operations for this resource
-      const resourceOps = operations.filter(op => 
-        op.assignedResourceId === resource.id || op.workCenterId === resource.id
-      );
-      
-      // Render operations as bars on timeline
-      resourceOps.forEach(op => {
-        const bar = document.createElement('div');
-        bar.style.position = 'absolute';
-        bar.style.top = '10px';
-        bar.style.height = '30px';
-        bar.style.borderRadius = '4px';
-        bar.style.padding = '0 8px';
-        bar.style.display = 'flex';
-        bar.style.alignItems = 'center';
-        bar.style.fontSize = '12px';
-        bar.style.color = 'white';
-        bar.style.cursor = 'pointer';
-        bar.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
-        bar.style.overflow = 'hidden';
-        bar.style.whiteSpace = 'nowrap';
-        bar.style.textOverflow = 'ellipsis';
+      dayColumn.innerHTML = `
+        <div style="font-weight: 600;">${dayDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+        <div>${dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+      `;
+      timelineHeaderContent.appendChild(dayColumn);
+    }
+    
+    timelineHeader.appendChild(timelineHeaderContent);
+    timelineContainer.appendChild(timelineHeader);
+    
+    // Timeline content with scroll
+    const timelineScroll = document.createElement('div');
+    timelineScroll.style.flex = '1';
+    timelineScroll.style.overflowY = 'auto';
+    timelineScroll.style.overflowX = 'auto';
+    timelineScroll.style.background = '#ffffff';
+    
+    const timelineContent = document.createElement('div');
+    timelineContent.style.minWidth = `${viewDays * 200}px`;
+    
+    // Create rows for each resource
+    if (resources.length === 0) {
+      const emptyMessage = document.createElement('div');
+      emptyMessage.style.padding = '40px';
+      emptyMessage.style.textAlign = 'center';
+      emptyMessage.style.color = '#6c757d';
+      emptyMessage.textContent = 'No resources available';
+      resourceList.appendChild(emptyMessage);
+      timelineContent.appendChild(emptyMessage.cloneNode(true));
+    } else {
+      resources.forEach((resource, index) => {
+        // Resource row in left pane
+        const resourceRow = document.createElement('div');
+        resourceRow.style.padding = '12px';
+        resourceRow.style.borderBottom = '1px solid #dee2e6';
+        resourceRow.style.height = '60px';
+        resourceRow.style.display = 'flex';
+        resourceRow.style.alignItems = 'center';
+        resourceRow.style.background = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
+        resourceRow.innerHTML = `
+          <div>
+            <div style="font-weight: 500; font-size: 13px; color: #212529;">${resource.name || `Resource ${resource.id}`}</div>
+            <div style="font-size: 11px; color: #6c757d; margin-top: 2px;">${resource.type || 'Standard'} • ${resource.status || 'Active'}</div>
+          </div>
+        `;
+        resourceList.appendChild(resourceRow);
         
-        // Calculate position based on time
-        const startTime = op.startTime ? new Date(op.startTime) : new Date();
-        const endTime = op.endTime ? new Date(op.endTime) : new Date(startTime.getTime() + 3600000);
-        const startHour = startTime.getHours() + startTime.getMinutes() / 60;
-        const duration = (endTime.getTime() - startTime.getTime()) / 3600000; // in hours
+        // Timeline row for this resource
+        const timelineRow = document.createElement('div');
+        timelineRow.style.height = '60px';
+        timelineRow.style.borderBottom = '1px solid #dee2e6';
+        timelineRow.style.position = 'relative';
+        timelineRow.style.background = index % 2 === 0 ? '#ffffff' : '#f8f9fa';
         
-        bar.style.left = `${startHour * 80}px`;
-        bar.style.width = `${Math.max(duration * 80, 40)}px`;
-        
-        // Color based on status
-        if (op.status === 'completed') {
-          bar.style.background = '#22c55e';
-        } else if (op.status === 'in-progress') {
-          bar.style.background = '#3b82f6';
-        } else {
-          bar.style.background = '#9ca3af';
+        // Add day grid lines
+        for (let day = 0; day < viewDays; day++) {
+          const gridLine = document.createElement('div');
+          gridLine.style.position = 'absolute';
+          gridLine.style.left = `${day * 200}px`;
+          gridLine.style.top = '0';
+          gridLine.style.width = '1px';
+          gridLine.style.height = '100%';
+          gridLine.style.background = '#dee2e6';
+          timelineRow.appendChild(gridLine);
         }
         
-        bar.textContent = op.name || op.operationName || 'Operation';
-        bar.title = `${op.name || op.operationName}\nStart: ${startTime.toLocaleString()}\nEnd: ${endTime.toLocaleString()}\nStatus: ${op.status || 'scheduled'}`;
+        // Find operations for this resource
+        const resourceOps = operations.filter(op => 
+          op.assignedResourceId === resource.id || 
+          op.workCenterId === resource.id ||
+          op.resourceId === resource.id
+        );
         
-        timelineRow.appendChild(bar);
+        console.log(`Resource ${resource.name} (ID: ${resource.id}) has ${resourceOps.length} operations`);
+        
+        // Render operations as bars on timeline
+        resourceOps.forEach(op => {
+          const opStartTime = op.startTime ? new Date(op.startTime) : null;
+          const opEndTime = op.endTime ? new Date(op.endTime) : null;
+          
+          if (!opStartTime || !opEndTime) return;
+          
+          // Check if operation falls within the current view
+          if (opEndTime < startDate || opStartTime > endDate) return;
+          
+          const bar = document.createElement('div');
+          bar.style.position = 'absolute';
+          bar.style.top = '10px';
+          bar.style.height = '40px';
+          bar.style.borderRadius = '6px';
+          bar.style.padding = '4px 8px';
+          bar.style.display = 'flex';
+          bar.style.alignItems = 'center';
+          bar.style.fontSize = '11px';
+          bar.style.fontWeight = '500';
+          bar.style.color = 'white';
+          bar.style.cursor = 'pointer';
+          bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+          bar.style.overflow = 'hidden';
+          bar.style.whiteSpace = 'nowrap';
+          bar.style.textOverflow = 'ellipsis';
+          bar.style.transition = 'transform 0.2s';
+          
+          // Calculate position based on date
+          const daysDiff = (opStartTime.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+          const duration = (opEndTime.getTime() - opStartTime.getTime()) / (1000 * 60 * 60 * 24);
+          
+          const leftPos = Math.max(0, daysDiff * 200);
+          const width = Math.max(40, duration * 200);
+          
+          bar.style.left = `${leftPos}px`;
+          bar.style.width = `${width}px`;
+          
+          // Color based on status
+          const status = op.status || 'scheduled';
+          if (status === 'completed') {
+            bar.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          } else if (status === 'in-progress' || status === 'in_progress') {
+            bar.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+          } else if (status === 'delayed') {
+            bar.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+          } else {
+            bar.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+          }
+          
+          // Add hover effect
+          bar.onmouseenter = () => {
+            bar.style.transform = 'translateY(-2px)';
+            bar.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+          };
+          bar.onmouseleave = () => {
+            bar.style.transform = 'translateY(0)';
+            bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+          };
+          
+          const operationName = op.name || op.operationName || op.operation_name || 'Operation';
+          bar.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <div style="font-weight: 600;">${operationName}</div>
+              <div style="font-size: 10px; opacity: 0.9;">${opStartTime.toLocaleDateString()} - ${opEndTime.toLocaleDateString()}</div>
+            </div>
+          `;
+          
+          bar.title = `${operationName}
+Start: ${opStartTime.toLocaleString()}
+End: ${opEndTime.toLocaleString()}
+Duration: ${duration.toFixed(1)} days
+Status: ${status}`;
+          
+          timelineRow.appendChild(bar);
+        });
+        
+        timelineContent.appendChild(timelineRow);
       });
-      
-      timelineContent.appendChild(timelineRow);
-    });
+    }
     
-    timelineWrapper.appendChild(timelineContent);
-    wrapper.appendChild(resourcePane);
-    wrapper.appendChild(timelineWrapper);
-    container.appendChild(wrapper);
+    timelineScroll.appendChild(timelineContent);
+    timelineContainer.appendChild(timelineScroll);
     
-    // Add notice
-    const notice = document.createElement('div');
-    notice.style.marginTop = '20px';
-    notice.style.padding = '12px';
-    notice.style.background = '#d1fae5';
-    notice.style.border = '1px solid #34d399';
-    notice.style.borderRadius = '4px';
-    notice.innerHTML = `
-      <strong>Resource-Based Gantt View:</strong> Resources are shown in the left pane, with their assigned operations displayed on the timeline. This is a simplified visualization while we configure the full Bryntum Gantt functionality.
+    ganttWrapper.appendChild(resourcePane);
+    ganttWrapper.appendChild(timelineContainer);
+    mainWrapper.appendChild(ganttWrapper);
+    
+    // Add status bar
+    const statusBar = document.createElement('div');
+    statusBar.style.padding = '8px 12px';
+    statusBar.style.background = '#f8f9fa';
+    statusBar.style.borderTop = '1px solid #dee2e6';
+    statusBar.style.fontSize = '12px';
+    statusBar.style.color = '#6c757d';
+    statusBar.style.display = 'flex';
+    statusBar.style.justifyContent = 'space-between';
+    
+    const totalOps = operations.length;
+    const assignedOps = operations.filter(op => 
+      op.assignedResourceId || op.workCenterId || op.resourceId
+    ).length;
+    
+    statusBar.innerHTML = `
+      <div>Resources: ${resources.length} • Operations: ${totalOps} • Assigned: ${assignedOps}</div>
+      <div>View: ${viewDays} days</div>
     `;
-    container.appendChild(notice);
+    
+    mainWrapper.appendChild(statusBar);
+    container.appendChild(mainWrapper);
 
-  }, [operations, resources]);
+  }, [operations, resources, currentDate, viewDays]);
 
   return (
     <Card className={className}>
       <CardContent className="p-4">
+        <div className="mb-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold">Resource Schedule</h3>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={navigatePrevious}
+              className="gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={navigateToday}
+              className="gap-1"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Today
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={navigateNext}
+              className="gap-1"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
         <div ref={containerRef} />
       </CardContent>
     </Card>
   );
 }
+
+export default SimpleBryntumGantt;
