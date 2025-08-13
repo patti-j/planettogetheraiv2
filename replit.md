@@ -17,6 +17,7 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes & Fixes
+- **Added Layout Density Control System** (Aug 13, 2025): Implemented comprehensive layout density controls with compressed, standard, and comfortable options. Added LayoutDensityContext for managing font sizes and spacing across the application. Created density toggle control in desktop header with visual row icons (Rows2, Rows3, Rows4). Added CSS variables and classes for density-specific font sizes, spacing, and line heights with localStorage persistence
 - **Fixed Data Schema Page Header Overflow** (Aug 13, 2025): Fixed header controls being pushed off the right side of the page by improving responsive layout, adding flex-shrink-0 to prevent control compression, using icon-only buttons on mobile to save space, and optimizing gap spacing
 - **Cleaned Up Production Schedule Navigation** (Aug 13, 2025): Removed redundant /production-scheduling route and menu item, keeping only the valid /production-schedule route and "Production Schedule" menu item in the Planning & Scheduling section
 
@@ -39,7 +40,7 @@ Note on concurrent work:
 - **Build Tool**: Vite for development and production builds
 - **Widget System**: Comprehensive reusable components for consistent UI patterns (e.g., FilterSearchWidget, MetricsCardWidget, DataTableWidget). Two types: System widgets (non-editable, controlled by system) and User widgets (editable/customizable by users).
 - **Navigation**: Desktop features left rail navigation with integrated slide-out menu, workspace switching, recent pages, and resizable right-side AI panel. Menu slides out from left to maintain context, showing clear relationship to navigation rail. Mobile navigation uses bottom footer bar for easier thumb access, featuring Home, Menu, Search, Recent, and Profile buttons. Uses same centralized navigation-menu.ts configuration as desktop for consistency across platforms.
-- **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, and user-configurable layouts with persistence.
+- **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts for mobile and desktop, standardized button styling (AI gradient, primary blue), intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls for optimal data visibility (compressed/standard/comfortable modes).
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript

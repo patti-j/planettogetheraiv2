@@ -11,6 +11,7 @@ import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
 import { FullScreenProvider } from "@/contexts/FullScreenContext";
+import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
@@ -653,10 +654,12 @@ function App() {
                   <TourProvider>
                     <MaxDockProvider>
                       <FullScreenProvider>
-                        <Router />
-                        <OnboardingWizard />
-                        <ResumeTourButton />
-                        <Toaster />
+                        <LayoutDensityProvider>
+                          <Router />
+                          <OnboardingWizard />
+                          <ResumeTourButton />
+                          <Toaster />
+                        </LayoutDensityProvider>
                       </FullScreenProvider>
                     </MaxDockProvider>
                   </TourProvider>

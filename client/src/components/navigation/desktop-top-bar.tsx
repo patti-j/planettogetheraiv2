@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2 } from 'lucide-react';
+import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2, MoreVertical, Rows3, Rows4, Rows2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +31,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useFullScreen } from '@/contexts/FullScreenContext';
+import { useLayoutDensity } from '@/contexts/LayoutDensityContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function DesktopTopBar() {
@@ -43,6 +44,7 @@ export function DesktopTopBar() {
   const [dateHorizon, setDateHorizon] = useState('30-days');
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { isFullScreen, toggleFullScreen } = useFullScreen();
+  const { density, setDensity } = useLayoutDensity();
 
   // Fetch plants data
   const { data: plants = [] } = useQuery({
@@ -212,6 +214,41 @@ export function DesktopTopBar() {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+
+      {/* Layout Density Control */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="flex-shrink-0">
+            {density === 'compressed' ? (
+              <Rows2 className="h-4 w-4" />
+            ) : density === 'comfortable' ? (
+              <Rows4 className="h-4 w-4" />
+            ) : (
+              <Rows3 className="h-4 w-4" />
+            )}
+            <span className="sr-only">Layout density</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Layout Density</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setDensity('compressed')}>
+            <Rows2 className="mr-2 h-4 w-4" />
+            <span>Compressed</span>
+            {density === 'compressed' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDensity('standard')}>
+            <Rows3 className="mr-2 h-4 w-4" />
+            <span>Standard</span>
+            {density === 'standard' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDensity('comfortable')}>
+            <Rows4 className="mr-2 h-4 w-4" />
+            <span>Comfortable</span>
+            {density === 'comfortable' && <span className="ml-auto">✓</span>}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Theme Toggle */}
       <DropdownMenu>
