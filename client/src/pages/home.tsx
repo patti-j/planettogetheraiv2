@@ -307,7 +307,9 @@ export default function HomePage() {
       {isCustomizing && (
         <HomeDashboardCustomizer
           open={isCustomizing}
-          onClose={() => setIsCustomizing(false)}
+          onOpenChange={setIsCustomizing}
+          currentLayout={null}
+          onLayoutUpdate={() => {}}
         />
       )}
     </div>

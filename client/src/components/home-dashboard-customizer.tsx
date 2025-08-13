@@ -57,8 +57,8 @@ export interface HomeDashboardLayout {
 interface HomeDashboardCustomizerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentLayout: HomeDashboardLayout | null;
-  onLayoutUpdate: (layout: HomeDashboardLayout) => void;
+  currentLayout?: HomeDashboardLayout | null;
+  onLayoutUpdate?: (layout: HomeDashboardLayout) => void;
 }
 
 // Available widget templates for the home page
@@ -269,10 +269,10 @@ function DropZone({ children, onDrop, isEditing }: DropZoneProps) {
     accept: ['widget', 'template'],
     drop: (item: any, monitor) => {
       const clientOffset = monitor.getClientOffset();
-      const containerOffset = monitor.getDropResult();
+      const dropRef = drop as any;
       
-      if (clientOffset && drop.current) {
-        const rect = (drop.current as HTMLElement).getBoundingClientRect();
+      if (clientOffset && dropRef.current) {
+        const rect = dropRef.current.getBoundingClientRect();
         const position = {
           x: Math.max(0, Math.round((clientOffset.x - rect.left) / GRID_SIZE) * GRID_SIZE),
           y: Math.max(0, Math.round((clientOffset.y - rect.top) / GRID_SIZE) * GRID_SIZE)
@@ -321,7 +321,7 @@ export function HomeDashboardCustomizer({
       setWidgets(currentLayout.widgets);
       setLayoutName(currentLayout.name);
     }
-  }, [currentLayout]);
+  }, [currentLayout?.id]);
 
   const handleAddWidget = (template: typeof WIDGET_TEMPLATES[0], position: { x: number; y: number }) => {
     const newWidget: DashboardWidget = {
@@ -363,18 +363,21 @@ export function HomeDashboardCustomizer({
 
   const saveLayoutMutation = useMutation({
     mutationFn: async (layout: HomeDashboardLayout) => {
-      const method = layout.id ? 'PUT' : 'POST';
-      const url = layout.id ? `/api/home-layouts/${layout.id}` : '/api/home-layouts';
-      return apiRequest(method, url, layout);
+      const method = layout.id ? 'PATCH' : 'POST';
+      const url = layout.id ? `/api/home-dashboard-layouts/${layout.id}` : '/api/home-dashboard-layouts';
+      const response = await apiRequest(method, url, layout);
+      return response as HomeDashboardLayout;
     },
     onSuccess: (savedLayout) => {
-      onLayoutUpdate(savedLayout);
+      if (onLayoutUpdate) {
+        onLayoutUpdate(savedLayout);
+      }
       setIsEditing(false);
       toast({
         title: "Dashboard Saved",
         description: "Your dashboard layout has been saved successfully."
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/home-layouts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/home-dashboard-layouts'] });
     },
     onError: (error) => {
       toast({
