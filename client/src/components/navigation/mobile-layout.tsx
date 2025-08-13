@@ -35,7 +35,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     enabled: !!localStorage.getItem('userId')
   });
 
-  const isVoiceEnabled = userPreferences?.maxAiState?.voiceEnabled || false;
+  const isVoiceEnabled = (userPreferences as any)?.maxAiState?.voiceEnabled || false;
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -97,9 +97,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   // Voice input handling
   useEffect(() => {
-    if (!isVoiceEnabled || !window.webkitSpeechRecognition) return;
+    if (!isVoiceEnabled || !(window as any).webkitSpeechRecognition) return;
 
-    const recognition = new window.webkitSpeechRecognition();
+    const recognition = new (window as any).webkitSpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
