@@ -254,19 +254,22 @@ function Router() {
   }
 
   // Allow access during demo tour or when authenticated
+  // For unauthenticated users, render public pages with full-screen layout
   if (!isAuthenticated && !isTourActive) {
     return (
-      <Switch>
-        <Route path="/pricing" component={Pricing} />
-        <Route path="/solutions-comparison" component={SolutionsComparison} />
-        <Route path="/demo-tour" component={DemoTour} />
-        <Route path="/presentation" component={PresentationPage} />
-        <Route path="/marketing" component={MarketingLandingPage} />
-        <Route path="/home" component={MarketingHome} />
-        <Route path="/login" component={Login} />
-        <Route path="/" component={MarketingHome} />
-        <Route component={Login} />
-      </Switch>
+      <div className="fixed inset-0 z-[9999] overflow-auto">
+        <Switch>
+          <Route path="/pricing" component={Pricing} />
+          <Route path="/solutions-comparison" component={SolutionsComparison} />
+          <Route path="/demo-tour" component={DemoTour} />
+          <Route path="/presentation" component={PresentationPage} />
+          <Route path="/marketing" component={MarketingLandingPage} />
+          <Route path="/home" component={MarketingHome} />
+          <Route path="/login" component={Login} />
+          <Route path="/" component={MarketingHome} />
+          <Route component={Login} />
+        </Switch>
+      </div>
     );
   }
 
