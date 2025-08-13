@@ -6,7 +6,7 @@ import {
   Calendar, Clock, Package, AlertCircle, TrendingUp, 
   Users, Factory, CheckCircle2, AlertTriangle, BarChart3, 
   Activity, Target, Briefcase, DollarSign, ArrowRight,
-  Star, MessageCircle, Bell, Settings
+  Star, MessageCircle, Bell, Settings, Layout, Edit3
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -14,6 +14,8 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { useLocation } from 'wouter';
 
 import { useDeviceType } from '@/hooks/useDeviceType';
+import { CustomizableHomeDashboard } from '@/components/customizable-home-dashboard';
+import { HomeDashboardCustomizer } from '@/components/home-dashboard-customizer';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -21,6 +23,8 @@ export default function HomePage() {
   const { recentPages } = useNavigation();
   const isMobile = useDeviceType() === 'mobile';
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isCustomizing, setIsCustomizing] = useState(false);
+  const [useCustomDashboard, setUseCustomDashboard] = useState(false);
 
   // Update time every minute
   useEffect(() => {
@@ -33,37 +37,31 @@ export default function HomePage() {
   // Query for production metrics
   const { data: productionOrders } = useQuery({
     queryKey: ['/api/production-orders'],
-    queryOptions: { 
-      refetchInterval: 60000 // Refresh every minute
-    }
+    refetchInterval: 60000 // Refresh every minute
   });
 
   const { data: operations } = useQuery({
     queryKey: ['/api/operations'],
-    queryOptions: { 
-      refetchInterval: 60000
-    }
+    refetchInterval: 60000
   });
 
   const { data: resources } = useQuery({
     queryKey: ['/api/resources'],
-    queryOptions: { 
-      refetchInterval: 60000
-    }
+    refetchInterval: 60000
   });
 
   // Calculate metrics
-  const activeOrders = productionOrders?.filter(order => order.status === 'in_progress').length || 0;
-  const completedToday = productionOrders?.filter(order => {
+  const activeOrders = (productionOrders as any[])?.filter((order: any) => order.status === 'in_progress').length || 0;
+  const completedToday = (productionOrders as any[])?.filter((order: any) => {
     const completedDate = new Date(order.actualCompletionDate);
     const today = new Date();
     return order.status === 'completed' && 
            completedDate.toDateString() === today.toDateString();
   }).length || 0;
   
-  const operationsInProgress = operations?.filter(op => op.status === 'in_progress').length || 0;
-  const delayedOperations = operations?.filter(op => op.status === 'delayed').length || 0;
-  const resourceUtilization = resources ? Math.round((resources.filter(r => r.currentStatus === 'busy').length / resources.length) * 100) : 0;
+  const operationsInProgress = (operations as any[])?.filter((op: any) => op.status === 'in_progress').length || 0;
+  const delayedOperations = (operations as any[])?.filter((op: any) => op.status === 'delayed').length || 0;
+  const resourceUtilization = (resources as any[]) ? Math.round(((resources as any[]).filter((r: any) => r.currentStatus === 'busy').length / (resources as any[]).length) * 100) : 0;
 
   // Quick access links based on user role
   const getQuickLinks = () => {
@@ -95,6 +93,26 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setUseCustomDashboard(!useCustomDashboard)}
+              className="gap-2"
+            >
+              <Layout className="w-4 h-4" />
+              {useCustomDashboard ? 'Standard View' : 'Custom Dashboard'}
+            </Button>
+            {useCustomDashboard && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCustomizing(true)}
+                className="gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                Customize
+              </Button>
+            )}
             <Badge variant="outline" className="gap-1">
               <Clock className="w-3 h-3" />
               {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -105,7 +123,10 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className={`flex-1 overflow-auto ${isMobile ? 'p-4' : 'p-6'}`}>
-        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
+        {useCustomDashboard ? (
+          <CustomizableHomeDashboard />
+        ) : (
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
           
           {/* Key Metrics Section */}
           <div className={`${isMobile ? '' : 'lg:col-span-2'}`}>
@@ -129,7 +150,7 @@ export default function HomePage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Completed Today</p>
                     <p className="text-2xl font-bold text-green-600">{completedToday}</p>
-                    <Badge variant="success" className="mt-1">
+                    <Badge variant="secondary" className="mt-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       On Track
                     </Badge>
@@ -278,8 +299,17 @@ export default function HomePage() {
               </Card>
             )}
           </div>
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Home Dashboard Customizer Modal */}
+      {isCustomizing && (
+        <HomeDashboardCustomizer
+          open={isCustomizing}
+          onClose={() => setIsCustomizing(false)}
+        />
+      )}
     </div>
   );
 }
