@@ -13,6 +13,11 @@ const getIconName = (iconComponent: any): string => {
   const name = iconComponent.displayName || iconComponent.name;
   if (name) return name;
   
+  // Check if it's a React component with a constructor name
+  if (iconComponent.constructor && iconComponent.constructor.name) {
+    return iconComponent.constructor.name;
+  }
+  
   // Fallback: try to extract from component string representation
   const componentStr = iconComponent.toString();
   const match = componentStr.match(/function\s+([A-Z][a-zA-Z0-9]*)/);
@@ -52,6 +57,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/production-planning': { label: 'Production Planning', icon: 'Target' },
   '/shift-management': { label: 'Shift Management', icon: 'Clock' },
   '/optimization-studio': { label: 'Optimization Studio', icon: 'Sparkles' },
+  '/autonomous-optimization': { label: 'Autonomous Optimization', icon: 'Bot' },
   '/demand-forecasting': { label: 'Demand Forecasting', icon: 'Brain' },
   '/inventory-optimization': { label: 'Inventory Optimization', icon: 'Package' },
   '/shop-floor': { label: 'Shop Floor', icon: 'Factory' },
@@ -309,7 +315,21 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Get the navigation item from the config to get the correct label and icon
     const navItem = getNavigationItemByHref(path);
     const finalLabel = label || navItem?.label || pageMapping[path]?.label || generateLabelFromPath(path).label;
-    const finalIcon = icon || getIconName(navItem?.icon) || pageMapping[path]?.icon || generateLabelFromPath(path).icon;
+    
+    // Try to get icon in this order of preference:
+    // 1. Explicitly passed icon
+    // 2. Icon from pageMapping (manually maintained)  
+    // 3. Icon from navigation config (extracted from React component)
+    // 4. Generated icon from path
+    let finalIcon = icon;
+    if (!finalIcon && pageMapping[path]?.icon) {
+      finalIcon = pageMapping[path].icon;
+    } else if (!finalIcon && navItem?.icon) {
+      finalIcon = getIconName(navItem.icon);
+    }
+    if (!finalIcon) {
+      finalIcon = generateLabelFromPath(path).icon;
+    }
     
     setRecentPages(current => {
       // Check if the page already exists in the recent list
