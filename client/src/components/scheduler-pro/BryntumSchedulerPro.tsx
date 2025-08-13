@@ -49,8 +49,11 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
       name: resource.name,
       type: resource.type,
       capacity: resource.capacity || 100,
-      efficiency: resource.efficiency || 100
+      efficiency: resource.efficiency || 100,
+      cls: 'resource-row' // Add CSS class for styling
     }));
+    
+    console.log('Scheduler resources:', schedulerResources);
 
     // Transform operations to events
     const schedulerEvents = operations.map((operation: any, index: number) => {
@@ -105,20 +108,159 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
   const schedulerConfig = {
     startDate,
     endDate,
-    viewPreset: 'weekAndDayLetter',
+    viewPreset: {
+      base: 'weekAndDayLetter',
+      headers: [
+        {
+          unit: 'month',
+          dateFormat: 'MMM YYYY'
+        },
+        {
+          unit: 'week',
+          dateFormat: 'DD MMM'
+        }
+      ],
+      shiftIncrement: 1,
+      shiftUnit: 'month', // Makes navigation move by month
+      columnWidth: 50
+    },
     barMargin: 1,
-    rowHeight: 35,
+    rowHeight: 100, // Increased row height for better visibility
     resourceImagePath: 'users/',
     eventStyle: 'plain' as const,
     eventColor: null, // Let individual events control their color
-    scrollable: true,
+    scrollable: true, // Enable scrolling to see all resources
     infiniteScroll: false,
+    enableTextSelection: false,
+    fillLastColumn: false,
+    
+    // Force all rows to be visible by disabling virtualization
+    disableGridRowModelWarning: true,
+    
     zoomOnTimeAxisDoubleClick: true,
     zoomOnMouseWheel: true,
+    
+    // Configure zoom levels
+    zoomLevels: [
+      {
+        name: 'Days',
+        preset: {
+          base: 'hourAndDay',
+          headers: [
+            { unit: 'day', dateFormat: 'DD MMM' },
+            { unit: 'hour', dateFormat: 'HH' }
+          ]
+        },
+        width: 100
+      },
+      {
+        name: 'Weeks',
+        preset: {
+          base: 'weekAndDayLetter',
+          headers: [
+            { unit: 'week', dateFormat: 'w MMM' },
+            { unit: 'day', dateFormat: 'DD' }
+          ]
+        },
+        width: 50
+      },
+      {
+        name: 'Months',
+        preset: {
+          base: 'monthAndYear',
+          headers: [
+            { unit: 'year', dateFormat: 'YYYY' },
+            { unit: 'month', dateFormat: 'MMM' }
+          ]
+        },
+        width: 150
+      }
+    ],
+    
     // Scroll to today on load
     visibleDate: {
       date: new Date(),
       block: 'center' as const
+    },
+    
+    // Add toolbar with navigation and zoom controls
+    tbar: {
+      items: [
+        {
+          type: 'button',
+          text: 'Previous Month',
+          icon: 'b-icon-left',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              const currentStart = new Date(scheduler.startDate);
+              const currentEnd = new Date(scheduler.endDate);
+              currentStart.setMonth(currentStart.getMonth() - 1);
+              currentEnd.setMonth(currentEnd.getMonth() - 1);
+              scheduler.setTimeSpan(currentStart, currentEnd);
+            }
+          }
+        },
+        {
+          type: 'button',
+          text: 'Today',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              scheduler.scrollToDate(new Date(), { block: 'center', animate: true });
+            }
+          }
+        },
+        {
+          type: 'button',
+          text: 'Next Month',
+          icon: 'b-icon-right',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              const currentStart = new Date(scheduler.startDate);
+              const currentEnd = new Date(scheduler.endDate);
+              currentStart.setMonth(currentStart.getMonth() + 1);
+              currentEnd.setMonth(currentEnd.getMonth() + 1);
+              scheduler.setTimeSpan(currentStart, currentEnd);
+            }
+          }
+        },
+        '|', // Separator
+        {
+          type: 'button',
+          text: 'Zoom In',
+          icon: 'b-icon-search-plus',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              scheduler.zoomIn();
+            }
+          }
+        },
+        {
+          type: 'button',
+          text: 'Zoom Out',
+          icon: 'b-icon-search-minus',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              scheduler.zoomOut();
+            }
+          }
+        },
+        {
+          type: 'button',
+          text: 'Zoom to Fit',
+          icon: 'b-icon-expand',
+          onClick: () => {
+            const scheduler = schedulerRef.current?.instance;
+            if (scheduler) {
+              scheduler.zoomToFit();
+            }
+          }
+        }
+      ]
     },
     
     columns: [
@@ -223,51 +365,7 @@ Status: ${eventRecord.status || 'Scheduled'}`
         console.log('Event resized:', context);
         // Here you would call API to update event duration
       }
-    },
-
-    tbar: [
-      {
-        type: 'button',
-        text: 'Previous Month',
-        icon: 'b-fa-chevron-left',
-        onAction: () => {
-          const scheduler = schedulerRef.current?.instance;
-          if (scheduler) {
-            scheduler.shiftPrevious();
-          }
-        }
-      },
-      {
-        type: 'button',
-        text: 'Today',
-        icon: 'b-fa-calendar-day',
-        onAction: () => {
-          const scheduler = schedulerRef.current?.instance;
-          if (scheduler) {
-            scheduler.scrollToDate(new Date(), { block: 'center' });
-          }
-        }
-      },
-      {
-        type: 'button',
-        text: 'Next Month',
-        icon: 'b-fa-chevron-right',
-        onAction: () => {
-          const scheduler = schedulerRef.current?.instance;
-          if (scheduler) {
-            scheduler.shiftNext();
-          }
-        }
-      },
-      {
-        type: 'widget',
-        html: '|'
-      },
-      {
-        type: 'viewpresetcombo',
-        width: 120
-      }
-    ]
+    }
   };
 
   // Update scheduler data when it changes
@@ -297,13 +395,21 @@ Status: ${eventRecord.status || 'Scheduled'}`
 
   return (
     <div className="bryntum-scheduler-container">
+      <style>{`
+        /* Ensure scheduler container has proper height */
+        .bryntum-scheduler-container .b-schedulerpro {
+          min-height: 900px !important;
+        }
+      `}</style>
       <BryntumSchedulerPro
         ref={schedulerRef}
         {...schedulerConfig}
         resources={schedulerResources}
         events={events}
         assignments={assignments}
-        height={height}
+        height="800px"
+        minHeight="600px"
+        autoHeight={true}
       />
     </div>
   );

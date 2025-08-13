@@ -545,11 +545,13 @@ export default function ProductionSchedulePage() {
                   </div>
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <BryntumSchedulerProComponent 
-                    height={isMobile ? '400px' : '650px'}
-                    startDate={new Date('2025-08-07')}
-                    endDate={new Date('2025-08-31')}
-                  />
+                  <div style={{ minHeight: '700px', height: 'auto' }}>
+                    <BryntumSchedulerProComponent 
+                      height={isMobile ? '500px' : '900px'}
+                      startDate={new Date('2025-08-07')}
+                      endDate={new Date('2025-08-31')}
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-96">
                     <div className="text-center">
