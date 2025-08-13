@@ -56,37 +56,45 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
     }));
 
     // Transform operations to events
-    const schedulerEvents = operations.map((operation: any) => ({
-      id: `operation-${operation.id}`,
-      name: operation.name || operation.operationName || 'Operation',
-      startDate: operation.startTime || new Date(),
-      endDate: operation.endTime || new Date(Date.now() + operation.duration * 60 * 1000),
-      duration: operation.duration || 60,
-      durationUnit: 'minute',
-      effort: operation.duration || 60,
-      effortUnit: 'minute',
-      percentDone: operation.completionPercentage || 0,
-      priority: operation.priority || 5,
-      constraintType: 'muststarton',
-      constraintDate: operation.startTime,
-      eventColor: operation.status === 'completed' ? 'green' :
-                  operation.status === 'in_progress' ? 'blue' :
-                  operation.status === 'scheduled' ? 'orange' : 'gray',
-      status: operation.status,
-      productionOrderId: operation.productionOrderId,
-      description: operation.description
-    }));
+    const schedulerEvents = operations.map((operation: any, index: number) => {
+      // Parse dates properly
+      const startDate = operation.startTime ? new Date(operation.startTime) : new Date(Date.now() + index * 24 * 60 * 60 * 1000);
+      const endDate = operation.endTime ? new Date(operation.endTime) : 
+                     new Date(startDate.getTime() + (operation.duration || operation.standardDuration || 120) * 60 * 1000);
+      
+      return {
+        id: `operation-${operation.id}`,
+        name: operation.name || operation.operationName || `Operation ${operation.id}`,
+        startDate: startDate,
+        endDate: endDate,
+        duration: operation.duration || operation.standardDuration || 120,
+        durationUnit: 'minute',
+        effort: operation.duration || operation.standardDuration || 120,
+        effortUnit: 'minute',
+        percentDone: operation.completionPercentage || 0,
+        priority: operation.priority || 5,
+        constraintType: 'muststarton',
+        constraintDate: startDate,
+        eventColor: operation.status === 'completed' ? 'green' :
+                    operation.status === 'in_progress' ? 'blue' :
+                    operation.status === 'scheduled' ? 'orange' : 'gray',
+        status: operation.status,
+        productionOrderId: operation.productionOrderId || operation.routingId,
+        description: operation.description || `${operation.operationName} - ${operation.status}`
+      };
+    });
 
     // Create assignments (link operations to resources)
+    // Use workCenterId or assignedResourceId for resource mapping
     const schedulerAssignments = operations
-      .filter((op: any) => op.assignedResourceId)
+      .filter((op: any) => op.workCenterId || op.assignedResourceId)
       .map((operation: any) => ({
         id: `assignment-${operation.id}`,
         eventId: `operation-${operation.id}`,
-        resourceId: `resource-${operation.assignedResourceId}`,
+        resourceId: `resource-${operation.workCenterId || operation.assignedResourceId}`,
         units: 100 // Percentage of resource capacity used
       }));
-
+    
     return {
       events: schedulerEvents,
       resources: schedulerResources,
@@ -97,7 +105,7 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
   const schedulerConfig = {
     startDate,
     endDate,
-    viewPreset: 'weekAndMonth',
+    viewPreset: 'hourAndDay',
     barMargin: 5,
     rowHeight: 60,
     resourceImagePath: 'users/',

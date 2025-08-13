@@ -549,15 +549,15 @@ export default function ProductionSchedulePage() {
                       <div className="flex items-center gap-4">
                         <div className="text-sm">
                           <span className="font-semibold text-blue-600">Active Resources:</span> 
-                          <span className="ml-2">{resources?.filter((r: any) => r.status === 'active' || !r.status).length || 0} / {resources?.length || 0}</span>
+                          <span className="ml-2">{Array.isArray(resources) ? resources.filter((r: any) => r.status === 'active' || !r.status).length : 0} / {Array.isArray(resources) ? resources.length : 0}</span>
                         </div>
                         <div className="text-sm">
                           <span className="font-semibold text-green-600">Average Utilization:</span> 
-                          <span className="ml-2">{Math.round((operations?.length || 0) / (resources?.length || 1) * 20)}%</span>
+                          <span className="ml-2">{Math.round((Array.isArray(operations) ? operations.length : 0) / (Array.isArray(resources) ? resources.length : 1) * 20)}%</span>
                         </div>
                         <div className="text-sm">
                           <span className="font-semibold text-orange-600">Operations Scheduled:</span> 
-                          <span className="ml-2">{operations?.length || 0}</span>
+                          <span className="ml-2">{Array.isArray(operations) ? operations.length : 0}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -580,8 +580,8 @@ export default function ProductionSchedulePage() {
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                   <BryntumSchedulerProComponent 
                     height={isMobile ? '400px' : '650px'}
-                    startDate={new Date()}
-                    endDate={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                    startDate={new Date('2025-08-07')}
+                    endDate={new Date('2025-08-31')}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-96">
