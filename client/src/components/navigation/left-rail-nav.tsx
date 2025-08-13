@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Clock, ChevronDown, ChevronRight, FolderOpen, Grid, Pin, PinOff, X, Menu } from 'lucide-react';
+import { Home, Clock, ChevronDown, ChevronRight, FolderOpen, Grid, Pin, PinOff, X, Menu, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +23,7 @@ interface Workspace {
 export function LeftRailNav() {
   const [location, setLocation] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
   const { recentPages, togglePinPage, clearRecentPages } = useNavigation();
@@ -69,9 +70,34 @@ export function LeftRailNav() {
         onClose={() => setIsMenuOpen(false)} 
       />
       
+      {/* Minimized state - floating restore button */}
+      {isMinimized && (
+        <div className="fixed left-2 top-4 z-30">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsMinimized(false)}
+                  className="h-10 w-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+                  aria-label="Restore navigation"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Restore navigation</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+      
       <TooltipProvider>
         <div className={cn(
           "h-full bg-background border-r transition-all duration-300 flex flex-col",
+          isMinimized && "hidden",
           isCollapsed ? "w-16" : "w-64"
         )}>
           {/* Workspace Switcher */}
@@ -270,31 +296,82 @@ export function LeftRailNav() {
           </ScrollArea>
         </div>
 
-        {/* Collapse Toggle */}
+        {/* Controls */}
         <div className="p-2 border-t">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className={cn(
-                  "w-full",
-                  isCollapsed ? "justify-center" : "justify-start"
-                )}
-                aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
-              >
-                <ChevronRight className={cn(
-                  "h-4 w-4 transition-transform",
-                  !isCollapsed && "rotate-180"
-                )} />
-                {!isCollapsed && <span className="ml-2">Collapse</span>}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>{isCollapsed ? "Expand navigation" : "Collapse navigation"}</p>
-            </TooltipContent>
-          </Tooltip>
+          {!isCollapsed ? (
+            <div className="flex gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMinimized(true)}
+                    className="flex-1 justify-start"
+                    aria-label="Minimize navigation"
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                    <span className="ml-2">Minimize</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Minimize navigation</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCollapsed(true)}
+                    className="flex-shrink-0"
+                    aria-label="Collapse navigation"
+                  >
+                    <ChevronRight className="h-4 w-4 rotate-180" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Collapse navigation</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMinimized(true)}
+                    className="w-full justify-center"
+                    aria-label="Minimize navigation"
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Minimize navigation</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCollapsed(false)}
+                    className="w-full justify-center"
+                    aria-label="Expand navigation"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Expand navigation</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
         </div>
 
         </div>
