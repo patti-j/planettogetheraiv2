@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatGanttData, ganttConfig } from './GanttConfig';
+
+// Extend window type for Bryntum
+declare global {
+  interface Window {
+    bryntum: any;
+  }
+}
 
 interface BryntumGanttWrapperProps {
   operations: any[];
@@ -84,46 +92,60 @@ export function BryntumGanttWrapper({
 
       try {
         console.log('BryntumGanttWrapper: Container ref available:', !!containerRef.current);
+        console.log('BryntumGanttWrapper: Resources:', resources.length, 'Operations:', operations.length);
         
-        // Use the simplest possible configuration to avoid the Helpers.constructor error
+        // Format data for resource-based scheduling view
+        const formattedData = formatGanttData(operations, resources);
+        console.log('BryntumGanttWrapper: Formatted data:', formattedData);
+        
+        // Use the resource-based configuration from GanttConfig
         const config = {
           appendTo: containerRef.current,
-          height: 500,
+          height: 600,
           
-          // Simple columns without special types
-          columns: [
-            { text: 'Name', field: 'name', width: 250 }
-          ],
+          // Use resource-focused columns
+          columns: ganttConfig.columns,
           
-          // Minimal features configuration
+          // Use resource scheduling view preset
+          viewPreset: ganttConfig.viewPreset || 'weekAndDay',
+          barMargin: ganttConfig.barMargin || 5,
+          rowHeight: ganttConfig.rowHeight || 70,
+          
+          // Configure features for resource scheduling
           features: {
-            taskDrag: false,  // Disable drag for now to avoid errors
-            taskResize: false,  // Disable resize for now
-            taskEdit: false,  // Disable editing for now
-            percentDone: false,
-            progressLine: false,
-            dependencies: false
+            taskDrag: true,  // Enable drag for resource scheduling
+            taskResize: true,  // Enable resize
+            taskEdit: false,  // Disable edit dialog
+            columnLines: true,
+            percentDone: false,  // Trial limitation
+            progressLine: false,  // Trial limitation
+            dependencies: false  // Trial limitation
           },
           
-          // Simple task data
-          tasks: operations.map((op, index) => ({
-            id: op.id || index + 1,
-            name: op.name || op.operationName || `Operation ${index + 1}`,
-            startDate: op.startTime || new Date(),
-            duration: op.standardDuration || 1,
-            durationUnit: 'hour'
-          })),
+          // Use formatted data
+          tasks: formattedData.tasks.rows,
+          resources: formattedData.resources.rows,
+          assignments: formattedData.assignments.rows,
           
-          // Simple resource data
-          resources: resources.map(r => ({
-            id: r.id,
-            name: r.name || `Resource ${r.id}`
-          })),
-          
-          // Minimal project configuration
+          // Project configuration for resource scheduling
           project: {
             autoLoad: false,
             autoSync: false
+          },
+          
+          // Event handlers
+          listeners: {
+            taskDrop: ({ taskRecords, targetResource }) => {
+              if (onOperationMove && taskRecords[0]) {
+                const task = taskRecords[0];
+                onOperationMove(
+                  task.id,
+                  targetResource?.id || task.resourceId,
+                  new Date(task.startDate),
+                  new Date(task.endDate)
+                );
+              }
+            }
           }
         };
         

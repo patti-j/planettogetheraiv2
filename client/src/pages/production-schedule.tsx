@@ -13,7 +13,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
-import { SimpleBryntumGantt } from '@/components/bryntum/SimpleBryntumGantt';
+import { BryntumGanttWrapper } from '@/components/bryntum/BryntumGanttWrapper';
 import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
@@ -565,9 +565,13 @@ export default function ProductionSchedulePage() {
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <SimpleBryntumGantt
+                <BryntumGanttWrapper
                   operations={operations as any || []}
                   resources={resources as any || []}
+                  onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
+                    console.log('Moving operation:', operationId, 'to resource:', newResourceId);
+                    // Handle operation move if needed
+                  }}
                 />
               ) : (
                 <Card className="h-full">
