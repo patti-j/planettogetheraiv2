@@ -75,7 +75,7 @@ import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
 import PlanningOverview from "@/pages/planning-overview";
 import SchedulingHistory from "@/pages/scheduling-history";
-import ProductionSchedulePage from "@/pages/production-schedule";
+import ProductionSchedulePage from "@/pages/production-schedule-simple";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
 import MasterProductionSchedulePage from "@/pages/master-production-schedule";
 import MobileHomePage from "@/pages/mobile-home";

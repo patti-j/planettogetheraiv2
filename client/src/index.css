@@ -1420,3 +1420,89 @@ div[data-radix-tooltip-content] {
 .b-sch-event {
   min-width: 1px !important;
 }
+
+/* Bryntum Scheduler Pro Custom Styles - Match Core App */
+.bryntum-scheduler-container .b-sch-event {
+  border-radius: 2px !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: white !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  padding: 2px 4px !important;
+  line-height: 1.2 !important;
+}
+
+.bryntum-scheduler-container .b-sch-event-content {
+  padding: 2px 4px !important;
+}
+
+.bryntum-scheduler-container .b-grid-row {
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.bryntum-scheduler-container .b-grid-cell {
+  border-right: 1px solid #f0f0f0 !important;
+  font-size: 12px !important;
+}
+
+.bryntum-scheduler-container .b-sch-timeaxis-cell {
+  border-right: 1px solid #e0e0e0 !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.bryntum-scheduler-container .b-grid-header {
+  background: #f5f5f5 !important;
+  border-bottom: 2px solid #d0d0d0 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  color: #333 !important;
+}
+
+.bryntum-scheduler-container .b-sch-header-timeaxis-cell {
+  background: #f5f5f5 !important;
+  border-right: 1px solid #d0d0d0 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: #555 !important;
+}
+
+.bryntum-scheduler-container .b-sch-nonworkingtime {
+  background: #f9f9f9 !important;
+}
+
+/* Resource rows alternating colors */
+.bryntum-scheduler-container .b-grid-row:nth-child(even) {
+  background: #fafafa !important;
+}
+
+.bryntum-scheduler-container .b-grid-row:hover {
+  background: #f0f7ff !important;
+}
+
+/* Clean toolbar styling */
+.bryntum-scheduler-container .b-toolbar {
+  background: white !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+  padding: 8px !important;
+}
+
+.bryntum-scheduler-container .b-button {
+  background: white !important;
+  border: 1px solid #d0d0d0 !important;
+  color: #333 !important;
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+  border-radius: 3px !important;
+}
+
+.bryntum-scheduler-container .b-button:hover {
+  background: #f5f5f5 !important;
+  border-color: #999 !important;
+}
+
+/* Event selection */
+.bryntum-scheduler-container .b-sch-event-selected {
+  outline: 2px solid #1976D2 !important;
+  outline-offset: 1px !important;
+}

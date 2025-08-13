@@ -43,16 +43,13 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
       return { events: [], resources: [], assignments: [] };
     }
 
-    // Transform resources
+    // Transform resources  
     const schedulerResources = resources.map((resource: any) => ({
       id: `resource-${resource.id}`,
       name: resource.name,
       type: resource.type,
       capacity: resource.capacity || 100,
-      efficiency: resource.efficiency || 100,
-      eventColor: resource.type === 'production_line' ? 'blue' : 
-                  resource.type === 'assembly' ? 'green' : 
-                  resource.type === 'packaging' ? 'orange' : 'gray'
+      efficiency: resource.efficiency || 100
     }));
 
     // Transform operations to events
@@ -62,9 +59,13 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
       const endDate = operation.endTime ? new Date(operation.endTime) : 
                      new Date(startDate.getTime() + (operation.duration || operation.standardDuration || 120) * 60 * 1000);
       
+      // Generate vibrant colors similar to the core app
+      const colors = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1', '#FF7043', '#9E9D24'];
+      const colorIndex = index % colors.length;
+      
       return {
         id: `operation-${operation.id}`,
-        name: operation.name || operation.operationName || `Operation ${operation.id}`,
+        name: `${operation.name || operation.operationName || 'Operation'} [${operation.productionOrderId || operation.id}]`,
         startDate: startDate,
         endDate: endDate,
         duration: operation.duration || operation.standardDuration || 120,
@@ -75,9 +76,8 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         priority: operation.priority || 5,
         constraintType: 'muststarton',
         constraintDate: startDate,
-        eventColor: operation.status === 'completed' ? 'green' :
-                    operation.status === 'in_progress' ? 'blue' :
-                    operation.status === 'scheduled' ? 'orange' : 'gray',
+        eventColor: colors[colorIndex],
+        cls: 'custom-event',
         status: operation.status,
         productionOrderId: operation.productionOrderId || operation.routingId,
         description: operation.description || `${operation.operationName} - ${operation.status}`
@@ -105,16 +105,16 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
   const schedulerConfig = {
     startDate,
     endDate,
-    viewPreset: 'dayAndWeek',
-    barMargin: 5,
-    rowHeight: 60,
+    viewPreset: 'weekAndDayLetter',
+    barMargin: 1,
+    rowHeight: 35,
     resourceImagePath: 'users/',
-    eventStyle: 'colored' as const,
+    eventStyle: 'plain' as const,
     eventColor: null, // Let individual events control their color
     scrollable: true,
     infiniteScroll: false,
-    zoomOnTimeAxisDoubleClick: false,
-    zoomOnMouseWheel: false,
+    zoomOnTimeAxisDoubleClick: true,
+    zoomOnMouseWheel: true,
     // Scroll to today on load
     visibleDate: {
       date: new Date(),
@@ -123,109 +123,54 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
     
     columns: [
       { 
-        text: 'Resource', 
+        text: 'Resource Name', 
         field: 'name', 
-        width: 220,
+        width: 150,
         locked: true,
         htmlEncode: false,
         renderer: ({ record }: any) => {
-          const typeIcon = record.type === 'production_line' ? '🏭' :
-                          record.type === 'assembly' ? '🔧' :
-                          record.type === 'packaging' ? '📦' : 
-                          record.type === 'quality_control' ? '✅' :
-                          record.type === 'maintenance' ? '🔨' : '⚙️';
-          // Return simple text with icon - Bryntum will handle the display
-          return `${typeIcon} ${record.name}`;
+          // Simple clean resource name
+          return record.name;
         }
       },
       { 
-        text: 'Status', 
-        field: 'status', 
-        width: 100,
-        renderer: ({ record }: any) => {
-          return record.status || 'Available';
-        }
-      },
-      { 
-        text: 'Type', 
+        text: 'Workcentre', 
         field: 'type', 
-        width: 130,
-        renderer: ({ value }: any) => {
-          return value ? value.replace(/_/g, ' ').toUpperCase() : '';
-        }
-      },
-      { 
-        text: 'Utilization', 
-        field: 'utilization', 
         width: 100,
-        align: 'center' as const,
-        renderer: ({ record }: any) => {
-          const utilization = record.utilization || 0;
-          return `${utilization}%`;
-        }
-      },
-      { 
-        text: 'Capacity', 
-        field: 'capacity', 
-        width: 80,
-        align: 'center' as const,
-        renderer: ({ value }: any) => `${value || 100}%`
-      },
-      { 
-        text: 'Efficiency', 
-        field: 'efficiency', 
-        width: 80,
-        align: 'center' as const,
         renderer: ({ value }: any) => {
-          const eff = value || 100;
-          return `${eff}%`;
+          return value ? value.replace(/_/g, ' ').charAt(0).toUpperCase() + value.replace(/_/g, ' ').slice(1) : '';
         }
       }
     ],
 
     features: {
-      // Enable key features
+      // Enable key features like core app
       eventDrag: true,
-      eventDragCreate: true,
+      eventDragCreate: false,
       eventResize: true,
-      eventEdit: {
-        items: {
-          generalTab: {
-            items: {
-              name: { label: 'Operation Name' },
-              startDate: { label: 'Start Time' },
-              endDate: { label: 'End Time' },
-              duration: { label: 'Duration (minutes)' },
-              percentDone: { label: 'Progress (%)' },
-              priority: { label: 'Priority (1-10)' }
-            }
-          }
-        }
-      },
+      eventEdit: false, // Disable double-click edit to match core app
       eventTooltip: {
         template: ({ eventRecord }: any) => {
           return {
             header: eventRecord.name,
-            body: `Status: ${eventRecord.status || 'Scheduled'}
-Progress: ${eventRecord.percentDone || 0}%
-Priority: ${eventRecord.priority || 5}
-${eventRecord.description ? `Description: ${eventRecord.description}` : ''}`
+            body: `Start: ${eventRecord.startDate.toLocaleString()}
+End: ${eventRecord.endDate.toLocaleString()}
+Duration: ${eventRecord.duration} ${eventRecord.durationUnit}
+Status: ${eventRecord.status || 'Scheduled'}`
           };
         }
       },
-      dependencies: true,
-      dependencyEdit: true,
-      criticalPaths: true,
+      dependencies: false, // Clean view without dependency lines
       nonWorkingTime: true,
-      timeRanges: true,
-      resourceTimeRanges: true,
-      scheduleTooltip: true,
+      timeRanges: false,
+      resourceTimeRanges: false,
+      scheduleTooltip: false,
       cellEdit: false,
       taskEdit: false,
-      percentBar: true,
-      summary: true,
-      indicators: true,
-      sort: 'name'
+      percentBar: false,
+      summary: false,
+      indicators: false,
+      sort: false
     },
 
     // Configure working time
@@ -283,32 +228,34 @@ ${eventRecord.description ? `Description: ${eventRecord.description}` : ''}`
     tbar: [
       {
         type: 'button',
-        text: 'Optimize Schedule',
-        icon: 'b-fa-magic',
-        onAction: () => {
-          console.log('Optimizing schedule...');
-          // Call optimization API
-        }
-      },
-      {
-        type: 'button',
-        text: 'Critical Path',
-        icon: 'b-fa-project-diagram',
+        text: 'Previous Month',
+        icon: 'b-fa-chevron-left',
         onAction: () => {
           const scheduler = schedulerRef.current?.instance;
           if (scheduler) {
-            scheduler.features.criticalPaths.highlighted = !scheduler.features.criticalPaths.highlighted;
+            scheduler.shiftPrevious();
           }
         }
       },
       {
         type: 'button',
-        text: 'Export',
-        icon: 'b-fa-file-export',
+        text: 'Today',
+        icon: 'b-fa-calendar-day',
         onAction: () => {
           const scheduler = schedulerRef.current?.instance;
           if (scheduler) {
-            scheduler.features.pdfExport?.showExportDialog();
+            scheduler.scrollToDate(new Date(), { block: 'center' });
+          }
+        }
+      },
+      {
+        type: 'button',
+        text: 'Next Month',
+        icon: 'b-fa-chevron-right',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          if (scheduler) {
+            scheduler.shiftNext();
           }
         }
       },
@@ -318,20 +265,7 @@ ${eventRecord.description ? `Description: ${eventRecord.description}` : ''}`
       },
       {
         type: 'viewpresetcombo',
-        label: 'View:',
-        width: 150
-      },
-      {
-        type: 'datefield',
-        label: 'Start:',
-        ref: 'startDateField',
-        value: startDate,
-        onChange: ({ value }: any) => {
-          const scheduler = schedulerRef.current?.instance;
-          if (scheduler) {
-            scheduler.startDate = value;
-          }
-        }
+        width: 120
       }
     ]
   };

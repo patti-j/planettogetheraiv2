@@ -420,46 +420,7 @@ export default function ProductionSchedulePage() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`${isMobile ? 'grid w-full grid-cols-3 h-auto gap-1 p-1' : 'grid w-full grid-cols-6'}`}>
-            <TabsTrigger 
-              value="scheduler-pro" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''} ${activeTab === 'scheduler-pro' ? 'bg-blue-600 text-white' : ''}`}
-            >
-              {isMobile ? '🏭 Resources' : '🏭 Resource Schedule'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="overview" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Overview' : 'Schedule Overview'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="gantt" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Gantt' : 'Gantt Chart'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="sequencer" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Sequencer' : 'Operation Sequencer'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="resources" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Assign' : 'Resource Assignment'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="management" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Manage' : 'Schedule Management'}
-            </TabsTrigger>
-          </TabsList>
+      <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
 
           <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : gridCols}`}>
