@@ -98,10 +98,19 @@ export function BryntumGanttWrapper({
         const formattedData = formatGanttData(operations, resources);
         console.log('BryntumGanttWrapper: Formatted data:', formattedData);
         
+        // Calculate height based on number of resources
+        // Minimum 400px, but expand to show all resources
+        const rowHeight = ganttConfig.rowHeight || 70;
+        const headerHeight = 100; // Header and toolbar
+        const minHeight = 400;
+        const calculatedHeight = Math.max(minHeight, (resources.length * rowHeight) + headerHeight);
+        
         // Use the resource-based configuration from GanttConfig
         const config = {
           appendTo: containerRef.current,
-          height: 600,
+          height: calculatedHeight,
+          minHeight: minHeight,
+          autoHeight: false, // Don't auto-expand beyond calculated height
           
           // Use resource-focused columns
           columns: ganttConfig.columns,
@@ -109,7 +118,7 @@ export function BryntumGanttWrapper({
           // Use resource scheduling view preset
           viewPreset: ganttConfig.viewPreset || 'weekAndDay',
           barMargin: ganttConfig.barMargin || 5,
-          rowHeight: ganttConfig.rowHeight || 70,
+          rowHeight: rowHeight,
           
           // Configure features for resource scheduling
           features: {
@@ -232,7 +241,15 @@ export function BryntumGanttWrapper({
         }
       `}</style>
       <div className={className}>
-        <div ref={containerRef} className="bryntum-gantt-container" />
+        <div 
+          ref={containerRef} 
+          className="bryntum-gantt-container"
+          style={{ 
+            height: `${Math.max(400, (resources.length * 70) + 100)}px`,
+            minHeight: '400px',
+            position: 'relative'
+          }}
+        />
       </div>
     </>
   );
