@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -617,6 +617,7 @@ function MobilePageContent({ location }: { location: string }) {
 // Mobile Menu Trigger Component - using FloatingHamburgerMenu
 function MobileMenuTrigger() {
   const { user, logout } = useAuth();
+  const { hasPermission } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
   
@@ -691,31 +692,46 @@ function MobileMenuTrigger() {
               
               {/* Navigation Menu - Using Centralized Navigation Structure */}
               <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                {navigationGroups.map((group) => (
-                  <div key={group.title} className="space-y-2">
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      {group.title}
-                    </h3>
-                    <div className="space-y-1">
-                      {group.features.slice(0, 6).map((feature) => {
-                        const Icon = feature.icon;
-                        return (
-                          <div
-                            key={feature.href}
-                            className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                            onClick={() => {
-                              setIsOpen(false);
-                              setLocation(feature.href);
-                            }}
-                          >
-                            <Icon className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{feature.label}</span>
-                          </div>
-                        );
-                      })}
+                {navigationGroups.map((group) => {
+                  // Filter features based on permissions, same as desktop menu
+                  const visibleFeatures = group.features.filter(feature => {
+                    // Always show items that don't require permission checks
+                    if (!feature.feature) return true;
+                    // Always show items that explicitly don't require onboarding
+                    if (feature.requiresOnboarding === false) return true;
+                    // Check permissions for feature access
+                    return hasPermission(feature.feature, feature.action);
+                  });
+
+                  // Only show group if it has visible features
+                  if (visibleFeatures.length === 0) return null;
+
+                  return (
+                    <div key={group.title} className="space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        {group.title}
+                      </h3>
+                      <div className="space-y-1">
+                        {visibleFeatures.map((feature) => {
+                          const Icon = feature.icon;
+                          return (
+                            <div
+                              key={feature.href}
+                              className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                              onClick={() => {
+                                setIsOpen(false);
+                                setLocation(feature.href);
+                              }}
+                            >
+                              <Icon className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{feature.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
               </div>
             </div>
