@@ -423,11 +423,19 @@ export default function ProductionSchedulePage() {
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
         <Tabs defaultValue="scheduler-pro" className="flex-1">
-          <TabsList className="grid w-full grid-cols-4 mb-4">
-            <TabsTrigger value="scheduler-pro">Resource Schedule</TabsTrigger>
-            <TabsTrigger value="demo">Demo Data</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="gantt">Simple Gantt</TabsTrigger>
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} mb-4 gap-1`}>
+            <TabsTrigger value="scheduler-pro" className={isMobile ? 'text-xs' : ''}>
+              {isMobile ? 'Resources' : 'Resource Schedule'}
+            </TabsTrigger>
+            <TabsTrigger value="demo" className={`${isMobile ? 'text-xs' : ''} bg-orange-50 dark:bg-orange-950/20`}>
+              {isMobile ? 'Demo' : 'Demo Data'}
+            </TabsTrigger>
+            <TabsTrigger value="overview" className={isMobile ? 'text-xs' : ''}>
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="gantt" className={isMobile ? 'text-xs' : ''}>
+              {isMobile ? 'Gantt' : 'Simple Gantt'}
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
