@@ -117,7 +117,7 @@ export function SimpleBryntumGantt({
     resourceHeader.style.fontWeight = '600';
     resourceHeader.style.fontSize = '13px';
     resourceHeader.style.color = '#495057';
-    resourceHeader.textContent = `Resources (${resources.length})`;
+    resourceHeader.textContent = `Resources (${validResources.length})`;
     resourcePane.appendChild(resourceHeader);
     
     // Resources list container
@@ -363,13 +363,13 @@ Status: ${status}`;
     statusBar.style.display = 'flex';
     statusBar.style.justifyContent = 'space-between';
     
-    const totalOps = operations.length;
-    const assignedOps = operations.filter(op => 
+    const totalOps = validOperations.length;
+    const assignedOps = validOperations.filter(op => 
       op.assignedResourceId || op.workCenterId || op.resourceId
     ).length;
     
     statusBar.innerHTML = `
-      <div>Resources: ${resources.length} • Operations: ${totalOps} • Assigned: ${assignedOps}</div>
+      <div>Resources: ${validResources.length} • Operations: ${totalOps} • Assigned: ${assignedOps}</div>
       <div>View: ${viewDays} days</div>
     `;
     
