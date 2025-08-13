@@ -169,7 +169,7 @@ function ChartWidget({ widget }: { widget: DashboardWidget }) {
   };
 
   const chartData = getChartData();
-  const maxValue = chartData.length > 0 ? Math.max(...chartData.map(d => d.value)) : 1;
+  const maxValue = chartData.length > 0 ? Math.max(...chartData.map(d => Number(d.value))) : 1;
 
   return (
     <div className="space-y-3">
@@ -180,12 +180,12 @@ function ChartWidget({ widget }: { widget: DashboardWidget }) {
         <div key={item.label} className="space-y-1">
           <div className="flex justify-between text-sm">
             <span>{item.label}</span>
-            <span className="font-medium">{item.value}</span>
+            <span className="font-medium">{String(item.value)}</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${(item.value / maxValue) * 100}%` }}
+              style={{ width: `${(Number(item.value) / maxValue) * 100}%` }}
             />
           </div>
         </div>

@@ -266,20 +266,25 @@ interface DropZoneProps {
 
 function DropZone({ children, onDrop, isEditing }: DropZoneProps) {
   const [{ isOver }, drop] = useDrop({
-    accept: ['widget', 'template'],
+    accept: ['template', 'widget'],
     drop: (item: any, monitor) => {
       const clientOffset = monitor.getClientOffset();
-      const dropRef = drop as any;
+      const targetRef = drop as any;
       
-      if (clientOffset && dropRef.current) {
-        const rect = dropRef.current.getBoundingClientRect();
+      if (clientOffset && targetRef?.current) {
+        const rect = targetRef.current.getBoundingClientRect();
         const position = {
           x: Math.max(0, Math.round((clientOffset.x - rect.left) / GRID_SIZE) * GRID_SIZE),
           y: Math.max(0, Math.round((clientOffset.y - rect.top) / GRID_SIZE) * GRID_SIZE)
         };
         
         onDrop(item, position);
+        return { position };
       }
+      
+      // Fallback position if clientOffset is not available
+      onDrop(item, { x: 0, y: 0 });
+      return { position: { x: 0, y: 0 } };
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
@@ -366,7 +371,7 @@ export function HomeDashboardCustomizer({
       const method = layout.id ? 'PATCH' : 'POST';
       const url = layout.id ? `/api/home-dashboard-layouts/${layout.id}` : '/api/home-dashboard-layouts';
       const response = await apiRequest(method, url, layout);
-      return response as HomeDashboardLayout;
+      return response;
     },
     onSuccess: (savedLayout) => {
       if (onLayoutUpdate) {
@@ -401,14 +406,17 @@ export function HomeDashboardCustomizer({
   };
 
   const handleDrop = (item: any, position: { x: number; y: number }) => {
+    console.log('Drop received:', item, position, 'isEditing:', isEditing);
     if (item.templateId) {
       // Adding new widget from template
       const template = WIDGET_TEMPLATES.find(t => t.id === item.templateId);
       if (template) {
+        console.log('Adding widget from template:', template.title);
         handleAddWidget(template, position);
       }
     } else if (item.id) {
       // Moving existing widget
+      console.log('Moving existing widget:', item.id);
       handleMoveWidget(item.id, position);
     }
   };
@@ -428,7 +436,10 @@ export function HomeDashboardCustomizer({
               <Button
                 variant={isEditing ? "default" : "outline"}
                 size="sm"
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => {
+                  console.log('Edit button clicked, isEditing was:', isEditing);
+                  setIsEditing(!isEditing);
+                }}
               >
                 {isEditing ? "Done" : "Edit"}
               </Button>
@@ -521,7 +532,11 @@ function WidgetTemplate({ template, disabled }: WidgetTemplateProps) {
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    canDrag: !disabled
+    canDrag: !disabled,
+    end: (item, monitor) => {
+      const dropResult = monitor.getDropResult();
+      console.log('Drag ended:', item, dropResult, 'canDrag:', !disabled);
+    }
   });
 
   const Icon = template.icon;
