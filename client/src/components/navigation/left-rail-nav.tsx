@@ -74,150 +74,119 @@ export function LeftRailNav() {
           "h-full bg-background border-r transition-all duration-300 flex flex-col",
           isCollapsed ? "w-16" : "w-64"
         )}>
-          {/* Toggle Button & Menu Button Row */}
+          {/* Workspace Switcher */}
           <div className="p-2 border-b">
-            {!isCollapsed ? (
-              <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsMenuOpen(true)}
-                  className="flex-shrink-0"
-                  aria-label="Open navigation menu"
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-between",
+                    isCollapsed && "justify-center px-2"
+                  )}
                 >
-                  <Menu className="h-4 w-4" />
-                  <span className="ml-2">Menu</span>
+                  <div className="flex items-center min-w-0">
+                    <span className="text-lg mr-2">{activeWorkspace.icon}</span>
+                    {!isCollapsed && (
+                      <div className="text-left min-w-0">
+                        <p className="text-sm font-medium truncate">{activeWorkspace.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{activeWorkspace.description}</p>
+                      </div>
+                    )}
+                  </div>
+                  {!isCollapsed && <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />}
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCollapsed(true)}
-                  className="ml-auto"
-                  aria-label="Collapse navigation"
-                >
-                  <ChevronRight className="h-4 w-4 rotate-180" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsCollapsed(false)}
-                      className="w-full justify-center"
-                      aria-label="Expand navigation"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Expand navigation</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsMenuOpen(true)}
-                      className="w-full justify-center"
-                      aria-label="Open navigation menu"
-                    >
-                      <Menu className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Menu</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">Switch Workspace</p>
+                  <p className="text-xs text-muted-foreground">Select active workspace</p>
+                </div>
+                <DropdownMenuSeparator />
+                {workspaces.map((workspace) => (
+                  <DropdownMenuItem
+                    key={workspace.id}
+                    onClick={() => switchWorkspace(workspace)}
+                    className={cn(
+                      "cursor-pointer",
+                      workspace.id === activeWorkspace.id && "bg-accent"
+                    )}
+                  >
+                    <span className="mr-2">{workspace.icon}</span>
+                    <div className="flex-1">
+                      <p className="text-sm">{workspace.name}</p>
+                      <p className="text-xs text-muted-foreground">{workspace.description}</p>
+                    </div>
+                    {workspace.id === activeWorkspace.id && (
+                      <Badge variant="secondary" className="ml-2">Active</Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Grid className="h-4 w-4 mr-2" />
+                  Manage Workspaces
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Home Button */}
           <div className="p-2 border-b">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={location === '/' ? 'default' : 'ghost'}
-                className={cn(
-                  "w-full justify-start",
-                  isCollapsed && "justify-center"
-                )}
-                onClick={() => setLocation('/')}
-              >
-                <Home className="h-4 w-4" />
-                {!isCollapsed && <span className="ml-2">Home</span>}
-              </Button>
-            </TooltipTrigger>
-            {isCollapsed && (
-              <TooltipContent side="right">
-                <p>Home</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </div>
-
-        {/* Workspace Switcher */}
-        <div className="p-2 border-b">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between",
-                  isCollapsed && "justify-center px-2"
-                )}
-              >
-                <div className="flex items-center min-w-0">
-                  <span className="text-lg mr-2">{activeWorkspace.icon}</span>
-                  {!isCollapsed && (
-                    <div className="text-left min-w-0">
-                      <p className="text-sm font-medium truncate">{activeWorkspace.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{activeWorkspace.description}</p>
-                    </div>
-                  )}
-                </div>
-                {!isCollapsed && <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">Switch Workspace</p>
-                <p className="text-xs text-muted-foreground">Select active workspace</p>
-              </div>
-              <DropdownMenuSeparator />
-              {workspaces.map((workspace) => (
-                <DropdownMenuItem
-                  key={workspace.id}
-                  onClick={() => switchWorkspace(workspace)}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={location === '/' ? 'default' : 'ghost'}
                   className={cn(
-                    "cursor-pointer",
-                    workspace.id === activeWorkspace.id && "bg-accent"
+                    "w-full justify-start",
+                    isCollapsed && "justify-center"
                   )}
+                  onClick={() => setLocation('/')}
                 >
-                  <span className="mr-2">{workspace.icon}</span>
-                  <div className="flex-1">
-                    <p className="text-sm">{workspace.name}</p>
-                    <p className="text-xs text-muted-foreground">{workspace.description}</p>
-                  </div>
-                  {workspace.id === activeWorkspace.id && (
-                    <Badge variant="secondary" className="ml-2">Active</Badge>
-                  )}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Grid className="h-4 w-4 mr-2" />
-                Manage Workspaces
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                  <Home className="h-4 w-4" />
+                  {!isCollapsed && <span className="ml-2">Home</span>}
+                </Button>
+              </TooltipTrigger>
+              {isCollapsed && (
+                <TooltipContent side="right">
+                  <p>Home</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
+
+          {/* Menu Button */}
+          <div className="p-2 border-b">
+            {!isCollapsed ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMenuOpen(true)}
+                className="w-full justify-start"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="h-4 w-4" />
+                <span className="ml-2">Menu</span>
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMenuOpen(true)}
+                    className="w-full justify-center"
+                    aria-label="Open navigation menu"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Menu</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
 
         {/* Recent Pages */}
         <div className="flex-1 flex flex-col min-h-0">
@@ -301,6 +270,32 @@ export function LeftRailNav() {
           </ScrollArea>
         </div>
 
+        {/* Collapse Toggle */}
+        <div className="p-2 border-t">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={cn(
+                  "w-full",
+                  isCollapsed ? "justify-center" : "justify-start"
+                )}
+                aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+              >
+                <ChevronRight className={cn(
+                  "h-4 w-4 transition-transform",
+                  !isCollapsed && "rotate-180"
+                )} />
+                {!isCollapsed && <span className="ml-2">Collapse</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{isCollapsed ? "Expand navigation" : "Collapse navigation"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
         </div>
       </TooltipProvider>
