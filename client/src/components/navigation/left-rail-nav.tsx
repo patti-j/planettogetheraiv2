@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Clock, ChevronRight, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2 } from 'lucide-react';
+import { Home, Clock, ChevronRight, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, Bot, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -18,15 +18,18 @@ export function LeftRailNav() {
   const { user } = useAuth();
   const { recentPages, togglePinPage, clearRecentPages } = useNavigation();
 
-  // Get page icon based on path
-  const getPageIcon = (path: string) => {
-    if (path.includes('dashboard')) return '📊';
-    if (path.includes('production')) return '🏭';
-    if (path.includes('inventory')) return '📦';
-    if (path.includes('quality')) return '✅';
-    if (path.includes('reports')) return '📈';
-    if (path.includes('settings')) return '⚙️';
-    return '📄';
+  // Get Lucide icon component from icon name
+  const getIconComponent = (iconName: string) => {
+    const icons: Record<string, any> = {
+      Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, 
+      Wrench, Shield, Bot, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
+      Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
+      GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
+      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers
+    };
+    
+    const IconComponent = icons[iconName] || FileText;
+    return IconComponent;
   };
 
   return (
@@ -194,7 +197,10 @@ export function LeftRailNav() {
                         )}
                         onClick={() => setLocation(page.path)}
                       >
-                        <span className="text-sm mr-2">{getPageIcon(page.path)}</span>
+                        {(() => {
+                          const IconComponent = getIconComponent(page.icon || 'FileText');
+                          return <IconComponent className="h-4 w-4 mr-2 flex-shrink-0" />;
+                        })()}
                         {!isCollapsed && (
                           <>
                             <span className="flex-1 text-left truncate text-sm">
