@@ -1624,29 +1624,17 @@ Rules:
       // Update last login
       await storage.updateUserLastLogin(user.id);
       
-      // Generate a simple token and store user ID in session AND return token
+      // Generate a simple token for token-based authentication
       console.log("=== LOGIN SUCCESS ===");
       const token = `user_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      req.session.userId = user.id;
-      req.session.token = token;
       
-      // Force session save and return token
-      req.session.save((err: any) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ message: "Failed to save session" });
-        }
-        
-        console.log("Session saved successfully with token:", token);
-        console.log("Session ID:", req.sessionID);
-        console.log("Session userId:", req.session.userId);
-        
-        // Return user data with token
-        const { passwordHash, ...userData } = user;
-        console.log("=== RETURNING USER DATA ===");
-        console.log("User data to return:", JSON.stringify({ ...userData, token }));
-        res.json({ ...userData, token });
-      });
+      console.log("Generated token:", token);
+      
+      // Return user data with token (no session dependency)
+      const { passwordHash, ...userData } = user;
+      console.log("=== RETURNING USER DATA ===");
+      console.log("User data to return:", JSON.stringify({ ...userData, token }));
+      res.json({ ...userData, token });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -1654,12 +1642,9 @@ Rules:
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err: any) => {
-      if (err) {
-        return res.status(500).json({ message: "Could not log out" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
+    // With token-based auth, logout is handled client-side by removing the token
+    // Server-side logout is just a confirmation response
+    res.json({ message: "Logged out successfully" });
   });
 
   app.get("/api/auth/me", async (req, res) => {
