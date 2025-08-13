@@ -18,6 +18,7 @@ import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
 import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
+import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -421,12 +422,18 @@ export default function ProductionSchedulePage() {
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`${isMobile ? 'grid w-full grid-cols-3 h-auto gap-1 p-1' : 'grid w-full grid-cols-5'}`}>
+          <TabsList className={`${isMobile ? 'grid w-full grid-cols-3 h-auto gap-1 p-1' : 'grid w-full grid-cols-6'}`}>
             <TabsTrigger 
               value="overview" 
               className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
             >
               {isMobile ? 'Overview' : 'Schedule Overview'}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="scheduler-pro" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
+            >
+              {isMobile ? 'Pro' : 'Scheduler Pro'}
             </TabsTrigger>
             <TabsTrigger 
               value="gantt" 
@@ -514,6 +521,43 @@ export default function ProductionSchedulePage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="scheduler-pro" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
+            <Card className="h-full">
+              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                <CardTitle className={`flex items-center justify-between ${isMobile ? 'text-base' : ''}`}>
+                  <div className="flex items-center gap-2">
+                    <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Bryntum Scheduler Pro
+                  </div>
+                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                    Advanced
+                  </Badge>
+                </CardTitle>
+                {!isMobile && (
+                  <p className="text-sm text-muted-foreground">
+                    Professional scheduling with critical path analysis, resource optimization, and dependencies
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent className="p-0">
+                {!ordersLoading && !operationsLoading && !resourcesLoading ? (
+                  <BryntumSchedulerProComponent 
+                    height={isMobile ? '400px' : '600px'}
+                    startDate={new Date()}
+                    endDate={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading Scheduler Pro...</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
