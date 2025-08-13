@@ -26,8 +26,8 @@ export const navigationGroups: NavigationGroup[] = [
     bgColor: "bg-blue-50 dark:bg-blue-950/20",
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
-      { icon: Calendar, label: "Production Schedule", href: "/production-schedule", feature: "production-scheduling", action: "view", color: "bg-blue-500" },
-      { icon: Calendar, label: "Production Scheduling", href: "/production-scheduling", feature: "production-scheduling", action: "view", color: "bg-blue-600" },
+      { icon: Calendar, label: "Production Schedule", href: "/production-schedule", feature: "schedule", action: "view", color: "bg-blue-500" },
+      { icon: Calendar, label: "Production Scheduling", href: "/production-scheduling", feature: "schedule", action: "view", color: "bg-blue-600" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
       { icon: Monitor, label: "Cockpit", href: "/cockpit", feature: "production-cockpit", action: "view", color: "bg-slate-600" },
