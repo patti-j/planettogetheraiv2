@@ -22905,6 +22905,68 @@ Be careful to preserve data integrity and relationships.`;
   });
 
   // ================================
+  // Implementation Consultant API Routes
+  // ================================
+  
+  app.get("/api/implementation/status", requireAuth, async (req, res) => {
+    try {
+      // Return implementation status data
+      // This would typically fetch from database
+      res.json({
+        company: {
+          name: 'Heineken',
+          industry: 'Food & Beverage',
+          size: 'Enterprise',
+          implementationStage: 'Phase 2',
+          goLiveDate: '2025-09-15'
+        },
+        healthScore: 85,
+        adoptionRate: 72,
+        activeUsers: 156,
+        completedMilestones: 8,
+        totalMilestones: 15
+      });
+    } catch (error) {
+      console.error("Error fetching implementation status:", error);
+      res.status(500).json({ error: "Failed to fetch implementation status" });
+    }
+  });
+
+  app.post("/api/implementation/goals", requireAuth, async (req, res) => {
+    try {
+      const goal = req.body;
+      // Save goal to database
+      // This would typically use the storage layer
+      res.json({ success: true, goal });
+    } catch (error) {
+      console.error("Error saving implementation goal:", error);
+      res.status(500).json({ error: "Failed to save implementation goal" });
+    }
+  });
+
+  app.get("/api/implementation/recommendations", requireAuth, async (req, res) => {
+    try {
+      // Return AI recommendations
+      res.json({
+        recommendations: [
+          {
+            id: '1',
+            type: 'feature',
+            title: 'Enable Advanced Scheduling Optimizer',
+            description: 'Your production complexity would benefit from our AI-powered scheduling optimizer',
+            impact: 'high',
+            effort: 'low',
+            status: 'suggested'
+          }
+        ]
+      });
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      res.status(500).json({ error: "Failed to fetch recommendations" });
+    }
+  });
+
+  // ================================
   // Smart KPI Management System API Routes
   // ================================
   

@@ -6,7 +6,7 @@ import {
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
-  Workflow
+  Workflow, Users
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -53,6 +53,7 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-purple-200 dark:border-purple-800",
     features: [
       { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
+      { icon: Users, label: "Implementation Consultant", href: "/implementation-consultant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
       { icon: Bot, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "optimization", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: Brain, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },

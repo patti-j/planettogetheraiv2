@@ -102,6 +102,7 @@ import TenantAdminPage from "@/pages/tenant-admin";
 import EnterpriseMapPage from "@/pages/enterprise-map";
 import AutonomousOptimizationPage from "@/pages/autonomous-optimization";
 import SmartKpiTrackingPage from "@/pages/smart-kpi-tracking";
+import ImplementationConsultantPage from "@/pages/implementation-consultant";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -627,6 +628,11 @@ function Router() {
           <Route path="/smart-kpi-tracking">
             <ProtectedRoute feature="planning-scheduling" action="view">
               <SmartKpiTrackingPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/implementation-consultant">
+            <ProtectedRoute feature="systems-management" action="view">
+              <ImplementationConsultantPage />
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
