@@ -902,16 +902,16 @@ export default function DashboardsPage() {
                           key={widget.id}
                           className="absolute bg-white border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                           style={{
-                            left: widget.position.x,
-                            top: widget.position.y,
-                            width: widget.size.width,
-                            height: widget.size.height
+                            left: widget.position?.x || 0,
+                            top: widget.position?.y || 0,
+                            width: widget.size?.width || 200,
+                            height: widget.size?.height || 150
                           }}
                           onMouseDown={(e) => {
                             if (e.target === e.currentTarget || e.target.closest('.widget-header') || e.target.closest('.widget-content')) {
                               // Handle widget dragging
-                              const startX = e.clientX - widget.position.x;
-                              const startY = e.clientY - widget.position.y;
+                              const startX = e.clientX - (widget.position?.x || 0);
+                              const startY = e.clientY - (widget.position?.y || 0);
                               
                               const handleMouseMove = (e: MouseEvent) => {
                                 const snapSize = 20; // Grid size for snapping
@@ -982,13 +982,13 @@ export default function DashboardsPage() {
                                 e.stopPropagation();
                                 const startX = e.clientX;
                                 const startY = e.clientY;
-                                const startWidth = widget.size.width;
-                                const startHeight = widget.size.height;
+                                const startWidth = widget.size?.width || 200;
+                                const startHeight = widget.size?.height || 150;
                                 
                                 const handleMouseMove = (e: MouseEvent) => {
                                   const snapSize = 20; // Grid size for snapping
-                                  const rawWidth = Math.max(100, Math.min(800 - widget.position.x, startWidth + (e.clientX - startX)));
-                                  const rawHeight = Math.max(80, Math.min(600 - widget.position.y, startHeight + (e.clientY - startY)));
+                                  const rawWidth = Math.max(100, Math.min(800 - (widget.position?.x || 0), startWidth + (e.clientX - startX)));
+                                  const rawHeight = Math.max(80, Math.min(600 - (widget.position?.y || 0), startHeight + (e.clientY - startY)));
                                   
                                   // Snap to grid
                                   const newWidth = Math.round(rawWidth / snapSize) * snapSize;

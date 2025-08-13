@@ -1040,10 +1040,10 @@ export function convertUniversalToCanvasWidget(widget: WidgetConfig, userId: num
       limit: widget.limit
     },
     position: {
-      x: widget.position.x,
-      y: widget.position.y,
-      width: widget.size.width,
-      height: widget.size.height
+      x: widget.position?.x || 0,
+      y: widget.position?.y || 0,
+      width: widget.size?.width || 200,
+      height: widget.size?.height || 150
     },
     is_visible: true,
     created_by_max: false,

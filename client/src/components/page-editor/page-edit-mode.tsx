@@ -132,8 +132,8 @@ const DraggableWidget: React.FC<{
         !widget.visible ? 'opacity-60' : ''
       } transition-all duration-200 shadow-sm`}
       style={{
-        gridColumn: isMobile ? 'span 1' : `span ${widget.position.w}`,
-        gridRow: `span ${widget.position.h}`,
+        gridColumn: isMobile ? 'span 1' : `span ${widget.position?.w || 2}`,
+        gridRow: `span ${widget.position?.h || 2}`,
       }}
     >
       {isEditMode && (

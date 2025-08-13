@@ -149,10 +149,10 @@ const DraggableWidget = ({ widget, onMove, onResize, onEdit, onDelete, isSelecte
         isDragging ? "opacity-50" : ""
       } ${isSelected ? "border-blue-500" : "border-gray-200"}`}
       style={{
-        left: widget.position.x,
-        top: widget.position.y,
-        width: widget.size.width,
-        height: widget.size.height,
+        left: widget.position?.x || 0,
+        top: widget.position?.y || 0,
+        width: widget.size?.width || 200,
+        height: widget.size?.height || 150,
       }}
       onClick={() => onSelect(widget.id)}
     >
