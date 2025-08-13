@@ -73,6 +73,7 @@ import MarketingHome from "@/pages/marketing-home";
 import ShiftManagement from "@/pages/shift-management";
 import ProductionCockpit from "@/pages/production-cockpit";
 import ProductDevelopment from "@/pages/product-development";
+import PlanningOverview from "@/pages/planning-overview";
 import SchedulingHistory from "@/pages/scheduling-history";
 import ProductionSchedulePage from "@/pages/production-schedule";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
@@ -381,6 +382,11 @@ function Router() {
             </ProtectedRoute>
           </Route>
           
+          <Route path="/planning-overview">
+            <ProtectedRoute feature="planning-overview" action="view">
+              <PlanningOverview />
+            </ProtectedRoute>
+          </Route>
           <Route path="/master-production-schedule">
             <ProtectedRoute feature="master-production-schedule" action="view">
               <MasterProductionSchedulePage />
