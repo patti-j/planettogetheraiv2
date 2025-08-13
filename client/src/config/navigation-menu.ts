@@ -21,6 +21,24 @@ export interface NavigationGroup {
 
 export const navigationGroups: NavigationGroup[] = [
   {
+    title: "Business Management", 
+    priority: "high",
+    color: "blue",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    features: [
+      { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: GitBranch, label: "Solutions Comparison", href: "/solutions-comparison", feature: "", action: "", color: "bg-purple-600" },
+      { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
+      { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
+      { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },
+      { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
+      { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
+      { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
+      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
+    ]
+  },
+  {
     title: "Planning & Scheduling",
     priority: "high",
     color: "blue",
@@ -90,24 +108,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", feature: "forklift-driver", action: "view", color: "bg-yellow-500" },
       { icon: Wrench, label: "Maintenance", href: "/maintenance", feature: "maintenance", action: "view", color: "bg-red-500" },
       { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", feature: "disruption-management", action: "view", color: "bg-red-600" }
-    ]
-  },
-  {
-    title: "Business Management", 
-    priority: "medium",
-    color: "blue",
-    bgColor: "bg-blue-50 dark:bg-blue-950/20",
-    borderColor: "border-blue-200 dark:border-blue-800",
-    features: [
-      { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
-      { icon: GitBranch, label: "Solutions Comparison", href: "/solutions-comparison", feature: "", action: "", color: "bg-purple-600" },
-      { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
-      { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
-      { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },
-      { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
-      { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
-      { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
-      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
     ]
   },
   {
