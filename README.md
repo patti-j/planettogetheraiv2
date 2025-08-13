@@ -1,16 +1,25 @@
-# PlanetTogether - AI First Factory Optimization Platform
+# PlanetTogether - AI-First Manufacturing ERP System
 
-An advanced AI-powered industrial management platform that provides intelligent data management and optimization tools for manufacturing workflows, with enhanced schema visualization and layout algorithms.
+<div align="center">
+  <img src="attached_assets/Copy of logo-icon_250px_1754109283906.PNG" alt="PlanetTogether Logo" width="150">
+  
+  **Transform Your Manufacturing Operations with AI-Powered Intelligence**
+  
+  [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+  [![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+</div>
 
 ## 🏭 Features
 
 - **Manufacturing Process Management**: Complete support for both discrete and process manufacturing
-- **AI-Powered Optimization**: Intelligent scheduling and resource allocation
-- **Advanced Schema Visualization**: Interactive database schema explorer with multiple layout algorithms
+- **AI-Powered Optimization**: Intelligent scheduling and resource allocation with OpenAI GPT-4
+- **Advanced Production Scheduling**: Bryntum Scheduler Pro integration for visual Gantt charts
 - **Real-time Analytics**: Manufacturing KPIs and performance metrics
 - **Resource Management**: Comprehensive resource planning and allocation
 - **Quality Control**: Quality management and compliance tracking
-- **Mobile Responsive**: Full mobile and tablet support
+- **Mobile Responsive**: Full mobile and tablet support with optimized navigation
 
 ## 🚀 Technology Stack
 

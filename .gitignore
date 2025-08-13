@@ -111,6 +111,15 @@ vite.config.ts.*
 .replit
 replit.nix
 
+# NPM authentication (contains Bryntum credentials)
+.npmrc
+
+# Test files
+test-*.js
+test-*.mp3
+cookies.txt
+valid_cookie.txt
+
 # Drizzle
 drizzle/
 
