@@ -421,7 +421,13 @@ export default function ProductionSchedulePage() {
 
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
-        <Tabs defaultValue="overview" className="flex-1">
+        <Tabs defaultValue="scheduler-pro" className="flex-1">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="scheduler-pro">Resource Schedule</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="gantt">Simple Gantt</TabsTrigger>
+          </TabsList>
+          
           <TabsContent value="overview" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : gridCols}`}>
               {/* Gantt Chart Widget - Temporarily disabled to prevent conflict with Bryntum */}
@@ -558,55 +564,20 @@ export default function ProductionSchedulePage() {
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
-              {import.meta.env.DEV ? (
-                <div className="space-y-4">
-                  <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                    <p><strong>Data Status:</strong> Operations: {Array.isArray(operations) ? operations.length : 0}, Resources: {Array.isArray(resources) ? resources.length : 0}</p>
-                    {Array.isArray(operations) && operations.length > 0 && (
-                      <p><strong>Sample Operation:</strong> {operations[0]?.operationName} ({operations[0]?.status}) - Start: {operations[0]?.startTime}</p>
-                    )}
-                    {Array.isArray(resources) && resources.length > 0 && (
-                      <p><strong>Sample Resource:</strong> {resources[0]?.name} ({resources[0]?.type})</p>
-                    )}
-                    <p><strong>Loading States:</strong> Orders: {ordersLoading ? 'Loading...' : 'Ready'}, Operations: {operationsLoading ? 'Loading...' : 'Ready'}, Resources: {resourcesLoading ? 'Loading...' : 'Ready'}</p>
-                  </div>
-                  {!ordersLoading && !operationsLoading && !resourcesLoading && (
-                    <BryntumGanttReact
-                      operations={operations as any || []}
-                      resources={resources as any || []}
-                      onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
-                        try {
-                          const response = await apiRequest('PUT', `/api/operations/${operationId}`, {
-                            workCenterId: newResourceId,
-                            startTime: newStartTime.toISOString(),
-                            endTime: newEndTime.toISOString()
-                          });
-                          if (!response.ok) throw new Error('Failed to reschedule operation');
-                          await queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
-                        } catch (error) {
-                          console.error('ERROR in onOperationMove:', error);
-                          throw error;
-                        }
-                      }}
-                    />
-                  )}
-                </div>
+              {!ordersLoading && !operationsLoading && !resourcesLoading ? (
+                <SimpleBryntumGantt
+                  operations={operations as any || []}
+                  resources={resources as any || []}
+                />
               ) : (
-                !ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <SimpleBryntumGantt
-                    operations={operations as any || []}
-                    resources={resources as any || []}
-                  />
-                ) : (
-                  <Card className="h-full">
-                    <CardContent className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-muted-foreground">Loading Gantt chart...</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
+                <Card className="h-full">
+                  <CardContent className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading Gantt chart...</p>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </TabsContent>
