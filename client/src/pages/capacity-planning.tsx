@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   Calendar, Users, Settings, Target, TrendingUp, AlertTriangle, Plus, BookOpen, Zap, Briefcase,
   Clock, Activity, BarChart3, Factory, Gauge, Timer, Wrench, UserCheck, ClipboardList, 
-  ChevronUp, ChevronDown, Info, Building2, MapPin, LineChart, PieChart
+  ChevronUp, ChevronDown, Info, Building2, MapPin, LineChart, PieChart, Grid3X3
 } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWeekend, differenceInDays } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,6 +26,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import CapacityGridView from "@/components/capacity-planning/capacity-grid-view";
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -1059,10 +1060,14 @@ export default function CapacityPlanning() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex w-full overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-4 lg:grid-cols-9">
+        <TabsList className="flex w-full overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-4 lg:grid-cols-10">
           <TabsTrigger value="overview" className="text-xs sm:text-sm flex-shrink-0">
             <BarChart3 className="w-4 h-4 mr-1" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="grid" className="text-xs sm:text-sm flex-shrink-0">
+            <Grid3X3 className="w-4 h-4 mr-1" />
+            Grid View
           </TabsTrigger>
           <TabsTrigger value="plants" className="text-xs sm:text-sm flex-shrink-0">
             <Building2 className="w-4 h-4 mr-1" />
@@ -1156,6 +1161,15 @@ export default function CapacityPlanning() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Grid View Tab - Excel-like capacity grid */}
+        <TabsContent value="grid" className="space-y-6">
+          <CapacityGridView 
+            resources={resources}
+            scenarios={scenarios}
+            projections={capacityProjections}
+          />
         </TabsContent>
 
         {/* Plants Tab - New detailed plant capacity timeline */}
