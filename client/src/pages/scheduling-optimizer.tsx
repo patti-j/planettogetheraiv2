@@ -457,7 +457,7 @@ const SchedulingOptimizer: React.FC = () => {
 
   // Register this page in recent pages when component mounts
   useEffect(() => {
-    addRecentPage('/scheduling-optimizer', 'Scheduling Optimizer', 'Sparkles');
+    addRecentPage('/scheduling-optimizer');
   }, [addRecentPage]);
 
   // Auto-scroll to evaluation system when it becomes visible

@@ -3,6 +3,21 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
+import { getNavigationItemByHref } from '@/config/navigation-menu';
+
+// Helper function to get icon name from Lucide React component
+const getIconName = (iconComponent: any): string => {
+  if (!iconComponent) return 'FileText';
+  
+  // Get the display name or function name from the component
+  const name = iconComponent.displayName || iconComponent.name;
+  if (name) return name;
+  
+  // Fallback: try to extract from component string representation
+  const componentStr = iconComponent.toString();
+  const match = componentStr.match(/function\s+([A-Z][a-zA-Z0-9]*)/);
+  return match ? match[1] : 'FileText';
+};
 
 interface RecentPage {
   path: string;
@@ -285,13 +300,16 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   
   // Remove unused trackMenuClick function that was causing TypeScript errors
 
-  const addRecentPage = (path: string, label: string, icon?: string) => {
+  const addRecentPage = (path: string, label?: string, icon?: string) => {
     // Replace old routes with new ones
     if (path === '/role-management') {
       path = '/user-access-management';
-      label = pageMapping['/user-access-management']?.label || 'User & Access Management';
-      icon = pageMapping['/user-access-management']?.icon || 'Shield';
     }
+    
+    // Get the navigation item from the config to get the correct label and icon
+    const navItem = getNavigationItemByHref(path);
+    const finalLabel = label || navItem?.label || pageMapping[path]?.label || generateLabelFromPath(path).label;
+    const finalIcon = icon || getIconName(navItem?.icon) || pageMapping[path]?.icon || generateLabelFromPath(path).icon;
     
     setRecentPages(current => {
       // Check if the page already exists in the recent list
@@ -316,7 +334,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         const unpinnedPages = current.filter(page => !page.isPinned);
         
         // New page - add to the unpinned section and limit total to MAX_RECENT_PAGES
-        const newPage = { path, label, icon: icon || 'FileText', timestamp: Date.now(), isPinned: false };
+        const newPage = { path, label: finalLabel, icon: finalIcon, timestamp: Date.now(), isPinned: false };
         const updatedUnpinned = [newPage, ...unpinnedPages];
         
         // Combine pinned + unpinned, ensuring we don't exceed MAX_RECENT_PAGES
