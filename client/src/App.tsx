@@ -111,6 +111,7 @@ import InboxPage from "@/pages/inbox";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
+import DemoPage from "@/pages/demo";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -282,6 +283,7 @@ function Router() {
   const routeContent = (
     <OnboardingGate>
       <Switch>
+        <Route path="/demo" component={DemoPage} />
         <Route path="/marketing" component={MarketingLandingPage} />
         <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/onboarding" component={Onboarding} />
