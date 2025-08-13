@@ -1,97 +1,176 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.material.css';
+import { useQuery } from '@tanstack/react-query';
+
+// Custom event renderer to display job/operation info with status
+const eventRenderer = ({ eventRecord, renderData }) => {
+  const jobName = eventRecord.jobName || 'Unknown Job';
+  const operationName = eventRecord.name || 'Unknown Operation';
+  const status = eventRecord.status || 'waiting';
+  
+  // Status colors
+  const statusColors = {
+    ready: '#4CAF50',      // Green
+    waiting: '#FF9800',    // Orange  
+    in_progress: '#2196F3', // Blue
+    completed: '#9E9E9E',   // Gray
+    planned: '#FFC107',     // Amber
+    scheduled: '#4CAF50'    // Green (same as ready)
+  };
+
+  const statusColor = statusColors[status] || '#FF9800';
+  
+  // Create custom HTML for the event
+  return {
+    ...renderData,
+    children: `
+      <div style="
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 2px 4px;
+        font-size: 11px;
+      ">
+        <div style="
+          font-weight: bold;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        ">
+          ${jobName}: ${operationName}
+        </div>
+        <div style="
+          background-color: ${statusColor};
+          color: white;
+          padding: 1px 4px;
+          border-radius: 2px;
+          text-align: center;
+          font-size: 10px;
+          text-transform: uppercase;
+        ">
+          ${status === 'scheduled' ? 'ready' : status.replace('_', ' ')}
+        </div>
+      </div>
+    `
+  };
+};
 
 export default function DemoPage() {
   const schedulerRef = useRef<any>(null);
+  const [schedulerData, setSchedulerData] = useState<any>(null);
   
-  // Pure Bryntum test data - 5 resources with colorful operations
-  const testData = {
+  // Fetch production orders
+  const { data: productionOrders } = useQuery({
+    queryKey: ['/api/production-orders'],
+    enabled: true
+  });
+  
+  // Fetch discrete operations  
+  const { data: operations } = useQuery({
+    queryKey: ['/api/operations'],
+    enabled: true
+  });
+  
+  // Fetch resources/work centers
+  const { data: resources } = useQuery({
+    queryKey: ['/api/resources'],
+    enabled: true
+  });
+  
+  useEffect(() => {
+    if (productionOrders && operations && resources) {
+      // Map resources to Bryntum format
+      const bryntumResources = resources.slice(0, 10).map((resource: any) => ({
+        id: resource.id,
+        name: resource.name,
+        eventColor: resource.isDrum ? 'red' : 'blue'
+      }));
+      
+      // Map operations to Bryntum events
+      const bryntumEvents = operations.map((op: any) => {
+        // Find the related production order
+        const order = productionOrders.find((po: any) => po.id === op.productionOrderId);
+        
+        return {
+          id: op.id,
+          name: op.operationName || op.name,
+          jobName: order ? order.name : `Order ${op.productionOrderId || ''}`,
+          startDate: op.startTime || new Date('2025-08-07T08:00:00'),
+          endDate: op.endTime || new Date('2025-08-07T12:00:00'),
+          status: op.status || 'waiting',
+          eventColor: op.status === 'scheduled' || op.status === 'ready' ? 'green' : 
+                     op.status === 'in_progress' ? 'blue' : 
+                     op.status === 'completed' ? 'gray' : 'orange',
+          draggable: true,
+          resizable: true
+        };
+      });
+      
+      // Create assignments (map operations to resources)
+      const bryntumAssignments = operations.map((op: any, index: number) => ({
+        id: index + 1,
+        eventId: op.id,
+        resourceId: op.workCenterId || op.assignedResourceId || (index % bryntumResources.length) + 1
+      }));
+      
+      setSchedulerData({
+        resources: bryntumResources,
+        events: bryntumEvents,
+        assignments: bryntumAssignments
+      });
+    }
+  }, [productionOrders, operations, resources]);
+  
+  if (!schedulerData) {
+    return (
+      <div style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f3f4f6'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2>Loading Production Schedule...</h2>
+          <p>Fetching jobs and operations data</p>
+        </div>
+      </div>
+    );
+  }
+  
+  const config = {
     startDate: new Date('2025-08-05'),
     endDate: new Date('2025-08-31'),
     viewPreset: 'weekAndDayLetter',
-    rowHeight: 60,
+    rowHeight: 70,
     barMargin: 5,
     eventStyle: 'colored' as const,
     snap: true,
     readOnly: false,
     
+    // Use custom event renderer
+    eventRenderer,
+    
     columns: [
       { 
         type: 'resourceInfo',
-        text: 'Test Resources',
-        width: 200,
+        text: 'Work Centers / Resources',
+        width: 250,
         showEventCount: true,
         showImage: false
       }
     ],
     
-    // 5 Test Resources
-    resources: [
-      { id: 1, name: 'Resource 1 - Test', eventColor: 'blue' },
-      { id: 2, name: 'Resource 2 - Test', eventColor: 'red' },
-      { id: 3, name: 'Resource 3 - Test', eventColor: 'orange' },
-      { id: 4, name: 'Resource 4 - Test', eventColor: 'green' },
-      { id: 5, name: 'Resource 5 - Test', eventColor: 'purple' }
-    ],
-    
-    // Sample colorful events - make them draggable and resizable
-    events: [
-      {
-        id: 1,
-        name: 'Blue Task - Drag Me!',
-        startDate: '2025-08-07T08:00:00',
-        endDate: '2025-08-07T12:00:00',
-        eventColor: 'blue',
-        draggable: true,
-        resizable: true
-      },
-      {
-        id: 2,
-        name: 'Red Task - Resize Me!',
-        startDate: '2025-08-07T13:00:00',
-        endDate: '2025-08-07T17:00:00',
-        eventColor: 'red',
-        draggable: true,
-        resizable: true
-      },
-      {
-        id: 3,
-        name: 'Orange Task - Move Me!',
-        startDate: '2025-08-08T09:00:00',
-        endDate: '2025-08-08T11:00:00',
-        eventColor: 'orange',
-        draggable: true,
-        resizable: true
-      },
-      {
-        id: 4,
-        name: 'Green Task',
-        startDate: '2025-08-07T10:00:00',
-        endDate: '2025-08-07T18:00:00',
-        eventColor: 'green',
-        draggable: true,
-        resizable: true
-      },
-      {
-        id: 5,
-        name: 'Purple Task',
-        startDate: '2025-08-08T08:00:00',
-        endDate: '2025-08-08T12:00:00',
-        eventColor: 'purple',
-        draggable: true,
-        resizable: true
-      }
-    ],
-    
-    // Assignments linking events to resources
-    assignments: [
-      { id: 1, eventId: 1, resourceId: 1 },
-      { id: 2, eventId: 2, resourceId: 2 },
-      { id: 3, eventId: 3, resourceId: 3 },
-      { id: 4, eventId: 4, resourceId: 4 },
-      { id: 5, eventId: 5, resourceId: 5 }
-    ],
+    // Use real data from API
+    resources: schedulerData.resources,
+    events: schedulerData.events,
+    assignments: schedulerData.assignments,
     
     // Enable ALL Bryntum Pro features
     features: {
@@ -109,49 +188,127 @@ export default function DemoPage() {
       // Tooltips and editing
       eventTooltip: {
         template: ({ eventRecord }) => `
-          <b>${eventRecord.name}</b><br>
-          Start: ${eventRecord.startDate}<br>
-          End: ${eventRecord.endDate}<br>
-          <em>Drag to move, resize edges to change duration</em>
+          <div style="padding: 10px;">
+            <h4 style="margin: 0 0 8px 0; color: #333;">${eventRecord.jobName || 'Job'}</h4>
+            <b>Operation:</b> ${eventRecord.name}<br>
+            <b>Status:</b> <span style="color: ${
+              eventRecord.status === 'scheduled' || eventRecord.status === 'ready' ? '#4CAF50' : 
+              eventRecord.status === 'waiting' ? '#FF9800' :
+              eventRecord.status === 'in_progress' ? '#2196F3' : '#666'
+            }; font-weight: bold;">${eventRecord.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}</span><br>
+            <b>Start:</b> ${eventRecord.startDate ? new Date(eventRecord.startDate).toLocaleString() : 'Not set'}<br>
+            <b>End:</b> ${eventRecord.endDate ? new Date(eventRecord.endDate).toLocaleString() : 'Not set'}<br>
+            <hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+            <em style="font-size: 11px;">Drag to move, resize edges to change duration</em>
+          </div>
         `
       },
       eventEdit: {
         editorConfig: {
-          title: 'Edit Task',
-          height: 400
+          title: 'Edit Operation',
+          height: 450,
+          // Custom fields for editing
+          items: {
+            generalTab: {
+              title: 'General',
+              items: {
+                jobNameField: {
+                  type: 'text',
+                  name: 'jobName',
+                  label: 'Job Name',
+                  weight: 100
+                },
+                nameField: {
+                  type: 'text',
+                  name: 'name',
+                  label: 'Operation Name',
+                  weight: 200
+                },
+                statusField: {
+                  type: 'combo',
+                  name: 'status',
+                  label: 'Status',
+                  weight: 300,
+                  items: [
+                    { value: 'planned', text: 'Planned' },
+                    { value: 'scheduled', text: 'Ready' },
+                    { value: 'waiting', text: 'Waiting' },
+                    { value: 'in_progress', text: 'In Progress' },
+                    { value: 'completed', text: 'Completed' }
+                  ]
+                }
+              }
+            }
+          }
         }
       },
       
-      // Context menus
+      // Context menus  
       eventMenu: {
         items: {
-          deleteEvent: {
-            text: 'Delete',
-            icon: 'b-fa-trash',
-            onItem: ({ eventRecord }) => eventRecord.remove()
-          },
           editEvent: {
-            text: 'Edit',
+            text: 'Edit Operation',
             icon: 'b-fa-edit',
             onItem: ({ eventRecord }) => {
               const scheduler = schedulerRef.current?.instance;
               scheduler?.editEvent(eventRecord);
             }
+          },
+          changeStatus: {
+            text: 'Change Status',
+            icon: 'b-fa-flag',
+            menu: [
+              {
+                text: 'Ready',
+                onItem: ({ eventRecord }) => {
+                  eventRecord.status = 'scheduled';
+                  eventRecord.eventColor = 'green';
+                }
+              },
+              {
+                text: 'Waiting',
+                onItem: ({ eventRecord }) => {
+                  eventRecord.status = 'waiting';
+                  eventRecord.eventColor = 'orange';
+                }
+              },
+              {
+                text: 'In Progress',
+                onItem: ({ eventRecord }) => {
+                  eventRecord.status = 'in_progress';
+                  eventRecord.eventColor = 'blue';
+                }
+              },
+              {
+                text: 'Completed',
+                onItem: ({ eventRecord }) => {
+                  eventRecord.status = 'completed';
+                  eventRecord.eventColor = 'gray';
+                }
+              }
+            ]
+          },
+          deleteEvent: {
+            text: 'Delete Operation',
+            icon: 'b-fa-trash',
+            onItem: ({ eventRecord }) => eventRecord.remove()
           }
         }
       },
       scheduleMenu: {
         items: {
           addEvent: {
-            text: 'Add new task here',
+            text: 'Add new operation here',
             icon: 'b-fa-plus',
             onItem: ({ resourceRecord, date }) => {
               resourceRecord.events.add({
-                name: 'New Task',
+                name: 'New Operation',
+                jobName: 'Unassigned Job',
+                status: 'planned',
                 startDate: date,
                 duration: 4,
                 durationUnit: 'hour',
-                eventColor: 'cyan'
+                eventColor: 'orange'
               });
             }
           }
@@ -172,16 +329,15 @@ export default function DemoPage() {
       
       // Data management
       eventFilter: true,
-      group: 'eventColor',
       sort: true,
       summary: true,
       
       // Additional Pro features
       resourceTimeRanges: true,
-      percentBar: true,
+      percentBar: false,
       labels: {
         left: {
-          field: 'name',
+          field: 'jobName',
           editor: false
         }
       }
@@ -248,19 +404,32 @@ export default function DemoPage() {
         '->',
         {
           type: 'button',
-          text: 'Add Event',
+          text: 'Refresh Data',
+          icon: 'b-fa-sync',
+          onAction: () => {
+            window.location.reload();
+          }
+        },
+        {
+          type: 'button',
+          text: 'Add Operation',
           icon: 'b-fa-plus-circle',
           style: 'background: #4CAF50; color: white;',
           onAction: () => {
             const scheduler = schedulerRef.current?.instance;
-            scheduler?.eventStore.add({
-              resourceId: Math.floor(Math.random() * 5) + 1,
-              name: 'New Task',
-              startDate: new Date('2025-08-10T10:00:00'),
-              duration: 3,
-              durationUnit: 'hour',
-              eventColor: 'teal'
-            });
+            const firstResource = schedulerData.resources[0];
+            if (firstResource) {
+              scheduler?.eventStore.add({
+                resourceId: firstResource.id,
+                name: 'New Operation',
+                jobName: 'Unassigned Job',
+                status: 'planned',
+                startDate: new Date('2025-08-10T10:00:00'),
+                duration: 3,
+                durationUnit: 'hour',
+                eventColor: 'orange'
+              });
+            }
           }
         }
       ]
@@ -278,15 +447,15 @@ export default function DemoPage() {
       backgroundColor: '#f3f4f6'
     }}>
       <div style={{
-        backgroundColor: '#ff6b35',
+        backgroundColor: '#2563eb',
         color: 'white',
         padding: '15px',
         borderRadius: '8px',
         marginBottom: '20px',
         textAlign: 'center'
       }}>
-        <h1 style={{ margin: 0, fontSize: '24px' }}>Bryntum Pure Test Demo</h1>
-        <p style={{ margin: '5px 0 0 0', opacity: 0.9 }}>5 Test Resources with Colorful Tasks</p>
+        <h1 style={{ margin: 0, fontSize: '24px' }}>Production Schedule Gantt</h1>
+        <p style={{ margin: '5px 0 0 0', opacity: 0.9 }}>Jobs and Operations with Status Tracking</p>
       </div>
       
       <div style={{
@@ -298,7 +467,7 @@ export default function DemoPage() {
       }}>
         <BryntumSchedulerPro
           ref={schedulerRef}
-          {...testData}
+          {...config}
         />
       </div>
     </div>
