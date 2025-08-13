@@ -17,6 +17,7 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes & Fixes
+- **Extended Full-Screen Layout to Marketing Pages** (Aug 13, 2025): Applied full-screen layout pattern (fixed inset-0 with z-[9999] and overflow-auto) to pricing, marketing home, and solutions comparison pages for consistent public-facing page experience
 - **Added Layout Density Control System** (Aug 13, 2025): Implemented comprehensive layout density controls with compressed, standard, and comfortable options. Added LayoutDensityContext for managing font sizes and spacing across the application. Created density toggle control in desktop header with visual row icons (Rows2, Rows3, Rows4). Added CSS variables and classes for density-specific font sizes, spacing, and line heights with localStorage persistence
 - **Fixed Data Schema Page Header Overflow** (Aug 13, 2025): Fixed header controls being pushed off the right side of the page by improving responsive layout, adding flex-shrink-0 to prevent control compression, using icon-only buttons on mobile to save space, and optimizing gap spacing
 - **Cleaned Up Production Schedule Navigation** (Aug 13, 2025): Removed redundant /production-scheduling route and menu item, keeping only the valid /production-schedule route and "Production Schedule" menu item in the Planning & Scheduling section

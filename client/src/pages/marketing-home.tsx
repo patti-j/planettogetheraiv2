@@ -132,7 +132,7 @@ const MarketingHome: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="fixed inset-0 min-h-screen bg-background z-[9999] overflow-auto">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
         <div className="absolute inset-0 bg-grid-white/10" />
