@@ -161,12 +161,25 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       
       // Fix broken icons (empty objects, FileText fallbacks) by using pageMapping
       const mappedPage = pageMapping[page.path];
-      if (mappedPage && (!page.icon || typeof page.icon !== 'string' || page.icon === '{}' || page.icon === 'FileText')) {
-        return {
-          ...page,
-          icon: mappedPage.icon,
-          label: page.label || mappedPage.label
-        };
+      if (mappedPage) {
+        // Always use the mapped page information if it exists
+        // This fixes FileText fallbacks and ensures consistency
+        const shouldUpdateIcon = !page.icon || 
+                                 typeof page.icon !== 'string' || 
+                                 page.icon === '{}' || 
+                                 page.icon === 'FileText' ||
+                                 page.icon === 'undefined' ||
+                                 page.icon === 'null';
+        
+        const shouldUpdateLabel = !page.label || page.label !== mappedPage.label;
+        
+        if (shouldUpdateIcon || shouldUpdateLabel) {
+          return {
+            ...page,
+            icon: mappedPage.icon,
+            label: mappedPage.label
+          };
+        }
       }
       
       return page;
@@ -333,14 +346,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     const finalLabel = label || navItem?.label || pageMapping[path]?.label || generateLabelFromPath(path).label;
     
     // Try to get icon in this order of preference:
-    // 1. Explicitly passed icon
-    // 2. Icon from pageMapping (manually maintained)  
+    // 1. Icon from pageMapping (most reliable, manually maintained)  
+    // 2. Explicitly passed icon
     // 3. Icon from navigation config (extracted from React component)
     // 4. Generated icon from path
-    let finalIcon = icon;
-    if (!finalIcon && pageMapping[path]?.icon) {
-      finalIcon = pageMapping[path].icon;
-    } else if (!finalIcon && navItem?.icon) {
+    let finalIcon = pageMapping[path]?.icon || icon;
+    
+    if (!finalIcon && navItem?.icon) {
       const extractedIcon = getIconName(navItem.icon);
       finalIcon = extractedIcon;
     }
