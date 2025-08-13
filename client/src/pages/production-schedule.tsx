@@ -19,6 +19,7 @@ import OperationSequencerWidget from '@/components/widgets/operation-sequencer-w
 import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
 import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
+import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -422,8 +423,9 @@ export default function ProductionSchedulePage() {
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
         <Tabs defaultValue="scheduler-pro" className="flex-1">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="scheduler-pro">Resource Schedule</TabsTrigger>
+            <TabsTrigger value="demo">Demo Data</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="gantt">Simple Gantt</TabsTrigger>
           </TabsList>
@@ -560,6 +562,30 @@ export default function ProductionSchedulePage() {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="demo" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
+            <Card className="h-full">
+              <CardHeader className={`${isMobile ? 'pb-2' : ''}`}>
+                <CardTitle className={`flex items-center justify-between ${isMobile ? 'text-base' : ''}`}>
+                  <div className="flex items-center gap-2">
+                    <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                    Bryntum Demo - Test Data
+                  </div>
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Demo Mode
+                  </Badge>
+                </CardTitle>
+                {!isMobile && (
+                  <p className="text-sm text-muted-foreground">
+                    This tab shows Bryntum Scheduler Pro with their recommended demo data structure. Use this to verify the scheduler component is working correctly.
+                  </p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <BryntumSchedulerProDemo height={isMobile ? '500px' : '700px'} />
               </CardContent>
             </Card>
           </TabsContent>
