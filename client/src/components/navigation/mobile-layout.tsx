@@ -23,6 +23,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [recentDialogOpen, setRecentDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -36,6 +37,16 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   });
 
   const isVoiceEnabled = (userPreferences as any)?.maxAiState?.voiceEnabled || false;
+
+  // Filter navigation groups based on search query
+  const filteredNavigationGroups = searchQuery
+    ? navigationGroups.map((group) => ({
+        ...group,
+        features: group.features.filter((feature) =>
+          feature.label.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+      })).filter((group) => group.features.length > 0)
+    : navigationGroups;
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
@@ -317,7 +328,10 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSearchQuery("");
+                    }}
                     className="p-1.5"
                   >
                     <X className="w-4 h-4" />
@@ -325,15 +339,29 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 </div>
               </div>
               
+              {/* Search bar */}
+              <div className="p-4 border-b dark:border-gray-700">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search menu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9 text-sm"
+                  />
+                </div>
+              </div>
+              
               {/* Navigation Menu */}
               <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-                {navigationGroups.map((group) => (
+                {filteredNavigationGroups.map((group) => (
                   <div key={group.title} className="space-y-2">
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                       {group.title}
                     </h3>
                     <div className="space-y-1">
-                      {group.features.slice(0, 6).map((feature) => {
+                      {group.features.map((feature) => {
                         const Icon = feature.icon;
                         return (
                           <div
@@ -341,6 +369,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                             className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                             onClick={() => {
                               setMobileMenuOpen(false);
+                              setSearchQuery("");
                               setLocation(feature.href);
                             }}
                           >
