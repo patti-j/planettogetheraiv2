@@ -887,6 +887,5 @@ export default function ProductionSchedulePage() {
           </span>
         </div>
       </div>
-    </div>
   );
 }
