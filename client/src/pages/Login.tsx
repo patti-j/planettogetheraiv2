@@ -147,7 +147,7 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+    <div className="fixed inset-0 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 z-[9999]">
       <div className="max-w-md w-full space-y-6">
         {/* Back to Marketing Link */}
         <div className="flex justify-between items-center gap-2">

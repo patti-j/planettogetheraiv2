@@ -194,6 +194,9 @@ export function useAuth() {
         window.dispatchEvent(new CustomEvent('tourClose'));
       }
       
+      // Clear authentication state immediately to trigger re-render
+      queryClient.setQueryData(["/api/auth/me"], null);
+      
       try {
         // Make logout request without token since we cleared it above
         const response = await fetch("/api/auth/logout", {
@@ -218,9 +221,9 @@ export function useAuth() {
       localStorage.removeItem('userPreferences');
       localStorage.removeItem('lastVisitedPage');
       
-      // Force redirect to login page
+      // Force complete page reload to login to ensure clean state
       console.log("Redirecting to login page...");
-      window.location.href = '/login';
+      window.location.replace('/login');
     },
     onError: (error) => {
       console.error("Logout error:", error);
@@ -231,7 +234,7 @@ export function useAuth() {
       localStorage.removeItem('lastVisitedPage');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
-      window.location.href = '/login';
+      window.location.replace('/login');
     },
   });
 
