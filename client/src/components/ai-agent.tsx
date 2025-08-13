@@ -729,14 +729,14 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
     <TooltipProvider>
       <Card 
         ref={dropZoneRef}
-        className={`w-full max-w-2xl mx-auto h-[600px] flex flex-col transition-all ${
+        className={`w-full max-w-full sm:max-w-2xl mx-auto h-screen sm:h-[600px] flex flex-col transition-all border-0 sm:border rounded-none sm:rounded-lg ${
           isDragOver ? 'border-2 border-dashed border-blue-500 bg-blue-50' : ''
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 px-4 sm:px-6">
           {/* Single Clean Header with Search */}
           <div className="flex items-center gap-4">
             <Bot className="w-6 h-6 text-gray-600 flex-shrink-0" />
@@ -757,7 +757,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
           </div>
         </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col gap-4">
+      <CardContent className="flex-1 flex flex-col gap-4 px-4 sm:px-6">
         {/* Messages */}
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">

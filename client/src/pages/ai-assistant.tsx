@@ -8,8 +8,8 @@ export default function AIAssistant() {
   const [searchQuery, setSearchQuery] = useState("");
   
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-      <div className="md:ml-12 ml-0">
+    <div className="p-0 sm:p-6 space-y-0 sm:space-y-6 h-screen sm:h-auto">
+      <div className="md:ml-12 ml-0 h-full">
         <AIAgent searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       </div>
     </div>
