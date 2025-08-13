@@ -34,6 +34,14 @@ import { useFullScreen } from '@/contexts/FullScreenContext';
 import { useLayoutDensity } from '@/contexts/LayoutDensityContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+interface Workspace {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  isActive?: boolean;
+}
+
 export function DesktopTopBar() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -45,6 +53,28 @@ export function DesktopTopBar() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { isFullScreen, toggleFullScreen } = useFullScreen();
   const { density, setDensity } = useLayoutDensity();
+
+  // Workspace state
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>({
+    id: '1',
+    name: 'Production',
+    description: 'Manufacturing Operations',
+    icon: '🏭',
+    isActive: true
+  });
+
+  const workspaces: Workspace[] = [
+    { id: '1', name: 'Production', description: 'Manufacturing Operations', icon: '🏭' },
+    { id: '2', name: 'Engineering', description: 'Product Development', icon: '⚙️' },
+    { id: '3', name: 'Quality', description: 'Quality Control', icon: '✅' },
+    { id: '4', name: 'Logistics', description: 'Supply Chain', icon: '📦' },
+    { id: '5', name: 'Finance', description: 'Financial Planning', icon: '💰' }
+  ];
+
+  const switchWorkspace = (workspace: Workspace) => {
+    setActiveWorkspace(workspace);
+    console.log('Switching to workspace:', workspace.name);
+  };
 
   // Fetch plants data
   const { data: plants = [] } = useQuery({
@@ -106,6 +136,47 @@ export function DesktopTopBar() {
 
   return (
     <div className="h-14 bg-background border-b flex items-center px-4 gap-3 sticky top-0 z-50">
+      {/* Workspace Switcher */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className="min-w-[140px] justify-between"
+          >
+            <div className="flex items-center min-w-0">
+              <span className="text-lg mr-2">{activeWorkspace.icon}</span>
+              <div className="text-left min-w-0">
+                <p className="text-sm font-medium truncate">{activeWorkspace.name}</p>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <div className="px-2 py-1.5">
+            <p className="text-sm font-medium">Switch Workspace</p>
+            <p className="text-xs text-muted-foreground">Select active workspace</p>
+          </div>
+          <DropdownMenuSeparator />
+          {workspaces.map((workspace) => (
+            <DropdownMenuItem
+              key={workspace.id}
+              onClick={() => switchWorkspace(workspace)}
+              className={workspace.id === activeWorkspace.id ? "bg-accent" : ""}
+            >
+              <span className="mr-2">{workspace.icon}</span>
+              <div className="flex-1">
+                <p className="text-sm">{workspace.name}</p>
+                <p className="text-xs text-muted-foreground">{workspace.description}</p>
+              </div>
+              {workspace.id === activeWorkspace.id && (
+                <Badge variant="secondary" className="ml-2">Active</Badge>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       {/* Global Search / Command Palette */}
       <div className="flex items-center gap-2 flex-1 max-w-md">
         <Button

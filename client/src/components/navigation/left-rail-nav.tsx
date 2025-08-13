@@ -1,24 +1,14 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Clock, ChevronDown, ChevronRight, FolderOpen, Grid, Pin, PinOff, X, Menu, Minimize2, Maximize2 } from 'lucide-react';
+import { Home, Clock, ChevronRight, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { SlideOutMenu } from './slide-out-menu';
-
-interface Workspace {
-  id: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  isActive?: boolean;
-}
 
 export function LeftRailNav() {
   const [location, setLocation] = useLocation();
@@ -27,29 +17,6 @@ export function LeftRailNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
   const { recentPages, togglePinPage, clearRecentPages } = useNavigation();
-  
-  // Mock workspaces for now - this would come from the backend
-  const [activeWorkspace, setActiveWorkspace] = useState<Workspace>({
-    id: '1',
-    name: 'Production',
-    description: 'Manufacturing Operations',
-    icon: '🏭',
-    isActive: true
-  });
-  
-  const workspaces: Workspace[] = [
-    { id: '1', name: 'Production', description: 'Manufacturing Operations', icon: '🏭' },
-    { id: '2', name: 'Engineering', description: 'Product Development', icon: '⚙️' },
-    { id: '3', name: 'Quality', description: 'Quality Control', icon: '✅' },
-    { id: '4', name: 'Logistics', description: 'Supply Chain', icon: '📦' },
-    { id: '5', name: 'Finance', description: 'Financial Planning', icon: '💰' }
-  ];
-
-  const switchWorkspace = (workspace: Workspace) => {
-    setActiveWorkspace(workspace);
-    // In a real app, this would trigger workspace context change
-    console.log('Switching to workspace:', workspace.name);
-  };
 
   // Get page icon based on path
   const getPageIcon = (path: string) => {
@@ -100,12 +67,12 @@ export function LeftRailNav() {
           isMinimized && "hidden",
           isCollapsed ? "w-16" : "w-64"
         )}>
-          {/* Header with Workspace Switcher and Collapse Button */}
+          {/* Header with Collapse Button */}
           <div className="p-2 border-b">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between">
               <div className="flex-1">
                 {!isCollapsed && (
-                  <span className="text-xs font-medium text-muted-foreground">Workspace</span>
+                  <span className="text-xs font-medium text-muted-foreground">Navigation</span>
                 )}
               </div>
               
@@ -123,60 +90,6 @@ export function LeftRailNav() {
                 )} />
               </Button>
             </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between",
-                    isCollapsed && "justify-center px-2"
-                  )}
-                >
-                  <div className="flex items-center min-w-0">
-                    <span className="text-lg mr-2">{activeWorkspace.icon}</span>
-                    {!isCollapsed && (
-                      <div className="text-left min-w-0">
-                        <p className="text-sm font-medium truncate">{activeWorkspace.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{activeWorkspace.description}</p>
-                      </div>
-                    )}
-                  </div>
-                  {!isCollapsed && <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">Switch Workspace</p>
-                  <p className="text-xs text-muted-foreground">Select active workspace</p>
-                </div>
-                <DropdownMenuSeparator />
-                {workspaces.map((workspace) => (
-                  <DropdownMenuItem
-                    key={workspace.id}
-                    onClick={() => switchWorkspace(workspace)}
-                    className={cn(
-                      "cursor-pointer",
-                      workspace.id === activeWorkspace.id && "bg-accent"
-                    )}
-                  >
-                    <span className="mr-2">{workspace.icon}</span>
-                    <div className="flex-1">
-                      <p className="text-sm">{workspace.name}</p>
-                      <p className="text-xs text-muted-foreground">{workspace.description}</p>
-                    </div>
-                    {workspace.id === activeWorkspace.id && (
-                      <Badge variant="secondary" className="ml-2">Active</Badge>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Grid className="h-4 w-4 mr-2" />
-                  Manage Workspaces
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
           {/* Home Button */}
