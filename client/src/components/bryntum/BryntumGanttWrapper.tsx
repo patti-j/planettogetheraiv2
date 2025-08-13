@@ -98,18 +98,15 @@ export function BryntumGanttWrapper({
         const formattedData = formatGanttData(operations, resources);
         console.log('BryntumGanttWrapper: Formatted data:', formattedData);
         
-        // Calculate height based on number of resources
-        // Minimum 400px, but expand to show all resources
-        const rowHeight = ganttConfig.rowHeight || 70;
-        const headerHeight = 100; // Header and toolbar
-        const minHeight = 400;
-        const calculatedHeight = Math.max(minHeight, (resources.length * rowHeight) + headerHeight);
+        // Fixed height to ensure all resources are visible
+        // Set to 700px to guarantee all 3 resources are shown without scrolling
+        const fixedHeight = 700;
         
         // Use the resource-based configuration from GanttConfig
         const config = {
           appendTo: containerRef.current,
-          height: calculatedHeight,
-          minHeight: minHeight,
+          height: fixedHeight,
+          minHeight: fixedHeight,
           autoHeight: false, // Don't auto-expand beyond calculated height
           
           // Use resource-focused columns
@@ -118,7 +115,7 @@ export function BryntumGanttWrapper({
           // Use resource scheduling view preset
           viewPreset: ganttConfig.viewPreset || 'weekAndDay',
           barMargin: ganttConfig.barMargin || 5,
-          rowHeight: rowHeight,
+          rowHeight: 80, // Use consistent row height
           
           // Configure features for resource scheduling
           features: {
@@ -239,14 +236,28 @@ export function BryntumGanttWrapper({
         .b-dependency-arrow {
           display: none !important;
         }
+        
+        /* Ensure full height for Gantt viewport */
+        .b-gantt-locked-grid,
+        .b-gantt-normal-grid,
+        .b-gantt-vertical-scroller {
+          height: 100% !important;
+          max-height: none !important;
+        }
+        
+        /* Remove any viewport constraints */
+        .b-gantt .b-grid-body-container {
+          height: auto !important;
+          min-height: 500px !important;
+        }
       `}</style>
       <div className={className}>
         <div 
           ref={containerRef} 
           className="bryntum-gantt-container"
           style={{ 
-            height: `${Math.max(400, (resources.length * 70) + 100)}px`,
-            minHeight: '400px',
+            height: '700px',
+            minHeight: '700px',
             position: 'relative'
           }}
         />
