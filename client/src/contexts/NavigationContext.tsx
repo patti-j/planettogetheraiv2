@@ -48,7 +48,7 @@ const MAX_RECENT_PAGES = 6;
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
-  '/production-schedule': { label: 'Production Schedule', icon: 'BarChart3' },
+  '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
   '/cockpit': { label: 'Cockpit', icon: 'Monitor' },
   '/boards': { label: 'Boards', icon: 'Columns3' },
   '/analytics': { label: 'Analytics', icon: 'BarChart3' },
@@ -91,6 +91,10 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' },
   '/tenant-admin': { label: 'Tenant Administration', icon: 'Settings' },
+  '/master-data': { label: 'Master Data Editor', icon: 'Database' },
+  '/master-data-management': { label: 'Master Data Management', icon: 'Database' },
+  '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Sparkles' },
+  '/optimize-orders': { label: 'Order Optimization', icon: 'Sparkles' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }
 };
 
@@ -141,7 +145,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     return pages;
   };
 
-  // Helper function to replace old routes with new ones
+  // Helper function to replace old routes with new ones and fix broken icons
   const replaceOldRoutes = (pages: RecentPage[]): RecentPage[] => {
     return pages.map(page => {
       // Replace old role-management route with new user-access-management route
@@ -153,6 +157,27 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           icon: pageMapping['/user-access-management']?.icon || 'Shield'
         };
       }
+      
+      // Fix broken icons (empty objects) by using pageMapping
+      if (!page.icon || typeof page.icon !== 'string' || page.icon === '{}') {
+        const mappedPage = pageMapping[page.path];
+        if (mappedPage) {
+          return {
+            ...page,
+            icon: mappedPage.icon,
+            label: page.label || mappedPage.label
+          };
+        }
+        
+        // If not in pageMapping, try to generate from path
+        const generated = generateLabelFromPath(page.path);
+        return {
+          ...page,
+          icon: generated.icon,
+          label: page.label || generated.label
+        };
+      }
+      
       return page;
     });
   };
@@ -325,10 +350,16 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     if (!finalIcon && pageMapping[path]?.icon) {
       finalIcon = pageMapping[path].icon;
     } else if (!finalIcon && navItem?.icon) {
-      finalIcon = getIconName(navItem.icon);
+      const extractedIcon = getIconName(navItem.icon);
+      finalIcon = extractedIcon;
     }
     if (!finalIcon) {
       finalIcon = generateLabelFromPath(path).icon;
+    }
+    
+    // Ensure finalIcon is always a string, never an object
+    if (typeof finalIcon !== 'string') {
+      finalIcon = 'FileText';
     }
     
     setRecentPages(current => {
