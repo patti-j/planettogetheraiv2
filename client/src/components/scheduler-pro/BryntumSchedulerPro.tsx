@@ -15,7 +15,7 @@ interface SchedulerProProps {
 
 const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({ 
   height = '600px',
-  startDate = new Date(),
+  startDate = new Date(new Date().setHours(0, 0, 0, 0)), // Today at midnight
   endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
 }) => {
   const schedulerRef = useRef<any>(null);
@@ -105,12 +105,21 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
   const schedulerConfig = {
     startDate,
     endDate,
-    viewPreset: 'hourAndDay',
+    viewPreset: 'dayAndWeek',
     barMargin: 5,
     rowHeight: 60,
     resourceImagePath: 'users/',
     eventStyle: 'colored' as const,
     eventColor: null, // Let individual events control their color
+    scrollable: true,
+    infiniteScroll: false,
+    zoomOnTimeAxisDoubleClick: false,
+    zoomOnMouseWheel: false,
+    // Scroll to today on load
+    visibleDate: {
+      date: new Date(),
+      block: 'center' as const
+    },
     
     columns: [
       { 
@@ -118,24 +127,23 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         field: 'name', 
         width: 220,
         locked: true,
+        htmlEncode: false,
         renderer: ({ record }: any) => {
           const typeIcon = record.type === 'production_line' ? '🏭' :
                           record.type === 'assembly' ? '🔧' :
                           record.type === 'packaging' ? '📦' : 
                           record.type === 'quality_control' ? '✅' :
                           record.type === 'maintenance' ? '🔨' : '⚙️';
-          const statusColor = record.status === 'available' ? 'text-green-600' :
-                             record.status === 'busy' ? 'text-orange-600' :
-                             record.status === 'maintenance' ? 'text-red-600' : '';
-          return `
-            <div class="flex items-center gap-2">
-              <span class="text-lg">${typeIcon}</span>
-              <div>
-                <div class="font-semibold">${record.name}</div>
-                <div class="text-xs ${statusColor}">${record.status || 'Available'}</div>
-              </div>
-            </div>
-          `;
+          // Return simple text with icon - Bryntum will handle the display
+          return `${typeIcon} ${record.name}`;
+        }
+      },
+      { 
+        text: 'Status', 
+        field: 'status', 
+        width: 100,
+        renderer: ({ record }: any) => {
+          return record.status || 'Available';
         }
       },
       { 
@@ -153,15 +161,7 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         align: 'center' as const,
         renderer: ({ record }: any) => {
           const utilization = record.utilization || 0;
-          const color = utilization > 90 ? 'red' : utilization > 70 ? 'orange' : 'green';
-          return `
-            <div class="flex flex-col items-center">
-              <div class="text-sm font-bold" style="color: ${color}">${utilization}%</div>
-              <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                <div class="h-2 rounded-full" style="width: ${utilization}%; background-color: ${color}"></div>
-              </div>
-            </div>
-          `;
+          return `${utilization}%`;
         }
       },
       { 
@@ -178,8 +178,7 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         align: 'center' as const,
         renderer: ({ value }: any) => {
           const eff = value || 100;
-          const color = eff >= 90 ? 'green' : eff >= 70 ? 'orange' : 'red';
-          return `<span style="color: ${color}; font-weight: bold">${eff}%</span>`;
+          return `${eff}%`;
         }
       }
     ],
@@ -204,15 +203,15 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         }
       },
       eventTooltip: {
-        template: ({ eventRecord }: any) => `
-          <div class="b-tooltip-content">
-            <h4>${eventRecord.name}</h4>
-            <p>Status: ${eventRecord.status || 'Scheduled'}</p>
-            <p>Progress: ${eventRecord.percentDone || 0}%</p>
-            <p>Priority: ${eventRecord.priority || 5}</p>
-            ${eventRecord.description ? `<p>Description: ${eventRecord.description}</p>` : ''}
-          </div>
-        `
+        template: ({ eventRecord }: any) => {
+          return {
+            header: eventRecord.name,
+            body: `Status: ${eventRecord.status || 'Scheduled'}
+Progress: ${eventRecord.percentDone || 0}%
+Priority: ${eventRecord.priority || 5}
+${eventRecord.description ? `Description: ${eventRecord.description}` : ''}`
+          };
+        }
       },
       dependencies: true,
       dependencyEdit: true,
