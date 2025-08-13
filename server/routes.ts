@@ -58,7 +58,9 @@ import {
   // Constraints Management Schemas
   insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema,
   // Buffer Management Schemas
-  insertBufferDefinitionSchema, insertBufferConsumptionSchema, insertBufferManagementHistorySchema, insertBufferPolicySchema
+  insertBufferDefinitionSchema, insertBufferConsumptionSchema, insertBufferManagementHistorySchema, insertBufferPolicySchema,
+  // Home Dashboard Layout Schema
+  insertHomeDashboardLayoutSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
@@ -22547,6 +22549,168 @@ Be careful to preserve data integrity and relationships.`;
         error: "Failed to process AI modification",
         details: error instanceof Error ? error.message : 'Unknown error'
       });
+    }
+  });
+
+  // Home Dashboard Layout Management Routes
+  app.get("/api/home-dashboard-layouts", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      const layouts = await storage.getHomeDashboardLayouts(userId);
+      res.json(layouts);
+    } catch (error) {
+      console.error("Error fetching home dashboard layouts:", error);
+      res.status(500).json({ error: "Failed to fetch home dashboard layouts" });
+    }
+  });
+
+  app.get("/api/home-dashboard-layouts/default", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      const layout = await storage.getDefaultHomeDashboardLayout(userId);
+      res.json(layout);
+    } catch (error) {
+      console.error("Error fetching default home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to fetch default home dashboard layout" });
+    }
+  });
+
+  app.get("/api/home-dashboard-layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+
+      const layout = await storage.getHomeDashboardLayout(id);
+      if (!layout) {
+        return res.status(404).json({ error: "Home dashboard layout not found" });
+      }
+
+      // Check if user owns this layout
+      if (layout.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      res.json(layout);
+    } catch (error) {
+      console.error("Error fetching home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to fetch home dashboard layout" });
+    }
+  });
+
+  app.post("/api/home-dashboard-layouts", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const layoutData = {
+        ...req.body,
+        userId: userId
+      };
+
+      const validation = insertHomeDashboardLayoutSchema.safeParse(layoutData);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid layout data", details: validation.error.errors });
+      }
+
+      const layout = await storage.createHomeDashboardLayout(validation.data);
+      res.status(201).json(layout);
+    } catch (error) {
+      console.error("Error creating home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to create home dashboard layout" });
+    }
+  });
+
+  app.put("/api/home-dashboard-layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+
+      // Check if user owns this layout
+      const existingLayout = await storage.getHomeDashboardLayout(id);
+      if (!existingLayout) {
+        return res.status(404).json({ error: "Home dashboard layout not found" });
+      }
+      if (existingLayout.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const validation = insertHomeDashboardLayoutSchema.partial().safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid layout data", details: validation.error.errors });
+      }
+
+      const layout = await storage.updateHomeDashboardLayout(id, validation.data);
+      res.json(layout);
+    } catch (error) {
+      console.error("Error updating home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to update home dashboard layout" });
+    }
+  });
+
+  app.delete("/api/home-dashboard-layouts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+
+      // Check if user owns this layout
+      const existingLayout = await storage.getHomeDashboardLayout(id);
+      if (!existingLayout) {
+        return res.status(404).json({ error: "Home dashboard layout not found" });
+      }
+      if (existingLayout.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const success = await storage.deleteHomeDashboardLayout(id);
+      if (!success) {
+        return res.status(404).json({ error: "Home dashboard layout not found" });
+      }
+      
+      res.json({ message: "Home dashboard layout deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to delete home dashboard layout" });
+    }
+  });
+
+  app.post("/api/home-dashboard-layouts/:id/set-default", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid layout ID" });
+      }
+
+      // Check if user owns this layout
+      const existingLayout = await storage.getHomeDashboardLayout(id);
+      if (!existingLayout) {
+        return res.status(404).json({ error: "Home dashboard layout not found" });
+      }
+      if (existingLayout.userId !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const success = await storage.setDefaultHomeDashboardLayout(userId, id);
+      if (!success) {
+        return res.status(500).json({ error: "Failed to set default layout" });
+      }
+
+      res.json({ message: "Default layout updated successfully" });
+    } catch (error) {
+      console.error("Error setting default home dashboard layout:", error);
+      res.status(500).json({ error: "Failed to set default home dashboard layout" });
     }
   });
 

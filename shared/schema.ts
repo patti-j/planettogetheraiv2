@@ -1342,6 +1342,28 @@ export const widgetDeployments = pgTable("widget_deployments", {
   widgetSystemUnique: unique().on(table.widgetId, table.targetSystem, table.targetContext),
 }));
 
+// Home Dashboard Layouts - customizable dashboard layouts for the home page
+export const homeDashboardLayouts = pgTable("home_dashboard_layouts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  widgets: jsonb("widgets").$type<Array<{
+    id: string;
+    type: 'metric' | 'chart' | 'table' | 'quick-links' | 'recent-activity' | 'alerts' | 'custom';
+    title: string;
+    position: { x: number; y: number };
+    size: { width: number; height: number };
+    config: any;
+    visible: boolean;
+  }>>().notNull().default([]),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userDefaultUnique: unique().on(table.userId, table.isDefault),
+  userIndex: index("home_dashboard_layouts_user_idx").on(table.userId),
+}));
+
 // Systems Management Tables for IT Administration
 
 // User management for the application
@@ -9636,6 +9658,15 @@ export const insertRecipeEquipmentSchema = createInsertSchema(recipeEquipment, {
 });
 export type InsertRecipeEquipment = z.infer<typeof insertRecipeEquipmentSchema>;
 export type RecipeEquipment = typeof recipeEquipment.$inferSelect;
+
+// Home Dashboard Layout schemas
+export const insertHomeDashboardLayoutSchema = createInsertSchema(homeDashboardLayouts, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+export type InsertHomeDashboardLayout = z.infer<typeof insertHomeDashboardLayoutSchema>;
+export type HomeDashboardLayout = typeof homeDashboardLayouts.$inferSelect;
 
 // Export schedule schemas
 export * from './schedule-schema';

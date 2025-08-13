@@ -72,6 +72,8 @@ import {
   type PresentationMaterial, type PresentationContentSuggestion, type PresentationProject,
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
+  homeDashboardLayouts,
+  type HomeDashboardLayout, type InsertHomeDashboardLayout,
 
   // Extension Studio
   extensions, extensionFiles, extensionInstallations, extensionMarketplace, extensionReviews,
@@ -869,6 +871,15 @@ export interface IStorage {
   getCanvasSettings(userId: number, sessionId: string): Promise<CanvasSettings | undefined>;
   upsertCanvasSettings(settings: InsertCanvasSettings): Promise<CanvasSettings>;
   updateCanvasSettings(userId: number, sessionId: string, settings: Partial<InsertCanvasSettings>): Promise<CanvasSettings | undefined>;
+
+  // Home Dashboard Layout Management
+  getHomeDashboardLayouts(userId: number): Promise<HomeDashboardLayout[]>;
+  getHomeDashboardLayout(id: number): Promise<HomeDashboardLayout | undefined>;
+  getDefaultHomeDashboardLayout(userId: number): Promise<HomeDashboardLayout | undefined>;
+  createHomeDashboardLayout(layout: InsertHomeDashboardLayout): Promise<HomeDashboardLayout>;
+  updateHomeDashboardLayout(id: number, layout: Partial<InsertHomeDashboardLayout>): Promise<HomeDashboardLayout | undefined>;
+  deleteHomeDashboardLayout(id: number): Promise<boolean>;
+  setDefaultHomeDashboardLayout(userId: number, layoutId: number): Promise<boolean>;
 
   // Error Logging and Monitoring
   logError(errorData: InsertErrorLog): Promise<ErrorLog>;
@@ -14401,6 +14412,113 @@ export class DatabaseStorage implements IStorage {
 
     await db.insert(unifiedWidgets).values(widgetsToSeed);
     console.log(`Seeded ${widgetsToSeed.length} mobile widgets`);
+  }
+
+  // ==================== HOME DASHBOARD LAYOUTS IMPLEMENTATION ====================
+  
+  async getHomeDashboardLayouts(userId: number): Promise<HomeDashboardLayout[]> {
+    return await db.select()
+      .from(homeDashboardLayouts)
+      .where(eq(homeDashboardLayouts.userId, userId))
+      .orderBy(homeDashboardLayouts.isDefault, homeDashboardLayouts.name);
+  }
+
+  async getHomeDashboardLayout(id: number): Promise<HomeDashboardLayout | undefined> {
+    const [layout] = await db.select()
+      .from(homeDashboardLayouts)
+      .where(eq(homeDashboardLayouts.id, id));
+    return layout || undefined;
+  }
+
+  async getDefaultHomeDashboardLayout(userId: number): Promise<HomeDashboardLayout | undefined> {
+    const [layout] = await db.select()
+      .from(homeDashboardLayouts)
+      .where(
+        and(
+          eq(homeDashboardLayouts.userId, userId),
+          eq(homeDashboardLayouts.isDefault, true)
+        )
+      );
+    return layout || undefined;
+  }
+
+  async createHomeDashboardLayout(layout: InsertHomeDashboardLayout): Promise<HomeDashboardLayout> {
+    // If this is being set as default, unset any existing default for this user
+    if (layout.isDefault) {
+      await db.update(homeDashboardLayouts)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(homeDashboardLayouts.userId, layout.userId),
+            eq(homeDashboardLayouts.isDefault, true)
+          )
+        );
+    }
+
+    const [newLayout] = await db.insert(homeDashboardLayouts)
+      .values(layout)
+      .returning();
+    return newLayout;
+  }
+
+  async updateHomeDashboardLayout(id: number, layout: Partial<InsertHomeDashboardLayout>): Promise<HomeDashboardLayout | undefined> {
+    // If this is being set as default, unset any existing default for this user
+    if (layout.isDefault) {
+      const existingLayout = await this.getHomeDashboardLayout(id);
+      if (existingLayout) {
+        await db.update(homeDashboardLayouts)
+          .set({ isDefault: false })
+          .where(
+            and(
+              eq(homeDashboardLayouts.userId, existingLayout.userId),
+              eq(homeDashboardLayouts.isDefault, true),
+              ne(homeDashboardLayouts.id, id)
+            )
+          );
+      }
+    }
+
+    const [updated] = await db.update(homeDashboardLayouts)
+      .set({ ...layout, updatedAt: new Date() })
+      .where(eq(homeDashboardLayouts.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteHomeDashboardLayout(id: number): Promise<boolean> {
+    const result = await db.delete(homeDashboardLayouts)
+      .where(eq(homeDashboardLayouts.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async setDefaultHomeDashboardLayout(userId: number, layoutId: number): Promise<boolean> {
+    try {
+      // First unset any existing default for this user
+      await db.update(homeDashboardLayouts)
+        .set({ isDefault: false })
+        .where(
+          and(
+            eq(homeDashboardLayouts.userId, userId),
+            eq(homeDashboardLayouts.isDefault, true)
+          )
+        );
+
+      // Set the new default
+      const [updated] = await db.update(homeDashboardLayouts)
+        .set({ isDefault: true })
+        .where(
+          and(
+            eq(homeDashboardLayouts.id, layoutId),
+            eq(homeDashboardLayouts.userId, userId)
+          )
+        )
+        .returning();
+
+      return !!updated;
+    } catch (error) {
+      console.error('Error setting default home dashboard layout:', error);
+      return false;
+    }
   }
 }
 
