@@ -423,29 +423,30 @@ export default function ProductionSchedulePage() {
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
         <Tabs defaultValue="scheduler-pro" value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4 gap-1'} mb-4 p-1 h-auto`}>
-            <TabsTrigger value="scheduler-pro" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
-              <div className="flex flex-col items-center gap-1">
-                <span>{isMobile ? 'Resources' : 'Resource Schedule'}</span>
-                {resources && operations && (
-                  <div className="flex gap-1">
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{resources.length} Resources</Badge>
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0">{operations.length} Operations</Badge>
-                  </div>
-                )}
-              </div>
+          <TabsList className={`w-full mb-4 ${isMobile ? 'grid grid-cols-2 gap-2 h-auto p-1' : 'grid grid-cols-4 gap-1'}`}>
+            <TabsTrigger 
+              value="scheduler-pro" 
+              className={`${isMobile ? 'text-xs py-3 px-2' : ''}`}
+            >
+              {isMobile ? '📊 Resources' : 'Resource Schedule'}
             </TabsTrigger>
-            <TabsTrigger value="demo" className={`${isMobile ? 'text-xs p-2' : 'p-3'} bg-orange-100 dark:bg-orange-950/30 hover:bg-orange-200 dark:hover:bg-orange-950/50 data-[state=active]:bg-orange-500 data-[state=active]:text-white`}>
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-semibold">{isMobile ? 'Demo' : 'Demo Data'}</span>
-                <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400">Test Data</Badge>
-              </div>
+            <TabsTrigger 
+              value="demo" 
+              className={`${isMobile ? 'text-xs py-3 px-2' : ''} bg-orange-200 dark:bg-orange-900 hover:bg-orange-300`}
+            >
+              {isMobile ? '🧪 Demo' : 'Demo Data'}
             </TabsTrigger>
-            <TabsTrigger value="overview" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
-              Overview
+            <TabsTrigger 
+              value="overview" 
+              className={`${isMobile ? 'text-xs py-3 px-2' : ''}`}
+            >
+              {isMobile ? '📈 Overview' : 'Overview'}
             </TabsTrigger>
-            <TabsTrigger value="gantt" className={`${isMobile ? 'text-xs p-2' : 'p-3'} data-[state=active]:bg-primary data-[state=active]:text-primary-foreground`}>
-              {isMobile ? 'Gantt' : 'Simple Gantt'}
+            <TabsTrigger 
+              value="gantt" 
+              className={`${isMobile ? 'text-xs py-3 px-2' : ''}`}
+            >
+              {isMobile ? '📅 Gantt' : 'Simple Gantt'}
             </TabsTrigger>
           </TabsList>
           
