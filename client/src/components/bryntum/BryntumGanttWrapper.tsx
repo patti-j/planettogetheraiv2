@@ -112,8 +112,28 @@ export function BryntumGanttWrapper({
           // Use resource-focused columns
           columns: ganttConfig.columns,
           
-          // Use resource scheduling view preset
-          viewPreset: ganttConfig.viewPreset || 'weekAndDay',
+          // Configure view preset with proper time units
+          viewPreset: {
+            base: 'weekAndDay',
+            headers: [
+              {
+                unit: 'month',
+                dateFormat: 'MMM YYYY'
+              },
+              {
+                unit: 'week',
+                dateFormat: 'DD MMM'
+              }
+            ],
+            columnWidth: 50,
+            shiftIncrement: 1,
+            shiftUnit: 'month', // Make navigation buttons move by month
+            timeResolution: {
+              unit: 'day',
+              increment: 1
+            }
+          },
+          
           barMargin: ganttConfig.barMargin || 5,
           rowHeight: 80, // Use consistent row height
           
@@ -125,13 +145,145 @@ export function BryntumGanttWrapper({
             columnLines: true,
             percentDone: false,  // Trial limitation
             progressLine: false,  // Trial limitation
-            dependencies: false  // Trial limitation
+            dependencies: false,  // Trial limitation
+            // Add navigation and zoom features
+            timeRanges: true,
+            eventTooltip: true,
+            scheduleTooltip: true,
+            zoomOnMouseWheel: true,
+            zoomOnTimeAxisDoubleClick: true
+          },
+          
+          // Configure toolbar with zoom controls
+          tbar: {
+            items: [
+              {
+                type: 'button',
+                text: 'Previous Month',
+                icon: 'b-icon-left',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    const startDate = new Date(ganttRef.current.startDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    const endDate = new Date(ganttRef.current.endDate);
+                    endDate.setMonth(endDate.getMonth() - 1);
+                    ganttRef.current.setTimeSpan(startDate, endDate);
+                  }
+                }
+              },
+              {
+                type: 'button',
+                text: 'Today',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    const today = new Date();
+                    const start = new Date(today);
+                    start.setDate(start.getDate() - 7);
+                    const end = new Date(today);
+                    end.setDate(end.getDate() + 30);
+                    ganttRef.current.setTimeSpan(start, end);
+                  }
+                }
+              },
+              {
+                type: 'button',
+                text: 'Next Month',
+                icon: 'b-icon-right',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    const startDate = new Date(ganttRef.current.startDate);
+                    startDate.setMonth(startDate.getMonth() + 1);
+                    const endDate = new Date(ganttRef.current.endDate);
+                    endDate.setMonth(endDate.getMonth() + 1);
+                    ganttRef.current.setTimeSpan(startDate, endDate);
+                  }
+                }
+              },
+              '|', // Separator
+              {
+                type: 'button',
+                text: 'Zoom In',
+                icon: 'b-icon-search-plus',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    ganttRef.current.zoomIn();
+                  }
+                }
+              },
+              {
+                type: 'button',
+                text: 'Zoom Out',
+                icon: 'b-icon-search-minus',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    ganttRef.current.zoomOut();
+                  }
+                }
+              },
+              {
+                type: 'button',
+                text: 'Zoom to Fit',
+                icon: 'b-icon-expand',
+                onClick: () => {
+                  if (ganttRef.current) {
+                    ganttRef.current.zoomToFit();
+                  }
+                }
+              }
+            ]
           },
           
           // Use formatted data
           tasks: formattedData.tasks.rows,
           resources: formattedData.resources.rows,
           assignments: formattedData.assignments.rows,
+          
+          // Configure scrolling to show all resources
+          scrollable: {
+            // Disable vertical scrolling to show all resources
+            overflowY: false
+          },
+          
+          // Configure subgrid sizes
+          subGridConfigs: {
+            locked: {
+              width: 250, // Resource column width
+              scrollable: {
+                overflowY: false // No vertical scroll in locked section
+              }
+            },
+            normal: {
+              scrollable: {
+                overflowY: false // No vertical scroll in schedule section
+              }
+            }
+          },
+          
+          // Set timeline date range
+          startDate: new Date('2025-08-01'),
+          endDate: new Date('2025-09-01'),
+          
+          // Configure zoom levels
+          zoomLevels: [
+            { 
+              name: 'Days',
+              tickWidth: 100,
+              bottomHeader: { unit: 'day', dateFormat: 'DD' },
+              topHeader: { unit: 'week', dateFormat: 'MMM DD' }
+            },
+            {
+              name: 'Weeks', 
+              tickWidth: 50,
+              bottomHeader: { unit: 'week', dateFormat: 'DD MMM' },
+              topHeader: { unit: 'month', dateFormat: 'MMM YYYY' }
+            },
+            {
+              name: 'Months',
+              tickWidth: 150,
+              bottomHeader: { unit: 'month', dateFormat: 'MMM' },
+              topHeader: { unit: 'year', dateFormat: 'YYYY' }
+            }
+          ],
           
           // Project configuration for resource scheduling
           project: {
@@ -239,16 +391,37 @@ export function BryntumGanttWrapper({
         
         /* Ensure full height for Gantt viewport */
         .b-gantt-locked-grid,
-        .b-gantt-normal-grid,
-        .b-gantt-vertical-scroller {
+        .b-gantt-normal-grid {
           height: 100% !important;
           max-height: none !important;
+          overflow-y: visible !important;
         }
         
-        /* Remove any viewport constraints */
-        .b-gantt .b-grid-body-container {
+        /* Force vertical scroller to show all content */
+        .b-gantt-vertical-scroller,
+        .b-vertical-scroller {
+          display: none !important;
+        }
+        
+        /* Ensure grid body shows all rows */
+        .b-gantt .b-grid-body-container,
+        .b-grid-body-container {
           height: auto !important;
-          min-height: 500px !important;
+          min-height: 400px !important;
+          transform: none !important;
+        }
+        
+        /* Force viewport to expand */
+        .b-grid-body-scrollable,
+        .b-grid-scrollable {
+          overflow-y: visible !important;
+          height: auto !important;
+        }
+        
+        /* Ensure rows container shows all resources */
+        .b-grid-row-container {
+          transform: none !important;
+          position: relative !important;
         }
       `}</style>
       <div className={className}>
