@@ -374,11 +374,6 @@ function Router() {
               <ProductionSchedulePage />
             </ProtectedRoute>
           </Route>
-          <Route path="/production-scheduling">
-            <ProtectedRoute feature="production-scheduling" action="view">
-              <ProductionSchedulePage />
-            </ProtectedRoute>
-          </Route>
           <Route path="/capacity-planning">
             <ProtectedRoute feature="capacity-planning" action="view">
               <CapacityPlanning />

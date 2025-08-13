@@ -18,7 +18,7 @@ Note on concurrent work:
 
 ## Recent Changes & Fixes
 - **Fixed Data Schema Page Header Overflow** (Aug 13, 2025): Fixed header controls being pushed off the right side of the page by improving responsive layout, adding flex-shrink-0 to prevent control compression, using icon-only buttons on mobile to save space, and optimizing gap spacing
-- **Restored Missing Production Scheduling Menu Item** (Aug 13, 2025): Added missing "Production Scheduling" menu item to navigation menu and created corresponding route /production-scheduling that routes to the same ProductionSchedulePage component as /production-schedule
+- **Cleaned Up Production Schedule Navigation** (Aug 13, 2025): Removed redundant /production-scheduling route and menu item, keeping only the valid /production-schedule route and "Production Schedule" menu item in the Planning & Scheduling section
 
 ## System Architecture
 
