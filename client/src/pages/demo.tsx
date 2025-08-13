@@ -3,60 +3,6 @@ import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.material.css';
 import { useQuery } from '@tanstack/react-query';
 
-// Custom event renderer to display job/operation info with status
-const eventRenderer = ({ eventRecord, renderData }) => {
-  const jobName = eventRecord.jobName || 'Unknown Job';
-  const operationName = eventRecord.name || 'Unknown Operation';
-  const status = eventRecord.status || 'waiting';
-  
-  // Status colors
-  const statusColors = {
-    ready: '#4CAF50',      // Green
-    waiting: '#FF9800',    // Orange  
-    in_progress: '#2196F3', // Blue
-    completed: '#9E9E9E',   // Gray
-    planned: '#FFC107',     // Amber
-    scheduled: '#4CAF50'    // Green (same as ready)
-  };
-
-  const statusColor = statusColors[status] || '#FF9800';
-  
-  // Create custom HTML for the event
-  return {
-    ...renderData,
-    children: `
-      <div style="
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 2px 4px;
-        font-size: 11px;
-      ">
-        <div style="
-          font-weight: bold;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        ">
-          ${jobName}: ${operationName}
-        </div>
-        <div style="
-          background-color: ${statusColor};
-          color: white;
-          padding: 1px 4px;
-          border-radius: 2px;
-          text-align: center;
-          font-size: 10px;
-          text-transform: uppercase;
-        ">
-          ${status === 'scheduled' ? 'ready' : status.replace('_', ' ')}
-        </div>
-      </div>
-    `
-  };
-};
-
 export default function DemoPage() {
   const schedulerRef = useRef<any>(null);
   const [schedulerData, setSchedulerData] = useState<any>(null);
@@ -154,8 +100,59 @@ export default function DemoPage() {
     snap: true,
     readOnly: false,
     
-    // Use custom event renderer
-    eventRenderer,
+    // Use eventBodyTemplate for custom event display (safer than eventRenderer)
+    eventBodyTemplate: (data) => {
+      const jobName = data.jobName || 'Unknown Job';
+      const operationName = data.name || 'Unknown Operation';
+      const status = data.status || 'waiting';
+      
+      // Status colors
+      const statusColors = {
+        ready: '#4CAF50',
+        waiting: '#FF9800',  
+        in_progress: '#2196F3',
+        completed: '#9E9E9E',
+        planned: '#FFC107',
+        scheduled: '#4CAF50'
+      };
+
+      const statusColor = statusColors[status] || '#FF9800';
+      const statusText = status === 'scheduled' ? 'ready' : status.replace('_', ' ');
+      
+      return `
+        <div style="
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding: 2px 4px;
+          font-size: 11px;
+          box-sizing: border-box;
+        ">
+          <div style="
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+          ">
+            ${jobName}: ${operationName}
+          </div>
+          <div style="
+            background-color: ${statusColor};
+            color: white;
+            padding: 1px 4px;
+            border-radius: 2px;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-top: 2px;
+          ">
+            ${statusText}
+          </div>
+        </div>
+      `;
+    },
     
     columns: [
       { 
@@ -187,8 +184,14 @@ export default function DemoPage() {
       
       // Tooltips and editing
       eventTooltip: {
+        // Ensure tooltip appears near mouse cursor
+        align: 'l-r',
+        anchorToTarget: false,
+        trackMouse: true,
+        hideDelay: 100,
+        showDelay: 500,
         template: ({ eventRecord }) => `
-          <div style="padding: 10px;">
+          <div style="padding: 10px; min-width: 200px;">
             <h4 style="margin: 0 0 8px 0; color: #333;">${eventRecord.jobName || 'Job'}</h4>
             <b>Operation:</b> ${eventRecord.name}<br>
             <b>Status:</b> <span style="color: ${
