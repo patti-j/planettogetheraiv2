@@ -15,7 +15,8 @@ export function SimpleBryntumGantt({
   className = '' 
 }: SimpleBryntumGanttProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Start from August 7, 2025 to show the operations
+  const [currentDate, setCurrentDate] = useState(new Date('2025-08-07'));
   const [viewDays] = useState(7); // Show 7 days by default
 
   const navigatePrevious = () => {
@@ -40,7 +41,13 @@ export function SimpleBryntumGantt({
     const container = containerRef.current;
     container.innerHTML = '';
     
-    console.log('SimpleBryntumGantt - Resources:', resources.length, 'Operations:', operations.length);
+    console.log('SimpleBryntumGantt - Resources:', resources?.length || 0, 'Operations:', operations?.length || 0);
+    console.log('Resources details:', JSON.stringify(resources));
+    console.log('Operations details:', JSON.stringify(operations));
+    
+    // Ensure we have valid arrays
+    const validResources = Array.isArray(resources) ? resources : [];
+    const validOperations = Array.isArray(operations) ? operations : [];
     
     // Calculate date range
     const startDate = new Date(currentDate);
@@ -117,6 +124,7 @@ export function SimpleBryntumGantt({
     const resourceList = document.createElement('div');
     resourceList.style.flex = '1';
     resourceList.style.overflowY = 'auto';
+    resourceList.style.minHeight = '100%';
     resourcePane.appendChild(resourceList);
     
     // Timeline container
@@ -176,9 +184,11 @@ export function SimpleBryntumGantt({
     
     const timelineContent = document.createElement('div');
     timelineContent.style.minWidth = `${viewDays * 200}px`;
+    timelineContent.style.height = 'auto';
+    timelineContent.style.minHeight = '100%';
     
     // Create rows for each resource
-    if (resources.length === 0) {
+    if (validResources.length === 0) {
       const emptyMessage = document.createElement('div');
       emptyMessage.style.padding = '40px';
       emptyMessage.style.textAlign = 'center';
@@ -187,7 +197,10 @@ export function SimpleBryntumGantt({
       resourceList.appendChild(emptyMessage);
       timelineContent.appendChild(emptyMessage.cloneNode(true));
     } else {
-      resources.forEach((resource, index) => {
+      console.log('Starting to render resources, count:', validResources.length);
+      validResources.forEach((resource, index) => {
+        console.log(`Rendering resource ${index + 1}:`, resource.name, resource.id);
+        
         // Resource row in left pane
         const resourceRow = document.createElement('div');
         resourceRow.style.padding = '12px';
@@ -224,23 +237,40 @@ export function SimpleBryntumGantt({
         }
         
         // Find operations for this resource
-        const resourceOps = operations.filter(op => 
+        const resourceOps = validOperations.filter(op => 
           op.assignedResourceId === resource.id || 
           op.workCenterId === resource.id ||
           op.resourceId === resource.id
         );
         
         console.log(`Resource ${resource.name} (ID: ${resource.id}) has ${resourceOps.length} operations`);
+        console.log(`Resource ${resource.id} operations:`, resourceOps.map(op => ({
+          id: op.id,
+          name: op.name || op.operationName,
+          assignedResourceId: op.assignedResourceId,
+          workCenterId: op.workCenterId,
+          resourceId: op.resourceId,
+          startTime: op.startTime,
+          endTime: op.endTime
+        })));
         
         // Render operations as bars on timeline
         resourceOps.forEach(op => {
           const opStartTime = op.startTime ? new Date(op.startTime) : null;
           const opEndTime = op.endTime ? new Date(op.endTime) : null;
           
-          if (!opStartTime || !opEndTime) return;
+          if (!opStartTime || !opEndTime) {
+            console.log(`Skipping operation ${op.id} - missing dates`);
+            return;
+          }
           
           // Check if operation falls within the current view
-          if (opEndTime < startDate || opStartTime > endDate) return;
+          if (opEndTime < startDate || opStartTime > endDate) {
+            console.log(`Operation ${op.id} outside view range:`, opStartTime, 'to', opEndTime);
+            return;
+          }
+          
+          console.log(`Rendering operation ${op.id} for resource ${resource.id}:`, op.name || op.operationName);
           
           const bar = document.createElement('div');
           bar.style.position = 'absolute';
@@ -310,11 +340,14 @@ Status: ${status}`;
         });
         
         timelineContent.appendChild(timelineRow);
+        console.log(`Added timeline row for resource ${resource.id}`);
       });
+      console.log(`Total timeline rows added: ${timelineContent.children.length}`);
     }
     
     timelineScroll.appendChild(timelineContent);
     timelineContainer.appendChild(timelineScroll);
+    console.log('Timeline container setup complete');
     
     ganttWrapper.appendChild(resourcePane);
     ganttWrapper.appendChild(timelineContainer);
