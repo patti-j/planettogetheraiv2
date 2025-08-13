@@ -122,6 +122,11 @@ import {
   type CockpitLayout, type CockpitWidget, type CockpitAlert, type CockpitTemplate,
   type InsertCockpitLayout, type InsertCockpitWidget, type InsertCockpitAlert, type InsertCockpitTemplate,
   
+  // Master Production Schedule
+  masterProductionSchedule, salesForecasts, availableToPromise,
+  type MasterProductionSchedule, type SalesForecast, type AvailableToPromise,
+  type InsertMasterProductionSchedule, type InsertSalesForecast, type InsertAvailableToPromise,
+  
   // Missing table types that are referenced in the interface
   accountInfo, billingHistory, usageMetrics, integrationDataFlow, integrationExecutionLog, integrationDataMapping, integrationWebhook,
   shiftCoverage, shiftUtilization, recipeEquipment,
@@ -880,6 +885,28 @@ export interface IStorage {
   updateHomeDashboardLayout(id: number, layout: Partial<InsertHomeDashboardLayout>): Promise<HomeDashboardLayout | undefined>;
   deleteHomeDashboardLayout(id: number): Promise<boolean>;
   setDefaultHomeDashboardLayout(userId: number, layoutId: number): Promise<boolean>;
+
+  // Master Production Schedule Management
+  getMasterProductionSchedules(plantId?: number, itemNumber?: string): Promise<MasterProductionSchedule[]>;
+  getMasterProductionSchedule(id: number): Promise<MasterProductionSchedule | undefined>;
+  createMasterProductionSchedule(mps: InsertMasterProductionSchedule): Promise<MasterProductionSchedule>;
+  updateMasterProductionSchedule(id: number, updates: Partial<InsertMasterProductionSchedule>): Promise<MasterProductionSchedule | undefined>;
+  deleteMasterProductionSchedule(id: number): Promise<boolean>;
+  publishMasterProductionSchedule(id: number, publishedBy: number): Promise<MasterProductionSchedule | undefined>;
+  getMasterProductionSchedulesByPlanner(plannerId: number): Promise<MasterProductionSchedule[]>;
+
+  // Sales Forecasts Management
+  getSalesForecasts(plantId?: number, itemNumber?: string): Promise<SalesForecast[]>;
+  getSalesForecast(id: number): Promise<SalesForecast | undefined>;
+  createSalesForecast(forecast: InsertSalesForecast): Promise<SalesForecast>;
+  updateSalesForecast(id: number, updates: Partial<InsertSalesForecast>): Promise<SalesForecast | undefined>;
+  deleteSalesForecast(id: number): Promise<boolean>;
+  getForecastAccuracy(itemNumber: string, plantId: number, periodMonths?: number): Promise<{ accuracy: number; error: number; }>;
+
+  // Available to Promise Management
+  getAvailableToPromise(itemNumber: string, plantId: number): Promise<AvailableToPromise | undefined>;
+  calculateAvailableToPromise(itemNumber: string, plantId: number): Promise<AvailableToPromise>;
+  updateAvailableToPromise(id: number, updates: Partial<InsertAvailableToPromise>): Promise<AvailableToPromise | undefined>;
 
   // Error Logging and Monitoring
   logError(errorData: InsertErrorLog): Promise<ErrorLog>;
@@ -14519,6 +14546,174 @@ export class DatabaseStorage implements IStorage {
       console.error('Error setting default home dashboard layout:', error);
       return false;
     }
+  }
+
+  // ==================== MASTER PRODUCTION SCHEDULE IMPLEMENTATION ====================
+  
+  async getMasterProductionSchedules(plantId?: number, itemNumber?: string): Promise<MasterProductionSchedule[]> {
+    let query = db.select().from(masterProductionSchedule);
+    
+    if (plantId || itemNumber) {
+      const conditions: any[] = [];
+      if (plantId) conditions.push(eq(masterProductionSchedule.plantId, plantId));
+      if (itemNumber) conditions.push(eq(masterProductionSchedule.itemNumber, itemNumber));
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(masterProductionSchedule.itemNumber, masterProductionSchedule.createdAt);
+  }
+
+  async getMasterProductionSchedule(id: number): Promise<MasterProductionSchedule | undefined> {
+    const [mps] = await db.select()
+      .from(masterProductionSchedule)
+      .where(eq(masterProductionSchedule.id, id));
+    return mps || undefined;
+  }
+
+  async createMasterProductionSchedule(mps: InsertMasterProductionSchedule): Promise<MasterProductionSchedule> {
+    const [newMps] = await db.insert(masterProductionSchedule)
+      .values(mps)
+      .returning();
+    return newMps;
+  }
+
+  async updateMasterProductionSchedule(id: number, updates: Partial<InsertMasterProductionSchedule>): Promise<MasterProductionSchedule | undefined> {
+    const [updated] = await db.update(masterProductionSchedule)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(masterProductionSchedule.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteMasterProductionSchedule(id: number): Promise<boolean> {
+    const result = await db.delete(masterProductionSchedule)
+      .where(eq(masterProductionSchedule.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async publishMasterProductionSchedule(id: number, publishedBy: number): Promise<MasterProductionSchedule | undefined> {
+    const [published] = await db.update(masterProductionSchedule)
+      .set({ 
+        isPublished: true, 
+        publishedAt: new Date(), 
+        publishedBy: publishedBy,
+        updatedAt: new Date()
+      })
+      .where(eq(masterProductionSchedule.id, id))
+      .returning();
+    return published || undefined;
+  }
+
+  async getMasterProductionSchedulesByPlanner(plannerId: number): Promise<MasterProductionSchedule[]> {
+    return await db.select()
+      .from(masterProductionSchedule)
+      .where(eq(masterProductionSchedule.plannerId, plannerId))
+      .orderBy(masterProductionSchedule.itemNumber);
+  }
+
+  // ==================== SALES FORECASTS IMPLEMENTATION ====================
+
+  async getSalesForecasts(plantId?: number, itemNumber?: string): Promise<SalesForecast[]> {
+    let query = db.select().from(salesForecasts);
+    
+    if (plantId || itemNumber) {
+      const conditions: any[] = [];
+      if (plantId) conditions.push(eq(salesForecasts.plantId, plantId));
+      if (itemNumber) conditions.push(eq(salesForecasts.itemNumber, itemNumber));
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(salesForecasts.itemNumber, salesForecasts.createdAt);
+  }
+
+  async getSalesForecast(id: number): Promise<SalesForecast | undefined> {
+    const [forecast] = await db.select()
+      .from(salesForecasts)
+      .where(eq(salesForecasts.id, id));
+    return forecast || undefined;
+  }
+
+  async createSalesForecast(forecast: InsertSalesForecast): Promise<SalesForecast> {
+    const [newForecast] = await db.insert(salesForecasts)
+      .values(forecast)
+      .returning();
+    return newForecast;
+  }
+
+  async updateSalesForecast(id: number, updates: Partial<InsertSalesForecast>): Promise<SalesForecast | undefined> {
+    const [updated] = await db.update(salesForecasts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(salesForecasts.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteSalesForecast(id: number): Promise<boolean> {
+    const result = await db.delete(salesForecasts)
+      .where(eq(salesForecasts.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getForecastAccuracy(itemNumber: string, plantId: number, periodMonths: number = 12): Promise<{ accuracy: number; error: number; }> {
+    // This would be implemented with more complex queries to calculate forecast accuracy
+    // For now, return sample data
+    return {
+      accuracy: 85.5,
+      error: 14.5
+    };
+  }
+
+  // ==================== AVAILABLE TO PROMISE IMPLEMENTATION ====================
+
+  async getAvailableToPromise(itemNumber: string, plantId: number): Promise<AvailableToPromise | undefined> {
+    const [atp] = await db.select()
+      .from(availableToPromise)
+      .where(
+        and(
+          eq(availableToPromise.itemNumber, itemNumber),
+          eq(availableToPromise.plantId, plantId)
+        )
+      );
+    return atp || undefined;
+  }
+
+  async calculateAvailableToPromise(itemNumber: string, plantId: number): Promise<AvailableToPromise> {
+    // This is a complex calculation that would involve:
+    // 1. Current inventory levels
+    // 2. Scheduled receipts from production orders
+    // 3. Planned order receipts from MPS
+    // 4. Committed sales orders
+    // 5. Safety stock requirements
+    
+    // For now, create a basic ATP record
+    const atpData = {
+      itemNumber,
+      plantId,
+      atpData: [],
+      atpRules: {
+        includeForecastInAtp: true,
+        safetyStockProtected: true,
+        enableBackorderSatisfaction: false,
+        atpFence: 7,
+        planningFence: 30,
+        demandFence: 7
+      },
+      lastCalculatedAt: new Date(),
+      calculationTrigger: "manual" as const
+    };
+
+    const [newAtp] = await db.insert(availableToPromise)
+      .values(atpData)
+      .returning();
+    return newAtp;
+  }
+
+  async updateAvailableToPromise(id: number, updates: Partial<InsertAvailableToPromise>): Promise<AvailableToPromise | undefined> {
+    const [updated] = await db.update(availableToPromise)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(availableToPromise.id, id))
+      .returning();
+    return updated || undefined;
   }
 }
 

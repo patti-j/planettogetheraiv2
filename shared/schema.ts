@@ -9668,6 +9668,87 @@ export const insertHomeDashboardLayoutSchema = createInsertSchema(homeDashboardL
 export type InsertHomeDashboardLayout = z.infer<typeof insertHomeDashboardLayoutSchema>;
 export type HomeDashboardLayout = typeof homeDashboardLayouts.$inferSelect;
 
+// Master Production Schedule Tables (matching actual database structure)
+export const masterProductionSchedule = pgTable("master_production_schedule", {
+  id: serial("id").primaryKey(),
+  itemNumber: text("item_number").notNull(),
+  plantId: integer("plant_id").notNull(),
+  plannerId: integer("planner_id").notNull(),
+  planningHorizonDays: integer("planning_horizon_days").default(365),
+  timeBuckets: jsonb("time_buckets").$type<Array<{
+    period: string;
+    startDate: string;
+    endDate: string;
+    quantity: number;
+    availableToPromise: number;
+    projectedOnHand: number;
+  }>>().default([]),
+  isPublished: boolean("is_published").default(false),
+  publishedAt: timestamp("published_at"),
+  publishedBy: integer("published_by"),
+  notes: text("notes"),
+  revision: integer("revision").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemPlantIdx: unique().on(table.itemNumber, table.plantId),
+  plannerIdx: index("mps_planner_idx").on(table.plannerId),
+  statusIdx: index("mps_status_idx").on(table.status),
+}));
+
+// Sales forecasts that feed into MPS (simplified structure)
+export const salesForecasts = pgTable("sales_forecasts", {
+  id: serial("id").primaryKey(),
+  itemNumber: text("item_number").notNull(),
+  plantId: integer("plant_id").notNull(),
+  forecastData: jsonb("forecast_data").default([]),
+  forecastModel: text("forecast_model").default("manual"),
+  accuracyScore: numeric("accuracy_score", { precision: 5, scale: 2 }),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdBy: integer("created_by"),
+  notes: text("notes"),
+  isBaseline: boolean("is_baseline").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Available to Promise calculations (simplified structure)
+export const availableToPromise = pgTable("available_to_promise", {
+  id: serial("id").primaryKey(),
+  itemNumber: text("item_number").notNull(),
+  plantId: integer("plant_id").notNull(),
+  atpData: jsonb("atp_data").default([]),
+  atpRules: jsonb("atp_rules").default({}),
+  lastCalculatedAt: timestamp("last_calculated_at").defaultNow(),
+  calculationTrigger: text("calculation_trigger").default("manual"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMasterProductionScheduleSchema = createInsertSchema(masterProductionSchedule, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+export type InsertMasterProductionSchedule = z.infer<typeof insertMasterProductionScheduleSchema>;
+export type MasterProductionSchedule = typeof masterProductionSchedule.$inferSelect;
+
+export const insertSalesForecastSchema = createInsertSchema(salesForecasts, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+export type InsertSalesForecast = z.infer<typeof insertSalesForecastSchema>;
+export type SalesForecast = typeof salesForecasts.$inferSelect;
+
+export const insertAvailableToPromiseSchema = createInsertSchema(availableToPromise, { 
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+export type InsertAvailableToPromise = z.infer<typeof insertAvailableToPromiseSchema>;
+export type AvailableToPromise = typeof availableToPromise.$inferSelect;
+
 // Export schedule schemas
 export * from './schedule-schema';
 

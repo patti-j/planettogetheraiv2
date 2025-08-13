@@ -76,6 +76,7 @@ import ProductDevelopment from "@/pages/product-development";
 import SchedulingHistory from "@/pages/scheduling-history";
 import ProductionSchedulePage from "@/pages/production-schedule";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
+import MasterProductionSchedulePage from "@/pages/master-production-schedule";
 import MobileHomePage from "@/pages/mobile-home";
 import MobileWidgetView from "@/pages/mobile-widget-view";
 import MobileDashboardView from "@/pages/mobile-dashboard-view";
@@ -377,6 +378,12 @@ function Router() {
           <Route path="/production-schedule">
             <ProtectedRoute feature="schedule" action="view">
               <ProductionSchedulePage />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/master-production-schedule">
+            <ProtectedRoute feature="master-production-schedule" action="view">
+              <MasterProductionSchedulePage />
             </ProtectedRoute>
           </Route>
           <Route path="/capacity-planning">

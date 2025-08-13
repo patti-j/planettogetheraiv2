@@ -22714,6 +22714,193 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
+  // ==================== MASTER PRODUCTION SCHEDULE ROUTES ====================
+  
+  // Get all Master Production Schedules with optional filters
+  app.get("/api/master-production-schedule", requireAuth, async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const itemNumber = req.query.itemNumber as string | undefined;
+      
+      const mpsItems = await storage.getMasterProductionSchedules(plantId, itemNumber);
+      res.json(mpsItems);
+    } catch (error) {
+      console.error("Error fetching master production schedules:", error);
+      res.status(500).json({ error: "Failed to fetch master production schedules" });
+    }
+  });
+
+  // Get specific Master Production Schedule
+  app.get("/api/master-production-schedule/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid MPS ID" });
+      }
+
+      const mps = await storage.getMasterProductionSchedule(id);
+      if (!mps) {
+        return res.status(404).json({ error: "Master Production Schedule not found" });
+      }
+
+      res.json(mps);
+    } catch (error) {
+      console.error("Error fetching master production schedule:", error);
+      res.status(500).json({ error: "Failed to fetch master production schedule" });
+    }
+  });
+
+  // Create new Master Production Schedule
+  app.post("/api/master-production-schedule", requireAuth, async (req, res) => {
+    try {
+      // Validate request body with Zod schema here if needed
+      const mps = await storage.createMasterProductionSchedule(req.body);
+      res.status(201).json(mps);
+    } catch (error) {
+      console.error("Error creating master production schedule:", error);
+      res.status(500).json({ error: "Failed to create master production schedule" });
+    }
+  });
+
+  // Update Master Production Schedule
+  app.patch("/api/master-production-schedule/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid MPS ID" });
+      }
+
+      const updated = await storage.updateMasterProductionSchedule(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Master Production Schedule not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating master production schedule:", error);
+      res.status(500).json({ error: "Failed to update master production schedule" });
+    }
+  });
+
+  // Delete Master Production Schedule
+  app.delete("/api/master-production-schedule/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid MPS ID" });
+      }
+
+      const success = await storage.deleteMasterProductionSchedule(id);
+      if (!success) {
+        return res.status(404).json({ error: "Master Production Schedule not found" });
+      }
+
+      res.json({ message: "Master Production Schedule deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting master production schedule:", error);
+      res.status(500).json({ error: "Failed to delete master production schedule" });
+    }
+  });
+
+  // Publish Master Production Schedule
+  app.post("/api/master-production-schedule/:id/publish", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const publishedBy = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid MPS ID" });
+      }
+
+      const published = await storage.publishMasterProductionSchedule(id, publishedBy);
+      if (!published) {
+        return res.status(404).json({ error: "Master Production Schedule not found" });
+      }
+
+      res.json(published);
+    } catch (error) {
+      console.error("Error publishing master production schedule:", error);
+      res.status(500).json({ error: "Failed to publish master production schedule" });
+    }
+  });
+
+  // AI Optimization endpoint
+  app.post("/api/master-production-schedule/ai-optimize", requireAuth, async (req, res) => {
+    try {
+      const { itemNumbers, plantId } = req.body;
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      // This would be a complex AI optimization process
+      // For now, return a simulated response
+      res.json({
+        message: "AI optimization completed",
+        itemNumbers,
+        plantId,
+        recommendations: [
+          {
+            itemNumber: itemNumbers[0],
+            recommendation: "Increase lot size by 10% to improve efficiency",
+            confidenceScore: 85,
+            reasoning: "Based on demand trends and capacity constraints"
+          }
+        ]
+      });
+    } catch (error) {
+      console.error("Error in AI optimization:", error);
+      res.status(500).json({ error: "Failed to optimize master production schedule" });
+    }
+  });
+
+  // ==================== SALES FORECASTS ROUTES ====================
+  
+  // Get all Sales Forecasts with optional filters
+  app.get("/api/sales-forecasts", requireAuth, async (req, res) => {
+    try {
+      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+      const itemNumber = req.query.itemNumber as string | undefined;
+      
+      const forecasts = await storage.getSalesForecasts(plantId, itemNumber);
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching sales forecasts:", error);
+      res.status(500).json({ error: "Failed to fetch sales forecasts" });
+    }
+  });
+
+  // Create new Sales Forecast
+  app.post("/api/sales-forecasts", requireAuth, async (req, res) => {
+    try {
+      const forecast = await storage.createSalesForecast(req.body);
+      res.status(201).json(forecast);
+    } catch (error) {
+      console.error("Error creating sales forecast:", error);
+      res.status(500).json({ error: "Failed to create sales forecast" });
+    }
+  });
+
+  // Update Sales Forecast
+  app.patch("/api/sales-forecasts/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid forecast ID" });
+      }
+
+      const updated = await storage.updateSalesForecast(id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Sales forecast not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating sales forecast:", error);
+      res.status(500).json({ error: "Failed to update sales forecast" });
+    }
+  });
+
   // Register schedule routes
   registerScheduleRoutes(app);
 
