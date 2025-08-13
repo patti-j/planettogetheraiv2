@@ -97,28 +97,63 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
   const schedulerConfig = {
     startDate,
     endDate,
-    viewPreset: 'dayAndWeek',
+    viewPreset: 'weekAndMonth',
     barMargin: 5,
-    rowHeight: 50,
+    rowHeight: 60,
+    resourceImagePath: 'users/',
+    eventStyle: 'colored' as const,
+    eventColor: null, // Let individual events control their color
     
     columns: [
       { 
         text: 'Resource', 
         field: 'name', 
-        width: 200,
+        width: 220,
+        locked: true,
         renderer: ({ record }: any) => {
           const typeIcon = record.type === 'production_line' ? '🏭' :
                           record.type === 'assembly' ? '🔧' :
-                          record.type === 'packaging' ? '📦' : '⚙️';
-          return `${typeIcon} ${record.name}`;
+                          record.type === 'packaging' ? '📦' : 
+                          record.type === 'quality_control' ? '✅' :
+                          record.type === 'maintenance' ? '🔨' : '⚙️';
+          const statusColor = record.status === 'available' ? 'text-green-600' :
+                             record.status === 'busy' ? 'text-orange-600' :
+                             record.status === 'maintenance' ? 'text-red-600' : '';
+          return `
+            <div class="flex items-center gap-2">
+              <span class="text-lg">${typeIcon}</span>
+              <div>
+                <div class="font-semibold">${record.name}</div>
+                <div class="text-xs ${statusColor}">${record.status || 'Available'}</div>
+              </div>
+            </div>
+          `;
         }
       },
       { 
         text: 'Type', 
         field: 'type', 
-        width: 120,
+        width: 130,
         renderer: ({ value }: any) => {
           return value ? value.replace(/_/g, ' ').toUpperCase() : '';
+        }
+      },
+      { 
+        text: 'Utilization', 
+        field: 'utilization', 
+        width: 100,
+        align: 'center' as const,
+        renderer: ({ record }: any) => {
+          const utilization = record.utilization || 0;
+          const color = utilization > 90 ? 'red' : utilization > 70 ? 'orange' : 'green';
+          return `
+            <div class="flex flex-col items-center">
+              <div class="text-sm font-bold" style="color: ${color}">${utilization}%</div>
+              <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                <div class="h-2 rounded-full" style="width: ${utilization}%; background-color: ${color}"></div>
+              </div>
+            </div>
+          `;
         }
       },
       { 
@@ -133,7 +168,11 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
         field: 'efficiency', 
         width: 80,
         align: 'center' as const,
-        renderer: ({ value }: any) => `${value || 100}%`
+        renderer: ({ value }: any) => {
+          const eff = value || 100;
+          const color = eff >= 90 ? 'green' : eff >= 70 ? 'orange' : 'red';
+          return `<span style="color: ${color}; font-weight: bold">${eff}%</span>`;
+        }
       }
     ],
 

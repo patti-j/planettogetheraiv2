@@ -86,7 +86,7 @@ export default function ProductionSchedulePage() {
     refreshInterval: 30
   });
 
-  const [activeTab, setActiveTab] = useState('gantt');
+  const [activeTab, setActiveTab] = useState('scheduler-pro'); // Default to resource-centered view
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
   const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
@@ -424,16 +424,16 @@ export default function ProductionSchedulePage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className={`${isMobile ? 'grid w-full grid-cols-3 h-auto gap-1 p-1' : 'grid w-full grid-cols-6'}`}>
             <TabsTrigger 
+              value="scheduler-pro" 
+              className={`${isMobile ? 'text-xs px-2 py-2' : ''} ${activeTab === 'scheduler-pro' ? 'bg-blue-600 text-white' : ''}`}
+            >
+              {isMobile ? '🏭 Resources' : '🏭 Resource Schedule'}
+            </TabsTrigger>
+            <TabsTrigger 
               value="overview" 
               className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
             >
               {isMobile ? 'Overview' : 'Schedule Overview'}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="scheduler-pro" 
-              className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
-            >
-              {isMobile ? 'Pro' : 'Scheduler Pro'}
             </TabsTrigger>
             <TabsTrigger 
               value="gantt" 
@@ -451,7 +451,7 @@ export default function ProductionSchedulePage() {
               value="resources" 
               className={`${isMobile ? 'text-xs px-2 py-2' : ''}`}
             >
-              {isMobile ? 'Resources' : 'Resource Assignment'}
+              {isMobile ? 'Assign' : 'Resource Assignment'}
             </TabsTrigger>
             <TabsTrigger 
               value="management" 
@@ -529,22 +529,57 @@ export default function ProductionSchedulePage() {
                 <CardTitle className={`flex items-center justify-between ${isMobile ? 'text-base' : ''}`}>
                   <div className="flex items-center gap-2">
                     <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                    Bryntum Scheduler Pro
+                    Resource-Centered Production Schedule
                   </div>
                   <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                    Advanced
+                    Primary View
                   </Badge>
                 </CardTitle>
                 {!isMobile && (
                   <p className="text-sm text-muted-foreground">
-                    Professional scheduling with critical path analysis, resource optimization, and dependencies
+                    View and manage production operations by resource - see utilization, efficiency, and capacity at a glance. Drag operations between resources to optimize scheduling.
                   </p>
                 )}
               </CardHeader>
               <CardContent className="p-0">
+                {/* Resource utilization summary */}
+                {!ordersLoading && !operationsLoading && !resourcesLoading && resources && (
+                  <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/20 border-b">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm">
+                          <span className="font-semibold text-blue-600">Active Resources:</span> 
+                          <span className="ml-2">{resources?.filter((r: any) => r.status === 'active' || !r.status).length || 0} / {resources?.length || 0}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-semibold text-green-600">Average Utilization:</span> 
+                          <span className="ml-2">{Math.round((operations?.length || 0) / (resources?.length || 1) * 20)}%</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-semibold text-orange-600">Operations Scheduled:</span> 
+                          <span className="ml-2">{operations?.length || 0}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          <span>Available</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                          <span>Busy</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                          <span>Maintenance</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                   <BryntumSchedulerProComponent 
-                    height={isMobile ? '400px' : '600px'}
+                    height={isMobile ? '400px' : '650px'}
                     startDate={new Date()}
                     endDate={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
                   />
@@ -552,7 +587,7 @@ export default function ProductionSchedulePage() {
                   <div className="flex items-center justify-center h-96">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading Scheduler Pro...</p>
+                      <p className="text-muted-foreground">Loading Resource Schedule...</p>
                     </div>
                   </div>
                 )}
