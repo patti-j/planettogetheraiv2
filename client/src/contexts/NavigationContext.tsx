@@ -59,6 +59,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/optimization-studio': { label: 'Optimization Studio', icon: 'Sparkles' },
   '/autonomous-optimization': { label: 'Autonomous Optimization', icon: 'Bot' },
   '/demand-forecasting': { label: 'Demand Forecasting', icon: 'Brain' },
+  '/demand-planning': { label: 'Demand Planning', icon: 'Brain' },
   '/inventory-optimization': { label: 'Inventory Optimization', icon: 'Package' },
   '/shop-floor': { label: 'Shop Floor', icon: 'Factory' },
   '/operator-dashboard': { label: 'Operator Dashboard', icon: 'Settings' },
@@ -158,23 +159,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         };
       }
       
-      // Fix broken icons (empty objects) by using pageMapping
-      if (!page.icon || typeof page.icon !== 'string' || page.icon === '{}') {
-        const mappedPage = pageMapping[page.path];
-        if (mappedPage) {
-          return {
-            ...page,
-            icon: mappedPage.icon,
-            label: page.label || mappedPage.label
-          };
-        }
-        
-        // If not in pageMapping, try to generate from path
-        const generated = generateLabelFromPath(page.path);
+      // Fix broken icons (empty objects, FileText fallbacks) by using pageMapping
+      const mappedPage = pageMapping[page.path];
+      if (mappedPage && (!page.icon || typeof page.icon !== 'string' || page.icon === '{}' || page.icon === 'FileText')) {
         return {
           ...page,
-          icon: generated.icon,
-          label: page.label || generated.label
+          icon: mappedPage.icon,
+          label: page.label || mappedPage.label
         };
       }
       
