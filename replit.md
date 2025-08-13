@@ -16,6 +16,9 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Recent Changes & Fixes
+- **Fixed Data Schema Page Header Overflow** (Aug 13, 2025): Fixed header controls being pushed off the right side of the page by improving responsive layout, adding flex-shrink-0 to prevent control compression, using icon-only buttons on mobile to save space, and optimizing gap spacing
+
 ## System Architecture
 
 ### Navigation Architecture

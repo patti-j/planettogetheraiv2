@@ -256,7 +256,11 @@ export default function HomePage() {
                 <CardContent>
                   <div className="space-y-2">
                     {recentPages.slice(0, 5).map((page, index) => {
-                      const IconComponent = page.icon;
+                      // Handle icon - it could be a string name, component, or empty/invalid
+                      const IconComponent = typeof page.icon === 'string' 
+                        ? null // Icon names as strings aren't directly renderable
+                        : (typeof page.icon === 'function' ? page.icon : null);
+                      
                       return (
                         <Button
                           key={index}
@@ -264,7 +268,7 @@ export default function HomePage() {
                           className="w-full justify-start gap-2 h-8"
                           onClick={() => setLocation(page.path)}
                         >
-                          {IconComponent && <IconComponent className="w-4 h-4" />}
+                          {IconComponent && typeof IconComponent === 'function' && <IconComponent className="w-4 h-4" />}
                           <span className="text-sm">{page.label}</span>
                         </Button>
                       );

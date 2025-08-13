@@ -2222,8 +2222,8 @@ function DataSchemaViewContent() {
             </Badge>
           </div>
           
-          {/* Top Right Controls */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Top Right Controls - Responsive with proper overflow handling */}
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 max-w-full overflow-x-auto">
             {/* Homepage Navigation Button - More prominent */}
             <Button 
               onClick={() => {
@@ -2232,9 +2232,10 @@ function DataSchemaViewContent() {
               }}
               variant="default"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
             >
-              <span>← Homepage</span>
+              <Home className="w-4 h-4 sm:hidden" />
+              <span className="hidden sm:inline">← Homepage</span>
             </Button>
             
             {/* Manual Refresh Button */}
@@ -2246,10 +2247,9 @@ function DataSchemaViewContent() {
                     size="sm"
                     onClick={handleManualRefresh}
                     disabled={isRefreshing}
-                    className="flex items-center gap-2"
+                    className="flex-shrink-0"
                   >
                     <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline">Refresh</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -2257,8 +2257,6 @@ function DataSchemaViewContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-
-
 
             {/* Fit to View Button */}
             <TooltipProvider>
@@ -2268,6 +2266,7 @@ function DataSchemaViewContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => fitView({ padding: 0.2, minZoom: 0.05, maxZoom: 2.0, duration: 800 })}
+                    className="flex-shrink-0"
                   >
                     <Target className="w-4 h-4" />
                   </Button>
@@ -2286,7 +2285,7 @@ function DataSchemaViewContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowMiniMap(!showMiniMap)}
-                    className={showMiniMap ? 'ring-2 ring-blue-500' : ''}
+                    className={`flex-shrink-0 ${showMiniMap ? 'ring-2 ring-blue-500' : ''}`}
                   >
                     {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </Button>
@@ -2305,7 +2304,7 @@ function DataSchemaViewContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsFullScreen(!isFullScreen)}
-                    className={isFullScreen ? 'ring-2 ring-green-500' : ''}
+                    className={`flex-shrink-0 ${isFullScreen ? 'ring-2 ring-green-500' : ''}`}
                   >
                     {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                   </Button>
