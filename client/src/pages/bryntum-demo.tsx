@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, FlaskConical, Calendar, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
 
 export default function BryntumDemoPage() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   
   return (
     <div className="flex flex-col h-full">
@@ -17,7 +17,7 @@ export default function BryntumDemoPage() {
           <Button 
             variant="ghost" 
             className="text-white hover:bg-white/20"
-            onClick={() => navigate('/production-schedule')}
+            onClick={() => setLocation('/production-schedule')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Schedule
