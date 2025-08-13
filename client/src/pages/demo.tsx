@@ -129,14 +129,28 @@ export default function DemoPage() {
           font-size: 11px;
           box-sizing: border-box;
         ">
-          <div style="
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.2;
-          ">
-            ${jobName}: ${operationName}
+          <div>
+            <div style="
+              font-weight: bold;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              line-height: 1.2;
+              color: #333;
+            ">
+              ${jobName}
+            </div>
+            <div style="
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              line-height: 1.2;
+              font-size: 10px;
+              color: #666;
+              margin-top: 1px;
+            ">
+              ${operationName}
+            </div>
           </div>
           <div style="
             background-color: ${statusColor};
@@ -185,11 +199,11 @@ export default function DemoPage() {
       // Tooltips and editing
       eventTooltip: {
         // Ensure tooltip appears near mouse cursor
-        align: 'l-r',
-        anchorToTarget: false,
-        trackMouse: true,
+        align: 'b-t',
+        anchorToTarget: true,
+        trackMouse: false,
         hideDelay: 100,
-        showDelay: 500,
+        showDelay: 300,
         template: ({ eventRecord }) => `
           <div style="padding: 10px; min-width: 200px;">
             <h4 style="margin: 0 0 8px 0; color: #333;">${eventRecord.jobName || 'Job'}</h4>
