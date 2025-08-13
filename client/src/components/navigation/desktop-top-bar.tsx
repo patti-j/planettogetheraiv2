@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor } from 'lucide-react';
+import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +30,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useFullScreen } from '@/contexts/FullScreenContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function DesktopTopBar() {
   const { user, logout } = useAuth();
@@ -40,6 +42,7 @@ export function DesktopTopBar() {
   const [selectedPlants, setSelectedPlants] = useState<string[]>(['plant-1']);
   const [dateHorizon, setDateHorizon] = useState('30-days');
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { isFullScreen, toggleFullScreen } = useFullScreen();
 
   // Fetch plants data
   const { data: plants = [] } = useQuery({
@@ -116,70 +119,99 @@ export function DesktopTopBar() {
         </Button>
       </div>
 
-      {/* Scenario Switcher */}
-      <Select value={selectedScenario} onValueChange={setSelectedScenario}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select scenario" />
-        </SelectTrigger>
-        <SelectContent>
-          {scenarios.map(scenario => (
-            <SelectItem key={scenario.value} value={scenario.value}>
-              {scenario.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Only show filters when not in full screen */}
+      {!isFullScreen && (
+        <>
+          {/* Scenario Switcher */}
+          <Select value={selectedScenario} onValueChange={setSelectedScenario}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select scenario" />
+            </SelectTrigger>
+            <SelectContent>
+              {scenarios.map(scenario => (
+                <SelectItem key={scenario.value} value={scenario.value}>
+                  {scenario.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      {/* Plant Filter (Multi-select) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="min-w-[150px]">
-            <Building2 className="w-4 h-4 mr-2" />
-            Plants ({selectedPlants.length})
-            <ChevronDown className="w-4 h-4 ml-2" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-[250px]">
-          <DropdownMenuLabel>Select Plants</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {availablePlants.map(plant => (
-            <DropdownMenuCheckboxItem
-              key={plant.id}
-              checked={selectedPlants.includes(plant.id)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  setSelectedPlants([...selectedPlants, plant.id]);
-                } else {
-                  setSelectedPlants(selectedPlants.filter(p => p !== plant.id));
-                }
-              }}
-            >
-              <div className="flex flex-col">
-                <span>{plant.name}</span>
-                <span className="text-xs text-muted-foreground">{plant.location}</span>
-              </div>
-            </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          {/* Plant Filter (Multi-select) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[150px]">
+                <Building2 className="w-4 h-4 mr-2" />
+                Plants ({selectedPlants.length})
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[250px]">
+              <DropdownMenuLabel>Select Plants</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {availablePlants.map(plant => (
+                <DropdownMenuCheckboxItem
+                  key={plant.id}
+                  checked={selectedPlants.includes(plant.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedPlants([...selectedPlants, plant.id]);
+                    } else {
+                      setSelectedPlants(selectedPlants.filter(p => p !== plant.id));
+                    }
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <span>{plant.name}</span>
+                    <span className="text-xs text-muted-foreground">{plant.location}</span>
+                  </div>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-      {/* Date Horizon Selector */}
-      <Select value={dateHorizon} onValueChange={setDateHorizon}>
-        <SelectTrigger className="w-[140px]">
-          <Calendar className="w-4 h-4 mr-2" />
-          <SelectValue placeholder="Date range" />
-        </SelectTrigger>
-        <SelectContent>
-          {dateHorizons.map(horizon => (
-            <SelectItem key={horizon.value} value={horizon.value}>
-              {horizon.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          {/* Date Horizon Selector */}
+          <Select value={dateHorizon} onValueChange={setDateHorizon}>
+            <SelectTrigger className="w-[140px]">
+              <Calendar className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Date range" />
+            </SelectTrigger>
+            <SelectContent>
+              {dateHorizons.map(horizon => (
+                <SelectItem key={horizon.value} value={horizon.value}>
+                  {horizon.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />
+
+      {/* Full Screen Toggle */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullScreen}
+              className="flex-shrink-0"
+              aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+            >
+              {isFullScreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isFullScreen ? "Exit full screen" : "Enter full screen"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Theme Toggle */}
       <DropdownMenu>

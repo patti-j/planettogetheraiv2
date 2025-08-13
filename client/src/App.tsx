@@ -10,6 +10,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { TourProvider, useTour } from "@/contexts/TourContext";
 import { MaxDockProvider } from "@/contexts/MaxDockContext";
 import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
+import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
@@ -651,10 +652,12 @@ function App() {
                 <NavigationProvider>
                   <TourProvider>
                     <MaxDockProvider>
-                    <Router />
-                    <OnboardingWizard />
-                    <ResumeTourButton />
-                    <Toaster />
+                      <FullScreenProvider>
+                        <Router />
+                        <OnboardingWizard />
+                        <ResumeTourButton />
+                        <Toaster />
+                      </FullScreenProvider>
                     </MaxDockProvider>
                   </TourProvider>
                 </NavigationProvider>
