@@ -96,7 +96,7 @@ export function LeftRailNav() {
       
       <TooltipProvider>
         <div className={cn(
-          "h-full bg-background border-r transition-all duration-300 flex flex-col relative z-50",
+          "h-full bg-background border-r transition-all duration-300 flex flex-col",
           isMinimized && "hidden",
           isCollapsed ? "w-16" : "w-64"
         )}>
@@ -297,7 +297,7 @@ export function LeftRailNav() {
         </div>
 
         {/* Controls */}
-        <div className="p-2 border-t relative z-50">
+        <div className="p-2 border-t">
           {!isCollapsed ? (
             <div className="flex gap-1">
               <Tooltip>
