@@ -2007,6 +2007,182 @@ export const shiftUtilization = pgTable("shift_utilization", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Smart KPI Meeting system for tracking performance and improvement guidance
+export const smartKpiMeetings = pgTable("smart_kpi_meetings", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  meetingDate: timestamp("meeting_date").notNull(),
+  meetingType: text("meeting_type").notNull(), // daily_standup, weekly_review, monthly_planning, quarterly_review
+  organizerId: integer("organizer_id").references(() => users.id).notNull(),
+  attendees: jsonb("attendees").$type<number[]>().default([]), // user IDs
+  businessGoalsDiscussed: jsonb("business_goals_discussed").$type<string[]>().default([]),
+  keyDecisions: jsonb("key_decisions").$type<Array<{
+    decision: string;
+    owner: number; // user ID
+    dueDate: string;
+    priority: "high" | "medium" | "low";
+  }>>().default([]),
+  actionItems: jsonb("action_items").$type<Array<{
+    task: string;
+    assignee: number; // user ID
+    dueDate: string;
+    status: "pending" | "in_progress" | "completed" | "delayed";
+    kpiImpact: string[]; // KPI IDs that this action affects
+  }>>().default([]),
+  meetingNotes: text("meeting_notes"),
+  nextMeetingDate: timestamp("next_meeting_date"),
+  status: text("status").notNull().default("completed"), // scheduled, in_progress, completed, cancelled
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Smart KPI definitions with business goal alignment
+export const smartKpiDefinitions = pgTable("smart_kpi_definitions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // efficiency, quality, delivery, cost, safety, sustainability
+  businessStrategy: text("business_strategy").notNull(), // cost_leadership, customer_service, innovation, environmental
+  calculationMethod: text("calculation_method").notNull(), // manual, automated, hybrid
+  formula: text("formula"), // mathematical formula for calculation
+  dataSource: text("data_source"), // where the data comes from
+  measurementUnit: text("measurement_unit").notNull(), // percentage, hours, dollars, count, etc.
+  targetType: text("target_type").notNull(), // higher_better, lower_better, range_target
+  isActive: boolean("is_active").default(true),
+  trackingFrequency: text("tracking_frequency").notNull(), // real_time, hourly, daily, weekly, monthly
+  reportingLevel: text("reporting_level").notNull(), // plant, department, line, resource
+  improvementActions: jsonb("improvement_actions").$type<Array<{
+    condition: string; // when to trigger this action
+    action: string; // what to do
+    priority: "high" | "medium" | "low";
+    estimatedImpact: string;
+  }>>().default([]),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Smart KPI targets with time-based goals
+export const smartKpiTargets = pgTable("smart_kpi_targets", {
+  id: serial("id").primaryKey(),
+  kpiDefinitionId: integer("kpi_definition_id").references(() => smartKpiDefinitions.id).notNull(),
+  targetPeriod: text("target_period").notNull(), // daily, weekly, monthly, quarterly, yearly
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  targetValue: numeric("target_value", { precision: 15, scale: 5 }).notNull(),
+  minimumAcceptable: numeric("minimum_acceptable", { precision: 15, scale: 5 }),
+  stretchGoal: numeric("stretch_goal", { precision: 15, scale: 5 }),
+  businessJustification: text("business_justification"),
+  resourcesRequired: jsonb("resources_required").$type<Array<{
+    type: string; // labor, equipment, budget, training
+    description: string;
+    estimatedCost: number;
+  }>>().default([]),
+  risks: jsonb("risks").$type<Array<{
+    risk: string;
+    probability: "low" | "medium" | "high";
+    impact: "low" | "medium" | "high";
+    mitigation: string;
+  }>>().default([]),
+  setBy: integer("set_by").references(() => users.id).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  status: text("status").notNull().default("active"), // draft, active, achieved, missed, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Smart KPI actual performance tracking
+export const smartKpiActuals = pgTable("smart_kpi_actuals", {
+  id: serial("id").primaryKey(),
+  kpiDefinitionId: integer("kpi_definition_id").references(() => smartKpiDefinitions.id).notNull(),
+  recordDate: timestamp("record_date").notNull(),
+  actualValue: numeric("actual_value", { precision: 15, scale: 5 }).notNull(),
+  dataSource: text("data_source").notNull(), // manual_entry, automated_system, calculated
+  dataQuality: text("data_quality").notNull().default("good"), // excellent, good, fair, poor
+  confidence: integer("confidence").notNull().default(100), // 0-100 percentage
+  contextNotes: text("context_notes"), // external factors affecting the measurement
+  validationStatus: text("validation_status").notNull().default("pending"), // pending, validated, rejected
+  validatedBy: integer("validated_by").references(() => users.id),
+  validatedAt: timestamp("validated_at"),
+  relatedMeetingId: integer("related_meeting_id").references(() => smartKpiMeetings.id),
+  contributingFactors: jsonb("contributing_factors").$type<Array<{
+    factor: string;
+    impact: "positive" | "negative" | "neutral";
+    magnitude: "low" | "medium" | "high";
+  }>>().default([]),
+  recordedBy: integer("recorded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Smart KPI improvement initiatives
+export const smartKpiImprovements = pgTable("smart_kpi_improvements", {
+  id: serial("id").primaryKey(),
+  kpiDefinitionId: integer("kpi_definition_id").references(() => smartKpiDefinitions.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  initiativeType: text("initiative_type").notNull(), // process_improvement, training, equipment_upgrade, policy_change
+  triggerReason: text("trigger_reason").notNull(), // target_miss, trend_analysis, meeting_decision, external_requirement
+  relatedMeetingId: integer("related_meeting_id").references(() => smartKpiMeetings.id),
+  priority: text("priority").notNull().default("medium"), // high, medium, low
+  status: text("status").notNull().default("planning"), // planning, approved, in_progress, completed, cancelled, on_hold
+  plannedStartDate: timestamp("planned_start_date"),
+  actualStartDate: timestamp("actual_start_date"),
+  plannedEndDate: timestamp("planned_end_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  estimatedImpact: numeric("estimated_impact", { precision: 5, scale: 2 }), // percentage improvement expected
+  actualImpact: numeric("actual_impact", { precision: 5, scale: 2 }), // percentage improvement achieved
+  estimatedCost: numeric("estimated_cost", { precision: 15, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 15, scale: 2 }),
+  resourcesRequired: jsonb("resources_required").$type<Array<{
+    type: string;
+    description: string;
+    quantity: number;
+    cost: number;
+  }>>().default([]),
+  successCriteria: jsonb("success_criteria").$type<Array<{
+    criteria: string;
+    measurementMethod: string;
+    targetValue: number;
+    achieved: boolean;
+  }>>().default([]),
+  lessonsLearned: text("lessons_learned"),
+  recommendedForReplication: boolean("recommended_for_replication").default(false),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Smart KPI alerts and notifications
+export const smartKpiAlerts = pgTable("smart_kpi_alerts", {
+  id: serial("id").primaryKey(),
+  kpiDefinitionId: integer("kpi_definition_id").references(() => smartKpiDefinitions.id).notNull(),
+  alertType: text("alert_type").notNull(), // threshold_breach, trend_warning, target_achievement, data_quality
+  severity: text("severity").notNull(), // info, warning, critical
+  message: text("message").notNull(),
+  triggeredValue: numeric("triggered_value", { precision: 15, scale: 5 }),
+  thresholdValue: numeric("threshold_value", { precision: 15, scale: 5 }),
+  triggerCondition: text("trigger_condition"), // above, below, equals, trend_up, trend_down
+  alertedUsers: jsonb("alerted_users").$type<number[]>().default([]), // user IDs who should be notified
+  notificationsSent: jsonb("notifications_sent").$type<Array<{
+    userId: number;
+    method: "email" | "sms" | "in_app";
+    sentAt: string;
+    status: "sent" | "failed" | "pending";
+  }>>().default([]),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  resolution: text("resolution"),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  status: text("status").notNull().default("active"), // active, acknowledged, resolved, dismissed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Production Scheduler's Cockpit Configuration
 export const cockpitLayouts = pgTable("cockpit_layouts", {
   id: serial("id").primaryKey(),
@@ -9693,7 +9869,7 @@ export const masterProductionSchedule = pgTable("master_production_schedule", {
 }, (table) => ({
   itemPlantIdx: unique().on(table.itemNumber, table.plantId),
   plannerIdx: index("mps_planner_idx").on(table.plannerId),
-  statusIdx: index("mps_status_idx").on(table.status),
+  publishedIdx: index("mps_published_idx").on(table.isPublished),
 }));
 
 // Sales forecasts that feed into MPS (simplified structure)
@@ -9748,6 +9924,62 @@ export const insertAvailableToPromiseSchema = createInsertSchema(availableToProm
 });
 export type InsertAvailableToPromise = z.infer<typeof insertAvailableToPromiseSchema>;
 export type AvailableToPromise = typeof availableToPromise.$inferSelect;
+
+// Smart KPI Insert Schemas
+export const insertSmartKpiMeetingSchema = createInsertSchema(smartKpiMeetings, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+export const insertSmartKpiDefinitionSchema = createInsertSchema(smartKpiDefinitions, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+export const insertSmartKpiTargetSchema = createInsertSchema(smartKpiTargets, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+export const insertSmartKpiActualSchema = createInsertSchema(smartKpiActuals, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+export const insertSmartKpiImprovementSchema = createInsertSchema(smartKpiImprovements, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+export const insertSmartKpiAlertSchema = createInsertSchema(smartKpiAlerts, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined,
+});
+
+// Smart KPI Types
+export type SmartKpiMeeting = typeof smartKpiMeetings.$inferSelect;
+export type InsertSmartKpiMeeting = z.infer<typeof insertSmartKpiMeetingSchema>;
+
+export type SmartKpiDefinition = typeof smartKpiDefinitions.$inferSelect;
+export type InsertSmartKpiDefinition = z.infer<typeof insertSmartKpiDefinitionSchema>;
+
+export type SmartKpiTarget = typeof smartKpiTargets.$inferSelect;
+export type InsertSmartKpiTarget = z.infer<typeof insertSmartKpiTargetSchema>;
+
+export type SmartKpiActual = typeof smartKpiActuals.$inferSelect;
+export type InsertSmartKpiActual = z.infer<typeof insertSmartKpiActualSchema>;
+
+export type SmartKpiImprovement = typeof smartKpiImprovements.$inferSelect;
+export type InsertSmartKpiImprovement = z.infer<typeof insertSmartKpiImprovementSchema>;
+
+export type SmartKpiAlert = typeof smartKpiAlerts.$inferSelect;
+export type InsertSmartKpiAlert = z.infer<typeof insertSmartKpiAlertSchema>;
 
 // Export schedule schemas
 export * from './schedule-schema';

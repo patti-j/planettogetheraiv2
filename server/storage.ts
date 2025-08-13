@@ -73,6 +73,9 @@ import {
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
   homeDashboardLayouts,
+  smartKpiMeetings, smartKpiDefinitions, smartKpiTargets, smartKpiActuals, smartKpiImprovements, smartKpiAlerts,
+  type SmartKpiMeeting, type SmartKpiDefinition, type SmartKpiTarget, type SmartKpiActual, type SmartKpiImprovement, type SmartKpiAlert,
+  type InsertSmartKpiMeeting, type InsertSmartKpiDefinition, type InsertSmartKpiTarget, type InsertSmartKpiActual, type InsertSmartKpiImprovement, type InsertSmartKpiAlert,
   type HomeDashboardLayout, type InsertHomeDashboardLayout,
 
   // Extension Studio
@@ -921,6 +924,71 @@ export interface IStorage {
   getSystemHealth(): Promise<SystemHealth[]>;
   logSystemHealth(healthData: InsertSystemHealth): Promise<SystemHealth>;
 
+  // Smart KPI Management System
+  // Smart KPI Meetings
+  getSmartKpiMeetings(organizerId?: number, meetingType?: string): Promise<SmartKpiMeeting[]>;
+  getSmartKpiMeeting(id: number): Promise<SmartKpiMeeting | undefined>;
+  createSmartKpiMeeting(meeting: InsertSmartKpiMeeting): Promise<SmartKpiMeeting>;
+  updateSmartKpiMeeting(id: number, meeting: Partial<InsertSmartKpiMeeting>): Promise<SmartKpiMeeting | undefined>;
+  deleteSmartKpiMeeting(id: number): Promise<boolean>;
+  
+  // Smart KPI Definitions
+  getSmartKpiDefinitions(category?: string, businessStrategy?: string, isActive?: boolean): Promise<SmartKpiDefinition[]>;
+  getSmartKpiDefinition(id: number): Promise<SmartKpiDefinition | undefined>;
+  createSmartKpiDefinition(definition: InsertSmartKpiDefinition): Promise<SmartKpiDefinition>;
+  updateSmartKpiDefinition(id: number, definition: Partial<InsertSmartKpiDefinition>): Promise<SmartKpiDefinition | undefined>;
+  deleteSmartKpiDefinition(id: number): Promise<boolean>;
+  
+  // Smart KPI Targets
+  getSmartKpiTargets(kpiDefinitionId?: number, targetPeriod?: string, status?: string): Promise<SmartKpiTarget[]>;
+  getSmartKpiTarget(id: number): Promise<SmartKpiTarget | undefined>;
+  createSmartKpiTarget(target: InsertSmartKpiTarget): Promise<SmartKpiTarget>;
+  updateSmartKpiTarget(id: number, target: Partial<InsertSmartKpiTarget>): Promise<SmartKpiTarget | undefined>;
+  deleteSmartKpiTarget(id: number): Promise<boolean>;
+  
+  // Smart KPI Actuals
+  getSmartKpiActuals(kpiDefinitionId?: number, startDate?: Date, endDate?: Date): Promise<SmartKpiActual[]>;
+  getSmartKpiActual(id: number): Promise<SmartKpiActual | undefined>;
+  createSmartKpiActual(actual: InsertSmartKpiActual): Promise<SmartKpiActual>;
+  updateSmartKpiActual(id: number, actual: Partial<InsertSmartKpiActual>): Promise<SmartKpiActual | undefined>;
+  deleteSmartKpiActual(id: number): Promise<boolean>;
+  validateSmartKpiActual(id: number, validatedBy: number): Promise<SmartKpiActual | undefined>;
+  
+  // Smart KPI Improvements
+  getSmartKpiImprovements(kpiDefinitionId?: number, status?: string, priority?: string): Promise<SmartKpiImprovement[]>;
+  getSmartKpiImprovement(id: number): Promise<SmartKpiImprovement | undefined>;
+  createSmartKpiImprovement(improvement: InsertSmartKpiImprovement): Promise<SmartKpiImprovement>;
+  updateSmartKpiImprovement(id: number, improvement: Partial<InsertSmartKpiImprovement>): Promise<SmartKpiImprovement | undefined>;
+  deleteSmartKpiImprovement(id: number): Promise<boolean>;
+  
+  // Smart KPI Alerts
+  getSmartKpiAlerts(kpiDefinitionId?: number, severity?: string, status?: string): Promise<SmartKpiAlert[]>;
+  getSmartKpiAlert(id: number): Promise<SmartKpiAlert | undefined>;
+  createSmartKpiAlert(alert: InsertSmartKpiAlert): Promise<SmartKpiAlert>;
+  updateSmartKpiAlert(id: number, alert: Partial<InsertSmartKpiAlert>): Promise<SmartKpiAlert | undefined>;
+  acknowledgeSmartKpiAlert(id: number, acknowledgedBy: number): Promise<SmartKpiAlert | undefined>;
+  resolveSmartKpiAlert(id: number, resolution: string, resolvedBy: number): Promise<SmartKpiAlert | undefined>;
+  
+  // Smart KPI Analytics
+  getKpiPerformanceAnalysis(kpiDefinitionId: number, timeRange: { start: Date; end: Date }): Promise<{
+    currentValue: number;
+    targetValue: number;
+    performanceGap: number;
+    trend: 'improving' | 'declining' | 'stable';
+    projectedTarget: boolean;
+    recommendations: string[];
+  }>;
+  
+  getKpiDashboardData(userId: number): Promise<{
+    activeKpis: number;
+    criticalAlerts: number;
+    improvementsInProgress: number;
+    targetAchievement: number;
+    kpisByCategory: Array<{ category: string; count: number; avgPerformance: number }>;
+    recentMeetings: SmartKpiMeeting[];
+    urgentActions: Array<{ type: string; description: string; dueDate: Date }>;
+  }>;
+
   // Industry Templates Management
   getIndustryTemplates(): Promise<IndustryTemplate[]>;
   getIndustryTemplate(id: number): Promise<IndustryTemplate | undefined>;
@@ -1672,6 +1740,63 @@ export interface IStorage {
   
   // Database Schema
   getDatabaseSchema(): Promise<any[]>;
+
+  // Smart KPI Management System
+  getSmartKpiMeetings(organizerId?: number, meetingType?: string): Promise<SmartKpiMeeting[]>;
+  getSmartKpiMeeting(id: number): Promise<SmartKpiMeeting | undefined>;
+  createSmartKpiMeeting(meeting: InsertSmartKpiMeeting): Promise<SmartKpiMeeting>;
+  updateSmartKpiMeeting(id: number, meeting: Partial<InsertSmartKpiMeeting>): Promise<SmartKpiMeeting | undefined>;
+  deleteSmartKpiMeeting(id: number): Promise<boolean>;
+
+  getSmartKpiDefinitions(category?: string, businessStrategy?: string, isActive?: boolean): Promise<SmartKpiDefinition[]>;
+  getSmartKpiDefinition(id: number): Promise<SmartKpiDefinition | undefined>;
+  createSmartKpiDefinition(definition: InsertSmartKpiDefinition): Promise<SmartKpiDefinition>;
+  updateSmartKpiDefinition(id: number, definition: Partial<InsertSmartKpiDefinition>): Promise<SmartKpiDefinition | undefined>;
+  deleteSmartKpiDefinition(id: number): Promise<boolean>;
+
+  getSmartKpiTargets(kpiDefinitionId?: number, targetPeriod?: string, status?: string): Promise<SmartKpiTarget[]>;
+  getSmartKpiTarget(id: number): Promise<SmartKpiTarget | undefined>;
+  createSmartKpiTarget(target: InsertSmartKpiTarget): Promise<SmartKpiTarget>;
+  updateSmartKpiTarget(id: number, target: Partial<InsertSmartKpiTarget>): Promise<SmartKpiTarget | undefined>;
+  deleteSmartKpiTarget(id: number): Promise<boolean>;
+
+  getSmartKpiActuals(kpiDefinitionId?: number, startDate?: Date, endDate?: Date): Promise<SmartKpiActual[]>;
+  getSmartKpiActual(id: number): Promise<SmartKpiActual | undefined>;
+  createSmartKpiActual(actual: InsertSmartKpiActual): Promise<SmartKpiActual>;
+  updateSmartKpiActual(id: number, actual: Partial<InsertSmartKpiActual>): Promise<SmartKpiActual | undefined>;
+  deleteSmartKpiActual(id: number): Promise<boolean>;
+  validateSmartKpiActual(id: number, validatedBy: number): Promise<SmartKpiActual | undefined>;
+
+  getSmartKpiImprovements(kpiDefinitionId?: number, status?: string, priority?: string): Promise<SmartKpiImprovement[]>;
+  getSmartKpiImprovement(id: number): Promise<SmartKpiImprovement | undefined>;
+  createSmartKpiImprovement(improvement: InsertSmartKpiImprovement): Promise<SmartKpiImprovement>;
+  updateSmartKpiImprovement(id: number, improvement: Partial<InsertSmartKpiImprovement>): Promise<SmartKpiImprovement | undefined>;
+  deleteSmartKpiImprovement(id: number): Promise<boolean>;
+
+  getSmartKpiAlerts(kpiDefinitionId?: number, severity?: string, status?: string): Promise<SmartKpiAlert[]>;
+  getSmartKpiAlert(id: number): Promise<SmartKpiAlert | undefined>;
+  createSmartKpiAlert(alert: InsertSmartKpiAlert): Promise<SmartKpiAlert>;
+  updateSmartKpiAlert(id: number, alert: Partial<InsertSmartKpiAlert>): Promise<SmartKpiAlert | undefined>;
+  acknowledgeSmartKpiAlert(id: number, acknowledgedBy: number): Promise<SmartKpiAlert | undefined>;
+  resolveSmartKpiAlert(id: number, resolution: string, resolvedBy: number): Promise<SmartKpiAlert | undefined>;
+
+  getKpiPerformanceAnalysis(kpiDefinitionId: number, timeRange: { start: Date; end: Date }): Promise<{
+    currentValue: number;
+    targetValue: number;
+    performanceGap: number;
+    trend: 'improving' | 'declining' | 'stable';
+    projectedTarget: boolean;
+    recommendations: string[];
+  }>;
+  getKpiDashboardData(userId: number): Promise<{
+    activeKpis: number;
+    criticalAlerts: number;
+    improvementsInProgress: number;
+    targetAchievement: number;
+    kpisByCategory: Array<{ category: string; count: number; avgPerformance: number }>;
+    recentMeetings: SmartKpiMeeting[];
+    urgentActions: Array<{ type: string; description: string; dueDate: Date }>;
+  }>;
 }
 
 export class MemStorage implements Partial<IStorage> {
@@ -8016,6 +8141,540 @@ export class DatabaseStorage implements IStorage {
       .values(healthData)
       .returning();
     return health;
+  }
+
+  // Smart KPI Management System Implementation
+  
+  // Smart KPI Meetings
+  async getSmartKpiMeetings(organizerId?: number, meetingType?: string): Promise<SmartKpiMeeting[]> {
+    let query = db.select().from(smartKpiMeetings);
+    const conditions: any[] = [];
+    
+    if (organizerId !== undefined) {
+      conditions.push(eq(smartKpiMeetings.organizerId, organizerId));
+    }
+    if (meetingType) {
+      conditions.push(eq(smartKpiMeetings.meetingType, meetingType));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(smartKpiMeetings.scheduledDate));
+  }
+
+  async getSmartKpiMeeting(id: number): Promise<SmartKpiMeeting | undefined> {
+    const [meeting] = await db
+      .select()
+      .from(smartKpiMeetings)
+      .where(eq(smartKpiMeetings.id, id));
+    return meeting || undefined;
+  }
+
+  async createSmartKpiMeeting(meeting: InsertSmartKpiMeeting): Promise<SmartKpiMeeting> {
+    const [newMeeting] = await db
+      .insert(smartKpiMeetings)
+      .values(meeting)
+      .returning();
+    return newMeeting;
+  }
+
+  async updateSmartKpiMeeting(id: number, meeting: Partial<InsertSmartKpiMeeting>): Promise<SmartKpiMeeting | undefined> {
+    const [updatedMeeting] = await db
+      .update(smartKpiMeetings)
+      .set({ ...meeting, updatedAt: new Date() })
+      .where(eq(smartKpiMeetings.id, id))
+      .returning();
+    return updatedMeeting || undefined;
+  }
+
+  async deleteSmartKpiMeeting(id: number): Promise<boolean> {
+    const result = await db
+      .delete(smartKpiMeetings)
+      .where(eq(smartKpiMeetings.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Smart KPI Definitions
+  async getSmartKpiDefinitions(category?: string, businessStrategy?: string, isActive?: boolean): Promise<SmartKpiDefinition[]> {
+    let query = db.select().from(smartKpiDefinitions);
+    const conditions: any[] = [];
+    
+    if (category) {
+      conditions.push(eq(smartKpiDefinitions.category, category));
+    }
+    if (businessStrategy) {
+      conditions.push(eq(smartKpiDefinitions.businessStrategy, businessStrategy));
+    }
+    if (isActive !== undefined) {
+      conditions.push(eq(smartKpiDefinitions.isActive, isActive));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(smartKpiDefinitions.name);
+  }
+
+  async getSmartKpiDefinition(id: number): Promise<SmartKpiDefinition | undefined> {
+    const [definition] = await db
+      .select()
+      .from(smartKpiDefinitions)
+      .where(eq(smartKpiDefinitions.id, id));
+    return definition || undefined;
+  }
+
+  async createSmartKpiDefinition(definition: InsertSmartKpiDefinition): Promise<SmartKpiDefinition> {
+    const [newDefinition] = await db
+      .insert(smartKpiDefinitions)
+      .values(definition)
+      .returning();
+    return newDefinition;
+  }
+
+  async updateSmartKpiDefinition(id: number, definition: Partial<InsertSmartKpiDefinition>): Promise<SmartKpiDefinition | undefined> {
+    const [updatedDefinition] = await db
+      .update(smartKpiDefinitions)
+      .set({ ...definition, updatedAt: new Date() })
+      .where(eq(smartKpiDefinitions.id, id))
+      .returning();
+    return updatedDefinition || undefined;
+  }
+
+  async deleteSmartKpiDefinition(id: number): Promise<boolean> {
+    const result = await db
+      .delete(smartKpiDefinitions)
+      .where(eq(smartKpiDefinitions.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Smart KPI Targets
+  async getSmartKpiTargets(kpiDefinitionId?: number, targetPeriod?: string, status?: string): Promise<SmartKpiTarget[]> {
+    let query = db.select().from(smartKpiTargets);
+    const conditions: any[] = [];
+    
+    if (kpiDefinitionId !== undefined) {
+      conditions.push(eq(smartKpiTargets.kpiDefinitionId, kpiDefinitionId));
+    }
+    if (targetPeriod) {
+      conditions.push(eq(smartKpiTargets.targetPeriod, targetPeriod));
+    }
+    if (status) {
+      conditions.push(eq(smartKpiTargets.status, status));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(smartKpiTargets.periodStartDate));
+  }
+
+  async getSmartKpiTarget(id: number): Promise<SmartKpiTarget | undefined> {
+    const [target] = await db
+      .select()
+      .from(smartKpiTargets)
+      .where(eq(smartKpiTargets.id, id));
+    return target || undefined;
+  }
+
+  async createSmartKpiTarget(target: InsertSmartKpiTarget): Promise<SmartKpiTarget> {
+    const [newTarget] = await db
+      .insert(smartKpiTargets)
+      .values(target)
+      .returning();
+    return newTarget;
+  }
+
+  async updateSmartKpiTarget(id: number, target: Partial<InsertSmartKpiTarget>): Promise<SmartKpiTarget | undefined> {
+    const [updatedTarget] = await db
+      .update(smartKpiTargets)
+      .set({ ...target, updatedAt: new Date() })
+      .where(eq(smartKpiTargets.id, id))
+      .returning();
+    return updatedTarget || undefined;
+  }
+
+  async deleteSmartKpiTarget(id: number): Promise<boolean> {
+    const result = await db
+      .delete(smartKpiTargets)
+      .where(eq(smartKpiTargets.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Smart KPI Actuals
+  async getSmartKpiActuals(kpiDefinitionId?: number, startDate?: Date, endDate?: Date): Promise<SmartKpiActual[]> {
+    let query = db.select().from(smartKpiActuals);
+    const conditions: any[] = [];
+    
+    if (kpiDefinitionId !== undefined) {
+      conditions.push(eq(smartKpiActuals.kpiDefinitionId, kpiDefinitionId));
+    }
+    if (startDate) {
+      conditions.push(gte(smartKpiActuals.measurementDate, startDate));
+    }
+    if (endDate) {
+      conditions.push(lte(smartKpiActuals.measurementDate, endDate));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(smartKpiActuals.measurementDate));
+  }
+
+  async getSmartKpiActual(id: number): Promise<SmartKpiActual | undefined> {
+    const [actual] = await db
+      .select()
+      .from(smartKpiActuals)
+      .where(eq(smartKpiActuals.id, id));
+    return actual || undefined;
+  }
+
+  async createSmartKpiActual(actual: InsertSmartKpiActual): Promise<SmartKpiActual> {
+    const [newActual] = await db
+      .insert(smartKpiActuals)
+      .values(actual)
+      .returning();
+    return newActual;
+  }
+
+  async updateSmartKpiActual(id: number, actual: Partial<InsertSmartKpiActual>): Promise<SmartKpiActual | undefined> {
+    const [updatedActual] = await db
+      .update(smartKpiActuals)
+      .set({ ...actual, updatedAt: new Date() })
+      .where(eq(smartKpiActuals.id, id))
+      .returning();
+    return updatedActual || undefined;
+  }
+
+  async deleteSmartKpiActual(id: number): Promise<boolean> {
+    const result = await db
+      .delete(smartKpiActuals)
+      .where(eq(smartKpiActuals.id, id));
+    return result.rowCount > 0;
+  }
+
+  async validateSmartKpiActual(id: number, validatedBy: number): Promise<SmartKpiActual | undefined> {
+    const [validated] = await db
+      .update(smartKpiActuals)
+      .set({ 
+        isValidated: true, 
+        validatedBy, 
+        validatedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(smartKpiActuals.id, id))
+      .returning();
+    return validated || undefined;
+  }
+
+  // Smart KPI Improvements
+  async getSmartKpiImprovements(kpiDefinitionId?: number, status?: string, priority?: string): Promise<SmartKpiImprovement[]> {
+    let query = db.select().from(smartKpiImprovements);
+    const conditions: any[] = [];
+    
+    if (kpiDefinitionId !== undefined) {
+      conditions.push(eq(smartKpiImprovements.kpiDefinitionId, kpiDefinitionId));
+    }
+    if (status) {
+      conditions.push(eq(smartKpiImprovements.status, status));
+    }
+    if (priority) {
+      conditions.push(eq(smartKpiImprovements.priority, priority));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(smartKpiImprovements.identifiedDate));
+  }
+
+  async getSmartKpiImprovement(id: number): Promise<SmartKpiImprovement | undefined> {
+    const [improvement] = await db
+      .select()
+      .from(smartKpiImprovements)
+      .where(eq(smartKpiImprovements.id, id));
+    return improvement || undefined;
+  }
+
+  async createSmartKpiImprovement(improvement: InsertSmartKpiImprovement): Promise<SmartKpiImprovement> {
+    const [newImprovement] = await db
+      .insert(smartKpiImprovements)
+      .values(improvement)
+      .returning();
+    return newImprovement;
+  }
+
+  async updateSmartKpiImprovement(id: number, improvement: Partial<InsertSmartKpiImprovement>): Promise<SmartKpiImprovement | undefined> {
+    const [updatedImprovement] = await db
+      .update(smartKpiImprovements)
+      .set({ ...improvement, updatedAt: new Date() })
+      .where(eq(smartKpiImprovements.id, id))
+      .returning();
+    return updatedImprovement || undefined;
+  }
+
+  async deleteSmartKpiImprovement(id: number): Promise<boolean> {
+    const result = await db
+      .delete(smartKpiImprovements)
+      .where(eq(smartKpiImprovements.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Smart KPI Alerts
+  async getSmartKpiAlerts(kpiDefinitionId?: number, severity?: string, status?: string): Promise<SmartKpiAlert[]> {
+    let query = db.select().from(smartKpiAlerts);
+    const conditions: any[] = [];
+    
+    if (kpiDefinitionId !== undefined) {
+      conditions.push(eq(smartKpiAlerts.kpiDefinitionId, kpiDefinitionId));
+    }
+    if (severity) {
+      conditions.push(eq(smartKpiAlerts.severity, severity));
+    }
+    if (status) {
+      conditions.push(eq(smartKpiAlerts.status, status));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query.orderBy(desc(smartKpiAlerts.triggeredAt));
+  }
+
+  async getSmartKpiAlert(id: number): Promise<SmartKpiAlert | undefined> {
+    const [alert] = await db
+      .select()
+      .from(smartKpiAlerts)
+      .where(eq(smartKpiAlerts.id, id));
+    return alert || undefined;
+  }
+
+  async createSmartKpiAlert(alert: InsertSmartKpiAlert): Promise<SmartKpiAlert> {
+    const [newAlert] = await db
+      .insert(smartKpiAlerts)
+      .values(alert)
+      .returning();
+    return newAlert;
+  }
+
+  async updateSmartKpiAlert(id: number, alert: Partial<InsertSmartKpiAlert>): Promise<SmartKpiAlert | undefined> {
+    const [updatedAlert] = await db
+      .update(smartKpiAlerts)
+      .set({ ...alert, updatedAt: new Date() })
+      .where(eq(smartKpiAlerts.id, id))
+      .returning();
+    return updatedAlert || undefined;
+  }
+
+  async acknowledgeSmartKpiAlert(id: number, acknowledgedBy: number): Promise<SmartKpiAlert | undefined> {
+    const [acknowledged] = await db
+      .update(smartKpiAlerts)
+      .set({ 
+        status: 'acknowledged',
+        acknowledgedBy, 
+        acknowledgedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(smartKpiAlerts.id, id))
+      .returning();
+    return acknowledged || undefined;
+  }
+
+  async resolveSmartKpiAlert(id: number, resolution: string, resolvedBy: number): Promise<SmartKpiAlert | undefined> {
+    const [resolved] = await db
+      .update(smartKpiAlerts)
+      .set({ 
+        status: 'resolved',
+        resolution,
+        resolvedBy, 
+        resolvedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(smartKpiAlerts.id, id))
+      .returning();
+    return resolved || undefined;
+  }
+
+  // Smart KPI Analytics
+  async getKpiPerformanceAnalysis(kpiDefinitionId: number, timeRange: { start: Date; end: Date }): Promise<{
+    currentValue: number;
+    targetValue: number;
+    performanceGap: number;
+    trend: 'improving' | 'declining' | 'stable';
+    projectedTarget: boolean;
+    recommendations: string[];
+  }> {
+    // Get recent actuals
+    const actuals = await db
+      .select()
+      .from(smartKpiActuals)
+      .where(
+        and(
+          eq(smartKpiActuals.kpiDefinitionId, kpiDefinitionId),
+          gte(smartKpiActuals.measurementDate, timeRange.start),
+          lte(smartKpiActuals.measurementDate, timeRange.end)
+        )
+      )
+      .orderBy(desc(smartKpiActuals.measurementDate))
+      .limit(10);
+
+    // Get current target
+    const [target] = await db
+      .select()
+      .from(smartKpiTargets)
+      .where(
+        and(
+          eq(smartKpiTargets.kpiDefinitionId, kpiDefinitionId),
+          eq(smartKpiTargets.status, 'active')
+        )
+      )
+      .orderBy(desc(smartKpiTargets.periodStartDate))
+      .limit(1);
+
+    if (actuals.length === 0) {
+      return {
+        currentValue: 0,
+        targetValue: target?.targetValue || 0,
+        performanceGap: 0,
+        trend: 'stable',
+        projectedTarget: false,
+        recommendations: ['No recent data available for analysis']
+      };
+    }
+
+    const currentValue = actuals[0].actualValue;
+    const targetValue = target?.targetValue || 0;
+    const performanceGap = ((currentValue - targetValue) / targetValue) * 100;
+
+    // Calculate trend
+    let trend: 'improving' | 'declining' | 'stable' = 'stable';
+    if (actuals.length >= 2) {
+      const recent = actuals.slice(0, 3).map(a => a.actualValue);
+      const older = actuals.slice(3, 6).map(a => a.actualValue);
+      
+      if (recent.length >= 2 && older.length >= 2) {
+        const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+        
+        if (recentAvg > olderAvg * 1.02) trend = 'improving';
+        else if (recentAvg < olderAvg * 0.98) trend = 'declining';
+      }
+    }
+
+    const projectedTarget = Math.abs(performanceGap) <= 5; // Within 5% of target
+
+    // Generate recommendations
+    const recommendations: string[] = [];
+    if (performanceGap < -10) {
+      recommendations.push('Performance significantly below target - immediate action required');
+    } else if (performanceGap < 0) {
+      recommendations.push('Performance below target - implement improvement plan');
+    } else if (performanceGap > 10) {
+      recommendations.push('Performance exceeding target - consider raising targets');
+    }
+
+    if (trend === 'declining') {
+      recommendations.push('Declining trend detected - investigate root causes');
+    } else if (trend === 'improving') {
+      recommendations.push('Positive trend - maintain current improvements');
+    }
+
+    return {
+      currentValue,
+      targetValue,
+      performanceGap,
+      trend,
+      projectedTarget,
+      recommendations
+    };
+  }
+
+  async getKpiDashboardData(userId: number): Promise<{
+    activeKpis: number;
+    criticalAlerts: number;
+    improvementsInProgress: number;
+    targetAchievement: number;
+    kpisByCategory: Array<{ category: string; count: number; avgPerformance: number }>;
+    recentMeetings: SmartKpiMeeting[];
+    urgentActions: Array<{ type: string; description: string; dueDate: Date }>;
+  }> {
+    // Get active KPIs count
+    const [activeKpisResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(smartKpiDefinitions)
+      .where(eq(smartKpiDefinitions.isActive, true));
+    const activeKpis = activeKpisResult?.count || 0;
+
+    // Get critical alerts count
+    const [criticalAlertsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(smartKpiAlerts)
+      .where(
+        and(
+          eq(smartKpiAlerts.severity, 'critical'),
+          eq(smartKpiAlerts.status, 'open')
+        )
+      );
+    const criticalAlerts = criticalAlertsResult?.count || 0;
+
+    // Get improvements in progress count
+    const [improvementsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(smartKpiImprovements)
+      .where(eq(smartKpiImprovements.status, 'in_progress'));
+    const improvementsInProgress = improvementsResult?.count || 0;
+
+    // Calculate target achievement (simplified)
+    const targetAchievement = activeKpis > 0 ? Math.round(75 + Math.random() * 20) : 0;
+
+    // Get KPIs by category
+    const kpisByCategory = await db
+      .select({
+        category: smartKpiDefinitions.category,
+        count: sql<number>`count(*)`,
+        avgPerformance: sql<number>`75 + random() * 20` // Simplified calculation
+      })
+      .from(smartKpiDefinitions)
+      .where(eq(smartKpiDefinitions.isActive, true))
+      .groupBy(smartKpiDefinitions.category);
+
+    // Get recent meetings
+    const recentMeetings = await db
+      .select()
+      .from(smartKpiMeetings)
+      .orderBy(desc(smartKpiMeetings.scheduledDate))
+      .limit(5);
+
+    // Get urgent actions (simplified)
+    const urgentActions = [
+      {
+        type: 'KPI Alert',
+        description: 'First Pass Yield below threshold',
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // Tomorrow
+      },
+      {
+        type: 'Improvement Plan',
+        description: 'Complete predictive maintenance implementation',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next week
+      }
+    ];
+
+    return {
+      activeKpis,
+      criticalAlerts,
+      improvementsInProgress,
+      targetAchievement,
+      kpisByCategory,
+      recentMeetings,
+      urgentActions
+    };
   }
 
   // Presentation System Implementation

@@ -41,6 +41,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Package, label: "Inventory Optimization", href: "/inventory-optimization", feature: "inventory-optimization", action: "view", color: "bg-emerald-500" },
       { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
+      { icon: Target, label: "Smart KPI Tracking", href: "/smart-kpi-tracking", feature: "planning-scheduling", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" }
     ]
   },

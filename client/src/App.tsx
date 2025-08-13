@@ -101,6 +101,7 @@ import KPIPage from "@/pages/kpi";
 import TenantAdminPage from "@/pages/tenant-admin";
 import EnterpriseMapPage from "@/pages/enterprise-map";
 import AutonomousOptimizationPage from "@/pages/autonomous-optimization";
+import SmartKpiTrackingPage from "@/pages/smart-kpi-tracking";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -621,6 +622,11 @@ function Router() {
           <Route path="/shift-management">
             <ProtectedRoute feature="shift-management" action="view">
               <ShiftManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/smart-kpi-tracking">
+            <ProtectedRoute feature="planning-scheduling" action="view">
+              <SmartKpiTrackingPage />
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />

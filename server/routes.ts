@@ -60,7 +60,10 @@ import {
   // Buffer Management Schemas
   insertBufferDefinitionSchema, insertBufferConsumptionSchema, insertBufferManagementHistorySchema, insertBufferPolicySchema,
   // Home Dashboard Layout Schema
-  insertHomeDashboardLayoutSchema
+  insertHomeDashboardLayoutSchema,
+  // Smart KPI Schemas
+  insertSmartKpiMeetingSchema, insertSmartKpiDefinitionSchema, insertSmartKpiTargetSchema, 
+  insertSmartKpiActualSchema, insertSmartKpiImprovementSchema, insertSmartKpiAlertSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
@@ -22900,6 +22903,236 @@ Be careful to preserve data integrity and relationships.`;
       res.status(500).json({ error: "Failed to update sales forecast" });
     }
   });
+
+  // ================================
+  // Smart KPI Management System API Routes
+  // ================================
+  
+  // Smart KPI Meetings
+  app.get("/api/smart-kpi-meetings", requireAuth, createSafeHandler(async (req, res) => {
+    const { organizerId, meetingType } = req.query;
+    const meetings = await storage.getSmartKpiMeetings(
+      organizerId ? parseInt(organizerId as string) : undefined,
+      meetingType as string
+    );
+    res.json(meetings);
+  }));
+
+  app.get("/api/smart-kpi-meetings/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid meeting ID");
+    
+    const meeting = await storage.getSmartKpiMeeting(id);
+    if (!meeting) throw new NotFoundError("Smart KPI meeting not found");
+    
+    res.json(meeting);
+  }));
+
+  app.post("/api/smart-kpi-meetings", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiMeetingSchema.parse(req.body);
+    const meeting = await storage.createSmartKpiMeeting(validatedData);
+    res.status(201).json(meeting);
+  }));
+
+  app.patch("/api/smart-kpi-meetings/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid meeting ID");
+    
+    const updated = await storage.updateSmartKpiMeeting(id, req.body);
+    if (!updated) throw new NotFoundError("Smart KPI meeting not found");
+    
+    res.json(updated);
+  }));
+
+  app.delete("/api/smart-kpi-meetings/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid meeting ID");
+    
+    const success = await storage.deleteSmartKpiMeeting(id);
+    if (!success) throw new NotFoundError("Smart KPI meeting not found");
+    
+    res.status(204).send();
+  }));
+
+  // Smart KPI Definitions
+  app.get("/api/smart-kpi-definitions", requireAuth, createSafeHandler(async (req, res) => {
+    const { category, businessStrategy, isActive } = req.query;
+    const definitions = await storage.getSmartKpiDefinitions(
+      category as string,
+      businessStrategy as string,
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined
+    );
+    res.json(definitions);
+  }));
+
+  app.get("/api/smart-kpi-definitions/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI definition ID");
+    
+    const definition = await storage.getSmartKpiDefinition(id);
+    if (!definition) throw new NotFoundError("Smart KPI definition not found");
+    
+    res.json(definition);
+  }));
+
+  app.post("/api/smart-kpi-definitions", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiDefinitionSchema.parse(req.body);
+    const definition = await storage.createSmartKpiDefinition(validatedData);
+    res.status(201).json(definition);
+  }));
+
+  app.patch("/api/smart-kpi-definitions/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI definition ID");
+    
+    const updated = await storage.updateSmartKpiDefinition(id, req.body);
+    if (!updated) throw new NotFoundError("Smart KPI definition not found");
+    
+    res.json(updated);
+  }));
+
+  // Smart KPI Targets
+  app.get("/api/smart-kpi-targets", requireAuth, createSafeHandler(async (req, res) => {
+    const { kpiDefinitionId, targetPeriod, status } = req.query;
+    const targets = await storage.getSmartKpiTargets(
+      kpiDefinitionId ? parseInt(kpiDefinitionId as string) : undefined,
+      targetPeriod as string,
+      status as string
+    );
+    res.json(targets);
+  }));
+
+  app.post("/api/smart-kpi-targets", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiTargetSchema.parse(req.body);
+    const target = await storage.createSmartKpiTarget(validatedData);
+    res.status(201).json(target);
+  }));
+
+  app.patch("/api/smart-kpi-targets/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI target ID");
+    
+    const updated = await storage.updateSmartKpiTarget(id, req.body);
+    if (!updated) throw new NotFoundError("Smart KPI target not found");
+    
+    res.json(updated);
+  }));
+
+  // Smart KPI Actuals
+  app.get("/api/smart-kpi-actuals", requireAuth, createSafeHandler(async (req, res) => {
+    const { kpiDefinitionId, startDate, endDate } = req.query;
+    const actuals = await storage.getSmartKpiActuals(
+      kpiDefinitionId ? parseInt(kpiDefinitionId as string) : undefined,
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    res.json(actuals);
+  }));
+
+  app.post("/api/smart-kpi-actuals", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiActualSchema.parse(req.body);
+    const actual = await storage.createSmartKpiActual(validatedData);
+    res.status(201).json(actual);
+  }));
+
+  app.patch("/api/smart-kpi-actuals/:id/validate", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI actual ID");
+    
+    const userId = req.session?.userId;
+    const validated = await storage.validateSmartKpiActual(id, userId);
+    if (!validated) throw new NotFoundError("Smart KPI actual not found");
+    
+    res.json(validated);
+  }));
+
+  // Smart KPI Improvements
+  app.get("/api/smart-kpi-improvements", requireAuth, createSafeHandler(async (req, res) => {
+    const { kpiDefinitionId, status, priority } = req.query;
+    const improvements = await storage.getSmartKpiImprovements(
+      kpiDefinitionId ? parseInt(kpiDefinitionId as string) : undefined,
+      status as string,
+      priority as string
+    );
+    res.json(improvements);
+  }));
+
+  app.post("/api/smart-kpi-improvements", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiImprovementSchema.parse(req.body);
+    const improvement = await storage.createSmartKpiImprovement(validatedData);
+    res.status(201).json(improvement);
+  }));
+
+  app.patch("/api/smart-kpi-improvements/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI improvement ID");
+    
+    const updated = await storage.updateSmartKpiImprovement(id, req.body);
+    if (!updated) throw new NotFoundError("Smart KPI improvement not found");
+    
+    res.json(updated);
+  }));
+
+  // Smart KPI Alerts
+  app.get("/api/smart-kpi-alerts", requireAuth, createSafeHandler(async (req, res) => {
+    const { kpiDefinitionId, severity, status } = req.query;
+    const alerts = await storage.getSmartKpiAlerts(
+      kpiDefinitionId ? parseInt(kpiDefinitionId as string) : undefined,
+      severity as string,
+      status as string
+    );
+    res.json(alerts);
+  }));
+
+  app.post("/api/smart-kpi-alerts", requireAuth, createSafeHandler(async (req, res) => {
+    const validatedData = insertSmartKpiAlertSchema.parse(req.body);
+    const alert = await storage.createSmartKpiAlert(validatedData);
+    res.status(201).json(alert);
+  }));
+
+  app.patch("/api/smart-kpi-alerts/:id/acknowledge", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI alert ID");
+    
+    const userId = req.session?.userId;
+    const acknowledged = await storage.acknowledgeSmartKpiAlert(id, userId);
+    if (!acknowledged) throw new NotFoundError("Smart KPI alert not found");
+    
+    res.json(acknowledged);
+  }));
+
+  app.patch("/api/smart-kpi-alerts/:id/resolve", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) throw new ValidationError("Invalid KPI alert ID");
+    
+    const { resolution } = req.body;
+    const userId = req.session?.userId;
+    const resolved = await storage.resolveSmartKpiAlert(id, resolution, userId);
+    if (!resolved) throw new NotFoundError("Smart KPI alert not found");
+    
+    res.json(resolved);
+  }));
+
+  // Smart KPI Analytics
+  app.get("/api/smart-kpi-analytics/performance/:kpiId", requireAuth, createSafeHandler(async (req, res) => {
+    const kpiId = parseInt(req.params.kpiId);
+    if (isNaN(kpiId)) throw new ValidationError("Invalid KPI ID");
+    
+    const { startDate, endDate } = req.query;
+    const timeRange = {
+      start: startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      end: endDate ? new Date(endDate as string) : new Date()
+    };
+    
+    const analysis = await storage.getKpiPerformanceAnalysis(kpiId, timeRange);
+    res.json(analysis);
+  }));
+
+  app.get("/api/smart-kpi-analytics/dashboard", requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.session?.userId;
+    const dashboardData = await storage.getKpiDashboardData(userId);
+    res.json(dashboardData);
+  }));
 
   // Register schedule routes
   registerScheduleRoutes(app);
