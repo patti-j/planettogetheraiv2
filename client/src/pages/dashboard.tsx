@@ -901,39 +901,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Floating AI Assistant Quick Action */}
-          <div className="fixed bottom-6 right-6 z-40">
-            <div className="floating-ai-assistant rounded-lg shadow-lg border border-gray-200 p-4 max-w-md">
-              <div className="flex items-center space-x-2 mb-3">
-                <Bot className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium text-gray-700">Max</span>
-              </div>
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Ask AI to create jobs, schedule operations..."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="flex-1"
-                />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      size="sm" 
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                      onClick={handleAiPrompt}
-                      disabled={aiMutation.isPending || !aiPrompt.trim()}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Send AI command to control Gantt chart view</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
+
 
           {/* Schedule Evaluation System */}
           {showEvaluationSystem && (
