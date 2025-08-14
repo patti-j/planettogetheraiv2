@@ -15,7 +15,7 @@ export default function DemandManagement() {
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: requests = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/demand-change-requests"],
   });
 
@@ -180,7 +180,7 @@ export default function DemandManagement() {
               </div>
             )}
 
-            {!isLoading && requests.length === 0 && (
+            {!isLoading && Array.isArray(requests) && requests.length === 0 && (
               <Card className="text-center py-12">
                 <CardContent>
                   <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-4" />
