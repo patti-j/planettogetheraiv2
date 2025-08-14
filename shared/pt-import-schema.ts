@@ -1093,6 +1093,83 @@ export const ptWarehouses = pgTable("pt_warehouses", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ForecastShipments - Forecast shipment data
+export const ptForecastShipments = pgTable("pt_forecast_shipments", {
+  id: serial("id").primaryKey(),
+  forecastExternalId: text("forecast_external_id"),
+  requiredDate: text("required_date"),
+  requiredQty: text("required_qty"),
+  warehouseExternalId: text("warehouse_external_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// JobSuccessorManufacturingOrders - Job successor relationships to manufacturing orders
+export const ptJobSuccessorManufacturingOrders = pgTable("pt_job_successor_manufacturing_orders", {
+  id: serial("id").primaryKey(),
+  externalId: text("external_id"),
+  jobExternalId: text("job_external_id"),
+  moExternalId: text("mo_external_id"),
+  successorJobExternalId: text("successor_job_external_id"),
+  successorManufacturingOrderExternalId: text("successor_manufacturing_order_external_id"),
+  successorOperationExternalId: text("successor_operation_external_id"),
+  successorPathExternalId: text("successor_path_external_id"),
+  transferHrs: text("transfer_hrs"),
+  usageQtyPerCycle: text("usage_qty_per_cycle"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Lots - Lot/batch tracking information
+export const ptLots = pgTable("pt_lots", {
+  id: serial("id").primaryKey(),
+  externalId: text("external_id"),
+  itemExternalId: text("item_external_id"),
+  warehouseExternalId: text("warehouse_external_id"),
+  qty: text("qty"),
+  code: text("code"),
+  expirationDate: text("expiration_date"),
+  limitMatlSrcToEligibleLots: text("limit_matl_src_to_eligible_lots"),
+  lotProductionDate: text("lot_production_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ManufacturingOrders - Manufacturing order master data
+export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
+  id: serial("id").primaryKey(),
+  externalId: text("external_id"),
+  name: text("name"),
+  jobExternalId: text("job_external_id"),
+  requiredQty: text("required_qty"),
+  description: text("description"),
+  alternatePathSelection: text("alternate_path_selection"),
+  autoJoinGroup: text("auto_join_group"),
+  batchDefinitionName: text("batch_definition_name"),
+  batchGroupName: text("batch_group_name"),
+  canSpanPlants: text("can_span_plants"),
+  copyRoutingFromTemplate: text("copy_routing_from_template"),
+  dbrShippingBufferOverrideDays: text("dbr_shipping_buffer_override_days"),
+  defaultPathExternalId: text("default_path_external_id"),
+  expectedFinishQty: text("expected_finish_qty"),
+  family: text("family"),
+  hold: text("hold"),
+  holdReason: text("hold_reason"),
+  holdUntilDate: text("hold_until_date"),
+  isReleased: text("is_released"),
+  lockedPlantExternalId: text("locked_plant_external_id"),
+  lockToCurrentAlternatePath: text("lock_to_current_alternate_path"),
+  moNeedDate: text("mo_need_date"),
+  needDate: text("need_date"),
+  notes: text("notes"),
+  preserveRequiredQty: text("preserve_required_qty"),
+  productColor: text("product_color"),
+  productDescription: text("product_description"),
+  productName: text("product_name"),
+  releaseDateTime: text("release_date_time"),
+  splitUpdateMode: text("split_update_mode"),
+  uom: text("uom"),
+  userFields: jsonb("user_fields").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Export insert schemas and types for each table
 export const insertPtAllowedHelpersSchema = createInsertSchema(ptAllowedHelpers).omit({ id: true, createdAt: true });
 export type InsertPtAllowedHelpers = z.infer<typeof insertPtAllowedHelpersSchema>;
@@ -1141,3 +1218,19 @@ export type PtSalesOrders = typeof ptSalesOrders.$inferSelect;
 export const insertPtWarehousesSchema = createInsertSchema(ptWarehouses).omit({ id: true, createdAt: true });
 export type InsertPtWarehouses = z.infer<typeof insertPtWarehousesSchema>;
 export type PtWarehouses = typeof ptWarehouses.$inferSelect;
+
+export const insertPtForecastShipmentsSchema = createInsertSchema(ptForecastShipments).omit({ id: true, createdAt: true });
+export type InsertPtForecastShipments = z.infer<typeof insertPtForecastShipmentsSchema>;
+export type PtForecastShipments = typeof ptForecastShipments.$inferSelect;
+
+export const insertPtJobSuccessorManufacturingOrdersSchema = createInsertSchema(ptJobSuccessorManufacturingOrders).omit({ id: true, createdAt: true });
+export type InsertPtJobSuccessorManufacturingOrders = z.infer<typeof insertPtJobSuccessorManufacturingOrdersSchema>;
+export type PtJobSuccessorManufacturingOrders = typeof ptJobSuccessorManufacturingOrders.$inferSelect;
+
+export const insertPtLotsSchema = createInsertSchema(ptLots).omit({ id: true, createdAt: true });
+export type InsertPtLots = z.infer<typeof insertPtLotsSchema>;
+export type PtLots = typeof ptLots.$inferSelect;
+
+export const insertPtManufacturingOrdersSchema = createInsertSchema(ptManufacturingOrders).omit({ id: true, createdAt: true });
+export type InsertPtManufacturingOrders = z.infer<typeof insertPtManufacturingOrdersSchema>;
+export type PtManufacturingOrders = typeof ptManufacturingOrders.$inferSelect;
