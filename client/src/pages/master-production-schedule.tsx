@@ -27,12 +27,14 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format, addWeeks, startOfWeek, endOfWeek } from "date-fns";
+import { format, addWeeks, startOfWeek, endOfWeek, addDays, addMonths, addQuarters, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfDay, endOfDay } from "date-fns";
 
-interface MPSWeekData {
-  weekStartDate: string;
-  weekEndDate: string;
-  weekNumber: number;
+type TimePeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+
+interface MPSPeriodData {
+  periodStartDate: string;
+  periodEndDate: string;
+  periodNumber: number;
   year: number;
   salesOrderDemand: number;
   forecastDemand: number;
@@ -41,7 +43,7 @@ interface MPSWeekData {
   projectedOnHand: number;
   availableToPromise: number;
   masterProductionScheduleQuantity: number;
-  cumulativeLeadTimeWeeks: number;
+  cumulativeLeadTimePeriods: number;
   lotSize: number;
   minimumOrderQuantity: number;
   maximumOrderQuantity: number;
@@ -61,8 +63,8 @@ interface MPSItem {
   itemNumber: string;
   itemDescription: string;
   plantId: number;
-  planningHorizonWeeks: number;
-  mpsData: MPSWeekData[];
+  planningHorizonPeriods: number;
+  mpsData: MPSPeriodData[];
   safetyStockDays: number;
   lotSizingRule: string;
   fixedLotSize: number;
@@ -85,7 +87,7 @@ interface SalesForecast {
   forecastData: Array<{
     periodStartDate: string;
     periodEndDate: string;
-    periodType: 'weekly' | 'monthly' | 'quarterly';
+    periodType: 'daily' | 'weekly' | 'monthly' | 'quarterly';
     statisticalForecast: number;
     managementForecast: number;
     consensusForecast: number;
@@ -100,18 +102,81 @@ export default function MasterProductionSchedulePage() {
   const { toast } = useToast();
   const [selectedPlant, setSelectedPlant] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<string>("all");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("weekly");
   const [planningHorizon, setPlanningHorizon] = useState<number>(26);
   const [showAIRecommendations, setShowAIRecommendations] = useState(true);
   const [activeTab, setActiveTab] = useState("schedule");
 
+  // Update planning horizon based on time period
+  useEffect(() => {
+    const defaultHorizons = {
+      daily: 90,
+      weekly: 26,
+      monthly: 12,
+      quarterly: 4
+    };
+    setPlanningHorizon(defaultHorizons[timePeriod]);
+  }, [timePeriod]);
+
+  // Helper functions for time period calculations
+  const getTimePeriodData = (startDate: Date, periodIndex: number, period: TimePeriod) => {
+    let periodStart: Date;
+    let periodEnd: Date;
+    let periodNumber: number;
+
+    switch (period) {
+      case 'daily':
+        periodStart = addDays(startOfDay(startDate), periodIndex);
+        periodEnd = endOfDay(periodStart);
+        periodNumber = periodIndex + 1;
+        break;
+      case 'weekly':
+        periodStart = addWeeks(startOfWeek(startDate), periodIndex);
+        periodEnd = endOfWeek(periodStart);
+        periodNumber = periodIndex + 1;
+        break;
+      case 'monthly':
+        periodStart = addMonths(startOfMonth(startDate), periodIndex);
+        periodEnd = endOfMonth(periodStart);
+        periodNumber = periodIndex + 1;
+        break;
+      case 'quarterly':
+        periodStart = addQuarters(startOfQuarter(startDate), periodIndex);
+        periodEnd = endOfQuarter(periodStart);
+        periodNumber = periodIndex + 1;
+        break;
+      default:
+        periodStart = addWeeks(startOfWeek(startDate), periodIndex);
+        periodEnd = endOfWeek(periodStart);
+        periodNumber = periodIndex + 1;
+    }
+
+    return {
+      periodStartDate: format(periodStart, 'yyyy-MM-dd'),
+      periodEndDate: format(periodEnd, 'yyyy-MM-dd'),
+      periodNumber,
+      year: periodStart.getFullYear(),
+    };
+  };
+
+  const getPeriodLabel = (period: TimePeriod) => {
+    switch (period) {
+      case 'daily': return 'Day';
+      case 'weekly': return 'Week';
+      case 'monthly': return 'Month';
+      case 'quarterly': return 'Quarter';
+      default: return 'Period';
+    }
+  };
+
   // Fetch MPS data
   const { data: mpsItems = [], isLoading: isMPSLoading } = useQuery<MPSItem[]>({
-    queryKey: ['/api/master-production-schedule', { plantId: selectedPlant, itemNumber: selectedItem }],
+    queryKey: ['/api/master-production-schedule', { plantId: selectedPlant, itemNumber: selectedItem, timePeriod, planningHorizon }],
   });
 
   // Fetch sales forecasts
   const { data: forecasts = [] } = useQuery<SalesForecast[]>({
-    queryKey: ['/api/sales-forecasts', { plantId: selectedPlant }],
+    queryKey: ['/api/sales-forecasts', { plantId: selectedPlant, timePeriod }],
   });
 
   // Fetch plants for filter
@@ -169,16 +234,16 @@ export default function MasterProductionSchedulePage() {
 
     mpsItems.forEach(item => {
       let itemHasIssues = false;
-      item.mpsData.forEach(week => {
-        totalForecastDemand += week.forecastDemand;
-        totalPlannedProduction += week.masterProductionScheduleQuantity;
+      item.mpsData.forEach(period => {
+        totalForecastDemand += period.forecastDemand;
+        totalPlannedProduction += period.masterProductionScheduleQuantity;
         
-        if (week.status === 'warning' || week.status === 'critical') {
+        if (period.status === 'warning' || period.status === 'critical') {
           itemHasIssues = true;
         }
         
-        if (week.aiConfidenceScore) {
-          averageAIConfidence += week.aiConfidenceScore;
+        if (period.aiConfidenceScore) {
+          averageAIConfidence += period.aiConfidenceScore;
           aiRecommendationCount++;
         }
       });
@@ -202,7 +267,7 @@ export default function MasterProductionSchedulePage() {
 
   // Generate sample MPS data for demonstration
   const generateSampleMPSData = () => {
-    const startDate = startOfWeek(new Date());
+    const startDate = new Date();
     const sampleItems = [
       { itemNumber: "FINISHED-001", itemDescription: "Premium Widget A", plant: "Plant 1" },
       { itemNumber: "FINISHED-002", itemDescription: "Standard Widget B", plant: "Plant 1" },
@@ -214,16 +279,24 @@ export default function MasterProductionSchedulePage() {
       itemNumber: item.itemNumber,
       itemDescription: item.itemDescription,
       plantId: 1,
-      planningHorizonWeeks: 26,
-      mpsData: Array.from({ length: 26 }, (_, weekIndex) => {
-        const weekStart = addWeeks(startDate, weekIndex);
-        const weekEnd = endOfWeek(weekStart);
-        const baselineDemand = 100 + (weekIndex * 5) + Math.floor(Math.random() * 50);
-        const forecastDemand = baselineDemand + Math.floor(Math.random() * 20);
-        const salesOrderDemand = Math.max(0, forecastDemand - Math.floor(Math.random() * 30));
+      planningHorizonPeriods: planningHorizon,
+      mpsData: Array.from({ length: planningHorizon }, (_, periodIndex) => {
+        const periodData = getTimePeriodData(startDate, periodIndex, timePeriod);
+        
+        // Adjust demand based on time period
+        const demandMultiplier = {
+          daily: 1,
+          weekly: 7,
+          monthly: 30,
+          quarterly: 90
+        }[timePeriod];
+        
+        const baselineDemand = (100 + (periodIndex * 5) + Math.floor(Math.random() * 50)) * demandMultiplier;
+        const forecastDemand = baselineDemand + Math.floor(Math.random() * 20 * demandMultiplier);
+        const salesOrderDemand = Math.max(0, forecastDemand - Math.floor(Math.random() * 30 * demandMultiplier));
         const totalDemand = forecastDemand + salesOrderDemand;
         const plannedProduction = Math.ceil(totalDemand / 50) * 50; // Lot size of 50
-        const projectedOnHand = Math.max(0, plannedProduction - totalDemand + (weekIndex === 0 ? 150 : 0));
+        const projectedOnHand = Math.max(0, plannedProduction - totalDemand + (periodIndex === 0 ? 150 : 0));
         
         const aiConfidence = 75 + Math.floor(Math.random() * 20);
         const aiRecommendation = plannedProduction + Math.floor((Math.random() - 0.5) * 20);
@@ -248,10 +321,7 @@ export default function MasterProductionSchedulePage() {
         }
 
         return {
-          weekStartDate: format(weekStart, 'yyyy-MM-dd'),
-          weekEndDate: format(weekEnd, 'yyyy-MM-dd'),
-          weekNumber: weekIndex + 1,
-          year: weekStart.getFullYear(),
+          ...periodData,
           salesOrderDemand,
           forecastDemand,
           safetyStockRequirement: 20,
@@ -259,7 +329,7 @@ export default function MasterProductionSchedulePage() {
           projectedOnHand,
           availableToPromise: Math.max(0, projectedOnHand - 20),
           masterProductionScheduleQuantity: plannedProduction,
-          cumulativeLeadTimeWeeks: 2,
+          cumulativeLeadTimePeriods: 2,
           lotSize: 50,
           minimumOrderQuantity: 50,
           maximumOrderQuantity: 500,
@@ -423,7 +493,7 @@ export default function MasterProductionSchedulePage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="plant-select">Plant</Label>
               <Select value={selectedPlant} onValueChange={setSelectedPlant}>
@@ -456,14 +526,29 @@ export default function MasterProductionSchedulePage() {
             </div>
 
             <div>
-              <Label htmlFor="horizon">Planning Horizon (Weeks)</Label>
+              <Label htmlFor="time-period">Time Period</Label>
+              <Select value={timePeriod} onValueChange={(value: TimePeriod) => setTimePeriod(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="horizon">Planning Horizon ({getPeriodLabel(timePeriod)}s)</Label>
               <Input
                 id="horizon"
                 type="number"
                 value={planningHorizon}
                 onChange={(e) => setPlanningHorizon(Number(e.target.value))}
                 min="1"
-                max="52"
+                max={timePeriod === 'daily' ? 365 : timePeriod === 'weekly' ? 52 : timePeriod === 'monthly' ? 24 : 8}
               />
             </div>
 
@@ -511,7 +596,7 @@ export default function MasterProductionSchedulePage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2 font-medium">Week</th>
+                        <th className="text-left p-2 font-medium">{getPeriodLabel(timePeriod)}</th>
                         <th className="text-right p-2 font-medium">Sales Orders</th>
                         <th className="text-right p-2 font-medium">Forecast</th>
                         <th className="text-right p-2 font-medium">Total Demand</th>
@@ -523,19 +608,19 @@ export default function MasterProductionSchedulePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {item.mpsData.slice(0, Math.min(12, planningHorizon)).map((week, weekIndex) => (
-                        <tr key={weekIndex} className="border-b hover:bg-muted/50">
+                      {item.mpsData.slice(0, Math.min(12, planningHorizon)).map((period, periodIndex) => (
+                        <tr key={periodIndex} className="border-b hover:bg-muted/50">
                           <td className="p-2">
-                            <div className="font-medium">{format(new Date(week.weekStartDate), 'MMM dd')}</div>
-                            <div className="text-xs text-muted-foreground">Week {week.weekNumber}</div>
+                            <div className="font-medium">{format(new Date(period.periodStartDate), timePeriod === 'daily' ? 'MMM dd' : timePeriod === 'weekly' ? 'MMM dd' : timePeriod === 'monthly' ? 'MMM yyyy' : "'Q'Q yyyy")}</div>
+                            <div className="text-xs text-muted-foreground">{getPeriodLabel(timePeriod)} {period.periodNumber}</div>
                           </td>
-                          <td className="p-2 text-right">{week.salesOrderDemand.toLocaleString()}</td>
-                          <td className="p-2 text-right">{week.forecastDemand.toLocaleString()}</td>
-                          <td className="p-2 text-right font-medium">{week.totalDemand.toLocaleString()}</td>
+                          <td className="p-2 text-right">{period.salesOrderDemand.toLocaleString()}</td>
+                          <td className="p-2 text-right">{period.forecastDemand.toLocaleString()}</td>
+                          <td className="p-2 text-right font-medium">{period.totalDemand.toLocaleString()}</td>
                           <td className="p-2 text-right">
                             <Input
                               type="number"
-                              value={week.masterProductionScheduleQuantity}
+                              value={period.masterProductionScheduleQuantity}
                               onChange={(e) => {
                                 // Handle MPS quantity change
                                 const newQuantity = Number(e.target.value);
@@ -545,20 +630,20 @@ export default function MasterProductionSchedulePage() {
                             />
                           </td>
                           <td className="p-2 text-right">
-                            <span className={week.projectedOnHand < week.safetyStockRequirement ? "text-red-600 font-medium" : ""}>
-                              {week.projectedOnHand.toLocaleString()}
+                            <span className={period.projectedOnHand < period.safetyStockRequirement ? "text-red-600 font-medium" : ""}>
+                              {period.projectedOnHand.toLocaleString()}
                             </span>
                           </td>
-                          <td className="p-2 text-right">{week.availableToPromise.toLocaleString()}</td>
+                          <td className="p-2 text-right">{period.availableToPromise.toLocaleString()}</td>
                           {showAIRecommendations && (
                             <td className="p-2 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <span className="text-purple-600 font-medium">
-                                  {week.aiRecommendedQuantity?.toLocaleString() || '-'}
+                                  {period.aiRecommendedQuantity?.toLocaleString() || '-'}
                                 </span>
-                                {week.aiConfidenceScore && (
+                                {period.aiConfidenceScore && (
                                   <Badge variant="outline" className="text-xs">
-                                    {week.aiConfidenceScore}%
+                                    {period.aiConfidenceScore}%
                                   </Badge>
                                 )}
                               </div>
@@ -566,10 +651,10 @@ export default function MasterProductionSchedulePage() {
                           )}
                           <td className="p-2 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <div className={`h-2 w-2 rounded-full ${getStatusColor(week.status)}`} />
-                              {week.alerts.length > 0 && (
+                              <div className={`h-2 w-2 rounded-full ${getStatusColor(period.status)}`} />
+                              {period.alerts.length > 0 && (
                                 <Badge variant="destructive" className="text-xs">
-                                  {week.alerts.length}
+                                  {period.alerts.length}
                                 </Badge>
                               )}
                             </div>

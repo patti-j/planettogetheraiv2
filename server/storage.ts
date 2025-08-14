@@ -911,7 +911,7 @@ export interface IStorage {
   setDefaultHomeDashboardLayout(userId: number, layoutId: number): Promise<boolean>;
 
   // Master Production Schedule Management
-  getMasterProductionSchedules(plantId?: number, itemNumber?: string): Promise<MasterProductionSchedule[]>;
+  getMasterProductionSchedules(plantId?: number, itemNumber?: string, timePeriod?: 'daily' | 'weekly' | 'monthly' | 'quarterly', planningHorizon?: number): Promise<MasterProductionSchedule[]>;
   getMasterProductionSchedule(id: number): Promise<MasterProductionSchedule | undefined>;
   createMasterProductionSchedule(mps: InsertMasterProductionSchedule): Promise<MasterProductionSchedule>;
   updateMasterProductionSchedule(id: number, updates: Partial<InsertMasterProductionSchedule>): Promise<MasterProductionSchedule | undefined>;
@@ -940,7 +940,7 @@ export interface IStorage {
   deleteMasterProductionScheduleEntry(id: number): Promise<boolean>;
 
   // Sales Forecasts Management
-  getSalesForecasts(plantId?: number, itemNumber?: string): Promise<SalesForecast[]>;
+  getSalesForecasts(plantId?: number, itemNumber?: string, timePeriod?: 'daily' | 'weekly' | 'monthly' | 'quarterly'): Promise<SalesForecast[]>;
   getSalesForecast(id: number): Promise<SalesForecast | undefined>;
   createSalesForecast(forecast: InsertSalesForecast): Promise<SalesForecast>;
   updateSalesForecast(id: number, updates: Partial<InsertSalesForecast>): Promise<SalesForecast | undefined>;
@@ -15324,7 +15324,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== MASTER PRODUCTION SCHEDULE IMPLEMENTATION ====================
   
-  async getMasterProductionSchedules(plantId?: number, itemNumber?: string): Promise<MasterProductionSchedule[]> {
+  async getMasterProductionSchedules(plantId?: number, itemNumber?: string, timePeriod: 'daily' | 'weekly' | 'monthly' | 'quarterly' = 'weekly', planningHorizon: number = 26): Promise<MasterProductionSchedule[]> {
     let query = db.select().from(masterProductionSchedule);
     
     if (plantId || itemNumber) {
@@ -15387,7 +15387,7 @@ export class DatabaseStorage implements IStorage {
 
   // ==================== SALES FORECASTS IMPLEMENTATION ====================
 
-  async getSalesForecasts(plantId?: number, itemNumber?: string): Promise<SalesForecast[]> {
+  async getSalesForecasts(plantId?: number, itemNumber?: string, timePeriod: 'daily' | 'weekly' | 'monthly' | 'quarterly' = 'weekly'): Promise<SalesForecast[]> {
     let query = db.select().from(salesForecasts);
     
     if (plantId || itemNumber) {

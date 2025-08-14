@@ -22728,10 +22728,12 @@ Be careful to preserve data integrity and relationships.`;
   // Get all Master Production Schedules with optional filters
   app.get("/api/master-production-schedule", requireAuth, async (req, res) => {
     try {
-      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
-      const itemNumber = req.query.itemNumber as string | undefined;
+      const plantId = req.query.plantId && req.query.plantId !== 'all' ? parseInt(req.query.plantId as string) : undefined;
+      const itemNumber = req.query.itemNumber && req.query.itemNumber !== 'all' ? req.query.itemNumber as string : undefined;
+      const timePeriod = req.query.timePeriod as 'daily' | 'weekly' | 'monthly' | 'quarterly' || 'weekly';
+      const planningHorizon = req.query.planningHorizon ? parseInt(req.query.planningHorizon as string) : 26;
       
-      const mpsItems = await storage.getMasterProductionSchedules(plantId, itemNumber);
+      const mpsItems = await storage.getMasterProductionSchedules(plantId, itemNumber, timePeriod, planningHorizon);
       res.json(mpsItems);
     } catch (error) {
       console.error("Error fetching master production schedules:", error);
@@ -22868,10 +22870,11 @@ Be careful to preserve data integrity and relationships.`;
   // Get all Sales Forecasts with optional filters
   app.get("/api/sales-forecasts", requireAuth, async (req, res) => {
     try {
-      const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
-      const itemNumber = req.query.itemNumber as string | undefined;
+      const plantId = req.query.plantId && req.query.plantId !== 'all' ? parseInt(req.query.plantId as string) : undefined;
+      const itemNumber = req.query.itemNumber && req.query.itemNumber !== 'all' ? req.query.itemNumber as string : undefined;
+      const timePeriod = req.query.timePeriod as 'daily' | 'weekly' | 'monthly' | 'quarterly' || 'weekly';
       
-      const forecasts = await storage.getSalesForecasts(plantId, itemNumber);
+      const forecasts = await storage.getSalesForecasts(plantId, itemNumber, timePeriod);
       res.json(forecasts);
     } catch (error) {
       console.error("Error fetching sales forecasts:", error);
