@@ -255,17 +255,17 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
       return dynamicSize;
     }
     
-    // Fallback static sizes
+    // Fallback static sizes - fill height for horizontal, width for vertical
     const sizeMap = {
       horizontal: {
-        small: 'w-48',
-        medium: 'w-72',
-        large: 'w-96'
+        small: 'w-48 h-full',
+        medium: 'w-72 h-full',
+        large: 'w-96 h-full'
       },
       vertical: {
-        small: 'h-32',
-        medium: 'h-48',
-        large: 'h-64'
+        small: 'w-full h-32',
+        medium: 'w-full h-48',
+        large: 'w-full h-64'
       }
     };
     
@@ -294,8 +294,8 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
               snapshot.isDragging && "opacity-50 z-50"
             )}
           >
-            <Card className={cn(
-              "h-full border border-gray-200 shadow-sm transition-all duration-200",
+            <div className={cn(
+              "h-full border border-border/50 rounded-lg bg-card shadow-sm transition-all duration-200",
               isExpanded && "shadow-lg border-blue-300",
               isCollapsed && "w-12 h-12"
             )}>
@@ -353,7 +353,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
           </div>
         )}
       </Draggable>
