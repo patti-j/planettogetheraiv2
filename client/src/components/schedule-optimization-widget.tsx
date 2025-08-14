@@ -259,6 +259,71 @@ export default function ScheduleOptimizationWidget({
     );
   }
 
+  // Compact view for widget bar (no Card wrapper to avoid double border)
+  if (viewMode === 'compact') {
+    return (
+      <div className="h-full p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Schedule Optimizer</span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-6 px-2 text-xs"
+            onClick={() => {
+              if (selectedAlgorithm && selectedProfile) {
+                optimizationMutation.mutate({
+                  algorithmId: selectedAlgorithm.id,
+                  profileId: selectedProfile.id,
+                  parameters: { weights: profileWeights }
+                });
+              }
+            }}
+            disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
+          >
+            {optimizationMutation.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <PlayCircle className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
+        
+        {/* Status and last run info */}
+        {schedulingHistory && schedulingHistory.length > 0 && (
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Last Run</span>
+              <Badge 
+                variant={schedulingHistory[0]?.status === 'completed' ? 'default' : 'secondary'} 
+                className="h-4 px-1.5 text-[10px]"
+              >
+                {schedulingHistory[0]?.status || 'Unknown'}
+              </Badge>
+            </div>
+            {schedulingHistory[0]?.status === 'completed' && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Performance</span>
+                <span className="font-medium text-green-600">
+                  {schedulingHistory[0]?.performanceMetrics?.score || 'N/A'}%
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Algorithm info */}
+        {selectedAlgorithm && (
+          <div className="text-xs text-muted-foreground">
+            <span>Algorithm: {selectedAlgorithm.displayName}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Standard view with Card wrapper
   return (
     <Card className="h-full">
