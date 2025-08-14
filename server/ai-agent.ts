@@ -1877,7 +1877,6 @@ async function executeAction(action: string, parameters: any, message: string, c
           "operator-dashboard": { path: "/operator-dashboard", name: "Operator Dashboard", permissions: ["operator-view"] },
           "maintenance": { path: "/maintenance", name: "Maintenance", permissions: ["maintenance-view"] },
           "forklift-driver": { path: "/forklift-driver", name: "Forklift Driver", permissions: ["forklift-driver-view"] },
-          "plant-manager": { path: "/plant-manager-dashboard", name: "Plant Manager Dashboard", permissions: ["plant-manager-view"] },
           
           // Systems & Integration
           "systems-integration": { path: "/systems-integration", name: "Systems Integration", permissions: ["systems-integration-view"] },

@@ -206,7 +206,7 @@ const getIconForPage = (page: string): React.ElementType => {
     '/production-schedule': BarChart3,
     '/boards': Kanban,
     '/optimize-orders': Target,
-    '/plant-manager-dashboard': Users,
+
     '/capacity-planning': BarChart3,
     '/shop-floor': Settings,
     '/systems-management-dashboard': Settings,

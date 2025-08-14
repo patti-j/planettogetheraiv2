@@ -34,7 +34,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
       { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
-      { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", feature: "plant-manager", action: "view", color: "bg-indigo-500" }
+
     ]
   },
   {

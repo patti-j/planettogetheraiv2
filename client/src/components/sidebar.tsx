@@ -132,7 +132,6 @@ export default function Sidebar() {
     { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", active: location === "/disruption-management", feature: "disruption-management", action: "view" },
     
     // Management & Administration
-    { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
@@ -258,7 +257,6 @@ export default function Sidebar() {
     { icon: AlertTriangle, label: "Disruption Management", href: "/disruption-management", active: location === "/disruption-management", feature: "disruption-management", action: "view" },
     
     // Management & Administration
-    { icon: Building, label: "Plant Manager", href: "/plant-manager-dashboard", active: location === "/plant-manager-dashboard", feature: "plant-manager", action: "view" },
     { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", active: location === "/systems-management-dashboard", feature: "systems-management", action: "view" },
     { icon: Building, label: "Plants Management", href: "/plants-management", active: location === "/plants-management", feature: "systems-management", action: "view" },
     { icon: Code, label: "Extension Studio", href: "/extension-studio", active: location === "/extension-studio", feature: "systems-management", action: "view" },
@@ -307,7 +305,6 @@ export default function Sidebar() {
       "/forklift-driver": "Material movement tracking for forklift drivers",
       "/maintenance": "Plan and manage resource maintenance schedules and work orders",
       "/disruption-management": "Track and manage production disruptions including machine breakdowns, material shortages, and personnel issues",
-      "/plant-manager-dashboard": "Comprehensive plant operations oversight and strategic decision-making",
       "/systems-management-dashboard": "Monitor system health, manage users, and oversee IT infrastructure",
       "/plants-management": "Manage manufacturing plant locations, configurations, and multi-plant operations",
       "/extension-studio": "Create and manage custom software extensions to extend platform capabilities",
