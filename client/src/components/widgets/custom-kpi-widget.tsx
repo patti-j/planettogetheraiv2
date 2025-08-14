@@ -174,8 +174,10 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
   };
 
   const getStatusColor = (current: number, target: number, type: string) => {
+    if (!current || !target) return 'text-gray-600';
     const percentage = (current / target) * 100;
-    if (type === 'cost') {
+    const category = (type || '').toLowerCase();
+    if (category === 'cost') {
       // For costs, lower is better
       if (percentage <= 100) return 'text-green-600';
       if (percentage <= 110) return 'text-yellow-600';
@@ -200,7 +202,9 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
   };
 
   const getProgressValue = (current: number, target: number, type: string) => {
-    if (type === 'cost') {
+    if (!current || !target) return 0;
+    const category = (type || '').toLowerCase();
+    if (category === 'cost') {
       // For costs, we want to show how close we are to being under target
       return Math.min(100, (target / current) * 100);
     }
@@ -217,7 +221,7 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
           </div>
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <span className={`text-lg font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category.toLowerCase())}`}>
+              <span className={`text-lg font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category || 'production')}`}>
                 {formatValue(kpi.currentValue, kpi.type, kpi.unit)}
               </span>
               {configuration.showTargets && (
@@ -228,7 +232,7 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
             </div>
             {configuration.showTargets && (
               <Progress 
-                value={getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase())} 
+                value={getProgressValue(kpi.currentValue, kpi.target, kpi.category || 'production')} 
                 className="h-1" 
               />
             )}
@@ -254,7 +258,7 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
           <CardContent className="p-0 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className={`text-2xl font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category.toLowerCase())}`}>
+                <span className={`text-2xl font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category || 'production')}`}>
                   {formatValue(kpi.currentValue, kpi.type, kpi.unit)}
                 </span>
                 {configuration.showTrends && (
@@ -277,10 +281,10 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>Progress</span>
-                  <span>{getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase()).toFixed(0)}%</span>
+                  <span>{getProgressValue(kpi.currentValue, kpi.target, kpi.category || 'production').toFixed(0)}%</span>
                 </div>
                 <Progress 
-                  value={getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase())} 
+                  value={getProgressValue(kpi.currentValue, kpi.target, kpi.category || 'production')} 
                   className="h-2" 
                 />
               </div>
@@ -320,7 +324,7 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">Current</div>
-                  <div className={`text-2xl font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category.toLowerCase())}`}>
+                  <div className={`text-2xl font-bold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category || 'production')}`}>
                     {formatValue(kpi.currentValue, kpi.type, kpi.unit)}
                   </div>
                   {configuration.showTrends && (
@@ -339,17 +343,17 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
                   </div>
                   <div className="mt-2">
                     <Badge variant={
-                      getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase()) >= 95 ? 'default' :
-                      getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase()) >= 85 ? 'secondary' : 'destructive'
+                      getProgressValue(kpi.currentValue, kpi.target, kpi.category || "production") >= 95 ? 'default' :
+                      getProgressValue(kpi.currentValue, kpi.target, kpi.category || "production") >= 85 ? 'secondary' : 'destructive'
                     }>
-                      {getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase()).toFixed(0)}%
+                      {getProgressValue(kpi.currentValue, kpi.target, kpi.category || "production").toFixed(0)}%
                     </Badge>
                   </div>
                 </div>
               </div>
 
               <Progress 
-                value={getProgressValue(kpi.currentValue, kpi.target, kpi.category.toLowerCase())} 
+                value={getProgressValue(kpi.currentValue, kpi.target, kpi.category || "production")} 
                 className="h-3" 
               />
             </div>

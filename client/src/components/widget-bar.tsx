@@ -20,8 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import CustomKPIWidget from './widgets/custom-kpi-widget';
-import OperationSequencerWidget from './widgets/operation-sequencer-widget';
+import { getWidgetComponent, WIDGET_REGISTRY, getAvailableWidgets } from '@/lib/widget-registry';
 
 interface Widget {
   id: string;
@@ -48,7 +47,7 @@ const defaultWidgets: Widget[] = [
     id: 'kpi-1',
     type: 'custom-kpi',
     title: 'Production KPIs',
-    component: CustomKPIWidget,
+    component: null as any, // Will be resolved dynamically
     config: { view: 'compact', showTrends: true, showTargets: true, maxKPIs: 3 },
     size: 'large',
     priority: 1
@@ -57,7 +56,7 @@ const defaultWidgets: Widget[] = [
     id: 'kpi-2',
     type: 'custom-kpi',
     title: 'Quality Metrics',
-    component: CustomKPIWidget,
+    component: null as any, // Will be resolved dynamically
     config: { view: 'compact', showTrends: true, showTargets: false, maxKPIs: 2 },
     size: 'medium',
     priority: 2
@@ -66,7 +65,7 @@ const defaultWidgets: Widget[] = [
     id: 'sequencer-1',
     type: 'operation-sequencer',
     title: 'Quick Sequencer',
-    component: OperationSequencerWidget,
+    component: null as any, // Will be resolved dynamically
     config: { view: 'compact', allowReorder: false, showResourceFilter: false },
     size: 'medium',
     priority: 3
@@ -85,6 +84,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
   const [configOpen, setConfigOpen] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<Widget | null>(null);
   const [expandedWidget, setExpandedWidget] = useState<string | null>(null);
+  const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isHorizontal = position === 'top' || position === 'bottom';
@@ -98,6 +98,32 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     items.splice(result.destination.index, 0, reorderedItem);
 
     onWidgetUpdate(items);
+  };
+
+  const handleAddWidget = (widgetType: string) => {
+    if (!onWidgetUpdate) return;
+    
+    const availableWidgets = getAvailableWidgets();
+    const widgetInfo = availableWidgets.find(w => w.type === widgetType);
+    if (!widgetInfo) return;
+
+    const newWidget: Widget = {
+      id: `${widgetType}-${Date.now()}`,
+      type: widgetType,
+      title: widgetInfo.title,
+      component: null as any,
+      config: {},
+      size: 'medium',
+      priority: widgets.length + 1
+    };
+
+    onWidgetUpdate([...widgets, newWidget]);
+    setAddWidgetOpen(false);
+  };
+
+  const handleRemoveWidget = (widgetId: string) => {
+    if (!onWidgetUpdate) return;
+    onWidgetUpdate(widgets.filter(w => w.id !== widgetId));
   };
 
   const scroll = (direction: 'left' | 'right' | 'up' | 'down') => {
@@ -138,7 +164,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
 
   const renderWidget = (widget: Widget, index: number) => {
     const isExpanded = expandedWidget === widget.id;
-    const Component = widget.component;
+    const Component = getWidgetComponent(widget.type);
     
     // Safety check to ensure component exists
     if (!Component) {
@@ -302,7 +328,6 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
               <ScrollArea 
                 ref={scrollRef}
                 className="flex-1"
-                orientation={isHorizontal ? 'horizontal' : 'vertical'}
               >
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="widget-bar" direction={isHorizontal ? 'horizontal' : 'vertical'}>
@@ -358,18 +383,39 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Active Widgets</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Active Widgets</label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAddWidgetOpen(true)}
+                  className="h-7 px-2"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add Widget
+                </Button>
+              </div>
               {widgets.map((widget) => (
                 <div key={widget.id} className="flex items-center justify-between p-2 border rounded">
                   <span className="text-sm">{widget.title}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedWidget(widget)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Settings className="h-3 w-3" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedWidget(widget)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveWidget(widget.id)}
+                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -404,6 +450,42 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
             
             <Button className="w-full" onClick={() => setSelectedWidget(null)}>
               Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Widget Dialog */}
+      <Dialog open={addWidgetOpen} onOpenChange={setAddWidgetOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Widget</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              Choose a widget to add to your widget bar:
+            </div>
+            <div className="space-y-2">
+              {getAvailableWidgets().map((widgetInfo) => (
+                <Button
+                  key={widgetInfo.type}
+                  variant="outline"
+                  className="w-full justify-start p-4 h-auto"
+                  onClick={() => handleAddWidget(widgetInfo.type)}
+                >
+                  <div className="text-left">
+                    <div className="font-medium">{widgetInfo.title}</div>
+                    <div className="text-sm text-gray-500">{widgetInfo.description}</div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+            <Button 
+              variant="ghost" 
+              className="w-full" 
+              onClick={() => setAddWidgetOpen(false)}
+            >
+              Cancel
             </Button>
           </div>
         </DialogContent>
