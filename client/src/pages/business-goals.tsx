@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { 
   Target, TrendingUp, AlertTriangle, CheckCircle, Clock, 
   Plus, Edit, Trash2, BarChart3, Users, Calendar, DollarSign,
-  AlertCircle, Activity, Maximize2, Minimize2
+  AlertCircle, Activity
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useMaxDock } from "@/contexts/MaxDockContext";
@@ -24,7 +24,6 @@ import type {
 } from "@shared/schema";
 
 export default function BusinessGoalsPage() {
-  const [isMaximized, setIsMaximized] = useState(false);
   const { isMaxOpen } = useMaxDock();
   const [selectedGoal, setSelectedGoal] = useState<BusinessGoal | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -416,10 +415,6 @@ export default function BusinessGoalsPage() {
   const totalActiveRisks = risks.filter((r: GoalRisk) => r.status === 'active').length;
   const totalOpenIssues = issues.filter((i: GoalIssue) => i.status !== 'resolved').length;
 
-  const containerClass = isMaximized 
-    ? "fixed inset-0 z-50 bg-white dark:bg-gray-900" 
-    : "min-h-screen bg-gray-50 dark:bg-gray-900";
-
   if (goalsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -429,7 +424,7 @@ export default function BusinessGoalsPage() {
   }
 
   return (
-    <div className={containerClass}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -449,17 +444,6 @@ export default function BusinessGoalsPage() {
             >
               <Plus className="h-4 w-4 mr-2" />
               New Goal
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsMaximized(!isMaximized)}
-              className="hidden md:flex"
-            >
-              {isMaximized ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
             </Button>
           </div>
         </div>
