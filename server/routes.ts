@@ -2345,7 +2345,7 @@ Rules:
       console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
       console.log("Query will use only pt_job_operations table with basic columns");
       
-      // Complete PT operations query using ID-based joins for comprehensive manufacturing data
+      // PT operations query using PURE ID-based joins (NO external_id columns in joins)
       const ptOperationsQuery = `
         SELECT 
           -- Operation core data
@@ -2369,50 +2369,39 @@ Rules:
           jo.hold_reason,
           jo.notes,
           
-          -- Job information (ID-based join)
-          pj.id as job_id,
-          pj.name as job_name,
-          pj.description as job_description,
-          pj.priority as job_priority,
-          pj.due_date as job_due_date,
+          -- Job information (PURE ID-based join: jo.job_id -> j.id)
+          j.id as job_id,
+          j.name as job_name,
+          j.description as job_description,
+          j.priority as job_priority,
+          j.due_date as job_due_date,
           
-          -- Activity information (ID-based join)
+          -- Activity information (PURE ID-based join: ja.operation_id -> jo.id)
           ja.id as activity_id,
           ja.external_id as activity_number,
           ja.production_status as activity_status,
           ja.comments as activity_description,
           
-          -- Plant information (ID-based join)
+          -- Plant information (PURE ID-based join: r.plant_id -> p.id)
           p.id as plant_id,
           p.name as plant_name,
           p.description as plant_description,
           
-          -- Resource information (ID-based join)
+          -- Resource information (PURE ID-based join: jra.resource_id -> r.id)
           r.id as resource_id,
           r.name as resource_name,
           r.description as resource_description,
-          r.resource_type,
-          
-          -- Manufacturing Order information (ID-based join)
-          mo.id as manufacturing_order_id,
-          mo.name as manufacturing_order_name,
-          
-          -- Item information (ID-based join)
-          i.id as item_id,
-          i.name as item_name,
-          i.description as item_description
+          r.resource_type
           
         FROM pt_job_operations jo
-        LEFT JOIN pt_jobs pj ON jo.job_external_id = pj.external_id
-        LEFT JOIN pt_job_activities ja ON jo.external_id = ja.op_external_id
-        LEFT JOIN pt_job_resource_assignments jra ON jo.id = jra.operation_id
+        LEFT JOIN pt_jobs j ON jo.job_id = j.id
+        LEFT JOIN pt_job_activities ja ON ja.operation_id = jo.id
+        LEFT JOIN pt_job_resource_assignments jra ON jra.operation_id = jo.id
         LEFT JOIN pt_resources r ON jra.resource_id = r.id
-        LEFT JOIN pt_plants p ON jra.plant_id = p.id
-        LEFT JOIN pt_manufacturing_orders mo ON pj.external_id = mo.job_external_id
-        LEFT JOIN pt_items i ON jo.product_code = i.external_id
+        LEFT JOIN pt_plants p ON r.plant_id = p.id
         ORDER BY 
           jo.operation_sequence ASC,
-          jo.external_id
+          jo.id
       `;
       
       const ptOperations = await storage.db.execute(ptOperationsQuery);
