@@ -2081,15 +2081,44 @@ export class MemStorage implements Partial<IStorage> {
   // Operations - Enhanced method with production order join
   async getOperations(): Promise<Operation[]> {
     console.log("Fetching operations for Gantt chart...");
+    console.log("DEBUG: DatabaseStorage.getOperations called - starting enhanced version...");
     try {
-      console.log("Query: " + `select "id", "routing_id", "operation_name", "description", "status", "standard_duration", "actual_duration", "start_time", "end_time", "sequence_number", "work_center_id", "priority", "completion_percentage", "quality_check_required", "quality_status", "notes", "production_order_id", "created_at", "updated_at" from "discrete_operations"`);
+      console.log("Starting getOperations - querying discrete operations with production order relationship...");
       
-      // Query discrete operations directly - now includes productionOrderId field
+      // Query discrete operations WITH their production order IDs
       const discreteOpsQuery = await db
-        .select()
+        .select({
+          id: discreteOperations.id,
+          routingId: discreteOperations.routingId,
+          productionOrderId: discreteOperations.productionOrderId,
+          operationName: discreteOperations.operationName,
+          description: discreteOperations.description,
+          status: discreteOperations.status,
+          standardDuration: discreteOperations.standardDuration,
+          actualDuration: discreteOperations.actualDuration,
+          startTime: discreteOperations.startTime,
+          endTime: discreteOperations.endTime,
+          sequenceNumber: discreteOperations.sequenceNumber,
+          workCenterId: discreteOperations.workCenterId,
+          priority: discreteOperations.priority,
+          completionPercentage: discreteOperations.completionPercentage,
+          qualityCheckRequired: discreteOperations.qualityCheckRequired,
+          qualityStatus: discreteOperations.qualityStatus,
+          notes: discreteOperations.notes,
+          createdAt: discreteOperations.createdAt,
+          updatedAt: discreteOperations.updatedAt,
+        })
         .from(discreteOperations);
       
       console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
+      if (discreteOpsQuery.length > 0) {
+        console.log("Operation 14 details:", {
+          id: discreteOpsQuery.find(op => op.id === 14),
+          startTime: discreteOpsQuery.find(op => op.id === 14)?.startTime,
+          endTime: discreteOpsQuery.find(op => op.id === 14)?.endTime,
+          workCenterId: discreteOpsQuery.find(op => op.id === 14)?.workCenterId,
+        });
+      }
       
       console.log("Querying process operations...");
       const processOps = await db.select().from(processOperations);
