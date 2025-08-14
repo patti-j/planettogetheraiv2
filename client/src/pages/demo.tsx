@@ -46,14 +46,11 @@ export default function DemoPage() {
         const jobName = order ? `${order.orderNumber} - ${order.name}` : `Job ${op.id}`;
         const operationName = op.operationName || op.name || 'Unknown Operation';
         
-        // Try using the name field to include both job and operation
-        const combinedName = `<div style="display:flex;flex-direction:column;"><b style="font-size:11px;">${jobName}</b><span style="font-size:10px;color:#666;">${operationName}</span></div>`;
-        
         const event = {
           id: op.id,
-          // Use HTML in the name field directly
-          name: combinedName,
-          // Also store separately for tooltip
+          // Use simple name field for Bryntum
+          name: operationName,
+          // Store job and operation names as custom fields
           jobName: jobName,
           operationName: operationName,
           startDate: op.startTime || new Date('2025-08-07T08:00:00'),
@@ -63,8 +60,7 @@ export default function DemoPage() {
                      op.status === 'in_progress' ? 'blue' : 
                      op.status === 'completed' ? 'gray' : 'orange',
           draggable: true,
-          resizable: true,
-          cls: 'custom-event-style'
+          resizable: true
         };
         
         console.log(`Event ${index}:`, event);
@@ -134,85 +130,84 @@ export default function DemoPage() {
     events: schedulerData.events,
     assignments: schedulerData.assignments,
     
+    // Custom event renderer at root level per Bryntum docs
+    eventRenderer: ({ eventRecord, renderData }) => {
+      const jobName = eventRecord.jobName || 'Unknown Job';
+      const operationName = eventRecord.operationName || eventRecord.name || 'Unknown Operation';
+      const status = eventRecord.status || 'waiting';
+      
+      console.log('EventRenderer called:', { jobName, operationName, status });
+      
+      // Status colors matching the screenshot
+      const statusColors = {
+        ready: '#4CAF50',
+        waiting: '#FF9800',
+        in_progress: '#2196F3',
+        completed: '#9E9E9E',
+        planned: '#FFC107',
+        scheduled: '#4CAF50'
+      };
+
+      const statusColor = statusColors[status] || '#FF9800';
+      
+      // Override the default event content
+      renderData.eventContent = `
+        <div style="
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 0;
+          font-size: 11px;
+          box-sizing: border-box;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 2px;
+          overflow: hidden;
+        ">
+          <div style="
+            flex: 1;
+            padding: 3px 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: white;
+          ">
+            <div style="
+              font-weight: bold;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              line-height: 1.2;
+              color: #333;
+              font-size: 11px;
+            ">
+              ${jobName}
+            </div>
+            <div style="
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              line-height: 1.2;
+              font-size: 10px;
+              color: #666;
+              margin-top: 1px;
+            ">
+              ${operationName}
+            </div>
+          </div>
+          <div style="
+            height: 5px;
+            background-color: ${statusColor};
+            margin: 0;
+          "></div>
+        </div>
+      `;
+      
+      return renderData;
+    },
+    
     // Enable ALL Bryntum Pro features
     features: {
-      // Custom event renderer
-      eventRenderer: {
-        defaultRenderer: ({ eventRecord, renderData }) => {
-          const jobName = eventRecord.jobName || eventRecord.data?.jobName || 'Unknown Job';
-          const operationName = eventRecord.name || 'Unknown Operation';
-          const status = eventRecord.status || 'waiting';
-          
-          console.log('Rendering event:', { jobName, operationName, status, eventRecord });
-          
-          // Status colors matching the screenshot
-          const statusColors = {
-            ready: '#4CAF50',
-            waiting: '#FF9800',
-            in_progress: '#2196F3',
-            completed: '#9E9E9E',
-            planned: '#FFC107',
-            scheduled: '#4CAF50'
-          };
-
-          const statusColor = statusColors[status] || '#FF9800';
-          
-          // Modify the renderData content directly
-          renderData.eventContent = `
-            <div style="
-              height: 100%;
-              display: flex;
-              flex-direction: column;
-              padding: 0;
-              font-size: 11px;
-              box-sizing: border-box;
-              background: white;
-              border: 1px solid #ddd;
-              border-radius: 2px;
-              overflow: hidden;
-            ">
-              <div style="
-                flex: 1;
-                padding: 3px 5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                background: white;
-              ">
-                <div style="
-                  font-weight: bold;
-                  white-space: nowrap;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  line-height: 1.2;
-                  color: #333;
-                  font-size: 11px;
-                ">
-                  ${jobName}
-                </div>
-                <div style="
-                  white-space: nowrap;
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  line-height: 1.2;
-                  font-size: 10px;
-                  color: #666;
-                  margin-top: 1px;
-                ">
-                  ${operationName}
-                </div>
-              </div>
-              <div style="
-                height: 5px;
-                background-color: ${statusColor};
-                margin: 0;
-              "></div>
-            </div>
-          `;
-          
-          return renderData;
-        }
-      },
       
       // Core drag and drop
       eventDrag: {
