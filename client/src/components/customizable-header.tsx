@@ -118,7 +118,7 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking', type: 'page' },
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals', type: 'page' },
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard', type: 'page' },
-    { id: 'enterprise-map', label: 'Map', icon: 'Globe', href: '/enterprise-map', type: 'page' },
+    { id: 'enterprise-map', label: 'Control Tower', icon: 'Globe', href: '/enterprise-map', type: 'page' },
     { id: 'users', label: 'Users', icon: 'Shield', href: '/user-access-management', type: 'page' },
     { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard', type: 'page' },
     { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning', type: 'page' },

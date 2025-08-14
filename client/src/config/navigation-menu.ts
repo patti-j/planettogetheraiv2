@@ -27,7 +27,7 @@ export const navigationGroups: NavigationGroup[] = [
     bgColor: "bg-blue-50 dark:bg-blue-950/20",
     borderColor: "border-blue-200 dark:border-blue-800",
     features: [
-      { icon: Globe, label: "Enterprise Map", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
+      { icon: Globe, label: "Global Control Tower", href: "/enterprise-map", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Building, label: "Plants Management", href: "/plants-management", feature: "systems-management", action: "view", color: "bg-slate-500" },
       { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
       { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },

@@ -97,7 +97,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/master-data': { label: 'Master Data Editor', icon: 'Database' },
   '/master-data-management': { label: 'Master Data Management', icon: 'Database' },
   '/optimize-orders': { label: 'Order Optimization', icon: 'Sparkles' },
-  '/enterprise-map': { label: 'Enterprise Map', icon: 'Globe' },
+  '/enterprise-map': { label: 'Global Control Tower', icon: 'Globe' },
   '/smart-kpi-tracking': { label: 'Smart KPI Tracking', icon: 'TrendingUp' },
   '/implementation-consultant': { label: 'Implementation Consultant', icon: 'Users' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }

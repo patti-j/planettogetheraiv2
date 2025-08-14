@@ -270,7 +270,7 @@ export default function EnterpriseMapPage() {
                 </div>
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    Global Enterprise Map
+                    Global Control Tower
                   </h1>
                   <p className="text-gray-600 dark:text-gray-300 mt-1">
                     Real-time visualization of worldwide operations and supply chain network
