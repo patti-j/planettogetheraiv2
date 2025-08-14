@@ -130,7 +130,7 @@ export const navigationGroups: NavigationGroup[] = [
     bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
     borderColor: "border-indigo-200 dark:border-indigo-800",
     features: [
-      { icon: BookOpen, label: "Getting Started", href: "/help", feature: "getting-started", action: "view", color: "bg-emerald-500" },
+      { icon: BookOpen, label: "Getting Started", href: "/onboarding", feature: "getting-started", action: "view", color: "bg-emerald-500" },
       { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-cyan-500", requiresOnboarding: false },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "training", action: "view", color: "bg-blue-700" },
