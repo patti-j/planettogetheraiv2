@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import companyLogo from '@/assets/company-logo.png';
 
 // Icon mapping for quick access items
 const iconMap = {
@@ -309,7 +310,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             onClick={() => setLocation('/')}
             className="flex items-center gap-2 px-3 py-2 h-9"
           >
-            <img src="/logo-icon.png" alt="Logo" className="h-6 w-6" />
+            <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
             <span className="hidden lg:inline font-semibold">PlanetTogether</span>
           </Button>
 
