@@ -87,112 +87,14 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
-  const [dynamicSizes, setDynamicSizes] = useState<Record<string, string>>({});
+  // Removed dynamic sizing - widgets use standard sizes
 
   const isHorizontal = position === 'top' || position === 'bottom';
   const isVertical = position === 'left' || position === 'right';
 
-  // Monitor container dimensions for dynamic sizing
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerDimensions({ width: rect.width, height: rect.height });
-      }
-    };
+  // Removed container monitoring for dynamic sizing
 
-    updateDimensions();
-    
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  // Calculate dynamic widget sizes based on container size and widget count
-  const calculateDynamicSizes = useCallback(() => {
-    if (isCollapsed || !containerDimensions.width || !containerDimensions.height) {
-      return {};
-    }
-
-    const visibleWidgets = widgets.filter(w => w.size);
-    const totalWidgets = visibleWidgets.length;
-    
-    if (totalWidgets === 0) return {};
-
-    // Available space calculation
-    const availableSpace = isHorizontal 
-      ? containerDimensions.width - 120 // Account for padding and controls
-      : containerDimensions.height - 120;
-
-    const newSizes: Record<string, string> = {};
-
-    if (isHorizontal) {
-      // Horizontal layout - ensure reasonable minimum widths for compact widgets
-      const baseWidgetWidth = Math.max(240, Math.floor(availableSpace / totalWidgets));
-      const maxWidgetWidth = Math.min(320, baseWidgetWidth + 80);
-      
-      visibleWidgets.forEach((widget) => {
-        let width;
-        
-        // Adjust size based on widget size preference with better minimums
-        switch (widget.size) {
-          case 'small':
-            width = Math.max(240, Math.min(300, Math.floor(baseWidgetWidth * 0.9)));
-            break;
-          case 'large':
-            width = Math.min(maxWidgetWidth, Math.floor(baseWidgetWidth * 1.2));
-            break;
-          default: // medium
-            width = Math.max(260, baseWidgetWidth);
-        }
-        
-        // Ensure compact widgets have sufficient width
-        if (width < 240) {
-          width = 240;
-        }
-        
-        newSizes[widget.id] = `w-[${width}px]`;
-      });
-    } else {
-      // Vertical layout - distribute height with better minimums
-      const baseWidgetHeight = Math.max(160, Math.floor(availableSpace / totalWidgets));
-      const maxWidgetHeight = Math.min(240, baseWidgetHeight + 60);
-      
-      visibleWidgets.forEach((widget) => {
-        let height;
-        
-        switch (widget.size) {
-          case 'small':
-            height = Math.max(140, Math.min(200, Math.floor(baseWidgetHeight * 0.85)));
-            break;
-          case 'large':
-            height = Math.min(maxWidgetHeight, Math.floor(baseWidgetHeight * 1.2));
-            break;
-          default: // medium
-            height = Math.max(160, baseWidgetHeight);
-        }
-        
-        // Ensure compact widgets have sufficient height
-        if (height < 140) {
-          height = 140;
-        }
-        
-        newSizes[widget.id] = `h-[${height}px]`;
-      });
-    }
-
-    return newSizes;
-  }, [widgets, containerDimensions, isHorizontal, isCollapsed]);
-
-  // Update dynamic sizes when dependencies change
-  useEffect(() => {
-    const newSizes = calculateDynamicSizes();
-    setDynamicSizes(newSizes);
-  }, [calculateDynamicSizes]);
+  // Removed dynamic sizing calculation
 
   const handleDragEnd = (result: any) => {
     if (!result.destination || !onWidgetUpdate) return;
@@ -272,23 +174,17 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
   const getWidgetSizeClass = (widget: Widget) => {
     if (isCollapsed) return '';
     
-    // Use dynamic size if available, otherwise fall back to static sizes
-    const dynamicSize = dynamicSizes[widget.id];
-    if (dynamicSize) {
-      return dynamicSize;
-    }
-    
-    // Better fallback static sizes with reasonable minimums
+    // Use standard static sizes for all widgets
     const sizeMap = {
       horizontal: {
-        small: 'w-60 h-full',  // 240px minimum width
-        medium: 'w-72 h-full', // 288px width  
-        large: 'w-80 h-full'   // 320px width
+        small: 'w-64 h-full',  // 256px standard width for compact widgets
+        medium: 'w-80 h-full', // 320px width  
+        large: 'w-96 h-full'   // 384px width
       },
       vertical: {
-        small: 'w-full h-36',  // 144px minimum height
-        medium: 'w-full h-48', // 192px height
-        large: 'w-full h-60'   // 240px height
+        small: 'w-full h-40',  // 160px standard height for compact widgets
+        medium: 'w-full h-56', // 224px height
+        large: 'w-full h-72'   // 288px height
       }
     };
     
@@ -368,8 +264,8 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                         showTrends: true,
                         showTargets: true,
                         dynamicResize: true,
-                        containerWidth: containerDimensions.width,
-                        containerHeight: containerDimensions.height,
+                        containerWidth: 256, // Fixed width for widget bar
+                        containerHeight: 128, // Fixed height for widget bar
                         minimal: true
                       }}
                     />
