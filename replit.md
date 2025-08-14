@@ -17,6 +17,18 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-14**: PT Operations API Fixed with Authentic Data
+- Successfully resolved critical PT operations API endpoint database column mapping errors
+- Fixed all database schema inconsistencies between TypeScript definitions and actual PostgreSQL column names
+- PT operations API now returns 7 authentic PlanetTogether manufacturing operations including:
+  * Blending Operation (pharmaceutical API mixing)
+  * Tablet Compression (tablet manufacturing process)
+  * Film Coating (protective coating application)
+  * Primary Packaging (blister packaging operations)
+  * Prescription Packaging (bottle packaging for medications)
+- Enhanced Resource Gantt with comprehensive timing breakdowns, operation sequences, and job hierarchy data
+- System now pulls authentic manufacturing data from PlanetTogether import tables with proper job IDs and detailed descriptions
+
 **2025-08-14**: Interactive Lasso Selection for Data Schema Visualization
 - Implemented comprehensive lasso selection tool allowing users to draw around table groups for focused analysis
 - Added lasso mode toggle with crosshair cursor and visual feedback indicators

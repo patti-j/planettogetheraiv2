@@ -2342,16 +2342,16 @@ Rules:
   // New PT-based operations endpoint for Production Gantt
   app.get("/api/pt-operations", async (req, res) => {
     try {
-      console.log("Fetching PT operations for Gantt chart...");
+      console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
+      console.log("Query will use only pt_job_operations table with basic columns");
       
-      // Fetch data from PT import tables
+      // Simplified PT operations query using only basic operation data first
       const ptOperationsQuery = `
         SELECT 
           jo.id,
           jo.external_id,
           jo.name as operation_name,
-          j.name as job_name,
-          j.external_id as job_external_id,
+          jo.job_external_id,
           jo.mo_external_id,
           jo.required_finish_qty,
           jo.cycle_hrs,
@@ -2366,40 +2366,9 @@ Rules:
           jo.commit_end_date,
           jo.on_hold,
           jo.hold_reason,
-          jo.priority,
-          jo.notes,
-          -- Job details
-          j.quantity as job_quantity,
-          j.due_date as job_due_date,
-          j.priority as job_priority,
-          j.status as job_status,
-          j.color as job_color,
-          j.customer_external_id,
-          -- Manufacturing order details
-          mo.name as manufacturing_order_name,
-          mo.quantity as mo_quantity,
-          mo.due_date as mo_due_date,
-          mo.status as mo_status,
-          -- Resource assignments
-          jr.resource_external_id,
-          r.name as resource_name,
-          -- Activities (actual scheduling)
-          ja.scheduled_setup_hrs,
-          ja.scheduled_cycle_hrs,
-          ja.scheduled_clean_hrs,
-          ja.scheduled_post_processing_hrs,
-          ja.anchor_start_date as activity_start_date,
-          ja.reported_start_date,
-          ja.reported_finish_date,
-          ja.production_status
+          jo.notes
         FROM pt_job_operations jo
-        LEFT JOIN pt_jobs j ON jo.job_external_id = j.external_id
-        LEFT JOIN pt_manufacturing_orders mo ON jo.mo_external_id = mo.external_id
-        LEFT JOIN pt_job_resources jr ON (jr.job_external_id = jo.job_external_id AND jr.operation_external_id = jo.external_id)
-        LEFT JOIN pt_resources r ON jr.resource_external_id = r.external_id
-        LEFT JOIN pt_job_activities ja ON (ja.job_external_id = jo.job_external_id AND ja.op_external_id = jo.external_id)
         ORDER BY 
-          j.priority DESC NULLS LAST,
           jo.operation_sequence ASC,
           jo.external_id
       `;
