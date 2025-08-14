@@ -2345,10 +2345,11 @@ Rules:
       console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
       console.log("Query will use only pt_job_operations table with basic columns");
       
-      // Complete PT operations query with job names and activity data (3-table join)
+      // Complete PT operations query using ID-based joins for comprehensive manufacturing data
       const ptOperationsQuery = `
         SELECT 
-          jo.id,
+          -- Operation core data
+          jo.id as operation_id,
           jo.external_id,
           jo.name as operation_name,
           jo.job_external_id,
@@ -2367,19 +2368,48 @@ Rules:
           jo.on_hold,
           jo.hold_reason,
           jo.notes,
-          -- Job information
+          
+          -- Job information (ID-based join)
+          pj.id as job_id,
           pj.name as job_name,
           pj.description as job_description,
           pj.priority as job_priority,
           pj.due_date as job_due_date,
-          -- Activity information
+          
+          -- Activity information (ID-based join)
+          ja.id as activity_id,
           ja.external_id as activity_number,
           ja.production_status as activity_status,
           ja.comments as activity_description,
-          ja.required_finish_qty as activity_required_qty
+          
+          -- Plant information (ID-based join)
+          p.id as plant_id,
+          p.name as plant_name,
+          p.description as plant_description,
+          
+          -- Resource information (ID-based join)
+          r.id as resource_id,
+          r.name as resource_name,
+          r.description as resource_description,
+          r.resource_type,
+          
+          -- Manufacturing Order information (ID-based join)
+          mo.id as manufacturing_order_id,
+          mo.name as manufacturing_order_name,
+          
+          -- Item information (ID-based join)
+          i.id as item_id,
+          i.name as item_name,
+          i.description as item_description
+          
         FROM pt_job_operations jo
         LEFT JOIN pt_jobs pj ON jo.job_external_id = pj.external_id
         LEFT JOIN pt_job_activities ja ON jo.external_id = ja.op_external_id
+        LEFT JOIN pt_job_resource_assignments jra ON jo.id = jra.operation_id
+        LEFT JOIN pt_resources r ON jra.resource_id = r.id
+        LEFT JOIN pt_plants p ON jra.plant_id = p.id
+        LEFT JOIN pt_manufacturing_orders mo ON pj.external_id = mo.job_external_id
+        LEFT JOIN pt_items i ON jo.product_code = i.external_id
         ORDER BY 
           jo.operation_sequence ASC,
           jo.external_id
@@ -2415,16 +2445,49 @@ Rules:
         }
         
         return {
-          id: row.id || index + 1000,
+          id: row.operation_id || index + 1000,
           name: `${row.job_name || 'Job'}: ${row.operation_name || 'Operation'}`,
+          
+          // Core Operation Data
+          operationId: row.operation_id,
           operationName: row.operation_name || 'Unknown Operation',
+          operationSequence: row.operation_sequence || 1,
+          operationDescription: row.description || null,
+          
+          // Job Data (ID-based)
+          jobId: row.job_id,
           jobName: row.job_name || 'Unknown Job',
-          activityName: row.activity_status || null, // Use activity status as activity name
-          activityDescription: row.activity_description || null,
+          jobNumber: row.job_external_id,
+          jobDescription: row.job_description || null,
+          jobPriority: row.job_priority || 'Medium',
+          jobDueDate: row.job_due_date,
+          
+          // Activity Data (ID-based)
+          activityId: row.activity_id,
+          activityName: row.activity_status || null,
           activityNumber: row.activity_number || null,
           activityStatus: row.activity_status || 'Planned',
-          jobId: row.job_external_id,
-          operationId: row.external_id,
+          activityDescription: row.activity_description || null,
+          
+          // Plant Data (ID-based)
+          plantId: row.plant_id,
+          plantName: row.plant_name || null,
+          plantDescription: row.plant_description || null,
+          
+          // Resource Data (ID-based)  
+          resourceId: row.resource_id,
+          resourceName: row.resource_name || null,
+          resourceDescription: row.resource_description || null,
+          resourceType: row.resource_type || null,
+          
+          // Manufacturing Order Data (ID-based)
+          manufacturingOrderId: row.manufacturing_order_id,
+          manufacturingOrderName: row.manufacturing_order_name || null,
+          
+          // Item Data (ID-based)
+          itemId: row.item_id,
+          itemName: row.item_name || null,
+          itemDescription: row.item_description || null,
           manufacturingOrderId: row.mo_external_id,
           manufacturingOrderName: row.manufacturing_order_name,
           description: row.description || `${row.operation_name} for ${row.job_name}`,
