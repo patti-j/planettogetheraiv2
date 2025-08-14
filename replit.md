@@ -17,6 +17,19 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-14**: Algorithm Governance System Implementation
+- Built comprehensive algorithm version control system with database schema for managing algorithm versions, plant approvals, and deployments  
+- Created Algorithm Governance page with tabs for versions, approvals, and deployments including health monitoring and execution tracking
+- Implemented API endpoints for algorithm governance with sample data and full CRUD operations
+- Added plant-specific algorithm deployment management with status tracking and approval workflows
+- Fixed access permissions by adding algorithm-governance permission to Administrator role
+- Removed floating Max circle UI element that was appearing on desktop and mobile
+
+**2025-08-14**: PT Import Tables Enhancement
+- All PT import tables already include auto-incrementing ID columns as primary keys using serial("id").primaryKey()
+- Tables include: pt_plants, pt_allowed_helpers, pt_attributes, pt_capabilities, pt_departments, pt_resources, and 30+ other import tables
+- Each record gets an automatic integer ID when added to any PT import table
+
 **2025-08-14**: Comprehensive Bryntum Scheduler Pro Algorithm Research & Strategy
 - Completed detailed analysis of available Bryntum Scheduler Pro algorithms and features
 - Documented ChronoGraph scheduling engine capabilities (20-30x performance boost)
@@ -24,13 +37,6 @@ Note on concurrent work:
 - Created comprehensive 4-phase implementation strategy document
 - Outlined integration points for advanced features: resource histogram, optimization algorithms, Timefold integration
 - Established success metrics and risk mitigation strategies for manufacturing scheduling optimization
-
-**2025-08-14**: Fixed mobile sign-in page layout issues
-- Changed fixed positioning to scrollable layout to prevent username field truncation
-- Added proper mobile viewport handling with safe area support
-- Implemented responsive design with compact spacing for mobile screens
-- Added mobile-specific input styling to prevent iOS Safari zoom
-- Enhanced virtual keyboard compatibility for better form accessibility
 
 ## System Architecture
 
