@@ -165,7 +165,22 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
   const [editingKPI, setEditingKPI] = useState<CustomKPI | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const formatValue = (value: number, type: string, unit: string) => {
+  const formatValue = (value: number, type: string, unit: string, compact: boolean = false) => {
+    if (compact) {
+      // Ultra-compressed format for widget bar
+      switch (type) {
+        case 'percentage':
+          return `${value.toFixed(0)}%`;
+        case 'currency':
+          return value >= 1000 ? `${unit}${(value / 1000).toFixed(0)}k` : `${unit}${value.toFixed(0)}`;
+        case 'time':
+          return value >= 60 ? `${(value / 60).toFixed(0)}h` : `${value}${unit}`;
+        default:
+          return value >= 1000 ? `${(value / 1000).toFixed(0)}k` : `${value}`;
+      }
+    }
+    
+    // Standard formatting
     switch (type) {
       case 'percentage':
         return `${value.toFixed(1)}%`;
@@ -195,14 +210,14 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
     }
   };
 
-  const getTrendIcon = (trend: string) => {
+  const getTrendIcon = (trend: string, sizeClass: string = "h-4 w-4") => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600" />;
+        return <TrendingUp className={`${sizeClass} text-green-600`} />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className={`${sizeClass} text-red-600`} />;
       default:
-        return <Minus className="h-4 w-4 text-gray-600" />;
+        return <Minus className={`${sizeClass} text-gray-600`} />;
     }
   };
 
@@ -440,92 +455,121 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
     </div>
   );
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Custom KPIs</h3>
-        {configuration.allowEdit && (
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add KPI
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Custom KPI</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>KPI Name</Label>
-                  <Input placeholder="e.g., Overall Equipment Effectiveness" />
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <Input placeholder="Brief description of the KPI" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Target Value</Label>
-                    <Input type="number" placeholder="85" />
-                  </div>
-                  <div>
-                    <Label>Unit</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="%">Percentage (%)</SelectItem>
-                        <SelectItem value="$">Currency ($)</SelectItem>
-                        <SelectItem value="units">Units</SelectItem>
-                        <SelectItem value="hours">Hours</SelectItem>
-                        <SelectItem value="days">Days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Category</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="production">Production</SelectItem>
-                        <SelectItem value="quality">Quality</SelectItem>
-                        <SelectItem value="cost">Cost</SelectItem>
-                        <SelectItem value="safety">Safety</SelectItem>
-                        <SelectItem value="delivery">Delivery</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Priority</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button className="w-full">Create KPI</Button>
+  // Determine view mode
+  const viewMode = configuration.view || (configuration.isCompact ? 'compact' : 'standard');
+  const maxItems = configuration.maxItems || configuration.maxKPIs || (configuration.isCompact ? 3 : 6);
+  
+  // New minimal view for widget bar
+  if (viewMode === 'minimal') {
+    return (
+      <div className="space-y-1">
+        {kpis.slice(0, 2).map((kpi, index) => {
+          if (!kpi || !kpi.name) return null; // Safety check
+          return (
+            <div key={kpi.id} className="flex items-center justify-between text-xs">
+              <span className="truncate text-foreground/80 max-w-[60px]">
+                {kpi.name.split(' ')[0]} {/* Show only first word */}
+              </span>
+              <div className="flex items-center gap-1">
+                <span className={`font-semibold ${getStatusColor(kpi.currentValue, kpi.target, kpi.category || 'production')}`}>
+                  {formatValue(kpi.currentValue, kpi.type, kpi.unit, true)} {/* Use compact format */}
+                </span>
+                {configuration.showTrends && getTrendIcon(kpi.trend, 'h-2.5 w-2.5')} {/* Smaller icon */}
               </div>
-            </DialogContent>
-          </Dialog>
-        )}
+            </div>
+          );
+        }).filter(Boolean)}
       </div>
+    );
+  }
 
-      {configuration.view === 'compact' && renderCompactView()}
-      {configuration.view === 'standard' && renderStandardView()}
-      {configuration.view === 'detailed' && renderDetailedView()}
+  return (
+    <div className="space-y-4">      
+      {!configuration.isCompact && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Custom KPIs</h3>
+          {configuration.allowEdit && (
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add KPI
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Custom KPI</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>KPI Name</Label>
+                    <Input placeholder="e.g., Overall Equipment Effectiveness" />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Input placeholder="Brief description of the KPI" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Target Value</Label>
+                      <Input type="number" placeholder="85" />
+                    </div>
+                    <div>
+                      <Label>Unit</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="%">Percentage (%)</SelectItem>
+                          <SelectItem value="$">Currency ($)</SelectItem>
+                          <SelectItem value="units">Units</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Category</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="production">Production</SelectItem>
+                          <SelectItem value="quality">Quality</SelectItem>
+                          <SelectItem value="cost">Cost</SelectItem>
+                          <SelectItem value="safety">Safety</SelectItem>
+                          <SelectItem value="delivery">Delivery</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Priority</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button className="w-full">Create KPI</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      )}
+
+      {(viewMode === 'compact' || viewMode === 'standard') && renderCompactView()}
+      {viewMode === 'detailed' && renderDetailedView()}
     </div>
   );
 };

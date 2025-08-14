@@ -306,55 +306,48 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   </Badge>
                 </div>
               ) : (
-                <div className="h-full flex flex-col">
+                <div className="h-full flex flex-col relative">
+                  {/* Minimal Widget Label */}
+                  <div className="absolute top-1 left-2 right-6 z-10">
+                    <span className="text-[10px] font-medium text-foreground/60 truncate block bg-background/80 rounded px-1 backdrop-blur-sm">
+                      {widget.title}
+                    </span>
+                  </div>
+
+                  {/* Close Button Only */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeWidget(widget.id)}
+                    className="absolute top-0.5 right-0.5 h-4 w-4 p-0 z-10 hover:bg-destructive/20 hover:text-destructive opacity-0 hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </Button>
+
+                  {/* Drag Handle - Invisible but functional */}
                   <div 
                     {...provided.dragHandleProps}
-                    className="flex items-center justify-between p-2 border-b bg-gray-50 cursor-move"
-                  >
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs font-medium truncate">{widget.title}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setExpandedWidget(isExpanded ? null : widget.id)}
-                        className="h-6 w-6 p-0"
-                      >
-                        {isExpanded ? (
-                          <Minimize2 className="h-3 w-3" />
-                        ) : (
-                          <Maximize2 className="h-3 w-3" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedWidget(widget)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Settings className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className={cn(
-                    "flex-1 overflow-auto p-2",
-                    isExpanded && "p-4"
-                  )}>
+                    className="absolute top-0 left-0 right-0 h-6 z-5 cursor-move"
+                  />
+
+                  {/* Widget Content - Full Area */}
+                  <div className="flex-1 overflow-auto pt-4 p-1">
                     <Component 
                       {...widget.config}
-                      isCompact={!isExpanded}
+                      isCompact={true}
                       configuration={{
                         ...widget.config,
-                        view: isExpanded ? 'detailed' : 'compact',
-                        isCompact: !isExpanded,
-                        maxItems: isExpanded ? 10 : 3,
+                        view: 'minimal', // New minimal view for widget bar
+                        isCompact: true,
+                        showLabels: false,
+                        showTitles: false,
+                        maxItems: 2, // Even fewer items for widget bar
                         showTrends: true,
-                        showTargets: widget.config.showTargets !== false,
+                        showTargets: true,
                         dynamicResize: true,
                         containerWidth: containerDimensions.width,
-                        containerHeight: containerDimensions.height
+                        containerHeight: containerDimensions.height,
+                        minimal: true
                       }}
                     />
                   </div>
