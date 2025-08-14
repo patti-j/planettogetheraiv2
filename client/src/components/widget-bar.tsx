@@ -256,17 +256,17 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                       isCompact={true}
                       configuration={{
                         ...widget.config,
-                        view: 'minimal', // New minimal view for widget bar
+                        view: 'compact', // Use compact view for proper sizing
                         isCompact: true,
-                        showLabels: false,
+                        showLabels: true,
                         showTitles: false,
-                        maxItems: 2, // Even fewer items for widget bar
+                        maxItems: 3, // Allow more items for compact widgets
                         showTrends: true,
                         showTargets: true,
-                        dynamicResize: true,
+                        dynamicResize: false,
                         containerWidth: 256, // Fixed width for widget bar
                         containerHeight: 128, // Fixed height for widget bar
-                        minimal: true
+                        minimal: false
                       }}
                     />
                   </div>
