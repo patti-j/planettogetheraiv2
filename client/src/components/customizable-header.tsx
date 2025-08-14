@@ -40,6 +40,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import companyLogo from '@/assets/company-logo.png';
+import { getAvailableWidgets, type WidgetMetadata } from '@/lib/widget-registry';
 
 // Icon mapping for quick access items
 const iconMap = {
@@ -97,31 +98,68 @@ const defaultHeaderItemsByRole = {
   ]
 };
 
-// Available items to add
-const availableItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/' },
-  { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
-  { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
-  { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
-  { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
-  { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
-  { id: 'inventory', label: 'Inventory', icon: 'Package', href: '/inventory-optimization' },
-  { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control' },
-  { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio' },
-  { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking' },
-  { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
-  { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
-  { id: 'enterprise-map', label: 'Map', icon: 'Globe', href: '/enterprise-map' },
-  { id: 'users', label: 'Users', icon: 'Shield', href: '/user-access-management' },
-  { id: 'max-ai', label: 'Max AI', icon: 'Bot', action: 'max-ai' },
-  { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat' },
-  { id: 'help', label: 'Help', icon: 'HelpCircle', href: '/help' },
-  { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard' },
-  { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning' },
-  { id: 'search', label: 'Search', icon: 'Search', action: 'search' },
-  { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications' },
-  { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
-];
+// Generate available items including widgets
+const generateAvailableItems = (): HeaderItem[] => {
+  // Base navigation items
+  const baseItems: HeaderItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', type: 'page' },
+    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule', type: 'page' },
+    { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor', type: 'page' },
+    { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics', type: 'page' },
+    { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports', type: 'page' },
+    { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning', type: 'page' },
+    { id: 'inventory', label: 'Inventory', icon: 'Package', href: '/inventory-optimization', type: 'page' },
+    { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control', type: 'page' },
+    { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio', type: 'page' },
+    { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking', type: 'page' },
+    { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals', type: 'page' },
+    { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard', type: 'page' },
+    { id: 'enterprise-map', label: 'Map', icon: 'Globe', href: '/enterprise-map', type: 'page' },
+    { id: 'users', label: 'Users', icon: 'Shield', href: '/user-access-management', type: 'page' },
+    { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard', type: 'page' },
+    { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning', type: 'page' },
+    { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat', type: 'page' },
+    { id: 'help', label: 'Help', icon: 'HelpCircle', href: '/help', type: 'page' },
+    { id: 'max-ai', label: 'Max AI', icon: 'Bot', action: 'max-ai', type: 'action' },
+    { id: 'search', label: 'Search', icon: 'Search', action: 'search', type: 'action' },
+    { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications', type: 'action' },
+    { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
+  ];
+
+  // Add widgets as header items
+  const widgetItems: HeaderItem[] = getAvailableWidgets('desktop').map(({ type, metadata }) => ({
+    id: `widget-${type}`,
+    label: metadata.displayName,
+    icon: getWidgetIcon(type),
+    widget: type,
+    type: 'widget' as const
+  }));
+
+  return [...baseItems, ...widgetItems];
+};
+
+// Map widget types to appropriate icons
+const getWidgetIcon = (widgetType: string): string => {
+  const iconMap: Record<string, string> = {
+    'operation-sequencer': 'Factory',
+    'atp-ctp': 'Calendar',
+    'sales-order-status': 'Package',
+    'reports': 'BarChart3',
+    'schedule-tradeoff-analyzer': 'TrendingUp',
+    'schedule-optimizer': 'Sparkles',
+    'production-order-status': 'Clock',
+    'operation-dispatch': 'Target',
+    'resource-assignment': 'Briefcase',
+    'production-metrics': 'BarChart3',
+    'equipment-status': 'Settings',
+    'quality-dashboard': 'Shield',
+    'inventory-tracking': 'Package',
+    'gantt-chart': 'Calendar'
+  };
+  return iconMap[widgetType] || 'HelpCircle';
+};
+
+const availableItems = generateAvailableItems();
 
 interface HeaderItem {
   id: string;
@@ -129,7 +167,9 @@ interface HeaderItem {
   icon: string;
   href?: string;
   action?: string;
+  widget?: string; // Widget type for widget items
   alwaysVisible?: boolean;
+  type?: 'page' | 'action' | 'widget'; // Item type for better organization
 }
 
 interface CustomizableHeaderProps {
@@ -245,6 +285,12 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       if (item.label && item.href !== '/') {
         addRecentPage(item.href, item.label, item.icon);
       }
+    } else if (item.widget) {
+      // Handle widget items - could open in modal or navigate to dedicated widget page
+      toast({
+        title: "Widget",
+        description: `${item.label} widget opened. Widget integration coming soon.`
+      });
     } else if (item.action) {
       switch (item.action) {
         case 'search':
@@ -455,6 +501,9 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                                     {item.alwaysVisible && (
                                       <span className="text-xs text-muted-foreground">(Required)</span>
                                     )}
+                                    {item.widget && (
+                                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Widget</span>
+                                    )}
                                   </div>
                                   {!item.alwaysVisible && (
                                     <Button
@@ -483,25 +532,82 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             <div>
               <Label className="text-base font-semibold mb-3 block">Available Items</Label>
               <ScrollArea className="h-[400px] border rounded-md p-3">
-                <div className="space-y-2">
-                  {availableItems
-                    .filter(item => !tempHeaderItems.find(i => i.id === item.id))
-                    .map(item => {
-                      const Icon = iconMap[item.icon] || HelpCircle;
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
-                          onClick={() => addHeaderItem(item)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            <span className="text-sm">{item.label}</span>
-                          </div>
-                          <Plus className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      );
-                    })}
+                <div className="space-y-4">
+                  {/* Pages Section */}
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground mb-2 block">Pages</Label>
+                    <div className="space-y-2">
+                      {availableItems
+                        .filter(item => item.type === 'page' && !tempHeaderItems.find(i => i.id === item.id))
+                        .map(item => {
+                          const Icon = iconMap[item.icon] || HelpCircle;
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                              onClick={() => addHeaderItem(item)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                <span className="text-sm">{item.label}</span>
+                              </div>
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Widgets Section */}
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground mb-2 block">Widgets</Label>
+                    <div className="space-y-2">
+                      {availableItems
+                        .filter(item => item.type === 'widget' && !tempHeaderItems.find(i => i.id === item.id))
+                        .map(item => {
+                          const Icon = iconMap[item.icon] || HelpCircle;
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                              onClick={() => addHeaderItem(item)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                <span className="text-sm">{item.label}</span>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Widget</span>
+                              </div>
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Actions Section */}
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground mb-2 block">Actions</Label>
+                    <div className="space-y-2">
+                      {availableItems
+                        .filter(item => item.type === 'action' && !tempHeaderItems.find(i => i.id === item.id))
+                        .map(item => {
+                          const Icon = iconMap[item.icon] || HelpCircle;
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                              onClick={() => addHeaderItem(item)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                <span className="text-sm">{item.label}</span>
+                              </div>
+                              <Plus className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
                 </div>
               </ScrollArea>
             </div>
