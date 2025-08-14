@@ -49,6 +49,8 @@ const MAX_RECENT_PAGES = 6;
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
   '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
+  '/schedule-sequences': { label: 'Schedule Sequences', icon: 'ArrowUpDown' },
+  '/planning-overview': { label: 'Planning Process Guide', icon: 'Workflow' },
 
   '/boards': { label: 'Boards', icon: 'Columns3' },
   '/analytics': { label: 'Analytics', icon: 'BarChart3' },
