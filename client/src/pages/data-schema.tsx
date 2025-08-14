@@ -58,7 +58,10 @@ import {
   Minus,
   RefreshCw,
   Flag,
-  Zap
+  Zap,
+  Lasso,
+  MousePointer,
+  Focus
 } from "lucide-react";
 
 // Custom edge component for relationships with cardinality labels
@@ -875,6 +878,13 @@ function DataSchemaViewContent() {
   // Card-based selection for relationship filtering - separate from table selector
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   
+  // Lasso selection states
+  const [isLassoMode, setIsLassoMode] = useState(false);
+  const [lassoPath, setLassoPath] = useState<{ x: number; y: number }[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lassoSelection, setLassoSelection] = useState<string[]>([]);
+  const [zoomedToLasso, setZoomedToLasso] = useState(false);
+  
   // Initialize showLegend state from localStorage, default to true if not set
   const [showLegend, setShowLegend] = useState(() => {
     try {
@@ -1094,6 +1104,128 @@ function DataSchemaViewContent() {
     try {
       localStorage.setItem('dataSchemaSelectedTables', JSON.stringify(tables));
     } catch {}
+  };
+
+  // Lasso selection helper functions
+  const isPointInPolygon = (point: { x: number; y: number }, polygon: { x: number; y: number }[]) => {
+    if (polygon.length < 3) return false;
+    
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      if ((polygon[i].y > point.y) !== (polygon[j].y > point.y) &&
+          point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
+  const getTablePosition = (tableName: string, currentNodes: any[]) => {
+    const node = currentNodes.find(n => n.id === tableName);
+    return node ? { x: node.position.x, y: node.position.y } : null;
+  };
+
+  const selectTablesInLasso = useCallback((currentNodes: any[]) => {
+    if (lassoPath.length < 3) return;
+    
+    const selectedInLasso: string[] = [];
+    currentNodes.forEach(node => {
+      const nodeCenter = {
+        x: node.position.x + 150, // Approximate center of table node
+        y: node.position.y + 100
+      };
+      
+      if (isPointInPolygon(nodeCenter, lassoPath)) {
+        selectedInLasso.push(node.id);
+      }
+    });
+    
+    setLassoSelection(selectedInLasso);
+    setSelectedTables(selectedInLasso);
+    
+    // Show toast with selection count
+    toast({
+      title: "Lasso Selection Complete",
+      description: `Selected ${selectedInLasso.length} tables`,
+    });
+  }, [lassoPath, setSelectedTables, toast]);
+
+  const handleLassoMouseDown = (event: React.MouseEvent) => {
+    if (!isLassoMode) return;
+    
+    event.preventDefault();
+    setIsDrawing(true);
+    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+    const position = {
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    };
+    setLassoPath([position]);
+  };
+
+  const handleLassoMouseMove = (event: React.MouseEvent) => {
+    if (!isLassoMode || !isDrawing) return;
+    
+    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
+    const position = {
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
+    };
+    
+    setLassoPath(prev => [...prev, position]);
+  };
+
+  const handleLassoMouseUp = (currentNodes: any[]) => {
+    if (!isLassoMode || !isDrawing) return;
+    
+    setIsDrawing(false);
+    selectTablesInLasso(currentNodes);
+    setLassoPath([]);
+  };
+
+  const zoomToLassoSelection = useCallback((currentNodes: any[]) => {
+    if (lassoSelection.length === 0) return;
+    
+    const selectedNodes = currentNodes.filter(node => lassoSelection.includes(node.id));
+    if (selectedNodes.length === 0) return;
+    
+    // Calculate bounding box of selected nodes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    selectedNodes.forEach(node => {
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+      maxX = Math.max(maxX, node.position.x + 300); // Approximate node width
+      maxY = Math.max(maxY, node.position.y + 200); // Approximate node height
+    });
+    
+    // Add padding
+    const padding = 100;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+    
+    // Fit view to selected area
+    fitView({ 
+      nodes: selectedNodes,
+      padding: 0.2,
+      duration: 800
+    });
+    
+    setZoomedToLasso(true);
+    
+    toast({
+      title: "Zoomed to Selection",
+      description: `Focused on ${lassoSelection.length} selected tables`,
+    });
+  }, [lassoSelection, fitView, toast]);
+
+  const resetLassoZoom = () => {
+    setZoomedToLasso(false);
+    setLassoSelection([]);
+    setSelectedTables([]);
+    fitView({ duration: 800 });
   };
 
   // Get tables connected to focus table
@@ -2296,6 +2428,74 @@ function DataSchemaViewContent() {
               </Tooltip>
             </TooltipProvider>
 
+            {/* Lasso Selection Toggle */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsLassoMode(!isLassoMode);
+                      if (isLassoMode) {
+                        // Clear lasso selection when turning off lasso mode
+                        setLassoPath([]);
+                        setIsDrawing(false);
+                      }
+                    }}
+                    className={`flex-shrink-0 ${isLassoMode ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
+                  >
+                    {isLassoMode ? <MousePointer className="w-4 h-4" /> : <Lasso className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{isLassoMode ? 'Exit Lasso Mode' : 'Enable Lasso Selection'} - Draw around tables to select</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Zoom to Lasso Selection */}
+            {lassoSelection.length > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => zoomToLassoSelection(nodes)}
+                      className="flex-shrink-0 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                    >
+                      <Focus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Zoom to Lasso Selection ({lassoSelection.length} tables)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Reset Lasso Zoom */}
+            {zoomedToLasso && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetLassoZoom}
+                      className="flex-shrink-0 bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Reset to Full View</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
             {/* Full Screen Toggle */}
             <TooltipProvider>
               <Tooltip>
@@ -2731,10 +2931,14 @@ function DataSchemaViewContent() {
           onNodeClick={handleNodeClick}
           onEdgeMouseEnter={handleEdgeMouseEnter}
           onEdgeMouseLeave={handleEdgeMouseLeave}
+          onMouseDown={handleLassoMouseDown}
+          onMouseMove={handleLassoMouseMove}
+          onMouseUp={() => handleLassoMouseUp(nodes)}
           edgeTypes={edgeTypes}
           connectionMode={ConnectionMode.Loose}
           fitView
           fitViewOptions={{ padding: 0.2 }}
+          style={{ cursor: isLassoMode ? 'crosshair' : 'default' }}
         >
           <Background 
             gap={20} 
@@ -2742,6 +2946,62 @@ function DataSchemaViewContent() {
             style={{ backgroundColor: 'transparent' }}
           />
           <Controls />
+          
+          {/* Lasso Selection Path Overlay */}
+          {isLassoMode && lassoPath.length > 0 && (
+            <svg
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                zIndex: 1000,
+              }}
+            >
+              <path
+                d={`M ${lassoPath.map(point => `${point.x} ${point.y}`).join(' L ')}`}
+                stroke="#8b5cf6"
+                strokeWidth="2"
+                fill="rgba(139, 92, 246, 0.1)"
+                strokeDasharray="5,5"
+              />
+            </svg>
+          )}
+          
+          {/* Lasso Mode Indicator */}
+          {isLassoMode && (
+            <Panel position="top-center" className="z-50">
+              <div className="bg-purple-50 border border-purple-200 px-3 py-2 rounded-lg shadow-sm">
+                <p className="text-sm text-purple-700 font-medium flex items-center gap-2">
+                  <Lasso className="w-4 h-4" />
+                  Lasso Mode Active - Draw around tables to select them
+                </p>
+              </div>
+            </Panel>
+          )}
+          
+          {/* Lasso Selection Status */}
+          {lassoSelection.length > 0 && (
+            <Panel position="bottom-center" className="z-50">
+              <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-lg shadow-sm">
+                <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4" />
+                  {lassoSelection.length} tables selected
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => zoomToLassoSelection(nodes)}
+                    className="ml-2 h-6 px-2 text-xs text-green-700 hover:bg-green-100"
+                  >
+                    <Focus className="w-3 h-3 mr-1" />
+                    Zoom to Selection
+                  </Button>
+                </p>
+              </div>
+            </Panel>
+          )}
           
           {/* Full Screen Exit Button - Only visible in full screen mode */}
           {isFullScreen && (

@@ -17,6 +17,16 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-14**: Interactive Lasso Selection for Data Schema Visualization
+- Implemented comprehensive lasso selection tool allowing users to draw around table groups for focused analysis
+- Added lasso mode toggle with crosshair cursor and visual feedback indicators
+- Created point-in-polygon algorithm for accurate table selection within drawn lasso boundaries
+- Integrated zoom-to-selection functionality to automatically focus on lasso-selected tables
+- Added visual lasso path overlay with purple stroke and semi-transparent fill during drawing
+- Included real-time selection status indicators and quick action buttons for lasso operations
+- Enhanced data schema page with intuitive table group selection and analysis capabilities
+- Implemented reset functionality to clear lasso selection and return to full schema view
+
 **2025-08-14**: Complete PT Import Database Schema (59 tables)
 - Added 4 missing PT import tables: ForecastShipments, JobSuccessorManufacturingOrders, Lots, and ManufacturingOrders
 - Achieved complete 59-table coverage matching the full PlanetTogether SQL script
