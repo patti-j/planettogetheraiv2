@@ -47,7 +47,7 @@ export default function DemoPage() {
         console.log(`🎯 Processing PT operation ${index}:`, op);
         const jobName = op.jobName || `Job ${op.jobId || op.id}`;
         const operationName = op.operationName || op.name || 'Unknown Operation';
-        console.log(`  ✓ Job: ${jobName}, Operation: ${operationName}`);
+        console.log(`  ✓ Job: ${jobName}, Operation: ${operationName}, Activity: ${op.activityName || 'None'}`);
         
         // Enhanced status mapping for PT operations
         const status = op.onHold ? 'on_hold' : op.status || 'scheduled';
@@ -60,6 +60,8 @@ export default function DemoPage() {
           jobName: jobName,
           operationName: operationName,
           activityName: op.activityName,
+          activityStatus: op.activityStatus,
+          activityDescription: op.activityDescription,
           jobId: op.jobId,
           operationId: op.operationId,
           manufacturingOrderId: op.manufacturingOrderId,

@@ -2345,7 +2345,7 @@ Rules:
       console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
       console.log("Query will use only pt_job_operations table with basic columns");
       
-      // Enhanced PT operations query with job names (activity table doesn't exist yet)
+      // Complete PT operations query with job names and activity data (3-table join)
       const ptOperationsQuery = `
         SELECT 
           jo.id,
@@ -2371,9 +2371,15 @@ Rules:
           pj.name as job_name,
           pj.description as job_description,
           pj.priority as job_priority,
-          pj.due_date as job_due_date
+          pj.due_date as job_due_date,
+          -- Activity information
+          ja.external_id as activity_number,
+          ja.production_status as activity_status,
+          ja.comments as activity_description,
+          ja.required_finish_qty as activity_required_qty
         FROM pt_job_operations jo
         LEFT JOIN pt_jobs pj ON jo.job_external_id = pj.external_id
+        LEFT JOIN pt_job_activities ja ON jo.external_id = ja.op_external_id
         ORDER BY 
           jo.operation_sequence ASC,
           jo.external_id
@@ -2413,7 +2419,10 @@ Rules:
           name: `${row.job_name || 'Job'}: ${row.operation_name || 'Operation'}`,
           operationName: row.operation_name || 'Unknown Operation',
           jobName: row.job_name || 'Unknown Job',
-          activityName: row.operation_name || null, // Use operation name as activity name for now
+          activityName: row.activity_status || null, // Use activity status as activity name
+          activityDescription: row.activity_description || null,
+          activityNumber: row.activity_number || null,
+          activityStatus: row.activity_status || 'Planned',
           jobId: row.job_external_id,
           operationId: row.external_id,
           manufacturingOrderId: row.mo_external_id,
