@@ -94,7 +94,6 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/tenant-admin': { label: 'Tenant Administration', icon: 'Settings' },
   '/master-data': { label: 'Master Data Editor', icon: 'Database' },
   '/master-data-management': { label: 'Master Data Management', icon: 'Database' },
-  '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Sparkles' },
   '/optimize-orders': { label: 'Order Optimization', icon: 'Sparkles' },
   '/enterprise-map': { label: 'Enterprise Map', icon: 'Globe' },
   '/smart-kpi-tracking': { label: 'Smart KPI Tracking', icon: 'TrendingUp' },
