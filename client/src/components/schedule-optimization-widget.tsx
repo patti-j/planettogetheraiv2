@@ -262,13 +262,29 @@ export default function ScheduleOptimizationWidget({
   // Compact view for widget bar (no Card wrapper to avoid double border)
   if (viewMode === 'compact') {
     return (
-      <div className="h-full p-1.5 flex flex-col justify-center space-y-1">
-        {/* Simple content without title */}
-        <div className="flex justify-center">
+      <div className="h-full w-full p-2 flex flex-col justify-between bg-card rounded border">
+        {/* Top section - Algorithm/Profile status */}
+        <div className="space-y-1 text-[10px]">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Algorithm:</span>
+            <span className="font-medium truncate max-w-[100px]">
+              {selectedAlgorithm?.displayName || 'None'}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Profile:</span>
+            <span className="font-medium truncate max-w-[100px]">
+              {selectedProfile?.name || 'Default'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Middle section - Action button */}
+        <div className="flex justify-center py-1">
           <Button 
             size="sm" 
             variant="outline" 
-            className="h-5 px-2 text-[9px] flex items-center gap-1"
+            className="h-7 px-3 text-[10px] flex items-center gap-1.5 w-full"
             onClick={() => {
               if (selectedAlgorithm && selectedProfile) {
                 optimizationMutation.mutate({
@@ -281,21 +297,22 @@ export default function ScheduleOptimizationWidget({
             disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
           >
             {optimizationMutation.isPending ? (
-              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <PlayCircle className="h-2.5 w-2.5" />
+              <PlayCircle className="h-3 w-3" />
             )}
-            <span>Optimize</span>
+            <span>Run Optimization</span>
           </Button>
         </div>
         
+        {/* Bottom section - Last run status */}
         {schedulingHistory && schedulingHistory.length > 0 && (
-          <div className="space-y-0.5 text-[8px]">
+          <div className="space-y-1 text-[10px]">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Last:</span>
+              <span className="text-muted-foreground">Last Run:</span>
               <Badge 
                 variant={schedulingHistory[0]?.status === 'completed' ? 'default' : 'secondary'} 
-                className="h-3 px-1 text-[7px]"
+                className="h-4 px-1.5 text-[8px]"
               >
                 {schedulingHistory[0]?.status || 'Unknown'}
               </Badge>
@@ -305,6 +322,14 @@ export default function ScheduleOptimizationWidget({
                 <span className="text-muted-foreground">Score:</span>
                 <span className="font-medium text-green-600">
                   {schedulingHistory[0]?.performanceMetrics?.score || 'N/A'}%
+                </span>
+              </div>
+            )}
+            {schedulingHistory[0]?.endTime && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Duration:</span>
+                <span className="font-medium">
+                  {schedulingHistory[0]?.executionDuration || 'N/A'}s
                 </span>
               </div>
             )}
