@@ -26,6 +26,9 @@ export default function DemoPage() {
   
   useEffect(() => {
     if (productionOrders && operations && resources) {
+      console.log('Production Orders:', productionOrders);
+      console.log('Operations:', operations);
+      
       // Map resources to Bryntum format
       const bryntumResources = (resources as any[]).slice(0, 10).map((resource: any) => ({
         id: resource.id,
@@ -39,10 +42,20 @@ export default function DemoPage() {
         const orderIndex = Math.floor(index / 3) % (productionOrders as any[]).length;
         const order = (productionOrders as any[])[orderIndex];
         
+        // Build the job name with order number and product name
+        const jobName = order ? `${order.orderNumber} - ${order.name}` : `Job ${op.id}`;
+        const operationName = op.operationName || op.name || 'Unknown Operation';
+        
+        // Try using the name field to include both job and operation
+        const combinedName = `<div style="display:flex;flex-direction:column;"><b style="font-size:11px;">${jobName}</b><span style="font-size:10px;color:#666;">${operationName}</span></div>`;
+        
         const event = {
           id: op.id,
-          name: op.operationName || op.name || 'Unknown Operation',
-          jobName: order ? `${order.orderNumber} - ${order.name}` : `Operation ${op.id}`,
+          // Use HTML in the name field directly
+          name: combinedName,
+          // Also store separately for tooltip
+          jobName: jobName,
+          operationName: operationName,
           startDate: op.startTime || new Date('2025-08-07T08:00:00'),
           endDate: op.endTime || new Date('2025-08-07T12:00:00'),
           status: op.status || 'waiting',
@@ -50,9 +63,11 @@ export default function DemoPage() {
                      op.status === 'in_progress' ? 'blue' : 
                      op.status === 'completed' ? 'gray' : 'orange',
           draggable: true,
-          resizable: true
+          resizable: true,
+          cls: 'custom-event-style'
         };
         
+        console.log(`Event ${index}:`, event);
         return event;
       });
       
@@ -62,6 +77,8 @@ export default function DemoPage() {
         eventId: op.id,
         resourceId: op.workCenterId || op.assignedResourceId || (index % bryntumResources.length) + 1
       }));
+      
+      console.log('Bryntum Events:', bryntumEvents);
       
       setSchedulerData({
         resources: bryntumResources,
@@ -119,12 +136,14 @@ export default function DemoPage() {
     
     // Enable ALL Bryntum Pro features
     features: {
-      // Custom event renderer for the event bars
+      // Custom event renderer
       eventRenderer: {
-        renderer: ({ eventRecord, renderData }) => {
-          const jobName = eventRecord.jobName || 'Unknown Job';
+        defaultRenderer: ({ eventRecord, renderData }) => {
+          const jobName = eventRecord.jobName || eventRecord.data?.jobName || 'Unknown Job';
           const operationName = eventRecord.name || 'Unknown Operation';
           const status = eventRecord.status || 'waiting';
+          
+          console.log('Rendering event:', { jobName, operationName, status, eventRecord });
           
           // Status colors matching the screenshot
           const statusColors = {
@@ -138,7 +157,7 @@ export default function DemoPage() {
 
           const statusColor = statusColors[status] || '#FF9800';
           
-          // Override the event content with custom HTML
+          // Modify the renderData content directly
           renderData.eventContent = `
             <div style="
               height: 100%;
@@ -208,27 +227,34 @@ export default function DemoPage() {
       
       // Tooltips
       eventTooltip: {
-        // Positioning configuration
-        align: 'b-t',
-        anchorToTarget: true,
+        // Positioning configuration to follow mouse
+        align: 'l-r',
+        anchorToTarget: false,
+        trackMouse: true,
         hideDelay: 100,
-        showDelay: 200,
+        showDelay: 500,
         autoHide: true,
-        template: ({ eventRecord }) => `
-          <div style="padding: 10px; min-width: 200px;">
-            <h4 style="margin: 0 0 8px 0; color: #333;">${eventRecord.jobName || 'Job'}</h4>
-            <b>Operation:</b> ${eventRecord.name}<br>
-            <b>Status:</b> <span style="color: ${
-              eventRecord.status === 'scheduled' || eventRecord.status === 'ready' ? '#4CAF50' : 
-              eventRecord.status === 'waiting' ? '#FF9800' :
-              eventRecord.status === 'in_progress' ? '#2196F3' : '#666'
-            }; font-weight: bold;">${eventRecord.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}</span><br>
-            <b>Start:</b> ${eventRecord.startDate ? new Date(eventRecord.startDate).toLocaleString() : 'Not set'}<br>
-            <b>End:</b> ${eventRecord.endDate ? new Date(eventRecord.endDate).toLocaleString() : 'Not set'}<br>
-            <hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
-            <em style="font-size: 11px;">Drag to move, resize edges to change duration</em>
-          </div>
-        `
+        mouseOffsetX: 15,
+        mouseOffsetY: 15,
+        getHtml: ({ eventRecord }) => {
+          const jobName = eventRecord.jobName || eventRecord.data?.jobName || 'Unknown Job';
+          const operationName = eventRecord.name || 'Unknown Operation';
+          return `
+            <div style="padding: 10px; min-width: 200px; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <h4 style="margin: 0 0 8px 0; color: #333;">${jobName}</h4>
+              <b>Operation:</b> ${operationName}<br>
+              <b>Status:</b> <span style="color: ${
+                eventRecord.status === 'scheduled' || eventRecord.status === 'ready' ? '#4CAF50' : 
+                eventRecord.status === 'waiting' ? '#FF9800' :
+                eventRecord.status === 'in_progress' ? '#2196F3' : '#666'
+              }; font-weight: bold;">${eventRecord.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}</span><br>
+              <b>Start:</b> ${eventRecord.startDate ? new Date(eventRecord.startDate).toLocaleString() : 'Not set'}<br>
+              <b>End:</b> ${eventRecord.endDate ? new Date(eventRecord.endDate).toLocaleString() : 'Not set'}<br>
+              <hr style="margin: 8px 0; border: none; border-top: 1px solid #ddd;">
+              <em style="font-size: 11px;">Drag to move, resize edges to change duration</em>
+            </div>
+          `;
+        }
       },
       eventEdit: {
         editorConfig: {
