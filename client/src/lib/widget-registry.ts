@@ -1,4 +1,11 @@
 import { z } from "zod";
+
+// Configuration schemas for validation
+const commonConfigSchema = z.object({
+  refreshInterval: z.number().optional(),
+  showHeader: z.boolean().optional(),
+  compact: z.boolean().optional()
+});
 import OperationSequencerWidget from "@/components/widgets/operation-sequencer-widget";
 import AtpCtpWidget from "@/components/widgets/atp-ctp-widget";
 import { SalesOrderStatusWidget } from "@/components/widgets/sales-order-status-widget";
@@ -8,6 +15,19 @@ import ScheduleOptimizationWidget from "@/components/schedule-optimization-widge
 import ProductionOrderStatusWidget from "@/components/widgets/production-order-status-widget";
 import OperationDispatchWidget from "@/components/widgets/operation-dispatch-widget";
 import ResourceAssignmentWidget from "@/components/widgets/resource-assignment-widget";
+import EquipmentStatusWidget from "@/components/widgets/equipment-status-widget";
+import QualityDashboardWidget from "@/components/widgets/quality-dashboard-widget";
+import InventoryTrackingWidget from "@/components/widgets/inventory-tracking-widget";
+import ProductionMetricsWidget from "@/components/widgets/production-metrics-widget";
+import GanttChartWidget from "@/components/widgets/gantt-chart-widget";
+import GanttWidget from "@/components/widgets/gantt-widget";
+// Common utility widgets
+import FilterSearchWidget from "@/components/widgets/common/filter-search-widget";
+import StatusIndicatorWidget from "@/components/widgets/common/status-indicator-widget";
+import MetricsCardWidget from "@/components/widgets/common/metrics-card-widget";
+import DataTableWidget from "@/components/widgets/common/data-table-widget";
+import ActionButtonsWidget from "@/components/widgets/common/action-buttons-widget";
+import KanbanCardWidget from "@/components/widgets/common/kanban-card-widget";
 
 // Standardized widget interface
 export interface StandardWidgetProps {
@@ -175,12 +195,69 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     defaultConfig: { materials: ['raw_materials', 'wip', 'finished_goods'] }
   },
   'gantt-chart': {
-    component: OperationSequencerWidget,
+    component: GanttChartWidget,
     displayName: 'Gantt Chart',
     description: 'Visual project timeline and resource scheduling',
     supportedPlatforms: ['both'],
     configSchema: ganttChartConfigSchema,
     defaultConfig: { view: 'weekly', isDesktop: false }
+  },
+  'gantt-widget': {
+    component: GanttWidget,
+    displayName: 'Gantt Timeline',
+    description: 'Advanced Gantt chart with dependencies',
+    supportedPlatforms: ['both'],
+    configSchema: ganttChartConfigSchema,
+    defaultConfig: { view: 'weekly', showDependencies: true }
+  },
+  // Common utility widgets
+  'filter-search': {
+    component: FilterSearchWidget,
+    displayName: 'Filter & Search',
+    description: 'Search and filter interface component',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { showFilters: true }
+  },
+  'status-indicator': {
+    component: StatusIndicatorWidget,
+    displayName: 'Status Indicator',
+    description: 'Visual status badges and indicators',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { showProgress: true }
+  },
+  'metrics-card': {
+    component: MetricsCardWidget,
+    displayName: 'Metrics Card',
+    description: 'Key metrics display card',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { showTrends: true }
+  },
+  'data-table': {
+    component: DataTableWidget,
+    displayName: 'Data Table',
+    description: 'Sortable and filterable data table',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { sortable: true, filterable: true }
+  },
+  'action-buttons': {
+    component: ActionButtonsWidget,
+    displayName: 'Action Buttons',
+    description: 'Configurable action button groups',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { layout: 'horizontal' }
+  },
+  'kanban-card': {
+    component: MetricsCardWidget, // Use metrics card instead since it's compatible
+    displayName: 'Kanban Card',
+    description: 'Draggable cards for Kanban boards',
+    supportedPlatforms: ['both'],
+    configSchema: commonConfigSchema,
+    defaultConfig: { draggable: true }
   }
 };
 
@@ -216,6 +293,6 @@ export const isWidgetSupportedOnPlatform = (type: string, platform: 'mobile' | '
 
 export const getAvailableWidgets = (platform?: 'mobile' | 'desktop'): Array<{ type: string; metadata: WidgetMetadata }> => {
   return Object.entries(WIDGET_REGISTRY)
-    .filter(([, metadata]) => !platform || isWidgetSupportedOnPlatform(metadata.displayName, platform))
+    .filter(([type, metadata]) => !platform || isWidgetSupportedOnPlatform(type, platform))
     .map(([type, metadata]) => ({ type, metadata }));
 };

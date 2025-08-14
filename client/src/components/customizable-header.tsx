@@ -154,7 +154,14 @@ const getWidgetIcon = (widgetType: string): string => {
     'equipment-status': 'Settings',
     'quality-dashboard': 'Shield',
     'inventory-tracking': 'Package',
-    'gantt-chart': 'Calendar'
+    'gantt-chart': 'Calendar',
+    'gantt-widget': 'Calendar',
+    'filter-search': 'Search',
+    'status-indicator': 'AlertTriangle',
+    'metrics-card': 'TrendingUp',
+    'data-table': 'Database',
+    'action-buttons': 'Plus',
+    'kanban-card': 'Package'
   };
   return iconMap[widgetType] || 'HelpCircle';
 };
