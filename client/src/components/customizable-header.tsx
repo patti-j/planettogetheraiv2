@@ -50,7 +50,6 @@ const iconMap = {
 // Default header items by role
 const defaultHeaderItemsByRole = {
   'Administrator': [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', alwaysVisible: true },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
@@ -60,7 +59,6 @@ const defaultHeaderItemsByRole = {
     { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
   ],
   'Production Manager': [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', alwaysVisible: true },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
@@ -70,7 +68,6 @@ const defaultHeaderItemsByRole = {
     { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
   ],
   'Plant Manager': [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', alwaysVisible: true },
     { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking' },
     { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio' },
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
@@ -80,7 +77,6 @@ const defaultHeaderItemsByRole = {
     { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
   ],
   'Operator': [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', alwaysVisible: true },
     { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard' },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
     { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat' },
@@ -90,7 +86,6 @@ const defaultHeaderItemsByRole = {
     { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
   ],
   'Quality Manager': [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', alwaysVisible: true },
     { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
