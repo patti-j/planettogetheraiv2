@@ -312,7 +312,7 @@ export default function OperationSequencerWidget({
         )}
 
         {/* Operations List */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
           {filteredOperations.map((operation, index) => (
             <DraggableOperation
               key={operation.id}

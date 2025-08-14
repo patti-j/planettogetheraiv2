@@ -163,7 +163,7 @@ export default function ScheduleSequencesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Resources</SelectItem>
-                  {resources.map((resource: any) => (
+                  {(resources as any[]).map((resource: any) => (
                     <SelectItem key={resource.id} value={resource.id.toString()}>
                       {resource.name}
                     </SelectItem>
@@ -206,7 +206,7 @@ export default function ScheduleSequencesPage() {
       </Card>
 
       {/* Main Sequencer Widget */}
-      <Card className="min-h-[600px]">
+      <Card className="min-h-[500px] flex flex-col">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -227,7 +227,7 @@ export default function ScheduleSequencesPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-hidden">
           <OperationSequencerWidget
             configuration={{
               view: sequencerView,
