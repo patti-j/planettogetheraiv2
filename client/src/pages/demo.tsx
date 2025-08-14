@@ -50,11 +50,12 @@ export default function DemoPage() {
         
         const event = {
           id: op.id,
-          // Display format: "Sequence. Job: Operation" for PT data
-          name: `${op.sequence > 0 ? op.sequence + '. ' : ''}${jobName}: ${operationName}`,
+          // Display format: "Sequence. Job: Operation - Activity" for PT data
+          name: `${op.sequence > 0 ? op.sequence + '. ' : ''}${jobName}: ${operationName}${op.activityName ? ' - ' + op.activityName : ''}`,
           // Store PT-specific data as custom fields
           jobName: jobName,
           operationName: operationName,
+          activityName: op.activityName,
           jobId: op.jobId,
           operationId: op.operationId,
           manufacturingOrderId: op.manufacturingOrderId,
@@ -159,6 +160,7 @@ export default function DemoPage() {
     eventBodyTemplate: (data) => {
       const jobName = data.jobName || 'Unknown Job';
       const operationName = data.operationName || data.name || 'Unknown Operation';
+      const activityName = data.activityName;
       const status = data.status || 'waiting';
       
       // Status colors matching the screenshot
@@ -214,7 +216,7 @@ export default function DemoPage() {
               color: #666;
               margin-top: 1px;
             ">
-              ${operationName}
+              ${operationName}${activityName ? ' - ' + activityName : ''}
             </div>
           </div>
           <div style="

@@ -2345,7 +2345,7 @@ Rules:
       console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
       console.log("Query will use only pt_job_operations table with basic columns");
       
-      // Simplified PT operations query using only basic operation data first
+      // Enhanced PT operations query with job names (activity table doesn't exist yet)
       const ptOperationsQuery = `
         SELECT 
           jo.id,
@@ -2366,8 +2366,14 @@ Rules:
           jo.commit_end_date,
           jo.on_hold,
           jo.hold_reason,
-          jo.notes
+          jo.notes,
+          -- Job information
+          pj.name as job_name,
+          pj.description as job_description,
+          pj.priority as job_priority,
+          pj.due_date as job_due_date
         FROM pt_job_operations jo
+        LEFT JOIN pt_jobs pj ON jo.job_external_id = pj.external_id
         ORDER BY 
           jo.operation_sequence ASC,
           jo.external_id
@@ -2407,6 +2413,7 @@ Rules:
           name: `${row.job_name || 'Job'}: ${row.operation_name || 'Operation'}`,
           operationName: row.operation_name || 'Unknown Operation',
           jobName: row.job_name || 'Unknown Job',
+          activityName: row.operation_name || null, // Use operation name as activity name for now
           jobId: row.job_external_id,
           operationId: row.external_id,
           manufacturingOrderId: row.mo_external_id,
