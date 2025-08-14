@@ -26,6 +26,7 @@ import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useFullScreen } from '@/contexts/FullScreenContext';
 import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
@@ -34,7 +35,7 @@ import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
-  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase
+  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -45,7 +46,7 @@ const iconMap = {
   Home, Calendar, BarChart3, Package, Factory, TrendingUp,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle,
   Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase,
-  Search, Bell, Settings, User
+  Search, Bell, Settings, User, Maximize, Minimize
 };
 
 // Default header items by role
@@ -139,6 +140,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
+  const { isFullScreen, toggleFullScreen } = useFullScreen();
   const queryClient = useQueryClient();
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -337,6 +339,24 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           >
             <Edit2 className="h-4 w-4" />
             <span className="hidden lg:inline text-sm">Customize</span>
+          </Button>
+
+          {/* Fullscreen toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleFullScreen}
+            className="flex items-center gap-2 px-3 py-2 h-9"
+            title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullScreen ? (
+              <Minimize className="h-4 w-4" />
+            ) : (
+              <Maximize className="h-4 w-4" />
+            )}
+            <span className="hidden lg:inline text-sm">
+              {isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+            </span>
           </Button>
 
           {/* Theme and Profile (always visible) */}
