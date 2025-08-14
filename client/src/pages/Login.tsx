@@ -147,45 +147,45 @@ export default function Login() {
   ];
 
   return (
-    <div className="fixed inset-0 min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 z-[9999]">
-      <div className="max-w-md w-full space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-2 sm:px-4 py-2 sm:py-6 z-[9999] overflow-y-auto">
+      <div className="max-w-md mx-auto w-full space-y-3 sm:space-y-6 pb-safe-bottom">
         {/* Back to Marketing Link */}
-        <div className="flex justify-between items-center gap-2">
+        <div className="flex flex-wrap justify-center sm:justify-between items-center gap-2 pt-safe-top">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setLocation("/marketing-landing")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 text-xs sm:text-sm"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             Learn More
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setLocation("/solutions-comparison")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 text-xs sm:text-sm"
           >
-            <BarChart3 className="h-4 w-4" />
+            <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
             Compare
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setLocation("/marketing-home")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 text-xs sm:text-sm"
           >
-            <Home className="h-4 w-4" />
+            <Home className="h-3 w-3 sm:h-4 sm:w-4" />
             Home
           </Button>
         </div>
 
         {/* Logo and Title */}
         <div className="text-center">
-          <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center mb-2 sm:mb-4">
             <Logo size="large" showText={true} />
           </div>
-          <p className="text-gray-600 dark:text-gray-300">AI Powered Factory Optimization</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">AI Powered Factory Optimization</p>
         </div>
 
         {/* Login Form */}
@@ -246,8 +246,8 @@ export default function Login() {
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="pt-4 sm:pt-6">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -267,6 +267,7 @@ export default function Login() {
                   required
                   disabled={loading}
                   autoComplete="username"
+                  className="mobile-input"
                 />
               </div>
 
@@ -283,7 +284,7 @@ export default function Login() {
                     placeholder="Enter password"
                     required
                     disabled={loading}
-                    className="pr-10"
+                    className="pr-10 mobile-input"
                     autoComplete="current-password"
                   />
                   <button
@@ -309,23 +310,23 @@ export default function Login() {
 
         {/* Free Trial Signup */}
         <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-purple-700">
-              <Zap className="h-5 w-5" />
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="flex items-center gap-2 text-purple-700 text-base sm:text-lg">
+              <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
               Start Your Free Trial
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Get instant access to production scheduling with no setup required
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2 sm:pt-6">
             {trialSuccess ? (
               <div className="text-center text-green-600">
                 <p className="font-medium">Trial account created successfully!</p>
                 <p className="text-sm">Logging you in...</p>
               </div>
             ) : (
-              <form onSubmit={handleTrialSignup} className="space-y-4">
+              <form onSubmit={handleTrialSignup} className="space-y-3 sm:space-y-4">
                 {trialError && (
                   <Alert>
                     <AlertDescription className="text-red-600">
@@ -346,6 +347,7 @@ export default function Login() {
                     placeholder="Enter your email"
                     required
                     disabled={trialLoading}
+                    className="mobile-input"
                   />
                 </div>
 
@@ -361,6 +363,7 @@ export default function Login() {
                     placeholder="Enter company name"
                     required
                     disabled={trialLoading}
+                    className="mobile-input"
                   />
                 </div>
 
@@ -391,12 +394,12 @@ export default function Login() {
         </Card>
 
         {/* Demo Tour and Pricing */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="text-center">
-                <h3 className="font-semibold text-gray-800 mb-2">New to PlanetTogether?</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="font-semibold text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">New to PlanetTogether?</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
                   Take a guided tour and see how our AI-powered platform can transform your manufacturing operations
                 </p>
                 <Button 
@@ -412,10 +415,10 @@ export default function Login() {
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="text-center">
-                <h3 className="font-semibold text-gray-800 mb-2">Explore Our Plans</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="font-semibold text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">Explore Our Plans</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
                   See our pricing options and find the right plan for your manufacturing operations
                 </p>
                 <Button 

@@ -307,6 +307,25 @@
     max-height: 100vh;
     max-height: -webkit-fill-available;
   }
+  
+  /* Mobile login page specific fixes */
+  .mobile-login-container {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    min-height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+  }
+  
+  /* Ensure login content doesn't get hidden */
+  .mobile-login-content {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    min-height: 100dvh;
+  }
 }
 
 /* Dynamic viewport units for modern browsers */
