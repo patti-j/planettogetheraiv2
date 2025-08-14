@@ -32,6 +32,7 @@ import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
 import { AssignedRoleSwitcher } from './assigned-role-switcher';
 import WidgetModal from './widget-modal';
+import WidgetFlyout from './widget-flyout';
 import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
@@ -195,7 +196,9 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [widgetModalOpen, setWidgetModalOpen] = useState(false);
+  const [widgetFlyoutOpen, setWidgetFlyoutOpen] = useState(false);
   const [selectedWidget, setSelectedWidget] = useState<{ type: string; title: string } | null>(null);
+  const [flyoutAnchor, setFlyoutAnchor] = useState<HTMLElement | null>(null);
   const [headerItems, setHeaderItems] = useState<HeaderItem[]>([]);
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const { addRecentPage } = useNavigation();
@@ -290,16 +293,17 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   };
 
   // Handle item click
-  const handleItemClick = (item: HeaderItem) => {
+  const handleItemClick = (item: HeaderItem, event?: React.MouseEvent<HTMLButtonElement>) => {
     if (item.href) {
       setLocation(item.href);
       if (item.label && item.href !== '/') {
         addRecentPage(item.href, item.label, item.icon);
       }
     } else if (item.widget) {
-      // Open widget in modal
+      // Open widget in flyout panel
       setSelectedWidget({ type: item.widget, title: item.label });
-      setWidgetModalOpen(true);
+      setFlyoutAnchor(event?.currentTarget || null);
+      setWidgetFlyoutOpen(true);
     } else if (item.action) {
       switch (item.action) {
         case 'search':
@@ -341,7 +345,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         key={item.id}
         variant="ghost"
         size="sm"
-        onClick={() => handleItemClick(item)}
+        onClick={(e) => handleItemClick(item, e)}
         className={cn(
           "flex items-center gap-2 px-3 py-2 h-9",
           item.href === location && "bg-accent"
@@ -639,6 +643,36 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       {/* User profile dialog */}
       <UserProfileDialog open={userProfileOpen} onOpenChange={setUserProfileOpen} />
 
+      {/* Widget flyout */}
+      {selectedWidget && (
+        <WidgetFlyout
+          isOpen={widgetFlyoutOpen}
+          onClose={() => {
+            setWidgetFlyoutOpen(false);
+            setSelectedWidget(null);
+            setFlyoutAnchor(null);
+          }}
+          onPin={() => {
+            // Add widget to widget bar
+            toast({
+              title: "Widget Pinned",
+              description: `${selectedWidget.title} has been added to your widget bar.`
+            });
+            setWidgetFlyoutOpen(false);
+            setSelectedWidget(null);
+          }}
+          onMaximize={() => {
+            // Switch to modal view
+            setWidgetFlyoutOpen(false);
+            setWidgetModalOpen(true);
+          }}
+          widgetType={selectedWidget.type}
+          widgetTitle={selectedWidget.title}
+          position="top-right"
+          anchorElement={flyoutAnchor}
+        />
+      )}
+
       {/* Widget modal */}
       {selectedWidget && (
         <WidgetModal
@@ -648,7 +682,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             setSelectedWidget(null);
           }}
           widgetType={selectedWidget.type}
-          title={selectedWidget.title}
+          widgetTitle={selectedWidget.title}
         />
       )}
     </>
