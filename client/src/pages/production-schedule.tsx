@@ -15,9 +15,8 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
 import { BryntumGanttWrapper } from '@/components/bryntum/BryntumGanttWrapper';
 import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
-import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
-import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
-import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
+
+
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
 import { Input } from '@/components/ui/input';
@@ -529,16 +528,9 @@ export default function ProductionSchedulePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <OperationSequencerWidget 
-                    configuration={{
-                      view: isMobile ? 'compact' : layoutConfig.view,
-                      allowReorder: canEditSchedule,
-                      showResourceFilter: !isMobile,
-                      showStatusFilter: !isMobile,
-                      showOptimizationFlags: !isMobile
-                    }}
-                    isDesktop={!isMobile}
-                  />
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Operation sequencing dashboard component would appear here</p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -551,10 +543,9 @@ export default function ProductionSchedulePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ProductionMetricsWidget 
-                    configuration={filteredWidgetConfig}
-                    className={`${isMobile ? 'h-48' : 'h-64'}`}
-                  />
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Production metrics dashboard component would appear here</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -693,16 +684,9 @@ export default function ProductionSchedulePage() {
                 )}
               </CardHeader>
               <CardContent>
-                <OperationSequencerWidget 
-                  configuration={{
-                    view: isMobile ? 'compact' : 'detailed',
-                    allowReorder: canEditSchedule,
-                    showResourceFilter: !isMobile,
-                    showStatusFilter: !isMobile,
-                    showOptimizationFlags: !isMobile
-                  }}
-                  isDesktop={!isMobile}
-                />
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Operation sequencer dashboard component would appear here</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -718,9 +702,9 @@ export default function ProductionSchedulePage() {
                 )}
               </CardHeader>
               <CardContent>
-                <ResourceAssignmentWidget 
-                  className={`${isMobile ? 'h-64' : 'h-96'}`}
-                />
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Resource assignment dashboard component would appear here</p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

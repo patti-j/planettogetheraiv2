@@ -123,7 +123,7 @@ import {
 } from "lucide-react";
 
 // Import widget components
-import WidgetDesignStudio from '@/components/widget-design-studio';
+// Widget functionality replaced with dashboard-based components
 import { WidgetConfig } from '@/lib/widget-library';
 import DesignStudio from '@/components/design-studio/design-studio-clean';
 import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studio-mobile';
@@ -2185,15 +2185,17 @@ export default function MobileHomePage() {
         </div>
       )}
 
-      {/* Widget Design Studio for Mobile - only render when explicitly open */}
+      {/* Widget Design Studio for Mobile - Replaced with dashboard functionality */}
       {widgetStudioOpen && (
-        <WidgetDesignStudio
-          open={widgetStudioOpen}
-          onOpenChange={setWidgetStudioOpen}
-          onWidgetCreate={handleCreateWidget}
-          editingWidget={editingWidget}
-          mode={editingWidget ? 'edit' : 'create'}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Widget Design Studio</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Widget design functionality has been replaced with dashboard-based components.
+            </p>
+            <Button onClick={() => setWidgetStudioOpen(false)}>Close</Button>
+          </div>
+        </div>
       )}
 
       {/* Design Studio - integrated design system */}

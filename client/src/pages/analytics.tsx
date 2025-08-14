@@ -13,9 +13,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
-import AnalyticsWidget from "@/components/analytics-widget";
-import UniversalWidget from "@/components/universal-widget";
-import { WidgetConfig, WidgetDataProcessor, SystemData, WIDGET_TEMPLATES } from "@/lib/widget-library";
+
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMobile } from "@/hooks/use-mobile";

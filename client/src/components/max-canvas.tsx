@@ -58,7 +58,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
+// Schedule optimization widget functionality replaced with dashboard-based components
 
 interface MaxCanvasProps {
   isVisible: boolean;

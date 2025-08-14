@@ -24,14 +24,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { apiRequest } from '@/lib/queryClient';
 import type { ProductionPlan, ProductionTarget, ResourceAllocation, ProductionMilestone, Plant, ProductionOrder, Resource, DemandForecast, PlannedOrder } from '@shared/schema';
 
-// Import common reusable widgets
-import { 
-  FilterSearchWidget, 
-  MetricsCardWidget, 
-  StatusIndicatorWidget, 
-  DataTableWidget,
-  ActionButtonsWidget 
-} from '@/components/widgets/common';
+// Note: Widget functionality replaced with dashboard-based components 
+
 
 // Form schemas
 const productionPlanSchema = z.object({
@@ -613,168 +607,161 @@ export default function ProductionPlanningPage() {
 
       {/* Production Overview Statistics using MetricsCardWidget */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricsCardWidget
-          title="Total Plans"
-          value={plans.length}
-          icon="file"
-          color="blue"
-          variant="default"
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Plans</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{plans.length}</div>
+          </CardContent>
+        </Card>
         
-        <MetricsCardWidget
-          title="Active Plans"
-          value={plans.filter(p => p.status === 'active').length}
-          icon="check"
-          color="green"
-          variant="default"
-          change={{
-            value: 12,
-            label: "vs last month",
-            direction: "up",
-            isPercentage: true
-          }}
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Plans</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{plans.filter(p => p.status === 'active').length}</div>
+            <p className="text-xs text-muted-foreground">+12% vs last month</p>
+          </CardContent>
+        </Card>
         
-        <MetricsCardWidget
-          title="Resources Allocated"
-          value={allocations.length}
-          icon="users"
-          color="purple"
-          variant="default"
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Resources Allocated</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{allocations.length}</div>
+          </CardContent>
+        </Card>
         
-        <MetricsCardWidget
-          title="Completion Rate"
-          value={`${plans.length > 0 ? Math.round((plans.filter(p => p.status === 'completed').length / plans.length) * 100) : 0}%`}
-          icon="trending-up"
-          color="orange"
-          variant="default"
-          progress={{
-            current: plans.filter(p => p.status === 'completed').length,
-            target: plans.length,
-            showPercentage: true
-          }}
-        />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{plans.length > 0 ? Math.round((plans.filter(p => p.status === 'completed').length / plans.length) * 100) : 0}%</div>
+            <Progress value={plans.length > 0 ? (plans.filter(p => p.status === 'completed').length / plans.length) * 100 : 0} className="w-full" />
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Enhanced Future Planning Controls using FilterSearchWidget */}
-      <FilterSearchWidget
-        title="Planning Controls & Filters"
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="Search production plans..."
-        showSearch={true}
-        filters={[
-          {
-            label: "Horizon",
-            value: "planningHorizon",
-            options: [
-              { value: "6-weeks", label: "6 Weeks" },
-              { value: "12-weeks", label: "12 Weeks" },
-              { value: "6-months", label: "6 Months" },
-              { value: "12-months", label: "12 Months" }
-            ],
-            selectedValue: planningHorizon,
-            onValueChange: setPlanningHorizon
-          },
-          {
-            label: "Plant",
-            value: "plant",
-            options: [
-              ...plants.map(plant => ({ 
-                value: plant.id.toString(), 
-                label: plant.name,
-                count: plans.filter(p => p.plantId === plant.id).length
-              }))
-            ],
-            selectedValue: filterPlant,
-            onValueChange: setFilterPlant
-          },
-          {
-            label: "Period",
-            value: "period",
-            options: [
-              { value: "current", label: "Current" },
-              { value: "next-month", label: "Next Month" },
-              { value: "next-3-months", label: "Next 3 Months" },
-              { value: "next-6-months", label: "Next 6 Months" },
-              { value: "future", label: "All Future" },
-              { value: "past", label: "Past" }
-            ],
-            selectedValue: filterPeriod,
-            onValueChange: setFilterPeriod
-          },
-          {
-            label: "Status",
-            value: "status",
-            options: [
-              { value: "draft", label: "Draft", count: plans.filter(p => p.status === 'draft').length },
-              { value: "active", label: "Active", count: plans.filter(p => p.status === 'active').length },
-              { value: "completed", label: "Completed", count: plans.filter(p => p.status === 'completed').length },
-              { value: "cancelled", label: "Cancelled", count: plans.filter(p => p.status === 'cancelled').length }
-            ],
-            selectedValue: filterStatus,
-            onValueChange: setFilterStatus
-          }
-        ]}
-        showFilters={true}
-        activeFilters={[
-          ...(searchTerm ? [{ label: "Search", value: searchTerm, onRemove: () => setSearchTerm('') }] : []),
-          ...(filterPlant !== 'all' ? [{ label: "Plant", value: plants.find(p => p.id.toString() === filterPlant)?.name || filterPlant, onRemove: () => setFilterPlant('all') }] : []),
-          ...(filterStatus !== 'all' ? [{ label: "Status", value: filterStatus, onRemove: () => setFilterStatus('all') }] : []),
-          ...(filterPeriod !== 'next-3-months' ? [{ label: "Period", value: filterPeriod, onRemove: () => setFilterPeriod('next-3-months') }] : [])
-        ]}
-        onClearAll={() => {
-          setSearchTerm('');
-          setFilterPlant('all');
-          setFilterStatus('all');
-          setFilterPeriod('next-3-months');
-        }}
-        layout="horizontal"
-        className="mb-4"
-      />
+      {/* Enhanced Future Planning Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Planning Controls & Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search production plans..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Horizon</Label>
+              <Select value={planningHorizon} onValueChange={setPlanningHorizon}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6-weeks">6 Weeks</SelectItem>
+                  <SelectItem value="12-weeks">12 Weeks</SelectItem>
+                  <SelectItem value="6-months">6 Months</SelectItem>
+                  <SelectItem value="12-months">12 Months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Plant</Label>
+              <Select value={filterPlant} onValueChange={setFilterPlant}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Plants</SelectItem>
+                  {plants.map(plant => (
+                    <SelectItem key={plant.id} value={plant.id.toString()}>
+                      {plant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Period</Label>
+              <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current">Current</SelectItem>
+                  <SelectItem value="next-month">Next Month</SelectItem>
+                  <SelectItem value="next-3-months">Next 3 Months</SelectItem>
+                  <SelectItem value="next-6-months">Next 6 Months</SelectItem>
+                  <SelectItem value="future">All Future</SelectItem>
+                  <SelectItem value="past">Past</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
-      {/* View Mode Controls using ActionButtonsWidget */}
-      <ActionButtonsWidget
-        title="View Controls"
-        actions={[
-          {
-            id: 'timeline',
-            label: 'Timeline',
-            icon: ArrowRight,
-            onClick: () => setViewMode('timeline'),
-            variant: viewMode === 'timeline' ? 'default' : 'outline',
-            size: 'sm'
-          },
-          {
-            id: 'calendar',
-            label: 'Calendar', 
-            icon: Calendar,
-            onClick: () => setViewMode('calendar'),
-            variant: viewMode === 'calendar' ? 'default' : 'outline',
-            size: 'sm'
-          },
-          {
-            id: 'capacity',
-            label: 'Capacity',
-            icon: BarChart3,
-            onClick: () => setViewMode('capacity'),
-            variant: viewMode === 'capacity' ? 'default' : 'outline',
-            size: 'sm'
-          },
-          {
-            id: 'detail-toggle',
-            label: showDetailView ? 'Simple' : 'Details',
-            icon: showDetailView ? EyeOff : Eye,
-            onClick: () => setShowDetailView(!showDetailView),
-            variant: 'outline',
-            size: 'sm'
-          }
-        ]}
-        layout="horizontal"
-        variant="compact"
-        className="mb-4"
-      />
+      {/* View Mode Controls */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>View Controls</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={viewMode === 'timeline' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('timeline')}
+              className="gap-2"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Timeline
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('calendar')}
+              className="gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </Button>
+            <Button
+              variant={viewMode === 'capacity' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('capacity')}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Capacity
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailView(!showDetailView)}
+              className="gap-2"
+            >
+              {showDetailView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showDetailView ? 'Simple' : 'Details'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content with Enhanced Future Planning Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

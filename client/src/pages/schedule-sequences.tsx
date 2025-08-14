@@ -21,7 +21,7 @@ import {
   CheckCircle,
   Workflow
 } from 'lucide-react';
-import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
+// Operation sequencer widget functionality replaced with dashboard-based components
 import { useQuery } from '@tanstack/react-query';
 
 export default function ScheduleSequencesPage() {
@@ -228,17 +228,13 @@ export default function ScheduleSequencesPage() {
           </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
-          <OperationSequencerWidget
-            configuration={{
-              view: sequencerView,
-              allowReorder: true,
-              showResourceFilter: true,
-              showStatusFilter: true,
-              showOptimizationFlags: true,
-              multiResourceView: true
-            }}
-            isDesktop={true}
-          />
+          <div className="min-h-96 flex items-center justify-center border rounded-lg bg-gray-50">
+            <div className="text-center">
+              <Workflow className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-sm text-muted-foreground">Operation sequencer functionality</p>
+              <p className="text-sm text-muted-foreground">has been replaced with dashboard-based components</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -3185,7 +3185,7 @@ Provide the response as a JSON object with the following structure:
       
       const systemPrompt = `You are an expert in manufacturing dashboard design. Generate a comprehensive dashboard configuration based on the user's requirements.
 
-Create a realistic manufacturing dashboard with appropriate widgets, layouts, and data visualizations. Include different widget types such as:
+Create a realistic manufacturing dashboard with appropriate components, layouts, and data visualizations. Include different component types such as:
 - KPI metrics (production efficiency, quality rates, throughput)
 - Charts (bar, line, pie, gauge)
 - Tables (production orders, resource status)
@@ -3196,10 +3196,10 @@ Return ONLY a valid JSON object with this exact structure:
 {
   "name": "Dashboard Name",
   "description": "Dashboard description",
-  "widgets": [
+  "components": [
     {
-      "id": "widget-1",
-      "title": "Widget Title",
+      "id": "component-1",
+      "title": "Component Title",
       "type": "metric|chart|table|progress",
       "data": {"value": 85, "label": "Efficiency %"},
       "visible": true,
@@ -3228,17 +3228,17 @@ Return ONLY a valid JSON object with this exact structure:
         dashboardConfig = JSON.parse(generatedContent);
         
         // Ensure the response has the required structure
-        if (!dashboardConfig.name || !dashboardConfig.widgets || !Array.isArray(dashboardConfig.widgets)) {
+        if (!dashboardConfig.name || !dashboardConfig.components || !Array.isArray(dashboardConfig.components)) {
           throw new Error("Invalid dashboard configuration structure");
         }
         
-        // Add position and size defaults for widgets if missing
-        dashboardConfig.widgets = dashboardConfig.widgets.map((widget, index) => ({
-          ...widget,
-          id: widget.id || `widget-${index + 1}`,
-          position: widget.position || { x: (index % 3) * 220, y: Math.floor(index / 3) * 140 },
-          size: widget.size || { width: 200, height: 120 },
-          visible: widget.visible !== false
+        // Add position and size defaults for components if missing
+        dashboardConfig.components = dashboardConfig.components.map((component, index) => ({
+          ...component,
+          id: component.id || `component-${index + 1}`,
+          position: component.position || { x: (index % 3) * 220, y: Math.floor(index / 3) * 140 },
+          size: component.size || { width: 200, height: 120 },
+          visible: component.visible !== false
         }));
         
         console.log("AI generated dashboard config:", JSON.stringify(dashboardConfig, null, 2));

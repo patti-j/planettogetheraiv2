@@ -16,9 +16,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
-import UniversalWidget from "@/components/universal-widget";
-import WidgetDesignStudio from "@/components/widget-design-studio";
-import MaxAICard from "@/components/max-ai-card";
+
+
 import { 
   Plus, 
   Sparkles, 
@@ -60,78 +59,24 @@ import {
   Layers,
   Target
 } from "lucide-react";
-import { WIDGET_TEMPLATES, WidgetTemplate } from "@/lib/widget-library";
 
-// Import all pre-built widget components
-import OperationSequencerWidget from '@/components/widgets/operation-sequencer-widget';
-import ScheduleOptimizationWidget from '@/components/schedule-optimization-widget';
-import AtpCtpWidget from '@/components/widgets/atp-ctp-widget';
-import EquipmentStatusWidget from '@/components/widgets/equipment-status-widget';
-import GanttChartWidget from '@/components/widgets/gantt-chart-widget';
-import InventoryTrackingWidget from '@/components/widgets/inventory-tracking-widget';
-import OperationDispatchWidget from '@/components/widgets/operation-dispatch-widget';
-import ProductionMetricsWidget from '@/components/widgets/production-metrics-widget';
-import ProductionOrderStatusWidget from '@/components/widgets/production-order-status-widget';
-import QualityDashboardWidget from '@/components/widgets/quality-dashboard-widget';
-import ReportsWidget from '@/components/widgets/reports-widget';
-import ResourceAssignmentWidget from '@/components/widgets/resource-assignment-widget';
-import { SalesOrderStatusWidget } from '@/components/widgets/sales-order-status-widget';
-import ScheduleTradeoffAnalyzerWidget from '@/components/widgets/schedule-tradeoff-analyzer-widget';
+
 
 // Widget Preview Component
 const WidgetPreview = ({ widget }: { widget: any }) => {
   // Check if this is a pre-built widget with a component property
   const componentName = widget?.data?.component || widget?.configuration?.component;
   
-  // Map component names to actual components
-  const widgetComponents: Record<string, any> = {
-    'operation-sequencer-widget': OperationSequencerWidget,
-    'schedule-optimization-widget': ScheduleOptimizationWidget,
-    'atp-ctp-widget': AtpCtpWidget,
-    'equipment-status-widget': EquipmentStatusWidget,
-    'gantt-chart-widget': GanttChartWidget,
-    'inventory-tracking-widget': InventoryTrackingWidget,
-    'operation-dispatch-widget': OperationDispatchWidget,
-    'production-metrics-widget': ProductionMetricsWidget,
-    'production-order-status-widget': ProductionOrderStatusWidget,
-    'quality-dashboard-widget': QualityDashboardWidget,
-    'reports-widget': ReportsWidget,
-    'resource-assignment-widget': ResourceAssignmentWidget,
-    'sales-order-status-widget': SalesOrderStatusWidget,
-    'schedule-tradeoff-analyzer-widget': ScheduleTradeoffAnalyzerWidget
-  };
+  // No widget components available - using dashboard approach instead
 
-  // If it's a pre-built widget component, render it
-  if (componentName && widgetComponents[componentName]) {
-    const WidgetComponent = widgetComponents[componentName];
-    return <WidgetComponent className="w-full" />;
-  }
-
-  // For custom widgets, use UniversalWidget with proper config
-  const widgetConfig = {
-    id: widget.id,
-    title: widget.title || 'Widget Preview',
-    type: widget.widgetType || widget.widget_type || 'chart',
-    subtype: widget.widgetSubtype || widget.widget_subtype || 'bar',
-    layout: widget.configuration?.layout || { desktop: { cols: 4, rows: 2 } },
-    refreshInterval: widget.configuration?.refreshInterval || null,
-    dataSource: widget.configuration?.dataSource || 'production-orders',
-    ...widget.configuration
-  };
-
+  // Return placeholder for dashboard components
   return (
-    <UniversalWidget
-      config={widgetConfig}
-      data={{
-        productionOrders: [],
-        resources: [],
-        inventory: [],
-        salesOrders: []
-      }}
-      readOnly={true}
-      showControls={false}
-      className="w-full"
-    />
+    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-sm text-gray-500">Component Preview</p>
+        <p className="text-xs text-gray-400">{widget.title || 'Dashboard Component'}</p>
+      </div>
+    </div>
   );
 };
 
@@ -181,7 +126,7 @@ export default function UIDesignStudio() {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showDesignStudio, setShowDesignStudio] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DesignItem | null>(null);
   
@@ -548,12 +493,15 @@ export default function UIDesignStudio() {
         </div>
 
         {/* AI Assistant Card */}
-        <MaxAICard
-          title="AI Design Assistant"
-          description="Let me help you create amazing designs with natural language"
-          icon={<Brain className="h-5 w-5" />}
-          className="mb-6"
-        >
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Design Assistant
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">Let me help you create amazing designs with natural language</p>
+          </CardHeader>
+          <CardContent>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
@@ -594,7 +542,8 @@ export default function UIDesignStudio() {
               </Badge>
             </div>
           </div>
-        </MaxAICard>
+          </CardContent>
+        </Card>
 
         {/* Main Content */}
         <Card>
@@ -828,7 +777,7 @@ export default function UIDesignStudio() {
                   <Label>Choose Template</Label>
                   <ScrollArea className="h-48 mt-2 border rounded-lg p-2">
                     <div className="grid grid-cols-2 gap-2">
-                      {WIDGET_TEMPLATES.map((template) => (
+                      {[].map((template: any) => (
                         <Card
                           key={template.id}
                           className={`cursor-pointer transition-all ${
@@ -916,12 +865,17 @@ export default function UIDesignStudio() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Widget Design Studio Modal */}
+        {/* Design Studio Modal - Widget functionality removed */}
         {showDesignStudio && activeTab === 'widgets' && (
-          <WidgetDesignStudio 
-            open={showDesignStudio}
-            onClose={() => setShowDesignStudio(false)}
-          />
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Design Studio</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Widget design functionality has been replaced with dashboard-based components.
+              </p>
+              <Button onClick={() => setShowDesignStudio(false)}>Close</Button>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -31,8 +31,7 @@ import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
 import { AssignedRoleSwitcher } from './assigned-role-switcher';
-import WidgetModal from './widget-modal';
-import WidgetFlyout from './widget-flyout';
+
 import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
@@ -42,7 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import companyLogo from '@/assets/company-logo.png';
-import { getAvailableWidgets, type WidgetMetadata } from '@/lib/widget-registry';
+
 
 // Icon mapping for quick access items
 const iconMap = {
@@ -128,46 +127,10 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
   ];
 
-  // Add widgets as header items
-  const widgetItems: HeaderItem[] = getAvailableWidgets('desktop').map(({ type, metadata }) => ({
-    id: `widget-${type}`,
-    label: metadata.displayName,
-    icon: getWidgetIcon(type),
-    widget: type,
-    type: 'widget' as const
-  }));
-
-  return [...baseItems, ...widgetItems];
+  return baseItems;
 };
 
-// Map widget types to appropriate icons
-const getWidgetIcon = (widgetType: string): string => {
-  const iconMap: Record<string, string> = {
-    'operation-sequencer': 'Factory',
-    'custom-kpi': 'TrendingUp',
-    'atp-ctp': 'Calendar',
-    'sales-order-status': 'Package',
-    'reports': 'BarChart3',
-    'schedule-tradeoff-analyzer': 'TrendingUp',
-    'schedule-optimizer': 'Sparkles',
-    'production-order-status': 'Clock',
-    'operation-dispatch': 'Target',
-    'resource-assignment': 'Briefcase',
-    'production-metrics': 'BarChart3',
-    'equipment-status': 'Settings',
-    'quality-dashboard': 'Shield',
-    'inventory-tracking': 'Package',
-    'gantt-chart': 'Calendar',
-    'gantt-widget': 'Calendar',
-    'filter-search': 'Search',
-    'status-indicator': 'AlertTriangle',
-    'metrics-card': 'TrendingUp',
-    'data-table': 'Database',
-    'action-buttons': 'Plus',
-    'kanban-card': 'Package'
-  };
-  return iconMap[widgetType] || 'HelpCircle';
-};
+
 
 const availableItems = generateAvailableItems();
 
@@ -195,10 +158,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
-  const [widgetModalOpen, setWidgetModalOpen] = useState(false);
-  const [widgetFlyoutOpen, setWidgetFlyoutOpen] = useState(false);
-  const [selectedWidget, setSelectedWidget] = useState<{ type: string; title: string } | null>(null);
-  const [flyoutAnchor, setFlyoutAnchor] = useState<HTMLElement | null>(null);
+
   const [headerItems, setHeaderItems] = useState<HeaderItem[]>([]);
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const { addRecentPage } = useNavigation();

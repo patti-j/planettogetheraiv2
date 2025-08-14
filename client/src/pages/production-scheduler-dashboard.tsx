@@ -16,8 +16,7 @@ import {
   Zap,
   RefreshCw
 } from "lucide-react";
-import ScheduleTradeoffAnalyzerWidget from "@/components/widgets/schedule-tradeoff-analyzer-widget";
-import ATPCTPWidget from "@/components/widgets/atp-ctp-widget";
+
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardWidget {
@@ -236,7 +235,9 @@ export default function ProductionSchedulerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <ScheduleTradeoffAnalyzerWidget />
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Schedule analysis dashboard component would appear here</p>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -286,7 +287,9 @@ export default function ProductionSchedulerDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <ATPCTPWidget compact={true} />
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">ATP/CTP dashboard component would appear here</p>
+              </div>
             </CardContent>
           </Card>
         </div>

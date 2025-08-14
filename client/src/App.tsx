@@ -16,7 +16,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
-import { WidgetBarProvider } from "@/contexts/WidgetBarContext";
+
 import WorkspaceLayout from "@/components/workspace-layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -82,7 +82,7 @@ import ProductionSchedulePage from "@/pages/production-schedule-simple";
 import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
 import MasterProductionSchedulePage from "@/pages/master-production-schedule";
 import MobileHomePage from "@/pages/mobile-home";
-import MobileWidgetView from "@/pages/mobile-widget-view";
+
 import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
 import UIDesignStudio from "@/pages/design-studio";
@@ -609,15 +609,6 @@ function Router() {
             <TestBryntumPage />
           </Route>
           {/* Legacy routes redirect to Design Studio */}
-          <Route path="/widget-showcase">
-            <Redirect to="/design-studio" />
-          </Route>
-          <Route path="/widget-studio">
-            <Redirect to="/design-studio" />
-          </Route>
-          <Route path="/widgets">
-            <Redirect to="/design-studio" />
-          </Route>
           <Route path="/dashboards">
             <Redirect to="/design-studio" />
           </Route>
@@ -631,7 +622,7 @@ function Router() {
             }
             return <MobileHomePage />;
           }} />
-          <Route path="/widgets/:id" component={MobileWidgetView} />
+
           <Route path="/dashboards/:id" component={MobileDashboardView} />
           <Route path="/product-development">
             <ProtectedRoute feature="systems-management" action="view">
@@ -671,7 +662,7 @@ function Router() {
   }
   
   // Force mobile layout for mobile-specific routes regardless of screen width
-  const forceMobileRoutes = ['/mobile', '/mobile-home', '/widgets/', '/dashboards/'];
+  const forceMobileRoutes = ['/mobile', '/mobile-home', '/dashboards/'];
   const shouldUseMobileLayout = isMobile || forceMobileRoutes.some(route => location.includes(route));
   
   // Return appropriate layout based on device or route
@@ -708,15 +699,13 @@ function App() {
                     <MaxDockProvider>
                       <FullScreenProvider>
                         <LayoutDensityProvider>
-                          <WidgetBarProvider>
-                            <>
-                              <Router />
-                              <OnboardingWizard />
-                              <ResumeTourButton />
-                              <IntegratedAIAssistant />
-                              <Toaster />
-                            </>
-                          </WidgetBarProvider>
+                          <>
+                            <Router />
+                            <OnboardingWizard />
+                            <ResumeTourButton />
+                            <IntegratedAIAssistant />
+                            <Toaster />
+                          </>
                         </LayoutDensityProvider>
                       </FullScreenProvider>
                     </MaxDockProvider>

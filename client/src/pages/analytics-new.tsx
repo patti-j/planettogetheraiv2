@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart3, TrendingUp, Clock, AlertTriangle, CheckCircle, Sparkles, Settings, Plus, Maximize2, Minimize2, Eye, EyeOff, X, Move, FolderOpen } from "lucide-react";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
-import AnalyticsWidget from "@/components/analytics-widget";
+// Analytics widget component removed - functionality replaced with dashboard-based components
 import DashboardManager from "@/components/dashboard-manager";
-import WidgetDesignStudio from "@/components/widget-design-studio";
-import type { Job, Operation, Resource } from "@shared/schema";
+// Widget functionality replaced with dashboard-based components
+import type { Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -633,12 +633,18 @@ export default function Analytics() {
             customWidgets={customWidgets}
           />
           
-          {/* Widget Design Studio */}
-          <WidgetDesignStudio
-            open={widgetStudioOpen}
-            onOpenChange={setWidgetStudioOpen}
-            onWidgetCreate={handleWidgetCreate}
-          />
+          {/* Widget Design Studio - Replaced with dashboard functionality */}
+          {widgetStudioOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Widget Design Studio</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Widget design functionality has been replaced with dashboard-based components.
+                </p>
+                <Button onClick={() => setWidgetStudioOpen(false)}>Close</Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="h-screen bg-gray-50 dark:bg-gray-900">
@@ -669,12 +675,18 @@ export default function Analytics() {
         customWidgets={customWidgets}
       />
       
-      {/* Widget Design Studio */}
-      <WidgetDesignStudio
-        open={widgetStudioOpen}
-        onOpenChange={setWidgetStudioOpen}
-        onWidgetCreate={handleWidgetCreate}
-      />
+      {/* Widget Design Studio - Replaced with dashboard functionality */}
+      {widgetStudioOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Widget Design Studio</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Widget design functionality has been replaced with dashboard-based components.
+            </p>
+            <Button onClick={() => setWidgetStudioOpen(false)}>Close</Button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

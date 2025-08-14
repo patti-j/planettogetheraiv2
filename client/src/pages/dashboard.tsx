@@ -19,7 +19,7 @@ import JobForm from "@/components/job-form";
 import ResourceForm from "@/components/resource-form";
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
-import AnalyticsWidget from "@/components/analytics-widget";
+
 import ScheduleEvaluationSystem from "@/components/schedule-evaluation-system";
 import { OptimizationSummaryDialog } from "@/components/optimization-summary-dialog";
 import { useToast } from "@/hooks/use-toast";

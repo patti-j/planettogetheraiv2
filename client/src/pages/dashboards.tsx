@@ -42,8 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
-import UniversalWidget from "@/components/universal-widget";
-import { SystemData, WidgetConfig } from "@/lib/widget-library";
+
 import { useDeviceType, shouldShowWidget } from "@/hooks/useDeviceType";
 import { TargetPlatformSelector } from "@/components/target-platform-selector";
 import { Smartphone, Tablet } from "lucide-react";
