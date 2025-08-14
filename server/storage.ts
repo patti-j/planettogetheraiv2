@@ -145,7 +145,19 @@ import {
   type AccountInfo, type BillingHistory, type UsageMetrics, type IntegrationDataFlow, type IntegrationExecutionLog, type IntegrationDataMapping, type IntegrationWebhook,
   type ShiftCoverage, type ShiftUtilization, type RecipeEquipment,
   type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
-  type InsertShiftCoverage, type InsertShiftUtilization, type InsertRecipeEquipment
+  type InsertShiftCoverage, type InsertShiftUtilization, type InsertRecipeEquipment,
+  algorithmVersions,
+  type AlgorithmVersion,
+  type InsertAlgorithmVersion,
+  plantAlgorithmDeployments,
+  type PlantAlgorithmDeployment,
+  type InsertPlantAlgorithmDeployment,
+  algorithmApprovalWorkflows,
+  type AlgorithmApprovalWorkflow,
+  type InsertAlgorithmApprovalWorkflow,
+  algorithmUsageLogs,
+  type AlgorithmUsageLog,
+  type InsertAlgorithmUsageLog,
 } from "@shared/schema";
 
 // Import schedule-related types from schedule-schema

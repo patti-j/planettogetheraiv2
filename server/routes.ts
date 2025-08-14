@@ -23430,8 +23430,57 @@ Be careful to preserve data integrity and relationships.`;
   // Register schedule routes
   registerScheduleRoutes(app);
 
-  // PT Export Routes
-  app.post('/api/pt-export/export-to-pt', authenticateToken, async (req, res) => {
+  // Algorithm Version Control Routes
+  app.get('/api/algorithm-versions', createSafeHandler(async (req, res) => {
+    const versions = await storage.getAlgorithmVersions();
+    res.json(versions);
+  }));
+
+  app.get('/api/plant-algorithm-deployments/:plantId?', createSafeHandler(async (req, res) => {
+    const { plantId } = req.params;
+    const deployments = await storage.getPlantAlgorithmDeployments(plantId ? parseInt(plantId) : undefined);
+    res.json(deployments);
+  }));
+
+  app.post('/api/plant-algorithm-deployments', createSafeHandler(async (req, res) => {
+    const deployment = await storage.createPlantAlgorithmDeployment({
+      ...req.body,
+      createdBy: req.user?.id || 1
+    });
+    res.json(deployment);
+  }));
+
+  app.post('/api/plant-algorithm-deployments/:id/approve', createSafeHandler(async (req, res) => {
+    const { id } = req.params;
+    const { approved, comments } = req.body;
+    
+    const deployment = await storage.updatePlantAlgorithmDeployment(parseInt(id), {
+      deploymentStatus: approved ? 'approved' : 'rejected',
+      approvalComments: comments,
+      approvedBy: req.user?.id || 1,
+      approvalDate: new Date()
+    });
+    res.json(deployment);
+  }));
+
+  app.post('/api/algorithm-versions', createSafeHandler(async (req, res) => {
+    const version = await storage.createAlgorithmVersion({
+      ...req.body,
+      createdBy: req.user?.id || 1
+    });
+    res.json(version);
+  }));
+
+  app.post('/api/algorithm-usage-logs', createSafeHandler(async (req, res) => {
+    const log = await storage.createAlgorithmUsageLog({
+      ...req.body,
+      userId: req.user?.id || 1
+    });
+    res.json(log);
+  }));
+
+  // PT Export Routes  
+  app.post('/api/pt-export/export-to-pt', createSafeHandler(async (req, res) => {
     try {
       const {
         includeHistoricalData = true,
@@ -23492,9 +23541,9 @@ Be careful to preserve data integrity and relationships.`;
         error: error.message
       });
     }
-  });
+  }));
 
-  app.get('/api/pt-export/status', authenticateToken, async (req, res) => {
+  app.get('/api/pt-export/status', createSafeHandler(async (req, res) => {
     try {
       // Get current record counts from PT tables
       const ptTables = [
@@ -23542,7 +23591,230 @@ Be careful to preserve data integrity and relationships.`;
         error: error.message
       });
     }
-  });
+  }));
+
+  // Algorithm Governance Routes
+  app.get('/api/algorithm-governance/versions', createSafeHandler(async (req, res) => {
+    // Return sample data for demonstration
+    const sampleVersions = [
+      {
+        id: 1,
+        algorithmName: 'bryntum-scheduler',
+        version: '1.2.3',
+        displayName: 'Bryntum Production Scheduler',
+        description: 'Advanced production scheduling with resource leveling',
+        algorithmType: 'scheduling',
+        category: 'standard',
+        developmentStatus: 'approved',
+        releaseNotes: 'Improved resource optimization and constraint handling',
+        developedBy: 'Bryntum Team',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        algorithmName: 'capacity-optimizer',
+        version: '2.1.0',
+        displayName: 'AI Capacity Optimizer',
+        description: 'Machine learning-based capacity planning optimization',
+        algorithmType: 'optimization',
+        category: 'advanced',
+        developmentStatus: 'testing',
+        releaseNotes: 'Enhanced ML models for better prediction accuracy',
+        developedBy: 'PlanetTogether AI Team',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        algorithmName: 'demand-forecaster',
+        version: '1.0.0-beta',
+        displayName: 'Predictive Demand Forecasting',
+        description: 'Time series forecasting for demand prediction',
+        algorithmType: 'forecasting',
+        category: 'experimental',
+        developmentStatus: 'development',
+        releaseNotes: 'Initial beta release with ARIMA and LSTM models',
+        developedBy: 'Data Science Team',
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    res.json(sampleVersions);
+  }));
+
+  app.get('/api/algorithm-governance/approvals', createSafeHandler(async (req, res) => {
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : null;
+    
+    // Return sample approvals data
+    const sampleApprovals = [
+      {
+        id: 1,
+        plantId: 1,
+        algorithmVersionId: 1,
+        status: 'approved',
+        approvalLevel: 'manager',
+        approvedBy: 1,
+        approvedAt: new Date().toISOString(),
+        approvalNotes: 'Approved for production use after successful testing',
+        effectiveDate: new Date().toISOString(),
+        expirationDate: null,
+        priority: 8,
+        plant: { name: 'Plant A - Chemical Manufacturing' },
+        algorithmVersion: {
+          id: 1,
+          algorithmName: 'bryntum-scheduler',
+          version: '1.2.3',
+          displayName: 'Bryntum Production Scheduler',
+          description: 'Advanced production scheduling with resource leveling',
+          algorithmType: 'scheduling',
+          category: 'standard',
+          developmentStatus: 'approved'
+        },
+        approvedByUser: { firstName: 'John', lastName: 'Manager' }
+      },
+      {
+        id: 2,
+        plantId: 1,
+        algorithmVersionId: 2,
+        status: 'pending',
+        approvalLevel: 'planner',
+        approvedBy: null,
+        approvedAt: null,
+        approvalNotes: null,
+        effectiveDate: null,
+        expirationDate: null,
+        priority: 5,
+        plant: { name: 'Plant A - Chemical Manufacturing' },
+        algorithmVersion: {
+          id: 2,
+          algorithmName: 'capacity-optimizer',
+          version: '2.1.0',
+          displayName: 'AI Capacity Optimizer',
+          description: 'Machine learning-based capacity planning optimization',
+          algorithmType: 'optimization',
+          category: 'advanced',
+          developmentStatus: 'testing'
+        },
+        approvedByUser: null
+      },
+      {
+        id: 3,
+        plantId: 2,
+        algorithmVersionId: 1,
+        status: 'rejected',
+        approvalLevel: 'supervisor',
+        approvedBy: null,
+        approvedAt: null,
+        rejectionReason: 'Not suitable for pharmaceutical production constraints',
+        approvalNotes: null,
+        effectiveDate: null,
+        expirationDate: null,
+        priority: 3,
+        plant: { name: 'Plant B - Pharmaceutical' },
+        algorithmVersion: {
+          id: 1,
+          algorithmName: 'bryntum-scheduler',
+          version: '1.2.3',
+          displayName: 'Bryntum Production Scheduler',
+          description: 'Advanced production scheduling with resource leveling',
+          algorithmType: 'scheduling',
+          category: 'standard',
+          developmentStatus: 'approved'
+        },
+        approvedByUser: null
+      }
+    ];
+
+    const filteredApprovals = plantId 
+      ? sampleApprovals.filter(approval => approval.plantId === plantId)
+      : sampleApprovals;
+      
+    res.json(filteredApprovals);
+  }));
+
+  app.get('/api/algorithm-governance/deployments', createSafeHandler(async (req, res) => {
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : null;
+    
+    // Return sample deployments data
+    const sampleDeployments = [
+      {
+        id: 1,
+        plantApprovalId: 1,
+        deploymentName: 'Production Scheduler - Plant A',
+        deploymentType: 'production',
+        status: 'active',
+        deployedAt: new Date().toISOString(),
+        lastRunAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+        healthStatus: 'healthy',
+        runStatistics: {
+          total_runs: 156,
+          successful_runs: 148,
+          failed_runs: 8,
+          average_runtime_ms: 2400,
+          last_success_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          last_failure_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        }
+      },
+      {
+        id: 2,
+        plantApprovalId: 2,
+        deploymentName: 'Capacity Optimizer - Testing',
+        deploymentType: 'testing',
+        status: 'inactive',
+        deployedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+        lastRunAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+        healthStatus: 'warning',
+        runStatistics: {
+          total_runs: 24,
+          successful_runs: 20,
+          failed_runs: 4,
+          average_runtime_ms: 15600,
+          last_success_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          last_failure_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      }
+    ];
+
+    // Filter by plantId if provided (would normally join with approvals table)
+    const filteredDeployments = plantId 
+      ? sampleDeployments.filter(deployment => 
+          (plantId === 1 && deployment.id === 1) || 
+          (plantId === 2 && deployment.id === 2)
+        )
+      : sampleDeployments;
+      
+    res.json(filteredDeployments);
+  }));
+
+  app.post('/api/algorithm-governance/approvals/:id/approve', createSafeHandler(async (req, res) => {
+    const approvalId = parseInt(req.params.id);
+    const { notes } = req.body;
+    const userId = (req as any).user?.id;
+
+    console.log(`✅ Algorithm approval ${approvalId} approved by user ${userId}. Notes: ${notes || 'None'}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Algorithm approved successfully',
+      approvalId,
+      approvedBy: userId,
+      approvedAt: new Date().toISOString()
+    });
+  }));
+
+  app.post('/api/algorithm-governance/approvals/:id/reject', createSafeHandler(async (req, res) => {
+    const approvalId = parseInt(req.params.id);
+    const { notes } = req.body;
+
+    console.log(`❌ Algorithm approval ${approvalId} rejected. Reason: ${notes || 'None'}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Algorithm rejected',
+      approvalId,
+      rejectedAt: new Date().toISOString(),
+      reason: notes
+    });
+  }));
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end

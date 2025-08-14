@@ -3171,6 +3171,249 @@ export const workflowMonitoring = pgTable("workflow_monitoring", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Algorithm Version Control and Plant Deployment
+export const algorithmVersions = pgTable("algorithm_versions", {
+  id: serial("id").primaryKey(),
+  algorithmName: text("algorithm_name").notNull(),
+  version: text("version").notNull(), // e.g., "1.2.3"
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // scheduling, optimization, resource_allocation, capacity_planning
+  algorithmType: text("algorithm_type").notNull(), // bryntum, custom, third_party
+  developmentStatus: text("development_status").notNull().default("development"), // development, testing, production, deprecated
+  releaseDate: timestamp("release_date"),
+  deprecationDate: timestamp("deprecation_date"),
+  features: jsonb("features").$type<string[]>().default([]),
+  requirements: jsonb("requirements").$type<{
+    minMemoryMb: number;
+    minCpuCores: number;
+    supportedPlatforms: string[];
+    dependencies: string[];
+  }>(),
+  configuration: jsonb("configuration").$type<{
+    parameters: Array<{
+      name: string;
+      type: string;
+      defaultValue: any;
+      description?: string;
+      required: boolean;
+    }>;
+    constraints: Array<{
+      name: string;
+      type: string;
+      value: any;
+    }>;
+  }>(),
+  performanceMetrics: jsonb("performance_metrics").$type<{
+    averageExecutionTimeMs: number;
+    memoryUsageMb: number;
+    successRate: number;
+    lastBenchmarkDate: string;
+  }>(),
+  changeLog: text("change_log"),
+  documentation: text("documentation"),
+  contactInfo: jsonb("contact_info").$type<{
+    developer: string;
+    maintainer: string;
+    supportEmail?: string;
+  }>(),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  algorithmVersionIdx: unique().on(table.algorithmName, table.version),
+}));
+
+export const plantAlgorithmDeployments = pgTable("plant_algorithm_deployments", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  algorithmVersionId: integer("algorithm_version_id").references(() => algorithmVersions.id).notNull(),
+  deploymentStatus: text("deployment_status").notNull().default("pending"), // pending, approved, deployed, testing, rejected, retired
+  approvalLevel: text("approval_level").notNull().default("plant_manager"), // plant_manager, regional_director, corporate, emergency
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvalDate: timestamp("approval_date"),
+  approvalComments: text("approval_comments"),
+  deployedDate: timestamp("deployed_date"),
+  retiredDate: timestamp("retired_date"),
+  isDefault: boolean("is_default").default(false), // Is this the default algorithm for this category at this plant
+  priority: integer("priority").default(100), // Higher priority algorithms are preferred
+  restrictions: jsonb("restrictions").$type<{
+    timeWindows: Array<{
+      startTime: string;
+      endTime: string;
+      daysOfWeek: number[];
+    }>;
+    maxConcurrentRuns: number;
+    resourceLimits: {
+      maxMemoryMb: number;
+      maxCpuUsage: number;
+    };
+    userRoles: string[];
+    productTypes: string[];
+    orderTypes: string[];
+  }>(),
+  configuration: jsonb("configuration").$type<{
+    plantSpecificParameters: Array<{
+      name: string;
+      value: any;
+      overrideReason: string;
+    }>;
+    integrationSettings: Record<string, any>;
+  }>(),
+  performanceData: jsonb("performance_data").$type<{
+    totalRuns: number;
+    successfulRuns: number;
+    averageExecutionTime: number;
+    lastRunDate: string;
+    issues: Array<{
+      date: string;
+      severity: string;
+      description: string;
+      resolved: boolean;
+    }>;
+  }>(),
+  testResults: jsonb("test_results").$type<{
+    testSuiteResults: Array<{
+      suiteName: string;
+      testDate: string;
+      passed: boolean;
+      results: Record<string, any>;
+    }>;
+    performanceBenchmarks: Array<{
+      benchmarkName: string;
+      result: number;
+      unit: string;
+      testDate: string;
+    }>;
+  }>(),
+  rollbackPlan: text("rollback_plan"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  plantAlgorithmIdx: unique().on(table.plantId, table.algorithmVersionId),
+}));
+
+export const algorithmApprovalWorkflows = pgTable("algorithm_approval_workflows", {
+  id: serial("id").primaryKey(),
+  deploymentId: integer("deployment_id").references(() => plantAlgorithmDeployments.id).notNull(),
+  workflowStep: integer("workflow_step").notNull().default(1),
+  stepName: text("step_name").notNull(), // plant_request, technical_review, manager_approval, deployment, verification
+  stepStatus: text("step_status").notNull().default("pending"), // pending, approved, rejected, in_progress, completed
+  assignedTo: integer("assigned_to").references(() => users.id),
+  assignedRole: text("assigned_role"), // plant_manager, technical_lead, regional_director
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
+  comments: text("comments"),
+  attachments: jsonb("attachments").$type<Array<{
+    name: string;
+    url: string;
+    type: string;
+    uploadedBy: number;
+    uploadedDate: string;
+  }>>().default([]),
+  requirements: jsonb("requirements").$type<{
+    documentsRequired: string[];
+    testsRequired: string[];
+    approvalsRequired: string[];
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const algorithmUsageLogs = pgTable("algorithm_usage_logs", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  algorithmVersionId: integer("algorithm_version_id").references(() => algorithmVersions.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  executionId: text("execution_id").notNull(), // Unique identifier for this run
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  status: text("status").notNull(), // running, completed, failed, cancelled
+  inputParameters: jsonb("input_parameters"),
+  outputResults: jsonb("output_results"),
+  errorMessage: text("error_message"),
+  memoryUsageMb: integer("memory_usage_mb"),
+  cpuUsagePercent: integer("cpu_usage_percent"),
+  dataProcessed: jsonb("data_processed").$type<{
+    ordersProcessed: number;
+    resourcesOptimized: number;
+    timeHorizonDays: number;
+  }>(),
+  qualityMetrics: jsonb("quality_metrics").$type<{
+    scheduleEfficiency: number;
+    resourceUtilization: number;
+    constraintViolations: number;
+    improvementScore: number;
+  }>(),
+  feedback: jsonb("feedback").$type<{
+    userRating: number;
+    userComments?: string;
+    issues?: string[];
+    suggestions?: string[];
+  }>(),
+  context: text("context"), // manual, automated, batch, emergency
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Relations for Algorithm Version Control
+export const algorithmVersionsRelations = relations(algorithmVersions, ({ many, one }) => ({
+  plantDeployments: many(plantAlgorithmDeployments),
+  usageLogs: many(algorithmUsageLogs),
+  createdByUser: one(users, {
+    fields: [algorithmVersions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const plantAlgorithmDeploymentsRelations = relations(plantAlgorithmDeployments, ({ one, many }) => ({
+  plant: one(plants, {
+    fields: [plantAlgorithmDeployments.plantId],
+    references: [plants.id],
+  }),
+  algorithmVersion: one(algorithmVersions, {
+    fields: [plantAlgorithmDeployments.algorithmVersionId],
+    references: [algorithmVersions.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [plantAlgorithmDeployments.approvedBy],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [plantAlgorithmDeployments.createdBy],
+    references: [users.id],
+  }),
+  approvalWorkflows: many(algorithmApprovalWorkflows),
+  usageLogs: many(algorithmUsageLogs),
+}));
+
+export const algorithmApprovalWorkflowsRelations = relations(algorithmApprovalWorkflows, ({ one }) => ({
+  deployment: one(plantAlgorithmDeployments, {
+    fields: [algorithmApprovalWorkflows.deploymentId],
+    references: [plantAlgorithmDeployments.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [algorithmApprovalWorkflows.assignedTo],
+    references: [users.id],
+  }),
+}));
+
+export const algorithmUsageLogsRelations = relations(algorithmUsageLogs, ({ one }) => ({
+  plant: one(plants, {
+    fields: [algorithmUsageLogs.plantId],
+    references: [plants.id],
+  }),
+  algorithmVersion: one(algorithmVersions, {
+    fields: [algorithmUsageLogs.algorithmVersionId],
+    references: [algorithmVersions.id],
+  }),
+  user: one(users, {
+    fields: [algorithmUsageLogs.userId],
+    references: [users.id],
+  }),
+}));
+
 // Business Goals and Directorial Oversight Tables
 
 // Strategic business goals set by directors
@@ -10231,6 +10474,10 @@ export type InsertSmartKpiImprovement = z.infer<typeof insertSmartKpiImprovement
 export type SmartKpiAlert = typeof smartKpiAlerts.$inferSelect;
 export type InsertSmartKpiAlert = z.infer<typeof insertSmartKpiAlertSchema>;
 
+
+
+
+
 // Collaborative Demand Management Tables
 export const demandChangeRequests = pgTable("demand_change_requests", {
   id: serial("id").primaryKey(),
@@ -10446,6 +10693,43 @@ export const insertDemandCollaborationSessionSchema = createInsertSchema(demandC
   createdAt: true,
   updatedAt: true,
 });
+
+// Algorithm Version Control Insert Schemas
+export const insertAlgorithmVersionSchema = createInsertSchema(algorithmVersions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPlantAlgorithmDeploymentSchema = createInsertSchema(plantAlgorithmDeployments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAlgorithmApprovalWorkflowSchema = createInsertSchema(algorithmApprovalWorkflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAlgorithmUsageLogSchema = createInsertSchema(algorithmUsageLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Algorithm Version Control Types
+export type AlgorithmVersion = typeof algorithmVersions.$inferSelect;
+export type InsertAlgorithmVersion = z.infer<typeof insertAlgorithmVersionSchema>;
+
+export type PlantAlgorithmDeployment = typeof plantAlgorithmDeployments.$inferSelect;
+export type InsertPlantAlgorithmDeployment = z.infer<typeof insertPlantAlgorithmDeploymentSchema>;
+
+export type AlgorithmApprovalWorkflow = typeof algorithmApprovalWorkflows.$inferSelect;
+export type InsertAlgorithmApprovalWorkflow = z.infer<typeof insertAlgorithmApprovalWorkflowSchema>;
+
+export type AlgorithmUsageLog = typeof algorithmUsageLogs.$inferSelect;
+export type InsertAlgorithmUsageLog = z.infer<typeof insertAlgorithmUsageLogSchema>;
 
 // Types for demand management
 export type DemandChangeRequest = typeof demandChangeRequests.$inferSelect;
