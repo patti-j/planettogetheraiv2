@@ -1129,6 +1129,17 @@ function DataSchemaViewContent() {
     if (lassoPath.length < 3) return;
     
     const selectedInLasso: string[] = [];
+    
+    console.log('Selecting tables in lasso:', {
+      lassoPathLength: lassoPath.length,
+      nodesCount: currentNodes.length,
+      sampleLassoPoint: lassoPath[0],
+      sampleNode: currentNodes[0] ? {
+        id: currentNodes[0].id,
+        position: currentNodes[0].position
+      } : null
+    });
+    
     currentNodes.forEach(node => {
       const nodeCenter = {
         x: node.position.x + 150, // Approximate center of table node
@@ -1137,8 +1148,11 @@ function DataSchemaViewContent() {
       
       if (isPointInPolygon(nodeCenter, lassoPath)) {
         selectedInLasso.push(node.id);
+        console.log(`Table ${node.id} selected in lasso at position:`, nodeCenter);
       }
     });
+    
+    console.log('Final lasso selection result:', selectedInLasso);
     
     setLassoSelection(selectedInLasso);
     setSelectedTables(selectedInLasso);
@@ -1200,25 +1214,44 @@ function DataSchemaViewContent() {
     });
     
     // Add padding
-    const padding = 100;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
+    const padding = 50;
+    const boundingBox = {
+      x: minX - padding,
+      y: minY - padding,
+      width: maxX - minX + 2 * padding,
+      height: maxY - minY + 2 * padding
+    };
     
-    // Fit view to selected area
-    fitView({ 
-      nodes: selectedNodes,
-      padding: 0.2,
-      duration: 800
+    console.log('Zooming to lasso selection:', {
+      selectedCount: selectedNodes.length,
+      boundingBox,
+      selectedNodeIds: selectedNodes.map(n => n.id)
     });
     
-    setZoomedToLasso(true);
-    
-    toast({
-      title: "Zoomed to Selection",
-      description: `Focused on ${lassoSelection.length} selected tables`,
-    });
+    // Use fitBounds for more precise control
+    try {
+      fitView({ 
+        nodes: selectedNodes,
+        padding: 0.1,
+        duration: 1000,
+        minZoom: 0.1,
+        maxZoom: 1.5
+      });
+      
+      setZoomedToLasso(true);
+      
+      toast({
+        title: "Zoomed to Selection",
+        description: `Focused on ${lassoSelection.length} selected tables`,
+      });
+    } catch (error) {
+      console.error('Error zooming to selection:', error);
+      toast({
+        title: "Zoom Error",
+        description: "Could not zoom to selection",
+        variant: "destructive"
+      });
+    }
   }, [lassoSelection, fitView, toast]);
 
   const resetLassoZoom = () => {
