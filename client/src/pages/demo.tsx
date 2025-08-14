@@ -36,13 +36,18 @@ export default function DemoPage() {
       
       // Map operations to Bryntum events
       const bryntumEvents = operations.map((op: any) => {
-        // Find the related production order
-        const order = productionOrders.find((po: any) => po.id === op.productionOrderId);
+        // Find the related production order using routingId or productionOrderId
+        // Operations have routingId which maps to production order's productionVersionId
+        const order = productionOrders.find((po: any) => 
+          po.id === op.productionOrderId || 
+          po.productionVersionId === op.routingId ||
+          po.id === op.routingId
+        );
         
-        return {
+        const event = {
           id: op.id,
-          name: op.operationName || op.name,
-          jobName: order ? order.name : `Order ${op.productionOrderId || ''}`,
+          name: op.operationName || op.name || 'Unknown Operation',
+          jobName: order ? (order.name || order.orderNumber) : `Routing ${op.routingId || 'Unknown'}`,
           startDate: op.startTime || new Date('2025-08-07T08:00:00'),
           endDate: op.endTime || new Date('2025-08-07T12:00:00'),
           status: op.status || 'waiting',
@@ -52,6 +57,20 @@ export default function DemoPage() {
           draggable: true,
           resizable: true
         };
+        
+        // Debug logging to see what data we're creating
+        console.log('Creating event:', {
+          id: event.id,
+          name: event.name,
+          jobName: event.jobName,
+          status: event.status,
+          routingId: op.routingId,
+          productionOrderId: op.productionOrderId,
+          orderFound: !!order,
+          orderData: order
+        });
+        
+        return event;
       });
       
       // Create assignments (map operations to resources)
@@ -100,74 +119,6 @@ export default function DemoPage() {
     snap: true,
     readOnly: false,
     
-    // Use eventBodyTemplate for custom event display (safer than eventRenderer)
-    eventBodyTemplate: (data) => {
-      const jobName = data.jobName || 'Unknown Job';
-      const operationName = data.name || 'Unknown Operation';
-      const status = data.status || 'waiting';
-      
-      // Status colors
-      const statusColors = {
-        ready: '#4CAF50',
-        waiting: '#FF9800',  
-        in_progress: '#2196F3',
-        completed: '#9E9E9E',
-        planned: '#FFC107',
-        scheduled: '#4CAF50'
-      };
-
-      const statusColor = statusColors[status] || '#FF9800';
-      const statusText = status === 'scheduled' ? 'ready' : status.replace('_', ' ');
-      
-      return `
-        <div style="
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          padding: 2px 4px;
-          font-size: 11px;
-          box-sizing: border-box;
-        ">
-          <div>
-            <div style="
-              font-weight: bold;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              line-height: 1.2;
-              color: #333;
-            ">
-              ${jobName}
-            </div>
-            <div style="
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              line-height: 1.2;
-              font-size: 10px;
-              color: #666;
-              margin-top: 1px;
-            ">
-              ${operationName}
-            </div>
-          </div>
-          <div style="
-            background-color: ${statusColor};
-            color: white;
-            padding: 1px 4px;
-            border-radius: 2px;
-            text-align: center;
-            font-size: 10px;
-            text-transform: uppercase;
-            margin-top: 2px;
-          ">
-            ${statusText}
-          </div>
-        </div>
-      `;
-    },
-    
     columns: [
       { 
         type: 'resourceInfo',
@@ -185,6 +136,78 @@ export default function DemoPage() {
     
     // Enable ALL Bryntum Pro features
     features: {
+      // Custom event renderer for displaying job/operation names and status
+      eventRenderer: ({ eventRecord, renderData }) => {
+        const jobName = eventRecord.jobName || 'Unknown Job';
+        const operationName = eventRecord.name || 'Unknown Operation';
+        const status = eventRecord.status || 'waiting';
+        
+        // Status colors
+        const statusColors = {
+          ready: '#4CAF50',
+          waiting: '#FF9800',
+          in_progress: '#2196F3',
+          completed: '#9E9E9E',
+          planned: '#FFC107',
+          scheduled: '#4CAF50'
+        };
+
+        const statusColor = statusColors[status] || '#FF9800';
+        const statusText = status === 'scheduled' ? 'ready' : status.replace('_', ' ');
+        
+        renderData.eventContent = {
+          html: `
+            <div style="
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              padding: 2px 4px;
+              font-size: 11px;
+              box-sizing: border-box;
+            ">
+              <div>
+                <div style="
+                  font-weight: bold;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  line-height: 1.2;
+                  color: #333;
+                ">
+                  ${jobName}
+                </div>
+                <div style="
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  line-height: 1.2;
+                  font-size: 10px;
+                  color: #666;
+                  margin-top: 1px;
+                ">
+                  ${operationName}
+                </div>
+              </div>
+              <div style="
+                background-color: ${statusColor};
+                color: white;
+                padding: 1px 4px;
+                border-radius: 2px;
+                text-align: center;
+                font-size: 10px;
+                text-transform: uppercase;
+                margin-top: 2px;
+              ">
+                ${statusText}
+              </div>
+            </div>
+          `
+        };
+        
+        return renderData;
+      },
+      
       // Core drag and drop
       eventDrag: {
         constrainDragToResource: false,
