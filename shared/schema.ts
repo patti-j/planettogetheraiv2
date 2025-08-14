@@ -10231,6 +10231,235 @@ export type InsertSmartKpiImprovement = z.infer<typeof insertSmartKpiImprovement
 export type SmartKpiAlert = typeof smartKpiAlerts.$inferSelect;
 export type InsertSmartKpiAlert = z.infer<typeof insertSmartKpiAlertSchema>;
 
+// Collaborative Demand Management Tables
+export const demandChangeRequests = pgTable("demand_change_requests", {
+  id: serial("id").primaryKey(),
+  requestNumber: text("request_number").notNull().unique(), // e.g., "DCR-2025-001"
+  title: text("title").notNull(),
+  description: text("description"),
+  requestType: text("request_type").notNull(), // demand_increase, demand_decrease, new_product, product_discontinuation, schedule_change
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("pending"), // pending, under_review, approved, rejected, implemented
+  urgency: text("urgency").notNull().default("normal"), // normal, urgent, critical
+  
+  // Who is involved
+  requestedBy: integer("requested_by").references(() => users.id).notNull(), // User who created the request
+  assignedTo: integer("assigned_to").references(() => users.id), // Planner/Scheduler assigned to review
+  approvedBy: integer("approved_by").references(() => users.id), // Who approved the change
+  
+  // What products/items are affected
+  affectedItems: jsonb("affected_items").$type<{
+    itemId: number;
+    itemName: string;
+    currentDemand: number;
+    proposedDemand: number;
+    effectiveDate: string;
+    reason: string;
+  }[]>().default([]),
+  
+  // Timeline information
+  requestedDate: timestamp("requested_date").defaultNow(),
+  requiredByDate: timestamp("required_by_date"),
+  reviewStartDate: timestamp("review_start_date"),
+  reviewDueDate: timestamp("review_due_date"),
+  approvedDate: timestamp("approved_date"),
+  implementedDate: timestamp("implemented_date"),
+  
+  // Impact analysis
+  businessImpact: jsonb("business_impact").$type<{
+    revenue_impact?: number;
+    customer_impact?: string;
+    operational_impact?: string;
+    resource_requirements?: string;
+  }>(),
+  
+  // Supporting information
+  justification: text("justification"),
+  attachments: jsonb("attachments").$type<{
+    filename: string;
+    fileType: string;
+    uploadedBy: number;
+    uploadedAt: string;
+  }[]>().default([]),
+  
+  // Review and approval workflow
+  reviewNotes: text("review_notes"),
+  approvalNotes: text("approval_notes"),
+  implementationNotes: text("implementation_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const demandChangeComments = pgTable("demand_change_comments", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").references(() => demandChangeRequests.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  commentType: text("comment_type").notNull().default("comment"), // comment, status_change, approval, rejection
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false), // Internal comments vs customer-facing
+  attachments: jsonb("attachments").$type<{
+    filename: string;
+    fileType: string;
+    size: number;
+  }[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const demandChangeApprovals = pgTable("demand_change_approvals", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").references(() => demandChangeRequests.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").notNull(), // planner, scheduler, manager, customer
+  status: text("status").notNull(), // pending, approved, rejected, delegated
+  decision: text("decision"), // Approval or rejection reason
+  decidedAt: timestamp("decided_at"),
+  delegatedTo: integer("delegated_to").references(() => users.id),
+  isRequired: boolean("is_required").default(true),
+  orderSequence: integer("order_sequence").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const demandCollaborationSessions = pgTable("demand_collaboration_sessions", {
+  id: serial("id").primaryKey(),
+  sessionName: text("session_name").notNull(),
+  description: text("description"),
+  sessionType: text("session_type").notNull(), // planning_meeting, review_session, crisis_response, forecast_review
+  status: text("status").notNull().default("scheduled"), // scheduled, active, completed, cancelled
+  
+  // Participants
+  organizer: integer("organizer").references(() => users.id).notNull(),
+  participants: jsonb("participants").$type<{
+    userId: number;
+    role: string; // planner, scheduler, manager, analyst
+    joinedAt?: string;
+    status: string; // invited, accepted, declined, attended
+  }[]>().default([]),
+  
+  // Session details
+  scheduledStart: timestamp("scheduled_start").notNull(),
+  scheduledEnd: timestamp("scheduled_end").notNull(),
+  actualStart: timestamp("actual_start"),
+  actualEnd: timestamp("actual_end"),
+  
+  // Related changes and topics
+  relatedRequests: jsonb("related_requests").$type<number[]>().default([]), // Array of demand change request IDs
+  agenda: jsonb("agenda").$type<{
+    item: string;
+    estimatedDuration: number;
+    presenter: number;
+    status: string; // pending, in_progress, completed, skipped
+  }[]>().default([]),
+  
+  // Outcomes
+  decisions: jsonb("decisions").$type<{
+    decision: string;
+    rationale: string;
+    assignedTo?: number;
+    dueDate?: string;
+    status: string; // pending, in_progress, completed
+  }[]>().default([]),
+  
+  meetingNotes: text("meeting_notes"),
+  actionItems: jsonb("action_items").$type<{
+    action: string;
+    assignedTo: number;
+    dueDate: string;
+    priority: string;
+    status: string; // pending, in_progress, completed, overdue
+  }[]>().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations for demand management tables
+export const demandChangeRequestsRelations = relations(demandChangeRequests, ({ one, many }) => ({
+  requestedByUser: one(users, {
+    fields: [demandChangeRequests.requestedBy],
+    references: [users.id],
+  }),
+  assignedToUser: one(users, {
+    fields: [demandChangeRequests.assignedTo],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [demandChangeRequests.approvedBy],
+    references: [users.id],
+  }),
+  comments: many(demandChangeComments),
+  approvals: many(demandChangeApprovals),
+}));
+
+export const demandChangeCommentsRelations = relations(demandChangeComments, ({ one }) => ({
+  request: one(demandChangeRequests, {
+    fields: [demandChangeComments.requestId],
+    references: [demandChangeRequests.id],
+  }),
+  user: one(users, {
+    fields: [demandChangeComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const demandChangeApprovalsRelations = relations(demandChangeApprovals, ({ one }) => ({
+  request: one(demandChangeRequests, {
+    fields: [demandChangeApprovals.requestId],
+    references: [demandChangeRequests.id],
+  }),
+  user: one(users, {
+    fields: [demandChangeApprovals.userId],
+    references: [users.id],
+  }),
+  delegatedToUser: one(users, {
+    fields: [demandChangeApprovals.delegatedTo],
+    references: [users.id],
+  }),
+}));
+
+export const demandCollaborationSessionsRelations = relations(demandCollaborationSessions, ({ one }) => ({
+  organizerUser: one(users, {
+    fields: [demandCollaborationSessions.organizer],
+    references: [users.id],
+  }),
+}));
+
+// Insert schemas for demand management tables
+export const insertDemandChangeRequestSchema = createInsertSchema(demandChangeRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDemandChangeCommentSchema = createInsertSchema(demandChangeComments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDemandChangeApprovalSchema = createInsertSchema(demandChangeApprovals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDemandCollaborationSessionSchema = createInsertSchema(demandCollaborationSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Types for demand management
+export type DemandChangeRequest = typeof demandChangeRequests.$inferSelect;
+export type InsertDemandChangeRequest = z.infer<typeof insertDemandChangeRequestSchema>;
+
+export type DemandChangeComment = typeof demandChangeComments.$inferSelect;
+export type InsertDemandChangeComment = z.infer<typeof insertDemandChangeCommentSchema>;
+
+export type DemandChangeApproval = typeof demandChangeApprovals.$inferSelect;
+export type InsertDemandChangeApproval = z.infer<typeof insertDemandChangeApprovalSchema>;
+
+export type DemandCollaborationSession = typeof demandCollaborationSessions.$inferSelect;
+export type InsertDemandCollaborationSession = z.infer<typeof insertDemandCollaborationSessionSchema>;
+
 // Export schedule schemas
 export * from './schedule-schema';
 

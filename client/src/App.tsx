@@ -73,6 +73,7 @@ import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import MarketingHome from "@/pages/marketing-home";
 import ShiftManagement from "@/pages/shift-management";
+import DemandManagement from "@/pages/demand-management";
 
 import ProductDevelopment from "@/pages/product-development";
 import PlanningOverview from "@/pages/planning-overview";
@@ -372,6 +373,11 @@ function Router() {
           <Route path="/demand-planning">
             <ProtectedRoute feature="demand-planning" action="view">
               <DemandPlanning />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/demand-management">
+            <ProtectedRoute feature="schedule" action="view">
+              <DemandManagement />
             </ProtectedRoute>
           </Route>
           <Route path="/systems-integration">

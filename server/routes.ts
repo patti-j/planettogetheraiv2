@@ -66,7 +66,10 @@ import {
   insertSmartKpiActualSchema, insertSmartKpiImprovementSchema, insertSmartKpiAlertSchema,
   // MRP Schemas
   insertMasterProductionScheduleSchema, insertMrpRunSchema, insertMrpRequirementSchema, 
-  insertMrpActionMessageSchema, insertMrpPlanningParametersSchema
+  insertMrpActionMessageSchema, insertMrpPlanningParametersSchema,
+  // Collaborative Demand Management Schemas
+  insertDemandChangeRequestSchema, insertDemandChangeCommentSchema,
+  insertDemandChangeApprovalSchema, insertDemandCollaborationSessionSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
@@ -23333,6 +23336,95 @@ Be careful to preserve data integrity and relationships.`;
     }
     
     res.json({ success: true });
+  }));
+
+  // Collaborative Demand Management Routes
+  
+  // Demand Change Requests
+  app.get("/api/demand-change-requests", createSafeHandler(async (req, res) => {
+    const { status, requestType } = req.query;
+    const requests = await storage.getDemandChangeRequests(
+      status as string,
+      requestType as string
+    );
+    res.json(requests);
+  }));
+
+  app.get("/api/demand-change-requests/:id", createSafeHandler(async (req, res) => {
+    const request = await storage.getDemandChangeRequest(parseInt(req.params.id));
+    if (!request) {
+      throw new NotFoundError("Demand change request not found");
+    }
+    res.json(request);
+  }));
+
+  app.post("/api/demand-change-requests", createSafeHandler(async (req, res) => {
+    const validatedData = insertDemandChangeRequestSchema.parse(req.body);
+    const request = await storage.createDemandChangeRequest(validatedData);
+    res.status(201).json(request);
+  }));
+
+  app.put("/api/demand-change-requests/:id", createSafeHandler(async (req, res) => {
+    const validatedData = insertDemandChangeRequestSchema.partial().parse(req.body);
+    const request = await storage.updateDemandChangeRequest(parseInt(req.params.id), validatedData);
+    if (!request) {
+      throw new NotFoundError("Demand change request not found");
+    }
+    res.json(request);
+  }));
+
+  app.delete("/api/demand-change-requests/:id", createSafeHandler(async (req, res) => {
+    const deleted = await storage.deleteDemandChangeRequest(parseInt(req.params.id));
+    if (!deleted) {
+      throw new NotFoundError("Demand change request not found");
+    }
+    res.status(204).send();
+  }));
+
+  // Demand Change Comments
+  app.get("/api/demand-change-requests/:requestId/comments", createSafeHandler(async (req, res) => {
+    const comments = await storage.getDemandChangeComments(parseInt(req.params.requestId));
+    res.json(comments);
+  }));
+
+  app.post("/api/demand-change-requests/:requestId/comments", createSafeHandler(async (req, res) => {
+    const validatedData = insertDemandChangeCommentSchema.parse({
+      ...req.body,
+      requestId: parseInt(req.params.requestId)
+    });
+    const comment = await storage.createDemandChangeComment(validatedData);
+    res.status(201).json(comment);
+  }));
+
+  // Demand Change Approvals
+  app.get("/api/demand-change-requests/:requestId/approvals", createSafeHandler(async (req, res) => {
+    const approvals = await storage.getDemandChangeApprovals(parseInt(req.params.requestId));
+    res.json(approvals);
+  }));
+
+  app.post("/api/demand-change-requests/:requestId/approvals", createSafeHandler(async (req, res) => {
+    const validatedData = insertDemandChangeApprovalSchema.parse({
+      ...req.body,
+      requestId: parseInt(req.params.requestId)
+    });
+    const approval = await storage.createDemandChangeApproval(validatedData);
+    res.status(201).json(approval);
+  }));
+
+  // Demand Collaboration Sessions
+  app.get("/api/demand-collaboration-sessions", createSafeHandler(async (req, res) => {
+    const { organizerId, status } = req.query;
+    const sessions = await storage.getDemandCollaborationSessions(
+      organizerId ? parseInt(organizerId as string) : undefined,
+      status as string
+    );
+    res.json(sessions);
+  }));
+
+  app.post("/api/demand-collaboration-sessions", createSafeHandler(async (req, res) => {
+    const validatedData = insertDemandCollaborationSessionSchema.parse(req.body);
+    const session = await storage.createDemandCollaborationSession(validatedData);
+    res.status(201).json(session);
   }));
 
   // Register schedule routes

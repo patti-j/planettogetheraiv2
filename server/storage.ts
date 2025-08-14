@@ -63,6 +63,9 @@ import {
   aiMemories, aiMemoryTags, aiConversationContext,
   type AIMemory, type AIMemoryTag, type AIConversationContext,
   type InsertAIMemory, type InsertAIMemoryTag, type InsertAIConversationContext,
+  demandChangeRequests, demandChangeComments, demandChangeApprovals, demandCollaborationSessions,
+  type DemandChangeRequest, type DemandChangeComment, type DemandChangeApproval, type DemandCollaborationSession,
+  type InsertDemandChangeRequest, type InsertDemandChangeComment, type InsertDemandChangeApproval, type InsertDemandCollaborationSession,
   errorLogs, errorReports,
   type ErrorLog, type ErrorReport,
   type InsertErrorLog, type InsertErrorReport,
@@ -1823,6 +1826,33 @@ export interface IStorage {
     recentMeetings: SmartKpiMeeting[];
     urgentActions: Array<{ type: string; description: string; dueDate: Date }>;
   }>;
+
+  // Collaborative Demand Management
+  // Demand Change Requests
+  getDemandChangeRequests(status?: string, requestType?: string): Promise<DemandChangeRequest[]>;
+  getDemandChangeRequest(id: number): Promise<DemandChangeRequest | undefined>;
+  createDemandChangeRequest(request: InsertDemandChangeRequest): Promise<DemandChangeRequest>;
+  updateDemandChangeRequest(id: number, request: Partial<InsertDemandChangeRequest>): Promise<DemandChangeRequest | undefined>;
+  deleteDemandChangeRequest(id: number): Promise<boolean>;
+  
+  // Demand Change Comments
+  getDemandChangeComments(requestId: number): Promise<DemandChangeComment[]>;
+  createDemandChangeComment(comment: InsertDemandChangeComment): Promise<DemandChangeComment>;
+  updateDemandChangeComment(id: number, comment: Partial<InsertDemandChangeComment>): Promise<DemandChangeComment | undefined>;
+  deleteDemandChangeComment(id: number): Promise<boolean>;
+  
+  // Demand Change Approvals
+  getDemandChangeApprovals(requestId: number): Promise<DemandChangeApproval[]>;
+  createDemandChangeApproval(approval: InsertDemandChangeApproval): Promise<DemandChangeApproval>;
+  updateDemandChangeApproval(id: number, approval: Partial<InsertDemandChangeApproval>): Promise<DemandChangeApproval | undefined>;
+  deleteDemandChangeApproval(id: number): Promise<boolean>;
+  
+  // Demand Collaboration Sessions
+  getDemandCollaborationSessions(organizerId?: number, status?: string): Promise<DemandCollaborationSession[]>;
+  getDemandCollaborationSession(id: number): Promise<DemandCollaborationSession | undefined>;
+  createDemandCollaborationSession(session: InsertDemandCollaborationSession): Promise<DemandCollaborationSession>;
+  updateDemandCollaborationSession(id: number, session: Partial<InsertDemandCollaborationSession>): Promise<DemandCollaborationSession | undefined>;
+  deleteDemandCollaborationSession(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements Partial<IStorage> {
@@ -15543,6 +15573,171 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db
       .delete(masterProductionSchedule)
       .where(eq(masterProductionSchedule.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Collaborative Demand Management Implementation
+  async getDemandChangeRequests(status?: string, requestType?: string): Promise<DemandChangeRequest[]> {
+    let query = this.db.select().from(demandChangeRequests);
+    
+    if (status || requestType) {
+      const conditions = [];
+      if (status) conditions.push(eq(demandChangeRequests.status, status));
+      if (requestType) conditions.push(eq(demandChangeRequests.requestType, requestType));
+      query = query.where(and(...conditions));
+    }
+    
+    return query.orderBy(desc(demandChangeRequests.createdAt));
+  }
+
+  async getDemandChangeRequest(id: number): Promise<DemandChangeRequest | undefined> {
+    const [request] = await this.db
+      .select()
+      .from(demandChangeRequests)
+      .where(eq(demandChangeRequests.id, id));
+    return request;
+  }
+
+  async createDemandChangeRequest(request: InsertDemandChangeRequest): Promise<DemandChangeRequest> {
+    // Generate request number
+    const count = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(demandChangeRequests);
+    
+    const requestNumber = `DCR-${new Date().getFullYear()}-${String(count[0].count + 1).padStart(3, '0')}`;
+
+    const [newRequest] = await this.db
+      .insert(demandChangeRequests)
+      .values({ ...request, requestNumber })
+      .returning();
+    return newRequest;
+  }
+
+  async updateDemandChangeRequest(id: number, request: Partial<InsertDemandChangeRequest>): Promise<DemandChangeRequest | undefined> {
+    const [updatedRequest] = await this.db
+      .update(demandChangeRequests)
+      .set({ ...request, updatedAt: new Date() })
+      .where(eq(demandChangeRequests.id, id))
+      .returning();
+    return updatedRequest;
+  }
+
+  async deleteDemandChangeRequest(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(demandChangeRequests)
+      .where(eq(demandChangeRequests.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Demand Change Comments
+  async getDemandChangeComments(requestId: number): Promise<DemandChangeComment[]> {
+    return this.db
+      .select()
+      .from(demandChangeComments)
+      .where(eq(demandChangeComments.requestId, requestId))
+      .orderBy(asc(demandChangeComments.createdAt));
+  }
+
+  async createDemandChangeComment(comment: InsertDemandChangeComment): Promise<DemandChangeComment> {
+    const [newComment] = await this.db
+      .insert(demandChangeComments)
+      .values(comment)
+      .returning();
+    return newComment;
+  }
+
+  async updateDemandChangeComment(id: number, comment: Partial<InsertDemandChangeComment>): Promise<DemandChangeComment | undefined> {
+    const [updatedComment] = await this.db
+      .update(demandChangeComments)
+      .set(comment)
+      .where(eq(demandChangeComments.id, id))
+      .returning();
+    return updatedComment;
+  }
+
+  async deleteDemandChangeComment(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(demandChangeComments)
+      .where(eq(demandChangeComments.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Demand Change Approvals
+  async getDemandChangeApprovals(requestId: number): Promise<DemandChangeApproval[]> {
+    return this.db
+      .select()
+      .from(demandChangeApprovals)
+      .where(eq(demandChangeApprovals.requestId, requestId))
+      .orderBy(asc(demandChangeApprovals.orderSequence));
+  }
+
+  async createDemandChangeApproval(approval: InsertDemandChangeApproval): Promise<DemandChangeApproval> {
+    const [newApproval] = await this.db
+      .insert(demandChangeApprovals)
+      .values(approval)
+      .returning();
+    return newApproval;
+  }
+
+  async updateDemandChangeApproval(id: number, approval: Partial<InsertDemandChangeApproval>): Promise<DemandChangeApproval | undefined> {
+    const [updatedApproval] = await this.db
+      .update(demandChangeApprovals)
+      .set(approval)
+      .where(eq(demandChangeApprovals.id, id))
+      .returning();
+    return updatedApproval;
+  }
+
+  async deleteDemandChangeApproval(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(demandChangeApprovals)
+      .where(eq(demandChangeApprovals.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Demand Collaboration Sessions
+  async getDemandCollaborationSessions(organizerId?: number, status?: string): Promise<DemandCollaborationSession[]> {
+    let query = this.db.select().from(demandCollaborationSessions);
+    
+    if (organizerId || status) {
+      const conditions = [];
+      if (organizerId) conditions.push(eq(demandCollaborationSessions.organizer, organizerId));
+      if (status) conditions.push(eq(demandCollaborationSessions.status, status));
+      query = query.where(and(...conditions));
+    }
+    
+    return query.orderBy(desc(demandCollaborationSessions.scheduledStart));
+  }
+
+  async getDemandCollaborationSession(id: number): Promise<DemandCollaborationSession | undefined> {
+    const [session] = await this.db
+      .select()
+      .from(demandCollaborationSessions)
+      .where(eq(demandCollaborationSessions.id, id));
+    return session;
+  }
+
+  async createDemandCollaborationSession(session: InsertDemandCollaborationSession): Promise<DemandCollaborationSession> {
+    const [newSession] = await this.db
+      .insert(demandCollaborationSessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+
+  async updateDemandCollaborationSession(id: number, session: Partial<InsertDemandCollaborationSession>): Promise<DemandCollaborationSession | undefined> {
+    const [updatedSession] = await this.db
+      .update(demandCollaborationSessions)
+      .set({ ...session, updatedAt: new Date() })
+      .where(eq(demandCollaborationSessions.id, id))
+      .returning();
+    return updatedSession;
+  }
+
+  async deleteDemandCollaborationSession(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(demandCollaborationSessions)
+      .where(eq(demandCollaborationSessions.id, id));
     return result.rowCount > 0;
   }
 }
