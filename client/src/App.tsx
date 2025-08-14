@@ -393,7 +393,7 @@ function Router() {
           </Route>
           
           <Route path="/planning-overview">
-            <ProtectedRoute feature="planning-overview" action="view">
+            <ProtectedRoute feature="production-scheduling" action="view">
               <PlanningOverview />
             </ProtectedRoute>
           </Route>
