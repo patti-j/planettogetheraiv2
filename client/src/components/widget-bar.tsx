@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  PanelTopClose
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -37,6 +38,7 @@ interface WidgetBarProps {
   isCollapsed?: boolean;
   onPositionChange?: (position: 'top' | 'bottom' | 'left' | 'right') => void;
   onToggleCollapse?: () => void;
+  onClose?: () => void;
   widgets?: Widget[];
   onWidgetUpdate?: (widgets: Widget[]) => void;
   className?: string;
@@ -77,6 +79,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
   isCollapsed = false,
   onPositionChange,
   onToggleCollapse,
+  onClose,
   widgets = defaultWidgets,
   onWidgetUpdate,
   className
@@ -339,14 +342,24 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                 )}
               </Button>
               {!isCollapsed && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfigOpen(true)}
-                  className="h-6 w-6 p-0"
-                >
-                  <Settings className="h-3 w-3" />
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfigOpen(true)}
+                    className="h-6 w-6 p-0"
+                  >
+                    <Settings className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClose}
+                    className="h-6 w-6 p-0 hover:bg-destructive/20 hover:text-destructive"
+                  >
+                    <PanelTopClose className="h-3 w-3" />
+                  </Button>
+                </>
               )}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import WidgetBar from './widget-bar';
+import WidgetBarToggle from './widget-bar-toggle';
 import { useWidgetBar } from '@/contexts/WidgetBarContext';
 
 interface WorkspaceLayoutProps {
@@ -9,10 +10,15 @@ interface WorkspaceLayoutProps {
 }
 
 const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ children, className }) => {
-  const { settings, updatePosition, toggleCollapse, updateWidgets } = useWidgetBar();
+  const { settings, updatePosition, toggleCollapse, toggleVisibility, updateWidgets } = useWidgetBar();
 
   if (!settings.isVisible) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className}>
+        {children}
+        <WidgetBarToggle />
+      </div>
+    );
   }
 
   const renderLayout = () => {
@@ -27,6 +33,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ children, className }
               isCollapsed={isCollapsed}
               onPositionChange={updatePosition}
               onToggleCollapse={toggleCollapse}
+              onClose={toggleVisibility}
               widgets={settings.widgets}
               onWidgetUpdate={updateWidgets}
             />
@@ -47,6 +54,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ children, className }
               isCollapsed={isCollapsed}
               onPositionChange={updatePosition}
               onToggleCollapse={toggleCollapse}
+              onClose={toggleVisibility}
               widgets={settings.widgets}
               onWidgetUpdate={updateWidgets}
             />
@@ -61,6 +69,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ children, className }
               isCollapsed={isCollapsed}
               onPositionChange={updatePosition}
               onToggleCollapse={toggleCollapse}
+              onClose={toggleVisibility}
               widgets={settings.widgets}
               onWidgetUpdate={updateWidgets}
             />
@@ -81,6 +90,7 @@ const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ children, className }
               isCollapsed={isCollapsed}
               onPositionChange={updatePosition}
               onToggleCollapse={toggleCollapse}
+              onClose={toggleVisibility}
               widgets={settings.widgets}
               onWidgetUpdate={updateWidgets}
             />
