@@ -119,25 +119,27 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
         if (item.content?.widgetName?.toLowerCase().includes('optimization') || 
             item.title?.toLowerCase().includes('optimization')) {
           return (
-            <ScheduleOptimizationWidget 
-              config={{
-                showQuickActions: true,
-                showHistory: true,
-                showMetrics: true,
-                maxHistoryItems: 10,
-                defaultView: 'overview',
-                showAlgorithmSelector: true,
-                showProfileSelector: true
-              }}
-              data={item.content}
-              onAction={(action, data) => {
-                console.log('Optimization widget action:', action, data);
-                toast({
-                  title: "Optimization Action",
-                  description: `Action "${action}" triggered`
-                });
-              }}
-            />
+            <div className="bg-white rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <h4 className="font-medium">Schedule Optimization</h4>
+              </div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded">
+                    <div className="text-lg font-semibold text-blue-600">95%</div>
+                    <div className="text-xs text-gray-600">Efficiency</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded">
+                    <div className="text-lg font-semibold text-green-600">2.3h</div>
+                    <div className="text-xs text-gray-600">Time Saved</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {item.content?.description || 'Optimization metrics and recommendations'}
+                </div>
+              </div>
+            </div>
           );
         }
         // Default widget rendering

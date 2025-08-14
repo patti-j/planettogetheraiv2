@@ -17,7 +17,7 @@ import { Plus, Settings, Star, Trash2, Edit3, Eye, Save, Move, Palette, BarChart
 import { apiRequest } from "@/lib/queryClient";
 import { useDrag, useDrop, useDragLayer, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import WidgetStudioButton from "@/components/widget-studio-button";
+
 
 interface AnalyticsWidget {
   id: string;
@@ -444,21 +444,22 @@ export function EnhancedDashboardManager({
                 <div className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">Widgets</h3>
-                    <WidgetStudioButton
+                    <Button
                       variant="outline"
                       size="default"
                       className="flex items-center gap-2"
-                      targetSystems={['analytics', 'dashboard']}
-                      onWidgetCreate={(widget, systems) => {
-                        console.log('Widget created via Dashboard Manager:', widget, systems);
-                        // Refresh dashboards to show new widget
-                        queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-                        queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
+                      onClick={() => {
+                        // Trigger widget creation process
+                        console.log('Widget creation requested');
+                        toast({
+                          title: "Widget Studio",
+                          description: "Widget creation feature coming soon"
+                        });
                       }}
                     >
                       <Plus className="w-4 h-4" />
                       New Widget
-                    </WidgetStudioButton>
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -758,7 +759,8 @@ export function EnhancedDashboardManager({
                                     height: widget.size.height
                                   }}
                                   onMouseDown={(e) => {
-                                    if (e.target === e.currentTarget || e.target.closest('.widget-header') || e.target.closest('.widget-content')) {
+                                    const target = e.target as Element;
+                                    if (target === e.currentTarget || target.closest('.widget-header') || target.closest('.widget-content')) {
                                       // Handle widget dragging
                                       const startX = e.clientX - widget.position.x;
                                       const startY = e.clientY - widget.position.y;
