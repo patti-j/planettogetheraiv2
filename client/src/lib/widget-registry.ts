@@ -177,8 +177,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'ATP/CTP Calculator',
     description: 'Available-to-Promise and Capable-to-Promise calculations',
     supportedPlatforms: ['both'],
-    sizeCategory: 'medium',
-    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
+    sizeCategory: 'large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'large' },
     configSchema: atpCtpConfigSchema,
     defaultConfig: { compact: false, view: 'expanded' }
   },
@@ -237,14 +237,12 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Production Order Status',
     description: 'Monitor production order progress',
     supportedPlatforms: ['both'],
-    sizeCategory: 'medium',
+    sizeCategory: 'large',
     widgetBarCompatibility: {
-      supported: true,
-      minWidth: 250,
-      minHeight: 150,
-      maxWidth: 350,
-      maxHeight: 220,
-      preferredSize: 'medium'
+      supported: false,
+      minWidth: 400,
+      minHeight: 300,
+      preferredSize: 'large'
     },
     defaultConfig: {}
   },

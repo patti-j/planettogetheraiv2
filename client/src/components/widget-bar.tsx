@@ -203,11 +203,14 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     onWidgetUpdate(items);
   };
 
-  // Filter widgets compatible with widget bar
+  // Filter widgets compatible with widget bar - only allow compact widgets
   const getWidgetBarCompatibleWidgets = () => {
     return getAvailableWidgets().filter(widget => {
       const compatibility = widget.metadata.widgetBarCompatibility;
-      return compatibility && compatibility.supported === true;
+      const sizeCategory = widget.metadata.sizeCategory;
+      return compatibility && 
+             compatibility.supported === true && 
+             sizeCategory === 'compact';
     });
   };
 
@@ -602,7 +605,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
           </DialogHeader>
           <div className="flex flex-col space-y-4 min-h-0">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Only widgets compatible with the widget bar are shown. Compatible widgets are compact and medium-sized.
+              Only compact widgets are shown. These widgets are designed to fit in the limited widget bar space.
             </div>
             <ScrollArea className="flex-1 max-h-[60vh]">
               <div className="space-y-2 pr-4">
