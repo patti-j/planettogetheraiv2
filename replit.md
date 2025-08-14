@@ -16,6 +16,14 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Recent Changes
+**2025-08-14**: Fixed mobile sign-in page layout issues
+- Changed fixed positioning to scrollable layout to prevent username field truncation
+- Added proper mobile viewport handling with safe area support
+- Implemented responsive design with compact spacing for mobile screens
+- Added mobile-specific input styling to prevent iOS Safari zoom
+- Enhanced virtual keyboard compatibility for better form accessibility
+
 ## System Architecture
 
 ### Navigation Architecture
@@ -56,7 +64,7 @@ Note on concurrent work:
 - **Role-Based Access Control**: Unified permission system with feature-action permissions.
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, comprehensive error handling, and reusable widget system.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.
-- **Mobile Responsiveness**: Mobile-first design.
+- **Mobile Responsiveness**: Mobile-first design with enhanced login page accessibility and proper viewport handling.
 - **Scaling Strategy**: Enterprise-grade production deployment with unlimited horizontal scaling.
 
 ## External Dependencies
