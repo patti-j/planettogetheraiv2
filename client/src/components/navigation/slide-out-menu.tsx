@@ -73,7 +73,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     items: group.features.filter(item => {
       // Skip permission check for common menu items that should always be visible
       // Including Smart KPI Tracking which should be accessible to all users
-      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule'];
       
       // Check permissions only if not in always visible list
       if (!alwaysVisibleItems.includes(item.label)) {
