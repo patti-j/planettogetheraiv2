@@ -234,22 +234,22 @@ export default function ScheduleOptimizationWidget({
         </div>
         
         {/* Last optimization result */}
-        {history.length > 0 && (
+        {schedulingHistory && schedulingHistory.length > 0 && (
           <div className="text-[10px] space-y-1 flex-1">
             <div className="flex items-center justify-between">
               <span className="text-foreground/60">Last Run</span>
               <Badge 
-                variant={history[0].status === 'completed' ? 'default' : 'secondary'} 
+                variant={schedulingHistory[0]?.status === 'completed' ? 'default' : 'secondary'} 
                 className="h-3 px-1 text-[8px]"
               >
-                {history[0].status}
+                {schedulingHistory[0]?.status || 'Unknown'}
               </Badge>
             </div>
-            {history[0].status === 'completed' && (
+            {schedulingHistory[0]?.status === 'completed' && (
               <div className="flex items-center gap-2">
                 <span className="text-foreground/80">Score:</span>
                 <span className="font-medium text-green-600">
-                  {history[0].performanceScore || 'N/A'}%
+                  {schedulingHistory[0]?.performanceMetrics?.score || 'N/A'}%
                 </span>
               </div>
             )}
