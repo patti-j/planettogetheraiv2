@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowUp, ArrowDown, Play, Pause, Check, Clock, AlertTriangle, Settings } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowUp, ArrowDown, Play, Pause, Check, Clock, AlertTriangle, Settings, Columns, Wrench, X } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ interface OperationSequencerWidgetProps {
     showResourceFilter?: boolean;
     showStatusFilter?: boolean;
     showOptimizationFlags?: boolean;
+    multiResourceView?: boolean;
   };
   isDesktop?: boolean;
 }
@@ -175,7 +177,8 @@ export default function OperationSequencerWidget({
     allowReorder = true,
     showResourceFilter = true,
     showStatusFilter = true,
-    showOptimizationFlags = true
+    showOptimizationFlags = true,
+    multiResourceView = false
   } = configuration;
 
   // Fetch real operations data from the API
@@ -220,6 +223,9 @@ export default function OperationSequencerWidget({
     status: 'all'
   });
 
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
+  const [isMultiResourceMode, setIsMultiResourceMode] = useState(multiResourceView);
+
   const moveOperation = (dragIndex: number, hoverIndex: number) => {
     if (!allowReorder) return;
     
@@ -240,6 +246,27 @@ export default function OperationSequencerWidget({
 
   const uniqueResources = [...new Set(operations.map(op => op.resource))];
   const uniqueStatuses = [...new Set(operations.map(op => op.status))];
+
+  // Group operations by resource for multi-resource view
+  const operationsByResource = React.useMemo(() => {
+    const grouped: Record<string, Operation[]> = {};
+    operations.forEach(op => {
+      if (!grouped[op.resource]) {
+        grouped[op.resource] = [];
+      }
+      grouped[op.resource].push(op);
+    });
+    return grouped;
+  }, [operations]);
+
+  // Handle resource selection for multi-resource view
+  const handleResourceToggle = (resource: string) => {
+    setSelectedResources(prev => 
+      prev.includes(resource) 
+        ? prev.filter(r => r !== resource)
+        : [...prev, resource]
+    );
+  };
 
   if (operationsLoading) {
     return (
@@ -263,8 +290,53 @@ export default function OperationSequencerWidget({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-4">
-        {/* Filters */}
-        {(showResourceFilter || showStatusFilter) && (
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isMultiResourceMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsMultiResourceMode(!isMultiResourceMode)}
+              className="flex items-center gap-2"
+            >
+              <Columns className="w-4 h-4" />
+              Multi-Resource View
+            </Button>
+          </div>
+        </div>
+
+        {/* Multi-Resource Selector (only shown in multi-resource mode) */}
+        {isMultiResourceMode && (
+          <div className="border rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Wrench className="w-4 h-4" />
+              <span className="text-sm font-medium">Select Resources to Compare:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {uniqueResources.map(resource => (
+                <div key={resource} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`resource-${resource}`}
+                    checked={selectedResources.includes(resource)}
+                    onCheckedChange={() => handleResourceToggle(resource)}
+                  />
+                  <label 
+                    htmlFor={`resource-${resource}`}
+                    className="text-sm cursor-pointer"
+                  >
+                    {resource}
+                  </label>
+                  <Badge variant="outline" className="text-xs">
+                    {operationsByResource[resource]?.length || 0}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Single Resource Filters (only shown in single resource mode) */}
+        {!isMultiResourceMode && (showResourceFilter || showStatusFilter) && (
           <div className="flex flex-wrap items-center gap-2">
             {showResourceFilter && (
               <Select 
@@ -311,31 +383,115 @@ export default function OperationSequencerWidget({
           </div>
         )}
 
-        {/* Operations List */}
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-          {filteredOperations.map((operation, index) => (
-            <DraggableOperation
-              key={operation.id}
-              operation={operation}
-              index={index}
-              moveOperation={moveOperation}
-              allowReorder={allowReorder}
-              view={view}
-            />
-          ))}
-        </div>
+        {/* Main Content Area */}
+        {isMultiResourceMode ? (
+          /* Multi-Resource Side-by-Side View */
+          <div className="flex h-full min-h-0 max-h-[60vh] overflow-hidden">
+            {selectedResources.length === 0 ? (
+              <div className="flex-1 p-8">
+                <Card>
+                  <div className="p-6 text-center">
+                    <Columns className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 mb-2">No resources selected</p>
+                    <p className="text-sm text-gray-400">Select resources above to see operations side by side</p>
+                  </div>
+                </Card>
+              </div>
+            ) : (
+              selectedResources.map(resource => {
+                const resourceOperations = operationsByResource[resource] || [];
+                
+                return (
+                  <div key={resource} className="flex-1 min-w-64 border-r border-gray-200 last:border-r-0">
+                    {/* Resource Header */}
+                    <div className="bg-gray-50 border-b border-gray-200 p-3 sticky top-0 z-10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="w-4 h-4 text-gray-600" />
+                          <div>
+                            <h3 className="font-medium text-sm text-gray-900">
+                              {resource}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {resourceOperations.length} ops
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResourceToggle(resource)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Resource Operations */}
+                    <div className="p-2 space-y-2 h-full overflow-y-auto">
+                      {resourceOperations.length === 0 ? (
+                        <div className="text-center py-8">
+                          <AlertTriangle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">No operations</p>
+                        </div>
+                      ) : (
+                        resourceOperations.map((operation, index) => (
+                          <DraggableOperation
+                            key={operation.id}
+                            operation={operation}
+                            index={index}
+                            moveOperation={moveOperation}
+                            allowReorder={allowReorder}
+                            view={view}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        ) : (
+          /* Single Resource List View */
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {filteredOperations.map((operation, index) => (
+              <DraggableOperation
+                key={operation.id}
+                operation={operation}
+                index={index}
+                moveOperation={moveOperation}
+                allowReorder={allowReorder}
+                view={view}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Summary */}
         <div className="pt-3 border-t">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Total Operations:</span>
-              <div className="font-medium">{filteredOperations.length}</div>
+              <div className="font-medium">
+                {isMultiResourceMode 
+                  ? selectedResources.reduce((sum, resource) => sum + (operationsByResource[resource]?.length || 0), 0)
+                  : filteredOperations.length
+                }
+              </div>
             </div>
             <div>
               <span className="text-muted-foreground">Total Duration:</span>
               <div className="font-medium">
-                {filteredOperations.reduce((sum, op) => sum + op.estimatedDuration, 0)}h
+                {isMultiResourceMode 
+                  ? selectedResources.reduce((sum, resource) => 
+                      sum + (operationsByResource[resource]?.reduce((opSum, op) => opSum + op.estimatedDuration, 0) || 0), 0
+                    )
+                  : filteredOperations.reduce((sum, op) => sum + op.estimatedDuration, 0)
+                }h
               </div>
             </div>
           </div>

@@ -234,7 +234,8 @@ export default function ScheduleSequencesPage() {
               allowReorder: true,
               showResourceFilter: true,
               showStatusFilter: true,
-              showOptimizationFlags: true
+              showOptimizationFlags: true,
+              multiResourceView: true
             }}
             isDesktop={true}
           />
