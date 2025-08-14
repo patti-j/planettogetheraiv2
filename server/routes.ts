@@ -2395,7 +2395,7 @@ Rules:
         FROM pt_job_operations jo
         LEFT JOIN pt_jobs j ON jo.job_external_id = j.external_id
         LEFT JOIN pt_manufacturing_orders mo ON jo.mo_external_id = mo.external_id
-        LEFT JOIN pt_job_resources jr ON (jr.job_external_id = jo.job_external_id AND jr.op_external_id = jo.external_id)
+        LEFT JOIN pt_job_resources jr ON (jr.job_external_id = jo.job_external_id AND jr.operation_external_id = jo.external_id)
         LEFT JOIN pt_resources r ON jr.resource_external_id = r.external_id
         LEFT JOIN pt_job_activities ja ON (ja.job_external_id = jo.job_external_id AND ja.op_external_id = jo.external_id)
         ORDER BY 

@@ -1,9 +1,11 @@
 // Scheduler-style configuration for Resource-Based View
 // Using Gantt in resource scheduling mode similar to Bryntum Scheduler
 export const ganttConfig = {
-  // Column configuration for resource grid (resources in left pane)
+  // Enhanced column configuration for resource grid with PT data
   columns: [
-    { type: 'name', field: 'name', width: 250, text: 'Resource' }
+    { type: 'name', field: 'name', width: 200, text: 'Resource' },
+    { field: 'type', width: 100, text: 'Type' },
+    { field: 'capacity', width: 80, text: 'Capacity', align: 'right' }
   ],
   
   // View configuration optimized for resource scheduling
@@ -67,59 +69,107 @@ export function formatGanttData(operations: any[], resources: any[]) {
   const formattedTasks = operations.map(op => {
     // Ensure valid dates
     const startDate = op.startTime ? new Date(op.startTime) : new Date();
-    const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + 3600000);
+    const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + (op.duration || 60) * 60000);
     
-    // Create comprehensive display name with PT data (Job Name + Operation Name)
+    // Create comprehensive display name with PT data
     const jobName = op.jobName || '';
     const operationName = op.operationName || op.name || `Operation ${op.id}`;
     const manufacturingOrderName = op.manufacturingOrderName || '';
     
-    // Format: "Job Name: Operation Name" or include MO name if different
+    // Enhanced display name with PT hierarchy: Job → Operation → Activity details
     let displayName = '';
     if (jobName && operationName) {
       displayName = `${jobName}: ${operationName}`;
-      // Add MO name if it's different from job name and exists
       if (manufacturingOrderName && manufacturingOrderName !== jobName) {
-        displayName += ` (${manufacturingOrderName})`;
+        displayName += ` (MO: ${manufacturingOrderName})`;
       }
     } else if (operationName) {
       displayName = operationName;
     } else {
       displayName = `Operation ${op.id}`;
     }
+
+    // Add sequence information for better ordering
+    if (op.sequence && op.sequence > 0) {
+      displayName = `${op.sequence}. ${displayName}`;
+    }
+
+    // Add timing breakdown in tooltip/description
+    const timingDetails = [];
+    if (op.setupTime > 0) timingDetails.push(`Setup: ${Math.round(op.setupTime)}min`);
+    if (op.cycleTime > 0) timingDetails.push(`Cycle: ${Math.round(op.cycleTime)}min`);
+    if (op.cleanupTime > 0) timingDetails.push(`Cleanup: ${Math.round(op.cleanupTime)}min`);
+    if (op.postProcessTime > 0) timingDetails.push(`Post: ${Math.round(op.postProcessTime)}min`);
+    
+    const timingInfo = timingDetails.length > 0 ? `\nTiming: ${timingDetails.join(', ')}` : '';
+    const quantityInfo = op.requiredQuantity > 0 ? `\nQty: ${op.requiredQuantity}` : '';
+    const activityDescription = `${op.description || ''}${timingInfo}${quantityInfo}`;
     
     return {
       id: op.id,
       name: displayName,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      duration: Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 3600000)), // Duration in hours
-      durationUnit: 'hour',
+      duration: Math.max(1, Math.round(op.duration || 60)), // Duration in minutes
+      durationUnit: 'minute',
       
-      // Ensure resource assignment for resource-based view
+      // Enhanced resource assignment using PT data
       resourceId: op.assignedResourceId || op.workCenterId || resources[0]?.id,
       
       // Task configuration
-      manuallyScheduled: true, // Manual scheduling for resource view
+      manuallyScheduled: true,
       constraintType: null,
       constraintDate: null,
       
-      // Custom fields for our application
+      // Enhanced PT data fields
       status: op.status || 'scheduled',
-      orderId: op.productionOrderId || null,
-      orderName: op.productionOrderName || null,
-      orderNumber: op.productionOrderNumber || null,
+      orderId: op.manufacturingOrderId || null,
+      orderName: op.manufacturingOrderName || null,
+      orderNumber: op.manufacturingOrderName || null,
       workCenterId: op.workCenterId || null,
+      workCenterName: op.workCenterName || op.assignedResourceName,
+      
+      // PT-specific fields for detailed display
+      jobId: op.jobId,
+      jobName: op.jobName,
+      operationId: op.operationId,
+      operationName: op.operationName,
+      sequence: op.sequence || 0,
+      productCode: op.productCode || '',
+      outputName: op.outputName || '',
+      requiredQuantity: op.requiredQuantity || 0,
+      
+      // Activity timing breakdown
+      setupTime: op.setupTime || 0,
+      cycleTime: op.cycleTime || 0,
+      cleanupTime: op.cleanupTime || 0,
+      postProcessTime: op.postProcessTime || 0,
+      
+      // Progress and quality
+      completionPercentage: op.completionPercentage || 0,
+      qualityCheckRequired: op.qualityCheckRequired || false,
+      qualityStatus: op.qualityStatus || 'pending',
+      
+      // Scheduling constraints
+      onHold: op.onHold || false,
+      holdReason: op.holdReason || '',
+      priority: op.priority || 5,
       
       // Task appearance and behavior
-      draggable: true,
-      resizable: true,
-      cls: `task-status-${op.status || 'scheduled'}`,
+      draggable: !op.onHold,
+      resizable: !op.onHold,
+      cls: `task-status-${(op.status || 'scheduled').replace(/[^a-zA-Z0-9]/g, '-')} ${op.onHold ? 'task-on-hold' : ''}`,
       
-      // Color based on status
-      eventColor: op.status === 'completed' ? 'green' : 
-                 op.status === 'in-progress' ? 'blue' : 
-                 op.status === 'delayed' ? 'red' : 'gray'
+      // Enhanced status-based coloring
+      eventColor: op.onHold ? '#FFA500' : // Orange for on hold
+                 op.status === 'completed' ? '#4CAF50' : // Green
+                 op.status === 'in_progress' ? '#2196F3' : // Blue  
+                 op.status === 'delayed' ? '#F44336' : // Red
+                 op.priority <= 2 ? '#9C27B0' : // Purple for high priority
+                 '#757575', // Gray for scheduled
+      
+      // Custom tooltip with comprehensive PT information
+      note: activityDescription
     };
   });
   

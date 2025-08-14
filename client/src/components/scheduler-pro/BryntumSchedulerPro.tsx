@@ -30,9 +30,9 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
     queryKey: ['/api/resources']
   });
 
-  // Fetch operations
+  // Fetch PT operations (jobs, operations, and activities)
   const { data: operations, isLoading: loadingOperations } = useQuery<any[]>({
-    queryKey: ['/api/operations']
+    queryKey: ['/api/pt-operations']
   });
 
   const isLoading = loadingOrders || loadingResources || loadingOperations;
@@ -55,47 +55,96 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
     
     console.log('Scheduler resources:', schedulerResources);
 
-    // Transform operations to events
+    // Transform PT operations to events with comprehensive job, operation, and activity data
     const schedulerEvents = operations.map((operation: any, index: number) => {
-      // Parse dates properly
-      const startDate = operation.startTime ? new Date(operation.startTime) : new Date(Date.now() + index * 24 * 60 * 60 * 1000);
+      // Parse dates from PT data
+      const startDate = operation.startTime ? new Date(operation.startTime) : new Date(Date.now() + index * 4 * 60 * 60 * 1000);
       const endDate = operation.endTime ? new Date(operation.endTime) : 
-                     new Date(startDate.getTime() + (operation.duration || operation.standardDuration || 120) * 60 * 1000);
+                     new Date(startDate.getTime() + (operation.duration || 120) * 60 * 1000);
       
-      // Generate vibrant colors similar to the core app
-      const colors = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1', '#FF7043', '#9E9D24'];
-      const colorIndex = index % colors.length;
+      // Enhanced colors based on PT status and priority
+      const getEventColor = (op: any) => {
+        if (op.onHold) return '#FFA500'; // Orange for on hold
+        if (op.status === 'completed') return '#4CAF50'; // Green
+        if (op.status === 'in_progress') return '#2196F3'; // Blue
+        if (op.status === 'delayed') return '#F44336'; // Red
+        if (op.priority <= 2) return '#9C27B0'; // Purple for high priority
+        return '#757575'; // Gray for scheduled
+      };
+      
+      // Create comprehensive display name: Sequence. Job: Operation (MO)
+      const displayName = [
+        operation.sequence > 0 ? `${operation.sequence}.` : '',
+        operation.jobName || 'Job',
+        operation.operationName || 'Operation',
+        operation.manufacturingOrderName && operation.manufacturingOrderName !== operation.jobName ? 
+          `(MO: ${operation.manufacturingOrderName})` : ''
+      ].filter(Boolean).join(' ');
+      
+      // Enhanced description with timing breakdown
+      const timingDetails = [];
+      if (operation.setupTime > 0) timingDetails.push(`Setup: ${Math.round(operation.setupTime)}min`);
+      if (operation.cycleTime > 0) timingDetails.push(`Cycle: ${Math.round(operation.cycleTime)}min`);
+      if (operation.cleanupTime > 0) timingDetails.push(`Cleanup: ${Math.round(operation.cleanupTime)}min`);
+      if (operation.postProcessTime > 0) timingDetails.push(`Post: ${Math.round(operation.postProcessTime)}min`);
+      
+      const description = [
+        operation.description || '',
+        timingDetails.length > 0 ? `Timing: ${timingDetails.join(', ')}` : '',
+        operation.requiredQuantity > 0 ? `Quantity: ${operation.requiredQuantity}` : '',
+        operation.productCode ? `Product: ${operation.productCode}` : ''
+      ].filter(Boolean).join('\n');
       
       return {
-        id: `operation-${operation.id}`,
-        name: `${operation.name || operation.operationName || 'Operation'} [${operation.productionOrderId || operation.id}]`,
+        id: `pt-operation-${operation.id}`,
+        name: displayName,
         startDate: startDate,
         endDate: endDate,
-        duration: operation.duration || operation.standardDuration || 120,
+        duration: operation.duration || 120,
         durationUnit: 'minute',
-        effort: operation.duration || operation.standardDuration || 120,
+        effort: operation.duration || 120,
         effortUnit: 'minute',
         percentDone: operation.completionPercentage || 0,
         priority: operation.priority || 5,
-        constraintType: 'muststarton',
-        constraintDate: startDate,
-        eventColor: colors[colorIndex],
-        cls: 'custom-event',
-        status: operation.status,
-        productionOrderId: operation.productionOrderId || operation.routingId,
-        description: operation.description || `${operation.operationName} - ${operation.status}`
+        constraintType: operation.onHold ? 'muststarton' : null,
+        constraintDate: operation.onHold ? startDate : null,
+        eventColor: getEventColor(operation),
+        cls: `pt-event ${operation.onHold ? 'on-hold' : ''} status-${(operation.status || 'scheduled').replace(/[^a-zA-Z0-9]/g, '-')}`,
+        
+        // PT-specific data
+        jobId: operation.jobId,
+        jobName: operation.jobName,
+        operationId: operation.operationId,
+        operationName: operation.operationName,
+        manufacturingOrderId: operation.manufacturingOrderId,
+        manufacturingOrderName: operation.manufacturingOrderName,
+        sequence: operation.sequence || 0,
+        productCode: operation.productCode || '',
+        outputName: operation.outputName || '',
+        requiredQuantity: operation.requiredQuantity || 0,
+        onHold: operation.onHold || false,
+        holdReason: operation.holdReason || '',
+        
+        // Activity timing breakdown
+        setupTime: operation.setupTime || 0,
+        cycleTime: operation.cycleTime || 0,
+        cleanupTime: operation.cleanupTime || 0,
+        postProcessTime: operation.postProcessTime || 0,
+        
+        status: operation.status || 'scheduled',
+        description: description
       };
     });
 
-    // Create assignments (link operations to resources)
-    // Use workCenterId or assignedResourceId for resource mapping
+    // Create assignments (link PT operations to resources)
+    // Use assignedResourceId or workCenterId from PT data
     const schedulerAssignments = operations
-      .filter((op: any) => op.workCenterId || op.assignedResourceId)
+      .filter((op: any) => op.assignedResourceId || op.workCenterId)
       .map((operation: any) => ({
-        id: `assignment-${operation.id}`,
-        eventId: `operation-${operation.id}`,
-        resourceId: `resource-${operation.workCenterId || operation.assignedResourceId}`,
-        units: 100 // Percentage of resource capacity used
+        id: `pt-assignment-${operation.id}`,
+        eventId: `pt-operation-${operation.id}`,
+        resourceId: `resource-${operation.assignedResourceId || operation.workCenterId}`,
+        units: operation.onHold ? 0 : 100 // No capacity used if on hold
       }));
     
     return {

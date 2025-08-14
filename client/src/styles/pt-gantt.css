@@ -1,0 +1,139 @@
+/* PT Gantt Custom Styles for Jobs, Operations, and Activities */
+
+/* PT Event Styling */
+.pt-event {
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pt-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* On Hold Events */
+.pt-event.on-hold {
+  background: repeating-linear-gradient(
+    45deg,
+    #FFA500,
+    #FFA500 5px,
+    #FFB84D 5px,
+    #FFB84D 10px
+  );
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Status-based styling */
+.status-scheduled {
+  background-color: #757575 !important;
+  border-left: 4px solid #424242;
+}
+
+.status-in-progress, .status-in_progress {
+  background-color: #2196F3 !important;
+  border-left: 4px solid #1976D2;
+}
+
+.status-completed {
+  background-color: #4CAF50 !important;
+  border-left: 4px solid #388E3C;
+}
+
+.status-delayed {
+  background-color: #F44336 !important;
+  border-left: 4px solid #D32F2F;
+}
+
+/* High Priority Events */
+.pt-event[data-priority="1"], 
+.pt-event[data-priority="2"] {
+  border-left: 4px solid #9C27B0 !important;
+  background: linear-gradient(135deg, #9C27B0 0%, #AB47BC 100%) !important;
+}
+
+/* Resource Row Styling */
+.resource-row {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.resource-row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Gantt Timeline Enhancements */
+.b-gantt-task-content {
+  font-size: 12px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Operation Sequence Badge */
+.operation-sequence {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+/* Timing Breakdown Tooltip */
+.timing-breakdown {
+  display: none;
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+.pt-event:hover .timing-breakdown {
+  display: block;
+}
+
+/* Manufacturing Order Badge */
+.mo-badge {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 9px;
+  margin-left: 4px;
+}
+
+/* Job Grouping Colors */
+.job-group-1 { border-top: 3px solid #4285F4; }
+.job-group-2 { border-top: 3px solid #DB4437; }
+.job-group-3 { border-top: 3px solid #F4B400; }
+.job-group-4 { border-top: 3px solid #0F9D58; }
+.job-group-5 { border-top: 3px solid #AB47BC; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .b-gantt-task-content {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  
+  .operation-sequence {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+  
+  .mo-badge {
+    font-size: 8px;
+    padding: 1px 2px;
+  }
+}

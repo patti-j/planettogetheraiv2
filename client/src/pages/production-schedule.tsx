@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical } from 'lucide-react';
 
+// Import PT Gantt styles
+import '../styles/pt-gantt.css';
+
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { usePageEditor, DEFAULT_WIDGET_DEFINITIONS } from '@/hooks/use-page-editor';
@@ -102,8 +105,8 @@ export default function ProductionSchedulePage() {
     enabled: canViewSchedule
   });
 
-  // Use PT operations endpoint for authentic PT import data
-  const { data: operations, isLoading: operationsLoading, refetch: refetchOperations } = useQuery({
+  // Use PT operations endpoint for authentic PT import data with jobs, operations, and activities
+  const { data: ptOperations, isLoading: operationsLoading, refetch: refetchOperations } = useQuery({
     queryKey: ['/api/pt-operations'],
     enabled: canViewSchedule
   });
@@ -571,9 +574,28 @@ export default function ProductionSchedulePage() {
                 )}
               </CardHeader>
               <CardContent className="p-0">
-                {/* Resource utilization summary */}
-                {!ordersLoading && !operationsLoading && !resourcesLoading && resources && (
-                  <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/20 border-b">
+                {/* PT Operations Summary - Enhanced with Jobs, Operations, Activities breakdown */}
+                {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources && (
+                  <div className="px-4 py-3 bg-gradient-to-r from-blue-50 via-purple-50 to-green-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-green-950/30 border-b">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                      <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                        <div className="text-lg font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set(ptOperations.map(op => op.jobId)).size : 0}</div>
+                        <div className="text-xs text-muted-foreground">Unique Jobs</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                        <div className="text-lg font-bold text-green-600">{Array.isArray(ptOperations) ? ptOperations.length : 0}</div>
+                        <div className="text-xs text-muted-foreground">Operations</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                        <div className="text-lg font-bold text-orange-600">{Array.isArray(ptOperations) ? ptOperations.filter(op => op.setupTime > 0 || op.cycleTime > 0).length : 0}</div>
+                        <div className="text-xs text-muted-foreground">Activities</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
+                        <div className="text-lg font-bold text-red-600">{Array.isArray(ptOperations) ? ptOperations.filter(op => op.onHold).length : 0}</div>
+                        <div className="text-xs text-muted-foreground">On Hold</div>
+                      </div>
+                    </div>
+                    
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-4">
                         <div className="text-sm">
@@ -581,26 +603,26 @@ export default function ProductionSchedulePage() {
                           <span className="ml-2">{Array.isArray(resources) ? resources.filter((r: any) => r.status === 'active' || !r.status).length : 0} / {Array.isArray(resources) ? resources.length : 0}</span>
                         </div>
                         <div className="text-sm">
-                          <span className="font-semibold text-green-600">Average Utilization:</span> 
-                          <span className="ml-2">{Math.round((Array.isArray(operations) ? operations.length : 0) / (Array.isArray(resources) ? resources.length : 1) * 20)}%</span>
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-semibold text-orange-600">Operations Scheduled:</span> 
-                          <span className="ml-2">{Array.isArray(operations) ? operations.length : 0}</span>
+                          <span className="font-semibold text-purple-600">Avg Load:</span> 
+                          <span className="ml-2">{Math.round((Array.isArray(ptOperations) ? ptOperations.length : 0) / (Array.isArray(resources) ? resources.length : 1) * 100 / 8)}%</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          <span>Available</span>
+                          <span>Completed</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          <span>In Progress</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                          <span>Scheduled</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                          <span>Busy</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                          <span>Maintenance</span>
+                          <span>On Hold</span>
                         </div>
                       </div>
                     </div>
@@ -618,7 +640,7 @@ export default function ProductionSchedulePage() {
                   <div className="flex items-center justify-center h-96">
                     <div className="text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading Resource Schedule...</p>
+                      <p className="text-muted-foreground">Loading PT operations data (jobs, operations, activities)...</p>
                     </div>
                   </div>
                 )}
@@ -654,7 +676,7 @@ export default function ProductionSchedulePage() {
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
               {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                 <BryntumGanttWrapper
-                  operations={operations as any || []}
+                  operations={ptOperations as any || []}
                   resources={resources as any || []}
                   onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
                     console.log('Moving operation:', operationId, 'to resource:', newResourceId);
@@ -924,7 +946,7 @@ export default function ProductionSchedulePage() {
             {Array.isArray(productionOrders) ? productionOrders.length : 0} {isMobile ? 'Orders' : 'Production Orders'}
           </span>
           <span>
-            {Array.isArray(operations) ? operations.length : 0} Operations
+            {Array.isArray(ptOperations) ? ptOperations.length : 0} Operations
           </span>
           <span>
             {Array.isArray(resources) ? resources.length : 0} Resources
