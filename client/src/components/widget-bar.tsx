@@ -229,13 +229,6 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                 </div>
               ) : (
                 <div className="h-full flex flex-col relative">
-                  {/* Minimal Widget Label */}
-                  <div className="absolute top-1 left-2 right-6 z-10">
-                    <span className="text-[10px] font-medium text-foreground/60 truncate block bg-background/80 rounded px-1 backdrop-blur-sm">
-                      {widget.title}
-                    </span>
-                  </div>
-
                   {/* Close Button Only */}
                   <Button
                     variant="ghost"
@@ -253,7 +246,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   />
 
                   {/* Widget Content - Full Area */}
-                  <div className="flex-1 overflow-auto pt-4 p-1">
+                  <div className="flex-1 overflow-auto p-1">
                     <Component 
                       {...widget.config}
                       isCompact={true}

@@ -263,12 +263,12 @@ export default function ScheduleOptimizationWidget({
   if (viewMode === 'compact') {
     return (
       <div className="h-full p-1.5 flex flex-col justify-center space-y-1">
-        {/* Simple content without header */}
-        <div className="flex items-center justify-between">
+        {/* Simple content without title */}
+        <div className="flex justify-center">
           <Button 
             size="sm" 
             variant="outline" 
-            className="h-4 px-1.5 text-[8px] flex items-center gap-1"
+            className="h-5 px-2 text-[9px] flex items-center gap-1"
             onClick={() => {
               if (selectedAlgorithm && selectedProfile) {
                 optimizationMutation.mutate({
@@ -281,15 +281,12 @@ export default function ScheduleOptimizationWidget({
             disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
           >
             {optimizationMutation.isPending ? (
-              <Loader2 className="h-2 w-2 animate-spin" />
+              <Loader2 className="h-2.5 w-2.5 animate-spin" />
             ) : (
-              <PlayCircle className="h-2 w-2" />
+              <PlayCircle className="h-2.5 w-2.5" />
             )}
-            <span>Run</span>
+            <span>Optimize</span>
           </Button>
-          <div className="text-[8px] text-muted-foreground">
-            Optimizer
-          </div>
         </div>
         
         {schedulingHistory && schedulingHistory.length > 0 && (
