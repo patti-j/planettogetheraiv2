@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -86,9 +86,112 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
   const [expandedWidget, setExpandedWidget] = useState<string | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  const [dynamicSizes, setDynamicSizes] = useState<Record<string, string>>({});
 
   const isHorizontal = position === 'top' || position === 'bottom';
   const isVertical = position === 'left' || position === 'right';
+
+  // Monitor container dimensions for dynamic sizing
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateDimensions();
+    
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // Calculate dynamic widget sizes based on container size and widget count
+  const calculateDynamicSizes = useCallback(() => {
+    if (isCollapsed || !containerDimensions.width || !containerDimensions.height) {
+      return {};
+    }
+
+    const visibleWidgets = widgets.filter(w => w.size);
+    const totalWidgets = visibleWidgets.length;
+    
+    if (totalWidgets === 0) return {};
+
+    // Available space calculation
+    const availableSpace = isHorizontal 
+      ? containerDimensions.width - 120 // Account for padding and controls
+      : containerDimensions.height - 120;
+
+    const newSizes: Record<string, string> = {};
+
+    if (isHorizontal) {
+      // Horizontal layout - distribute width
+      const baseWidgetWidth = Math.max(200, Math.floor(availableSpace / totalWidgets));
+      const maxWidgetWidth = Math.min(400, baseWidgetWidth + 100);
+      
+      visibleWidgets.forEach((widget) => {
+        let width;
+        
+        // Adjust size based on widget priority and original size preference
+        switch (widget.size) {
+          case 'small':
+            width = Math.max(180, Math.min(280, Math.floor(baseWidgetWidth * 0.8)));
+            break;
+          case 'large':
+            width = Math.min(maxWidgetWidth, Math.floor(baseWidgetWidth * 1.3));
+            break;
+          default: // medium
+            width = baseWidgetWidth;
+        }
+        
+        // Ensure widget doesn't get too cramped
+        if (totalWidgets > 4 && width < 220) {
+          width = 220;
+        }
+        
+        newSizes[widget.id] = `w-[${width}px]`;
+      });
+    } else {
+      // Vertical layout - distribute height  
+      const baseWidgetHeight = Math.max(150, Math.floor(availableSpace / totalWidgets));
+      const maxWidgetHeight = Math.min(300, baseWidgetHeight + 80);
+      
+      visibleWidgets.forEach((widget) => {
+        let height;
+        
+        switch (widget.size) {
+          case 'small':
+            height = Math.max(120, Math.min(200, Math.floor(baseWidgetHeight * 0.7)));
+            break;
+          case 'large':
+            height = Math.min(maxWidgetHeight, Math.floor(baseWidgetHeight * 1.4));
+            break;
+          default: // medium
+            height = baseWidgetHeight;
+        }
+        
+        if (totalWidgets > 3 && height < 160) {
+          height = 160;
+        }
+        
+        newSizes[widget.id] = `h-[${height}px]`;
+      });
+    }
+
+    return newSizes;
+  }, [widgets, containerDimensions, isHorizontal, isCollapsed]);
+
+  // Update dynamic sizes when dependencies change
+  useEffect(() => {
+    const newSizes = calculateDynamicSizes();
+    setDynamicSizes(newSizes);
+  }, [calculateDynamicSizes]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination || !onWidgetUpdate) return;
@@ -143,9 +246,16 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     }
   };
 
-  const getWidgetSizeClass = (size: string, position: string) => {
+  const getWidgetSizeClass = (widget: Widget) => {
     if (isCollapsed) return '';
     
+    // Use dynamic size if available, otherwise fall back to static sizes
+    const dynamicSize = dynamicSizes[widget.id];
+    if (dynamicSize) {
+      return dynamicSize;
+    }
+    
+    // Fallback static sizes
     const sizeMap = {
       horizontal: {
         small: 'w-48',
@@ -159,7 +269,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
       }
     };
     
-    return isHorizontal ? sizeMap.horizontal[size] : sizeMap.vertical[size];
+    return isHorizontal ? sizeMap.horizontal[widget.size] : sizeMap.vertical[widget.size];
   };
 
   const renderWidget = (widget: Widget, index: number) => {
@@ -180,7 +290,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
             {...provided.draggableProps}
             className={cn(
               "flex-shrink-0",
-              getWidgetSizeClass(widget.size, position),
+              getWidgetSizeClass(widget),
               snapshot.isDragging && "opacity-50 z-50"
             )}
           >
@@ -235,6 +345,17 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                     <Component 
                       {...widget.config}
                       isCompact={!isExpanded}
+                      configuration={{
+                        ...widget.config,
+                        view: isExpanded ? 'detailed' : 'compact',
+                        isCompact: !isExpanded,
+                        maxItems: isExpanded ? 10 : 3,
+                        showTrends: true,
+                        showTargets: widget.config.showTargets !== false,
+                        dynamicResize: true,
+                        containerWidth: containerDimensions.width,
+                        containerHeight: containerDimensions.height
+                      }}
                     />
                   </div>
                 </div>
@@ -334,7 +455,10 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                     {(provided) => (
                       <div
                         {...provided.droppableProps}
-                        ref={provided.innerRef}
+                        ref={(el) => {
+                          provided.innerRef(el);
+                          containerRef.current = el;
+                        }}
                         className={cn(
                           "p-2 gap-2",
                           isHorizontal ? "flex flex-row h-full" : "flex flex-col w-full"

@@ -72,6 +72,11 @@ interface CustomKPIWidgetProps {
     showHistory?: boolean;
     maxKPIs?: number;
     allowEdit?: boolean;
+    isCompact?: boolean;
+    dynamicResize?: boolean;
+    containerWidth?: number;
+    containerHeight?: number;
+    maxItems?: number;
   };
   kpis?: CustomKPI[];
   onKPIUpdate?: (kpi: CustomKPI) => void;
@@ -211,10 +216,19 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
     return Math.min(100, (current / target) * 100);
   };
 
-  const renderCompactView = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {kpis.slice(0, configuration.maxKPIs).map((kpi) => (
-        <Card key={kpi.id} className="p-3">
+  const renderCompactView = () => {
+    // Dynamic grid columns based on container dimensions
+    const gridCols = configuration.containerWidth && configuration.dynamicResize
+      ? configuration.containerWidth >= 400 ? 'grid-cols-3' : 
+        configuration.containerWidth >= 280 ? 'grid-cols-2' : 'grid-cols-1'
+      : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+    
+    const maxItems = configuration.maxItems || configuration.maxKPIs || 3;
+    
+    return (
+      <div className={`grid ${gridCols} gap-2`}>
+        {kpis.slice(0, maxItems).map((kpi) => (
+          <Card key={kpi.id} className="p-3">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium truncate">{kpi.name}</h4>
             {configuration.showTrends && getTrendIcon(kpi.trend)}
@@ -237,14 +251,24 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
               />
             )}
           </div>
-        </Card>
-      ))}
-    </div>
-  );
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
-  const renderStandardView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {kpis.slice(0, configuration.maxKPIs).map((kpi) => (
+  const renderStandardView = () => {
+    // Dynamic grid for standard view
+    const gridCols = configuration.containerWidth && configuration.dynamicResize
+      ? configuration.containerWidth >= 600 ? 'grid-cols-3' : 
+        configuration.containerWidth >= 400 ? 'grid-cols-2' : 'grid-cols-1'
+      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+    
+    const maxItems = configuration.maxItems || configuration.maxKPIs || 6;
+    
+    return (
+      <div className={`grid ${gridCols} gap-3`}>
+        {kpis.slice(0, maxItems).map((kpi) => (
         <Card key={kpi.id} className="p-4">
           <CardHeader className="p-0 mb-3">
             <div className="flex items-center justify-between">
@@ -295,9 +319,10 @@ const CustomKPIWidget: React.FC<CustomKPIWidgetProps> = ({
             </div>
           </CardContent>
         </Card>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   const renderDetailedView = () => (
     <div className="space-y-6">
