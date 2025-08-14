@@ -31,6 +31,7 @@ import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
 import { AssignedRoleSwitcher } from './assigned-role-switcher';
+import WidgetModal from './widget-modal';
 import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
@@ -192,6 +193,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
+  const [widgetModalOpen, setWidgetModalOpen] = useState(false);
+  const [selectedWidget, setSelectedWidget] = useState<{ type: string; title: string } | null>(null);
   const [headerItems, setHeaderItems] = useState<HeaderItem[]>([]);
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const { addRecentPage } = useNavigation();
@@ -293,11 +296,9 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         addRecentPage(item.href, item.label, item.icon);
       }
     } else if (item.widget) {
-      // Handle widget items - could open in modal or navigate to dedicated widget page
-      toast({
-        title: "Widget",
-        description: `${item.label} widget opened. Widget integration coming soon.`
-      });
+      // Open widget in modal
+      setSelectedWidget({ type: item.widget, title: item.label });
+      setWidgetModalOpen(true);
     } else if (item.action) {
       switch (item.action) {
         case 'search':
@@ -636,6 +637,19 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
       {/* User profile dialog */}
       <UserProfileDialog open={userProfileOpen} onOpenChange={setUserProfileOpen} />
+
+      {/* Widget modal */}
+      {selectedWidget && (
+        <WidgetModal
+          isOpen={widgetModalOpen}
+          onClose={() => {
+            setWidgetModalOpen(false);
+            setSelectedWidget(null);
+          }}
+          widgetType={selectedWidget.type}
+          title={selectedWidget.title}
+        />
+      )}
     </>
   );
 }
