@@ -29,8 +29,10 @@ export default function DemoPage() {
   
   useEffect(() => {
     if (productionOrders && operations && resources) {
+      console.log('🔍 Demo page data processing started');
       console.log('Production Orders:', productionOrders);
-      console.log('Operations:', operations);
+      console.log('PT Operations from API:', operations);
+      console.log('First PT operation:', operations[0]);
       
       // Map resources to Bryntum format
       const bryntumResources = (resources as any[]).slice(0, 10).map((resource: any) => ({
@@ -42,8 +44,10 @@ export default function DemoPage() {
       // Map PT operations to Bryntum events with authentic PlanetTogether data
       const bryntumEvents = (operations as any[]).map((op: any, index: number) => {
         // PT operations have jobId and jobName from the authentic import data
+        console.log(`🎯 Processing PT operation ${index}:`, op);
         const jobName = op.jobName || `Job ${op.jobId || op.id}`;
         const operationName = op.operationName || op.name || 'Unknown Operation';
+        console.log(`  ✓ Job: ${jobName}, Operation: ${operationName}`);
         
         // Enhanced status mapping for PT operations
         const status = op.onHold ? 'on_hold' : op.status || 'scheduled';
@@ -101,6 +105,9 @@ export default function DemoPage() {
       }));
       
       console.log('Bryntum Events:', bryntumEvents);
+      console.log('First event name:', bryntumEvents[0]?.name);
+      console.log('First event jobName:', bryntumEvents[0]?.jobName);
+      console.log('First event operationName:', bryntumEvents[0]?.operationName);
       
       setSchedulerData({
         resources: bryntumResources,
