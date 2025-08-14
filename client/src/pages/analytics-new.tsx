@@ -101,11 +101,11 @@ export default function Analytics() {
     queryKey: ["/api/metrics"],
   });
 
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<ProductionOrder[]>({
     queryKey: ["/api/jobs"],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<DiscreteOperation[]>({
     queryKey: ["/api/operations"],
   });
 
