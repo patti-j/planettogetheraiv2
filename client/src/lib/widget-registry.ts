@@ -41,12 +41,27 @@ export interface StandardWidgetProps {
   [key: string]: any; // Allow additional props for backward compatibility
 }
 
+// Widget size categories
+export type WidgetSizeCategory = 'compact' | 'medium' | 'large' | 'extra-large';
+
+// Widget bar compatibility
+export interface WidgetBarCompatibility {
+  supported: boolean;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  preferredSize?: WidgetSizeCategory;
+}
+
 // Widget metadata interface
 export interface WidgetMetadata {
   component: React.ComponentType<StandardWidgetProps>;
   displayName: string;
   description: string;
   supportedPlatforms: ('mobile' | 'desktop' | 'both')[];
+  sizeCategory: WidgetSizeCategory;
+  widgetBarCompatibility: WidgetBarCompatibility;
   configSchema?: z.ZodSchema<any>;
   defaultConfig?: Record<string, any>;
   requiredProps?: string[];
@@ -124,6 +139,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Custom KPI Tracker',
     description: 'Track custom KPIs with targets and trend analysis',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: {
+      supported: true,
+      minWidth: 200,
+      minHeight: 100,
+      maxWidth: 300,
+      maxHeight: 200,
+      preferredSize: 'compact'
+    },
     configSchema: customKpiConfigSchema,
     defaultConfig: { 
       view: 'standard', 
@@ -138,6 +162,13 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Operation Sequencer',
     description: 'Manage and sequence manufacturing operations',
     supportedPlatforms: ['both'],
+    sizeCategory: 'large',
+    widgetBarCompatibility: {
+      supported: false,
+      minWidth: 400,
+      minHeight: 300,
+      preferredSize: 'large'
+    },
     configSchema: operationSequencerConfigSchema,
     defaultConfig: { isDesktop: false, view: 'list' }
   },
@@ -146,6 +177,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'ATP/CTP Calculator',
     description: 'Available-to-Promise and Capable-to-Promise calculations',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     configSchema: atpCtpConfigSchema,
     defaultConfig: { compact: false, view: 'expanded' }
   },
@@ -154,6 +187,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Sales Order Status',
     description: 'Track sales order progress and status',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     defaultConfig: {}
   },
   'reports': {
@@ -161,6 +196,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Reports',
     description: 'Generate and view manufacturing reports',
     supportedPlatforms: ['both'],
+    sizeCategory: 'large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'large' },
     defaultConfig: {}
   },
   'schedule-tradeoff-analyzer': {
@@ -168,6 +205,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Schedule Tradeoff Analyzer',
     description: 'Analyze scheduling tradeoffs and optimize production',
     supportedPlatforms: ['desktop'],
+    sizeCategory: 'extra-large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'extra-large' },
     defaultConfig: {}
   },
   'schedule-optimizer': {
@@ -175,6 +214,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Schedule Optimizer',
     description: 'Optimize production schedules using AI',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: {
+      supported: true,
+      minWidth: 220,
+      minHeight: 120,
+      maxWidth: 300,
+      maxHeight: 180,
+      preferredSize: 'compact'
+    },
     configSchema: scheduleOptimizerConfigSchema,
     defaultConfig: { 
       view: 'standard',
@@ -189,6 +237,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Production Order Status',
     description: 'Monitor production order progress',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: {
+      supported: true,
+      minWidth: 250,
+      minHeight: 150,
+      maxWidth: 350,
+      maxHeight: 220,
+      preferredSize: 'medium'
+    },
     defaultConfig: {}
   },
   'operation-dispatch': {
@@ -196,6 +253,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Operation Dispatch',
     description: 'Dispatch and manage manufacturing operations',
     supportedPlatforms: ['both'],
+    sizeCategory: 'large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'large' },
     defaultConfig: { isMobile: false, compact: false }
   },
   'resource-assignment': {
@@ -203,6 +262,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Resource Assignment',
     description: 'Assign and manage resource allocations',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     defaultConfig: { isMobile: false, compact: false }
   },
   // Map legacy API types to actual components
@@ -211,6 +272,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Production Metrics',
     description: 'Monitor production performance metrics',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     configSchema: productionMetricsConfigSchema,
     defaultConfig: { metrics: ['output', 'efficiency', 'quality'] }
   },
@@ -219,6 +282,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Equipment Status',
     description: 'Monitor equipment status and availability',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     configSchema: equipmentStatusConfigSchema,
     defaultConfig: { equipment: [], showAlerts: true }
   },
@@ -227,6 +292,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Quality Dashboard',
     description: 'Quality metrics and test results dashboard',
     supportedPlatforms: ['both'],
+    sizeCategory: 'large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'large' },
     configSchema: qualityDashboardConfigSchema,
     defaultConfig: { tests: ['pH', 'temperature', 'purity'] }
   },
@@ -235,6 +302,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Inventory Tracking',
     description: 'Track inventory levels and movements',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     configSchema: inventoryTrackingConfigSchema,
     defaultConfig: { materials: ['raw_materials', 'wip', 'finished_goods'] }
   },
@@ -243,6 +312,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Gantt Chart',
     description: 'Visual project timeline and resource scheduling',
     supportedPlatforms: ['both'],
+    sizeCategory: 'extra-large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'extra-large' },
     configSchema: ganttChartConfigSchema,
     defaultConfig: { view: 'weekly', isDesktop: false }
   },
@@ -251,6 +322,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Gantt Timeline',
     description: 'Advanced Gantt chart with dependencies',
     supportedPlatforms: ['both'],
+    sizeCategory: 'extra-large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'extra-large' },
     configSchema: ganttChartConfigSchema,
     defaultConfig: { view: 'weekly', showDependencies: true }
   },
@@ -260,6 +333,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Filter & Search',
     description: 'Search and filter interface component',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: { supported: true, minWidth: 200, maxWidth: 300, preferredSize: 'compact' },
     configSchema: commonConfigSchema,
     defaultConfig: { showFilters: true }
   },
@@ -268,6 +343,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Status Indicator',
     description: 'Visual status badges and indicators',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: { supported: true, minWidth: 150, maxWidth: 250, preferredSize: 'compact' },
     configSchema: commonConfigSchema,
     defaultConfig: { showProgress: true }
   },
@@ -276,6 +353,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Metrics Card',
     description: 'Key metrics display card',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: { supported: true, minWidth: 180, maxWidth: 280, preferredSize: 'compact' },
     configSchema: commonConfigSchema,
     defaultConfig: { showTrends: true }
   },
@@ -284,6 +363,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Data Table',
     description: 'Sortable and filterable data table',
     supportedPlatforms: ['both'],
+    sizeCategory: 'large',
+    widgetBarCompatibility: { supported: false, preferredSize: 'large' },
     configSchema: commonConfigSchema,
     defaultConfig: { sortable: true, filterable: true }
   },
@@ -292,6 +373,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Action Buttons',
     description: 'Configurable action button groups',
     supportedPlatforms: ['both'],
+    sizeCategory: 'medium',
+    widgetBarCompatibility: { supported: false, preferredSize: 'medium' },
     configSchema: commonConfigSchema,
     defaultConfig: { layout: 'horizontal' }
   },
@@ -300,6 +383,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Kanban Card',
     description: 'Draggable cards for Kanban boards',
     supportedPlatforms: ['both'],
+    sizeCategory: 'compact',
+    widgetBarCompatibility: { supported: true, minWidth: 160, maxWidth: 240, preferredSize: 'compact' },
     configSchema: commonConfigSchema,
     defaultConfig: { draggable: true }
   }

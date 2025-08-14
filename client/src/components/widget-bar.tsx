@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { getWidgetComponent, WIDGET_REGISTRY, getAvailableWidgets } from '@/lib/widget-registry';
+import { getWidgetComponent, WIDGET_REGISTRY, getAvailableWidgets, WidgetSizeCategory, WidgetBarCompatibility } from '@/lib/widget-registry';
 
 interface Widget {
   id: string;
@@ -203,6 +203,14 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     onWidgetUpdate(items);
   };
 
+  // Filter widgets compatible with widget bar
+  const getWidgetBarCompatibleWidgets = () => {
+    return getAvailableWidgets().filter(widget => {
+      const compatibility = widget.metadata.widgetBarCompatibility;
+      return compatibility && compatibility.supported === true;
+    });
+  };
+
   const handleAddWidget = (widgetType: string) => {
     if (!onWidgetUpdate) return;
     
@@ -210,13 +218,24 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     const widgetInfo = availableWidgets.find(w => w.type === widgetType);
     if (!widgetInfo) return;
 
+    // Map size category to widget size
+    const mapSizeCategory = (category: WidgetSizeCategory): 'small' | 'medium' | 'large' => {
+      switch (category) {
+        case 'compact': return 'small';
+        case 'medium': return 'medium';
+        case 'large': 
+        case 'extra-large': 
+        default: return 'large';
+      }
+    };
+
     const newWidget: Widget = {
       id: `${widgetType}-${Date.now()}`,
       type: widgetType,
       title: widgetInfo.metadata.displayName,
       component: null as any,
       config: widgetInfo.metadata.defaultConfig || {},
-      size: 'medium',
+      size: mapSizeCategory(widgetInfo.metadata.sizeCategory),
       priority: widgets.length + 1
     };
 
@@ -318,7 +337,7 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeWidget(widget.id)}
+                    onClick={() => handleRemoveWidget(widget.id)}
                     className="absolute top-0.5 right-0.5 h-4 w-4 p-0 z-10 hover:bg-destructive/20 hover:text-destructive opacity-0 hover:opacity-100 transition-opacity"
                   >
                     <X className="h-2.5 w-2.5" />
@@ -583,11 +602,11 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
           </DialogHeader>
           <div className="flex flex-col space-y-4 min-h-0">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Choose a widget to add to your widget bar:
+              Only widgets compatible with the widget bar are shown. Compatible widgets are compact and medium-sized.
             </div>
             <ScrollArea className="flex-1 max-h-[60vh]">
               <div className="space-y-2 pr-4">
-                {getAvailableWidgets().map((widgetInfo) => (
+                {getWidgetBarCompatibleWidgets().map((widgetInfo) => (
                   <Button
                     key={widgetInfo.type}
                     variant="outline"
@@ -596,7 +615,12 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   >
                     <div className="text-left">
                       <div className="font-medium text-gray-900 dark:text-gray-100">{widgetInfo.metadata.displayName}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{widgetInfo.metadata.description}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {widgetInfo.metadata.description}
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {widgetInfo.metadata.sizeCategory}
+                        </Badge>
+                      </div>
                     </div>
                   </Button>
                 ))}
