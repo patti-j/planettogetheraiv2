@@ -31,9 +31,9 @@ import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
 import { AssignedRoleSwitcher } from './assigned-role-switcher';
-// Widget components (temporarily commented out to resolve import issues)
-// import { WidgetFlyout } from './widget-flyout';
-// import { WidgetModal } from './widget-modal';
+// Widget components
+import { WidgetFlyout } from './widget-flyout';
+import { WidgetModal } from './widget-modal';
 
 import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
@@ -130,7 +130,53 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
   ];
 
-  return baseItems;
+  // Widget items with enhanced configuration
+  const widgetItems: HeaderItem[] = [
+    { 
+      id: 'widget-operation-sequencer', 
+      label: 'Operation Sequencer', 
+      icon: 'Factory', 
+      type: 'widget', 
+      widget: 'operation-sequencer' 
+    },
+    { 
+      id: 'widget-schedule-optimizer', 
+      label: 'Schedule Optimizer', 
+      icon: 'Sparkles', 
+      type: 'widget', 
+      widget: 'schedule-optimizer' 
+    },
+    { 
+      id: 'widget-resource-monitor', 
+      label: 'Resource Monitor', 
+      icon: 'Target', 
+      type: 'widget', 
+      widget: 'resource-monitor' 
+    },
+    { 
+      id: 'widget-quality-tracker', 
+      label: 'Quality Tracker', 
+      icon: 'Shield', 
+      type: 'widget', 
+      widget: 'quality-tracker' 
+    },
+    { 
+      id: 'widget-inventory-alerts', 
+      label: 'Inventory Alerts', 
+      icon: 'Package', 
+      type: 'widget', 
+      widget: 'inventory-alerts' 
+    },
+    { 
+      id: 'widget-performance-kpi', 
+      label: 'Performance KPI', 
+      icon: 'TrendingUp', 
+      type: 'widget', 
+      widget: 'performance-kpi' 
+    }
+  ];
+
+  return [...baseItems, ...widgetItems];
 };
 
 
@@ -612,8 +658,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       {/* User profile dialog */}
       <UserProfileDialog open={userProfileOpen} onOpenChange={setUserProfileOpen} />
 
-      {/* Widget flyout - temporarily commented out */}
-      {/* {selectedWidget && (
+      {/* Widget flyout */}
+      {selectedWidget && (
         <WidgetFlyout
           isOpen={widgetFlyoutOpen}
           onClose={() => {
@@ -640,10 +686,10 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           position="top-right"
           anchorElement={flyoutAnchor}
         />
-      )} */}
+      )}
 
-      {/* Widget modal - temporarily commented out */}
-      {/* {selectedWidget && (
+      {/* Widget modal */}
+      {selectedWidget && (
         <WidgetModal
           isOpen={widgetModalOpen}
           onClose={() => {
@@ -653,7 +699,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           widgetType={selectedWidget.type}
           widgetTitle={selectedWidget.title}
         />
-      )} */}
+      )}
     </>
   );
 }
