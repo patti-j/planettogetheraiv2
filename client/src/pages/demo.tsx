@@ -1,19 +1,18 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import '@bryntum/schedulerpro/schedulerpro.material.css';
 import { useQuery } from '@tanstack/react-query';
 
 export default function DemoPage() {
   const schedulerRef = useRef<any>(null);
   const [schedulerData, setSchedulerData] = useState<any>(null);
-  
-  // Fetch production orders
+
+  // Fetch production orders/jobs
   const { data: productionOrders } = useQuery({
     queryKey: ['/api/production-orders'],
     enabled: true
   });
   
-  // Fetch discrete operations  
+  // Fetch operations
   const { data: operations } = useQuery({
     queryKey: ['/api/operations'],
     enabled: true
@@ -34,17 +33,16 @@ export default function DemoPage() {
         eventColor: resource.isDrum ? 'red' : 'blue'
       }));
       
-      // Map operations to Bryntum events
+      // Map operations to Bryntum events with job names
       const bryntumEvents = (operations as any[]).map((op: any, index: number) => {
         // Assign operations to production orders for demo purposes
-        // Since we can't modify the database structure, we'll distribute operations
         const orderIndex = Math.floor(index / 3) % (productionOrders as any[]).length;
         const order = (productionOrders as any[])[orderIndex];
         
         const event = {
           id: op.id,
           name: op.operationName || op.name || 'Unknown Operation',
-          jobName: order ? `${order.orderNumber} / ${order.name}` : `Operation ${op.id}`,
+          jobName: order ? `${order.orderNumber} - ${order.name}` : `Operation ${op.id}`,
           startDate: op.startTime || new Date('2025-08-07T08:00:00'),
           endDate: op.endTime || new Date('2025-08-07T12:00:00'),
           status: op.status || 'waiting',
@@ -121,80 +119,80 @@ export default function DemoPage() {
     
     // Enable ALL Bryntum Pro features
     features: {
-      // Custom event renderer for displaying job/operation names and status
-      eventRenderer: (args) => {
-        const eventRecord = args.eventRecord;
-        const renderData = args.renderData;
-        const jobName = eventRecord.jobName || 'Unknown Job';
-        const operationName = eventRecord.name || 'Unknown Operation';
-        const status = eventRecord.status || 'waiting';
-        
-        // Status colors matching the screenshot
-        const statusColors = {
-          ready: '#4CAF50',
-          waiting: '#FF9800',
-          in_progress: '#2196F3',
-          completed: '#9E9E9E',
-          planned: '#FFC107',
-          scheduled: '#4CAF50'
-        };
+      // Custom event renderer for the event bars
+      eventRenderer: {
+        renderer: ({ eventRecord, renderData }) => {
+          const jobName = eventRecord.jobName || 'Unknown Job';
+          const operationName = eventRecord.name || 'Unknown Operation';
+          const status = eventRecord.status || 'waiting';
+          
+          // Status colors matching the screenshot
+          const statusColors = {
+            ready: '#4CAF50',
+            waiting: '#FF9800',
+            in_progress: '#2196F3',
+            completed: '#9E9E9E',
+            planned: '#FFC107',
+            scheduled: '#4CAF50'
+          };
 
-        const statusColor = statusColors[status] || '#FF9800';
-        
-        // Override the default event content with custom HTML
-        args.renderData.eventContent = `
-          <div style="
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 0;
-            font-size: 11px;
-            box-sizing: border-box;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 2px;
-            overflow: hidden;
-          ">
+          const statusColor = statusColors[status] || '#FF9800';
+          
+          // Override the event content with custom HTML
+          renderData.eventContent = `
             <div style="
-              flex: 1;
-              padding: 3px 5px;
+              height: 100%;
               display: flex;
               flex-direction: column;
-              justify-content: center;
+              padding: 0;
+              font-size: 11px;
+              box-sizing: border-box;
               background: white;
+              border: 1px solid #ddd;
+              border-radius: 2px;
+              overflow: hidden;
             ">
               <div style="
-                font-weight: bold;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 1.2;
-                color: #333;
-                font-size: 11px;
+                flex: 1;
+                padding: 3px 5px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                background: white;
               ">
-                ${jobName}
+                <div style="
+                  font-weight: bold;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  line-height: 1.2;
+                  color: #333;
+                  font-size: 11px;
+                ">
+                  ${jobName}
+                </div>
+                <div style="
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  line-height: 1.2;
+                  font-size: 10px;
+                  color: #666;
+                  margin-top: 1px;
+                ">
+                  ${operationName}
+                </div>
               </div>
               <div style="
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 1.2;
-                font-size: 10px;
-                color: #666;
-                margin-top: 1px;
-              ">
-                ${operationName}
-              </div>
+                height: 5px;
+                background-color: ${statusColor};
+                margin: 0;
+              "></div>
             </div>
-            <div style="
-              height: 5px;
-              background-color: ${statusColor};
-              margin: 0;
-            "></div>
-          </div>
-        `;
-        
-        return args.renderData;
+          `;
+          
+          return renderData;
+        }
       },
       
       // Core drag and drop
@@ -208,14 +206,13 @@ export default function DemoPage() {
       eventDragCreate: true,
       eventDragSelect: true,
       
-      // Tooltips and editing
+      // Tooltips
       eventTooltip: {
-        // Fix tooltip positioning - use default Bryntum positioning
-        align: 't-b',
-        anchorToTarget: false,
-        trackMouse: true,
+        // Positioning configuration
+        align: 'b-t',
+        anchorToTarget: true,
         hideDelay: 100,
-        showDelay: 500,
+        showDelay: 200,
         autoHide: true,
         template: ({ eventRecord }) => `
           <div style="padding: 10px; min-width: 200px;">
@@ -279,96 +276,92 @@ export default function DemoPage() {
           editEvent: {
             text: 'Edit Operation',
             icon: 'b-fa-edit',
-            onItem: ({ eventRecord }) => {
-              const scheduler = schedulerRef.current?.instance;
-              scheduler?.editEvent(eventRecord);
-            }
-          },
-          changeStatus: {
-            text: 'Change Status',
-            icon: 'b-fa-flag',
-            menu: [
-              {
-                text: 'Ready',
-                onItem: ({ eventRecord }) => {
-                  eventRecord.status = 'scheduled';
-                  eventRecord.eventColor = 'green';
-                }
-              },
-              {
-                text: 'Waiting',
-                onItem: ({ eventRecord }) => {
-                  eventRecord.status = 'waiting';
-                  eventRecord.eventColor = 'orange';
-                }
-              },
-              {
-                text: 'In Progress',
-                onItem: ({ eventRecord }) => {
-                  eventRecord.status = 'in_progress';
-                  eventRecord.eventColor = 'blue';
-                }
-              },
-              {
-                text: 'Completed',
-                onItem: ({ eventRecord }) => {
-                  eventRecord.status = 'completed';
-                  eventRecord.eventColor = 'gray';
-                }
-              }
-            ]
+            weight: 100
           },
           deleteEvent: {
             text: 'Delete Operation',
             icon: 'b-fa-trash',
-            onItem: ({ eventRecord }) => eventRecord.remove()
+            weight: 200
+          },
+          '-': {
+            weight: 300
+          },
+          changeStatus: {
+            text: 'Change Status',
+            icon: 'b-fa-flag',
+            weight: 400,
+            menu: [
+              { text: 'Planned', icon: 'b-fa-clock' },
+              { text: 'Ready', icon: 'b-fa-check-circle' },
+              { text: 'Waiting', icon: 'b-fa-pause-circle' },
+              { text: 'In Progress', icon: 'b-fa-play-circle' },
+              { text: 'Completed', icon: 'b-fa-check-double' }
+            ]
           }
         }
       },
       scheduleMenu: {
         items: {
           addEvent: {
-            text: 'Add new operation here',
+            text: 'Add Operation',
             icon: 'b-fa-plus',
-            onItem: ({ resourceRecord, date }) => {
-              resourceRecord.events.add({
-                name: 'New Operation',
-                jobName: 'Unassigned Job',
-                status: 'planned',
-                startDate: date,
-                duration: 4,
-                durationUnit: 'hour',
-                eventColor: 'orange'
-              });
-            }
+            weight: 100
           }
         }
       },
       
-      // Time navigation
-      headerZoom: true,
-      zoomOnMouseWheel: true,
-      pan: true,
+      // Timeline and view features
+      timeRanges: {
+        showCurrentTimeLine: true,
+        showHeaderElements: true
+      },
+      nonWorkingTime: {
+        highlightWeekends: true
+      },
       
-      // Visual features
-      timeRanges: true,
-      nonWorkingTime: true,
-      columnLines: true,
+      // Advanced scheduling features
       dependencies: true,
       dependencyEdit: true,
-      
-      // Data management
-      eventFilter: true,
-      sort: true,
-      summary: true,
-      
-      // Additional Pro features
       resourceTimeRanges: true,
-      percentBar: false,
-      labels: {
-        left: {
-          field: 'jobName',
-          editor: false
+      timeAxisHeaderMenu: true,
+      columnLines: true,
+      rowReorder: true,
+      
+      // Filter and search
+      filter: true,
+      search: true,
+      
+      // Grouping  
+      group: false,
+      sort: 'name',
+      
+      // Summary
+      summary: {
+        renderer: ({ events }) => {
+          const statusCounts = {
+            planned: 0,
+            scheduled: 0,
+            waiting: 0,
+            in_progress: 0,
+            completed: 0
+          };
+          
+          events.forEach((event: any) => {
+            const status = event.status || 'waiting';
+            if (statusCounts[status] !== undefined) {
+              statusCounts[status]++;
+            }
+          });
+          
+          return `
+            <div style="padding: 5px; font-size: 12px;">
+              <b>Status Summary:</b>
+              Ready: ${statusCounts.scheduled} | 
+              Waiting: ${statusCounts.waiting} | 
+              In Progress: ${statusCounts.in_progress} | 
+              Completed: ${statusCounts.completed}
+            </div>
+          `;
         }
       }
     },
