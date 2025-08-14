@@ -2339,6 +2339,184 @@ Rules:
   });
 
   // Operations
+  // New PT-based operations endpoint for Production Gantt
+  app.get("/api/pt-operations", async (req, res) => {
+    try {
+      console.log("Fetching PT operations for Gantt chart...");
+      
+      // Fetch data from PT import tables
+      const ptOperationsQuery = `
+        SELECT 
+          jo.id,
+          jo.external_id,
+          jo.name as operation_name,
+          j.name as job_name,
+          j.external_id as job_external_id,
+          jo.mo_external_id,
+          jo.required_finish_qty,
+          jo.cycle_hrs,
+          jo.setup_hrs,
+          jo.clean_hrs,
+          jo.post_processing_hrs,
+          jo.operation_sequence,
+          jo.description,
+          jo.output_name,
+          jo.product_code,
+          jo.commit_start_date,
+          jo.commit_end_date,
+          jo.on_hold,
+          jo.hold_reason,
+          jo.priority,
+          jo.notes,
+          -- Job details
+          j.quantity as job_quantity,
+          j.due_date as job_due_date,
+          j.priority as job_priority,
+          j.status as job_status,
+          j.color as job_color,
+          j.customer_external_id,
+          -- Manufacturing order details
+          mo.name as manufacturing_order_name,
+          mo.quantity as mo_quantity,
+          mo.due_date as mo_due_date,
+          mo.status as mo_status,
+          -- Resource assignments
+          jr.resource_external_id,
+          r.name as resource_name,
+          -- Activities (actual scheduling)
+          ja.scheduled_setup_hrs,
+          ja.scheduled_cycle_hrs,
+          ja.scheduled_clean_hrs,
+          ja.scheduled_post_processing_hrs,
+          ja.anchor_start_date as activity_start_date,
+          ja.reported_start_date,
+          ja.reported_finish_date,
+          ja.production_status
+        FROM pt_job_operations jo
+        LEFT JOIN pt_jobs j ON jo.job_external_id = j.external_id
+        LEFT JOIN pt_manufacturing_orders mo ON jo.mo_external_id = mo.external_id
+        LEFT JOIN pt_job_resources jr ON (jr.job_external_id = jo.job_external_id AND jr.op_external_id = jo.external_id)
+        LEFT JOIN pt_resources r ON jr.resource_external_id = r.external_id
+        LEFT JOIN pt_job_activities ja ON (ja.job_external_id = jo.job_external_id AND ja.op_external_id = jo.external_id)
+        ORDER BY 
+          j.priority DESC NULLS LAST,
+          jo.operation_sequence ASC,
+          jo.external_id
+      `;
+      
+      const ptOperations = await storage.db.execute(ptOperationsQuery);
+      
+      // Transform PT data to Gantt format
+      const ganttOperations = ptOperations.rows.map((row: any, index: number) => {
+        // Calculate timing
+        const setupHours = parseFloat(row.setup_hrs || row.scheduled_setup_hrs || '0') || 0;
+        const cycleHours = parseFloat(row.cycle_hrs || row.scheduled_cycle_hrs || '0') || 0;
+        const cleanHours = parseFloat(row.clean_hrs || row.scheduled_clean_hrs || '0') || 0;
+        const postProcessHours = parseFloat(row.post_processing_hrs || row.scheduled_post_processing_hrs || '0') || 0;
+        const totalDuration = (setupHours + cycleHours + cleanHours + postProcessHours) * 60; // Convert to minutes
+        
+        // Determine start and end times
+        let startTime: Date;
+        let endTime: Date;
+        
+        if (row.activity_start_date) {
+          startTime = new Date(row.activity_start_date);
+          endTime = new Date(startTime.getTime() + totalDuration * 60000);
+        } else if (row.commit_start_date) {
+          startTime = new Date(row.commit_start_date);
+          endTime = new Date(row.commit_end_date || startTime.getTime() + totalDuration * 60000);
+        } else {
+          // Default scheduling: start operations at intervals
+          const baseDate = new Date();
+          baseDate.setHours(8, 0, 0, 0); // Start at 8 AM
+          startTime = new Date(baseDate.getTime() + index * 4 * 60 * 60 * 1000); // 4 hours apart
+          endTime = new Date(startTime.getTime() + (totalDuration || 120) * 60000); // Default 2 hours if no duration
+        }
+        
+        return {
+          id: row.id || index + 1000,
+          name: `${row.job_name || 'Job'}: ${row.operation_name || 'Operation'}`,
+          operationName: row.operation_name || 'Unknown Operation',
+          jobName: row.job_name || 'Unknown Job',
+          jobId: row.job_external_id,
+          operationId: row.external_id,
+          manufacturingOrderId: row.mo_external_id,
+          manufacturingOrderName: row.manufacturing_order_name,
+          description: row.description || `${row.operation_name} for ${row.job_name}`,
+          duration: Math.max(totalDuration, 60), // Minimum 1 hour
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          status: row.production_status || row.job_status || 'scheduled',
+          priority: parseInt(row.priority) || parseInt(row.job_priority) || 5,
+          assignedResourceId: row.resource_external_id,
+          assignedResourceName: row.resource_name,
+          workCenterId: row.resource_external_id,
+          workCenterName: row.resource_name,
+          // Detailed timing breakdown
+          setupTime: setupHours * 60,
+          cycleTime: cycleHours * 60,
+          cleanupTime: cleanHours * 60,
+          postProcessTime: postProcessHours * 60,
+          // Progress tracking
+          completionPercentage: row.production_status === 'completed' ? 100 : 
+                                row.production_status === 'in_progress' ? 50 : 0,
+          // Quality and constraints
+          qualityCheckRequired: false,
+          qualityStatus: 'pending',
+          // Production details
+          requiredQuantity: parseFloat(row.required_finish_qty) || parseFloat(row.job_quantity) || 0,
+          productCode: row.product_code,
+          outputName: row.output_name,
+          sequence: parseInt(row.operation_sequence) || 1,
+          // Scheduling constraints
+          onHold: row.on_hold === 'true' || row.on_hold === true,
+          holdReason: row.hold_reason,
+          // Customer information
+          customerId: row.customer_external_id,
+          // Color coding
+          color: row.job_color || (row.job_priority > 7 ? '#ef4444' : row.job_priority > 4 ? '#f97316' : '#10b981'),
+          // Dates for reference
+          jobDueDate: row.job_due_date,
+          moDueDate: row.mo_due_date,
+          // Actual vs planned
+          reportedStartDate: row.reported_start_date,
+          reportedFinishDate: row.reported_finish_date,
+          plannedStartDate: row.commit_start_date,
+          plannedEndDate: row.commit_end_date,
+          // Notes
+          notes: row.notes,
+          // Data source
+          dataSource: 'pt_import',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      });
+      
+      console.log(`PT Operations fetched successfully: ${ganttOperations.length}`);
+      if (ganttOperations.length > 0) {
+        console.log("First PT operation sample:", {
+          name: ganttOperations[0].name,
+          operationName: ganttOperations[0].operationName,
+          jobName: ganttOperations[0].jobName,
+          duration: ganttOperations[0].duration,
+          startTime: ganttOperations[0].startTime,
+          resourceName: ganttOperations[0].assignedResourceName
+        });
+      }
+      
+      // Add cache-control headers to prevent caching
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.json(ganttOperations);
+      
+    } catch (error) {
+      console.error("Error fetching PT operations:", error);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to fetch PT operations" });
+    }
+  });
+
   app.get("/api/operations", async (req, res) => {
     try {
       console.log("Fetching operations for Gantt chart...");

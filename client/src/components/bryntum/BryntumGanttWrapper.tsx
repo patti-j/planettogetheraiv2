@@ -5,7 +5,7 @@ import { formatGanttData, ganttConfig } from './GanttConfig';
 // Extend window type for Bryntum
 declare global {
   interface Window {
-    bryntum: any;
+    bryntum?: any;
   }
 }
 
@@ -55,18 +55,18 @@ export function BryntumGanttWrapper({
       let Gantt;
       
       // Method 1: Direct access
-      if (window.bryntum && window.bryntum.gantt && window.bryntum.gantt.Gantt) {
-        Gantt = window.bryntum.gantt.Gantt;
+      if (window.bryntum && (window.bryntum as any).gantt && (window.bryntum as any).gantt.Gantt) {
+        Gantt = (window.bryntum as any).gantt.Gantt;
         console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.gantt.Gantt');
       }
       // Method 2: Capital G for Gantt namespace
-      else if (window.bryntum && window.bryntum.Gantt) {
-        Gantt = window.bryntum.Gantt;
+      else if (window.bryntum && (window.bryntum as any).Gantt) {
+        Gantt = (window.bryntum as any).Gantt;
         console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.Gantt');
       }
       // Method 3: Through widget namespace
-      else if (window.bryntum && window.bryntum.widget && window.bryntum.widget.Gantt) {
-        Gantt = window.bryntum.widget.Gantt;
+      else if (window.bryntum && (window.bryntum as any).widget && (window.bryntum as any).widget.Gantt) {
+        Gantt = (window.bryntum as any).widget.Gantt;
         console.log('BryntumGanttWrapper: Found Gantt via window.bryntum.widget.Gantt');
       }
       
@@ -74,11 +74,11 @@ export function BryntumGanttWrapper({
         console.error('BryntumGanttWrapper: Gantt component not found in Bryntum library');
         console.log('Available Bryntum properties:', Object.keys(window.bryntum || {}));
         if (window.bryntum) {
-          if (window.bryntum.gantt) {
-            console.log('window.bryntum.gantt properties:', Object.keys(window.bryntum.gantt));
+          if ((window.bryntum as any).gantt) {
+            console.log('window.bryntum.gantt properties:', Object.keys((window.bryntum as any).gantt));
           }
-          if (window.bryntum.widget) {
-            console.log('window.bryntum.widget properties:', Object.keys(window.bryntum.widget));
+          if ((window.bryntum as any).widget) {
+            console.log('window.bryntum.widget properties:', Object.keys((window.bryntum as any).widget));
           }
         }
         setError('Gantt component not found in Bryntum library');

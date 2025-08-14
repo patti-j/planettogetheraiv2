@@ -102,8 +102,9 @@ export default function ProductionSchedulePage() {
     enabled: canViewSchedule
   });
 
+  // Use PT operations endpoint for authentic PT import data
   const { data: operations, isLoading: operationsLoading, refetch: refetchOperations } = useQuery({
-    queryKey: ['/api/operations'],
+    queryKey: ['/api/pt-operations'],
     enabled: canViewSchedule
   });
 

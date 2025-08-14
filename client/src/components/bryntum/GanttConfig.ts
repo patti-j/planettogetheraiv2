@@ -69,12 +69,24 @@ export function formatGanttData(operations: any[], resources: any[]) {
     const startDate = op.startTime ? new Date(op.startTime) : new Date();
     const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + 3600000);
     
-    // Create display name with production order info when available
-    const operationName = op.name || op.operationName || `Operation ${op.id}`;
-    const productionOrderInfo = op.productionOrderName || op.productionOrderNumber;
-    const displayName = productionOrderInfo 
-      ? `${operationName} (${productionOrderInfo})`
-      : operationName;
+    // Create comprehensive display name with PT data (Job Name + Operation Name)
+    const jobName = op.jobName || '';
+    const operationName = op.operationName || op.name || `Operation ${op.id}`;
+    const manufacturingOrderName = op.manufacturingOrderName || '';
+    
+    // Format: "Job Name: Operation Name" or include MO name if different
+    let displayName = '';
+    if (jobName && operationName) {
+      displayName = `${jobName}: ${operationName}`;
+      // Add MO name if it's different from job name and exists
+      if (manufacturingOrderName && manufacturingOrderName !== jobName) {
+        displayName += ` (${manufacturingOrderName})`;
+      }
+    } else if (operationName) {
+      displayName = operationName;
+    } else {
+      displayName = `Operation ${op.id}`;
+    }
     
     return {
       id: op.id,
