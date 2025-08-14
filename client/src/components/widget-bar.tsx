@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   Settings, 
   Maximize2, 
@@ -457,36 +457,43 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
 
       {/* Add Widget Dialog */}
       <Dialog open={addWidgetOpen} onOpenChange={setAddWidgetOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Add Widget</DialogTitle>
+            <DialogDescription>
+              Choose a widget to add to your widget bar
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+          <div className="flex flex-col space-y-4 min-h-0">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Choose a widget to add to your widget bar:
             </div>
-            <div className="space-y-2">
-              {getAvailableWidgets().map((widgetInfo) => (
-                <Button
-                  key={widgetInfo.type}
-                  variant="outline"
-                  className="w-full justify-start p-4 h-auto"
-                  onClick={() => handleAddWidget(widgetInfo.type)}
-                >
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">{widgetInfo.metadata.displayName}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{widgetInfo.metadata.description}</div>
-                  </div>
-                </Button>
-              ))}
+            <ScrollArea className="flex-1 max-h-[60vh]">
+              <div className="space-y-2 pr-4">
+                {getAvailableWidgets().map((widgetInfo) => (
+                  <Button
+                    key={widgetInfo.type}
+                    variant="outline"
+                    className="w-full justify-start p-4 h-auto"
+                    onClick={() => handleAddWidget(widgetInfo.type)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{widgetInfo.metadata.displayName}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{widgetInfo.metadata.description}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+            <div className="pt-2 border-t">
+              <Button 
+                variant="ghost" 
+                className="w-full" 
+                onClick={() => setAddWidgetOpen(false)}
+              >
+                Cancel
+              </Button>
             </div>
-            <Button 
-              variant="ghost" 
-              className="w-full" 
-              onClick={() => setAddWidgetOpen(false)}
-            >
-              Cancel
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
