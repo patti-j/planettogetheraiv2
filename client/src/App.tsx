@@ -120,7 +120,7 @@ import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
 import { ResumeTourButton } from "@/components/resume-tour-button";
-import IntegratedAIAssistant from "@/components/integrated-ai-assistant";
+
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { DesktopLayout } from "@/components/navigation/desktop-layout";
 import { MobileLayout } from "@/components/navigation/mobile-layout";
@@ -715,7 +715,6 @@ function App() {
                             <Router />
                             <OnboardingWizard />
                             <ResumeTourButton />
-                            <IntegratedAIAssistant />
                             <Toaster />
                           </>
                         </LayoutDensityProvider>
