@@ -87,6 +87,7 @@ import DataImportPage from "@/pages/data-import-simple";
 import MasterDataPage from "@/pages/master-data";
 import MasterDataManagement from "@/pages/master-data-management";
 import ScheduleManagement from "@/pages/schedule-management";
+import ScheduleSequences from "@/pages/schedule-sequences";
 import Onboarding from "@/pages/onboarding";
 import AtpCtpPage from "@/pages/atp-ctp";
 import DataValidation from "@/pages/data-validation";
@@ -498,6 +499,11 @@ function Router() {
           <Route path="/schedule-management">
             <ProtectedRoute feature="production-scheduling" action="view">
               <ScheduleManagement />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/schedule-sequences">
+            <ProtectedRoute feature="production-scheduling" action="view">
+              <ScheduleSequences />
             </ProtectedRoute>
           </Route>
           <Route path="/data-validation">

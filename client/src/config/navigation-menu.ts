@@ -6,7 +6,7 @@ import {
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
-  Workflow, Users
+  Workflow, Users, ArrowUpDown
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -47,6 +47,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Workflow, label: "Planning Process Guide", href: "/planning-overview", feature: "planning-overview", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: Calendar, label: "Production Schedule", href: "/production-schedule", feature: "schedule", action: "view", color: "bg-blue-500" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
+      { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "production-scheduling", action: "view", color: "bg-purple-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
 
       { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
