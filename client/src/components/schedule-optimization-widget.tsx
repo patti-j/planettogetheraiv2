@@ -39,6 +39,13 @@ interface ScheduleOptimizationWidgetProps {
     showAlgorithmSelector?: boolean;
     showProfileSelector?: boolean;
   };
+  configuration?: {
+    view?: 'minimal' | 'compact' | 'standard';
+    isCompact?: boolean;
+    minimal?: boolean;
+    [key: string]: any;
+  };
+  isCompact?: boolean;
   data?: any;
   onAction?: (action: string, data: any) => void;
 }
@@ -84,6 +91,8 @@ export default function ScheduleOptimizationWidget({
     showAlgorithmSelector: true,
     showProfileSelector: true
   },
+  configuration = {},
+  isCompact = false,
   data,
   onAction
 }: ScheduleOptimizationWidgetProps) {
@@ -189,6 +198,68 @@ export default function ScheduleOptimizationWidget({
     }
   }, [algorithms, selectedAlgorithm]);
 
+  // Determine view mode
+  const viewMode = configuration.view || (isCompact ? 'compact' : 'standard');
+  
+  // Minimal view for widget bar
+  if (viewMode === 'minimal' || configuration.minimal) {
+    return (
+      <div className="space-y-2 h-full flex flex-col">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Target className="h-3 w-3 text-primary" />
+            <span className="text-xs font-medium">Optimizer</span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="h-5 px-1.5 text-[10px]"
+            onClick={() => {
+              if (selectedAlgorithm && selectedProfile) {
+                optimizationMutation.mutate({
+                  algorithmId: selectedAlgorithm.id,
+                  profileId: selectedProfile.id,
+                  parameters: { weights: profileWeights }
+                });
+              }
+            }}
+            disabled={!selectedAlgorithm || !selectedProfile || optimizationMutation.isPending}
+          >
+            {optimizationMutation.isPending ? (
+              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+            ) : (
+              <PlayCircle className="h-2.5 w-2.5" />
+            )}
+          </Button>
+        </div>
+        
+        {/* Last optimization result */}
+        {history.length > 0 && (
+          <div className="text-[10px] space-y-1 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-foreground/60">Last Run</span>
+              <Badge 
+                variant={history[0].status === 'completed' ? 'default' : 'secondary'} 
+                className="h-3 px-1 text-[8px]"
+              >
+                {history[0].status}
+              </Badge>
+            </div>
+            {history[0].status === 'completed' && (
+              <div className="flex items-center gap-2">
+                <span className="text-foreground/80">Score:</span>
+                <span className="font-medium text-green-600">
+                  {history[0].performanceScore || 'N/A'}%
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Standard view with Card wrapper
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">

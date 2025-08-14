@@ -105,6 +105,18 @@ const customKpiConfigSchema = z.object({
   kpis: z.array(z.string()).default(['oee', 'yield', 'cost-per-unit'])
 });
 
+const scheduleOptimizerConfigSchema = z.object({
+  view: z.enum(['minimal', 'compact', 'standard']).default('standard'),
+  showQuickActions: z.boolean().default(true),
+  showHistory: z.boolean().default(true),
+  showMetrics: z.boolean().default(true),
+  maxHistoryItems: z.number().default(5),
+  defaultView: z.enum(['overview', 'history', 'algorithms']).default('overview'),
+  showAlgorithmSelector: z.boolean().default(true),
+  showProfileSelector: z.boolean().default(true),
+  minimal: z.boolean().default(false)
+});
+
 // Centralized widget registry
 export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
   'custom-kpi': {
@@ -163,7 +175,14 @@ export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
     displayName: 'Schedule Optimizer',
     description: 'Optimize production schedules using AI',
     supportedPlatforms: ['both'],
-    defaultConfig: { showOptimizer: true }
+    configSchema: scheduleOptimizerConfigSchema,
+    defaultConfig: { 
+      view: 'standard',
+      showOptimizer: true,
+      showQuickActions: true,
+      showHistory: true,
+      minimal: false
+    }
   },
   'production-order-status': {
     component: ProductionOrderStatusWidget,
