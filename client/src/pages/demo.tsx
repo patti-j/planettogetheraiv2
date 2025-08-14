@@ -38,12 +38,16 @@ export default function DemoPage() {
       
       // Map operations to Bryntum events with job names
       const bryntumEvents = (operations as any[]).map((op: any, index: number) => {
-        // Assign operations to production orders for demo purposes
-        const orderIndex = Math.floor(index / 3) % (productionOrders as any[]).length;
-        const order = (productionOrders as any[])[orderIndex];
+        // Use the actual production order ID from the operation
+        const productionOrderId = op.productionOrderId || op.jobId;
         
-        // Build the job name with order number and product name
-        const jobName = order ? `${order.orderNumber} - ${order.name}` : `Job ${op.id}`;
+        // Find the actual production order that this operation belongs to
+        const order = productionOrderId ? 
+          (productionOrders as any[]).find((po: any) => po.id === productionOrderId) : 
+          null;
+        
+        // Build the job name with order number and product name from the actual linked order
+        const jobName = order ? `${order.orderNumber} - ${order.name}` : `Operation ${op.id}`;
         const operationName = op.operationName || op.name || 'Unknown Operation';
         
         const event = {
@@ -64,6 +68,9 @@ export default function DemoPage() {
         };
         
         console.log(`Event ${index}:`, event);
+        console.log(`  - Production Order ID: ${productionOrderId}`);
+        console.log(`  - Found Order: ${order ? 'Yes' : 'No'}`);
+        console.log(`  - Job Name: ${jobName}`);
         return event;
       });
       
