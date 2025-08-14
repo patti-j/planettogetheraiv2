@@ -2621,17 +2621,35 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log("Starting getOperations - querying discrete operations with production order relationship...");
       
-      // Query discrete operations with JOIN to get production order info through routing
-      // Order by ID to ensure consistent results
+      // Query discrete operations with JOIN to get production order info directly
+      // Since discrete operations don't directly reference production orders, we'll do a more complex join
       const discreteOpsQuery = await db
         .select({
-          ...discreteOperations,
-          productionOrderId: productionOrders.id,
+          id: discreteOperations.id,
+          routingId: discreteOperations.routingId,
+          productionOrderId: discreteOperations.productionOrderId,
+          operationName: discreteOperations.operationName,
+          description: discreteOperations.description,
+          status: discreteOperations.status,
+          standardDuration: discreteOperations.standardDuration,
+          actualDuration: discreteOperations.actualDuration,
+          startTime: discreteOperations.startTime,
+          endTime: discreteOperations.endTime,
+          sequenceNumber: discreteOperations.sequenceNumber,
+          workCenterId: discreteOperations.workCenterId,
+          priority: discreteOperations.priority,
+          completionPercentage: discreteOperations.completionPercentage,
+          qualityCheckRequired: discreteOperations.qualityCheckRequired,
+          qualityStatus: discreteOperations.qualityStatus,
+          notes: discreteOperations.notes,
+          createdAt: discreteOperations.createdAt,
+          updatedAt: discreteOperations.updatedAt,
+          // Get production order name through direct relationship
           productionOrderName: productionOrders.name,
           productionOrderNumber: productionOrders.orderNumber
         })
         .from(discreteOperations)
-        .leftJoin(productionOrders, eq(discreteOperations.routingId, productionOrders.routingId))
+        .leftJoin(productionOrders, eq(discreteOperations.productionOrderId, productionOrders.id))
         .orderBy(discreteOperations.id);
       
       console.log("Discrete operations with production order data count:", discreteOpsQuery.length);

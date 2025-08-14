@@ -69,9 +69,16 @@ export function formatGanttData(operations: any[], resources: any[]) {
     const startDate = op.startTime ? new Date(op.startTime) : new Date();
     const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + 3600000);
     
+    // Create display name with production order info when available
+    const operationName = op.name || op.operationName || `Operation ${op.id}`;
+    const productionOrderInfo = op.productionOrderName || op.productionOrderNumber;
+    const displayName = productionOrderInfo 
+      ? `${operationName} (${productionOrderInfo})`
+      : operationName;
+    
     return {
       id: op.id,
-      name: op.name || op.operationName || `Operation ${op.id}`,
+      name: displayName,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       duration: Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 3600000)), // Duration in hours
@@ -88,6 +95,8 @@ export function formatGanttData(operations: any[], resources: any[]) {
       // Custom fields for our application
       status: op.status || 'scheduled',
       orderId: op.productionOrderId || null,
+      orderName: op.productionOrderName || null,
+      orderNumber: op.productionOrderNumber || null,
       workCenterId: op.workCenterId || null,
       
       // Task appearance and behavior
