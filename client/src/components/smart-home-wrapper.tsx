@@ -1,5 +1,6 @@
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useLocation, Redirect } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import MobileHomePage from "@/pages/mobile-home";
 import HomePage from "@/pages/home";
 import TopMenu from "@/components/top-menu";
@@ -8,9 +9,16 @@ import { MobileLayout } from "@/components/navigation/mobile-layout";
 export function SmartHomeWrapper() {
   const deviceType = useDeviceType();
   const [location] = useLocation();
+  const { isAuthenticated } = useAuth();
   
   // Debug logging to understand what's happening
   console.log('SmartHomeWrapper - Device Type:', deviceType, 'Window Width:', window.innerWidth, 'Location:', location);
+  
+  // Don't handle routing if user is not authenticated - let the main App router handle unauthenticated state
+  if (!isAuthenticated) {
+    console.log('SmartHomeWrapper - User not authenticated, skipping mobile routing');
+    return null;
+  }
   
   // On mobile devices, always redirect to mobile-home for any non-mobile route
   if (deviceType === "mobile" && window.innerWidth < 768) {
