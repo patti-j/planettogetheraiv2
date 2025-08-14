@@ -131,7 +131,7 @@ import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studi
 // Import page components for mobile routing - only import existing pages
 import ProductionSchedulePage from "@/pages/production-schedule";
 import Dashboard from "@/pages/dashboard";
-import ProductionCockpit from "@/pages/production-cockpit";
+
 import Analytics from "@/pages/analytics";
 import ShopFloor from "@/pages/shop-floor";
 import Reports from "@/pages/reports";
@@ -257,7 +257,7 @@ const getWidgetRoute = (widget: any): string | null => {
       return `/widgets/${widget.id}`;
     case 'production-metrics':
     case 'production-overview':
-      return '/production-cockpit';
+      return '/dashboard';
     case 'analytics':
     case 'analytics-dashboard':
       return '/analytics';
@@ -282,7 +282,7 @@ const getWidgetRoute = (widget: any): string | null => {
         return '/production-schedule';
       }
       if (widgetTitle.includes('production') && widgetTitle.includes('cockpit')) {
-        return '/production-cockpit';
+        return '/dashboard';
       }
       if (widgetTitle.includes('analytics')) {
         return '/analytics';
@@ -530,12 +530,7 @@ function MobilePageContent({ location }: { location: string }) {
           <Dashboard />
         </MobilePageWrapper>
       );
-    case "/production-cockpit":
-      return (
-        <MobilePageWrapper>
-          <ProductionCockpit />
-        </MobilePageWrapper>
-      );
+
     case "/analytics":
       return (
         <MobilePageWrapper>
@@ -1107,7 +1102,7 @@ export default function MobileHomePage() {
     {
       title: "Production",
       icon: Activity,
-      path: "/production-cockpit",
+      path: "/dashboard",
       color: "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400"
     },
     {
@@ -1143,7 +1138,7 @@ export default function MobileHomePage() {
 
   const menuItems = [
     { title: "Analytics", icon: TrendingUp, path: "/analytics" },
-    { title: "Production", icon: Activity, path: "/production-cockpit" },
+    { title: "Production", icon: Activity, path: "/dashboard" },
     { title: "Shop Floor", icon: Settings, path: "/shop-floor" },
     { title: "Reports", icon: Calendar, path: "/reports" },
     { title: "Settings", icon: Settings, path: "/account" }
@@ -1211,7 +1206,7 @@ export default function MobileHomePage() {
               <Logo size="small" showText={false} />
               <nav className="flex space-x-2 md:space-x-6 overflow-x-auto">
                 <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">Dashboard</Link>
-                <Link href="/production-cockpit" className="text-sm font-medium hover:text-blue-600">Production</Link>
+                <Link href="/dashboard" className="text-sm font-medium hover:text-blue-600">Production</Link>
                 <Link href="/analytics" className="text-sm font-medium hover:text-blue-600">Analytics</Link>
                 <Link href="/shop-floor" className="text-sm font-medium hover:text-blue-600">Shop Floor</Link>
                 <Link href="/boards" className="text-sm font-medium hover:text-blue-600">Boards</Link>
@@ -1287,9 +1282,9 @@ export default function MobileHomePage() {
                   <LayoutDashboard className="mr-3 h-4 w-4" />
                   Dashboard
                 </Link>
-                <Link href="/production-cockpit" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
+                <Link href="/dashboard" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
                   <Activity className="mr-3 h-4 w-4" />
-                  Production Cockpit
+                  Production Dashboard
                 </Link>
                 <Link href="/analytics" className="flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">
                   <TrendingUp className="mr-3 h-4 w-4" />
@@ -2135,7 +2130,7 @@ export default function MobileHomePage() {
                             } else if (action === 'create_dashboard') {
                               setLocation('/dashboard'); // Navigate to dashboard
                             } else if (action === 'show_production') {
-                              setLocation('/production-cockpit');
+                              setLocation('/dashboard');
                             } else if (action === 'show_schedule') {
                               setLocation('/scheduling');
                             }

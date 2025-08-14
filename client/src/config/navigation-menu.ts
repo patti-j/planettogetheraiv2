@@ -48,7 +48,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Calendar, label: "Production Schedule", href: "/production-schedule", feature: "schedule", action: "view", color: "bg-blue-500" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
       { icon: Sparkles, label: "Order Optimization", href: "/optimize-orders", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" },
-      { icon: Monitor, label: "Cockpit", href: "/cockpit", feature: "production-cockpit", action: "view", color: "bg-slate-600" },
+
       { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", feature: "capacity-planning", action: "view", color: "bg-purple-500" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" },
       { icon: BarChart3, label: "Master Production Schedule", href: "/master-production-schedule", feature: "master-production-schedule", action: "view", color: "bg-blue-600" },

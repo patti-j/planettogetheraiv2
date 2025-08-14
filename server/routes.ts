@@ -1749,7 +1749,7 @@ Rules:
             isDemo: true,
             role: 'Plant Manager',
             activeRole: { id: 'demo_plant_role', name: 'Plant Manager' },
-            permissions: ['production-cockpit-view', 'production-scheduling-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+            permissions: ['dashboard-view', 'production-scheduling-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
             roles: [{ id: 'demo_plant_role', name: 'Plant Manager' }]
           },
           'demo_scheduler': { 
@@ -7932,7 +7932,7 @@ Return ONLY a valid JSON object with this exact structure:
         const demoPermissions = {
           'demo_support': ['help-view', 'systems-management-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_director': ['business-goals-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
-          'demo_plant': ['production-cockpit-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
+          'demo_plant': ['dashboard-view', 'capacity-planning-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'],
           'demo_scheduler': ['schedule-view', 'boards-view', 'shop-floor-view', 'analytics-view', 'scheduling-optimizer-view', 'capacity-planning-view', 'business-goals-view', 'ai-assistant-view', 'feedback-view'],
           'demo_it_admin': ['systems-management-view', 'role-management-view', 'user-management-view', 'ai-assistant-view', 'feedback-view'],
           'demo_systems': ['systems-management-view', 'role-management-view', 'user-management-view', 'training-view', 'ai-assistant-view', 'feedback-view'],
@@ -10692,7 +10692,7 @@ Return a JSON response with this structure:
       '/maintenance': 'maintenance-view',
       '/optimize-orders': 'scheduling-optimizer-view',
       '/erp-import': 'erp-import-view',
-      '/cockpit': 'production-cockpit-view',
+      '/cockpit': 'dashboard-view',
       '/data-validation': 'systems-management-view',
 
       '/systems-management-dashboard': 'systems-management-view',
