@@ -26,10 +26,11 @@ Note on concurrent work:
   * `pt_job_materials.job_id` -> `pt_jobs.id`, `item_id` -> `pt_items.id`
   * `pt_sales_orders.customer_id` -> `pt_customers.id`
   * `pt_sales_order_lines.sales_order_id` -> `pt_sales_orders.id`, `item_id` -> `pt_items.id`
-- **✅ Created pt_operations_id_based view with pure integer ID joins across all 66 PT tables**
+- **✅ Created pt_operations_id_based view with pure integer ID joins across all PT tables**
 - **✅ PT operations API completely refactored to use only integer primary key relationships**
 - **✅ Database modernization COMPLETE: Zero external_id string joins remaining**
-- **✅ All 66 PT import tables now follow proper relational database design with integer foreign keys**
+- **✅ Expanded from 59 to 72 total PT tables: 59 original + 8 additional PT tables + 5 ID lookup tables**
+- **✅ All PT import tables now follow proper relational database design with integer foreign keys**
 - **✅ Enhanced performance through elimination of all string-based lookup joins**
 
 **2025-08-14**: Interactive Lasso Selection for Data Schema Visualization
