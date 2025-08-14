@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import { useQuery } from '@tanstack/react-query';
 
+// Import PT Gantt styles for enhanced visualization
+import '../styles/pt-gantt.css';
+
 export default function DemoPage() {
   const schedulerRef = useRef<any>(null);
   const [schedulerData, setSchedulerData] = useState<any>(null);
@@ -12,9 +15,9 @@ export default function DemoPage() {
     enabled: true
   });
   
-  // Fetch operations
+  // Fetch PT operations (authentic PlanetTogether import data)
   const { data: operations } = useQuery({
-    queryKey: ['/api/operations'],
+    queryKey: ['/api/pt-operations'],
     enabled: true
   });
   
@@ -36,49 +39,64 @@ export default function DemoPage() {
         eventColor: resource.isDrum ? 'red' : 'blue'
       }));
       
-      // Map operations to Bryntum events with job names
+      // Map PT operations to Bryntum events with authentic PlanetTogether data
       const bryntumEvents = (operations as any[]).map((op: any, index: number) => {
-        // Use the actual production order ID from the operation
-        const productionOrderId = op.productionOrderId || op.jobId;
-        
-        // Find the actual production order that this operation belongs to
-        const order = productionOrderId ? 
-          (productionOrders as any[]).find((po: any) => po.id === productionOrderId) : 
-          null;
-        
-        // Build the job name with order number and product name from the actual linked order
-        const jobName = order ? `${order.orderNumber} - ${order.name}` : `Operation ${op.id}`;
+        // PT operations have jobId and jobName from the authentic import data
+        const jobName = op.jobName || `Job ${op.jobId || op.id}`;
         const operationName = op.operationName || op.name || 'Unknown Operation';
+        
+        // Enhanced status mapping for PT operations
+        const status = op.onHold ? 'on_hold' : op.status || 'scheduled';
         
         const event = {
           id: op.id,
-          // Use simple name field for Bryntum
-          name: operationName,
-          // Store job and operation names as custom fields
+          // Display format: "Sequence. Job: Operation" for PT data
+          name: `${op.sequence > 0 ? op.sequence + '. ' : ''}${jobName}: ${operationName}`,
+          // Store PT-specific data as custom fields
           jobName: jobName,
           operationName: operationName,
-          startDate: op.startTime || new Date('2025-08-07T08:00:00'),
-          endDate: op.endTime || new Date('2025-08-07T12:00:00'),
-          status: op.status || 'waiting',
-          eventColor: op.status === 'scheduled' || op.status === 'ready' ? 'green' : 
+          jobId: op.jobId,
+          operationId: op.operationId,
+          manufacturingOrderId: op.manufacturingOrderId,
+          manufacturingOrderName: op.manufacturingOrderName,
+          startDate: op.startTime ? new Date(op.startTime) : new Date('2025-08-07T08:00:00'),
+          endDate: op.endTime ? new Date(op.endTime) : new Date('2025-08-07T12:00:00'),
+          status: status,
+          // Enhanced PT-specific color coding
+          eventColor: op.onHold ? 'orange' :
+                     op.status === 'completed' ? 'green' : 
                      op.status === 'in_progress' ? 'blue' : 
-                     op.status === 'completed' ? 'gray' : 'orange',
+                     op.priority <= 2 ? 'purple' : 'teal',
           draggable: true,
-          resizable: true
+          resizable: true,
+          // PT-specific fields
+          sequence: op.sequence || 1,
+          productCode: op.productCode,
+          outputName: op.outputName,
+          requiredQuantity: op.requiredQuantity,
+          setupTime: op.setupTime,
+          cycleTime: op.cycleTime,
+          cleanupTime: op.cleanupTime,
+          postProcessTime: op.postProcessTime,
+          onHold: op.onHold,
+          holdReason: op.holdReason,
+          dataSource: 'pt_import'
         };
         
-        console.log(`Event ${index}:`, event);
-        console.log(`  - Production Order ID: ${productionOrderId}`);
-        console.log(`  - Found Order: ${order ? 'Yes' : 'No'}`);
-        console.log(`  - Job Name: ${jobName}`);
+        console.log(`PT Event ${index}:`, event);
+        console.log(`  - Job ID: ${op.jobId}`);
+        console.log(`  - Operation: ${operationName}`);
+        console.log(`  - Manufacturing Order: ${op.manufacturingOrderName || 'None'}`);
+        console.log(`  - On Hold: ${op.onHold ? 'Yes' : 'No'}`);
         return event;
       });
       
-      // Create assignments (map operations to resources)
+      // Create assignments (map PT operations to resources)
       const bryntumAssignments = (operations as any[]).map((op: any, index: number) => ({
         id: index + 1,
         eventId: op.id,
-        resourceId: op.workCenterId || op.assignedResourceId || (index % bryntumResources.length) + 1
+        // Use PT-specific resource assignment or fallback to round-robin
+        resourceId: op.assignedResourceId || op.workCenterId || ((index % bryntumResources.length) + 1)
       }));
       
       console.log('Bryntum Events:', bryntumEvents);
@@ -105,8 +123,8 @@ export default function DemoPage() {
         backgroundColor: '#f3f4f6'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h2>Loading Production Schedule...</h2>
-          <p>Fetching jobs and operations data</p>
+          <h2>Loading PT Import Data...</h2>
+          <p>Fetching authentic PlanetTogether operations and resources</p>
         </div>
       </div>
     );
