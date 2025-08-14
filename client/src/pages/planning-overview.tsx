@@ -135,31 +135,7 @@ const planningSteps: PlanningStep[] = [
       'Cost Reduction Strategy'
     ]
   },
-  {
-    id: 'production-planning',
-    title: 'Production Planning',
-    description: 'Transform the MPS into detailed material and resource requirements using MRP and capacity planning.',
-    icon: Factory,
-    color: 'text-purple-600 bg-purple-50 border-purple-200',
-    inputs: ['Master Production Schedule', 'Bill of Materials', 'Inventory Levels', 'Lead Times'],
-    outputs: ['Material Requirements', 'Work Orders', 'Purchase Orders'],
-    keyMetrics: ['Material Availability', 'Planned Order Coverage', 'Inventory Investment'],
-    bestPractices: [
-      'Maintain accurate BOMs and lead times',
-      'Use lot sizing rules effectively',
-      'Consider safety stock at component level',
-      'Regular MRP regeneration'
-    ],
-    navigationPath: '/production-planning',
-    timeHorizon: '2-12 weeks',
-    stakeholders: ['Production Planners', 'Materials Management', 'Procurement'],
-    strategicAlignment: [
-      'Material Cost Optimization',
-      'Supplier Relationship Strategy',
-      'Inventory Investment Goals',
-      'Supply Chain Resilience'
-    ]
-  },
+
   {
     id: 'capacity-planning',
     title: 'Capacity Planning',
@@ -336,7 +312,7 @@ const PlanningOverview = () => {
           <Workflow className="h-5 w-5 text-blue-600" />
           <span className="text-sm font-medium text-blue-700">Planning Process Guide</span>
         </div>
-        <h1 className="text-4xl font-bold text-gray-900">Supply Chain Planning Overview</h1>
+        <h1 className="text-4xl font-bold text-gray-900">Production Planning Overview</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Understand how demand planning, master production scheduling, capacity planning, and production scheduling 
           work together to optimize your manufacturing operations and meet business goals.
