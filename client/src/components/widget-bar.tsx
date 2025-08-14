@@ -110,9 +110,9 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     const newWidget: Widget = {
       id: `${widgetType}-${Date.now()}`,
       type: widgetType,
-      title: widgetInfo.title,
+      title: widgetInfo.metadata.displayName,
       component: null as any,
-      config: {},
+      config: widgetInfo.metadata.defaultConfig || {},
       size: 'medium',
       priority: widgets.length + 1
     };
@@ -474,8 +474,8 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
                   onClick={() => handleAddWidget(widgetInfo.type)}
                 >
                   <div className="text-left">
-                    <div className="font-medium">{widgetInfo.title}</div>
-                    <div className="text-sm text-gray-500">{widgetInfo.description}</div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{widgetInfo.metadata.displayName}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{widgetInfo.metadata.description}</div>
                   </div>
                 </Button>
               ))}
