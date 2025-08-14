@@ -130,13 +130,11 @@ export default function DemoPage() {
     events: schedulerData.events,
     assignments: schedulerData.assignments,
     
-    // Custom event renderer at root level per Bryntum docs
-    eventRenderer: ({ eventRecord, renderData }) => {
-      const jobName = eventRecord.jobName || 'Unknown Job';
-      const operationName = eventRecord.operationName || eventRecord.name || 'Unknown Operation';
-      const status = eventRecord.status || 'waiting';
-      
-      console.log('EventRenderer called:', { jobName, operationName, status });
+    // Use eventBodyTemplate for simpler rendering without recursion
+    eventBodyTemplate: (data) => {
+      const jobName = data.jobName || 'Unknown Job';
+      const operationName = data.operationName || data.name || 'Unknown Operation';
+      const status = data.status || 'waiting';
       
       // Status colors matching the screenshot
       const statusColors = {
@@ -150,8 +148,7 @@ export default function DemoPage() {
 
       const statusColor = statusColors[status] || '#FF9800';
       
-      // Override the default event content
-      renderData.eventContent = `
+      return `
         <div style="
           height: 100%;
           display: flex;
@@ -202,8 +199,6 @@ export default function DemoPage() {
           "></div>
         </div>
       `;
-      
-      return renderData;
     },
     
     // Enable ALL Bryntum Pro features
