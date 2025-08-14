@@ -393,7 +393,7 @@ function Router() {
           </Route>
           
           <Route path="/planning-overview">
-            <ProtectedRoute feature="production-scheduling" action="view">
+            <ProtectedRoute feature="schedule" action="view">
               <PlanningOverview />
             </ProtectedRoute>
           </Route>
@@ -502,7 +502,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/schedule-sequences">
-            <ProtectedRoute feature="production-scheduling" action="view">
+            <ProtectedRoute feature="schedule" action="view">
               <ScheduleSequences />
             </ProtectedRoute>
           </Route>
