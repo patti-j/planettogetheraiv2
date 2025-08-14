@@ -373,8 +373,95 @@ export default function DemoPage() {
       }
     },
     
-    // Simple toolbar without complex items
-    tbar: false
+    // Add toolbar with zoom and navigation controls
+    tbar: [
+      {
+        type: 'button',
+        text: 'Zoom In',
+        icon: 'b-fa-search-plus',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.zoomIn();
+        }
+      },
+      {
+        type: 'button',
+        text: 'Zoom Out',
+        icon: 'b-fa-search-minus',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.zoomOut();
+        }
+      },
+      {
+        type: 'button',
+        text: 'Zoom to Fit',
+        icon: 'b-fa-expand-arrows-alt',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.zoomToFit();
+        }
+      },
+      '|',
+      {
+        type: 'button',
+        text: 'Previous',
+        icon: 'b-fa-angle-left',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.shiftPrevious();
+        }
+      },
+      {
+        type: 'button',
+        text: 'Today',
+        icon: 'b-fa-calendar-day',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.scrollToDate(new Date(), { block: 'center', animate: true });
+        }
+      },
+      {
+        type: 'button',
+        text: 'Next',
+        icon: 'b-fa-angle-right',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          scheduler?.shiftNext();
+        }
+      },
+      '->',
+      {
+        type: 'button',
+        text: 'Refresh Data',
+        icon: 'b-fa-sync',
+        onAction: () => {
+          window.location.reload();
+        }
+      },
+      {
+        type: 'button',
+        text: 'Add Operation',
+        icon: 'b-fa-plus-circle',
+        cls: 'b-green',
+        onAction: () => {
+          const scheduler = schedulerRef.current?.instance;
+          const firstResource = schedulerData.resources[0];
+          if (firstResource) {
+            scheduler?.eventStore.add({
+              resourceId: firstResource.id,
+              name: 'New Operation',
+              jobName: 'Unassigned Job',
+              status: 'planned',
+              startDate: new Date('2025-08-10T10:00:00'),
+              duration: 3,
+              durationUnit: 'hour',
+              eventColor: 'orange'
+            });
+          }
+        }
+      }
+    ]
   };
   
   return (
