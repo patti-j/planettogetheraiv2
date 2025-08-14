@@ -131,53 +131,54 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
     const newSizes: Record<string, string> = {};
 
     if (isHorizontal) {
-      // Horizontal layout - distribute width
-      const baseWidgetWidth = Math.max(200, Math.floor(availableSpace / totalWidgets));
-      const maxWidgetWidth = Math.min(400, baseWidgetWidth + 100);
+      // Horizontal layout - ensure reasonable minimum widths for compact widgets
+      const baseWidgetWidth = Math.max(240, Math.floor(availableSpace / totalWidgets));
+      const maxWidgetWidth = Math.min(320, baseWidgetWidth + 80);
       
       visibleWidgets.forEach((widget) => {
         let width;
         
-        // Adjust size based on widget priority and original size preference
+        // Adjust size based on widget size preference with better minimums
         switch (widget.size) {
           case 'small':
-            width = Math.max(180, Math.min(280, Math.floor(baseWidgetWidth * 0.8)));
+            width = Math.max(240, Math.min(300, Math.floor(baseWidgetWidth * 0.9)));
             break;
           case 'large':
-            width = Math.min(maxWidgetWidth, Math.floor(baseWidgetWidth * 1.3));
+            width = Math.min(maxWidgetWidth, Math.floor(baseWidgetWidth * 1.2));
             break;
           default: // medium
-            width = baseWidgetWidth;
+            width = Math.max(260, baseWidgetWidth);
         }
         
-        // Ensure widget doesn't get too cramped
-        if (totalWidgets > 4 && width < 220) {
-          width = 220;
+        // Ensure compact widgets have sufficient width
+        if (width < 240) {
+          width = 240;
         }
         
         newSizes[widget.id] = `w-[${width}px]`;
       });
     } else {
-      // Vertical layout - distribute height  
-      const baseWidgetHeight = Math.max(150, Math.floor(availableSpace / totalWidgets));
-      const maxWidgetHeight = Math.min(300, baseWidgetHeight + 80);
+      // Vertical layout - distribute height with better minimums
+      const baseWidgetHeight = Math.max(160, Math.floor(availableSpace / totalWidgets));
+      const maxWidgetHeight = Math.min(240, baseWidgetHeight + 60);
       
       visibleWidgets.forEach((widget) => {
         let height;
         
         switch (widget.size) {
           case 'small':
-            height = Math.max(120, Math.min(200, Math.floor(baseWidgetHeight * 0.7)));
+            height = Math.max(140, Math.min(200, Math.floor(baseWidgetHeight * 0.85)));
             break;
           case 'large':
-            height = Math.min(maxWidgetHeight, Math.floor(baseWidgetHeight * 1.4));
+            height = Math.min(maxWidgetHeight, Math.floor(baseWidgetHeight * 1.2));
             break;
           default: // medium
-            height = baseWidgetHeight;
+            height = Math.max(160, baseWidgetHeight);
         }
         
-        if (totalWidgets > 3 && height < 160) {
-          height = 160;
+        // Ensure compact widgets have sufficient height
+        if (height < 140) {
+          height = 140;
         }
         
         newSizes[widget.id] = `h-[${height}px]`;
@@ -277,17 +278,17 @@ const WidgetBar: React.FC<WidgetBarProps> = ({
       return dynamicSize;
     }
     
-    // Fallback static sizes - fill height for horizontal, width for vertical
+    // Better fallback static sizes with reasonable minimums
     const sizeMap = {
       horizontal: {
-        small: 'w-48 h-full',
-        medium: 'w-72 h-full',
-        large: 'w-96 h-full'
+        small: 'w-60 h-full',  // 240px minimum width
+        medium: 'w-72 h-full', // 288px width  
+        large: 'w-80 h-full'   // 320px width
       },
       vertical: {
-        small: 'w-full h-32',
-        medium: 'w-full h-48',
-        large: 'w-full h-64'
+        small: 'w-full h-36',  // 144px minimum height
+        medium: 'w-full h-48', // 192px height
+        large: 'w-full h-60'   // 240px height
       }
     };
     
