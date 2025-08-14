@@ -111,6 +111,31 @@ const planningSteps: PlanningStep[] = [
     ]
   },
   {
+    id: 'material-requirements-planning',
+    title: 'Material Requirements Planning',
+    description: 'Execute MRP runs to calculate time-phased material requirements, generate planned orders, and identify action messages.',
+    icon: FileText,
+    color: 'text-violet-600 bg-violet-50 border-violet-200',
+    inputs: ['Master Production Schedule', 'Bill of Materials', 'Inventory Records', 'Lead Times', 'Lot Sizing Rules'],
+    outputs: ['Planned Orders', 'Action Messages', 'Requirements Schedule', 'Exception Reports'],
+    keyMetrics: ['Order Coverage', 'Past Due Orders', 'Inventory Investment', 'MRP Nervousness'],
+    bestPractices: [
+      'Run MRP regeneration regularly',
+      'Maintain accurate inventory records',
+      'Use appropriate lot sizing policies',
+      'Review and act on action messages promptly'
+    ],
+    navigationPath: '/mrp',
+    timeHorizon: '2-26 weeks',
+    stakeholders: ['Materials Planners', 'Buyers', 'Production Control', 'Inventory Managers'],
+    strategicAlignment: [
+      'Material Availability Strategy',
+      'Inventory Investment Optimization',
+      'Supply Chain Efficiency Goals',
+      'Cost Reduction Strategy'
+    ]
+  },
+  {
     id: 'production-planning',
     title: 'Production Planning',
     description: 'Transform the MPS into detailed material and resource requirements using MRP and capacity planning.',
