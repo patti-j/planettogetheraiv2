@@ -380,7 +380,7 @@ export function AILeftPanel() {
               </ScrollArea>
               
               {/* Chat Input */}
-              <div className="border-t pt-4 pb-2">
+              <div className="border-t pt-4 pb-6">
                 <div className="flex gap-2">
                   <Input
                     value={prompt}
