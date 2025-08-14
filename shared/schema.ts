@@ -8603,6 +8603,244 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
   }),
 }));
 
+// ===== MRP (Material Requirements Planning) TABLES =====
+
+// MRP Master Production Schedule - defines what we plan to produce
+export const masterProductionSchedule = pgTable("master_production_schedule", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  periodType: text("period_type").notNull().default("weekly"), // daily, weekly, monthly
+  planningHorizon: integer("planning_horizon").notNull().default(52), // weeks
+  bucketStartDate: timestamp("bucket_start_date").notNull(),
+  bucketEndDate: timestamp("bucket_end_date").notNull(),
+  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull().default("0"),
+  firmedQuantity: numeric("firmed_quantity", { precision: 15, scale: 5 }).default("0"),
+  source: text("source").notNull().default("forecast"), // forecast, sales_order, manual
+  sourceId: integer("source_id"), // reference to sales order or other source
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  itemPlantPeriodIdx: unique().on(table.itemId, table.plantId, table.bucketStartDate),
+}));
+
+// MRP Runs - tracks each execution of the MRP calculation
+export const mrpRuns = pgTable("mrp_runs", {
+  id: serial("id").primaryKey(),
+  runNumber: text("run_number").notNull().unique(), // e.g., "MRP-2025-001"
+  description: text("description"),
+  plantId: integer("plant_id").references(() => plants.id),
+  runType: text("run_type").notNull().default("net_change"), // net_change, regenerative, single_level
+  status: text("status").notNull().default("planning"), // planning, running, completed, failed
+  planningHorizon: integer("planning_horizon").notNull().default(365), // days
+  cutoffDate: timestamp("cutoff_date").notNull(), // data cutoff for this run
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  processedItems: integer("processed_items").default(0),
+  totalItems: integer("total_items").default(0),
+  errorCount: integer("error_count").default(0),
+  warningCount: integer("warning_count").default(0),
+  parameters: jsonb("parameters").$type<{
+    includeForecast: boolean;
+    includeSafetyStock: boolean;
+    firmedPlannedOrders: boolean;
+    considerCapacity: boolean;
+    leadTimeMethod: string; // fixed, variable, dynamic
+    lotSizeMethod: string; // lot_for_lot, eoq, fixed, period_order_quantity
+  }>().default({}),
+  messages: jsonb("messages").$type<Array<{
+    type: string; // error, warning, info
+    message: string;
+    itemId?: number;
+    timestamp: string;
+  }>>().default([]),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// MRP Requirements - calculated material requirements for each item/period
+export const mrpRequirements = pgTable("mrp_requirements", {
+  id: serial("id").primaryKey(),
+  mrpRunId: integer("mrp_run_id").references(() => mrpRuns.id).notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  periodStartDate: timestamp("period_start_date").notNull(),
+  periodEndDate: timestamp("period_end_date").notNull(),
+  
+  // MRP calculations
+  grossRequirement: numeric("gross_requirement", { precision: 15, scale: 5 }).default("0"),
+  scheduledReceipts: numeric("scheduled_receipts", { precision: 15, scale: 5 }).default("0"),
+  projectedAvailable: numeric("projected_available", { precision: 15, scale: 5 }).default("0"),
+  netRequirement: numeric("net_requirement", { precision: 15, scale: 5 }).default("0"),
+  plannedOrderReceipts: numeric("planned_order_receipts", { precision: 15, scale: 5 }).default("0"),
+  plannedOrderReleases: numeric("planned_order_releases", { precision: 15, scale: 5 }).default("0"),
+  
+  // Additional planning data
+  safetyStock: numeric("safety_stock", { precision: 15, scale: 5 }).default("0"),
+  allocatedQuantity: numeric("allocated_quantity", { precision: 15, scale: 5 }).default("0"),
+  availableToPromise: numeric("available_to_promise", { precision: 15, scale: 5 }).default("0"),
+  
+  // Sources of demand/supply
+  demandSources: jsonb("demand_sources").$type<Array<{
+    sourceType: string; // sales_order, production_order, forecast, safety_stock
+    sourceId: number;
+    quantity: number;
+    dueDate: string;
+  }>>().default([]),
+  
+  supplySources: jsonb("supply_sources").$type<Array<{
+    sourceType: string; // purchase_order, production_order, planned_order, on_hand
+    sourceId: number;
+    quantity: number;
+    availableDate: string;
+  }>>().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  mrpItemPeriodIdx: unique().on(table.mrpRunId, table.itemId, table.periodStartDate),
+}));
+
+// MRP Action Messages - suggestions for planners
+export const mrpActionMessages = pgTable("mrp_action_messages", {
+  id: serial("id").primaryKey(),
+  mrpRunId: integer("mrp_run_id").references(() => mrpRuns.id).notNull(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  messageType: text("message_type").notNull(), // expedite, de_expedite, cancel, reschedule, release, firm
+  priority: text("priority").notNull().default("medium"), // high, medium, low
+  message: text("message").notNull(),
+  originalDate: timestamp("original_date"),
+  suggestedDate: timestamp("suggested_date"),
+  originalQuantity: numeric("original_quantity", { precision: 15, scale: 5 }),
+  suggestedQuantity: numeric("suggested_quantity", { precision: 15, scale: 5 }),
+  affectedOrderType: text("affected_order_type"), // purchase_order, production_order, planned_order
+  affectedOrderId: integer("affected_order_id"),
+  daysEarly: integer("days_early"),
+  daysLate: integer("days_late"),
+  status: text("status").notNull().default("open"), // open, acknowledged, completed, ignored
+  acknowledgedBy: integer("acknowledged_by"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// MRP Planning Parameters - item-specific planning settings
+export const mrpPlanningParameters = pgTable("mrp_planning_parameters", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").references(() => items.id).notNull(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  
+  // Planning method
+  planningMethod: text("planning_method").notNull().default("mrp"), // mrp, reorder_point, kanban, manual
+  mrpType: text("mrp_type").notNull().default("standard"), // standard, phantom, planning
+  lowLevelCode: integer("low_level_code").default(0), // for BOM explosion order
+  
+  // Lot sizing
+  lotSizeRule: text("lot_size_rule").notNull().default("lot_for_lot"), // lot_for_lot, eoq, fixed, period_order_quantity
+  lotSize: numeric("lot_size", { precision: 15, scale: 5 }).default("1"),
+  minimumOrderQuantity: numeric("minimum_order_quantity", { precision: 15, scale: 5 }).default("1"),
+  maximumOrderQuantity: numeric("maximum_order_quantity", { precision: 15, scale: 5 }),
+  orderMultiple: numeric("order_multiple", { precision: 15, scale: 5 }).default("1"),
+  
+  // Lead times
+  leadTime: integer("lead_time").default(0), // days
+  safetyLeadTime: integer("safety_lead_time").default(0), // days
+  
+  // Safety stock and service levels
+  safetyStock: numeric("safety_stock", { precision: 15, scale: 5 }).default("0"),
+  safetyStockMethod: text("safety_stock_method").default("fixed"), // fixed, calculated, dynamic
+  serviceLevel: integer("service_level").default(95), // percentage
+  
+  // Planning horizon and frequencies
+  planningTimeFence: integer("planning_time_fence").default(0), // days - no automatic changes within this fence
+  demandTimeFence: integer("demand_time_fence").default(0), // days - use actual demand instead of forecast
+  releaseTimeFence: integer("release_time_fence").default(0), // days - automatically release planned orders
+  
+  // Control parameters
+  includeInMrp: boolean("include_in_mrp").default(true),
+  createPurchaseReqs: boolean("create_purchase_reqs").default(true),
+  createPlannedOrders: boolean("create_planned_orders").default(true),
+  autoFirmPlannedOrders: boolean("auto_firm_planned_orders").default(false),
+  consumeForecast: boolean("consume_forecast").default(true),
+  
+  // Capacity considerations
+  considerCapacity: boolean("consider_capacity").default(false),
+  infiniteCapacity: boolean("infinite_capacity").default(true),
+  
+  isActive: boolean("is_active").default(true),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  itemPlantIdx: unique().on(table.itemId, table.plantId),
+}));
+
+// MRP Relations (to be handled below with existing relations)
+
+// MRP Relations
+export const masterProductionScheduleRelations = relations(masterProductionSchedule, ({ one }) => ({
+  item: one(items, {
+    fields: [masterProductionSchedule.itemId],
+    references: [items.id],
+  }),
+  plant: one(plants, {
+    fields: [masterProductionSchedule.plantId],
+    references: [plants.id],
+  }),
+}));
+
+export const mrpRunsRelations = relations(mrpRuns, ({ one, many }) => ({
+  plant: one(plants, {
+    fields: [mrpRuns.plantId],
+    references: [plants.id],
+  }),
+  requirements: many(mrpRequirements),
+  actionMessages: many(mrpActionMessages),
+}));
+
+export const mrpRequirementsRelations = relations(mrpRequirements, ({ one }) => ({
+  mrpRun: one(mrpRuns, {
+    fields: [mrpRequirements.mrpRunId],
+    references: [mrpRuns.id],
+  }),
+  item: one(items, {
+    fields: [mrpRequirements.itemId],
+    references: [items.id],
+  }),
+  plant: one(plants, {
+    fields: [mrpRequirements.plantId],
+    references: [plants.id],
+  }),
+}));
+
+export const mrpActionMessagesRelations = relations(mrpActionMessages, ({ one }) => ({
+  mrpRun: one(mrpRuns, {
+    fields: [mrpActionMessages.mrpRunId],
+    references: [mrpRuns.id],
+  }),
+  item: one(items, {
+    fields: [mrpActionMessages.itemId],
+    references: [items.id],
+  }),
+  plant: one(plants, {
+    fields: [mrpActionMessages.plantId],
+    references: [plants.id],
+  }),
+}));
+
+export const mrpPlanningParametersRelations = relations(mrpPlanningParameters, ({ one }) => ({
+  item: one(items, {
+    fields: [mrpPlanningParameters.itemId],
+    references: [items.id],
+  }),
+  plant: one(plants, {
+    fields: [mrpPlanningParameters.plantId],
+    references: [plants.id],
+  }),
+}));
+
 export const productionOrdersRelations = relations(productionOrders, ({ one, many }) => ({
   plant: one(plants, {
     fields: [productionOrders.plantId],
@@ -9844,33 +10082,7 @@ export const insertHomeDashboardLayoutSchema = createInsertSchema(homeDashboardL
 export type InsertHomeDashboardLayout = z.infer<typeof insertHomeDashboardLayoutSchema>;
 export type HomeDashboardLayout = typeof homeDashboardLayouts.$inferSelect;
 
-// Master Production Schedule Tables (matching actual database structure)
-export const masterProductionSchedule = pgTable("master_production_schedule", {
-  id: serial("id").primaryKey(),
-  itemNumber: text("item_number").notNull(),
-  plantId: integer("plant_id").notNull(),
-  plannerId: integer("planner_id").notNull(),
-  planningHorizonDays: integer("planning_horizon_days").default(365),
-  timeBuckets: jsonb("time_buckets").$type<Array<{
-    period: string;
-    startDate: string;
-    endDate: string;
-    quantity: number;
-    availableToPromise: number;
-    projectedOnHand: number;
-  }>>().default([]),
-  isPublished: boolean("is_published").default(false),
-  publishedAt: timestamp("published_at"),
-  publishedBy: integer("published_by"),
-  notes: text("notes"),
-  revision: integer("revision").default(1),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  itemPlantIdx: unique().on(table.itemNumber, table.plantId),
-  plannerIdx: index("mps_planner_idx").on(table.plannerId),
-  publishedIdx: index("mps_published_idx").on(table.isPublished),
-}));
+// MPS duplicate removed - using the original definition from MRP section
 
 // Sales forecasts that feed into MPS (simplified structure)
 export const salesForecasts = pgTable("sales_forecasts", {
@@ -9901,13 +10113,51 @@ export const availableToPromise = pgTable("available_to_promise", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// MRP Zod schemas
 export const insertMasterProductionScheduleSchema = createInsertSchema(masterProductionSchedule, { 
   id: undefined,
   createdAt: undefined,
   updatedAt: undefined,
 });
-export type InsertMasterProductionSchedule = z.infer<typeof insertMasterProductionScheduleSchema>;
+
+export const insertMrpRunSchema = createInsertSchema(mrpRuns, {
+  id: undefined,
+  createdAt: undefined,
+});
+
+export const insertMrpRequirementSchema = createInsertSchema(mrpRequirements, {
+  id: undefined,
+  createdAt: undefined,
+});
+
+export const insertMrpActionMessageSchema = createInsertSchema(mrpActionMessages, {
+  id: undefined,
+  createdAt: undefined,
+});
+
+export const insertMrpPlanningParametersSchema = createInsertSchema(mrpPlanningParameters, {
+  id: undefined,
+  createdAt: undefined,
+  lastUpdated: undefined,
+});
+
+// MRP Type exports
 export type MasterProductionSchedule = typeof masterProductionSchedule.$inferSelect;
+export type InsertMasterProductionSchedule = z.infer<typeof insertMasterProductionScheduleSchema>;
+
+export type MrpRun = typeof mrpRuns.$inferSelect;
+export type InsertMrpRun = z.infer<typeof insertMrpRunSchema>;
+
+export type MrpRequirement = typeof mrpRequirements.$inferSelect;
+export type InsertMrpRequirement = z.infer<typeof insertMrpRequirementSchema>;
+
+export type MrpActionMessage = typeof mrpActionMessages.$inferSelect;
+export type InsertMrpActionMessage = z.infer<typeof insertMrpActionMessageSchema>;
+
+export type MrpPlanningParameters = typeof mrpPlanningParameters.$inferSelect;
+export type InsertMrpPlanningParameters = z.infer<typeof insertMrpPlanningParametersSchema>;
+
+// MPS types moved to MRP section above
 
 export const insertSalesForecastSchema = createInsertSchema(salesForecasts, { 
   id: undefined,

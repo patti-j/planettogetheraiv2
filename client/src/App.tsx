@@ -104,6 +104,7 @@ import EnterpriseMapPage from "@/pages/enterprise-map";
 import AutonomousOptimizationPage from "@/pages/autonomous-optimization";
 import SmartKpiTrackingPage from "@/pages/smart-kpi-tracking";
 import ImplementationConsultantPage from "@/pages/implementation-consultant";
+import MrpPage from "@/pages/mrp";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -400,6 +401,11 @@ function Router() {
           <Route path="/master-production-schedule">
             <ProtectedRoute feature="master-production-schedule" action="view">
               <MasterProductionSchedulePage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/mrp">
+            <ProtectedRoute feature="schedule" action="view">
+              <MrpPage />
             </ProtectedRoute>
           </Route>
           <Route path="/capacity-planning">

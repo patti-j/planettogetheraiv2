@@ -63,7 +63,10 @@ import {
   insertHomeDashboardLayoutSchema,
   // Smart KPI Schemas
   insertSmartKpiMeetingSchema, insertSmartKpiDefinitionSchema, insertSmartKpiTargetSchema, 
-  insertSmartKpiActualSchema, insertSmartKpiImprovementSchema, insertSmartKpiAlertSchema
+  insertSmartKpiActualSchema, insertSmartKpiImprovementSchema, insertSmartKpiAlertSchema,
+  // MRP Schemas
+  insertMasterProductionScheduleSchema, insertMrpRunSchema, insertMrpRequirementSchema, 
+  insertMrpActionMessageSchema, insertMrpPlanningParametersSchema
 } from "@shared/schema";
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
@@ -23194,6 +23197,142 @@ Be careful to preserve data integrity and relationships.`;
     const userId = req.session?.userId;
     const dashboardData = await storage.getKpiDashboardData(userId);
     res.json(dashboardData);
+  }));
+
+  // MRP (Material Requirements Planning) Routes
+  app.get("/api/mrp/runs", createSafeHandler(async (req, res) => {
+    const runs = await storage.getMrpRuns();
+    res.json(runs);
+  }));
+
+  app.get("/api/mrp/runs/latest", createSafeHandler(async (req, res) => {
+    const runs = await storage.getMrpRuns();
+    const latestRun = runs.length > 0 ? runs[runs.length - 1] : null;
+    res.json(latestRun);
+  }));
+
+  app.get("/api/mrp/runs/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const run = await storage.getMrpRun(id);
+    if (!run) {
+      throw new NotFoundError("MRP run not found");
+    }
+    res.json(run);
+  }));
+
+  app.post("/api/mrp/runs", createSafeHandler(async (req, res) => {
+    const validation = insertMrpRunSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid MRP run data", validation.error.errors);
+    }
+
+    const run = await storage.createMrpRun(validation.data);
+    res.status(201).json(run);
+  }));
+
+  app.post("/api/mrp/runs/:id/execute", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const run = await storage.getMrpRun(id);
+    if (!run) {
+      throw new NotFoundError("MRP run not found");
+    }
+
+    // Update run status to 'running'
+    await storage.updateMrpRun(id, { status: "running" });
+    
+    // Here would be the actual MRP calculation logic
+    // For now, we'll simulate completion
+    setTimeout(async () => {
+      await storage.updateMrpRun(id, { 
+        status: "completed", 
+        completedAt: new Date(),
+        processedItems: 150,
+        totalItems: 150
+      });
+    }, 5000);
+
+    res.json({ message: "MRP execution started" });
+  }));
+
+  app.get("/api/mrp/requirements/:runId", createSafeHandler(async (req, res) => {
+    const runId = parseInt(req.params.runId);
+    const requirements = await storage.getMrpRequirements(runId);
+    res.json(requirements);
+  }));
+
+  app.get("/api/mrp/action-messages/:runId", createSafeHandler(async (req, res) => {
+    const runId = parseInt(req.params.runId);
+    const messages = await storage.getMrpActionMessages(runId);
+    res.json(messages);
+  }));
+
+  app.post("/api/mrp/action-messages/:id/acknowledge", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { notes } = req.body;
+    
+    const message = await storage.updateMrpActionMessage(id, {
+      status: "acknowledged",
+      notes: notes || "",
+      acknowledgedAt: new Date()
+    });
+    
+    if (!message) {
+      throw new NotFoundError("Action message not found");
+    }
+    
+    res.json(message);
+  }));
+
+  app.post("/api/mrp/action-messages/:id/complete", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    const message = await storage.updateMrpActionMessage(id, {
+      status: "completed",
+      completedAt: new Date()
+    });
+    
+    if (!message) {
+      throw new NotFoundError("Action message not found");
+    }
+    
+    res.json(message);
+  }));
+
+  app.get("/api/mrp/master-production-schedule", createSafeHandler(async (req, res) => {
+    const schedule = await storage.getMasterProductionSchedule();
+    res.json(schedule);
+  }));
+
+  app.post("/api/mrp/master-production-schedule", createSafeHandler(async (req, res) => {
+    const validation = insertMasterProductionScheduleSchema.safeParse(req.body);
+    if (!validation.success) {
+      throw new ValidationError("Invalid MPS data", validation.error.errors);
+    }
+
+    const entry = await storage.createMasterProductionScheduleEntry(validation.data);
+    res.status(201).json(entry);
+  }));
+
+  app.patch("/api/mrp/master-production-schedule/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    const entry = await storage.updateMasterProductionScheduleEntry(id, req.body);
+    if (!entry) {
+      throw new NotFoundError("MPS entry not found");
+    }
+    
+    res.json(entry);
+  }));
+
+  app.delete("/api/mrp/master-production-schedule/:id", createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    const success = await storage.deleteMasterProductionScheduleEntry(id);
+    if (!success) {
+      throw new NotFoundError("MPS entry not found");
+    }
+    
+    res.json({ success: true });
   }));
 
   // Register schedule routes

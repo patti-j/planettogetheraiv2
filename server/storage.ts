@@ -73,6 +73,8 @@ import {
   type InsertPresentation, type InsertPresentationSlide, type InsertPresentationTourIntegration, type InsertPresentationLibrary, type InsertPresentationAnalytics, type InsertPresentationAIContent,
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
   homeDashboardLayouts,
+  // MRP Tables
+  masterProductionSchedule, mrpRuns, mrpRequirements, mrpActionMessages, mrpPlanningParameters,
   smartKpiMeetings, smartKpiDefinitions, smartKpiTargets, smartKpiActuals, smartKpiImprovements, smartKpiAlerts,
   type SmartKpiMeeting, type SmartKpiDefinition, type SmartKpiTarget, type SmartKpiActual, type SmartKpiImprovement, type SmartKpiAlert,
   type InsertSmartKpiMeeting, type InsertSmartKpiDefinition, type InsertSmartKpiTarget, type InsertSmartKpiActual, type InsertSmartKpiImprovement, type InsertSmartKpiAlert,
@@ -129,6 +131,10 @@ import {
   masterProductionSchedule, salesForecasts, availableToPromise,
   type MasterProductionSchedule, type SalesForecast, type AvailableToPromise,
   type InsertMasterProductionSchedule, type InsertSalesForecast, type InsertAvailableToPromise,
+  
+  // MRP Types
+  type MrpRun, type MrpRequirement, type MrpActionMessage, type MrpPlanningParameters,
+  type InsertMrpRun, type InsertMrpRequirement, type InsertMrpActionMessage, type InsertMrpPlanningParameters,
   
   // Missing table types that are referenced in the interface
   accountInfo, billingHistory, usageMetrics, integrationDataFlow, integrationExecutionLog, integrationDataMapping, integrationWebhook,
@@ -897,6 +903,26 @@ export interface IStorage {
   deleteMasterProductionSchedule(id: number): Promise<boolean>;
   publishMasterProductionSchedule(id: number, publishedBy: number): Promise<MasterProductionSchedule | undefined>;
   getMasterProductionSchedulesByPlanner(plannerId: number): Promise<MasterProductionSchedule[]>;
+
+  // MRP (Material Requirements Planning) Management - New
+  getMrpRuns(): Promise<MrpRun[]>;
+  getMrpRun(id: number): Promise<MrpRun | undefined>;
+  createMrpRun(run: InsertMrpRun): Promise<MrpRun>;
+  updateMrpRun(id: number, updates: Partial<InsertMrpRun>): Promise<MrpRun | undefined>;
+  deleteMrpRun(id: number): Promise<boolean>;
+
+  getMrpRequirements(runId: number): Promise<MrpRequirement[]>;
+  createMrpRequirement(requirement: InsertMrpRequirement): Promise<MrpRequirement>;
+
+  getMrpActionMessages(runId: number): Promise<MrpActionMessage[]>;
+  createMrpActionMessage(message: InsertMrpActionMessage): Promise<MrpActionMessage>;
+  updateMrpActionMessage(id: number, updates: Partial<InsertMrpActionMessage>): Promise<MrpActionMessage | undefined>;
+
+  // Master Production Schedule Management for MRP
+  getMasterProductionSchedule(): Promise<MasterProductionSchedule[]>;
+  createMasterProductionScheduleEntry(entry: InsertMasterProductionSchedule): Promise<MasterProductionSchedule>;
+  updateMasterProductionScheduleEntry(id: number, updates: Partial<InsertMasterProductionSchedule>): Promise<MasterProductionSchedule | undefined>;
+  deleteMasterProductionScheduleEntry(id: number): Promise<boolean>;
 
   // Sales Forecasts Management
   getSalesForecasts(plantId?: number, itemNumber?: string): Promise<SalesForecast[]>;
@@ -15402,6 +15428,122 @@ export class DatabaseStorage implements IStorage {
       .where(eq(availableToPromise.id, id))
       .returning();
     return updated || undefined;
+  }
+  // MRP (Material Requirements Planning) Implementation
+  async getMrpRuns(): Promise<MrpRun[]> {
+    const runs = await this.db
+      .select()
+      .from(mrpRuns)
+      .orderBy(desc(mrpRuns.createdAt));
+    return runs;
+  }
+
+  async getMrpRun(id: number): Promise<MrpRun | undefined> {
+    const [run] = await this.db
+      .select()
+      .from(mrpRuns)
+      .where(eq(mrpRuns.id, id));
+    return run;
+  }
+
+  async createMrpRun(run: InsertMrpRun): Promise<MrpRun> {
+    const [newRun] = await this.db
+      .insert(mrpRuns)
+      .values(run)
+      .returning();
+    return newRun;
+  }
+
+  async updateMrpRun(id: number, updates: Partial<InsertMrpRun>): Promise<MrpRun | undefined> {
+    const [updatedRun] = await this.db
+      .update(mrpRuns)
+      .set(updates)
+      .where(eq(mrpRuns.id, id))
+      .returning();
+    return updatedRun;
+  }
+
+  async deleteMrpRun(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(mrpRuns)
+      .where(eq(mrpRuns.id, id));
+    return result.rowCount > 0;
+  }
+
+  async getMrpRequirements(runId: number): Promise<MrpRequirement[]> {
+    const requirements = await this.db
+      .select()
+      .from(mrpRequirements)
+      .where(eq(mrpRequirements.mrpRunId, runId))
+      .orderBy(mrpRequirements.itemNumber);
+    return requirements;
+  }
+
+  async createMrpRequirement(requirement: InsertMrpRequirement): Promise<MrpRequirement> {
+    const [newRequirement] = await this.db
+      .insert(mrpRequirements)
+      .values(requirement)
+      .returning();
+    return newRequirement;
+  }
+
+  async getMrpActionMessages(runId: number): Promise<MrpActionMessage[]> {
+    const messages = await this.db
+      .select()
+      .from(mrpActionMessages)
+      .where(eq(mrpActionMessages.mrpRunId, runId))
+      .orderBy(desc(mrpActionMessages.priority), mrpActionMessages.itemNumber);
+    return messages;
+  }
+
+  async createMrpActionMessage(message: InsertMrpActionMessage): Promise<MrpActionMessage> {
+    const [newMessage] = await this.db
+      .insert(mrpActionMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  async updateMrpActionMessage(id: number, updates: Partial<InsertMrpActionMessage>): Promise<MrpActionMessage | undefined> {
+    const [updatedMessage] = await this.db
+      .update(mrpActionMessages)
+      .set(updates)
+      .where(eq(mrpActionMessages.id, id))
+      .returning();
+    return updatedMessage;
+  }
+
+  // Master Production Schedule Management for MRP
+  async getMasterProductionSchedule(): Promise<MasterProductionSchedule[]> {
+    const schedule = await this.db
+      .select()
+      .from(masterProductionSchedule)
+      .orderBy(masterProductionSchedule.weekEndingDate, masterProductionSchedule.itemNumber);
+    return schedule;
+  }
+
+  async createMasterProductionScheduleEntry(entry: InsertMasterProductionSchedule): Promise<MasterProductionSchedule> {
+    const [newEntry] = await this.db
+      .insert(masterProductionSchedule)
+      .values(entry)
+      .returning();
+    return newEntry;
+  }
+
+  async updateMasterProductionScheduleEntry(id: number, updates: Partial<InsertMasterProductionSchedule>): Promise<MasterProductionSchedule | undefined> {
+    const [updatedEntry] = await this.db
+      .update(masterProductionSchedule)
+      .set(updates)
+      .where(eq(masterProductionSchedule.id, id))
+      .returning();
+    return updatedEntry;
+  }
+
+  async deleteMasterProductionScheduleEntry(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(masterProductionSchedule)
+      .where(eq(masterProductionSchedule.id, id));
+    return result.rowCount > 0;
   }
 }
 
