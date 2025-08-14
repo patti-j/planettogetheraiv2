@@ -109,7 +109,6 @@ import SmartKpiTrackingPage from "@/pages/smart-kpi-tracking";
 import ImplementationConsultantPage from "@/pages/implementation-consultant";
 import MrpPage from "@/pages/mrp";
 import DemandSupplyAlignmentPage from "@/pages/demand-supply-alignment";
-import AlgorithmGovernancePage from "@/pages/algorithm-governance";
 
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
@@ -423,11 +422,7 @@ function Router() {
               <DemandSupplyAlignmentPage />
             </ProtectedRoute>
           </Route>
-          <Route path="/algorithm-governance">
-            <ProtectedRoute feature="algorithm-governance" action="view">
-              <AlgorithmGovernancePage />
-            </ProtectedRoute>
-          </Route>
+
           <Route path="/capacity-planning">
             <ProtectedRoute feature="capacity-planning" action="view">
               <CapacityPlanning />

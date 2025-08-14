@@ -14,7 +14,8 @@ import {
   Code, TestTube, Rocket, BarChart3, Layers, Package,
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
   Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
-  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle, Bot
+  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle, Bot,
+  Shield, Users, FileText, Pause, XCircle
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -104,6 +105,53 @@ interface AlgorithmDeployment {
   metrics: any;
 }
 
+interface AlgorithmVersion {
+  id: number;
+  algorithmName: string;
+  version: string;
+  displayName: string;
+  description: string;
+  algorithmType: string;
+  category: string;
+  developmentStatus: string;
+  releaseNotes?: string;
+  developedBy?: string;
+  createdAt: string;
+}
+
+interface PlantAlgorithmApproval {
+  id: number;
+  plantId: number;
+  algorithmVersionId: number;
+  status: string;
+  approvalLevel: string;
+  approvedBy?: number;
+  approvedAt?: string;
+  approvalNotes?: string;
+  effectiveDate?: string;
+  expirationDate?: string;
+  priority: number;
+  plant: { name: string };
+  algorithmVersion: AlgorithmVersion;
+  approvedByUser?: { firstName: string; lastName: string };
+}
+
+interface GovernanceDeployment {
+  id: number;
+  plantApprovalId: number;
+  deploymentName: string;
+  deploymentType: string;
+  status: string;
+  deployedAt?: string;
+  lastRunAt?: string;
+  healthStatus: string;
+  runStatistics: {
+    total_runs?: number;
+    successful_runs?: number;
+    failed_runs?: number;
+  };
+}
+
 export default function OptimizationStudio() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedTab, setSelectedTab] = useState("algorithms");
@@ -123,6 +171,11 @@ export default function OptimizationStudio() {
   const [selectedAlgorithmForDev, setSelectedAlgorithmForDev] = useState<OptimizationAlgorithm | null>(null);
   const [feedbackFilter, setFeedbackFilter] = useState("all");
   const [expandedFeedback, setExpandedFeedback] = useState<Set<number>>(new Set());
+  
+  // Algorithm Governance state
+  const [selectedPlantId, setSelectedPlantId] = useState<number | null>(null);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState<PlantAlgorithmApproval | null>(null);
   const [selectedRescheduleAlgorithm, setSelectedRescheduleAlgorithm] = useState<string>(() => {
     // Load the selected algorithm from localStorage on component mount
     return localStorage.getItem('selectedRescheduleAlgorithm') || '';
@@ -182,6 +235,52 @@ export default function OptimizationStudio() {
     queryFn: async () => {
       const response = await fetch('/api/algorithm-feedback');
       if (!response.ok) throw new Error('Failed to fetch algorithm feedback');
+      return response.json();
+    }
+  });
+
+  // Fetch algorithm versions for governance
+  const { data: algorithmVersions = [] } = useQuery({
+    queryKey: ['/api/algorithm-governance/versions'],
+    queryFn: async () => {
+      const response = await fetch('/api/algorithm-governance/versions');
+      if (!response.ok) throw new Error('Failed to fetch algorithm versions');
+      return response.json();
+    }
+  });
+
+  // Fetch algorithm approvals for governance
+  const { data: algorithmApprovals = [] } = useQuery({
+    queryKey: ['/api/algorithm-governance/approvals', selectedPlantId],
+    queryFn: async () => {
+      const url = selectedPlantId 
+        ? `/api/algorithm-governance/approvals?plantId=${selectedPlantId}`
+        : '/api/algorithm-governance/approvals';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch algorithm approvals');
+      return response.json();
+    }
+  });
+
+  // Fetch governance deployments
+  const { data: governanceDeployments = [] } = useQuery({
+    queryKey: ['/api/algorithm-governance/deployments', selectedPlantId],
+    queryFn: async () => {
+      const url = selectedPlantId 
+        ? `/api/algorithm-governance/deployments?plantId=${selectedPlantId}`
+        : '/api/algorithm-governance/deployments';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch governance deployments');
+      return response.json();
+    }
+  });
+
+  // Fetch plants for governance
+  const { data: plants = [] } = useQuery({
+    queryKey: ['/api/plants'],
+    queryFn: async () => {
+      const response = await fetch('/api/plants');
+      if (!response.ok) throw new Error('Failed to fetch plants');
       return response.json();
     }
   });
@@ -1577,7 +1676,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-5 text-xs sm:text-sm h-9 sm:h-10 p-1">
+            <TabsList className="grid w-full sm:w-auto grid-cols-7 text-xs sm:text-sm h-9 sm:h-10 p-1">
               <TabsTrigger value="algorithms" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Algorithms</span>
                 <span className="sm:hidden">Algo</span>
@@ -1593,6 +1692,21 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               <TabsTrigger value="deployments" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Deployments</span>
                 <span className="sm:hidden">Deploy</span>
+              </TabsTrigger>
+              <TabsTrigger value="governance" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
+                <Shield className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Governance</span>
+                <span className="sm:hidden">Gov</span>
+              </TabsTrigger>
+              <TabsTrigger value="approvals" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Approvals</span>
+                <span className="sm:hidden">App</span>
+              </TabsTrigger>
+              <TabsTrigger value="versions" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
+                <FileText className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Versions</span>
+                <span className="sm:hidden">Ver</span>
               </TabsTrigger>
               <TabsTrigger value="extensions" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Extensions</span>
@@ -2195,6 +2309,291 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     </CardContent>
                   </Card>
                 ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Algorithm Governance Tab */}
+          <TabsContent value="governance" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Algorithm Governance Overview</h2>
+              <div className="flex items-center gap-2">
+                <Select value={selectedPlantId?.toString() || "all"} onValueChange={(value) => setSelectedPlantId(value === "all" ? null : Number(value))}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Plants" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Plants</SelectItem>
+                    {plants.map((plant: any) => (
+                      <SelectItem key={plant.id} value={plant.id.toString()}>
+                        {plant.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Governance Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Versions</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{algorithmVersions.length}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Across all algorithms
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {algorithmApprovals.filter((approval: any) => approval.status === 'pending').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting review
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Deployments</CardTitle>
+                  <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {governanceDeployments.filter((deployment: any) => deployment.status === 'active').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Currently running
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Algorithm Versions Tab */}
+          <TabsContent value="versions" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Algorithm Versions</h2>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                New Version
+              </Button>
+            </div>
+
+            <div className="grid gap-6">
+              {algorithmVersions.map((version: AlgorithmVersion) => (
+                <Card key={version.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{version.displayName}</CardTitle>
+                        <CardDescription>{version.algorithmName} v{version.version}</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={version.developmentStatus === 'approved' ? 'default' : 
+                                 version.developmentStatus === 'testing' ? 'secondary' : 'outline'}
+                        >
+                          {version.developmentStatus}
+                        </Badge>
+                        <Badge variant="outline">{version.category}</Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      {version.description}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span>{version.developedBy}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(version.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {version.algorithmType}
+                      </Badge>
+                    </div>
+
+                    {version.releaseNotes && (
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
+                        <h5 className="text-sm font-medium mb-2">Release Notes</h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {version.releaseNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Copy className="w-3 h-3 mr-1" />
+                        Clone Version
+                      </Button>
+                      {version.developmentStatus === 'approved' && (
+                        <Button size="sm">
+                          <Play className="w-3 h-3 mr-1" />
+                          Request Approval
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {algorithmVersions.length === 0 && (
+                <Card className="p-8 text-center">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No algorithm versions found</h3>
+                  <p className="text-gray-600 mb-4">
+                    Create your first algorithm version to get started
+                  </p>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create First Version
+                  </Button>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Algorithm Approvals Tab */}
+          <TabsContent value="approvals" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Plant Algorithm Approvals</h2>
+              <div className="flex items-center gap-2">
+                <Select value={selectedPlantId?.toString() || "all"} onValueChange={(value) => setSelectedPlantId(value === "all" ? null : Number(value))}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Plants" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Plants</SelectItem>
+                    {plants.map((plant: any) => (
+                      <SelectItem key={plant.id} value={plant.id.toString()}>
+                        {plant.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Approval Request
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              {algorithmApprovals.map((approval: PlantAlgorithmApproval) => (
+                <Card key={approval.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">
+                          {approval.algorithmVersion.displayName}
+                        </CardTitle>
+                        <CardDescription>
+                          {approval.plant.name} • v{approval.algorithmVersion.version} • Priority {approval.priority}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={approval.status === 'approved' ? 'default' : 
+                                 approval.status === 'pending' ? 'secondary' : 'destructive'}
+                        >
+                          {approval.status}
+                        </Badge>
+                        <Badge variant="outline">{approval.approvalLevel}</Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>
+                          {approval.effectiveDate ? 
+                            `Effective: ${new Date(approval.effectiveDate).toLocaleDateString()}` : 
+                            'No effective date set'
+                          }
+                        </span>
+                      </div>
+                      {approval.approvedByUser && (
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          <span>
+                            {approval.approvedByUser.firstName} {approval.approvedByUser.lastName}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {approval.approvalNotes && (
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
+                        <h5 className="text-sm font-medium mb-2">Approval Notes</h5>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {approval.approvalNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        <Eye className="w-3 h-3 mr-1" />
+                        View Details
+                      </Button>
+                      {approval.status === 'pending' && (
+                        <>
+                          <Button size="sm" variant="default">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {approval.status === 'approved' && (
+                        <Button size="sm">
+                          <Play className="w-3 h-3 mr-1" />
+                          Deploy
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {algorithmApprovals.length === 0 && (
+                <Card className="p-8 text-center">
+                  <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No approval requests found</h3>
+                  <p className="text-gray-600 mb-4">
+                    Submit algorithm versions for plant approval to get started
+                  </p>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Approval Request
+                  </Button>
+                </Card>
               )}
             </div>
           </TabsContent>
