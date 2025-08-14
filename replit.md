@@ -22,6 +22,7 @@ Note on concurrent work:
 - **Unified Layout System**: Consistent header/navigation for desktop, consistent footer bar for mobile.
 - **Mobile Footer Bar**: Navigation at bottom for optimal thumb reach (Home, Menu, Search, Recent, Profile).
 - **Desktop Navigation**: Left rail navigation with slide-out menu and resizable AI panel.
+- **Customizable Desktop Header**: Role-specific quick access items that users can add, remove, and reorder. Saves with workspace preferences.
 - **Client-Side Navigation**: Uses wouter for smooth routing, preventing unnecessary reloads.
 
 ### Frontend Architecture

@@ -1,5 +1,5 @@
 import { useDeviceType } from '@/hooks/useDeviceType';
-import { DesktopTopBar } from './desktop-top-bar';
+import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
 import { BottomDrawer } from './bottom-drawer';
 import { LeftRailNav } from './left-rail-nav';
@@ -24,8 +24,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // For desktop, use the new enhanced navigation components
   return (
     <div className="h-screen flex flex-col">
-      {/* New desktop top bar */}
-      <DesktopTopBar />
+      {/* Customizable desktop header - hidden in full screen */}
+      {!isFullScreen && <CustomizableHeader />}
       
       {/* Main content area with left rail and AI panel */}
       <div className="flex flex-1 overflow-hidden">
