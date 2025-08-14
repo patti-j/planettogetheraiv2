@@ -265,6 +265,55 @@ export default function MasterProductionSchedulePage() {
     };
   }, [mpsItems]);
 
+  // Enhanced function to calculate alignment priority for each item
+  const calculateAlignmentPriority = (item: MPSItem): { priority: number; issues: string[]; supplyGap: number } => {
+    let priority = 0;
+    const issues: string[] = [];
+    let totalSupplyGap = 0;
+    let criticalPeriods = 0;
+    
+    item.mpsData.forEach((period, index) => {
+      const supplyGap = period.totalDemand - period.masterProductionScheduleQuantity;
+      totalSupplyGap += Math.abs(supplyGap);
+      
+      // High priority for negative ATP (can't promise)
+      if (period.availableToPromise < 0) {
+        priority += 50;
+        if (!issues.includes('Negative ATP')) issues.push('Negative ATP');
+      }
+      
+      // High priority for low projected on-hand vs safety stock
+      if (period.projectedOnHand < period.safetyStockRequirement) {
+        priority += 30;
+        if (!issues.includes('Below Safety Stock')) issues.push('Below Safety Stock');
+      }
+      
+      // Priority for supply-demand imbalance
+      if (Math.abs(supplyGap) > period.totalDemand * 0.1) { // 10% threshold
+        priority += Math.min(20, Math.abs(supplyGap) / 1000);
+        if (!issues.includes('Supply-Demand Gap')) issues.push('Supply-Demand Gap');
+      }
+      
+      // Early periods get higher priority
+      if (index < 4) { // First 4 periods are more critical
+        priority *= 1.5;
+        if (period.status === 'critical') criticalPeriods++;
+      }
+    });
+    
+    // Bonus priority for items with multiple critical periods
+    if (criticalPeriods > 2) {
+      priority += 25;
+      if (!issues.includes('Multiple Critical Periods')) issues.push('Multiple Critical Periods');
+    }
+    
+    return { 
+      priority: Math.round(priority), 
+      issues, 
+      supplyGap: Math.round(totalSupplyGap) 
+    };
+  };
+
   // Generate sample MPS data for demonstration
   const generateSampleMPSData = () => {
     const startDate = new Date();
@@ -358,6 +407,30 @@ export default function MasterProductionSchedulePage() {
 
   // Use sample data if no real data is available
   const displayMPSItems = mpsItems.length > 0 ? mpsItems : generateSampleMPSData();
+
+  // Sort items by alignment priority (highest first)
+  const sortedMPSItems = [...displayMPSItems].map(item => ({
+    ...item,
+    alignmentData: calculateAlignmentPriority(item)
+  })).sort((a, b) => b.alignmentData.priority - a.alignmentData.priority);
+
+  // Helper function to get priority badge color
+  const getPriorityColor = (priority: number) => {
+    if (priority >= 80) return 'destructive';
+    if (priority >= 50) return 'default';
+    if (priority >= 25) return 'secondary';
+    return 'outline';
+  };
+
+  // Helper function to get supply-demand alignment indicator
+  const getSupplyDemandAlignment = (period: any) => {
+    const supplyGap = period.totalDemand - period.masterProductionScheduleQuantity;
+    const alignmentPercentage = period.totalDemand > 0 ? (period.masterProductionScheduleQuantity / period.totalDemand) * 100 : 100;
+    
+    if (alignmentPercentage < 90) return { color: 'bg-red-500', label: 'Under', percentage: alignmentPercentage };
+    if (alignmentPercentage > 110) return { color: 'bg-yellow-500', label: 'Over', percentage: alignmentPercentage };
+    return { color: 'bg-green-500', label: 'Aligned', percentage: alignmentPercentage };
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -484,6 +557,45 @@ export default function MasterProductionSchedulePage() {
         </div>
       )}
 
+      {/* Priority Alert Dashboard */}
+      {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length > 0 && (
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              Critical Supply-Demand Misalignments ({sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length} items)
+            </CardTitle>
+            <CardDescription>
+              Items requiring immediate planner attention to resolve supply-demand gaps
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).slice(0, 5).map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="h-3 w-3 rounded-full bg-red-500" />
+                    <div>
+                      <div className="font-medium">{item.itemNumber} - {item.itemDescription}</div>
+                      <div className="text-sm text-red-600">Priority: {item.alignmentData.priority} | Issues: {item.alignmentData.issues.join(', ')}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Supply Gap</div>
+                    <div className="font-medium text-red-600">{item.alignmentData.supplyGap.toLocaleString()}</div>
+                  </div>
+                </div>
+              ))}
+              {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length > 5 && (
+                <div className="text-sm text-muted-foreground text-center pt-2">
+                  ...and {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length - 5} more critical items
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -571,7 +683,7 @@ export default function MasterProductionSchedulePage() {
         </TabsList>
 
         <TabsContent value="schedule" className="space-y-4">
-          {displayMPSItems.map((item) => (
+          {sortedMPSItems.map((item) => (
             <Card key={item.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -581,14 +693,32 @@ export default function MasterProductionSchedulePage() {
                       <Badge variant={item.isPublished ? "default" : "secondary"}>
                         {item.isPublished ? "Published" : "Draft"}
                       </Badge>
+                      {item.alignmentData.priority > 0 && (
+                        <Badge variant={getPriorityColor(item.alignmentData.priority)} className="ml-2">
+                          Priority: {item.alignmentData.priority}
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription>
                       Lead Time: {item.manufacturingLeadTimeDays} days | Lot Size: {item.fixedLotSize} | Safety Stock: {item.safetyStockDays} days
+                      {item.alignmentData.issues.length > 0 && (
+                        <div className="mt-1 text-red-600 font-medium">
+                          ⚠️ Issues: {item.alignmentData.issues.join(', ')} | Supply Gap: {item.alignmentData.supplyGap.toLocaleString()}
+                        </div>
+                      )}
                     </CardDescription>
                   </div>
-                  <Button size="sm" variant="outline">
-                    Edit Parameters
-                  </Button>
+                  <div className="flex gap-2">
+                    {item.alignmentData.priority >= 50 && (
+                      <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700">
+                        <Target className="h-3 w-3 mr-1" />
+                        Fix Alignment
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline">
+                      Edit Parameters
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -601,6 +731,7 @@ export default function MasterProductionSchedulePage() {
                         <th className="text-right p-2 font-medium">Forecast</th>
                         <th className="text-right p-2 font-medium">Total Demand</th>
                         <th className="text-right p-2 font-medium">MPS Qty</th>
+                        <th className="text-center p-2 font-medium">Supply/Demand</th>
                         <th className="text-right p-2 font-medium">Projected OH</th>
                         <th className="text-right p-2 font-medium">ATP</th>
                         {showAIRecommendations && <th className="text-right p-2 font-medium">AI Rec.</th>}
@@ -618,16 +749,67 @@ export default function MasterProductionSchedulePage() {
                           <td className="p-2 text-right">{period.forecastDemand.toLocaleString()}</td>
                           <td className="p-2 text-right font-medium">{period.totalDemand.toLocaleString()}</td>
                           <td className="p-2 text-right">
-                            <Input
-                              type="number"
-                              value={period.masterProductionScheduleQuantity}
-                              onChange={(e) => {
-                                // Handle MPS quantity change
-                                const newQuantity = Number(e.target.value);
-                                // Update logic would go here
-                              }}
-                              className="w-20 h-8 text-right"
-                            />
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                value={period.masterProductionScheduleQuantity}
+                                onChange={(e) => {
+                                  // Handle MPS quantity change
+                                  const newQuantity = Number(e.target.value);
+                                  // Update logic would go here
+                                }}
+                                className="w-20 h-8 text-right text-xs"
+                              />
+                              <div className="flex flex-col gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-4 w-4 p-0 text-xs"
+                                  onClick={() => {
+                                    // Quick adjust to match demand
+                                    const newQuantity = period.totalDemand;
+                                    // Update logic would go here
+                                  }}
+                                  title="Match Demand"
+                                >
+                                  =
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-4 w-4 p-0 text-xs"
+                                  onClick={() => {
+                                    // Use AI recommendation
+                                    const newQuantity = period.aiRecommendedQuantity || period.totalDemand;
+                                    // Update logic would go here
+                                  }}
+                                  title="Use AI Recommendation"
+                                >
+                                  AI
+                                </Button>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-2 text-center">
+                            {(() => {
+                              const alignment = getSupplyDemandAlignment(period);
+                              const supplyGap = period.totalDemand - period.masterProductionScheduleQuantity;
+                              return (
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="flex items-center gap-1">
+                                    <div className={`h-3 w-3 rounded-full ${alignment.color}`} />
+                                    <span className="text-xs font-medium">
+                                      {alignment.percentage.toFixed(0)}%
+                                    </span>
+                                  </div>
+                                  {Math.abs(supplyGap) > 0 && (
+                                    <div className={`text-xs px-1 rounded ${supplyGap > 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                      {supplyGap > 0 ? `Short ${supplyGap.toLocaleString()}` : `Over ${Math.abs(supplyGap).toLocaleString()}`}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="p-2 text-right">
                             <span className={period.projectedOnHand < period.safetyStockRequirement ? "text-red-600 font-medium" : ""}>
