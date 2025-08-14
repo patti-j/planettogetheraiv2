@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Pin, Maximize2 } from 'lucide-react';
+import { X, Pin, Maximize2, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWidgetComponent } from '@/lib/widget-registry';
 
@@ -27,6 +27,8 @@ const WidgetFlyout: React.FC<WidgetFlyoutProps> = ({
   anchorElement
 }) => {
   const flyoutRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Handle click outside to close
   useEffect(() => {
@@ -59,6 +61,39 @@ const WidgetFlyout: React.FC<WidgetFlyoutProps> = ({
       return () => document.removeEventListener('keydown', handleEscape);
     }
   }, [isOpen, onClose]);
+
+  // Handle mouse move for dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging && flyoutRef.current) {
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
+        
+        // Keep widget within viewport bounds
+        const rect = flyoutRef.current.getBoundingClientRect();
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+        
+        flyoutRef.current.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
+        flyoutRef.current.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
+        flyoutRef.current.style.right = 'auto';
+        flyoutRef.current.style.bottom = 'auto';
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
 
   if (!isOpen) return null;
 
@@ -130,17 +165,35 @@ const WidgetFlyout: React.FC<WidgetFlyoutProps> = ({
       <Card 
         ref={flyoutRef}
         className={cn(
-          "fixed z-50 w-80 max-w-[90vw] max-h-[80vh] shadow-2xl border-border/50",
-          "bg-background/95 backdrop-blur-sm",
+          "fixed z-50 w-80 max-w-[90vw] max-h-[80vh] shadow-2xl border-border/50 cursor-move",
+          "bg-background backdrop-blur-sm", // Removed transparency to fix the see-through issue
           "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200",
           positionClasses[position]
         )}
+        onMouseDown={(e) => {
+          // Only allow dragging from header area
+          const headerArea = e.currentTarget.querySelector('.drag-handle');
+          if (headerArea && headerArea.contains(e.target as Node)) {
+            e.preventDefault();
+            setIsDragging(true);
+            const rect = flyoutRef.current?.getBoundingClientRect();
+            if (rect) {
+              setDragOffset({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+              });
+            }
+          }
+        }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-3 border-b border-border/50">
-          <h3 className="font-semibold text-sm truncate text-foreground">
-            {widgetTitle}
-          </h3>
+        {/* Header - Draggable Area */}
+        <div className="flex items-center justify-between p-3 border-b border-border/50 bg-background drag-handle cursor-move">
+          <div className="flex items-center gap-2 flex-1">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm truncate text-foreground select-none">
+              {widgetTitle}
+            </h3>
+          </div>
           <div className="flex items-center gap-1">
             {onPin && (
               <Button
@@ -176,7 +229,7 @@ const WidgetFlyout: React.FC<WidgetFlyoutProps> = ({
         </div>
         
         {/* Widget Content */}
-        <CardContent className="p-3 overflow-auto max-h-[calc(80vh-60px)]">
+        <CardContent className="p-3 overflow-auto max-h-[calc(80vh-60px)] bg-background">
           {renderWidget()}
         </CardContent>
       </Card>
