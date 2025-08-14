@@ -262,17 +262,13 @@ export default function ScheduleOptimizationWidget({
   // Compact view for widget bar (no Card wrapper to avoid double border)
   if (viewMode === 'compact') {
     return (
-      <div className="h-full flex flex-col overflow-hidden">
-        {/* Header with title and button */}
-        <div className="flex items-center justify-between p-1 bg-muted/30 rounded-t-sm border-b border-border/30">
-          <div className="flex items-center gap-1 min-w-0">
-            <Target className="h-2.5 w-2.5 text-primary flex-shrink-0" />
-            <span className="text-[9px] font-medium truncate">Optimizer</span>
-          </div>
+      <div className="h-full p-1.5 flex flex-col justify-center space-y-1">
+        {/* Simple content without header */}
+        <div className="flex items-center justify-between">
           <Button 
             size="sm" 
             variant="outline" 
-            className="h-4 px-1 text-[8px] flex-shrink-0"
+            className="h-4 px-1.5 text-[8px] flex items-center gap-1"
             onClick={() => {
               if (selectedAlgorithm && selectedProfile) {
                 optimizationMutation.mutate({
@@ -289,33 +285,34 @@ export default function ScheduleOptimizationWidget({
             ) : (
               <PlayCircle className="h-2 w-2" />
             )}
+            <span>Run</span>
           </Button>
+          <div className="text-[8px] text-muted-foreground">
+            Optimizer
+          </div>
         </div>
         
-        {/* Content area */}
-        <div className="flex-1 p-1 space-y-1 overflow-hidden">
-          {schedulingHistory && schedulingHistory.length > 0 && (
-            <div className="space-y-0.5 text-[9px]">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground truncate">Last Run</span>
-                <Badge 
-                  variant={schedulingHistory[0]?.status === 'completed' ? 'default' : 'secondary'} 
-                  className="h-3 px-0.5 text-[7px] flex-shrink-0"
-                >
-                  {schedulingHistory[0]?.status || 'Unknown'}
-                </Badge>
-              </div>
-              {schedulingHistory[0]?.status === 'completed' && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground truncate">Score</span>
-                  <span className="font-medium text-green-600 flex-shrink-0">
-                    {schedulingHistory[0]?.performanceMetrics?.score || 'N/A'}%
-                  </span>
-                </div>
-              )}
+        {schedulingHistory && schedulingHistory.length > 0 && (
+          <div className="space-y-0.5 text-[8px]">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Last:</span>
+              <Badge 
+                variant={schedulingHistory[0]?.status === 'completed' ? 'default' : 'secondary'} 
+                className="h-3 px-1 text-[7px]"
+              >
+                {schedulingHistory[0]?.status || 'Unknown'}
+              </Badge>
             </div>
-          )}
-        </div>
+            {schedulingHistory[0]?.status === 'completed' && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Score:</span>
+                <span className="font-medium text-green-600">
+                  {schedulingHistory[0]?.performanceMetrics?.score || 'N/A'}%
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
