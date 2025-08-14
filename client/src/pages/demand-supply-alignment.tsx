@@ -91,6 +91,7 @@ export default function DemandSupplyAlignmentPage() {
   const [viewMode, setViewMode] = useState<"summary" | "detailed" | "drill-down">("summary");
   const [selectedCriticality, setSelectedCriticality] = useState<string>("all");
   const [selectedRiskLevel, setSelectedRiskLevel] = useState<string>("all");
+  const [selectedAlignmentLevel, setSelectedAlignmentLevel] = useState<string>("all");
   const [chartType, setChartType] = useState<"line" | "area" | "bar" | "composed">("composed");
   const [drillDownItem, setDrillDownItem] = useState<number | null>(null);
 
@@ -275,9 +276,22 @@ export default function DemandSupplyAlignmentPage() {
       if (selectedCategory !== "all" && item.category !== selectedCategory) return false;
       if (selectedItem !== "all" && item.itemId.toString() !== selectedItem) return false;
       if (selectedCriticality !== "all" && item.criticality !== selectedCriticality) return false;
+      
+      // Filter by alignment level
+      if (selectedAlignmentLevel !== "all") {
+        const alignmentCategory = getAlignmentCategory(item.overallAlignment);
+        if (alignmentCategory !== selectedAlignmentLevel) return false;
+      }
+      
+      // Filter by risk level (check if any period has the selected risk level)
+      if (selectedRiskLevel !== "all") {
+        const hasRiskLevel = item.data.some(period => period.riskLevel === selectedRiskLevel);
+        if (!hasRiskLevel) return false;
+      }
+      
       return true;
     });
-  }, [alignmentData, selectedPlant, selectedCategory, selectedItem, selectedCriticality]);
+  }, [alignmentData, selectedPlant, selectedCategory, selectedItem, selectedCriticality, selectedAlignmentLevel, selectedRiskLevel]);
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
@@ -294,6 +308,23 @@ export default function DemandSupplyAlignmentPage() {
     if (score >= 75) return 'text-yellow-600';
     if (score >= 60) return 'text-orange-600';
     return 'text-red-600';
+  };
+
+  const getAlignmentCategory = (score: number) => {
+    if (score >= 90) return 'excellent';
+    if (score >= 75) return 'good';
+    if (score >= 60) return 'fair';
+    return 'poor';
+  };
+
+  const getAlignmentBadgeColor = (category: string) => {
+    switch (category) {
+      case 'excellent': return 'bg-green-100 text-green-800 border-green-200';
+      case 'good': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'fair': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'poor': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
   const getTrendIcon = (trend: string) => {
@@ -573,7 +604,7 @@ export default function DemandSupplyAlignmentPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <div>
               <Label htmlFor="plant">Plant</Label>
               <Select value={selectedPlant} onValueChange={setSelectedPlant}>
@@ -624,6 +655,38 @@ export default function DemandSupplyAlignmentPage() {
             </div>
 
             <div>
+              <Label htmlFor="alignment">Alignment Level</Label>
+              <Select value={selectedAlignmentLevel} onValueChange={setSelectedAlignmentLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select alignment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="excellent">Excellent (90%+)</SelectItem>
+                  <SelectItem value="good">Good (75-89%)</SelectItem>
+                  <SelectItem value="fair">Fair (60-74%)</SelectItem>
+                  <SelectItem value="poor">Poor (below 60%)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="risk">Risk Level</Label>
+              <Select value={selectedRiskLevel} onValueChange={setSelectedRiskLevel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select risk" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="horizon">Time Horizon (Weeks)</Label>
               <Select value={timeHorizon.toString()} onValueChange={(value) => setTimeHorizon(parseInt(value))}>
                 <SelectTrigger>
@@ -658,6 +721,127 @@ export default function DemandSupplyAlignmentPage() {
                 Refresh
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Active Filters Summary */}
+      {(selectedPlant !== "all" || selectedCategory !== "all" || selectedCriticality !== "all" || 
+        selectedAlignmentLevel !== "all" || selectedRiskLevel !== "all") && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Active Filters</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {selectedPlant !== "all" && (
+                <Badge variant="secondary" className="flex items-center">
+                  Plant: {plants.find(p => p.id.toString() === selectedPlant)?.name || selectedPlant}
+                  <button 
+                    onClick={() => setSelectedPlant("all")}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {selectedCategory !== "all" && (
+                <Badge variant="secondary" className="flex items-center">
+                  Category: {selectedCategory}
+                  <button 
+                    onClick={() => setSelectedCategory("all")}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {selectedCriticality !== "all" && (
+                <Badge variant="secondary" className="flex items-center">
+                  Criticality: {selectedCriticality}
+                  <button 
+                    onClick={() => setSelectedCriticality("all")}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {selectedAlignmentLevel !== "all" && (
+                <Badge variant="secondary" className="flex items-center">
+                  Alignment: {selectedAlignmentLevel}
+                  <button 
+                    onClick={() => setSelectedAlignmentLevel("all")}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              {selectedRiskLevel !== "all" && (
+                <Badge variant="secondary" className="flex items-center">
+                  Risk: {selectedRiskLevel}
+                  <button 
+                    onClick={() => setSelectedRiskLevel("all")}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-1"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSelectedPlant("all");
+                  setSelectedCategory("all"); 
+                  setSelectedCriticality("all");
+                  setSelectedAlignmentLevel("all");
+                  setSelectedRiskLevel("all");
+                }}
+              >
+                Clear All
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Filter Actions */}
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-gray-600">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant={selectedAlignmentLevel === "poor" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setSelectedAlignmentLevel(selectedAlignmentLevel === "poor" ? "all" : "poor")}
+            >
+              Show Poor Alignment
+            </Button>
+            <Button 
+              variant={selectedCriticality === "critical" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setSelectedCriticality(selectedCriticality === "critical" ? "all" : "critical")}
+            >
+              Critical Items Only
+            </Button>
+            <Button 
+              variant={selectedRiskLevel === "critical" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setSelectedRiskLevel(selectedRiskLevel === "critical" ? "all" : "critical")}
+            >
+              High Risk Items
+            </Button>
+            <Button 
+              variant={selectedAlignmentLevel === "excellent" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setSelectedAlignmentLevel(selectedAlignmentLevel === "excellent" ? "all" : "excellent")}
+            >
+              Excellent Alignment
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -709,13 +893,27 @@ export default function DemandSupplyAlignmentPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Active Alerts</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-600">Alignment Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">
-                  {filteredAlignmentData.reduce((sum, item) => sum + item.alerts.length, 0)}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-green-600">Excellent (90%+)</span>
+                    <span className="font-medium">{filteredAlignmentData.filter(item => item.overallAlignment >= 90).length}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-yellow-600">Good (75-89%)</span>
+                    <span className="font-medium">{filteredAlignmentData.filter(item => item.overallAlignment >= 75 && item.overallAlignment < 90).length}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-orange-600">Fair (60-74%)</span>
+                    <span className="font-medium">{filteredAlignmentData.filter(item => item.overallAlignment >= 60 && item.overallAlignment < 75).length}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-red-600">Poor (below 60%)</span>
+                    <span className="font-medium">{filteredAlignmentData.filter(item => item.overallAlignment < 60).length}</span>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500">Total alerts across items</p>
               </CardContent>
             </Card>
           </div>
@@ -747,6 +945,9 @@ export default function DemandSupplyAlignmentPage() {
                             'border-green-200 text-green-800'
                           }`}>
                             {item.criticality.toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline" className={`ml-2 ${getAlignmentBadgeColor(getAlignmentCategory(item.overallAlignment))}`}>
+                            {getAlignmentCategory(item.overallAlignment).toUpperCase()}
                           </Badge>
                           {item.alerts.length > 0 && (
                             <Badge variant="outline" className="ml-2 border-red-200 text-red-800">
@@ -797,6 +998,8 @@ export default function DemandSupplyAlignmentPage() {
                       setSelectedPlant("all");
                       setSelectedCategory("all");
                       setSelectedCriticality("all");
+                      setSelectedAlignmentLevel("all");
+                      setSelectedRiskLevel("all");
                     }}
                     className="mt-4"
                   >
@@ -829,6 +1032,9 @@ export default function DemandSupplyAlignmentPage() {
                           'border-green-200 text-green-800'
                         }`}>
                           {item.criticality.toUpperCase()}
+                        </Badge>
+                        <Badge variant="outline" className={`${getAlignmentBadgeColor(getAlignmentCategory(item.overallAlignment))}`}>
+                          {getAlignmentCategory(item.overallAlignment).toUpperCase()}
                         </Badge>
                         <span className={`font-medium ${getAlignmentColor(item.overallAlignment)}`}>
                           {item.overallAlignment}% Aligned
