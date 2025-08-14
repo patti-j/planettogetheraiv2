@@ -16,6 +16,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
+import { WidgetBarProvider } from "@/contexts/WidgetBarContext";
+import WorkspaceLayout from "@/components/workspace-layout";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -679,7 +681,9 @@ function Router() {
   return (
     <DesktopLayout>
       <SplitPaneLayout maxPanel={<MaxSidebar />}>
-        {routeContent}
+        <WorkspaceLayout>
+          {routeContent}
+        </WorkspaceLayout>
       </SplitPaneLayout>
     </DesktopLayout>
   );
@@ -698,10 +702,15 @@ function App() {
                     <MaxDockProvider>
                       <FullScreenProvider>
                         <LayoutDensityProvider>
-                          <Router />
-                          <OnboardingWizard />
-                          <ResumeTourButton />
-                          <Toaster />
+                          <WidgetBarProvider>
+                            <>
+                              <Router />
+                              <OnboardingWizard />
+                              <ResumeTourButton />
+                              <IntegratedAIAssistant />
+                              <Toaster />
+                            </>
+                          </WidgetBarProvider>
                         </LayoutDensityProvider>
                       </FullScreenProvider>
                     </MaxDockProvider>

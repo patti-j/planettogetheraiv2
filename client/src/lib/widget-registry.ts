@@ -28,6 +28,7 @@ import MetricsCardWidget from "@/components/widgets/common/metrics-card-widget";
 import DataTableWidget from "@/components/widgets/common/data-table-widget";
 import ActionButtonsWidget from "@/components/widgets/common/action-buttons-widget";
 import KanbanCardWidget from "@/components/widgets/common/kanban-card-widget";
+import CustomKPIWidget from "@/components/widgets/custom-kpi-widget";
 
 // Standardized widget interface
 export interface StandardWidgetProps {
@@ -94,8 +95,32 @@ const ganttChartConfigSchema = z.object({
   showDependencies: z.boolean().default(true)
 });
 
+const customKpiConfigSchema = z.object({
+  view: z.enum(['compact', 'standard', 'detailed']).default('standard'),
+  showTrends: z.boolean().default(true),
+  showTargets: z.boolean().default(true),
+  showHistory: z.boolean().default(false),
+  maxKPIs: z.number().default(6),
+  allowEdit: z.boolean().default(true),
+  kpis: z.array(z.string()).default(['oee', 'yield', 'cost-per-unit'])
+});
+
 // Centralized widget registry
 export const WIDGET_REGISTRY: Record<string, WidgetMetadata> = {
+  'custom-kpi': {
+    component: CustomKPIWidget,
+    displayName: 'Custom KPI Tracker',
+    description: 'Track custom KPIs with targets and trend analysis',
+    supportedPlatforms: ['both'],
+    configSchema: customKpiConfigSchema,
+    defaultConfig: { 
+      view: 'standard', 
+      showTrends: true, 
+      showTargets: true, 
+      maxKPIs: 6,
+      kpis: ['oee', 'yield', 'cost-per-unit'] 
+    }
+  },
   'operation-sequencer': {
     component: OperationSequencerWidget,
     displayName: 'Operation Sequencer',

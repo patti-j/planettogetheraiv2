@@ -143,6 +143,7 @@ const generateAvailableItems = (): HeaderItem[] => {
 const getWidgetIcon = (widgetType: string): string => {
   const iconMap: Record<string, string> = {
     'operation-sequencer': 'Factory',
+    'custom-kpi': 'TrendingUp',
     'atp-ctp': 'Calendar',
     'sales-order-status': 'Package',
     'reports': 'BarChart3',
