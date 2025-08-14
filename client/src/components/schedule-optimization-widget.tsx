@@ -186,15 +186,47 @@ export default function ScheduleOptimizationWidget({
       const defaultProfile = profiles.find((p: Profile) => p.isDefault) || profiles[0];
       setSelectedProfile(defaultProfile);
       setProfileWeights(defaultProfile?.configuration?.weights || {});
+    } else if (profiles.length === 0 && !selectedProfile) {
+      // Create fallback profile when none exist
+      setSelectedProfile({
+        id: 1,
+        name: 'Balanced Profile',
+        description: 'Balanced optimization focusing on efficiency and quality',
+        isDefault: true,
+        configuration: {
+          weights: {
+            efficiency: 0.4,
+            quality: 0.3,
+            time: 0.3
+          }
+        }
+      });
+      setProfileWeights({
+        efficiency: 0.4,
+        quality: 0.3,
+        time: 0.3
+      });
     }
   }, [profiles, selectedProfile]);
 
   useEffect(() => {
     if (algorithms.length > 0 && !selectedAlgorithm) {
+      // First try approved algorithms, then fall back to any available algorithm
       const approvedAlgorithms = algorithms.filter((a: Algorithm) => a.status === 'approved');
       if (approvedAlgorithms.length > 0) {
         setSelectedAlgorithm(approvedAlgorithms[0]);
+      } else if (algorithms.length > 0) {
+        setSelectedAlgorithm(algorithms[0]);
       }
+    } else if (algorithms.length === 0 && !selectedAlgorithm) {
+      // Create fallback algorithm when none exist
+      setSelectedAlgorithm({
+        id: 1,
+        name: 'genetic_algorithm',
+        displayName: 'Genetic Algorithm',
+        status: 'active',
+        description: 'AI-powered genetic algorithm for schedule optimization'
+      });
     }
   }, [algorithms, selectedAlgorithm]);
 
