@@ -263,7 +263,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       {/* Max AI Response Display - shows below header when there's a response */}
       {showMaxResponse && maxResponse && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl">
+        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl max-h-96 overflow-y-auto">
           <div className="relative bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
@@ -273,9 +273,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max AI Assistant</h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-64 overflow-y-auto">
                   {maxResponse.content}
-                </p>
+                </div>
                 {/* Quick Yes/No buttons for questions */}
                 {(maxResponse.content.includes('?') && (
                   maxResponse.content.toLowerCase().includes('would you like') ||

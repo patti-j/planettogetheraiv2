@@ -187,11 +187,11 @@ export class MaxAIService {
 
     COMMUNICATION RULES:
     - Be direct and specific in your questions - avoid compound questions that ask multiple things at once
-    - When mentioning alerts, automatically provide analysis instead of asking vague follow-up questions
-    - If you see active alerts in the data, immediately analyze them and provide recommendations
+    - For general status queries, provide a high-level summary first, then offer specific help
+    - When mentioning alerts, provide basic count/summary first, then ask if user wants detailed analysis
     - Ask only ONE clear question at a time
-    - When the user indicates they want help with alerts, provide detailed analysis of the specific alerts
-    - Avoid phrases like "Would you like me to X or Y?" - pick the most relevant action and do it`;
+    - When the user specifically asks for alert analysis, then provide detailed breakdown
+    - For production status: give overview first, then offer "Would you like me to analyze the alerts?"`;
 
     const rolePrompts: Record<string, string> = {
       'Production Manager': `Focus on schedule optimization, resource conflicts, and delivery commitments. 
@@ -226,8 +226,11 @@ export class MaxAIService {
       enriched += `\n\nCurrent Production Status: ${productionData.summary}`;
     }
 
-    // Add alert details if user is asking about alerts
-    if (query.toLowerCase().includes('alert') || query.toLowerCase().includes('show me details about the alerts')) {
+    // Add alert details only if user specifically asks for alert details/analysis
+    if (query.toLowerCase().includes('show me details about the alerts') || 
+        query.toLowerCase().includes('analyze the alerts') ||
+        query.toLowerCase().includes('alert analysis') ||
+        query.toLowerCase().includes('review the alerts')) {
       try {
         const activeAlerts = await db.select({
           id: alerts.id,
