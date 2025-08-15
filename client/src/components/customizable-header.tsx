@@ -62,8 +62,7 @@ const defaultHeaderItemsByRole = {
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
     { id: 'users', label: 'Users', icon: 'Shield', href: '/user-access-management' },
     { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications' },
-    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true },
-    { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Production Manager': [
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
@@ -71,8 +70,7 @@ const defaultHeaderItemsByRole = {
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
-    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true },
-    { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Plant Manager': [
     { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking' },
@@ -80,8 +78,7 @@ const defaultHeaderItemsByRole = {
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
-    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true },
-    { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Operator': [
     { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard' },
@@ -89,16 +86,14 @@ const defaultHeaderItemsByRole = {
     { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat' },
     { id: 'help', label: 'Help', icon: 'HelpCircle', href: '/help' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
-    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true },
-    { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Quality Manager': [
     { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
-    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true },
-    { id: 'profile', label: 'Profile', icon: 'User', action: 'profile', alwaysVisible: true }
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ]
 };
 
@@ -324,9 +319,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         case 'search':
           setSearchOpen(true);
           break;
-        case 'profile':
-          setUserProfileOpen(true);
-          break;
         case 'theme':
           // Theme toggle is handled by the component itself
           break;
@@ -395,7 +387,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
           {/* Header items */}
           <div className="flex items-center gap-1">
-            {headerItems.filter(item => !['profile', 'theme'].includes(item.id)).map(renderHeaderItem)}
+            {headerItems.filter(item => !['theme'].includes(item.id)).map(renderHeaderItem)}
           </div>
         </div>
 
@@ -433,8 +425,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             </span>
           </Button>
 
-          {/* Theme and Profile (always visible) */}
-          {headerItems.filter(item => ['profile', 'theme'].includes(item.id)).map(renderHeaderItem)}
+          {/* Theme (always visible) */}
+          {headerItems.filter(item => ['theme'].includes(item.id)).map(renderHeaderItem)}
 
           {/* Role switcher */}
           <AssignedRoleSwitcher 
