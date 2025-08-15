@@ -190,7 +190,8 @@ export class MaxAIService {
     - For general status queries, provide a high-level summary first, then offer specific help
     - When mentioning alerts, provide basic count/summary first, then ask if user wants detailed analysis
     - Ask only ONE clear question at a time
-    - When the user specifically asks for alert analysis, then provide detailed breakdown
+    - When user says "Yes" to analyzing alerts, immediately analyze ALL the specific alerts mentioned - don't ask for more clarification
+    - If you know there are specific alerts (like 3 active alerts), analyze those exact alerts when requested
     - For production status: give overview first, then offer "Would you like me to analyze the alerts?"`;
 
     const rolePrompts: Record<string, string> = {
@@ -226,11 +227,15 @@ export class MaxAIService {
       enriched += `\n\nCurrent Production Status: ${productionData.summary}`;
     }
 
-    // Add alert details only if user specifically asks for alert details/analysis
-    if (query.toLowerCase().includes('show me details about the alerts') || 
+    // Add alert details if user specifically asks for alert details/analysis
+    // OR if they say "Yes" to analyzing alerts (contextual response)
+    const isRequestingAlertAnalysis = query.toLowerCase().includes('show me details about the alerts') || 
         query.toLowerCase().includes('analyze the alerts') ||
         query.toLowerCase().includes('alert analysis') ||
-        query.toLowerCase().includes('review the alerts')) {
+        query.toLowerCase().includes('review the alerts') ||
+        (query.toLowerCase().includes('yes') && query.toLowerCase().includes('alert'));
+    
+    if (isRequestingAlertAnalysis) {
       try {
         const activeAlerts = await db.select({
           id: alerts.id,
@@ -238,7 +243,6 @@ export class MaxAIService {
           description: alerts.description,
           severity: alerts.severity,
           type: alerts.type,
-          category: alerts.category,
           createdAt: alerts.createdAt
         })
           .from(alerts)
