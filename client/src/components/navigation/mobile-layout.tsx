@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { navigationGroups } from "@/config/navigation-menu";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useRecentPages } from "@/hooks/useRecentPages";
+import { useNavigation } from "@/contexts/NavigationContext";
 import * as LucideIcons from "lucide-react";
 
 interface MobileLayoutProps {
@@ -36,7 +36,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const recognitionRef = useRef<any>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
-  const { recentPages, clearRecentPages } = useRecentPages();
+  const { recentPages, clearRecentPages } = useNavigation();
   
   // Fetch user preferences for voice settings
   const { data: userPreferences } = useQuery({
