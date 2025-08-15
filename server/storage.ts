@@ -2244,141 +2244,53 @@ export class MemStorage implements Partial<IStorage> {
     return this.resources.delete(id);
   }
 
-  // Operations - Enhanced method with production order join
+  // Operations - REDIRECTED TO PT PUBLISH TABLES
   async getOperations(): Promise<Operation[]> {
-    console.log("Fetching operations for Gantt chart...");
-    console.log("DEBUG: DatabaseStorage.getOperations called - starting enhanced version...");
+    console.log("getOperations: Redirecting to PT Publish Job Operations table");
+    
     try {
-      console.log("Starting getOperations - querying discrete operations with production order relationship...");
+      // Get operations from PT Publish tables
+      const ptOperations = await db
+        .select()
+        .from(ptPublishJobOperations)
+        .orderBy(asc(ptPublishJobOperations.sequenceNumber));
       
-      // Query discrete operations WITH their production order IDs
-      const discreteOpsQuery = await db
-        .select({
-          id: discreteOperations.id,
-          routingId: discreteOperations.routingId,
-          productionOrderId: discreteOperations.productionOrderId,
-          operationName: discreteOperations.operationName,
-          description: discreteOperations.description,
-          status: discreteOperations.status,
-          standardDuration: discreteOperations.standardDuration,
-          actualDuration: discreteOperations.actualDuration,
-          startTime: discreteOperations.startTime,
-          endTime: discreteOperations.endTime,
-          sequenceNumber: discreteOperations.sequenceNumber,
-          workCenterId: discreteOperations.workCenterId,
-          priority: discreteOperations.priority,
-          completionPercentage: discreteOperations.completionPercentage,
-          qualityCheckRequired: discreteOperations.qualityCheckRequired,
-          qualityStatus: discreteOperations.qualityStatus,
-          notes: discreteOperations.notes,
-          createdAt: discreteOperations.createdAt,
-          updatedAt: discreteOperations.updatedAt,
-        })
-        .from(discreteOperations);
+      console.log("PT Publish operations count:", ptOperations.length);
       
-      console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
-      if (discreteOpsQuery.length > 0) {
-        console.log("Operation 14 details:", {
-          id: discreteOpsQuery.find(op => op.id === 14),
-          startTime: discreteOpsQuery.find(op => op.id === 14)?.startTime,
-          endTime: discreteOpsQuery.find(op => op.id === 14)?.endTime,
-          workCenterId: discreteOpsQuery.find(op => op.id === 14)?.workCenterId,
-        });
-      }
-      
-      console.log("Querying process operations...");
-      const processOps = await db.select().from(processOperations);
-      console.log("Process operations count:", processOps.length);
-      
-      // Convert both types to the legacy Operation interface for backwards compatibility
-      console.log("Converting operations to legacy format...");
-      const combinedOps: Operation[] = [
-        ...discreteOpsQuery.map(op => ({
-          id: op.id,
-          name: op.operationName,
-          description: op.description,
-          duration: op.standardDuration,
-          jobId: op.productionOrderId, // Now includes production order ID from JOIN
-          productionOrderId: op.productionOrderId, // Add this for GanttChart compatibility
-          order: op.sequenceNumber,
-          status: op.status,
-          assignedResourceId: op.workCenterId,
-          startTime: op.startTime,
-          endTime: op.endTime,
-          routingId: op.routingId,
-          operationName: op.operationName,
-          standardDuration: op.standardDuration,
-          actualDuration: op.actualDuration,
-          workCenterId: op.workCenterId,
-          priority: op.priority,
-          completionPercentage: op.completionPercentage,
-          qualityCheckRequired: op.qualityCheckRequired,
-          qualityStatus: op.qualityStatus,
-          notes: op.notes,
-          createdAt: op.createdAt,
-          updatedAt: op.updatedAt
-        } as Operation)),
-        ...processOps.map(op => ({
-          id: op.id,
-          name: op.operationName,
-          description: op.description,
-          duration: op.standardDuration,
-          jobId: op.productionOrderId,
-          productionOrderId: op.productionOrderId,
-          order: op.sequenceNumber,
-          status: op.status,
-          assignedResourceId: op.workCenterId,
-          startTime: op.startTime,
-          endTime: op.endTime,
-          routingId: op.routingId,
-          operationName: op.operationName,
-          standardDuration: op.standardDuration,
-          actualDuration: op.actualDuration,
-          workCenterId: op.workCenterId,
-          priority: op.priority,
-          completionPercentage: op.completionPercentage,
-          qualityCheckRequired: op.qualityCheckRequired,
-          qualityStatus: op.qualityStatus,
-          notes: op.notes,
-          createdAt: op.createdAt,
-          updatedAt: op.updatedAt
-        } as Operation))
-      ];
-      
-      console.log("Successfully combined operations, total:", combinedOps.length);
-      return combinedOps;
-    } catch (error) {
-      console.error("Error in enhanced getOperations:", error);
-      console.error("Error stack:", error.stack);
-      
-      // Fallback to simple discrete operations if JOIN fails
-      console.log("Falling back to simple discrete operations query...");
-      const simpleOps = await db.select().from(discreteOperations);
-      return simpleOps.map(op => ({
+      // Map PT Publish Job Operations to Operation format for backward compatibility
+      const mappedOps: Operation[] = ptOperations.map(op => ({
         id: op.id,
-        name: op.operationName,
+        name: op.name || `Operation ${op.operationId}`,
         description: op.description,
-        duration: op.standardDuration,
-        jobId: null, // No production order link available
-        productionOrderId: null,
-        order: op.sequenceNumber,
-        status: op.status,
-        assignedResourceId: op.workCenterId,
-        startTime: op.startTime,
-        endTime: op.endTime,
-        routingId: op.routingId,
-        operationName: op.operationName,
-        standardDuration: op.standardDuration,
-        actualDuration: op.actualDuration,
-        workCenterId: op.workCenterId,
-        priority: op.priority,
-        completionPercentage: op.completionPercentage,
-        qualityCheckRequired: op.qualityCheckRequired,
-        qualityStatus: op.qualityStatus,
-        notes: op.notes,
-        createdAt: op.createdAt,
-        updatedAt: op.updatedAt
+        duration: Number(op.cycleHrs || op.setupHours || 1),
+        jobId: Number(op.jobId),
+        productionOrderId: Number(op.jobId),
+        order: Number(op.sequenceNumber || 0),
+        status: op.percentFinished === 100 ? 'completed' : 
+                op.percentFinished > 0 ? 'in_progress' : 'planned',
+        assignedResourceId: op.defaultResourceId || null,
+        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+        routingId: null,
+        operationName: op.name || `Operation ${op.operationId}`,
+        standardDuration: Number(op.cycleHrs || 1),
+        actualDuration: Number(op.actualCycleHrs || op.cycleHrs || null),
+        workCenterId: op.defaultResourceId || null,
+        priority: op.priority || 3,
+        completionPercentage: Number(op.percentFinished || 0),
+        qualityCheckRequired: op.qualityCheckRequired || false,
+        qualityStatus: op.qualityCheckStatus || null,
+        notes: op.notes || null,
+        createdAt: op.publishDate || new Date(),
+        updatedAt: op.publishDate || new Date()
       } as Operation));
+      
+      console.log("Successfully mapped PT operations, total:", mappedOps.length);
+      return mappedOps;
+    } catch (error) {
+      console.error("Error in PT Publish getOperations:", error);
+      console.error("Error stack:", error.stack);
+      return [];
     }
   }
 
@@ -2588,9 +2500,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResources(): Promise<Resource[]> {
-    // Use the original resources table for now until PT Publish migration is complete
-    const result = await db.select().from(resources);
-    return result || [];
+    console.log("getResources: Redirecting to PT Publish Resources table");
+    
+    // Get resources from PT Publish tables
+    const ptResources = await db
+      .select()
+      .from(ptPublishResources)
+      .orderBy(asc(ptPublishResources.name));
+    
+    // Map PT Publish Resources to Resource format for backward compatibility
+    return ptResources.map(res => ({
+      id: Number(res.resourceId),
+      name: res.name || `Resource ${res.resourceId}`,
+      type: res.type || 'machine',
+      status: res.status || 'active',
+      capabilities: res.capabilityIds ? (res.capabilityIds as number[]) : null,
+      capacity: res.capacity || null,
+      efficiency: res.efficiency || null,
+      costPerHour: res.costPerHour || null,
+      maintenanceSchedule: res.nextMaintenance || null,
+      location: res.location || null,
+      createdAt: res.publishDate || new Date(),
+      updatedAt: res.publishDate || new Date()
+    } as Resource));
   }
 
   async getResource(id: number): Promise<Resource | undefined> {
@@ -2708,9 +2640,37 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // Production Orders
+  // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    return await db.select().from(productionOrders).orderBy(asc(productionOrders.dueDate));
+    console.log("getProductionOrders: Redirecting to PT Publish Jobs table");
+    
+    // Get jobs from PT Publish tables and map to ProductionOrder format
+    const ptJobs = await db
+      .select()
+      .from(ptPublishJobs)
+      .orderBy(asc(ptPublishJobs.needDateTime));
+    
+    // Map PT Publish Jobs to ProductionOrder format for backward compatibility
+    return ptJobs.map(job => ({
+      id: Number(job.jobId),
+      name: job.name || `Job ${job.jobId}`,
+      description: job.description,
+      product: job.product || job.name || 'Product',
+      quantity: job.makeQty || 1000,
+      status: job.scheduledStatus?.toLowerCase() || 'planned',
+      priority: job.priority || 3,
+      startDate: job.earliestStartDate || new Date(),
+      dueDate: job.needDateTime || new Date(),
+      createdAt: job.publishDate || new Date(),
+      updatedAt: job.publishDate || new Date(),
+      customerId: job.customerId || null,
+      salesOrderId: job.salesOrderId || null,
+      batchNumber: job.externalId || null,
+      actualStartDate: job.actualStart || null,
+      actualEndDate: job.actualEnd || null,
+      completedQuantity: job.completedQty || null,
+      notes: job.notes || null
+    } as ProductionOrder));
   }
 
   async getProductionOrder(id: number): Promise<ProductionOrder | undefined> {
@@ -3348,9 +3308,39 @@ export class DatabaseStorage implements IStorage {
     return undefined;
   }
 
-  // New discrete operations methods
+  // New discrete operations methods - REDIRECTED TO PT PUBLISH TABLES
   async getDiscreteOperations(): Promise<DiscreteOperation[]> {
-    return await db.select().from(discreteOperations);
+    console.log("getDiscreteOperations: Redirecting to PT Publish Job Operations table");
+    
+    // Get operations from PT Publish tables (filter for discrete type)
+    const ptOperations = await db
+      .select()
+      .from(ptPublishJobOperations)
+      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+    
+    // Map PT Publish Job Operations to DiscreteOperation format
+    return ptOperations.map(op => ({
+      id: op.id,
+      routingId: op.routingId || null,
+      productionOrderId: Number(op.jobId),
+      operationName: op.name || `Operation ${op.operationId}`,
+      description: op.description,
+      status: op.percentFinished === 100 ? 'completed' : 
+              op.percentFinished > 0 ? 'in_progress' : 'planned',
+      standardDuration: Number(op.cycleHrs || 1),
+      actualDuration: Number(op.actualCycleHrs || null),
+      startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+      endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+      sequenceNumber: Number(op.sequenceNumber || 0),
+      workCenterId: op.defaultResourceId || null,
+      priority: op.priority || 3,
+      completionPercentage: Number(op.percentFinished || 0),
+      qualityCheckRequired: op.qualityCheckRequired || false,
+      qualityStatus: op.qualityCheckStatus || null,
+      notes: op.notes || null,
+      createdAt: op.publishDate || new Date(),
+      updatedAt: op.publishDate || new Date()
+    } as DiscreteOperation));
   }
 
   async getDiscreteOperation(id: number): Promise<DiscreteOperation | undefined> {
@@ -3473,9 +3463,41 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // New process operations methods
+  // New process operations methods - REDIRECTED TO PT PUBLISH TABLES
   async getProcessOperations(): Promise<ProcessOperation[]> {
-    return await db.select().from(processOperations);
+    console.log("getProcessOperations: Redirecting to PT Publish Job Operations table");
+    
+    // Get operations from PT Publish tables (filter for process type if available)
+    const ptOperations = await db
+      .select()
+      .from(ptPublishJobOperations)
+      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+    
+    // Map PT Publish Job Operations to ProcessOperation format
+    return ptOperations.map(op => ({
+      id: op.id,
+      routingId: op.routingId || null,
+      productionOrderId: Number(op.jobId),
+      recipeId: op.recipeId || null,
+      recipePhaseId: op.recipePhaseId || null,
+      operationName: op.name || `Operation ${op.operationId}`,
+      description: op.description,
+      status: op.percentFinished === 100 ? 'completed' : 
+              op.percentFinished > 0 ? 'in_progress' : 'planned',
+      standardDuration: Number(op.cycleHrs || 1),
+      actualDuration: Number(op.actualCycleHrs || null),
+      startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+      endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+      sequenceNumber: Number(op.sequenceNumber || 0),
+      workCenterId: op.defaultResourceId || null,
+      priority: op.priority || 3,
+      completionPercentage: Number(op.percentFinished || 0),
+      qualityCheckRequired: op.qualityCheckRequired || false,
+      qualityStatus: op.qualityCheckStatus || null,
+      notes: op.notes || null,
+      createdAt: op.publishDate || new Date(),
+      updatedAt: op.publishDate || new Date()
+    } as ProcessOperation));
   }
 
   async getProcessOperation(id: number): Promise<ProcessOperation | undefined> {
