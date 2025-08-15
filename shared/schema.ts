@@ -11216,6 +11216,171 @@ export type InsertCommentReaction = z.infer<typeof insertCommentReactionSchema>;
 export type CommentWatcher = typeof commentWatchers.$inferSelect;
 export type InsertCommentWatcher = z.infer<typeof insertCommentWatcherSchema>;
 
+// ========================================
+// PT Publish Tables - External Data from PlanetTogether
+// ========================================
+
+// PT Publish Jobs - Manufacturing orders from PlanetTogether
+export const ptPublishJobs = pgTable("pt_publish_jobs", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  jobId: integer("job_id").notNull(),
+  customers: text("customers"),
+  entryDate: timestamp("entry_date"),
+  needDateTime: timestamp("need_date_time"),
+  classification: text("classification"),
+  commitment: text("commitment"),
+  hot: boolean("hot").default(false),
+  hotReason: text("hot_reason"),
+  importance: integer("importance"),
+  cancelled: boolean("cancelled").default(false),
+  latePenaltyCost: numeric("late_penalty_cost", { precision: 15, scale: 2 }),
+  maxEarlyDeliveryDays: numeric("max_early_delivery_days", { precision: 10, scale: 2 }),
+  priority: integer("priority"),
+  type: text("type"),
+  revenue: numeric("revenue", { precision: 15, scale: 2 }),
+  profit: numeric("profit", { precision: 15, scale: 2 }),
+  scheduled: boolean("scheduled").default(false),
+});
+
+// PT Publish Resources - Resources from PlanetTogether
+export const ptPublishResources = pgTable("pt_publish_resources", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  plantId: integer("plant_id").notNull(),
+  departmentId: integer("department_id").notNull(),
+  resourceId: integer("resource_id").notNull(),
+  name: text("name"),
+  description: text("description"),
+  notes: text("notes"),
+  externalId: text("external_id"),
+  plantName: text("plant_name"),
+  departmentName: text("department_name"),
+  active: boolean("active").default(true),
+  speedFactor: numeric("speed_factor", { precision: 5, scale: 2 }),
+  jitLimitHrs: numeric("jit_limit_hrs", { precision: 10, scale: 2 }),
+  bottleneck: boolean("bottleneck").default(false),
+  constrainedResource: boolean("constrained_resource").default(false),
+  secondaryPriorityType: text("secondary_priority_type"),
+  attributeChangePenalties: text("attribute_change_penalties"),
+  loadPercent: numeric("load_percent", { precision: 5, scale: 2 }),
+});
+
+// PT Publish Job Operations - Operations from PlanetTogether
+export const ptPublishJobOperations = pgTable("pt_publish_job_operations", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  jobId: integer("job_id").notNull(),
+  manufacturingOrderId: integer("manufacturing_order_id").notNull(),
+  operationId: integer("operation_id").notNull(),
+  name: text("name"),
+  description: text("description"),
+  setupHours: numeric("setup_hours", { precision: 10, scale: 2 }),
+  requiredStartQty: numeric("required_start_qty", { precision: 15, scale: 5 }),
+  requiredFinishQty: numeric("required_finish_qty", { precision: 15, scale: 5 }),
+  qtyPerCycle: numeric("qty_per_cycle", { precision: 15, scale: 5 }),
+  minutesPerCycle: numeric("minutes_per_cycle", { precision: 10, scale: 2 }),
+  postProcessingHours: numeric("post_processing_hours", { precision: 10, scale: 2 }),
+  overlapTransferQty: numeric("overlap_transfer_qty", { precision: 15, scale: 5 }),
+  canPause: boolean("can_pause").default(true),
+  canSubcontract: boolean("can_subcontract").default(false),
+  dailyCarryingCost: numeric("daily_carrying_cost", { precision: 15, scale: 2 }),
+  compatibilityCode: text("compatibility_code"),
+  batchCode: text("batch_code"),
+});
+
+// PT Publish Capabilities - Resource capabilities from PlanetTogether
+export const ptPublishCapabilities = pgTable("pt_publish_capabilities", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  capabilityId: integer("capability_id").notNull(),
+  name: text("name"),
+  description: text("description"),
+  category: text("category"),
+  isActive: boolean("is_active").default(true),
+});
+
+// PT Publish Metrics - Calculated metrics from PlanetTogether
+export const ptPublishMetrics = pgTable("pt_publish_metrics", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  metricType: text("metric_type").notNull(),
+  metricName: text("metric_name").notNull(),
+  metricValue: numeric("metric_value", { precision: 20, scale: 5 }),
+  metricUnit: text("metric_unit"),
+  plantId: integer("plant_id"),
+  resourceId: integer("resource_id"),
+  jobId: integer("job_id"),
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+});
+
+// PT Publish Manufacturing Orders - Manufacturing orders from PlanetTogether
+export const ptPublishManufacturingOrders = pgTable("pt_publish_manufacturing_orders", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 255 }).notNull(),
+  manufacturingOrderId: integer("manufacturing_order_id").notNull(),
+  jobId: integer("job_id").notNull(),
+  moNumber: text("mo_number"),
+  itemId: integer("item_id"),
+  quantity: numeric("quantity", { precision: 15, scale: 5 }),
+  releaseDate: timestamp("release_date"),
+  dueDate: timestamp("due_date"),
+  status: text("status"),
+  priority: integer("priority"),
+  notes: text("notes"),
+});
+
+// Insert schemas for PT Publish tables
+export const insertPtPublishJobSchema = createInsertSchema(ptPublishJobs).omit({
+  id: true,
+});
+
+export const insertPtPublishResourceSchema = createInsertSchema(ptPublishResources).omit({
+  id: true,
+});
+
+export const insertPtPublishJobOperationSchema = createInsertSchema(ptPublishJobOperations).omit({
+  id: true,
+});
+
+export const insertPtPublishCapabilitySchema = createInsertSchema(ptPublishCapabilities).omit({
+  id: true,
+});
+
+export const insertPtPublishMetricSchema = createInsertSchema(ptPublishMetrics).omit({
+  id: true,
+  calculatedAt: true,
+});
+
+export const insertPtPublishManufacturingOrderSchema = createInsertSchema(ptPublishManufacturingOrders).omit({
+  id: true,
+});
+
+// Types for PT Publish tables
+export type PtPublishJob = typeof ptPublishJobs.$inferSelect;
+export type InsertPtPublishJob = z.infer<typeof insertPtPublishJobSchema>;
+
+export type PtPublishResource = typeof ptPublishResources.$inferSelect;
+export type InsertPtPublishResource = z.infer<typeof insertPtPublishResourceSchema>;
+
+export type PtPublishJobOperation = typeof ptPublishJobOperations.$inferSelect;
+export type InsertPtPublishJobOperation = z.infer<typeof insertPtPublishJobOperationSchema>;
+
+export type PtPublishCapability = typeof ptPublishCapabilities.$inferSelect;
+export type InsertPtPublishCapability = z.infer<typeof insertPtPublishCapabilitySchema>;
+
+export type PtPublishMetric = typeof ptPublishMetrics.$inferSelect;
+export type InsertPtPublishMetric = z.infer<typeof insertPtPublishMetricSchema>;
+
+export type PtPublishManufacturingOrder = typeof ptPublishManufacturingOrders.$inferSelect;
+export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrderSchema>;
+
 // Export schedule schemas
 export * from './schedule-schema';
 
