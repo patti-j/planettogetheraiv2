@@ -30,7 +30,27 @@ export class AlertsService {
     let query = db.select().from(alerts);
     
     const conditions = [];
-    if (userId) conditions.push(eq(alerts.userId, userId));
+    
+    // User filtering: Show alerts created by user OR alerts they've acknowledged/resolved
+    if (userId) {
+      if (filters?.status === 'acknowledged') {
+        // For acknowledged alerts, show alerts acknowledged by this user OR created by this user
+        conditions.push(or(
+          eq(alerts.userId, userId),
+          eq(alerts.acknowledgedBy, userId)
+        ));
+      } else if (filters?.status === 'resolved') {
+        // For resolved alerts, show alerts resolved by this user OR created by this user
+        conditions.push(or(
+          eq(alerts.userId, userId),
+          eq(alerts.resolvedBy, userId)
+        ));
+      } else {
+        // For other statuses, show alerts created by this user
+        conditions.push(eq(alerts.userId, userId));
+      }
+    }
+    
     if (filters?.status) conditions.push(eq(alerts.status, filters.status as any));
     if (filters?.severity) conditions.push(eq(alerts.severity, filters.severity as any));
     if (filters?.type) conditions.push(eq(alerts.type, filters.type as any));
