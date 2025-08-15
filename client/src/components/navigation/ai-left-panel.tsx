@@ -138,13 +138,6 @@ export function AILeftPanel() {
   });
   
   // Send message mutation
-  // Auto-scroll when thinking starts
-  useEffect(() => {
-    if (showMaxThinking && chatScrollRef.current) {
-      chatScrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [showMaxThinking]);
-
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       setShowMaxThinking(true);
@@ -319,7 +312,6 @@ export function AILeftPanel() {
   };
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Listen for toggle event from command palette
   useEffect(() => {
@@ -529,29 +521,7 @@ export function AILeftPanel() {
                       </div>
                     </div>
                   ))}
-                  
-                  {/* Show thinking indicator */}
-                  {showMaxThinking && (
-                    <div ref={chatScrollRef} className="flex gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          <Bot className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col gap-1 max-w-[85%]">
-                        <div className="rounded-lg px-3 py-2 text-sm bg-muted">
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                            </div>
-                            <span className="text-muted-foreground">Max is thinking...</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               </ScrollArea>
               
