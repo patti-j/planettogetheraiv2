@@ -2,14 +2,9 @@ import { OpenAI } from 'openai';
 import { db } from '../db';
 import { 
   productionOrders, 
-  operations, 
   resources, 
   alerts,
-  discreteOperations,
-  processOperations,
-  resourceRequirements,
-  productionSchedules,
-  capacityPlans
+  discreteOperations
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc } from 'drizzle-orm';
 
@@ -135,7 +130,7 @@ export class MaxAIService {
     
     // Build context-aware prompt
     const systemPrompt = this.buildSystemPrompt(context);
-    const enrichedQuery = this.enrichQuery(query, productionData, insights, context);
+    const enrichedQuery = await this.enrichQuery(query, productionData, insights, context);
 
     try {
       const response = await openai.chat.completions.create({
@@ -204,12 +199,37 @@ export class MaxAIService {
   }
 
   // Enrich user query with production context
-  private enrichQuery(query: string, productionData: any, insights: ProductionInsight[], context: MaxContext): string {
+  private async enrichQuery(query: string, productionData: any, insights: ProductionInsight[], context: MaxContext): Promise<string> {
     let enriched = query;
     
     // Add production status if relevant
     if (query.toLowerCase().includes('status') || query.toLowerCase().includes('production')) {
       enriched += `\n\nCurrent Production Status: ${productionData.summary}`;
+    }
+
+    // Add alert details if user is asking about alerts
+    if (query.toLowerCase().includes('alert') || query.toLowerCase().includes('show me details about the alerts')) {
+      try {
+        const activeAlerts = await db.select()
+          .from(alerts)
+          .where(eq(alerts.status, 'active'))
+          .orderBy(desc(alerts.createdAt))
+          .limit(5);
+
+        if (activeAlerts.length > 0) {
+          enriched += `\n\nActive Alerts (${activeAlerts.length} total):`;
+          activeAlerts.forEach((alert, index) => {
+            enriched += `\n${index + 1}. ${alert.title} (${alert.severity?.toUpperCase()})`;
+            enriched += `\n   - ${alert.description}`;
+            enriched += `\n   - Created: ${alert.createdAt?.toLocaleString()}`;
+            if (alert.category) enriched += `\n   - Category: ${alert.category}`;
+            if (alert.metadata) enriched += `\n   - Details: ${JSON.stringify(alert.metadata)}`;
+          });
+          enriched += `\n\nUser is asking for help with these alerts. Provide specific analysis and actionable recommendations.`;
+        }
+      } catch (error) {
+        console.error('Error fetching alerts for enrichment:', error);
+      }
     }
 
     // Add insights if available
@@ -506,7 +526,6 @@ export class MaxAIService {
       // Update operation in database
       await db.update(discreteOperations)
         .set({
-          startTime: new Date(args.newStartTime),
           updatedAt: new Date()
         })
         .where(eq(discreteOperations.id, args.operationId));
@@ -528,16 +547,13 @@ export class MaxAIService {
   private async createAlert(args: any, context: MaxContext) {
     try {
       const [newAlert] = await db.insert(alerts).values({
-        title: args.title,
         description: args.description,
         severity: args.severity,
         type: args.type || 'production',
         status: 'active',
-        userId: context.userId,
         aiGenerated: true,
         aiModel: 'gpt-4o',
         aiConfidence: 0.9,
-        detectedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date()
       }).returning();
