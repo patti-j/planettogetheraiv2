@@ -606,7 +606,7 @@ export default function MasterProductionSchedulePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="plant-select">Plant</Label>
               <Select value={selectedPlant} onValueChange={setSelectedPlant}>
                 <SelectTrigger>
@@ -620,7 +620,7 @@ export default function MasterProductionSchedulePage() {
               </Select>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="item-select">Item</Label>
               <Select value={selectedItem} onValueChange={setSelectedItem}>
                 <SelectTrigger>
@@ -637,7 +637,7 @@ export default function MasterProductionSchedulePage() {
               </Select>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="time-period">Time Period</Label>
               <Select value={timePeriod} onValueChange={(value: TimePeriod) => setTimePeriod(value)}>
                 <SelectTrigger>
@@ -652,8 +652,15 @@ export default function MasterProductionSchedulePage() {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="horizon">Planning Horizon ({getPeriodLabel(timePeriod)}s)</Label>
+            <div className="space-y-2">
+              <div className="min-h-5">
+                <Label htmlFor="horizon">
+                  Planning Horizon
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({getPeriodLabel(timePeriod)}s)
+                  </span>
+                </Label>
+              </div>
               <Input
                 id="horizon"
                 type="number"
@@ -664,7 +671,10 @@ export default function MasterProductionSchedulePage() {
               />
             </div>
 
-            <div className="flex items-end">
+            <div className="space-y-2">
+              <div className="min-h-5">
+                <Label className="invisible">Placeholder</Label>
+              </div>
               <Button variant="outline" className="w-full">
                 <Settings className="h-4 w-4 mr-2" />
                 Advanced Settings
