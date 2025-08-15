@@ -66,7 +66,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest("POST", "/api/max-ai/chat", { 
+      const response = await apiRequest("POST", "/api/max-ai/chat", { 
         message,
         context: {
           currentPage: location,
@@ -74,6 +74,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           recentActions: []
         }
       });
+      return response.json();
     },
     onSuccess: (data: any) => {
       console.log("Max AI Full Response:", data);
