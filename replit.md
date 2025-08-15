@@ -17,13 +17,20 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-15**: PT Publish Tables Date/Time Column Migration
+- **✅ Converted all 128 date/time columns from TEXT to TIMESTAMP**
+- **✅ Migration completed successfully using safe dynamic conversion script**
+- **✅ All publish_date, entry_date, need_date_time, scheduled dates now proper TIMESTAMP types**
+- **✅ Populated PT Publish tables with realistic brewery manufacturing data**
+- **✅ Loaded data for 3 plants, 8 departments, 11 resources, 14 items, 5 jobs, and related records**
+- **✅ Database now ready for production scheduling with proper datetime handling**
+
 **2025-08-15**: PT Publish Tables Successfully Created (Brewery Data)
 - **✅ Created all 61 PT Publish tables from SQL Server script**
 - **✅ Converted SQL Server data types to PostgreSQL format**
 - **✅ Added auto-incrementing ID columns (SERIAL PRIMARY KEY) to all tables**
 - **✅ Tables include: Jobs, Operations, Activities, Resources, Plants, Departments, etc.**
 - **✅ Added proper indexes for foreign key relationships and common queries**
-- **✅ All date/time columns stored as TEXT for import reliability (following established pattern)**
 - **✅ Ready for PlanetTogether Publish brewery data import**
 
 **2025-08-14**: PT Import Tables Cleanup (Preparation for New SQL Script)
