@@ -25,10 +25,15 @@ import {
   Eye,
   ArrowUpDown,
   Zap,
-  Clock
+  Clock,
+  MessageSquare,
+  Plus,
+  X
 } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, ComposedChart } from "recharts";
 import { format, addWeeks, startOfWeek, endOfWeek, addDays, parseISO } from "date-fns";
+import { CommentsPanel } from "@/components/comments/comments-panel";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface SupplyDemandData {
   periodStart: string;
@@ -94,6 +99,9 @@ export default function DemandSupplyAlignmentPage() {
   const [selectedAlignmentLevel, setSelectedAlignmentLevel] = useState<string>("all");
   const [chartType, setChartType] = useState<"line" | "area" | "bar" | "composed">("composed");
   const [drillDownItem, setDrillDownItem] = useState<number | null>(null);
+  const [showComments, setShowComments] = useState<boolean>(false);
+  const [commentsEntityId, setCommentsEntityId] = useState<number | null>(null);
+  const [commentsEntityType, setCommentsEntityType] = useState<string>("demand-supply-alignment");
 
   // Fetch demand forecasts, production schedules, and inventory data
   const { data: demandForecasts = [] } = useQuery<any[]>({
@@ -589,10 +597,37 @@ export default function DemandSupplyAlignmentPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-2">Demand/Supply Alignment</h1>
-        <p className="text-gray-600">
-          Monitor how well supply is meeting demand across your planning horizon
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 mb-2">Demand/Supply Alignment</h1>
+            <p className="text-gray-600">
+              Monitor how well supply is meeting demand across your planning horizon
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setCommentsEntityType("demand-supply-alignment");
+                setCommentsEntityId(1); // General page comments
+                setShowComments(true);
+              }}
+              className="flex items-center gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Page Comments
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export Analysis
+            </Button>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -977,7 +1012,20 @@ export default function DemandSupplyAlignmentPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCommentsEntityType("demand-supply-item");
+                            setCommentsEntityId(item.itemId);
+                            setShowComments(true);
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Comments
+                        </Button>
                         <Button variant="outline" size="sm">
                           <Eye className="w-4 h-4 mr-2" />
                           View Details
@@ -1039,6 +1087,18 @@ export default function DemandSupplyAlignmentPage() {
                         <span className={`font-medium ${getAlignmentColor(item.overallAlignment)}`}>
                           {item.overallAlignment}% Aligned
                         </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCommentsEntityType("demand-supply-item");
+                            setCommentsEntityId(item.itemId);
+                            setShowComments(true);
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Comments
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -1070,6 +1130,36 @@ export default function DemandSupplyAlignmentPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Comments Dialog */}
+      <Dialog open={showComments} onOpenChange={setShowComments}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>
+              {commentsEntityType === "demand-supply-alignment" 
+                ? "Page Comments - Demand/Supply Alignment" 
+                : `Item Comments - ${filteredAlignmentData.find(item => item.itemId === commentsEntityId)?.itemDescription || 'Unknown Item'}`
+              }
+            </DialogTitle>
+            <DialogDescription>
+              {commentsEntityType === "demand-supply-alignment"
+                ? "Collaborate on general demand/supply alignment topics, share insights, and discuss improvement strategies."
+                : "Discuss specific issues, alignment concerns, and solutions for this item."
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {commentsEntityId && (
+            <div className="flex-1 overflow-hidden">
+              <CommentsPanel
+                entityType={commentsEntityType}
+                entityId={commentsEntityId}
+                height="60vh"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
