@@ -75,6 +75,7 @@ import { processAICommand, processShiftAIRequest, processShiftAssignmentAIReques
 import { emailService } from "./email";
 import registerScheduleRoutes from "./routes/schedule-routes";
 import alertsRouter from "./routes/alerts";
+import commentsRouter from "./routes/comments";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -23651,6 +23652,9 @@ Be careful to preserve data integrity and relationships.`;
   
   // Register alerts routes
   app.use(alertsRouter);
+  
+  // Register comments routes
+  app.use(commentsRouter);
 
   // Algorithm Version Control Routes
   app.get('/api/algorithm-versions', createSafeHandler(async (req, res) => {

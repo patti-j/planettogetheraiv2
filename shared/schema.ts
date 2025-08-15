@@ -10948,6 +10948,274 @@ export type InsertDemandChangeApproval = z.infer<typeof insertDemandChangeApprov
 export type DemandCollaborationSession = typeof demandCollaborationSessions.$inferSelect;
 export type InsertDemandCollaborationSession = z.infer<typeof insertDemandCollaborationSessionSchema>;
 
+// ========================================
+// Commenting and Discussion System Tables
+// ========================================
+
+// Comments - Core commenting functionality with threading support
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  
+  // Context - what this comment is attached to
+  entityType: text("entity_type").notNull(), // 'resource', 'job', 'production_order', 'operation', 'plant', 'schedule', 'mps', etc.
+  entityId: integer("entity_id").notNull(), // ID of the entity being commented on
+  contextArea: text("context_area"), // Optional: 'production_scheduling', 'master_production_schedule', 'quality', 'maintenance', etc.
+  
+  // Comment content
+  content: text("content").notNull(), // The actual comment text (supports markdown)
+  plainTextContent: text("plain_text_content"), // Plain text version for search/notifications
+  
+  // Threading support
+  parentCommentId: integer("parent_comment_id"), // References comments.id for replies
+  threadRootId: integer("thread_root_id"), // References the top-level comment in a thread
+  threadDepth: integer("thread_depth").default(0), // 0 for root, 1 for direct reply, etc.
+  
+  // Author and metadata
+  authorId: integer("author_id").notNull(), // References users.id
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  editHistory: jsonb("edit_history").$type<Array<{
+    content: string;
+    editedAt: string;
+    editedBy: number;
+  }>>().default([]),
+  
+  // Status and visibility
+  status: text("status").notNull().default("active"), // 'active', 'resolved', 'deleted', 'archived'
+  isPinned: boolean("is_pinned").default(false),
+  isPrivate: boolean("is_private").default(false), // Private comments only visible to certain users
+  visibility: text("visibility").default("all"), // 'all', 'team', 'department', 'mentioned_only'
+  
+  // Rich features
+  metadata: jsonb("metadata").$type<{
+    attachmentCount?: number;
+    mentionCount?: number;
+    reactionCount?: number;
+    taskStatus?: string; // If comment creates a task
+    priority?: string;
+    dueDate?: string;
+    assignedTo?: number[];
+    labels?: string[];
+    linkedEntities?: Array<{ type: string; id: number; name: string }>;
+  }>().default({}),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: integer("resolved_by"),
+}, (table) => ({
+  entityIdx: index().on(table.entityType, table.entityId),
+  authorIdx: index().on(table.authorId),
+  parentIdx: index().on(table.parentCommentId),
+  threadIdx: index().on(table.threadRootId),
+  statusIdx: index().on(table.status),
+  createdAtIdx: index().on(table.createdAt),
+}));
+
+// Comment Mentions - Track user mentions (@username) in comments
+export const commentMentions = pgTable("comment_mentions", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => comments.id, { onDelete: "cascade" }).notNull(),
+  mentionedUserId: integer("mentioned_user_id").notNull(), // References users.id
+  mentionedByUserId: integer("mentioned_by_user_id").notNull(), // References users.id
+  
+  // Mention context
+  mentionType: text("mention_type").notNull().default("direct"), // 'direct' (@user), 'team' (@team), 'everyone' (@everyone)
+  mentionText: text("mention_text"), // The actual @mention text used
+  position: integer("position"), // Character position in the comment where mention appears
+  
+  // Status tracking
+  isAcknowledged: boolean("is_acknowledged").default(false),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  commentUserIdx: unique().on(table.commentId, table.mentionedUserId),
+  mentionedUserIdx: index().on(table.mentionedUserId),
+  acknowledgedIdx: index().on(table.isAcknowledged),
+}));
+
+// Notifications - Inbox for users (mentions, replies, assignments, etc.)
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  
+  // Recipient
+  userId: integer("user_id").notNull(), // References users.id
+  
+  // Notification type and source
+  type: text("type").notNull(), // 'mention', 'reply', 'assignment', 'status_change', 'comment_on_watched', 'task_due', etc.
+  category: text("category").notNull().default("comment"), // 'comment', 'task', 'system', 'alert'
+  priority: text("priority").notNull().default("normal"), // 'low', 'normal', 'high', 'urgent'
+  
+  // Reference to source
+  sourceType: text("source_type"), // 'comment', 'task', 'alert', etc.
+  sourceId: integer("source_id"), // ID of the source entity
+  
+  // Related entities
+  relatedEntityType: text("related_entity_type"), // 'resource', 'job', 'production_order', etc.
+  relatedEntityId: integer("related_entity_id"),
+  relatedEntityName: text("related_entity_name"), // Cached name for display
+  
+  // Notification content
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  actionUrl: text("action_url"), // URL to navigate to when clicked
+  iconType: text("icon_type"), // Icon to display
+  
+  // Additional data
+  metadata: jsonb("metadata").$type<{
+    commentSnippet?: string;
+    authorName?: string;
+    authorAvatar?: string;
+    contextInfo?: any;
+    actionButtons?: Array<{ label: string; action: string; data: any }>;
+  }>().default({}),
+  
+  // Status
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  isArchived: boolean("is_archived").default(false),
+  archivedAt: timestamp("archived_at"),
+  
+  // Delivery preferences
+  emailSent: boolean("email_sent").default(false),
+  pushSent: boolean("push_sent").default(false),
+  inAppShown: boolean("in_app_shown").default(true),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Optional expiration for notifications
+}, (table) => ({
+  userIdx: index().on(table.userId, table.isRead, table.isArchived),
+  typeIdx: index().on(table.type),
+  createdAtIdx: index().on(table.createdAt),
+  sourceIdx: index().on(table.sourceType, table.sourceId),
+}));
+
+// Comment Attachments - Files attached to comments
+export const commentAttachments = pgTable("comment_attachments", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => comments.id, { onDelete: "cascade" }).notNull(),
+  
+  // File information
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(), // MIME type
+  fileSize: integer("file_size").notNull(), // Size in bytes
+  fileUrl: text("file_url").notNull(), // URL or path to file
+  thumbnailUrl: text("thumbnail_url"), // For images/videos
+  
+  // File metadata
+  uploadedBy: integer("uploaded_by").notNull(), // References users.id
+  description: text("description"),
+  
+  // File processing status
+  status: text("status").notNull().default("uploaded"), // 'uploading', 'uploaded', 'processing', 'failed'
+  processingError: text("processing_error"),
+  
+  // Timestamps
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+}, (table) => ({
+  commentIdx: index().on(table.commentId),
+}));
+
+// Comment Reactions - Likes, emojis, etc. on comments
+export const commentReactions = pgTable("comment_reactions", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => comments.id, { onDelete: "cascade" }).notNull(),
+  userId: integer("user_id").notNull(), // References users.id
+  
+  // Reaction type
+  reactionType: text("reaction_type").notNull(), // 'like', 'heart', 'thumbs_up', 'celebrate', 'thinking', etc.
+  reactionEmoji: text("reaction_emoji"), // The actual emoji character
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueUserReaction: unique().on(table.commentId, table.userId, table.reactionType),
+  commentIdx: index().on(table.commentId),
+  userIdx: index().on(table.userId),
+}));
+
+// Comment Watchers - Users watching a thread for updates
+export const commentWatchers = pgTable("comment_watchers", {
+  id: serial("id").primaryKey(),
+  
+  // What to watch
+  watchType: text("watch_type").notNull(), // 'comment', 'thread', 'entity'
+  watchId: integer("watch_id").notNull(), // ID of comment, thread, or entity
+  entityType: text("entity_type"), // For entity watching
+  
+  // Watcher
+  userId: integer("user_id").notNull(), // References users.id
+  
+  // Notification preferences
+  notifyOnReply: boolean("notify_on_reply").default(true),
+  notifyOnMention: boolean("notify_on_mention").default(true),
+  notifyOnStatusChange: boolean("notify_on_status_change").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueWatcher: unique().on(table.watchType, table.watchId, table.userId),
+  userIdx: index().on(table.userId),
+}));
+
+// ========================================
+// Insert Schemas for Commenting System
+// ========================================
+
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCommentMentionSchema = createInsertSchema(commentMentions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCommentAttachmentSchema = createInsertSchema(commentAttachments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertCommentReactionSchema = createInsertSchema(commentReactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCommentWatcherSchema = createInsertSchema(commentWatchers).omit({
+  id: true,
+  createdAt: true,
+});
+
+// ========================================
+// Types for Commenting System
+// ========================================
+
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+
+export type CommentMention = typeof commentMentions.$inferSelect;
+export type InsertCommentMention = z.infer<typeof insertCommentMentionSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type CommentAttachment = typeof commentAttachments.$inferSelect;
+export type InsertCommentAttachment = z.infer<typeof insertCommentAttachmentSchema>;
+
+export type CommentReaction = typeof commentReactions.$inferSelect;
+export type InsertCommentReaction = z.infer<typeof insertCommentReactionSchema>;
+
+export type CommentWatcher = typeof commentWatchers.$inferSelect;
+export type InsertCommentWatcher = z.infer<typeof insertCommentWatcherSchema>;
+
 // Export schedule schemas
 export * from './schedule-schema';
 

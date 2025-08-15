@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import { useQuery } from '@tanstack/react-query';
+import { CommentsPanel } from '@/components/comments/comments-panel';
+import { Button } from '@/components/ui/button';
+import { MessageCircle, X } from 'lucide-react';
 
 // Import PT Gantt styles for enhanced visualization
 import '../styles/pt-gantt.css';

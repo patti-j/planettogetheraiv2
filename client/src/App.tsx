@@ -40,6 +40,7 @@ import Maintenance from "@/pages/maintenance";
 import Feedback from "@/pages/feedback";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
+import InboxPage from "@/pages/inbox";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import InventoryOptimization from "@/pages/inventory-optimization";
 import DemandPlanning from "@/pages/demand-planning";
@@ -113,7 +114,6 @@ import DemandSupplyAlignmentPage from "@/pages/demand-supply-alignment";
 import FunctionalMap from "@/pages/functional-map";
 import NotFound from "@/pages/not-found";
 import TasksPage from "@/pages/tasks";
-import InboxPage from "@/pages/inbox";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
@@ -349,6 +349,11 @@ function Router() {
           <Route path="/feedback">
             <ProtectedRoute feature="feedback" action="view">
               <Feedback />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/inbox">
+            <ProtectedRoute feature="inbox" action="view">
+              <InboxPage />
             </ProtectedRoute>
           </Route>
           <Route path="/forklift-driver">
