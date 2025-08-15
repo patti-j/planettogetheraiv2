@@ -53,10 +53,30 @@ router.get("/api/comments/:entityType/:entityId", async (req, res) => {
   }
 });
 
+// Authentication middleware function
+function getAuthenticatedUserId(req: any): number | null {
+  let userId = req.session?.userId;
+  
+  // Check for token in Authorization header if session fails
+  if (!userId && req.headers.authorization) {
+    const token = req.headers.authorization.replace('Bearer ', '');
+    
+    // Extract user ID from token (format: user_ID_timestamp_random)
+    if (token.startsWith('user_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 2) {
+        userId = parseInt(tokenParts[1]);
+      }
+    }
+  }
+  
+  return userId || null;
+}
+
 // Create a new comment
 router.post("/api/comments", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -81,7 +101,7 @@ router.post("/api/comments", async (req, res) => {
 // Update a comment
 router.put("/api/comments/:commentId", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -109,7 +129,7 @@ router.put("/api/comments/:commentId", async (req, res) => {
 // Delete a comment
 router.delete("/api/comments/:commentId", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -132,7 +152,7 @@ router.delete("/api/comments/:commentId", async (req, res) => {
 // Add a reaction to a comment
 router.post("/api/comments/:commentId/reactions", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -159,7 +179,7 @@ router.post("/api/comments/:commentId/reactions", async (req, res) => {
 // Remove a reaction from a comment
 router.delete("/api/comments/:commentId/reactions/:reactionType", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -179,7 +199,7 @@ router.delete("/api/comments/:commentId/reactions/:reactionType", async (req, re
 // Watch an entity or thread
 router.post("/api/watch", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -203,7 +223,7 @@ router.post("/api/watch", async (req, res) => {
 // Unwatch an entity or thread
 router.delete("/api/watch", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -222,7 +242,7 @@ router.delete("/api/watch", async (req, res) => {
 // Get user's notifications (inbox)
 router.get("/api/notifications", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -246,7 +266,7 @@ router.get("/api/notifications", async (req, res) => {
 // Get unread notification count
 router.get("/api/notifications/unread-count", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
@@ -265,7 +285,7 @@ router.get("/api/notifications/unread-count", async (req, res) => {
 // Mark notifications as read
 router.post("/api/notifications/mark-read", async (req, res) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(401).json({ error: "User not authenticated" });
     }
