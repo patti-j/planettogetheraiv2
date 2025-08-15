@@ -121,6 +121,7 @@ import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
+import Help from "@/pages/help";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -498,6 +499,9 @@ function Router() {
             <ProtectedRoute feature="chat" action="view">
               <Chat />
             </ProtectedRoute>
+          </Route>
+          <Route path="/help">
+            <Help />
           </Route>
 
           <Route path="/system-integrations">
