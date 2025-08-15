@@ -546,6 +546,7 @@ export interface IStorage {
   // User Management
   getUsers(): Promise<User[]>;
   getUsersWithRoles(): Promise<UserWithRoles[]>;
+  searchUsers(searchTerm: string, limit?: number): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -4968,6 +4969,25 @@ export class DatabaseStorage implements IStorage {
   // User Management
   async getUsers(): Promise<User[]> {
     return await db.select().from(users);
+  }
+
+  async searchUsers(searchTerm: string, limit: number = 10): Promise<User[]> {
+    try {
+      const result = await db
+        .select()
+        .from(users)
+        .where(
+          sql`LOWER(${users.username}) LIKE ${`%${searchTerm}%`} OR 
+              LOWER(${users.firstName}) LIKE ${`%${searchTerm}%`} OR 
+              LOWER(${users.lastName}) LIKE ${`%${searchTerm}%`} OR 
+              LOWER(CONCAT(${users.firstName}, ' ', ${users.lastName})) LIKE ${`%${searchTerm}%`}`
+        )
+        .limit(limit);
+      return result;
+    } catch (error) {
+      console.error("Error searching users:", error);
+      throw new Error("Failed to search users");
+    }
   }
 
   async getUser(id: number): Promise<User | undefined> {

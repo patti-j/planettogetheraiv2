@@ -7642,8 +7642,20 @@ Return ONLY a valid JSON object with this exact structure:
   // Users
   app.get("/api/users", async (req, res) => {
     try {
-      const users = await storage.getUsers();
-      res.json(users);
+      const { search, limit } = req.query;
+      
+      if (search && typeof search === 'string') {
+        // Search users for mentions
+        const searchTerm = search.toLowerCase();
+        const limitNum = limit ? parseInt(limit as string) : 10;
+        
+        const users = await storage.searchUsers(searchTerm, limitNum);
+        res.json(users);
+      } else {
+        // Return all users
+        const users = await storage.getUsers();
+        res.json(users);
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });

@@ -110,6 +110,8 @@ export function CommentsPanel({
   const [editContent, setEditContent] = useState("");
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [selectedMentions, setSelectedMentions] = useState<number[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
@@ -122,6 +124,17 @@ export function CommentsPanel({
       return response.json();
     },
     refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  // Fetch users for mentions (only when needed)
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users", mentionSearch],
+    queryFn: async () => {
+      const response = await fetch(`/api/users?search=${encodeURIComponent(mentionSearch)}&limit=10`);
+      if (!response.ok) throw new Error("Failed to fetch users");
+      return response.json();
+    },
+    enabled: showMentions && mentionSearch.length > 0
   });
 
   // Create comment mutation
@@ -228,13 +241,72 @@ export function CommentsPanel({
     }
   });
 
+  // Handle @ mention detection and autocomplete
+  const handleTextChange = (value: string, isReply = false) => {
+    if (isReply) {
+      setNewComment(value);
+    } else {
+      setNewComment(value);
+    }
+
+    // Detect @ mentions
+    const cursorPos = textareaRef.current?.selectionStart || 0;
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_]*)$/);
+    
+    if (mentionMatch) {
+      setShowMentions(true);
+      setMentionSearch(mentionMatch[1]);
+      setCursorPosition(cursorPos);
+    } else {
+      setShowMentions(false);
+      setMentionSearch("");
+    }
+  };
+
+  const insertMention = (user: any) => {
+    const cursorPos = cursorPosition;
+    const beforeCursor = newComment.substring(0, cursorPos);
+    const afterCursor = newComment.substring(cursorPos);
+    
+    // Find and replace the @mention text
+    const mentionRegex = /@([a-zA-Z0-9_]*)$/;
+    const match = beforeCursor.match(mentionRegex);
+    
+    if (match) {
+      const mentionStart = cursorPos - match[0].length;
+      const newText = 
+        newComment.substring(0, mentionStart) + 
+        `@${user.username} ` + 
+        afterCursor;
+      
+      setNewComment(newText);
+      setSelectedMentions(prev => [...prev, user.id]);
+      setShowMentions(false);
+      setMentionSearch("");
+      
+      // Focus back to textarea
+      setTimeout(() => {
+        if (textareaRef.current) {
+          const newCursorPos = mentionStart + user.username.length + 2; // +2 for "@" and space
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+          textareaRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
     
     createCommentMutation.mutate({
       content: newComment,
-      parentCommentId: replyingTo || undefined
+      parentCommentId: replyingTo || undefined,
+      mentions: selectedMentions.length > 0 ? selectedMentions : undefined
     });
+    
+    // Reset mentions
+    setSelectedMentions([]);
   };
 
   const handleUpdateComment = (commentId: number) => {
@@ -402,14 +474,49 @@ export function CommentsPanel({
                 </div>
                 
                 {replyingTo === comment.id && (
-                  <div className="mt-3">
+                  <div className="mt-3 relative">
                     <Textarea
                       ref={textareaRef}
                       value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder={`Reply to ${getAuthorName(comment.author)}...`}
+                      onChange={(e) => handleTextChange(e.target.value, true)}
+                      placeholder={`Reply to ${getAuthorName(comment.author)}... (use @ to mention)`}
                       className="min-h-[60px]"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.ctrlKey) {
+                          handleSubmitComment();
+                        }
+                        if (e.key === "Escape") {
+                          setShowMentions(false);
+                        }
+                      }}
                     />
+                    
+                    {/* Mention autocomplete dropdown for replies */}
+                    {showMentions && users.length > 0 && (
+                      <div className="absolute z-50 mt-1 w-64 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {users.map((user: any) => (
+                          <div
+                            key={user.id}
+                            className="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center space-x-2"
+                            onClick={() => insertMention(user)}
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={user.avatar} />
+                              <AvatarFallback>
+                                {user.firstName?.[0]}{user.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="text-sm font-medium">
+                                {user.firstName} {user.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">@{user.username}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
                     <div className="flex space-x-2 mt-2">
                       <Button 
                         size="sm"
@@ -425,6 +532,8 @@ export function CommentsPanel({
                         onClick={() => {
                           setReplyingTo(null);
                           setNewComment("");
+                          setSelectedMentions([]);
+                          setShowMentions(false);
                         }}
                       >
                         Cancel
@@ -507,41 +616,93 @@ export function CommentsPanel({
         
         {/* New comment form */}
         {!replyingTo && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="mt-4 pt-4 border-t relative">
             <Textarea
+              ref={textareaRef}
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
+              onChange={(e) => handleTextChange(e.target.value)}
+              placeholder="Add a comment... (use @ to mention someone)"
               className="min-h-[80px]"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && e.ctrlKey) {
                   handleSubmitComment();
                 }
+                if (e.key === "Escape") {
+                  setShowMentions(false);
+                }
               }}
             />
+            
+            {/* Mention autocomplete dropdown */}
+            {showMentions && users.length > 0 && (
+              <div className="absolute z-50 mt-1 w-64 bg-white border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                {users.map((user: any) => (
+                  <div
+                    key={user.id}
+                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 flex items-center space-x-2"
+                    onClick={() => insertMention(user)}
+                  >
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="text-sm font-medium">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500">@{user.username}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex justify-between items-center mt-2">
               <div className="flex space-x-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowMentions(!showMentions)}
+                  onClick={() => {
+                    if (textareaRef.current) {
+                      const cursorPos = textareaRef.current.selectionStart;
+                      const newText = newComment.substring(0, cursorPos) + "@" + newComment.substring(cursorPos);
+                      setNewComment(newText);
+                      setTimeout(() => {
+                        if (textareaRef.current) {
+                          textareaRef.current.setSelectionRange(cursorPos + 1, cursorPos + 1);
+                          textareaRef.current.focus();
+                        }
+                      }, 0);
+                    }
+                  }}
+                  title="Add mention"
                 >
                   <AtSign className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
+                  title="Add attachment"
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
               </div>
-              <Button 
-                onClick={handleSubmitComment}
-                disabled={!newComment.trim() || createCommentMutation.isPending}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Comment
-              </Button>
+              <div className="flex items-center space-x-2">
+                {selectedMentions.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedMentions.length} mention{selectedMentions.length > 1 ? 's' : ''}
+                  </Badge>
+                )}
+                <Button 
+                  onClick={handleSubmitComment}
+                  disabled={!newComment.trim() || createCommentMutation.isPending}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Comment
+                </Button>
+              </div>
             </div>
           </div>
         )}
