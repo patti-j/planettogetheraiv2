@@ -2183,15 +2183,44 @@ Rules:
 
   // Production Orders (formerly Jobs) - Enhanced with error handling
   app.get("/api/production-orders", createSafeHandler('Get Production Orders')(async (req, res) => {
-    const productionOrders = await storage.getProductionOrders();
-    if (!productionOrders) {
-      throw new DatabaseError('Failed to retrieve production orders from database', {
-        operation: 'Get Production Orders',
-        endpoint: '/api/production-orders',
-        userId: req.user?.id
-      });
+    // Check if we should use PT Publish data
+    const usePtPublish = req.query.source === 'pt-publish';
+    
+    if (usePtPublish) {
+      console.log("[API] Fetching production orders from PT Publish tables");
+      const ptJobs = await storage.getPtPublishJobs();
+      console.log(`[API] Found ${ptJobs.length} PT Publish jobs`);
+      
+      // Transform PT Publish jobs to match production order format
+      const transformedOrders = ptJobs.map(job => ({
+        id: Number(job.jobId),
+        orderNumber: job.orderNumber || `PT-${job.jobId}`,
+        name: job.name || 'Unnamed Order',
+        description: job.description,
+        customerId: null, // Will need to map from customers field
+        status: job.scheduled ? 'scheduled' : 'pending',
+        quantity: Number(job.qty) || 0,
+        dueDate: job.needDateTime,
+        actualStartDate: job.scheduledStartDateTime,
+        actualEndDate: job.scheduledEndDateTime,
+        priority: job.priority || 5,
+        completionPercentage: job.percentFinished || 0,
+        notes: job.notes,
+        createdAt: job.entryDate || new Date()
+      }));
+      
+      res.json(transformedOrders);
+    } else {
+      const productionOrders = await storage.getProductionOrders();
+      if (!productionOrders) {
+        throw new DatabaseError('Failed to retrieve production orders from database', {
+          operation: 'Get Production Orders',
+          endpoint: '/api/production-orders',
+          userId: req.user?.id
+        });
+      }
+      res.json(productionOrders);
     }
-    res.json(productionOrders);
   }));
 
   // Keep old /api/jobs endpoint for backward compatibility

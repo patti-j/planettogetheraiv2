@@ -164,6 +164,13 @@ import {
   type InsertAlgorithmUsageLog,
 } from "@shared/schema";
 
+// Import PT Publish tables from pt-publish-schema
+import {
+  ptPublishJobs, ptPublishManufacturingOrders, ptPublishJobOperations, ptPublishResources, ptPublishJobActivities,
+  type PtPublishJob, type PtPublishManufacturingOrder, type PtPublishJobOperation, type PtPublishResource, type PtPublishJobActivity,
+  type InsertPtPublishJob, type InsertPtPublishManufacturingOrder, type InsertPtPublishJobOperation, type InsertPtPublishResource, type InsertPtPublishJobActivity
+} from "@shared/pt-publish-schema";
+
 // Import schedule-related types from schedule-schema
 import {
   schedules, scheduleAssignments, scheduleDiscussions, scheduleApprovals, 
@@ -279,6 +286,13 @@ export interface IStorage {
   createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
   updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined>;
   deleteProductionOrder(id: number): Promise<boolean>;
+  
+  // PT Publish Methods - For reading from PT Publish tables
+  getPtPublishJobs(): Promise<PtPublishJob[]>;
+  getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]>;
+  getPtPublishJobOperations(): Promise<PtPublishJobOperation[]>;
+  getPtPublishResources(): Promise<PtPublishResource[]>;
+  getPtPublishJobActivities(): Promise<PtPublishJobActivity[]>;
   
   // Planned Orders
   getPlannedOrders(): Promise<PlannedOrder[]>;
@@ -2685,6 +2699,100 @@ export class DatabaseStorage implements IStorage {
   async deleteProductionOrder(id: number): Promise<boolean> {
     const result = await db.delete(productionOrders).where(eq(productionOrders.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // PT Publish Methods - Reading from PT Publish tables
+  async getPtPublishJobs(): Promise<PtPublishJob[]> {
+    // Get the most recent publish date for consistent data
+    const latestPublish = await db
+      .select({ maxDate: sql<string>`MAX(publish_date)::text`.as('maxDate') })
+      .from(ptPublishJobs)
+      .limit(1);
+    
+    const publishDateStr = latestPublish[0]?.maxDate;
+    if (!publishDateStr) {
+      console.log("No PT Publish data available");
+      return [];
+    }
+
+    // Use SQL to compare dates directly in the query
+    return await db
+      .select()
+      .from(ptPublishJobs)
+      .where(sql`${ptPublishJobs.publishDate}::text = ${publishDateStr}`)
+      .orderBy(asc(ptPublishJobs.needDateTime));
+  }
+
+  async getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]> {
+    const latestPublish = await db
+      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .from(ptPublishManufacturingOrders)
+      .limit(1);
+    
+    const publishDate = latestPublish[0]?.maxDate;
+    if (!publishDate) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(ptPublishManufacturingOrders)
+      .where(eq(ptPublishManufacturingOrders.publishDate, publishDate))
+      .orderBy(asc(ptPublishManufacturingOrders.manufacturingOrderId));
+  }
+
+  async getPtPublishJobOperations(): Promise<PtPublishJobOperation[]> {
+    const latestPublish = await db
+      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .from(ptPublishJobOperations)
+      .limit(1);
+    
+    const publishDate = latestPublish[0]?.maxDate;
+    if (!publishDate) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(ptPublishJobOperations)
+      .where(eq(ptPublishJobOperations.publishDate, publishDate))
+      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+  }
+
+  async getPtPublishResources(): Promise<PtPublishResource[]> {
+    const latestPublish = await db
+      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .from(ptPublishResources)
+      .limit(1);
+    
+    const publishDate = latestPublish[0]?.maxDate;
+    if (!publishDate) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(ptPublishResources)
+      .where(eq(ptPublishResources.publishDate, publishDate))
+      .orderBy(asc(ptPublishResources.name));
+  }
+
+  async getPtPublishJobActivities(): Promise<PtPublishJobActivity[]> {
+    const latestPublish = await db
+      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .from(ptPublishJobActivities)
+      .limit(1);
+    
+    const publishDate = latestPublish[0]?.maxDate;
+    if (!publishDate) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(ptPublishJobActivities)
+      .where(eq(ptPublishJobActivities.publishDate, publishDate))
+      .orderBy(asc(ptPublishJobActivities.scheduledStart));
   }
 
   // Operations - Enhanced method with production order join for DatabaseStorage class
