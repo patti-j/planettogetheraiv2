@@ -133,17 +133,28 @@ export class MaxAIService {
     const enrichedQuery = await this.enrichQuery(query, productionData, insights, context);
 
     try {
-      const response = await openai.chat.completions.create({
+      // Only enable function calling for specific action queries
+      const isActionQuery = query.toLowerCase().includes('reschedule') || 
+                           query.toLowerCase().includes('create alert') ||
+                           query.toLowerCase().includes('optimize schedule');
+      
+      const requestOptions: any = {
         model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: enrichedQuery }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
-        functions: this.getAvailableFunctions(context),
-        function_call: 'auto'
-      });
+        max_tokens: 1000
+      };
+      
+      // Only add functions for action queries
+      if (isActionQuery) {
+        requestOptions.functions = this.getAvailableFunctions(context);
+        requestOptions.function_call = 'auto';
+      }
+      
+      const response = await openai.chat.completions.create(requestOptions);
 
       // Handle function calls if needed
       if (response.choices[0].message.function_call) {
@@ -563,24 +574,24 @@ export class MaxAIService {
   private async createAlert(args: any, context: MaxContext) {
     try {
       const [newAlert] = await db.insert(alerts).values({
+        title: args.title || 'AI Generated Alert',
         description: args.description,
         severity: args.severity,
         type: args.type || 'production',
         status: 'active',
         aiGenerated: true,
         aiModel: 'gpt-4o',
-        aiConfidence: 0.9,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        aiConfidence: 0.9
       }).returning();
 
       return {
-        content: `Alert created: "${args.title}". It has been added to the alerts dashboard with ${args.severity} priority.`,
+        content: `Alert created: "${args.title || 'AI Generated Alert'}". It has been added to the alerts dashboard with ${args.severity} priority.`,
         success: true,
         action: 'create_alert',
         data: newAlert
       };
     } catch (error) {
+      console.error('Create alert error:', error);
       return {
         content: 'Failed to create alert. Please try again.',
         error: true
