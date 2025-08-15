@@ -2201,12 +2201,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createCapability(capability: InsertCapability): Promise<Capability> {
-    const newCapability: Capability = { 
-      id: this.currentCapabilityId++, 
-      name: capability.name,
-      description: capability.description || null
-    };
-    this.capabilities.set(newCapability.id, newCapability);
+    const [newCapability] = await db.insert(capabilities).values(capability).returning();
     return newCapability;
   }
 
@@ -2220,14 +2215,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {
-    const newResource: Resource = { 
-      id: this.currentResourceId++, 
-      name: resource.name,
-      type: resource.type,
-      status: resource.status || "active",
-      capabilities: (resource.capabilities as number[]) || null
-    };
-    this.resources.set(newResource.id, newResource);
+    const [newResource] = await db.insert(resources).values(resource).returning();
     return newResource;
   }
 
@@ -2260,26 +2248,26 @@ export class MemStorage implements Partial<IStorage> {
       // Map PT Publish Job Operations to Operation format for backward compatibility
       const mappedOps: Operation[] = ptOperations.map(op => ({
         id: op.id,
-        name: op.name || `Operation ${op.operationId}`,
+        name: op.name || `Operation ${op.jobOperationId}`,
         description: op.description,
-        duration: Number(op.cycleHrs || op.setupHours || 1),
+        duration: Number(op.setupHours || 1),
         jobId: Number(op.jobId),
         productionOrderId: Number(op.jobId),
         order: Number(op.sequenceNumber || 0),
-        status: op.percentFinished === 100 ? 'completed' : 
-                op.percentFinished > 0 ? 'in_progress' : 'planned',
-        assignedResourceId: op.defaultResourceId || null,
-        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
-        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+        status: op.percentComplete === 100 ? 'completed' : 
+                op.percentComplete > 0 ? 'in_progress' : 'planned',
+        assignedResourceId: null, // Not available in PT operations
+        startTime: op.scheduledStartDate ? new Date(op.scheduledStartDate) : null,
+        endTime: op.scheduledEndDate ? new Date(op.scheduledEndDate) : null,
         routingId: null,
-        operationName: op.name || `Operation ${op.operationId}`,
-        standardDuration: Number(op.cycleHrs || 1),
-        actualDuration: Number(op.actualCycleHrs || op.cycleHrs || null),
-        workCenterId: op.defaultResourceId || null,
-        priority: op.priority || 3,
-        completionPercentage: Number(op.percentFinished || 0),
-        qualityCheckRequired: op.qualityCheckRequired || false,
-        qualityStatus: op.qualityCheckStatus || null,
+        operationName: op.name || `Operation ${op.jobOperationId}`,
+        standardDuration: Number(op.setupHours || 1),
+        actualDuration: null,
+        workCenterId: null,
+        priority: op.locked ? 5 : 3,
+        completionPercentage: Number(op.percentComplete || 0),
+        qualityCheckRequired: false,
+        qualityStatus: null,
         notes: op.notes || null,
         createdAt: op.publishDate || new Date(),
         updatedAt: op.publishDate || new Date()
@@ -2308,92 +2296,86 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createOperation(operation: InsertOperation): Promise<Operation> {
-    const newOperation: Operation = { 
-      id: this.currentOperationId++, 
-      jobId: operation.jobId,
-      name: operation.name,
-      description: operation.description || null,
-      status: operation.status || "planned",
-      duration: operation.duration,
-
-      startTime: operation.startTime || null,
-      endTime: operation.endTime || null,
-      order: operation.order || 0
-    };
-    this.operations.set(newOperation.id, newOperation);
+    const [newOperation] = await db.insert(discreteOperations).values({
+      ...operation,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
     return newOperation;
   }
 
   async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
-    const existing = this.operations.get(id);
-    if (!existing) return undefined;
-    
-    const updated: Operation = { ...existing, ...operation };
-    this.operations.set(id, updated);
+    const [updated] = await db.update(discreteOperations)
+      .set({ ...operation, updatedAt: new Date() })
+      .where(eq(discreteOperations.id, id))
+      .returning();
     return updated;
   }
 
   async deleteOperation(id: number): Promise<boolean> {
-    // Also delete associated dependencies
-    const dependenciesToDelete = Array.from(this.dependencies.values())
-      .filter(dep => dep.fromDiscreteOperationId === id || dep.toDiscreteOperationId === id);
+    // Delete associated dependencies first
+    await db.delete(dependencies)
+      .where(or(
+        eq(dependencies.fromDiscreteOperationId, id),
+        eq(dependencies.toDiscreteOperationId, id)
+      ));
     
-    dependenciesToDelete.forEach(dep => {
-      this.dependencies.delete(dep.id);
-    });
-    
-    return this.operations.delete(id);
+    const result = await db.delete(discreteOperations)
+      .where(eq(discreteOperations.id, id));
+    return result.rowCount > 0;
   }
 
   // Dependencies
   async getDependencies(): Promise<Dependency[]> {
-    return Array.from(this.dependencies.values());
+    return await db.select().from(dependencies);
   }
 
   async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
-    return Array.from(this.dependencies.values())
-      .filter(dep => dep.fromDiscreteOperationId === operationId || dep.toDiscreteOperationId === operationId);
+    return await db.select().from(dependencies)
+      .where(or(
+        eq(dependencies.fromDiscreteOperationId, operationId),
+        eq(dependencies.toDiscreteOperationId, operationId)
+      ));
   }
 
   async createDependency(dependency: InsertDependency): Promise<Dependency> {
-    const newDependency: Dependency = { id: this.currentDependencyId++, ...dependency } as Dependency;
-    this.dependencies.set(newDependency.id, newDependency);
+    const [newDependency] = await db.insert(dependencies).values(dependency).returning();
     return newDependency;
   }
 
   async deleteDependency(id: number): Promise<boolean> {
-    return this.dependencies.delete(id);
+    const result = await db.delete(dependencies).where(eq(dependencies.id, id));
+    return result.rowCount > 0;
   }
 
   async getResourceViews(): Promise<ResourceView[]> {
-    return Array.from(this.resourceViews.values());
+    return await db.select().from(resourceViews);
   }
 
   async getResourceView(id: number): Promise<ResourceView | undefined> {
-    return this.resourceViews.get(id);
+    const [view] = await db.select().from(resourceViews).where(eq(resourceViews.id, id));
+    return view;
   }
 
   async createResourceView(resourceView: InsertResourceView): Promise<ResourceView> {
-    const newResourceView: ResourceView = { 
-      id: this.currentResourceViewId++, 
+    const [newResourceView] = await db.insert(resourceViews).values({
       ...resourceView,
       createdAt: new Date()
-    };
-    this.resourceViews.set(newResourceView.id, newResourceView);
+    }).returning();
     return newResourceView;
   }
 
   async updateResourceView(id: number, resourceView: Partial<InsertResourceView>): Promise<ResourceView | undefined> {
-    const existing = this.resourceViews.get(id);
-    if (!existing) return undefined;
-    
-    const updated: ResourceView = { ...existing, ...resourceView };
-    this.resourceViews.set(id, updated);
+    const [updated] = await db.update(resourceViews)
+      .set(resourceView)
+      .where(eq(resourceViews.id, id))
+      .returning();
     return updated;
   }
 
   async deleteResourceView(id: number): Promise<boolean> {
-    return this.resourceViews.delete(id);
+    const result = await db.delete(resourceViews).where(eq(resourceViews.id, id));
+    return result.rowCount > 0;
   }
 
   async getDefaultResourceView(): Promise<ResourceView | undefined> {
@@ -2502,27 +2484,38 @@ export class DatabaseStorage implements IStorage {
   async getResources(): Promise<Resource[]> {
     console.log("getResources: Redirecting to PT Publish Resources table");
     
-    // Get resources from PT Publish tables
-    const ptResources = await db
-      .select()
-      .from(ptPublishResources)
-      .orderBy(asc(ptPublishResources.name));
-    
-    // Map PT Publish Resources to Resource format for backward compatibility
-    return ptResources.map(res => ({
-      id: Number(res.resourceId),
-      name: res.name || `Resource ${res.resourceId}`,
-      type: res.type || 'machine',
-      status: res.status || 'active',
-      capabilities: res.capabilityIds ? (res.capabilityIds as number[]) : null,
-      capacity: res.capacity || null,
-      efficiency: res.efficiency || null,
-      costPerHour: res.costPerHour || null,
-      maintenanceSchedule: res.nextMaintenance || null,
-      location: res.location || null,
-      createdAt: res.publishDate || new Date(),
-      updatedAt: res.publishDate || new Date()
-    } as Resource));
+    try {
+      // Get resources from PT Publish Resources table using raw SQL to avoid column issues
+      const result = await db.execute(sql`
+        SELECT resource_id, name, department_name, plant_name, active, speed_factor, bottleneck, publish_date
+        FROM pt_publish_resources
+        WHERE instance_id = 'PHARMA-001'
+        ORDER BY name ASC
+      `);
+      
+      const ptResources = result.rows as any[];
+      console.log("PT Resources count:", ptResources.length);
+      
+      // Map PT Publish Resources to Resource format for backward compatibility
+      return ptResources.map(res => ({
+        id: Number(res.resource_id),
+        name: res.name || `Resource ${res.resource_id}`,
+        type: res.department_name || 'machine', // Use department name as type
+        status: res.active ? 'active' : 'inactive',
+        capabilities: null, // PT resources don't have capabilities array
+        capacity: null, // Not available in PT resources
+        efficiency: res.speed_factor ? Number(res.speed_factor) * 100 : null,
+        costPerHour: null, // Not available in PT resources
+        maintenanceSchedule: null, // Not available in PT resources
+        location: res.plant_name || null,
+        createdAt: res.publish_date || new Date(),
+        updatedAt: res.publish_date || new Date()
+      } as Resource));
+    } catch (error) {
+      console.error("Error fetching PT resources:", error);
+      // Fallback to empty array if error
+      return [];
+    }
   }
 
   async getResource(id: number): Promise<Resource | undefined> {
@@ -3024,150 +3017,7 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // Operations - Enhanced method with production order join for DatabaseStorage class
-  async getOperations(): Promise<Operation[]> {
-    console.log("DEBUG: DatabaseStorage.getOperations called - starting enhanced version...");
-    try {
-      console.log("Starting getOperations - querying discrete operations with production order relationship...");
-      
-      // Query discrete operations with JOIN to get production order info directly
-      // Since discrete operations don't directly reference production orders, we'll do a more complex join
-      const discreteOpsQuery = await db
-        .select({
-          id: discreteOperations.id,
-          routingId: discreteOperations.routingId,
-          productionOrderId: discreteOperations.productionOrderId,
-          operationName: discreteOperations.operationName,
-          description: discreteOperations.description,
-          status: discreteOperations.status,
-          standardDuration: discreteOperations.standardDuration,
-          actualDuration: discreteOperations.actualDuration,
-          startTime: discreteOperations.startTime,
-          endTime: discreteOperations.endTime,
-          sequenceNumber: discreteOperations.sequenceNumber,
-          workCenterId: discreteOperations.workCenterId,
-          priority: discreteOperations.priority,
-          completionPercentage: discreteOperations.completionPercentage,
-          qualityCheckRequired: discreteOperations.qualityCheckRequired,
-          qualityStatus: discreteOperations.qualityStatus,
-          notes: discreteOperations.notes,
-          createdAt: discreteOperations.createdAt,
-          updatedAt: discreteOperations.updatedAt,
-          // Get production order name through direct relationship
-          productionOrderName: productionOrders.name,
-          productionOrderNumber: productionOrders.orderNumber
-        })
-        .from(discreteOperations)
-        .leftJoin(productionOrders, eq(discreteOperations.productionOrderId, productionOrders.id))
-        .orderBy(discreteOperations.id);
-      
-      console.log("Discrete operations with production order data count:", discreteOpsQuery.length);
-      // Log the specific operation that was updated (ID 14)
-      const op14 = discreteOpsQuery.find(op => op.id === 14);
-      if (op14) {
-        console.log("Operation 14 details:", {
-          id: op14.id,
-          startTime: op14.startTime,
-          endTime: op14.endTime,
-          workCenterId: op14.workCenterId
-        });
-      }
-      
-      console.log("Querying process operations...");
-      const processOps = await db.select().from(processOperations);
-      console.log("Process operations count:", processOps.length);
-      
-      // Convert both types to the legacy Operation interface for backwards compatibility
-      console.log("Converting operations to legacy format...");
-      const combinedOps: Operation[] = [
-        ...discreteOpsQuery.map(op => ({
-          id: op.id,
-          name: op.operationName,
-          description: op.description,
-          duration: op.standardDuration,
-          jobId: op.productionOrderId, // Now includes production order ID from JOIN
-          productionOrderId: op.productionOrderId, // Add this for GanttChart compatibility
-          order: op.sequenceNumber,
-          status: op.status,
-          assignedResourceId: op.workCenterId,
-          startTime: op.startTime,
-          endTime: op.endTime,
-          routingId: op.routingId,
-          operationName: op.operationName,
-          standardDuration: op.standardDuration,
-          actualDuration: op.actualDuration,
-          workCenterId: op.workCenterId,
-          priority: op.priority,
-          completionPercentage: op.completionPercentage,
-          qualityCheckRequired: op.qualityCheckRequired,
-          qualityStatus: op.qualityStatus,
-          notes: op.notes,
-          createdAt: op.createdAt,
-          updatedAt: op.updatedAt
-        } as Operation)),
-        ...processOps.map(op => ({
-          id: op.id,
-          name: op.operationName,
-          description: op.description,
-          duration: op.standardDuration,
-          jobId: op.productionOrderId,
-          productionOrderId: op.productionOrderId,
-          order: op.sequenceNumber,
-          status: op.status,
-          assignedResourceId: op.workCenterId,
-          startTime: op.startTime,
-          endTime: op.endTime,
-          routingId: op.routingId,
-          operationName: op.operationName,
-          standardDuration: op.standardDuration,
-          actualDuration: op.actualDuration,
-          workCenterId: op.workCenterId,
-          priority: op.priority,
-          completionPercentage: op.completionPercentage,
-          qualityCheckRequired: op.qualityCheckRequired,
-          qualityStatus: op.qualityStatus,
-          notes: op.notes,
-          createdAt: op.createdAt,
-          updatedAt: op.updatedAt
-        } as Operation))
-      ];
-      
-      console.log("Successfully combined operations, total:", combinedOps.length);
-      return combinedOps;
-    } catch (error) {
-      console.error("Error in enhanced DatabaseStorage.getOperations:", error);
-      console.error("Error stack:", error.stack);
-      
-      // Fallback to simple discrete operations if JOIN fails
-      console.log("Falling back to simple discrete operations query...");
-      const simpleOps = await db.select().from(discreteOperations);
-      return simpleOps.map(op => ({
-        id: op.id,
-        name: op.operationName,
-        description: op.description,
-        duration: op.standardDuration,
-        jobId: null, // No production order link available
-        productionOrderId: null,
-        order: op.sequenceNumber,
-        status: op.status,
-        assignedResourceId: op.workCenterId,
-        startTime: op.startTime,
-        endTime: op.endTime,
-        routingId: op.routingId,
-        operationName: op.operationName,
-        standardDuration: op.standardDuration,
-        actualDuration: op.actualDuration,
-        workCenterId: op.workCenterId,
-        priority: op.priority,
-        completionPercentage: op.completionPercentage,
-        qualityCheckRequired: op.qualityCheckRequired,
-        qualityStatus: op.qualityStatus,
-        notes: op.notes,
-        createdAt: op.createdAt,
-        updatedAt: op.updatedAt
-      } as Operation));
-    }
-  }
+
 
   async getOperationsByJobId(jobId: number): Promise<Operation[]> {
     return this.getOperationsByProductionOrderId(jobId);
