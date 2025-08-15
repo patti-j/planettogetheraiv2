@@ -15,8 +15,12 @@ import {
   Trophy, Zap, MessageSquare, Plus, Settings,
   Award, Flame, Star, ArrowUp, ArrowDown, Minus,
   Bell, UserCheck, Activity, RefreshCw, Eye,
-  Sparkles, HandshakeIcon, GraduationCap, Flag
+  Sparkles, HandshakeIcon, GraduationCap, Flag,
+  Edit, Save, X, User, Crown, Shield, UserPlus,
+  Search, Filter, SortAsc, MoreHorizontal
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { format, formatDistanceToNow, isToday, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -280,7 +284,7 @@ export default function SmartKpiTrackingPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full mb-6">
+        <TabsList className="grid grid-cols-4 sm:grid-cols-7 w-full mb-6">
           <TabsTrigger value="realtime" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
             <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Real-Time</span>
@@ -290,6 +294,11 @@ export default function SmartKpiTrackingPage() {
             <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Accountability</span>
             <span className="sm:hidden">Team</span>
+          </TabsTrigger>
+          <TabsTrigger value="management" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Management</span>
+            <span className="sm:hidden">Manage</span>
           </TabsTrigger>
           <TabsTrigger value="celebrations" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
             <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -614,6 +623,268 @@ export default function SmartKpiTrackingPage() {
                     </div>
                   );
                 })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Management Tab */}
+        <TabsContent value="management" className="space-y-4 pb-6">
+          {/* KPI Ownership Management */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* KPI Owners Management */}
+            <Card>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Crown className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+                  KPI Ownership Management
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Assign and manage who owns each KPI definition
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search KPIs..." 
+                        className="pl-8 text-sm"
+                      />
+                    </div>
+                    <Select>
+                      <SelectTrigger className="w-[140px] text-sm">
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="efficiency">Efficiency</SelectItem>
+                        <SelectItem value="quality">Quality</SelectItem>
+                        <SelectItem value="delivery">Delivery</SelectItem>
+                        <SelectItem value="cost">Cost</SelectItem>
+                        <SelectItem value="safety">Safety</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {kpiDefinitions.map(kpi => {
+                    const owner = teamMembers.find(m => m.id === kpi.ownerId) || teamMembers[0];
+                    return (
+                      <div key={kpi.id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-sm truncate">{kpi.name}</h4>
+                              <Badge variant="outline" className="text-[10px]">
+                                {kpi.category}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                              {kpi.description}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 ml-3">
+                            <div className="flex items-center gap-1 text-sm">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-[10px]">
+                                  {owner.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs font-medium">{owner.name}</span>
+                            </div>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t">
+                  <Button className="w-full text-sm">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Assign New KPI Owner
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Target Management */}
+            <Card>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Target className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                  Target Management
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Manage target setting authority and approval workflow
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="space-y-4">
+                  {/* Target Approval Process */}
+                  <div className="border rounded-lg p-3 bg-blue-50 dark:bg-blue-950">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      Target Approval Workflow
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Target Setter</span>
+                        <Badge variant="secondary">KPI Owner</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Approval Required</span>
+                        <Badge variant="outline">Plant Manager</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Final Authority</span>
+                        <Badge>Operations Director</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Target Changes */}
+                  <div>
+                    <h4 className="font-semibold text-sm mb-3">Recent Target Changes</h4>
+                    <div className="space-y-2">
+                      {targets.slice(0, 3).map(target => {
+                        const kpi = kpiDefinitions.find(k => k.id === target.kpiDefinitionId);
+                        const setter = teamMembers.find(m => m.id === target.setBy) || teamMembers[0];
+                        
+                        return (
+                          <div key={target.id} className="border rounded-lg p-2 text-sm">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">{kpi?.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Target: {target.targetValue} {kpi?.measurementUnit}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant={target.status === "active" ? "default" : "secondary"} className="text-[10px]">
+                                  {target.status}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Set by {setter.name}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Button className="w-full text-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Set New Target
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Ownership Overview */}
+          <Card>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                Ownership Overview & Analytics
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Complete view of KPI ownership distribution and accountability metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Ownership Distribution */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">Ownership Distribution</h4>
+                  {teamMembers.slice(0, 5).map(member => {
+                    const ownedKpis = kpiDefinitions.filter(kpi => kpi.ownerId === member.id).length;
+                    return (
+                      <div key={member.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-[10px]">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{member.name}</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">
+                          {ownedKpis} KPIs
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Performance by Owner */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">Performance by Owner</h4>
+                  {teamMembers.slice(0, 5).map(member => {
+                    const ownedKpis = kpiDefinitions.filter(kpi => kpi.ownerId === member.id);
+                    const avgPerformance = ownedKpis.length > 0 
+                      ? ownedKpis.reduce((acc, kpi) => {
+                          const perf = calculateKpiPerformance(kpi.id);
+                          return acc + (perf?.performance || 0);
+                        }, 0) / ownedKpis.length 
+                      : 0;
+                    
+                    return (
+                      <div key={member.id} className="flex items-center justify-between">
+                        <span className="text-sm">{member.name}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-300"
+                              style={{ width: `${Math.min(avgPerformance, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium w-8">{Math.round(avgPerformance)}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Accountability Metrics */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm">Accountability Metrics</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Targets Set</span>
+                      <Badge variant="default">{targets.length}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Targets Achieved</span>
+                      <Badge variant="default">
+                        {targets.filter(t => t.status === "active").length}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Pending Approvals</span>
+                      <Badge variant="secondary">
+                        {targets.filter(t => !t.approvedBy).length}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>Overdue Reviews</span>
+                      <Badge variant="destructive">2</Badge>
+                    </div>
+                  </div>
+                  
+                  <Button variant="outline" className="w-full text-sm mt-3">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    View Full Report
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
