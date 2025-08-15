@@ -2,11 +2,44 @@ import { Router } from "express";
 import { AlertsService } from "../alerts-service";
 import { z } from "zod";
 
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  let userId = req.session?.userId;
+  
+  // Check for token in Authorization header if session fails
+  if (!userId && req.headers.authorization) {
+    const token = req.headers.authorization.replace('Bearer ', '');
+    
+    // Handle demo tokens
+    if (token.startsWith('demo_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 3) {
+        userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+      }
+    }
+    // Extract user ID from regular token (format: user_ID_timestamp_random)
+    else if (token.startsWith('user_')) {
+      const tokenParts = token.split('_');
+      if (tokenParts.length >= 2) {
+        userId = parseInt(tokenParts[1]);
+      }
+    }
+  }
+  
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  // Add userId to request for use in route handlers
+  req.user = { id: userId };
+  next();
+}
+
 const router = Router();
 const alertsService = new AlertsService();
 
 // Get all alerts with optional filters
-router.get("/api/alerts", async (req, res) => {
+router.get("/api/alerts", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const filters = {
@@ -26,7 +59,7 @@ router.get("/api/alerts", async (req, res) => {
 });
 
 // Get single alert by ID
-router.get("/api/alerts/:id", async (req, res) => {
+router.get("/api/alerts/:id", requireAuth, async (req, res) => {
   try {
     const alertId = parseInt(req.params.id);
     if (isNaN(alertId)) {
@@ -44,7 +77,7 @@ router.get("/api/alerts/:id", async (req, res) => {
 });
 
 // Create new alert
-router.post("/api/alerts", async (req, res) => {
+router.post("/api/alerts", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const alertData = {
@@ -61,7 +94,7 @@ router.post("/api/alerts", async (req, res) => {
 });
 
 // Create AI-generated alert
-router.post("/api/alerts/ai", async (req, res) => {
+router.post("/api/alerts/ai", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const { title, description, type, context } = req.body;
@@ -82,7 +115,7 @@ router.post("/api/alerts/ai", async (req, res) => {
 });
 
 // Acknowledge alert
-router.post("/api/alerts/:id/acknowledge", async (req, res) => {
+router.post("/api/alerts/:id/acknowledge", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -108,7 +141,7 @@ router.post("/api/alerts/:id/acknowledge", async (req, res) => {
 });
 
 // Resolve alert
-router.post("/api/alerts/:id/resolve", async (req, res) => {
+router.post("/api/alerts/:id/resolve", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -141,7 +174,7 @@ router.post("/api/alerts/:id/resolve", async (req, res) => {
 });
 
 // Escalate alert
-router.post("/api/alerts/:id/escalate", async (req, res) => {
+router.post("/api/alerts/:id/escalate", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -176,7 +209,7 @@ router.post("/api/alerts/:id/escalate", async (req, res) => {
 });
 
 // Train AI model with feedback
-router.post("/api/alerts/:id/feedback", async (req, res) => {
+router.post("/api/alerts/:id/feedback", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -221,7 +254,7 @@ router.get("/api/alert-rules", async (req, res) => {
 });
 
 // Create alert rule
-router.post("/api/alert-rules", async (req, res) => {
+router.post("/api/alert-rules", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     const ruleData = {
@@ -238,7 +271,7 @@ router.post("/api/alert-rules", async (req, res) => {
 });
 
 // Update alert rule
-router.put("/api/alert-rules/:id", async (req, res) => {
+router.put("/api/alert-rules/:id", requireAuth, async (req, res) => {
   try {
     const ruleId = parseInt(req.params.id);
     if (isNaN(ruleId)) {
@@ -254,7 +287,7 @@ router.put("/api/alert-rules/:id", async (req, res) => {
 });
 
 // Delete alert rule
-router.delete("/api/alert-rules/:id", async (req, res) => {
+router.delete("/api/alert-rules/:id", requireAuth, async (req, res) => {
   try {
     const ruleId = parseInt(req.params.id);
     if (isNaN(ruleId)) {
@@ -270,7 +303,7 @@ router.delete("/api/alert-rules/:id", async (req, res) => {
 });
 
 // Get alert statistics
-router.get("/api/alerts/stats", async (req, res) => {
+router.get("/api/alerts/stats", requireAuth, async (req, res) => {
   try {
     let timeRange;
     

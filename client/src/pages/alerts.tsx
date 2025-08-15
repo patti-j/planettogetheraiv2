@@ -132,11 +132,13 @@ export default function AlertsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/alerts/stats'] });
       toast({
         title: "Alert Resolved",
         description: "The alert has been resolved successfully."
       });
       setShowResolveDialog(false);
+      setSelectedAlert(null);
       setResolution('');
       setRootCause('');
     }
@@ -644,21 +646,46 @@ export default function AlertsPage() {
 
       {/* Resolve Alert Dialog */}
       <Dialog open={showResolveDialog} onOpenChange={setShowResolveDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Resolve Alert</DialogTitle>
             <DialogDescription>
-              Provide resolution details for this alert.
+              Provide resolution details for this alert. Review the alert information below.
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Alert Context */}
+          {selectedAlert && (
+            <div className="bg-muted/50 p-4 rounded-lg border mb-4">
+              <div className="flex items-start gap-3">
+                {getSeverityIcon(selectedAlert.severity)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold">{selectedAlert.title}</h4>
+                    <Badge variant={getSeverityColor(selectedAlert.severity)}>
+                      {selectedAlert.severity.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">{selectedAlert.description}</p>
+                  <div className="text-xs text-muted-foreground">
+                    <span>Detected: {format(new Date(selectedAlert.detectedAt), "MMM d, yyyy 'at' h:mm a")}</span>
+                    {selectedAlert.type && <span className="ml-4">Type: {selectedAlert.type}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="resolution">Resolution</Label>
+              <Label htmlFor="resolution">Resolution *</Label>
               <Textarea
                 id="resolution"
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
-                placeholder="Describe how this alert was resolved"
+                placeholder="Describe how this alert was resolved..."
+                className="min-h-[80px]"
+                required
               />
             </div>
             <div className="grid gap-2">
@@ -667,12 +694,23 @@ export default function AlertsPage() {
                 id="rootCause"
                 value={rootCause}
                 onChange={(e) => setRootCause(e.target.value)}
-                placeholder="What was the root cause of this issue?"
+                placeholder="What was the root cause of this issue? This helps prevent similar issues in the future."
+                className="min-h-[60px]"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleResolveAlert} disabled={resolveMutation.isPending}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowResolveDialog(false)}
+              disabled={resolveMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleResolveAlert} 
+              disabled={resolveMutation.isPending || !resolution.trim()}
+            >
               {resolveMutation.isPending ? 'Resolving...' : 'Resolve Alert'}
             </Button>
           </DialogFooter>
