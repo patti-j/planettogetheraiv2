@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Brain, Shield, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -53,6 +55,16 @@ export default function AlertsPage() {
   });
   const [resolution, setResolution] = useState('');
   const [rootCause, setRootCause] = useState('');
+  
+  // AI Settings state
+  const [aiSettings, setAiSettings] = useState({
+    globalAiEnabled: true,
+    confidenceThreshold: 75,
+    autoCreateAlerts: true,
+    emailNotifications: true,
+    smartFiltering: true,
+    learningMode: true
+  });
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -127,6 +139,20 @@ export default function AlertsPage() {
       setShowResolveDialog(false);
       setResolution('');
       setRootCause('');
+    }
+  });
+
+  // AI Settings mutation
+  const updateAiSettingsMutation = useMutation({
+    mutationFn: async (settings: any) => {
+      const response = await apiRequest('PUT', '/api/alerts/ai-settings', settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "AI Settings Updated",
+        description: "Your AI alert preferences have been saved successfully."
+      });
     }
   });
 
@@ -312,11 +338,15 @@ export default function AlertsPage() {
       )}
 
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="active">Active Alerts</TabsTrigger>
           <TabsTrigger value="acknowledged">Acknowledged</TabsTrigger>
           <TabsTrigger value="resolved">Resolved</TabsTrigger>
           <TabsTrigger value="all">All Alerts</TabsTrigger>
+          <TabsTrigger value="ai-settings" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            AI Settings
+          </TabsTrigger>
         </TabsList>
 
         {/* Filters */}
@@ -426,6 +456,188 @@ export default function AlertsPage() {
         <TabsContent value="all">
           <div className="text-center py-8 text-muted-foreground">
             All alerts will appear here
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai-settings" className="space-y-6">
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-purple-500" />
+                  AI Alert Generation
+                </CardTitle>
+                <CardDescription>
+                  Control how AI analyzes your data and creates alerts automatically
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="global-ai">Enable AI Alert Generation</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow AI to analyze production data and create alerts automatically
+                    </p>
+                  </div>
+                  <Switch
+                    id="global-ai"
+                    checked={aiSettings.globalAiEnabled}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, globalAiEnabled: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="confidence-threshold">AI Confidence Threshold: {aiSettings.confidenceThreshold}%</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {aiSettings.confidenceThreshold >= 90 ? 'Very Conservative' :
+                       aiSettings.confidenceThreshold >= 75 ? 'Conservative' :
+                       aiSettings.confidenceThreshold >= 50 ? 'Balanced' : 'Aggressive'}
+                    </span>
+                  </div>
+                  <div className="px-3">
+                    <Slider
+                      value={[aiSettings.confidenceThreshold]}
+                      onValueChange={(value) => 
+                        setAiSettings(prev => ({ ...prev, confidenceThreshold: value[0] }))
+                      }
+                      max={100}
+                      min={25}
+                      step={5}
+                      className="w-full"
+                      disabled={!aiSettings.globalAiEnabled}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>More Alerts</span>
+                      <span>Fewer Alerts</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Higher values mean AI will only create alerts when very confident, reducing false positives
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="auto-create">Auto-Create Alerts</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically create alerts when AI detects issues (requires approval)
+                    </p>
+                  </div>
+                  <Switch
+                    id="auto-create"
+                    checked={aiSettings.autoCreateAlerts}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, autoCreateAlerts: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-blue-500" />
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription>
+                  Choose how you want to be notified about AI-generated alerts
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="email-notifications">Email Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email notifications for AI-generated alerts
+                    </p>
+                  </div>
+                  <Switch
+                    id="email-notifications"
+                    checked={aiSettings.emailNotifications}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, emailNotifications: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="smart-filtering">Smart Filtering</Label>
+                    <p className="text-sm text-muted-foreground">
+                      AI filters duplicate or similar alerts to reduce noise
+                    </p>
+                  </div>
+                  <Switch
+                    id="smart-filtering"
+                    checked={aiSettings.smartFiltering}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, smartFiltering: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-green-500" />
+                  AI Learning & Improvement
+                </CardTitle>
+                <CardDescription>
+                  Help improve AI accuracy through feedback and learning
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="learning-mode">Learning Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow AI to learn from your feedback to improve future alerts
+                    </p>
+                  </div>
+                  <Switch
+                    id="learning-mode"
+                    checked={aiSettings.learningMode}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, learningMode: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">How AI Learning Works</p>
+                      <p className="text-sm text-muted-foreground">
+                        When you acknowledge, resolve, or dismiss AI alerts, the system learns from your actions. 
+                        This helps improve the accuracy and relevance of future alerts for your specific operations.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => updateAiSettingsMutation.mutate(aiSettings)}
+                disabled={updateAiSettingsMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                {updateAiSettingsMutation.isPending ? 'Saving...' : 'Save AI Settings'}
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

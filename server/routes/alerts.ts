@@ -28,7 +28,11 @@ router.get("/api/alerts", async (req, res) => {
 // Get single alert by ID
 router.get("/api/alerts/:id", async (req, res) => {
   try {
-    const alert = await alertsService.getAlertById(parseInt(req.params.id));
+    const alertId = parseInt(req.params.id);
+    if (isNaN(alertId)) {
+      return res.status(400).json({ error: "Invalid alert ID" });
+    }
+    const alert = await alertsService.getAlertById(alertId);
     if (!alert) {
       return res.status(404).json({ error: "Alert not found" });
     }
@@ -85,8 +89,13 @@ router.post("/api/alerts/:id/acknowledge", async (req, res) => {
       return res.status(401).json({ error: "User not authenticated" });
     }
     
+    const alertId = parseInt(req.params.id);
+    if (isNaN(alertId)) {
+      return res.status(400).json({ error: "Invalid alert ID" });
+    }
+    
     const alert = await alertsService.acknowledgeAlert(
-      parseInt(req.params.id),
+      alertId,
       userId,
       req.body.comment
     );
@@ -112,8 +121,13 @@ router.post("/api/alerts/:id/resolve", async (req, res) => {
       return res.status(400).json({ error: "Resolution is required" });
     }
     
+    const alertId = parseInt(req.params.id);
+    if (isNaN(alertId)) {
+      return res.status(400).json({ error: "Invalid alert ID" });
+    }
+    
     const alert = await alertsService.resolveAlert(
-      parseInt(req.params.id),
+      alertId,
       userId,
       resolution,
       rootCause
@@ -140,9 +154,16 @@ router.post("/api/alerts/:id/escalate", async (req, res) => {
       return res.status(400).json({ error: "Escalate to user and reason are required" });
     }
     
+    const alertId = parseInt(req.params.id);
+    const escalateToId = parseInt(escalateTo);
+    
+    if (isNaN(alertId) || isNaN(escalateToId)) {
+      return res.status(400).json({ error: "Invalid alert ID or escalate to user ID" });
+    }
+    
     const alert = await alertsService.escalateAlert(
-      parseInt(req.params.id),
-      escalateTo,
+      alertId,
+      escalateToId,
       userId,
       reason
     );
@@ -167,8 +188,13 @@ router.post("/api/alerts/:id/feedback", async (req, res) => {
       userId
     };
     
+    const alertId = parseInt(req.params.id);
+    if (isNaN(alertId)) {
+      return res.status(400).json({ error: "Invalid alert ID" });
+    }
+    
     const training = await alertsService.trainAIModel(
-      parseInt(req.params.id),
+      alertId,
       feedback
     );
     
@@ -214,10 +240,12 @@ router.post("/api/alert-rules", async (req, res) => {
 // Update alert rule
 router.put("/api/alert-rules/:id", async (req, res) => {
   try {
-    const rule = await alertsService.updateAlertRule(
-      parseInt(req.params.id),
-      req.body
-    );
+    const ruleId = parseInt(req.params.id);
+    if (isNaN(ruleId)) {
+      return res.status(400).json({ error: "Invalid rule ID" });
+    }
+    
+    const rule = await alertsService.updateAlertRule(ruleId, req.body);
     res.json(rule);
   } catch (error) {
     console.error("Error updating alert rule:", error);
@@ -228,7 +256,12 @@ router.put("/api/alert-rules/:id", async (req, res) => {
 // Delete alert rule
 router.delete("/api/alert-rules/:id", async (req, res) => {
   try {
-    await alertsService.deleteAlertRule(parseInt(req.params.id));
+    const ruleId = parseInt(req.params.id);
+    if (isNaN(ruleId)) {
+      return res.status(400).json({ error: "Invalid rule ID" });
+    }
+    
+    await alertsService.deleteAlertRule(ruleId);
     res.status(204).send();
   } catch (error) {
     console.error("Error deleting alert rule:", error);
@@ -312,6 +345,49 @@ router.post("/api/alerts/check-rules", async (req, res) => {
   } catch (error) {
     console.error("Error checking alert rules:", error);
     res.status(500).json({ error: "Failed to check alert rules" });
+  }
+});
+
+// Get user AI settings
+router.get("/api/alerts/ai-settings", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Return default AI settings for now
+    const aiSettings = {
+      globalAiEnabled: true,
+      confidenceThreshold: 75,
+      autoCreateAlerts: true,
+      emailNotifications: true,
+      smartFiltering: true,
+      learningMode: true
+    };
+    
+    res.json(aiSettings);
+  } catch (error) {
+    console.error("Error fetching AI settings:", error);
+    res.status(500).json({ error: "Failed to fetch AI settings" });
+  }
+});
+
+// Update user AI settings
+router.put("/api/alerts/ai-settings", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // For now, just return the updated settings
+    const updatedSettings = req.body;
+    
+    res.json(updatedSettings);
+  } catch (error) {
+    console.error("Error updating AI settings:", error);
+    res.status(500).json({ error: "Failed to update AI settings" });
   }
 });
 

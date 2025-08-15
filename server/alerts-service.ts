@@ -515,19 +515,23 @@ export class AlertsService {
       );
     }
 
-    const stats = await db.select({
-      total: sql<number>`count(*)`,
-      active: sql<number>`count(*) filter (where status = 'active')`,
-      acknowledged: sql<number>`count(*) filter (where status = 'acknowledged')`,
-      resolved: sql<number>`count(*) filter (where status = 'resolved')`,
-      critical: sql<number>`count(*) filter (where severity = 'critical')`,
-      high: sql<number>`count(*) filter (where severity = 'high')`,
-      aiGenerated: sql<number>`count(*) filter (where ai_generated = true)`,
-      avgResolutionTime: sql<number>`avg(EXTRACT(EPOCH FROM (resolved_at - detected_at))/3600) filter (where resolved_at is not null)`
+    let baseQuery = db.select({
+      total: sql<number>`count(*)::int`,
+      active: sql<number>`count(*) filter (where status = 'active')::int`,
+      acknowledged: sql<number>`count(*) filter (where status = 'acknowledged')::int`,
+      resolved: sql<number>`count(*) filter (where status = 'resolved')::int`,
+      critical: sql<number>`count(*) filter (where severity = 'critical')::int`,
+      high: sql<number>`count(*) filter (where severity = 'high')::int`,
+      aiGenerated: sql<number>`count(*) filter (where ai_generated = true)::int`,
+      avgResolutionTime: sql<number>`coalesce(avg(EXTRACT(EPOCH FROM (resolved_at - detected_at))/3600) filter (where resolved_at is not null), 0)::int`
     })
-    .from(alerts)
-    .where(conditions.length > 0 ? and(...conditions) : undefined);
+    .from(alerts);
 
-    return stats[0];
+    if (conditions.length > 0) {
+      baseQuery = baseQuery.where(and(...conditions));
+    }
+
+    const statsResult = await baseQuery;
+    return statsResult[0];
   }
 }
