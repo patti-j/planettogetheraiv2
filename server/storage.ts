@@ -77,7 +77,7 @@ import {
   type InsertPresentationMaterial, type InsertPresentationContentSuggestion, type InsertPresentationProject,
   homeDashboardLayouts,
   // MRP Tables
-  masterProductionSchedule, mrpRuns, mrpRequirements, mrpActionMessages, mrpPlanningParameters,
+  mrpRuns, mrpRequirements, mrpActionMessages, mrpPlanningParameters,
   smartKpiMeetings, smartKpiDefinitions, smartKpiTargets, smartKpiActuals, smartKpiImprovements, smartKpiAlerts,
   type SmartKpiMeeting, type SmartKpiDefinition, type SmartKpiTarget, type SmartKpiActual, type SmartKpiImprovement, type SmartKpiAlert,
   type InsertSmartKpiMeeting, type InsertSmartKpiDefinition, type InsertSmartKpiTarget, type InsertSmartKpiActual, type InsertSmartKpiImprovement, type InsertSmartKpiAlert,

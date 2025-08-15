@@ -11381,6 +11381,85 @@ export type InsertPtPublishMetric = z.infer<typeof insertPtPublishMetricSchema>;
 export type PtPublishManufacturingOrder = typeof ptPublishManufacturingOrders.$inferSelect;
 export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrderSchema>;
 
+// Create unified Operation type that combines different operation types
+export type Operation = {
+  id: number;
+  name: string;
+  description?: string | null;
+  status: string;
+  duration: number;
+  startTime?: Date | null;
+  endTime?: Date | null;
+  order: number;
+};
+
+// Helper function to convert different operation types to unified Operation type
+export const toUnifiedOperation = (op: any, type: 'discrete' | 'process' | 'recipe' | 'routing'): Operation => {
+  switch (type) {
+    case 'discrete':
+      return {
+        id: op.id,
+        name: op.operationName || op.name || `Operation ${op.id}`,
+        description: op.description,
+        status: op.status,
+        duration: op.standardDuration || op.actualDuration || 0,
+        startTime: op.startTime,
+        endTime: op.endTime,
+        order: op.sequenceNumber || 0
+      };
+    case 'process':
+      return {
+        id: op.id,
+        name: op.operationName || op.name || `Operation ${op.id}`,
+        description: op.description,
+        status: op.status,
+        duration: op.standardDuration || op.actualDuration || 0,
+        startTime: op.startTime,
+        endTime: op.endTime,
+        order: op.sequenceNumber || 0
+      };
+    case 'recipe':
+      return {
+        id: op.id,
+        name: op.operationName || op.name || `Operation ${op.id}`,
+        description: op.description,
+        status: 'planned', // Default status for recipe operations
+        duration: op.processingTime || 0,
+        startTime: null,
+        endTime: null,
+        order: parseInt(op.operationNumber || '0') || 0
+      };
+    case 'routing':
+      return {
+        id: op.id,
+        name: op.operationName || op.name || `Operation ${op.id}`,
+        description: op.description,
+        status: 'planned', // Default status for routing operations
+        duration: op.standardRunTime || 0,
+        startTime: null,
+        endTime: null,
+        order: op.sequenceNumber || 0
+      };
+    default:
+      return {
+        id: op.id,
+        name: op.name || `Operation ${op.id}`,
+        description: op.description,
+        status: op.status || 'planned',
+        duration: op.duration || 0,
+        startTime: op.startTime || null,
+        endTime: op.endTime || null,
+        order: op.order || 0
+      };
+  }
+};
+
+// Export individual operation types for reference
+export type DiscreteOperation = typeof discreteOperations.$inferSelect;
+export type ProcessOperation = typeof processOperations.$inferSelect;
+export type RecipeOperation = typeof recipeOperations.$inferSelect;
+export type RoutingOperation = typeof routingOperations.$inferSelect;
+
 // Export schedule schemas
 export * from './schedule-schema';
 
