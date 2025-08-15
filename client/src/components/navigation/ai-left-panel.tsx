@@ -138,6 +138,13 @@ export function AILeftPanel() {
   });
   
   // Send message mutation
+  // Auto-scroll when thinking starts
+  useEffect(() => {
+    if (showMaxThinking && chatScrollRef.current) {
+      chatScrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [showMaxThinking]);
+
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       setShowMaxThinking(true);
@@ -312,6 +319,7 @@ export function AILeftPanel() {
   };
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Listen for toggle event from command palette
   useEffect(() => {
@@ -524,7 +532,7 @@ export function AILeftPanel() {
                   
                   {/* Show thinking indicator */}
                   {showMaxThinking && (
-                    <div className="flex gap-3">
+                    <div ref={chatScrollRef} className="flex gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback>
                           <Bot className="h-4 w-4" />
@@ -549,6 +557,20 @@ export function AILeftPanel() {
               
               {/* Chat Input */}
               <div className="border-t pt-4 pb-6">
+                {/* Thinking indicator in input area */}
+                {showMaxThinking && (
+                  <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Max is thinking...</span>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
                   <Input
                     value={prompt}
@@ -556,8 +578,9 @@ export function AILeftPanel() {
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Ask Max anything..."
                     className="flex-1"
+                    disabled={showMaxThinking}
                   />
-                  <Button onClick={handleSendMessage} size="icon">
+                  <Button onClick={handleSendMessage} size="icon" disabled={showMaxThinking}>
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
