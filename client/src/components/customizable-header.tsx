@@ -455,7 +455,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
               <Button variant="ghost" size="sm" className="flex items-center gap-2">
                 <Avatar className="h-7 w-7">
                   <AvatarImage src={(user as any)?.avatar} />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold border border-border">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
