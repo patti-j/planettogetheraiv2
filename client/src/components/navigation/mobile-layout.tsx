@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import TopMenu from "@/components/top-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Bot } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Bot, Clock, Trash2 } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -13,6 +13,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { navigationGroups } from "@/config/navigation-menu";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useRecentPages } from "@/hooks/useRecentPages";
+import * as LucideIcons from "lucide-react";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -34,6 +36,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const recognitionRef = useRef<any>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
+  const { recentPages, clearRecentPages } = useRecentPages();
   
   // Fetch user preferences for voice settings
   const { data: userPreferences } = useQuery({
@@ -705,28 +708,66 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               </Button>
             </div>
             <div className="space-y-2">
-              <Button
-                variant="ghost"
-                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
-                onClick={() => {
-                  setLocation('/production-schedule');
-                  setRecentDialogOpen(false);
-                }}
-              >
-                <Calendar className="w-5 h-5 mr-3 text-blue-500" />
-                <span className="font-semibold text-gray-900 dark:text-white">Production Schedule</span>
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
-                onClick={() => {
-                  setLocation('/onboarding');
-                  setRecentDialogOpen(false);
-                }}
-              >
-                <BookOpen className="w-5 h-5 mr-3 text-green-500" />
-                <span className="font-semibold text-gray-900 dark:text-white">Getting Started</span>
-              </Button>
+              {recentPages.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No recent pages yet</p>
+                  <p className="text-xs">Navigate to pages to see them here</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {recentPages.length} recent page{recentPages.length !== 1 ? 's' : ''}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearRecentPages}
+                      className="text-xs text-gray-500 hover:text-red-600 p-1"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+                  {recentPages.map((page, index) => {
+                    // Get the icon component dynamically
+                    const IconComponent = (LucideIcons as any)[page.icon] || LucideIcons.FileText;
+                    const colors = [
+                      'text-blue-500',
+                      'text-green-500', 
+                      'text-purple-500',
+                      'text-orange-500',
+                      'text-red-500',
+                      'text-cyan-500',
+                      'text-pink-500',
+                      'text-yellow-500'
+                    ];
+                    
+                    return (
+                      <Button
+                        key={`${page.path}-${page.timestamp}`}
+                        variant="ghost"
+                        className="w-full text-left p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl justify-start border border-gray-200 dark:border-gray-600"
+                        onClick={() => {
+                          setLocation(page.path);
+                          setRecentDialogOpen(false);
+                        }}
+                      >
+                        <IconComponent className={`w-5 h-5 mr-3 ${colors[index % colors.length]}`} />
+                        <div className="flex-1">
+                          <span className="font-semibold text-gray-900 dark:text-white block">
+                            {page.label}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(page.timestamp).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </Button>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
         </div>
