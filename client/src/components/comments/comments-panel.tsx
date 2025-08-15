@@ -130,7 +130,17 @@ export function CommentsPanel({
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users", mentionSearch],
     queryFn: async () => {
-      const response = await fetch(`/api/users?search=${encodeURIComponent(mentionSearch)}&limit=10`);
+      const token = localStorage.getItem('authToken');
+      const headers: HeadersInit = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/users?search=${encodeURIComponent(mentionSearch)}&limit=10`, {
+        headers,
+        credentials: "include"
+      });
       if (!response.ok) throw new Error("Failed to fetch users");
       return response.json();
     },
