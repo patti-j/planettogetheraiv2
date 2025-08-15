@@ -138,29 +138,34 @@ export function AILeftPanel() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest('/api/max-ai/chat', {
-        method: 'POST',
-        body: JSON.stringify({
-          message,
-          context: {
-            currentPage: location,
-            selectedData: null,
-            recentActions: []
-          }
-        })
+      const response = await apiRequest("POST", "/api/max-ai/chat", { 
+        message,
+        context: {
+          currentPage: location,
+          selectedData: null,
+          recentActions: []
+        }
       });
+      return response.json();
     },
-    onSuccess: (response: any) => {
-      const aiResponse: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: response?.content || 'I\'m processing your request...',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, aiResponse]);
+    onSuccess: (data: any) => {
+      console.log("Max AI Full Response:", data);
+      
+      // Store response for display
+      if (data?.content || data?.message) {
+        const responseContent = data.content || data.message;
+        
+        const aiResponse: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: responseContent,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setChatMessages(prev => [...prev, aiResponse]);
+      }
       
       // If there are insights, show them
-      if (response?.insights && response.insights.length > 0) {
+      if (data?.insights && data.insights.length > 0) {
         // Switch to insights tab to show them
         setActiveTab('insights');
       }
