@@ -172,6 +172,69 @@ export function AILeftPanel() {
       setChatMessages(prev => [...prev, errorMessage]);
     }
   });
+
+  // Function to render content with clickable keywords
+  const renderContentWithClickableKeywords = (content: string) => {
+    // Define clickable keywords with their follow-up questions
+    const clickableKeywords = {
+      'Equipment usage': 'Show me detailed equipment usage analytics',
+      'Labor allocation': 'Analyze current labor allocation and efficiency',
+      'Material consumption': 'Review material consumption patterns and waste',
+      'Defect rates': 'Show me current defect rates and quality trends',
+      'Process stability': 'Analyze process stability and control charts',
+      'Compliance with standards': 'Review compliance status with quality standards',
+      'Equipment scheduling': 'Check equipment scheduling conflicts and optimization',
+      'Workforce scheduling': 'Analyze workforce scheduling and availability',
+      'Material availability': 'Review material availability and supply chain status',
+      'active alerts': 'Please analyze the 3 active alerts in detail',
+      '3 active alerts': 'Please analyze the 3 active alerts in detail',
+      'alerts': 'Show me alert details and recommendations'
+    };
+
+    // Create a regex pattern to match all clickable keywords
+    const keywordPattern = new RegExp(`(${Object.keys(clickableKeywords).join('|')})`, 'gi');
+    
+    // Split content by keywords and create clickable spans
+    const parts = content.split(keywordPattern);
+    
+    return (
+      <span>
+        {parts.map((part, index) => {
+          const lowercasePart = part.toLowerCase();
+          const matchedKeyword = Object.keys(clickableKeywords).find(
+            keyword => keyword.toLowerCase() === lowercasePart
+          );
+          
+          if (matchedKeyword) {
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  const followUpQuestion = clickableKeywords[matchedKeyword];
+                  const userMessage: ChatMessage = {
+                    id: Date.now().toString(),
+                    role: 'user',
+                    content: followUpQuestion,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  };
+                  setChatMessages(prev => [...prev, userMessage]);
+                  sendMessageMutation.mutate(followUpQuestion);
+                  setPrompt('');
+                }}
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline font-medium transition-colors cursor-pointer"
+                title={`Click to: ${clickableKeywords[matchedKeyword]}`}
+              >
+                {part}
+              </button>
+            );
+          }
+          
+          return <span key={index}>{part}</span>;
+        })}
+      </span>
+    );
+  };
+
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Listen for toggle event from command palette
@@ -371,7 +434,10 @@ export function AILeftPanel() {
                               : "bg-muted"
                           )}
                         >
-                          {message.content}
+                          {message.role === 'assistant' 
+                            ? renderContentWithClickableKeywords(message.content)
+                            : message.content
+                          }
                         </div>
                         <span className="text-xs text-muted-foreground px-1">
                           {message.timestamp}

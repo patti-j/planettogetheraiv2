@@ -143,6 +143,66 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     }
   });
 
+  // Function to render content with clickable keywords
+  const renderContentWithClickableKeywords = (content: string) => {
+    // Define clickable keywords with their follow-up questions
+    const clickableKeywords = {
+      'Equipment usage': 'Show me detailed equipment usage analytics',
+      'Labor allocation': 'Analyze current labor allocation and efficiency',
+      'Material consumption': 'Review material consumption patterns and waste',
+      'Defect rates': 'Show me current defect rates and quality trends',
+      'Process stability': 'Analyze process stability and control charts',
+      'Compliance with standards': 'Review compliance status with quality standards',
+      'Equipment scheduling': 'Check equipment scheduling conflicts and optimization',
+      'Workforce scheduling': 'Analyze workforce scheduling and availability',
+      'Material availability': 'Review material availability and supply chain status',
+      'active alerts': 'Please analyze the 3 active alerts in detail',
+      '3 active alerts': 'Please analyze the 3 active alerts in detail',
+      'alerts': 'Show me alert details and recommendations'
+    };
+
+    // Create a regex pattern to match all clickable keywords
+    const keywordPattern = new RegExp(`(${Object.keys(clickableKeywords).join('|')})`, 'gi');
+    
+    // Split content by keywords and create clickable spans
+    const parts = content.split(keywordPattern);
+    
+    return (
+      <span>
+        {parts.map((part, index) => {
+          const lowercasePart = part.toLowerCase();
+          const matchedKeyword = Object.keys(clickableKeywords).find(
+            keyword => keyword.toLowerCase() === lowercasePart
+          );
+          
+          if (matchedKeyword) {
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  const followUpQuestion = clickableKeywords[matchedKeyword];
+                  addMessage({
+                    id: Date.now().toString(),
+                    content: followUpQuestion,
+                    role: 'user',
+                    timestamp: new Date()
+                  });
+                  sendMessageMutation.mutate(followUpQuestion);
+                }}
+                className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline font-medium transition-colors cursor-pointer"
+                title={`Click to: ${clickableKeywords[matchedKeyword]}`}
+              >
+                {part}
+              </button>
+            );
+          }
+          
+          return <span key={index}>{part}</span>;
+        })}
+      </span>
+    );
+  };
+
   // Voice input handling
   useEffect(() => {
     if (!isVoiceEnabled || !(window as any).webkitSpeechRecognition) return;
@@ -306,7 +366,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               <div className="flex-1 min-w-0 pr-6">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max AI Assistant</h3>
                 <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {maxResponse.content}
+                  {renderContentWithClickableKeywords(maxResponse.content)}
                 </div>
                 {/* Quick Yes/No buttons for questions */}
                 {(maxResponse.content.includes('?') && (
