@@ -40,6 +40,7 @@ import Maintenance from "@/pages/maintenance";
 import Feedback from "@/pages/feedback";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
+import Settings from "@/pages/settings";
 import InboxPage from "@/pages/inbox";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 import InventoryOptimization from "@/pages/inventory-optimization";
@@ -370,6 +371,11 @@ function Router() {
           <Route path="/email-settings">
             <ProtectedRoute feature="email-settings" action="view">
               <EmailSettings />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/settings">
+            <ProtectedRoute feature="settings" action="view">
+              <Settings />
             </ProtectedRoute>
           </Route>
           <Route path="/optimize-orders">
