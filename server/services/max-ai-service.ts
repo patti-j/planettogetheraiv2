@@ -172,7 +172,15 @@ export class MaxAIService {
   private buildSystemPrompt(context: MaxContext): string {
     const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether ERP system. 
     You have deep knowledge of production scheduling, resource optimization, quality management, and supply chain operations.
-    You provide actionable insights and can help optimize manufacturing processes.`;
+    You provide actionable insights and can help optimize manufacturing processes.
+
+    COMMUNICATION RULES:
+    - Be direct and specific in your questions - avoid compound questions that ask multiple things at once
+    - When mentioning alerts, automatically provide analysis instead of asking vague follow-up questions
+    - If you see active alerts in the data, immediately analyze them and provide recommendations
+    - Ask only ONE clear question at a time
+    - When the user indicates they want help with alerts, provide detailed analysis of the specific alerts
+    - Avoid phrases like "Would you like me to X or Y?" - pick the most relevant action and do it`;
 
     const rolePrompts: Record<string, string> = {
       'Production Manager': `Focus on schedule optimization, resource conflicts, and delivery commitments. 
@@ -605,15 +613,53 @@ export class MaxAIService {
     const insights: ProductionInsight[] = [];
     const hour = new Date().getHours();
 
+    // Always check for active alerts first and provide immediate analysis
+    const status = await this.getProductionStatus(context);
+    if (status.criticalAlerts.length > 0 || status.summary.includes('active alerts')) {
+      // Get detailed alert data for analysis
+      try {
+        const activeAlerts = await db.select({
+          id: alerts.id,
+          title: alerts.title,
+          description: alerts.description,
+          severity: alerts.severity,
+          type: alerts.type,
+          createdAt: alerts.createdAt
+        })
+          .from(alerts)
+          .where(eq(alerts.status, 'active'))
+          .orderBy(desc(alerts.createdAt))
+          .limit(5);
+
+        if (activeAlerts.length > 0) {
+          let alertAnalysis = `Alert Analysis: Found ${activeAlerts.length} active alerts:\n`;
+          activeAlerts.forEach((alert, index) => {
+            alertAnalysis += `${index + 1}. ${alert.title} (${alert.severity?.toUpperCase()}): ${alert.description}\n`;
+          });
+          
+          insights.push({
+            type: 'bottleneck',
+            severity: 'high',
+            title: 'Active Alert Analysis',
+            description: alertAnalysis,
+            recommendation: 'Address these alerts immediately to prevent production disruptions',
+            actionable: true,
+            data: activeAlerts
+          });
+        }
+      } catch (error) {
+        console.error('Error getting alert details for proactive insights:', error);
+      }
+    }
+
     // Morning briefing (7-9 AM)
     if (hour >= 7 && hour <= 9) {
-      const status = await this.getProductionStatus(context);
       if (status.criticalAlerts.length > 0) {
         insights.push({
           type: 'bottleneck',
           severity: 'high',
-          title: 'Morning Alert Summary',
-          description: `You have ${status.criticalAlerts.length} critical alerts requiring immediate attention`,
+          title: 'Morning Critical Alert Review',
+          description: `You have ${status.criticalAlerts.length} critical alerts requiring immediate attention before starting production`,
           recommendation: 'Review and address critical alerts before starting production',
           actionable: true
         });
