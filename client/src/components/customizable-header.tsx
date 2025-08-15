@@ -331,11 +331,14 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           // Theme toggle is handled by the component itself
           break;
         case 'notifications':
-        case 'alerts':
           toast({
             title: "Coming soon",
             description: `${item.label} feature will be available soon.`
           });
+          break;
+        case 'alerts':
+          setLocation('/alerts');
+          addRecentPage('/alerts', 'Alerts & Notifications', 'AlertTriangle');
           break;
         case 'max-ai':
           // Toggle Max AI dock
