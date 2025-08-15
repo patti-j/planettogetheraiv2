@@ -1,91 +1,375 @@
 -- Populate PT Publish Tables with Sample Data
--- This script populates the PT Publish tables with sample brewery manufacturing data
+-- This script uses proper column names and avoids ID conflicts
 
--- Set the publish date for all records
-DO $$ 
-DECLARE 
-    v_publish_date timestamp := CURRENT_TIMESTAMP;
-BEGIN
+-- Clear existing sample data (optional - comment out to keep existing)
+DELETE FROM pt_publish_job_resources WHERE instance_id = 'PT-PROD-001';
+DELETE FROM pt_publish_job_activities WHERE instance_id = 'PT-PROD-001';
+DELETE FROM pt_publish_job_operations WHERE instance_id = 'PT-PROD-001';
+DELETE FROM pt_publish_jobs WHERE instance_id = 'PT-PROD-001';
+DELETE FROM pt_publish_manufacturing_orders WHERE instance_id = 'PT-PROD-001';
 
--- Clear existing data (optional - remove if you want to append)
-DELETE FROM pt_publish_job_activities;
-DELETE FROM pt_publish_job_operations;
-DELETE FROM pt_publish_jobs;
-DELETE FROM pt_publish_manufacturing_orders;
-DELETE FROM pt_publish_resources;
-
--- Insert PT Publish Resources (Brewery Equipment)
-INSERT INTO pt_publish_resources (resource_id, name, type, capacity, unit_of_measure, status, efficiency_rating, location, department, cost_per_hour, publish_date)
+-- Insert Jobs (without explicit ID to avoid conflicts)
+INSERT INTO pt_publish_jobs (
+    publish_date, instance_id, job_id, external_id, name, description,
+    priority, need_date_time, scheduled_status, classification, type
+)
 VALUES
-(1, 'Mash Tun #1', 'equipment', 5000, 'liters', 'available', 95.5, 'Brewhouse Floor 1', 'Brewing', 150.00, v_publish_date),
-(2, 'Fermentation Tank A', 'equipment', 10000, 'liters', 'available', 98.0, 'Fermentation Hall A', 'Fermentation', 200.00, v_publish_date),
-(3, 'Fermentation Tank B', 'equipment', 10000, 'liters', 'in_use', 97.5, 'Fermentation Hall A', 'Fermentation', 200.00, v_publish_date),
-(4, 'Bottling Line 1', 'equipment', 2000, 'bottles/hour', 'available', 92.0, 'Packaging Area', 'Packaging', 300.00, v_publish_date),
-(5, 'Keg Filling Station', 'equipment', 50, 'kegs/hour', 'maintenance', 90.0, 'Packaging Area', 'Packaging', 250.00, v_publish_date),
-(6, 'Quality Lab Station', 'facility', 10, 'samples/hour', 'available', 99.0, 'QA Laboratory', 'Quality', 100.00, v_publish_date),
-(7, 'Cold Storage Room 1', 'facility', 1000, 'pallets', 'available', 100.0, 'Warehouse', 'Storage', 50.00, v_publish_date),
-(8, 'Brew Kettle #1', 'equipment', 6000, 'liters', 'available', 94.0, 'Brewhouse Floor 1', 'Brewing', 175.00, v_publish_date),
-(9, 'Bright Tank 1', 'equipment', 8000, 'liters', 'available', 96.0, 'Conditioning Hall', 'Conditioning', 150.00, v_publish_date),
-(10, 'CIP System', 'equipment', 1, 'system', 'available', 99.5, 'Utility Room', 'Maintenance', 75.00, v_publish_date);
+    (NOW(), 'PT-PROD-001', 2001, 'JOB-2025-001', 'Ibuprofen Production Run', 'Production of 50,000 tablets of Ibuprofen 200mg',
+     5, NOW() + INTERVAL '7 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (NOW(), 'PT-PROD-001', 2002, 'JOB-2025-002', 'Acetaminophen Production Run', 'Production of 75,000 tablets of Acetaminophen 500mg',
+     4, NOW() + INTERVAL '10 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (NOW(), 'PT-PROD-001', 2003, 'JOB-2025-003', 'Vitamin C Production Run', 'Production of 30,000 tablets of Vitamin C 1000mg',
+     3, NOW() + INTERVAL '14 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (NOW(), 'PT-PROD-001', 2004, 'JOB-2025-004', 'Amoxicillin Production Run', 'Production of 40,000 capsules of Amoxicillin 250mg',
+     5, NOW() + INTERVAL '5 days', 'IN_PROGRESS', 'PRODUCTION', 'RUSH'),
+    (NOW(), 'PT-PROD-001', 2005, 'JOB-2025-005', 'Aspirin Production Run', 'Production of 100,000 tablets of Aspirin 100mg',
+     2, NOW() + INTERVAL '21 days', 'PLANNED', 'PRODUCTION', 'STANDARD');
 
--- Insert PT Publish Manufacturing Orders (Brewery Production Orders)
-INSERT INTO pt_publish_manufacturing_orders (manufacturing_order_id, order_number, product_code, product_name, quantity, unit_of_measure, due_date, priority, status, customer_name, notes, entry_date, publish_date)
+-- Insert Manufacturing Orders
+INSERT INTO pt_publish_manufacturing_orders (
+    publish_date, instance_id, manufacturing_order_id, external_id, name, description
+)
 VALUES
-(1, 'MO-2025-001', 'LAGER-500', 'Premium Lager 500ml', 10000, 'bottles', v_publish_date + interval '7 days', 5, 'released', 'Heineken Distribution', 'Regular production run', v_publish_date - interval '2 days', v_publish_date),
-(2, 'MO-2025-002', 'IPA-330', 'Craft IPA 330ml', 5000, 'bottles', v_publish_date + interval '10 days', 3, 'planned', 'Regional Distributors', 'Special craft batch', v_publish_date - interval '1 day', v_publish_date),
-(3, 'MO-2025-003', 'KEG-50L', 'Draft Beer 50L Keg', 100, 'kegs', v_publish_date + interval '5 days', 8, 'in_progress', 'Local Pubs Network', 'Urgent order for weekend', v_publish_date, v_publish_date),
-(4, 'MO-2025-004', 'WHEAT-500', 'Wheat Beer 500ml', 8000, 'bottles', v_publish_date + interval '14 days', 4, 'planned', 'Supermarket Chain', 'Seasonal product', v_publish_date - interval '3 days', v_publish_date),
-(5, 'MO-2025-005', 'PILSNER-330', 'Classic Pilsner 330ml', 15000, 'bottles', v_publish_date + interval '9 days', 6, 'released', 'Export Markets', 'International shipment', v_publish_date - interval '4 days', v_publish_date);
+    (NOW(), 'PT-PROD-001', 1001, 'MO-2025-001', 'Ibuprofen 200mg Batch A1', 'Manufacturing order for ibuprofen tablets'),
+    (NOW(), 'PT-PROD-001', 1002, 'MO-2025-002', 'Acetaminophen 500mg Batch B2', 'Manufacturing order for acetaminophen tablets'),
+    (NOW(), 'PT-PROD-001', 1003, 'MO-2025-003', 'Vitamin C 1000mg Batch C3', 'Manufacturing order for vitamin C tablets'),
+    (NOW(), 'PT-PROD-001', 1004, 'MO-2025-004', 'Amoxicillin 250mg Batch D4', 'Manufacturing order for amoxicillin capsules'),
+    (NOW(), 'PT-PROD-001', 1005, 'MO-2025-005', 'Aspirin 100mg Batch E5', 'Manufacturing order for aspirin tablets');
 
--- Insert PT Publish Jobs (Production Jobs linked to Manufacturing Orders)
-INSERT INTO pt_publish_jobs (job_id, order_number, name, description, qty, scheduled, priority, status, need_date_time, scheduled_start_date_time, scheduled_end_date_time, manufacturing_order_id, percent_finished, notes, entry_date, publish_date)
+-- Insert Job Operations for Ibuprofen (Job ID 2001)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id, 
+    job_id, manufacturing_order_id, operation_id,
+    name, description, 
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold,
+    external_id
+)
 VALUES
-(1, 'JOB-2025-001', 'Lager Production Batch 1', 'Premium Lager brewing and packaging', 10000, true, 5, 'in_progress', v_publish_date + interval '7 days', v_publish_date + interval '1 day', v_publish_date + interval '6 days', 1, 25, 'Mashing phase complete', v_publish_date - interval '2 days', v_publish_date),
-(2, 'JOB-2025-002', 'IPA Craft Batch', 'Craft IPA small batch production', 5000, true, 3, 'scheduled', v_publish_date + interval '10 days', v_publish_date + interval '3 days', v_publish_date + interval '9 days', 2, 0, 'Awaiting hop delivery', v_publish_date - interval '1 day', v_publish_date),
-(3, 'JOB-2025-003', 'Keg Filling Order', 'Draft beer keg filling operation', 100, true, 8, 'in_progress', v_publish_date + interval '5 days', v_publish_date, v_publish_date + interval '4 days', 3, 50, 'Fermentation complete, conditioning started', v_publish_date, v_publish_date),
-(4, 'JOB-2025-004', 'Wheat Beer Production', 'Wheat beer brewing process', 8000, false, 4, 'pending', v_publish_date + interval '14 days', NULL, NULL, 4, 0, 'Recipe finalization pending', v_publish_date - interval '3 days', v_publish_date),
-(5, 'JOB-2025-005', 'Pilsner Export Batch', 'Classic Pilsner for export', 15000, true, 6, 'scheduled', v_publish_date + interval '9 days', v_publish_date + interval '2 days', v_publish_date + interval '8 days', 5, 0, 'Export documentation prepared', v_publish_date - interval '4 days', v_publish_date);
+    (NOW(), 'PT-PROD-001', 
+     2001, 1001, 1,
+     'Weighing & Dispensing', 'Weigh and dispense raw materials',
+     0.5, 1.0, 0.25,
+     NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days 2 hours',
+     50000, 0, false,
+     'OP-JOB1-001'),
+    
+    (NOW(), 'PT-PROD-001',
+     2001, 1001, 2,
+     'Mixing', 'Mix active ingredients with excipients',
+     0.25, 2.0, 0.5,
+     NOW() + INTERVAL '7 days 2 hours', NOW() + INTERVAL '7 days 5 hours',
+     50000, 0, false,
+     'OP-JOB1-002'),
+     
+    (NOW(), 'PT-PROD-001',
+     2001, 1001, 3,
+     'Granulation', 'Wet granulation process',
+     0.5, 3.0, 1.0,
+     NOW() + INTERVAL '7 days 5 hours', NOW() + INTERVAL '7 days 10 hours',
+     50000, 0, false,
+     'OP-JOB1-003'),
+     
+    (NOW(), 'PT-PROD-001',
+     2001, 1001, 4,
+     'Compression', 'Tablet compression',
+     1.0, 4.0, 0.5,
+     NOW() + INTERVAL '7 days 10 hours', NOW() + INTERVAL '7 days 16 hours',
+     50000, 0, false,
+     'OP-JOB1-004'),
+     
+    (NOW(), 'PT-PROD-001',
+     2001, 1001, 5,
+     'Coating', 'Film coating application',
+     0.5, 3.0, 1.0,
+     NOW() + INTERVAL '7 days 16 hours', NOW() + INTERVAL '7 days 21 hours',
+     50000, 0, false,
+     'OP-JOB1-005'),
+     
+    (NOW(), 'PT-PROD-001',
+     2001, 1001, 6,
+     'Packaging', 'Blister packaging and boxing',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '7 days 21 hours', NOW() + INTERVAL '8 days',
+     50000, 0, false,
+     'OP-JOB1-006');
 
--- Insert PT Publish Job Operations (Brewing Process Steps)
-INSERT INTO pt_publish_job_operations (job_operation_id, job_id, operation_number, name, description, resource_id, sequence_number, setup_time, run_time, time_unit, status, scheduled_start, scheduled_end, actual_start, actual_end, notes, publish_date)
+-- Insert Job Operations for Acetaminophen (Job ID 2002)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold,
+    external_id
+)
 VALUES
--- Job 1 Operations (Lager Production)
-(1, 1, 'OP-001-01', 'Mashing', 'Grain mashing process', 1, 10, 30, 240, 'minutes', 'completed', v_publish_date + interval '1 day', v_publish_date + interval '1 day 4 hours', v_publish_date + interval '1 day', v_publish_date + interval '1 day 4 hours', 'Temperature maintained at 65°C', v_publish_date),
-(2, 1, 'OP-001-02', 'Boiling', 'Wort boiling with hops', 8, 20, 15, 90, 'minutes', 'in_progress', v_publish_date + interval '1 day 5 hours', v_publish_date + interval '1 day 7 hours', v_publish_date + interval '1 day 5 hours', NULL, 'Hop addition on schedule', v_publish_date),
-(3, 1, 'OP-001-03', 'Fermentation', 'Primary fermentation', 2, 30, 60, 10080, 'minutes', 'scheduled', v_publish_date + interval '2 days', v_publish_date + interval '9 days', NULL, NULL, '7 days fermentation planned', v_publish_date),
-(4, 1, 'OP-001-04', 'Conditioning', 'Beer conditioning', 9, 40, 30, 7200, 'minutes', 'scheduled', v_publish_date + interval '9 days', v_publish_date + interval '14 days', NULL, NULL, 'Temperature controlled conditioning', v_publish_date),
-(5, 1, 'OP-001-05', 'Bottling', 'Bottle filling and capping', 4, 50, 45, 300, 'minutes', 'scheduled', v_publish_date + interval '14 days', v_publish_date + interval '14 days 6 hours', NULL, NULL, 'Quality check every 100 bottles', v_publish_date),
+    (NOW(), 'PT-PROD-001',
+     2002, 1002, 1,
+     'Material Preparation', 'Prepare and verify raw materials',
+     0.75, 1.5, 0.25,
+     NOW() + INTERVAL '10 days', NOW() + INTERVAL '10 days 3 hours',
+     75000, 0, false,
+     'OP-JOB2-001'),
+     
+    (NOW(), 'PT-PROD-001',
+     2002, 1002, 2,
+     'Blending', 'Blend active and inactive ingredients',
+     0.5, 2.5, 0.5,
+     NOW() + INTERVAL '10 days 3 hours', NOW() + INTERVAL '10 days 7 hours',
+     75000, 0, false,
+     'OP-JOB2-002'),
+     
+    (NOW(), 'PT-PROD-001',
+     2002, 1002, 3,
+     'Tablet Formation', 'Direct compression tableting',
+     1.0, 5.0, 0.5,
+     NOW() + INTERVAL '10 days 7 hours', NOW() + INTERVAL '10 days 14 hours',
+     75000, 0, false,
+     'OP-JOB2-003'),
+     
+    (NOW(), 'PT-PROD-001',
+     2002, 1002, 4,
+     'Quality Testing', 'In-process quality control',
+     0.25, 1.0, 0.25,
+     NOW() + INTERVAL '10 days 14 hours', NOW() + INTERVAL '10 days 16 hours',
+     75000, 0, false,
+     'OP-JOB2-004'),
+     
+    (NOW(), 'PT-PROD-001',
+     2002, 1002, 5,
+     'Primary Packaging', 'Bottle filling and capping',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '10 days 16 hours', NOW() + INTERVAL '10 days 20 hours',
+     75000, 0, false,
+     'OP-JOB2-005');
 
--- Job 3 Operations (Keg Filling)
-(6, 3, 'OP-003-01', 'Tank Transfer', 'Transfer to bright tank', 9, 10, 20, 60, 'minutes', 'completed', v_publish_date, v_publish_date + interval '1 hour 20 minutes', v_publish_date, v_publish_date + interval '1 hour 20 minutes', 'Transfer complete', v_publish_date),
-(7, 3, 'OP-003-02', 'Carbonation', 'CO2 injection', 9, 20, 10, 120, 'minutes', 'in_progress', v_publish_date + interval '2 hours', v_publish_date + interval '4 hours', v_publish_date + interval '2 hours', NULL, 'Target: 2.5 volumes CO2', v_publish_date),
-(8, 3, 'OP-003-03', 'Keg Filling', 'Fill and seal kegs', 5, 30, 30, 180, 'minutes', 'scheduled', v_publish_date + interval '1 day', v_publish_date + interval '1 day 3 hours', NULL, NULL, 'Equipment check required', v_publish_date),
-(9, 3, 'OP-003-04', 'Quality Testing', 'Sample testing', 6, 40, 15, 30, 'minutes', 'scheduled', v_publish_date + interval '1 day 4 hours', v_publish_date + interval '1 day 5 hours', NULL, NULL, 'Lab analysis required', v_publish_date),
-(10, 3, 'OP-003-05', 'Cold Storage', 'Move to cold storage', 7, 50, 10, 20, 'minutes', 'scheduled', v_publish_date + interval '1 day 6 hours', v_publish_date + interval '1 day 7 hours', NULL, NULL, 'Temperature: 2-4°C', v_publish_date);
-
--- Insert PT Publish Job Activities (Resource Activities)
-INSERT INTO pt_publish_job_activities (job_activity_id, job_operation_id, resource_id, activity_type, scheduled_start, scheduled_end, actual_start, actual_end, status, operator_name, notes, publish_date)
+-- Insert Job Operations for Vitamin C (Job ID 2003)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold,
+    external_id
+)
 VALUES
-(1, 1, 1, 'setup', v_publish_date + interval '1 day', v_publish_date + interval '1 day 30 minutes', v_publish_date + interval '1 day', v_publish_date + interval '1 day 30 minutes', 'completed', 'John Smith', 'Equipment cleaned and ready', v_publish_date),
-(2, 1, 1, 'production', v_publish_date + interval '1 day 30 minutes', v_publish_date + interval '1 day 4 hours', v_publish_date + interval '1 day 30 minutes', v_publish_date + interval '1 day 4 hours', 'completed', 'John Smith', 'Mashing complete', v_publish_date),
-(3, 2, 8, 'setup', v_publish_date + interval '1 day 5 hours', v_publish_date + interval '1 day 5 hours 15 minutes', v_publish_date + interval '1 day 5 hours', NULL, 'in_progress', 'Mike Johnson', 'Preparing brew kettle', v_publish_date),
-(4, 2, 8, 'production', v_publish_date + interval '1 day 5 hours 15 minutes', v_publish_date + interval '1 day 7 hours', NULL, NULL, 'scheduled', 'Mike Johnson', 'Boiling phase', v_publish_date),
-(5, 6, 9, 'setup', v_publish_date, v_publish_date + interval '20 minutes', v_publish_date, v_publish_date + interval '20 minutes', 'completed', 'Sarah Chen', 'Tank prepared', v_publish_date),
-(6, 6, 9, 'production', v_publish_date + interval '20 minutes', v_publish_date + interval '1 hour 20 minutes', v_publish_date + interval '20 minutes', v_publish_date + interval '1 hour 20 minutes', 'completed', 'Sarah Chen', 'Transfer successful', v_publish_date),
-(7, 7, 9, 'setup', v_publish_date + interval '2 hours', v_publish_date + interval '2 hours 10 minutes', v_publish_date + interval '2 hours', v_publish_date + interval '2 hours 10 minutes', 'completed', 'Sarah Chen', 'CO2 system ready', v_publish_date),
-(8, 7, 9, 'production', v_publish_date + interval '2 hours 10 minutes', v_publish_date + interval '4 hours', v_publish_date + interval '2 hours 10 minutes', NULL, 'in_progress', 'Sarah Chen', 'Carbonation in progress', v_publish_date),
-(9, 3, 2, 'maintenance', v_publish_date + interval '8 hours', v_publish_date + interval '10 hours', NULL, NULL, 'scheduled', 'Tech Team', 'Scheduled cleaning', v_publish_date),
-(10, 5, 4, 'quality_check', v_publish_date + interval '14 days 3 hours', v_publish_date + interval '14 days 3 hours 30 minutes', NULL, NULL, 'scheduled', 'QA Team', 'Random sampling', v_publish_date);
+    (NOW(), 'PT-PROD-001',
+     2003, 1003, 1,
+     'Raw Material QC', 'Quality check of vitamin C powder',
+     0.5, 0.5, 0.25,
+     NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days 2 hours',
+     30000, 0, false,
+     'OP-JOB3-001'),
+     
+    (NOW(), 'PT-PROD-001',
+     2003, 1003, 2,
+     'Mixing & Blending', 'Mix vitamin C with excipients',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '14 days 2 hours', NOW() + INTERVAL '14 days 5 hours',
+     30000, 0, false,
+     'OP-JOB3-002'),
+     
+    (NOW(), 'PT-PROD-001',
+     2003, 1003, 3,
+     'Compression', 'High-dose tablet compression',
+     1.0, 3.0, 0.5,
+     NOW() + INTERVAL '14 days 5 hours', NOW() + INTERVAL '14 days 10 hours',
+     30000, 0, false,
+     'OP-JOB3-003'),
+     
+    (NOW(), 'PT-PROD-001',
+     2003, 1003, 4,
+     'Packaging', 'Packaging in moisture-resistant containers',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '14 days 10 hours', NOW() + INTERVAL '14 days 13 hours',
+     30000, 0, false,
+     'OP-JOB3-004');
 
-END $$;
+-- Insert Job Operations for Amoxicillin (Job ID 2004) - IN PROGRESS
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold,
+    external_id
+)
+VALUES
+    (NOW(), 'PT-PROD-001',
+     2004, 1004, 1,
+     'API Verification', 'Verify amoxicillin API quality',
+     0.5, 1.0, 0.25,
+     NOW() - INTERVAL '1 day', NOW() - INTERVAL '22 hours',
+     40000, 100, false,
+     'OP-JOB4-001'),
+     
+    (NOW(), 'PT-PROD-001',
+     2004, 1004, 2,
+     'Powder Blending', 'Blend API with excipients',
+     0.5, 2.0, 0.5,
+     NOW() - INTERVAL '22 hours', NOW() - INTERVAL '19 hours',
+     40000, 100, false,
+     'OP-JOB4-002'),
+     
+    (NOW(), 'PT-PROD-001',
+     2004, 1004, 3,
+     'Encapsulation', 'Fill capsules with powder blend',
+     1.0, 4.0, 0.5,
+     NOW() - INTERVAL '19 hours', NOW() - INTERVAL '13 hours',
+     40000, 65, false,
+     'OP-JOB4-003'),
+     
+    (NOW(), 'PT-PROD-001',
+     2004, 1004, 4,
+     'Polishing', 'Capsule polishing and inspection',
+     0.25, 1.0, 0.25,
+     NOW() + INTERVAL '2 hours', NOW() + INTERVAL '4 hours',
+     40000, 0, false,
+     'OP-JOB4-004'),
+     
+    (NOW(), 'PT-PROD-001',
+     2004, 1004, 5,
+     'Packaging', 'Blister packaging with desiccant',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '4 hours', NOW() + INTERVAL '8 hours',
+     40000, 0, false,
+     'OP-JOB4-005');
+
+-- Insert Job Operations for Aspirin (Job ID 2005)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold,
+    external_id
+)
+VALUES
+    (NOW(), 'PT-PROD-001',
+     2005, 1005, 1,
+     'Raw Material Staging', 'Stage aspirin API and excipients',
+     0.5, 0.75, 0.25,
+     NOW() + INTERVAL '21 days', NOW() + INTERVAL '21 days 2 hours',
+     100000, 0, false,
+     'OP-JOB5-001'),
+     
+    (NOW(), 'PT-PROD-001',
+     2005, 1005, 2,
+     'Dry Mixing', 'Dry blend aspirin with binders',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '21 days 2 hours', NOW() + INTERVAL '21 days 6 hours',
+     100000, 0, false,
+     'OP-JOB5-002'),
+     
+    (NOW(), 'PT-PROD-001',
+     2005, 1005, 3,
+     'High-Speed Compression', 'High-volume tablet production',
+     1.0, 6.0, 0.5,
+     NOW() + INTERVAL '21 days 6 hours', NOW() + INTERVAL '21 days 14 hours',
+     100000, 0, false,
+     'OP-JOB5-003'),
+     
+    (NOW(), 'PT-PROD-001',
+     2005, 1005, 4,
+     'Enteric Coating', 'Apply enteric coating for stomach protection',
+     0.75, 4.0, 1.0,
+     NOW() + INTERVAL '21 days 14 hours', NOW() + INTERVAL '21 days 20 hours',
+     100000, 0, false,
+     'OP-JOB5-004'),
+     
+    (NOW(), 'PT-PROD-001',
+     2005, 1005, 5,
+     'Bulk Packaging', 'Bottle packaging in bulk containers',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '21 days 20 hours', NOW() + INTERVAL '22 days',
+     100000, 0, false,
+     'OP-JOB5-005');
+
+-- Insert Job Resources for each operation
+INSERT INTO pt_publish_job_resources (
+    publish_date, instance_id,
+    job_id, manufacturing_order_id, operation_id, resource_requirement_id,
+    description, external_id,
+    usage_start, usage_end,
+    is_primary, default_resource_id
+)
+SELECT 
+    NOW(), 'PT-PROD-001',
+    o.job_id, o.manufacturing_order_id, o.operation_id, 
+    ROW_NUMBER() OVER (ORDER BY o.id), -- Generate unique resource_requirement_id
+    'Resource for ' || o.name, 
+    'RES-' || o.external_id,
+    o.scheduled_start::text, o.scheduled_end::text,
+    true,
+    CASE 
+        WHEN o.name LIKE '%Mixing%' OR o.name LIKE '%Blending%' THEN 1
+        WHEN o.name LIKE '%Granulation%' THEN 8
+        WHEN o.name LIKE '%Compression%' OR o.name LIKE '%Tablet%' THEN 3
+        WHEN o.name LIKE '%Coating%' THEN 5
+        WHEN o.name LIKE '%Packaging%' THEN 6
+        WHEN o.name LIKE '%Encapsulation%' THEN 9
+        WHEN o.name LIKE '%QC%' OR o.name LIKE '%Testing%' THEN 10
+        WHEN o.name LIKE '%Verification%' THEN 10
+        ELSE 1
+    END
+FROM pt_publish_job_operations o
+WHERE o.instance_id = 'PT-PROD-001';
+
+-- Insert Job Activities for some operations
+INSERT INTO pt_publish_job_activities (
+    publish_date, instance_id, activity_id, external_id,
+    operation_id, job_id,
+    name, description, activity_type,
+    scheduled_start_date, scheduled_end_date,
+    production_status, percent_complete
+)
+SELECT
+    NOW(), 'PT-PROD-001', 
+    ROW_NUMBER() OVER (ORDER BY o.id) + 20000, -- Generate unique activity_id
+    'ACT-' || o.external_id,
+    o.operation_id, o.job_id,
+    o.name || ' Activity', o.description, 
+    CASE 
+        WHEN o.name LIKE '%QC%' OR o.name LIKE '%Testing%' THEN 'QUALITY_CHECK'
+        WHEN o.name LIKE '%Preparation%' OR o.name LIKE '%Staging%' THEN 'PREPARATION'
+        ELSE 'PROCESSING'
+    END,
+    o.scheduled_start, o.scheduled_end,
+    CASE 
+        WHEN o.percent_finished = 100 THEN 'COMPLETED'
+        WHEN o.percent_finished > 0 THEN 'IN_PROGRESS'
+        ELSE 'SCHEDULED'
+    END,
+    o.percent_finished
+FROM pt_publish_job_operations o
+WHERE o.instance_id = 'PT-PROD-001'
+  AND o.job_id IN (2001, 2004) -- Only create activities for selected jobs
+LIMIT 15;
 
 -- Verify the data was inserted
-SELECT 'PT Publish Resources' as table_name, COUNT(*) as record_count FROM pt_publish_resources
-UNION ALL
-SELECT 'PT Publish Manufacturing Orders', COUNT(*) FROM pt_publish_manufacturing_orders
-UNION ALL
-SELECT 'PT Publish Jobs', COUNT(*) FROM pt_publish_jobs
-UNION ALL
-SELECT 'PT Publish Job Operations', COUNT(*) FROM pt_publish_job_operations
-UNION ALL
-SELECT 'PT Publish Job Activities', COUNT(*) FROM pt_publish_job_activities;
+SELECT 'PT Publish Tables Population Summary:' as status;
+SELECT 'Jobs: ' || COUNT(*) as count FROM pt_publish_jobs WHERE instance_id = 'PT-PROD-001';
+SELECT 'Manufacturing Orders: ' || COUNT(*) as count FROM pt_publish_manufacturing_orders WHERE instance_id = 'PT-PROD-001';
+SELECT 'Job Operations: ' || COUNT(*) as count FROM pt_publish_job_operations WHERE instance_id = 'PT-PROD-001';
+SELECT 'Job Resources: ' || COUNT(*) as count FROM pt_publish_job_resources WHERE instance_id = 'PT-PROD-001';
+SELECT 'Job Activities: ' || COUNT(*) as count FROM pt_publish_job_activities WHERE instance_id = 'PT-PROD-001';
+
+-- Show sample of operations with resources
+SELECT 
+    j.name as job_name,
+    o.name as operation_name,
+    o.scheduled_start,
+    o.percent_finished || '%' as progress,
+    r.default_resource_id as resource_id
+FROM pt_publish_jobs j
+JOIN pt_publish_job_operations o ON j.job_id = o.job_id AND j.instance_id = o.instance_id
+LEFT JOIN pt_publish_job_resources r ON o.operation_id = r.operation_id AND o.job_id = r.job_id AND o.instance_id = r.instance_id
+WHERE j.instance_id = 'PT-PROD-001'
+ORDER BY j.job_id, o.operation_id
+LIMIT 10;

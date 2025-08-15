@@ -1,84 +1,246 @@
--- Populate PT Import tables with corrected column mappings
--- Based on actual table structures in the database
+-- Populate PT Publish Tables with Sample Data
+-- Simplified script without DO blocks for better compatibility
 
--- Insert Job Operations with correct column names
-INSERT INTO pt_job_operations (job_external_id, external_id, name, description, operation_sequence, standard_run_hrs, standard_setup_hrs, notes, user_fields) VALUES
-('JOB_IBU200_001', 'OP_MIX_001', 'Blending Operation', 'Blend API with excipients', 10, '3.0', '0.75', 'Critical blend uniformity', '{"blend_time": "15min", "speed": "10rpm"}'),
-('JOB_IBU200_001', 'OP_PRESS_001', 'Tablet Compression', 'Compress blended material into tablets', 20, '4.0', '1.5', 'Monitor tablet hardness', '{"target_hardness": "8-12kp", "thickness": "4.5mm"}'),
-('JOB_IBU200_001', 'OP_COAT_001', 'Film Coating', 'Apply protective film coating', 30, '5.0', '2.0', 'Moisture protection coating', '{"coating_weight": "3%", "color": "white"}'),
-('JOB_IBU200_001', 'OP_PACK_001', 'Primary Packaging', 'Blister packaging of tablets', 40, '7.0', '1.0', 'Tamper-evident packaging', '{"format": "10x10", "material": "PVC/ALU"}'),
-('JOB_IBU400_001', 'OP_MIX_002', 'High Strength Blending', 'Blend higher concentration API', 10, '3.5', '1.0', 'Extended blend time for uniformity', '{"blend_time": "20min", "speed": "8rpm"}'),
-('JOB_IBU400_001', 'OP_PRESS_002', 'High Strength Compression', 'Compress 400mg tablets', 20, '4.67', '2.0', 'Higher compression force required', '{"target_hardness": "10-15kp", "thickness": "5.2mm"}'),
-('JOB_IBU400_001', 'OP_PACK_002', 'Prescription Packaging', 'Bottle packaging for prescription', 30, '6.0', '0.75', 'Child-resistant bottles', '{"bottle_size": "100ct", "cap_type": "CR"}');
+-- First, check what exists
+SELECT 'Existing PT Jobs: ' || COUNT(*) FROM pt_publish_jobs;
+SELECT 'Existing PT Manufacturing Orders: ' || COUNT(*) FROM pt_publish_manufacturing_orders;
 
--- Insert Job Resources with correct column names (remove notes column)
-INSERT INTO pt_job_resources (job_external_id, operation_external_id, plant_external_id, department_external_id, resource_external_id, primary_resource, resource_qty, run_rate, setup_time, user_fields) VALUES
-('JOB_IBU200_001', 'OP_MIX_001', 'PLANT_001', 'DEPT_MIX_001', 'RES_MIX_001', 'true', '1', '0.33', '45', '{"efficiency": 92, "notes": "Primary mixer assignment"}'),
-('JOB_IBU200_001', 'OP_MIX_001', 'PLANT_001', 'DEPT_MIX_001', 'RES_OPER_001', 'true', '1', '1.0', '0', '{"shift": "day", "notes": "Operator assignment"}'),
-('JOB_IBU200_001', 'OP_PRESS_001', 'PLANT_001', 'DEPT_PRESS_001', 'RES_PRESS_001', 'true', '1', '208', '90', '{"target_speed": "208tpm", "notes": "Press line assignment"}'),
-('JOB_IBU200_001', 'OP_PRESS_001', 'PLANT_001', 'DEPT_PRESS_001', 'RES_OPER_002', 'true', '1', '1.0', '0', '{"certification": "validated", "notes": "Press operator"}'),
-('JOB_IBU200_001', 'OP_COAT_001', 'PLANT_001', 'DEPT_COAT_001', 'RES_COAT_001', 'true', '1', '0.17', '120', '{"coating_efficiency": 90, "notes": "Coating pan assignment"}'),
-('JOB_IBU200_001', 'OP_PACK_001', 'PLANT_001', 'DEPT_PACK_001', 'RES_PACK_001', 'true', '1', '119', '60', '{"speed_bpm": 400, "notes": "Blister line assignment"}');
+-- Insert Jobs (using explicit IDs)
+INSERT INTO pt_publish_jobs (
+    id, publish_date, instance_id, job_id, external_id, name, description,
+    priority, need_date_time, scheduled_status, classification, type
+)
+VALUES
+    (101, NOW(), 'PT-PROD-001', 2001, 'JOB-2025-001', 'Ibuprofen Production Run', 'Production of 50,000 tablets of Ibuprofen 200mg',
+     5, NOW() + INTERVAL '7 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (102, NOW(), 'PT-PROD-001', 2002, 'JOB-2025-002', 'Acetaminophen Production Run', 'Production of 75,000 tablets of Acetaminophen 500mg',
+     4, NOW() + INTERVAL '10 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (103, NOW(), 'PT-PROD-001', 2003, 'JOB-2025-003', 'Vitamin C Production Run', 'Production of 30,000 tablets of Vitamin C 1000mg',
+     3, NOW() + INTERVAL '14 days', 'SCHEDULED', 'PRODUCTION', 'STANDARD'),
+    (104, NOW(), 'PT-PROD-001', 2004, 'JOB-2025-004', 'Amoxicillin Production Run', 'Production of 40,000 capsules of Amoxicillin 250mg',
+     5, NOW() + INTERVAL '5 days', 'IN_PROGRESS', 'PRODUCTION', 'RUSH'),
+    (105, NOW(), 'PT-PROD-001', 2005, 'JOB-2025-005', 'Aspirin Production Run', 'Production of 100,000 tablets of Aspirin 100mg',
+     2, NOW() + INTERVAL '21 days', 'PLANNED', 'PRODUCTION', 'STANDARD')
+ON CONFLICT (id) DO NOTHING;
 
--- Insert Job Materials with correct column names
-INSERT INTO pt_job_materials (job_external_id, op_external_id, item_external_id, warehouse_external_id, total_required_qty, uom, total_cost) VALUES
-('JOB_IBU200_001', 'OP_MIX_001', 'ITEM_API_IBUPROFEN', 'WH_MAIN_001', '10.0', 'kg', '1255.00'),
-('JOB_IBU200_001', 'OP_MIX_001', 'ITEM_LACTOSE', 'WH_MAIN_001', '25.0', 'kg', '70.00'),
-('JOB_IBU200_001', 'OP_MIX_001', 'ITEM_MCC', 'WH_MAIN_001', '12.0', 'kg', '38.40'),
-('JOB_IBU200_001', 'OP_MIX_001', 'ITEM_PVP', 'WH_MAIN_001', '2.0', 'kg', '37.50'),
-('JOB_IBU200_001', 'OP_PACK_001', 'ITEM_IBUPROFEN_200', 'WH_FG_001', '50000', 'tablets', '1250.00');
+-- Insert Manufacturing Orders (using explicit IDs)
+INSERT INTO pt_publish_manufacturing_orders (
+    id, publish_date, instance_id, manufacturing_order_id, external_id, name, description
+)
+VALUES
+    (101, NOW(), 'PT-PROD-001', 1001, 'MO-2025-001', 'Ibuprofen 200mg Batch A1', 'Manufacturing order for ibuprofen tablets'),
+    (102, NOW(), 'PT-PROD-001', 1002, 'MO-2025-002', 'Acetaminophen 500mg Batch B2', 'Manufacturing order for acetaminophen tablets'),
+    (103, NOW(), 'PT-PROD-001', 1003, 'MO-2025-003', 'Vitamin C 1000mg Batch C3', 'Manufacturing order for vitamin C tablets'),
+    (104, NOW(), 'PT-PROD-001', 1004, 'MO-2025-004', 'Amoxicillin 250mg Batch D4', 'Manufacturing order for amoxicillin capsules'),
+    (105, NOW(), 'PT-PROD-001', 1005, 'MO-2025-005', 'Aspirin 100mg Batch E5', 'Manufacturing order for aspirin tablets')
+ON CONFLICT (id) DO NOTHING;
 
--- Insert Inventories with correct column names (remove notes column)
-INSERT INTO pt_inventories (item_external_id, warehouse_external_id, on_hand_qty, safety_stock, max_inventory, lead_time_days) VALUES
-('ITEM_API_IBUPROFEN', 'WH_MAIN_001', '500', '100', '1000', '45'),
-('ITEM_LACTOSE', 'WH_MAIN_001', '50000', '10000', '100000', '14'),
-('ITEM_MCC', 'WH_MAIN_001', '30000', '5000', '75000', '21'),
-('ITEM_IBUPROFEN_200', 'WH_FG_001', '125000', '25000', '500000', '0'),
-('ITEM_IBUPROFEN_400', 'WH_FG_001', '75000', '15000', '300000', '0');
+-- Insert Job Operations for Job 1 (Ibuprofen)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id, job_operation_id, external_id, 
+    job_id, manufacturing_order_id, operation_id,
+    name, description, 
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold
+)
+VALUES
+    (NOW(), 'PT-PROD-001', 10001, 'OP-JOB1-001', 
+     101, 101, 1,
+     'Weighing & Dispensing', 'Weigh and dispense raw materials',
+     0.5, 1.0, 0.25,
+     NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days 2 hours',
+     50000, 0, false),
+    
+    (NOW(), 'PT-PROD-001', 10002, 'OP-JOB1-002',
+     101, 101, 2,
+     'Mixing', 'Mix active ingredients with excipients',
+     0.25, 2.0, 0.5,
+     NOW() + INTERVAL '7 days 2 hours', NOW() + INTERVAL '7 days 5 hours',
+     50000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10003, 'OP-JOB1-003',
+     101, 101, 3,
+     'Granulation', 'Wet granulation process',
+     0.5, 3.0, 1.0,
+     NOW() + INTERVAL '7 days 5 hours', NOW() + INTERVAL '7 days 10 hours',
+     50000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10004, 'OP-JOB1-004',
+     101, 101, 4,
+     'Compression', 'Tablet compression',
+     1.0, 4.0, 0.5,
+     NOW() + INTERVAL '7 days 10 hours', NOW() + INTERVAL '7 days 16 hours',
+     50000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10005, 'OP-JOB1-005',
+     101, 101, 5,
+     'Coating', 'Film coating application',
+     0.5, 3.0, 1.0,
+     NOW() + INTERVAL '7 days 16 hours', NOW() + INTERVAL '7 days 21 hours',
+     50000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10006, 'OP-JOB1-006',
+     101, 101, 6,
+     'Packaging', 'Blister packaging and boxing',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '7 days 21 hours', NOW() + INTERVAL '8 days',
+     50000, 0, false);
 
--- Additional PT Import tables data
--- Insert Job Activities (work orders tracking)
-INSERT INTO pt_job_activities (job_external_id, operation_external_id, activity_name, description, status, start_date_time, end_date_time, user_fields) VALUES
-('JOB_IBU200_001', 'OP_MIX_001', 'Material Preparation', 'Prepare and stage raw materials', 'Completed', '2025-08-18 08:00:00', '2025-08-18 08:30:00', '{"operator": "John Smith", "verified": true}'),
-('JOB_IBU200_001', 'OP_MIX_001', 'Blending Process', 'Execute blending operation', 'In Progress', '2025-08-18 08:30:00', null, '{"blend_speed": "10rpm", "temperature": "22C"}'),
-('JOB_IBU200_001', 'OP_PRESS_001', 'Press Setup', 'Setup tablet press for production', 'Planned', null, null, '{"tooling": "8mm_round", "target_weight": "320mg"}');
+-- Insert Job Operations for Job 2 (Acetaminophen)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id, job_operation_id, external_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold
+)
+VALUES
+    (NOW(), 'PT-PROD-001', 10007, 'OP-JOB2-001',
+     102, 102, 1,
+     'Material Preparation', 'Prepare and verify raw materials',
+     0.75, 1.5, 0.25,
+     NOW() + INTERVAL '10 days', NOW() + INTERVAL '10 days 3 hours',
+     75000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10008, 'OP-JOB2-002',
+     102, 102, 2,
+     'Blending', 'Blend active and inactive ingredients',
+     0.5, 2.5, 0.5,
+     NOW() + INTERVAL '10 days 3 hours', NOW() + INTERVAL '10 days 7 hours',
+     75000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10009, 'OP-JOB2-003',
+     102, 102, 3,
+     'Tablet Formation', 'Direct compression tableting',
+     1.0, 5.0, 0.5,
+     NOW() + INTERVAL '10 days 7 hours', NOW() + INTERVAL '10 days 14 hours',
+     75000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10010, 'OP-JOB2-004',
+     102, 102, 4,
+     'Quality Testing', 'In-process quality control',
+     0.25, 1.0, 0.25,
+     NOW() + INTERVAL '10 days 14 hours', NOW() + INTERVAL '10 days 16 hours',
+     75000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10011, 'OP-JOB2-005',
+     102, 102, 5,
+     'Primary Packaging', 'Bottle filling and capping',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '10 days 16 hours', NOW() + INTERVAL '10 days 20 hours',
+     75000, 0, false);
 
--- Insert Job Path information
-INSERT INTO pt_job_paths (job_external_id, path_index, path_name, path_description, user_fields) VALUES
-('JOB_IBU200_001', '1', 'Standard Tablet Path', 'Standard manufacturing path for solid dosage forms', '{"path_type": "primary", "yield_target": "98%"}'),
-('JOB_IBU400_001', '1', 'High Strength Path', 'Manufacturing path for higher strength tablets', '{"path_type": "primary", "yield_target": "97%"}');
+-- Insert Job Operations for Job 3 (Vitamin C)
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id, job_operation_id, external_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold
+)
+VALUES
+    (NOW(), 'PT-PROD-001', 10012, 'OP-JOB3-001',
+     103, 103, 1,
+     'Raw Material QC', 'Quality check of vitamin C powder',
+     0.5, 0.5, 0.25,
+     NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days 2 hours',
+     30000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10013, 'OP-JOB3-002',
+     103, 103, 2,
+     'Mixing & Blending', 'Mix vitamin C with excipients',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '14 days 2 hours', NOW() + INTERVAL '14 days 5 hours',
+     30000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10014, 'OP-JOB3-003',
+     103, 103, 3,
+     'Compression', 'High-dose tablet compression',
+     1.0, 3.0, 0.5,
+     NOW() + INTERVAL '14 days 5 hours', NOW() + INTERVAL '14 days 10 hours',
+     30000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10015, 'OP-JOB3-004',
+     103, 103, 4,
+     'Packaging', 'Packaging in moisture-resistant containers',
+     0.5, 2.0, 0.5,
+     NOW() + INTERVAL '14 days 10 hours', NOW() + INTERVAL '14 days 13 hours',
+     30000, 0, false);
 
--- Insert Job Path Nodes
-INSERT INTO pt_job_path_nodes (job_external_id, path_index, path_node_index, operation_external_id, sequence_number, operation_type, duration_minutes, setup_time_minutes, user_fields) VALUES
-('JOB_IBU200_001', '1', '1', 'OP_MIX_001', '10', 'Mixing', '180', '45', '{"critical_path": true}'),
-('JOB_IBU200_001', '1', '2', 'OP_PRESS_001', '20', 'Compression', '240', '90', '{"critical_path": true}'),
-('JOB_IBU200_001', '1', '3', 'OP_COAT_001', '30', 'Coating', '300', '120', '{"critical_path": false}'),
-('JOB_IBU200_001', '1', '4', 'OP_PACK_001', '40', 'Packaging', '420', '60', '{"critical_path": false}');
+-- Insert Job Operations for Job 4 (Amoxicillin) - IN PROGRESS
+INSERT INTO pt_publish_job_operations (
+    publish_date, instance_id, job_operation_id, external_id,
+    job_id, manufacturing_order_id, operation_id,
+    name, description,
+    setup_hours, cycle_hrs, post_processing_hours,
+    scheduled_start, scheduled_end,
+    required_finish_qty, percent_finished, on_hold
+)
+VALUES
+    (NOW(), 'PT-PROD-001', 10016, 'OP-JOB4-001',
+     104, 104, 1,
+     'API Verification', 'Verify amoxicillin API quality',
+     0.5, 1.0, 0.25,
+     NOW() - INTERVAL '1 day', NOW() - INTERVAL '22 hours',
+     40000, 100, false),
+     
+    (NOW(), 'PT-PROD-001', 10017, 'OP-JOB4-002',
+     104, 104, 2,
+     'Powder Blending', 'Blend API with excipients',
+     0.5, 2.0, 0.5,
+     NOW() - INTERVAL '22 hours', NOW() - INTERVAL '19 hours',
+     40000, 100, false),
+     
+    (NOW(), 'PT-PROD-001', 10018, 'OP-JOB4-003',
+     104, 104, 3,
+     'Encapsulation', 'Fill capsules with powder blend',
+     1.0, 4.0, 0.5,
+     NOW() - INTERVAL '19 hours', NOW() - INTERVAL '13 hours',
+     40000, 65, false),
+     
+    (NOW(), 'PT-PROD-001', 10019, 'OP-JOB4-004',
+     104, 104, 4,
+     'Polishing', 'Capsule polishing and inspection',
+     0.25, 1.0, 0.25,
+     NOW() + INTERVAL '2 hours', NOW() + INTERVAL '4 hours',
+     40000, 0, false),
+     
+    (NOW(), 'PT-PROD-001', 10020, 'OP-JOB4-005',
+     104, 104, 5,
+     'Packaging', 'Blister packaging with desiccant',
+     0.5, 3.0, 0.5,
+     NOW() + INTERVAL '4 hours', NOW() + INTERVAL '8 hours',
+     40000, 0, false);
 
--- Insert Job Products
-INSERT INTO pt_job_products (job_external_id, item_external_id, warehouse_external_id, quantity, qty_used, use_type, user_fields) VALUES
-('JOB_IBU200_001', 'ITEM_IBUPROFEN_200', 'WH_FG_001', '50000', '0', 'Output', '{"yield_expected": "98%", "quality_grade": "A"}'),
-('JOB_IBU400_001', 'ITEM_IBUPROFEN_400', 'WH_FG_001', '30000', '0', 'Output', '{"yield_expected": "97%", "quality_grade": "A"}');
+-- Insert Job Resources (get Operation IDs first)
+INSERT INTO pt_publish_job_resources (
+    publish_date, instance_id, job_resource_id, external_id,
+    operation_id, job_id, default_resource_id,
+    is_primary, usage_start, usage_end
+)
+SELECT 
+    NOW(), 'PT-PROD-001', 30001, 'JR-OP' || o.id,
+    o.id, o.job_id, 
+    CASE 
+        WHEN o.name LIKE '%Mixing%' OR o.name LIKE '%Blending%' THEN 1
+        WHEN o.name LIKE '%Granulation%' THEN 8
+        WHEN o.name LIKE '%Compression%' OR o.name LIKE '%Tablet%' THEN 3
+        WHEN o.name LIKE '%Coating%' THEN 5
+        WHEN o.name LIKE '%Packaging%' THEN 6
+        WHEN o.name LIKE '%Encapsulation%' THEN 9
+        ELSE 1
+    END,
+    true, o.scheduled_start, o.scheduled_end
+FROM pt_publish_job_operations o
+WHERE o.job_id IN (101, 102, 103, 104, 105)
+LIMIT 10;
 
--- Insert Users
-INSERT INTO pt_users (external_id, username, first_name, last_name, email, role, department, plant_external_id, is_active, user_fields) VALUES
-('USER_001', 'jsmith', 'John', 'Smith', 'john.smith@acmepharma.com', 'Production Supervisor', 'Manufacturing', 'PLANT_001', 'true', '{"security_clearance": "high", "certifications": ["GMP", "FDA"]}'),
-('USER_002', 'sjohnson', 'Sarah', 'Johnson', 'sarah.johnson@acmepharma.com', 'Quality Manager', 'Quality Control', 'PLANT_001', 'true', '{"security_clearance": "high", "certifications": ["GMP", "FDA", "ISO"]}'),
-('USER_003', 'mbrown', 'Mike', 'Brown', 'mike.brown@acmepharma.com', 'Maintenance Engineer', 'Engineering', 'PLANT_001', 'true', '{"security_clearance": "medium", "certifications": ["Mechanical", "Electrical"]}');
-
--- Insert Sales Order Line Distributions
-INSERT INTO pt_sales_order_line_distributions (external_id, sales_order_external_id, sales_order_line_external_id, item_external_id, warehouse_external_id, customer_external_id, distribution_qty, need_date, priority, status, user_fields) VALUES
-('SOLD_001', 'SO_001', 'SOL_001', 'ITEM_IBUPROFEN_200', 'WH_FG_001', 'CUST_PHARMACY_CHAIN', '100000', '2025-08-25 00:00:00', 'High', 'Confirmed', '{"shipping_method": "ground", "special_handling": false}'),
-('SOLD_002', 'SO_002', 'SOL_002', 'ITEM_IBUPROFEN_400', 'WH_FG_001', 'CUST_HOSPITAL_GROUP', '50000', '2025-08-30 00:00:00', 'Medium', 'Confirmed', '{"shipping_method": "next_day", "special_handling": true}');
-
--- Insert Transfer Orders
-INSERT INTO pt_transfer_orders (external_id, from_warehouse_external_id, to_warehouse_external_id, transfer_date, status, priority, user_fields) VALUES
-('TO_001', 'WH_FG_001', 'WH_WEST_FG', '2025-08-20', 'Planned', 'Medium', '{"reason": "stock_balancing", "truck_number": "TRK001"}'),
-('TO_002', 'WH_MAIN_001', 'WH_FG_001', '2025-08-19', 'In Transit', 'High', '{"reason": "production_supply", "urgent": true}');
-
--- Insert Transfer Order Distributions
-INSERT INTO pt_transfer_order_distributions (transfer_order_external_id, item_external_id, from_warehouse_external_id, to_warehouse_external_id, transfer_qty, need_date, status, user_fields) VALUES
-('TO_001', 'ITEM_IBUPROFEN_200', 'WH_FG_001', 'WH_WEST_FG', '25000', '2025-08-20 00:00:00', 'Planned', '{"priority": "normal", "packaging": "case"}'),
-('TO_002', 'ITEM_LACTOSE', 'WH_MAIN_001', 'WH_FG_001', '5000', '2025-08-19 00:00:00', 'In Transit', '{"priority": "urgent", "lot_number": "LAC2025081"}');
-
-COMMIT;
+-- Verify the data was inserted
+SELECT 'PT Publish Tables Population Summary:' as status;
+SELECT 'Jobs: ' || COUNT(*) as count FROM pt_publish_jobs;
+SELECT 'Manufacturing Orders: ' || COUNT(*) as count FROM pt_publish_manufacturing_orders;
+SELECT 'Job Operations: ' || COUNT(*) as count FROM pt_publish_job_operations;
+SELECT 'Job Resources: ' || COUNT(*) as count FROM pt_publish_job_resources;
