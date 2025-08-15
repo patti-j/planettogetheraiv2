@@ -17,21 +17,14 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
-**2025-08-14**: Pure ID-Based PT Table Joins Implementation (Final)
-- **✅ CORRECTED: All PT table joins now use PURE integer ID foreign keys (NO external_id columns in joins)**
-- **✅ Added proper foreign key columns to all PT tables:**
-  * `pt_job_operations.job_id` -> `pt_jobs.id` (INTEGER FK -> INTEGER PK)
-  * `pt_job_activities.operation_id` -> `pt_job_operations.id` (INTEGER FK -> INTEGER PK)  
-  * `pt_resources.plant_id` -> `pt_plants.id` (INTEGER FK -> INTEGER PK)
-  * `pt_job_materials.job_id` -> `pt_jobs.id`, `item_id` -> `pt_items.id`
-  * `pt_sales_orders.customer_id` -> `pt_customers.id`
-  * `pt_sales_order_lines.sales_order_id` -> `pt_sales_orders.id`, `item_id` -> `pt_items.id`
-- **✅ Created pt_operations_id_based view with pure integer ID joins across all PT tables**
-- **✅ PT operations API completely refactored to use only integer primary key relationships**
-- **✅ Database modernization COMPLETE: Zero external_id string joins remaining**
-- **✅ Expanded from 59 to 72 total PT tables: 59 original + 8 additional PT tables + 5 ID lookup tables**
-- **✅ All PT import tables now follow proper relational database design with integer foreign keys**
-- **✅ Enhanced performance through elimination of all string-based lookup joins**
+**2025-08-14**: PT Import Tables Cleanup (Preparation for New SQL Script)
+- **✅ Removed all 72 PT import tables and related objects from database**
+- **✅ Dropped 59 original PT import tables (jobs, operations, activities, resources, etc.)**
+- **✅ Dropped 8 additional PT tables (job_resource_assignments, cleanout triggers, operation_sequences, etc.)**
+- **✅ Dropped 5 ID lookup tables (job_id_lookup, operation_id_lookup, etc.)**
+- **✅ Removed 3 mapping views and 3 comprehensive views with CASCADE cleanup**
+- **✅ Database prepared for new PlanetTogether SQL script import**
+- **✅ All foreign key constraints and dependent objects automatically cleaned up**
 
 **2025-08-14**: Interactive Lasso Selection for Data Schema Visualization
 - Implemented comprehensive lasso selection tool allowing users to draw around table groups for focused analysis
