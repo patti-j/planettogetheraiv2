@@ -218,9 +218,27 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
 
                   {/* Menu Items - Grid Layout for better visual organization */}
                   <div className="space-y-0.5">
-                    {group.items.map((item) => {
+                    {group.items.map((item, itemIndex) => {
                       const Icon = item.icon;
                       const isActive = location === item.href;
+                      
+                      // Use predefined colors from navigation config or fall back to a color palette
+                      const colors = [
+                        'text-blue-500',
+                        'text-green-500', 
+                        'text-purple-500',
+                        'text-orange-500',
+                        'text-red-500',
+                        'text-cyan-500',
+                        'text-pink-500',
+                        'text-yellow-500',
+                        'text-indigo-500',
+                        'text-emerald-500',
+                        'text-violet-500',
+                        'text-rose-500'
+                      ];
+                      const iconColor = colors[itemIndex % colors.length];
+                      
                       return (
                         <Button
                           key={item.href}
@@ -236,7 +254,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                             {Icon && (
                               <Icon className={cn(
                                 "h-3.5 w-3.5 flex-shrink-0",
-                                isActive ? "text-primary" : "text-muted-foreground/60"
+                                isActive ? "text-primary" : iconColor
                               )} />
                             )}
                             <span className={cn(

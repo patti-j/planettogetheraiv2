@@ -669,8 +669,25 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                       {group.title}
                     </h3>
                     <div className="space-y-1">
-                      {group.features.map((feature) => {
+                      {group.features.map((feature, index) => {
                         const Icon = feature.icon;
+                        // Use predefined colors from navigation config or fall back to a color palette
+                        const colors = [
+                          'text-blue-500',
+                          'text-green-500', 
+                          'text-purple-500',
+                          'text-orange-500',
+                          'text-red-500',
+                          'text-cyan-500',
+                          'text-pink-500',
+                          'text-yellow-500',
+                          'text-indigo-500',
+                          'text-emerald-500',
+                          'text-violet-500',
+                          'text-rose-500'
+                        ];
+                        const iconColor = colors[index % colors.length];
+                        
                         return (
                           <div
                             key={feature.href}
@@ -681,7 +698,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                               setLocation(feature.href);
                             }}
                           >
-                            <Icon className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
+                            <Icon className={`w-4 h-4 mr-3 ${iconColor}`} />
                             <span className="text-sm text-gray-700 dark:text-gray-300">{feature.label}</span>
                           </div>
                         );
