@@ -71,6 +71,14 @@ import {
   insertDemandChangeRequestSchema, insertDemandChangeCommentSchema,
   insertDemandChangeApprovalSchema, insertDemandCollaborationSessionSchema
 } from "@shared/schema";
+
+// Import PT Publish schemas
+import {
+  insertPtPublishJobSchema, insertPtPublishManufacturingOrderSchema, 
+  insertPtPublishJobOperationSchema, insertPtPublishResourceSchema, 
+  insertPtPublishJobActivitySchema
+} from "@shared/pt-publish-schema";
+
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
 import registerScheduleRoutes from "./routes/schedule-routes";
@@ -2180,6 +2188,125 @@ Rules:
       res.status(500).json({ message: "Failed to update resource photo" });
     }
   });
+
+  // ====================================
+  // PT PUBLISH API ENDPOINTS - NEW
+  // ====================================
+  
+  // PT Publish Jobs
+  app.get("/api/pt-publish/jobs", createSafeHandler('Get PT Publish Jobs')(async (req, res) => {
+    try {
+      console.log('[API] GET /api/pt-publish/jobs');
+      const jobs = await storage.getPtPublishJobs();
+      res.json(jobs);
+    } catch (error) {
+      console.error('Error fetching PT Publish jobs:', error);
+      res.status(500).json({ error: 'Failed to fetch PT Publish jobs' });
+    }
+  }));
+
+  app.post("/api/pt-publish/jobs", createSafeHandler('Create PT Publish Job')(async (req, res) => {
+    try {
+      console.log('[API] POST /api/pt-publish/jobs', req.body);
+      const job = await storage.createPtPublishJob(req.body);
+      res.status(201).json(job);
+    } catch (error) {
+      console.error('Error creating PT Publish job:', error);
+      res.status(400).json({ error: 'Failed to create PT Publish job' });
+    }
+  }));
+
+  // PT Publish Manufacturing Orders
+  app.get("/api/pt-publish/manufacturing-orders", createSafeHandler('Get PT Publish Manufacturing Orders')(async (req, res) => {
+    try {
+      console.log('[API] GET /api/pt-publish/manufacturing-orders');
+      const orders = await storage.getPtPublishManufacturingOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error('Error fetching PT Publish manufacturing orders:', error);
+      res.status(500).json({ error: 'Failed to fetch PT Publish manufacturing orders' });
+    }
+  }));
+
+  app.post("/api/pt-publish/manufacturing-orders", createSafeHandler('Create PT Publish Manufacturing Order')(async (req, res) => {
+    try {
+      console.log('[API] POST /api/pt-publish/manufacturing-orders', req.body);
+      const order = await storage.createPtPublishManufacturingOrder(req.body);
+      res.status(201).json(order);
+    } catch (error) {
+      console.error('Error creating PT Publish manufacturing order:', error);
+      res.status(400).json({ error: 'Failed to create PT Publish manufacturing order' });
+    }
+  }));
+
+  // PT Publish Job Operations
+  app.get("/api/pt-publish/job-operations", createSafeHandler('Get PT Publish Job Operations')(async (req, res) => {
+    try {
+      console.log('[API] GET /api/pt-publish/job-operations');
+      const operations = await storage.getPtPublishJobOperations();
+      res.json(operations);
+    } catch (error) {
+      console.error('Error fetching PT Publish job operations:', error);
+      res.status(500).json({ error: 'Failed to fetch PT Publish job operations' });
+    }
+  }));
+
+  app.post("/api/pt-publish/job-operations", createSafeHandler('Create PT Publish Job Operation')(async (req, res) => {
+    try {
+      console.log('[API] POST /api/pt-publish/job-operations', req.body);
+      const operation = await storage.createPtPublishJobOperation(req.body);
+      res.status(201).json(operation);
+    } catch (error) {
+      console.error('Error creating PT Publish job operation:', error);
+      res.status(400).json({ error: 'Failed to create PT Publish job operation' });
+    }
+  }));
+
+  // PT Publish Resources
+  app.get("/api/pt-publish/resources", createSafeHandler('Get PT Publish Resources')(async (req, res) => {
+    try {
+      console.log('[API] GET /api/pt-publish/resources');
+      const resources = await storage.getPtPublishResources();
+      res.json(resources);
+    } catch (error) {
+      console.error('Error fetching PT Publish resources:', error);
+      res.status(500).json({ error: 'Failed to fetch PT Publish resources' });
+    }
+  }));
+
+  app.post("/api/pt-publish/resources", createSafeHandler('Create PT Publish Resource')(async (req, res) => {
+    try {
+      console.log('[API] POST /api/pt-publish/resources', req.body);
+      const resource = await storage.createPtPublishResource(req.body);
+      res.status(201).json(resource);
+    } catch (error) {
+      console.error('Error creating PT Publish resource:', error);
+      res.status(400).json({ error: 'Failed to create PT Publish resource' });
+    }
+  }));
+
+  // PT Publish Job Activities
+  app.get("/api/pt-publish/job-activities", createSafeHandler('Get PT Publish Job Activities')(async (req, res) => {
+    try {
+      console.log('[API] GET /api/pt-publish/job-activities');
+      const activities = await storage.getPtPublishJobActivities();
+      res.json(activities);
+    } catch (error) {
+      console.error('Error fetching PT Publish job activities:', error);
+      res.status(500).json({ error: 'Failed to fetch PT Publish job activities' });
+    }
+  }));
+
+  app.post("/api/pt-publish/job-activities", createSafeHandler('Create PT Publish Job Activity')(async (req, res) => {
+    try {
+      console.log('[API] POST /api/pt-publish/job-activities', req.body);
+      const activity = await storage.createPtPublishJobActivity(req.body);
+      res.status(201).json(activity);
+    } catch (error) {
+      console.error('Error creating PT Publish job activity:', error);
+      res.status(400).json({ error: 'Failed to create PT Publish job activity' });
+    }
+  }));
 
   // Production Orders (formerly Jobs) - Enhanced with error handling
   app.get("/api/production-orders", createSafeHandler('Get Production Orders')(async (req, res) => {

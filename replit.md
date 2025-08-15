@@ -19,10 +19,11 @@ Note on concurrent work:
 ## Application Behavior Documentation
 
 ### Current Issues & Migration Status
-- **PT Publish Tables Migration**: System currently uses old tables (resources, productionOrders) while PT Publish tables exist but remain unused. Migration analysis documented in pt-publish-migration-analysis.md
+- **PT Publish Tables Migration**: Migration in progress - PT Publish Jobs API fully functional, Resources and Manufacturing Orders APIs have schema mismatch issues
 - **TypeScript Compilation**: All major compilation errors resolved (previously 1584+, now 0 critical errors)
-- **API Endpoints**: 15+ endpoints need migration from old tables to PT Publish tables
-- **Storage Implementation**: DatabaseStorage class missing some IStorage interface methods
+- **API Endpoints**: PT Publish backend infrastructure complete with full CRUD operations in routes.ts and storage.ts
+- **Working PT Publish APIs**: Jobs endpoint fully functional (GET/POST/PUT/DELETE operations tested and working)
+- **Schema Issues**: PT Publish Resources and Manufacturing Orders queries selecting non-existent columns - needs schema alignment
 
 ### Design Principles & Guidelines
 When writing code, always follow these core principles:

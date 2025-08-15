@@ -287,12 +287,36 @@ export interface IStorage {
   updateProductionOrder(id: number, order: Partial<InsertProductionOrder>): Promise<ProductionOrder | undefined>;
   deleteProductionOrder(id: number): Promise<boolean>;
   
-  // PT Publish Methods - For reading from PT Publish tables
+  // PT Publish Methods - Full CRUD operations for PT Publish tables
   getPtPublishJobs(): Promise<PtPublishJob[]>;
+  getPtPublishJob(jobId: number): Promise<PtPublishJob | undefined>;
+  createPtPublishJob(job: Partial<PtPublishJob>): Promise<PtPublishJob>;
+  updatePtPublishJob(jobId: number, job: Partial<PtPublishJob>): Promise<PtPublishJob | undefined>;
+  deletePtPublishJob(jobId: number): Promise<boolean>;
+  
   getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]>;
+  getPtPublishManufacturingOrder(orderId: number): Promise<PtPublishManufacturingOrder | undefined>;
+  createPtPublishManufacturingOrder(order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder>;
+  updatePtPublishManufacturingOrder(orderId: number, order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder | undefined>;
+  deletePtPublishManufacturingOrder(orderId: number): Promise<boolean>;
+  
   getPtPublishJobOperations(): Promise<PtPublishJobOperation[]>;
+  getPtPublishJobOperation(operationId: number): Promise<PtPublishJobOperation | undefined>;
+  createPtPublishJobOperation(operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation>;
+  updatePtPublishJobOperation(operationId: number, operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation | undefined>;
+  deletePtPublishJobOperation(operationId: number): Promise<boolean>;
+  
   getPtPublishResources(): Promise<PtPublishResource[]>;
+  getPtPublishResource(resourceId: number): Promise<PtPublishResource | undefined>;
+  createPtPublishResource(resource: Partial<PtPublishResource>): Promise<PtPublishResource>;
+  updatePtPublishResource(resourceId: number, resource: Partial<PtPublishResource>): Promise<PtPublishResource | undefined>;
+  deletePtPublishResource(resourceId: number): Promise<boolean>;
+  
   getPtPublishJobActivities(): Promise<PtPublishJobActivity[]>;
+  getPtPublishJobActivity(activityId: number): Promise<PtPublishJobActivity | undefined>;
+  createPtPublishJobActivity(activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity>;
+  updatePtPublishJobActivity(activityId: number, activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity | undefined>;
+  deletePtPublishJobActivity(activityId: number): Promise<boolean>;
   
   // Planned Orders
   getPlannedOrders(): Promise<PlannedOrder[]>;
@@ -2740,7 +2764,7 @@ export class DatabaseStorage implements IStorage {
 
   async getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]> {
     const latestPublish = await db
-      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
       .from(ptPublishManufacturingOrders)
       .limit(1);
     
@@ -2752,13 +2776,13 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(ptPublishManufacturingOrders)
-      .where(eq(ptPublishManufacturingOrders.publishDate, publishDate))
+      .where(eq(ptPublishManufacturingOrders.publishDate, new Date(publishDate)))
       .orderBy(asc(ptPublishManufacturingOrders.manufacturingOrderId));
   }
 
   async getPtPublishJobOperations(): Promise<PtPublishJobOperation[]> {
     const latestPublish = await db
-      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
       .from(ptPublishJobOperations)
       .limit(1);
     
@@ -2770,13 +2794,13 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(ptPublishJobOperations)
-      .where(eq(ptPublishJobOperations.publishDate, publishDate))
+      .where(eq(ptPublishJobOperations.publishDate, new Date(publishDate)))
       .orderBy(asc(ptPublishJobOperations.sequenceNumber));
   }
 
   async getPtPublishResources(): Promise<PtPublishResource[]> {
     const latestPublish = await db
-      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
       .from(ptPublishResources)
       .limit(1);
     
@@ -2788,13 +2812,13 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(ptPublishResources)
-      .where(eq(ptPublishResources.publishDate, publishDate))
+      .where(eq(ptPublishResources.publishDate, new Date(publishDate)))
       .orderBy(asc(ptPublishResources.name));
   }
 
   async getPtPublishJobActivities(): Promise<PtPublishJobActivity[]> {
     const latestPublish = await db
-      .select({ maxDate: sql<Date>`MAX(publish_date)`.as('maxDate') })
+      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
       .from(ptPublishJobActivities)
       .limit(1);
     
@@ -2806,8 +2830,232 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(ptPublishJobActivities)
-      .where(eq(ptPublishJobActivities.publishDate, publishDate))
+      .where(eq(ptPublishJobActivities.publishDate, new Date(publishDate)))
       .orderBy(asc(ptPublishJobActivities.scheduledStart));
+  }
+
+  // PT Publish CRUD Operations - CREATE, UPDATE, DELETE
+
+  // PT Publish Jobs CRUD
+  async getPtPublishJob(jobId: number): Promise<PtPublishJob | undefined> {
+    const result = await db
+      .select()
+      .from(ptPublishJobs)
+      .where(eq(ptPublishJobs.jobId, jobId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPtPublishJob(job: Partial<PtPublishJob>): Promise<PtPublishJob> {
+    // Extract non-date fields
+    const { publishDate, entryDate, needDateTime, scheduledStartDateTime, scheduledEndDateTime, ...otherFields } = job;
+    
+    const [newJob] = await db.insert(ptPublishJobs).values({
+      ...otherFields,
+      publishDate: publishDate ? new Date(publishDate as any) : new Date(),
+      entryDate: entryDate ? new Date(entryDate as any) : new Date(),
+      needDateTime: needDateTime ? new Date(needDateTime as any) : undefined,
+      scheduledStartDateTime: scheduledStartDateTime ? new Date(scheduledStartDateTime as any) : undefined,
+      scheduledEndDateTime: scheduledEndDateTime ? new Date(scheduledEndDateTime as any) : undefined,
+      instanceId: job.instanceId || 'DEFAULT-INSTANCE'
+    }).returning();
+    return newJob;
+  }
+
+  async updatePtPublishJob(jobId: number, job: Partial<PtPublishJob>): Promise<PtPublishJob | undefined> {
+    const [updated] = await db
+      .update(ptPublishJobs)
+      .set(job)
+      .where(eq(ptPublishJobs.jobId, jobId))
+      .returning();
+    return updated;
+  }
+
+  async deletePtPublishJob(jobId: number): Promise<boolean> {
+    const result = await db
+      .delete(ptPublishJobs)
+      .where(eq(ptPublishJobs.jobId, jobId));
+    return result.rowCount > 0;
+  }
+
+  // PT Publish Manufacturing Orders CRUD
+  async getPtPublishManufacturingOrder(orderId: number): Promise<PtPublishManufacturingOrder | undefined> {
+    const result = await db
+      .select()
+      .from(ptPublishManufacturingOrders)
+      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPtPublishManufacturingOrder(order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder> {
+    // Extract date fields separately
+    const { publishDate, releaseDate, dueDate, ...otherFields } = order;
+    
+    // Only include fields that match the actual table schema
+    const validFields = {
+      manufacturingOrderId: otherFields.manufacturingOrderId,
+      jobId: otherFields.jobId,
+      moNumber: otherFields.moNumber || otherFields.orderNumber,
+      itemId: otherFields.itemId,
+      quantity: otherFields.quantity,
+      status: otherFields.status,
+      priority: otherFields.priority,
+      notes: otherFields.notes,
+    };
+    
+    const [newOrder] = await db.insert(ptPublishManufacturingOrders).values({
+      ...validFields,
+      publishDate: publishDate ? new Date(publishDate as any) : new Date(),
+      releaseDate: releaseDate ? new Date(releaseDate as any) : undefined,
+      dueDate: dueDate ? new Date(dueDate as any) : undefined,
+      instanceId: order.instanceId || 'DEFAULT-INSTANCE'
+    }).returning();
+    return newOrder;
+  }
+
+  async updatePtPublishManufacturingOrder(orderId: number, order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder | undefined> {
+    const [updated] = await db
+      .update(ptPublishManufacturingOrders)
+      .set(order)
+      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId))
+      .returning();
+    return updated;
+  }
+
+  async deletePtPublishManufacturingOrder(orderId: number): Promise<boolean> {
+    const result = await db
+      .delete(ptPublishManufacturingOrders)
+      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId));
+    return result.rowCount > 0;
+  }
+
+  // PT Publish Job Operations CRUD
+  async getPtPublishJobOperation(operationId: number): Promise<PtPublishJobOperation | undefined> {
+    const result = await db
+      .select()
+      .from(ptPublishJobOperations)
+      .where(eq(ptPublishJobOperations.jobOperationId, operationId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPtPublishJobOperation(operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation> {
+    const [newOperation] = await db.insert(ptPublishJobOperations).values({
+      ...operation,
+      publishDate: operation.publishDate || new Date()
+    }).returning();
+    return newOperation;
+  }
+
+  async updatePtPublishJobOperation(operationId: number, operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation | undefined> {
+    const [updated] = await db
+      .update(ptPublishJobOperations)
+      .set(operation)
+      .where(eq(ptPublishJobOperations.jobOperationId, operationId))
+      .returning();
+    return updated;
+  }
+
+  async deletePtPublishJobOperation(operationId: number): Promise<boolean> {
+    const result = await db
+      .delete(ptPublishJobOperations)
+      .where(eq(ptPublishJobOperations.jobOperationId, operationId));
+    return result.rowCount > 0;
+  }
+
+  // PT Publish Resources CRUD
+  async getPtPublishResource(resourceId: number): Promise<PtPublishResource | undefined> {
+    const result = await db
+      .select()
+      .from(ptPublishResources)
+      .where(eq(ptPublishResources.resourceId, resourceId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPtPublishResource(resource: Partial<PtPublishResource>): Promise<PtPublishResource> {
+    // Extract date field and only include valid fields for the table
+    const { publishDate, ...otherFields } = resource;
+    
+    // Remove any fields that don't exist in the table
+    const { 
+      resource_type, 
+      resource_group, 
+      capacity_per_hour,
+      efficiency_percent,
+      utilization_percent,
+      cost_per_hour,
+      setup_cost_per_hour,
+      finite_capacity,
+      can_run_multiple_jobs,
+      max_jobs_parallel,
+      priority,
+      color_code,
+      available,
+      down_reason,
+      ...validFields 
+    } = otherFields as any;
+    
+    const [newResource] = await db.insert(ptPublishResources).values({
+      ...validFields,
+      publishDate: publishDate ? new Date(publishDate as any) : new Date(),
+      instanceId: resource.instanceId || 'DEFAULT-INSTANCE',
+      plantId: resource.plantId || 1,
+      departmentId: resource.departmentId || 1,
+      resourceId: resource.resourceId
+    }).returning();
+    return newResource;
+  }
+
+  async updatePtPublishResource(resourceId: number, resource: Partial<PtPublishResource>): Promise<PtPublishResource | undefined> {
+    const [updated] = await db
+      .update(ptPublishResources)
+      .set(resource)
+      .where(eq(ptPublishResources.resourceId, resourceId))
+      .returning();
+    return updated;
+  }
+
+  async deletePtPublishResource(resourceId: number): Promise<boolean> {
+    const result = await db
+      .delete(ptPublishResources)
+      .where(eq(ptPublishResources.resourceId, resourceId));
+    return result.rowCount > 0;
+  }
+
+  // PT Publish Job Activities CRUD
+  async getPtPublishJobActivity(activityId: number): Promise<PtPublishJobActivity | undefined> {
+    const result = await db
+      .select()
+      .from(ptPublishJobActivities)
+      .where(eq(ptPublishJobActivities.jobActivityId, activityId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPtPublishJobActivity(activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity> {
+    const [newActivity] = await db.insert(ptPublishJobActivities).values({
+      ...activity,
+      publishDate: activity.publishDate || new Date()
+    }).returning();
+    return newActivity;
+  }
+
+  async updatePtPublishJobActivity(activityId: number, activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity | undefined> {
+    const [updated] = await db
+      .update(ptPublishJobActivities)
+      .set(activity)
+      .where(eq(ptPublishJobActivities.jobActivityId, activityId))
+      .returning();
+    return updated;
+  }
+
+  async deletePtPublishJobActivity(activityId: number): Promise<boolean> {
+    const result = await db
+      .delete(ptPublishJobActivities)
+      .where(eq(ptPublishJobActivities.jobActivityId, activityId));
+    return result.rowCount > 0;
   }
 
   // Operations - Enhanced method with production order join for DatabaseStorage class
