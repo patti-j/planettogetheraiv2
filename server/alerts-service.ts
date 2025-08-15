@@ -506,12 +506,36 @@ export class AlertsService {
   }
 
   // =============== STATISTICS ===============
-  async getAlertStatistics(timeRange?: { start: Date; end: Date }) {
-    const conditions = [];
+  async getAlertStatistics(timeRange?: string) {
+    // Parse timeRange string (e.g., '24h', '7d', '30d')
+    let startDate: Date | undefined;
+    let endDate: Date = new Date();
+    
     if (timeRange) {
+      const match = timeRange.match(/^(\d+)([hdw])$/);
+      if (match) {
+        const value = parseInt(match[1]);
+        const unit = match[2];
+        
+        switch (unit) {
+          case 'h':
+            startDate = new Date(Date.now() - value * 60 * 60 * 1000);
+            break;
+          case 'd':
+            startDate = new Date(Date.now() - value * 24 * 60 * 60 * 1000);
+            break;
+          case 'w':
+            startDate = new Date(Date.now() - value * 7 * 24 * 60 * 60 * 1000);
+            break;
+        }
+      }
+    }
+
+    const conditions = [];
+    if (startDate) {
       conditions.push(
-        gte(alerts.detectedAt, timeRange.start),
-        lte(alerts.detectedAt, timeRange.end)
+        gte(alerts.detectedAt, startDate),
+        lte(alerts.detectedAt, endDate)
       );
     }
 

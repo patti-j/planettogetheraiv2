@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AlertsService } from "../alerts-service";
+import { aiAnalysisService } from "../ai-analysis-service";
 import { z } from "zod";
 
 // Authentication middleware
@@ -55,6 +56,193 @@ router.get("/api/alerts", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error fetching alerts:", error);
     res.status(500).json({ error: "Failed to fetch alerts" });
+  }
+});
+
+// =============== AI ANALYSIS CONFIGURATION ENDPOINTS ===============
+// (Put these BEFORE the generic :id routes to avoid conflicts)
+
+// Get AI analysis configurations
+router.get("/api/alerts/ai-analysis-configs", requireAuth, async (req, res) => {
+  try {
+    const activeOnly = req.query.active !== 'false';
+    const configs = await aiAnalysisService.getAnalysisConfigs(activeOnly);
+    res.json(configs);
+  } catch (error) {
+    console.error("Error fetching AI analysis configs:", error);
+    res.status(500).json({ error: "Failed to fetch AI analysis configurations" });
+  }
+});
+
+// Create new AI analysis configuration
+router.post("/api/alerts/ai-analysis-configs", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const configData = {
+      ...req.body,
+      createdBy: userId
+    };
+    
+    const result = await aiAnalysisService.createAnalysisConfig(configData);
+    res.status(201).json(result);
+  } catch (error) {
+    console.error("Error creating AI analysis config:", error);
+    res.status(500).json({ error: "Failed to create AI analysis configuration" });
+  }
+});
+
+// Run AI analysis manually
+router.post("/api/alerts/ai-analysis/:configId/run", requireAuth, async (req, res) => {
+  try {
+    const configId = parseInt(req.params.configId);
+    if (isNaN(configId)) {
+      return res.status(400).json({ error: "Invalid configuration ID" });
+    }
+    
+    const result = await aiAnalysisService.runAnalysis(configId, 'manual');
+    res.json(result);
+  } catch (error) {
+    console.error("Error running AI analysis:", error);
+    res.status(500).json({ error: "Failed to run AI analysis" });
+  }
+});
+
+// Get AI analysis run history
+router.get("/api/alerts/ai-analysis-history", requireAuth, async (req, res) => {
+  try {
+    const configId = req.query.configId ? parseInt(req.query.configId as string) : undefined;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    
+    const history = await aiAnalysisService.getAnalysisHistory(configId, limit);
+    res.json(history);
+  } catch (error) {
+    console.error("Error fetching AI analysis history:", error);
+    res.status(500).json({ error: "Failed to fetch AI analysis history" });
+  }
+});
+
+// Run all scheduled analyses
+router.post("/api/alerts/ai-analysis/run-scheduled", requireAuth, async (req, res) => {
+  try {
+    const result = await aiAnalysisService.runScheduledAnalyses();
+    res.json(result);
+  } catch (error) {
+    console.error("Error running scheduled analyses:", error);
+    res.status(500).json({ error: "Failed to run scheduled analyses" });
+  }
+});
+
+// Get alert statistics
+router.get("/api/alerts/stats", requireAuth, async (req, res) => {
+  try {
+    const timeRange = req.query.timeRange as string || '24h';
+    const stats = await alertsService.getAlertStatistics(timeRange);
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching alert statistics:", error);
+    res.status(500).json({ error: "Failed to fetch alert statistics" });
+  }
+});
+
+// Get AI insights for alerts
+router.get("/api/alerts/ai-insights", requireAuth, async (req, res) => {
+  try {
+    const timeRange = req.query.timeRange as string || '24h';
+    const insights = await alertsService.getAIInsights(timeRange);
+    res.json(insights);
+  } catch (error) {
+    console.error("Error fetching AI insights:", error);
+    res.status(500).json({ error: "Failed to fetch AI insights" });
+  }
+});
+
+// Get user AI settings
+router.get("/api/alerts/ai-settings", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Return default AI settings for now
+    const aiSettings = {
+      globalAiEnabled: true,
+      confidenceThreshold: 75,
+      autoCreateAlerts: true,
+      emailNotifications: true,
+      smartFiltering: true,
+      learningMode: true
+    };
+    
+    res.json(aiSettings);
+  } catch (error) {
+    console.error("Error fetching AI settings:", error);
+    res.status(500).json({ error: "Failed to fetch AI settings" });
+  }
+});
+
+// Update user AI settings
+router.put("/api/alerts/ai-settings", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // For now, just return the updated settings
+    const updatedSettings = req.body;
+    
+    res.json(updatedSettings);
+  } catch (error) {
+    console.error("Error updating AI settings:", error);
+    res.status(500).json({ error: "Failed to update AI settings" });
+  }
+});
+
+// Get user alert subscriptions
+router.get("/api/alerts/subscriptions", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const subscriptions = await alertsService.getUserSubscriptions(userId);
+    res.json(subscriptions);
+  } catch (error) {
+    console.error("Error fetching subscriptions:", error);
+    res.status(500).json({ error: "Failed to fetch subscriptions" });
+  }
+});
+
+// Update user alert subscription
+router.put("/api/alerts/subscriptions", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    await alertsService.updateUserSubscription(userId, req.body);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating subscription:", error);
+    res.status(500).json({ error: "Failed to update subscription" });
+  }
+});
+
+// Check alert rules endpoint (trigger evaluation manually)
+router.post("/api/alerts/check-rules", async (req, res) => {
+  try {
+    await alertsService.checkAlertRules();
+    res.json({ message: "Alert rules checked successfully" });
+  } catch (error) {
+    console.error("Error checking alert rules:", error);
+    res.status(500).json({ error: "Failed to check alert rules" });
   }
 });
 
@@ -382,7 +570,7 @@ router.post("/api/alerts/check-rules", async (req, res) => {
 });
 
 // Get user AI settings
-router.get("/api/alerts/ai-settings", async (req, res) => {
+router.get("/api/alerts/ai-settings", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -407,7 +595,7 @@ router.get("/api/alerts/ai-settings", async (req, res) => {
 });
 
 // Update user AI settings
-router.put("/api/alerts/ai-settings", async (req, res) => {
+router.put("/api/alerts/ai-settings", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {

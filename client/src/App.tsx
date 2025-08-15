@@ -120,6 +120,7 @@ import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
 import AlertsPage from "@/pages/alerts";
+import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
 import { OnboardingGate } from "@/components/onboarding-gate";
@@ -361,6 +362,11 @@ function Router() {
           <Route path="/alerts">
             <ProtectedRoute feature="alerts" action="view">
               <AlertsPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/ai-analysis-config">
+            <ProtectedRoute feature="alerts" action="view">
+              <AIAnalysisConfig />
             </ProtectedRoute>
           </Route>
           <Route path="/forklift-driver">
