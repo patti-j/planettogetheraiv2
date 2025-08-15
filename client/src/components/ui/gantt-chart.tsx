@@ -14,7 +14,7 @@ import ResourceViewManager from "../resource-view-manager";
 import TextLabelConfigDialog from "../text-label-config-dialog";
 import CustomTextLabelManager from "../custom-text-label-manager";
 import { JobDetailsDialog } from "../kanban-board";
-import { useOperationDrop } from "@/hooks/use-drag-drop-fixed";
+import { useOperationDrop } from "@/hooks/use-drag-drop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -1500,7 +1500,7 @@ export default function GanttChart({
   // Draggable resource row component for reordering
   const DraggableResourceRow = ({ resource, index }: { resource: Resource; index: number }) => {
     const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale.periods, timeUnit, timelineScrollLeft);
     
     console.log("🔧 DraggableResourceRow setup:", {
       resourceName: resource.name,
@@ -1657,7 +1657,7 @@ export default function GanttChart({
   // Create a separate component to handle the drop zone for each resource (fallback)
   const ResourceRow = ({ resource }: { resource: Resource }) => {
     const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
-    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale, timeUnit, timeScale.minDate);
+    const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale.periods, timeUnit, timelineScrollLeft);
 
     return (
       <div className="border-b border-gray-100 dark:border-gray-800">
@@ -2369,7 +2369,18 @@ export default function GanttChart({
           {selectedJob && (
             <JobDetailsDialog
               job={selectedJob}
-              operations={operations.filter(op => op.productionOrderId === selectedJob.id)}
+              operations={operations
+                .filter(op => op.productionOrderId === selectedJob.id)
+                .map(op => ({
+                  id: op.id,
+                  name: op.operationName,
+                  description: op.description,
+                  status: op.status,
+                  duration: op.standardDuration || 0,
+                  startTime: op.startTime,
+                  endTime: op.endTime,
+                  order: op.sequenceNumber || 0,
+                }))}
               resources={resources}
               capabilities={capabilities}
               open={jobDialogOpen}
