@@ -95,6 +95,9 @@ export default function AlertsPage() {
   const createAlertMutation = useMutation({
     mutationFn: async (alertData: any) => {
       const response = await apiRequest('POST', '/api/alerts', alertData);
+      if (!response.ok) {
+        throw new Error(`Failed to create alert: ${response.status}`);
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -106,6 +109,14 @@ export default function AlertsPage() {
       });
       setShowCreateDialog(false);
       setNewAlert({ title: '', description: '', severity: 'medium', type: 'custom' });
+    },
+    onError: (error: any) => {
+      console.error('Create alert error:', error);
+      toast({
+        title: "Error Creating Alert",
+        description: error?.message || "Failed to create alert. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -288,7 +299,17 @@ export default function AlertsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleCreateAlert} disabled={createAlertMutation.isPending}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowCreateDialog(false)}
+                  disabled={createAlertMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateAlert} 
+                  disabled={createAlertMutation.isPending || !newAlert.title.trim()}
+                >
                   {createAlertMutation.isPending ? 'Creating...' : 'Create Alert'}
                 </Button>
               </DialogFooter>
