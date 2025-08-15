@@ -331,10 +331,12 @@ export function AILeftPanel() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-3 mx-4 mt-2">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsList className="grid grid-cols-5 mx-4 mt-2 text-xs">
+              <TabsTrigger value="chat" className="px-2">Chat</TabsTrigger>
+              <TabsTrigger value="insights" className="px-2">Insights</TabsTrigger>
+              <TabsTrigger value="anomalies" className="px-2">Alerts</TabsTrigger>
+              <TabsTrigger value="simulations" className="px-2">Sims</TabsTrigger>
+              <TabsTrigger value="settings" className="px-2">Settings</TabsTrigger>
             </TabsList>
 
             {/* Chat Tab with its own layout */}
@@ -869,24 +871,59 @@ export function AILeftPanel() {
       {/* Collapsed state - show icon indicators */}
       {isCollapsed && (
         <div className="flex-1 flex flex-col items-center py-4 gap-4">
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => {
+              setIsCollapsed(false);
+              setActiveTab('chat');
+            }}
+            title="Open AI Chat"
+          >
             <Brain className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           </Button>
           <Separator className="w-6" />
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => {
+              setIsCollapsed(false);
+              setActiveTab('insights');
+            }}
+            title="View AI Insights (3 new)"
+          >
             <TrendingUp className="w-5 h-5" />
             <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               3
             </Badge>
           </Button>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => {
+              setIsCollapsed(false);
+              setActiveTab('anomalies');
+            }}
+            title="View Anomalies (1 critical)"
+          >
             <AlertTriangle className="w-5 h-5 text-orange-500" />
             <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               1
             </Badge>
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => {
+              setIsCollapsed(false);
+              setActiveTab('simulations');
+            }}
+            title="Run AI Simulations"
+          >
             <Activity className="w-5 h-5" />
           </Button>
         </div>
