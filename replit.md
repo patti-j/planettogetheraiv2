@@ -1,7 +1,7 @@
 # PlanetTogether - Manufacturing ERP System
 
 ## Overview
-PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing ERP system specializing in production scheduling, managing production orders, operations, resources, and capabilities with a visual Gantt chart interface. Its vision is to transform traditional ERP into an AI-first approach, leveraging AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing.
+PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing ERP system. It specializes in production scheduling, managing production orders, operations, resources, and capabilities with a visual Gantt chart interface. The vision is to transform traditional ERP into an AI-first approach, leveraging AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -16,130 +16,14 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
-## Recent Changes
-**2025-08-15**: Max AI Manufacturing Intelligence Assistant Implementation - Mobile UI Complete
-- **✅ Created comprehensive Max AI service with real-time production intelligence**
-- **✅ Implemented production status monitoring, schedule analysis, and bottleneck detection**
-- **✅ Added resource conflict detection and optimization recommendations**
-- **✅ Integrated OpenAI GPT-4o for context-aware manufacturing responses**
-- **✅ Created proactive insights system based on user role and current page context**
-- **✅ Added function calling capabilities for schedule optimization and alert creation**
-- **✅ Built API endpoints for chat, production status, insights, and schedule analysis**
-- **✅ Enhanced AI panel with real-time data integration instead of mock data**
-- **✅ Fixed mobile Max AI display with purple gradient banner and 30-second auto-hide**
-- **✅ Added intelligent Yes/No buttons with contextual responses based on Max's questions**
-- **✅ Implemented clickable suggestion buttons that execute queries automatically**
-- **✅ Removed duplicate toast notifications for clean mobile UX**
-- **✅ Strategy: Transform Max from passive chat to active manufacturing intelligence assistant**
-
-**2025-08-15**: Alert System Filtering Bug Fixed - Complete Visibility
-- **✅ Fixed major alerts filtering issue that prevented acknowledged/resolved alerts from displaying**
-- **✅ Enhanced AlertsService logic to include system alerts (null user_id) in all filter views**
-- **✅ Added support for showing alerts that user has acknowledged or resolved regardless of original creator**
-- **✅ Improved SQL queries to properly filter: user alerts + system alerts + user-acted alerts**
-- **✅ Alert counts now show correctly: 9 total (3 active, 4 acknowledged, 2 resolved)**
-- **✅ All alert filter states (Active, Acknowledged, Resolved, All) now work as expected**
-
-**2025-08-15**: Enhanced AI Alert System with Comprehensive Scheduling and Analysis Controls
-- **✅ Created AI analysis configuration system with database tables (ai_alert_analysis_config, ai_analysis_runs)**
-- **✅ Added configurable AI analysis triggers (scheduled, event-based, threshold-based, continuous)**
-- **✅ Implemented background AI analysis service with OpenAI GPT-4o integration**
-- **✅ Added comprehensive analysis scheduling with cron expressions and rate limiting**
-- **✅ Created AI analysis management API endpoints with proper authentication**
-- **✅ Built AI Analysis Configuration UI page with real-time monitoring dashboard**
-- **✅ Added analysis run history tracking with performance metrics and error handling**
-- **✅ Fixed API routing conflicts by reordering routes to prevent path conflicts**
-
-**2025-08-15**: Alert System Authentication and Database Fixes
-- **✅ Fixed alert acknowledge and resolve button functionality**
-- **✅ Added missing authentication middleware to all alert API endpoints**
-- **✅ Created missing alert_history table for tracking alert actions**
-- **✅ Enhanced resolve dialog with complete alert context display**
-- **✅ Added proper validation and error handling for alert operations**
-- **✅ Tested acknowledge and resolve operations with successful database updates**
-- **✅ All alert buttons now work correctly with proper user authentication**
-
-**2025-08-15**: PT Publish Tables Enum Type Conversion
-- **✅ Created 25 PostgreSQL enum types for standardized column values**
-- **✅ Converted 27 columns from text to proper enum types**
-- **✅ Added 13 check constraints for numeric priority and grade columns**
-- **✅ Improved data integrity across 61 PT Publish tables**
-- **✅ Enum types include: production_status, scheduled_status, material_status, job_type, priority_class, etc.**
-- **✅ Database now enforces valid values for status, type, code, and priority columns**
-
-**2025-08-15**: PT Publish Tables Date/Time Column Migration
-- **✅ Converted all 128 date/time columns from TEXT to TIMESTAMP**
-- **✅ Migration completed successfully using safe dynamic conversion script**
-- **✅ All publish_date, entry_date, need_date_time, scheduled dates now proper TIMESTAMP types**
-- **✅ Populated PT Publish tables with realistic brewery manufacturing data**
-- **✅ Loaded data for 3 plants, 8 departments, 11 resources, 14 items, 5 jobs, and related records**
-- **✅ Database now ready for production scheduling with proper datetime handling**
-
-**2025-08-15**: PT Publish Tables Successfully Created (Brewery Data)
-- **✅ Created all 61 PT Publish tables from SQL Server script**
-- **✅ Converted SQL Server data types to PostgreSQL format**
-- **✅ Added auto-incrementing ID columns (SERIAL PRIMARY KEY) to all tables**
-- **✅ Tables include: Jobs, Operations, Activities, Resources, Plants, Departments, etc.**
-- **✅ Added proper indexes for foreign key relationships and common queries**
-- **✅ Ready for PlanetTogether Publish brewery data import**
-
-**2025-08-14**: PT Import Tables Cleanup (Preparation for New SQL Script)
-- **✅ Removed all 72 PT import tables and related objects from database**
-- **✅ Dropped 59 original PT import tables (jobs, operations, activities, resources, etc.)**
-- **✅ Dropped 8 additional PT tables (job_resource_assignments, cleanout triggers, operation_sequences, etc.)**
-- **✅ Dropped 5 ID lookup tables (job_id_lookup, operation_id_lookup, etc.)**
-- **✅ Removed 3 mapping views and 3 comprehensive views with CASCADE cleanup**
-- **✅ Database prepared for new PlanetTogether SQL script import**
-- **✅ All foreign key constraints and dependent objects automatically cleaned up**
-
-**2025-08-14**: Interactive Lasso Selection for Data Schema Visualization
-- Implemented comprehensive lasso selection tool allowing users to draw around table groups for focused analysis
-- Added lasso mode toggle with crosshair cursor and visual feedback indicators
-- Created point-in-polygon algorithm for accurate table selection within drawn lasso boundaries
-- Integrated zoom-to-selection functionality to automatically focus on lasso-selected tables
-- Added visual lasso path overlay with purple stroke and semi-transparent fill during drawing
-- Included real-time selection status indicators and quick action buttons for lasso operations
-- Enhanced data schema page with intuitive table group selection and analysis capabilities
-- Implemented reset functionality to clear lasso selection and return to full schema view
-
-**2025-08-14**: Complete PT Import Database Schema (59 tables)
-- Added 4 missing PT import tables: ForecastShipments, JobSuccessorManufacturingOrders, Lots, and ManufacturingOrders
-- Achieved complete 59-table coverage matching the full PlanetTogether SQL script
-- Enhanced lot traceability capabilities for pharmaceutical/chemical manufacturing
-- Improved manufacturing order relationships and job successor dependencies
-- PT import database now fully compatible with complete PlanetTogether system architecture
-
-**2025-08-14**: Algorithm Governance Integration into Optimization Studio
-- Successfully merged algorithm governance functionality into optimization studio page for streamlined workflow
-- Integrated algorithm versions, plant approvals, and deployment management as additional tabs within optimization studio
-- Added governance overview dashboard with metrics for total versions, pending approvals, and active deployments
-- Consolidated deployment management - both optimization deployments and governance deployments in one interface
-- Removed standalone algorithm governance page and routes to simplify navigation architecture
-- Enhanced optimization studio with plant filtering and approval workflow management
-- Fixed access permissions by adding algorithm-governance permission to Administrator role
-- Removed floating Max circle UI element that was appearing on desktop and mobile
-
-**2025-08-14**: PT Import Tables Enhancement
-- All PT import tables already include auto-incrementing ID columns as primary keys using serial("id").primaryKey()
-- Tables include: pt_plants, pt_allowed_helpers, pt_attributes, pt_capabilities, pt_departments, pt_resources, and 30+ other import tables
-- Each record gets an automatic integer ID when added to any PT import table
-
-**2025-08-14**: Comprehensive Bryntum Scheduler Pro Algorithm Research & Strategy
-- Completed detailed analysis of available Bryntum Scheduler Pro algorithms and features
-- Documented ChronoGraph scheduling engine capabilities (20-30x performance boost)
-- Identified current implementation limitations: no resource leveling, basic constraints only
-- Created comprehensive 4-phase implementation strategy document
-- Outlined integration points for advanced features: resource histogram, optimization algorithms, Timefold integration
-- Established success metrics and risk mitigation strategies for manufacturing scheduling optimization
-
 ## System Architecture
 
 ### Navigation Architecture
 - **Unified Layout System**: Consistent header/navigation for desktop, consistent footer bar for mobile.
 - **Mobile Footer Bar**: Navigation at bottom for optimal thumb reach (Home, Menu, Search, Recent, Profile).
 - **Desktop Navigation**: Left rail navigation with slide-out menu and resizable AI panel.
-- **Customizable Desktop Header**: Role-specific quick access items that users can add, remove, and reorder. Saves with workspace preferences.
-- **Client-Side Navigation**: Uses wouter for smooth routing, preventing unnecessary reloads.
+- **Customizable Desktop Header**: Role-specific quick access items, user-configurable and persistent.
+- **Client-Side Navigation**: Uses wouter for smooth routing.
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript.
@@ -151,7 +35,7 @@ Note on concurrent work:
 - **Gantt Chart**: Bryntum Gantt for production scheduling visualization.
 - **Build Tool**: Vite.
 - **Widget System**: Reusable components for consistent UI patterns (System and User widgets).
-- **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls (compressed/standard/comfortable modes).
+- **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls.
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript.
@@ -163,17 +47,18 @@ Note on concurrent work:
 - **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
 
 ### Core System Design & Features
-- **Data Model**: Comprehensive database schema for manufacturing, emphasizing normalized relationships.
-- **Manufacturing Hierarchy**: SAP-compliant production version architecture.
+- **Data Model**: Comprehensive database schema for manufacturing, emphasizing normalized relationships, including SAP-compliant production version architecture.
 - **Inventory Management**: Stock-centric system tracking specific records.
 - **Master Data Management**: Unified interface with AI-powered modification and validation.
-- **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management.
+- **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management. Includes detailed analysis and strategy for Bryntum Scheduler Pro algorithms like ChronoGraph.
 - **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and live data previews.
 - **Role-Based Access Control**: Unified permission system with feature-action permissions.
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, comprehensive error handling, and reusable widget system.
-- **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications.
+- **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications. Max AI service provides real-time production intelligence, status monitoring, schedule analysis, bottleneck detection, resource conflict detection, and optimization recommendations. It integrates OpenAI GPT-4o for context-aware responses and proactive insights.
 - **Mobile Responsiveness**: Mobile-first design with enhanced login page accessibility and proper viewport handling.
 - **Scaling Strategy**: Enterprise-grade production deployment with unlimited horizontal scaling.
+- **AI Alert System**: Configurable AI analysis triggers (scheduled, event-based, threshold-based, continuous) with OpenAI GPT-4o integration, analysis scheduling, and management API endpoints.
+- **Data Schema Visualization**: Interactive lasso selection tool for focused analysis of table groups.
 
 ## External Dependencies
 

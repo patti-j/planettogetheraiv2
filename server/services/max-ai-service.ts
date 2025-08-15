@@ -18,6 +18,18 @@ interface MaxContext {
   currentPage: string;
   selectedData?: any;
   recentActions?: string[];
+  conversationHistory?: ConversationMessage[];
+}
+
+interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  context?: {
+    alertsOffered?: boolean;
+    alertsAnalyzed?: boolean;
+    lastTopic?: string;
+  };
 }
 
 interface ProductionInsight {
@@ -31,6 +43,65 @@ interface ProductionInsight {
 }
 
 export class MaxAIService {
+  // Store conversation history in memory (in production, use Redis or database)
+  private conversationStore = new Map<number, ConversationMessage[]>();
+  
+  // Get conversation history for a user
+  private getConversationHistory(userId: number): ConversationMessage[] {
+    if (!this.conversationStore.has(userId)) {
+      this.conversationStore.set(userId, []);
+    }
+    return this.conversationStore.get(userId)!;
+  }
+  
+  // Add message to conversation history
+  private addToConversationHistory(userId: number, message: ConversationMessage) {
+    const history = this.getConversationHistory(userId);
+    history.push(message);
+    // Keep only last 20 messages to prevent memory issues
+    if (history.length > 20) {
+      history.shift();
+    }
+  }
+  
+  // Clear conversation history for a user
+  clearConversationHistory(userId: number) {
+    this.conversationStore.delete(userId);
+  }
+  
+  // Analyze conversation context to understand what user is referring to
+  private analyzeConversationContext(history: ConversationMessage[]): any {
+    if (history.length === 0) return {};
+    
+    const lastMessage = history[history.length - 1];
+    const previousMessage = history.length > 1 ? history[history.length - 2] : null;
+    
+    // Check if we just offered to analyze alerts
+    const alertsOffered = previousMessage?.content?.includes('Would you like me to analyze the alerts?') ||
+                          previousMessage?.content?.includes('active alerts');
+    
+    // Check if user is responding to a previous question
+    const isResponse = previousMessage?.role === 'assistant' && 
+                      previousMessage?.content?.includes('?');
+    
+    return {
+      alertsOffered,
+      isResponse,
+      lastTopic: previousMessage?.context?.lastTopic || this.extractTopic(previousMessage?.content || ''),
+      previousQuestion: isResponse ? previousMessage?.content : null
+    };
+  }
+  
+  // Extract the main topic from a message
+  private extractTopic(content: string): string {
+    if (content.includes('alert')) return 'alerts';
+    if (content.includes('production') || content.includes('status')) return 'production';
+    if (content.includes('schedule')) return 'scheduling';
+    if (content.includes('resource')) return 'resources';
+    if (content.includes('quality')) return 'quality';
+    return 'general';
+  }
+  
   // Get real-time production status
   async getProductionStatus(context: MaxContext) {
     const [orders, ops, res, alertList] = await Promise.all([
@@ -124,13 +195,26 @@ export class MaxAIService {
 
   // Generate contextual AI response based on user query and context
   async generateResponse(query: string, context: MaxContext) {
+    // Get conversation history
+    const history = this.getConversationHistory(context.userId);
+    
+    // Add user message to history
+    this.addToConversationHistory(context.userId, {
+      role: 'user',
+      content: query,
+      timestamp: new Date()
+    });
+    
+    // Analyze conversation context
+    const conversationContext = this.analyzeConversationContext(history);
+    
     // Enrich context with real-time data
     const productionData = await this.getProductionStatus(context);
     const insights = await this.analyzeSchedule(context);
     
-    // Build context-aware prompt
+    // Build context-aware prompt with conversation history
     const systemPrompt = this.buildSystemPrompt(context);
-    const enrichedQuery = await this.enrichQuery(query, productionData, insights, context);
+    const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
 
     try {
       // Only enable function calling for specific action queries
@@ -138,12 +222,25 @@ export class MaxAIService {
                            query.toLowerCase().includes('create alert') ||
                            query.toLowerCase().includes('optimize schedule');
       
+      // Build messages array with conversation history
+      const messages: any[] = [
+        { role: 'system', content: systemPrompt }
+      ];
+      
+      // Add last 5 messages from history for context (excluding the current message we just added)
+      const recentHistory = history.slice(-6, -1); // Get last 5 messages before current
+      recentHistory.forEach(msg => {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({ role: msg.role, content: msg.content });
+        }
+      });
+      
+      // Add the current enriched query
+      messages.push({ role: 'user', content: enrichedQuery });
+      
       const requestOptions: any = {
         model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: enrichedQuery }
-        ],
+        messages,
         temperature: 0.7,
         max_tokens: 1000
       };
@@ -158,14 +255,39 @@ export class MaxAIService {
 
       // Handle function calls if needed
       if (response.choices[0].message.function_call) {
-        return await this.handleFunctionCall(
+        const result = await this.handleFunctionCall(
           response.choices[0].message.function_call,
           context
         );
+        
+        // Store assistant's response in history
+        this.addToConversationHistory(context.userId, {
+          role: 'assistant',
+          content: result.content || '',
+          timestamp: new Date(),
+          context: {
+            lastTopic: this.extractTopic(result.content || '')
+          }
+        });
+        
+        return result;
       }
 
+      const assistantContent = response.choices[0].message.content || '';
+      
+      // Store assistant's response in history
+      this.addToConversationHistory(context.userId, {
+        role: 'assistant',
+        content: assistantContent,
+        timestamp: new Date(),
+        context: {
+          alertsOffered: assistantContent.includes('Would you like me to analyze the alerts?'),
+          lastTopic: this.extractTopic(assistantContent)
+        }
+      });
+
       return {
-        content: response.choices[0].message.content,
+        content: assistantContent,
         insights: insights.length > 0 ? insights : undefined,
         suggestions: await this.getContextualSuggestions(context),
         data: productionData
@@ -219,21 +341,33 @@ export class MaxAIService {
   }
 
   // Enrich user query with production context
-  private async enrichQuery(query: string, productionData: any, insights: ProductionInsight[], context: MaxContext): Promise<string> {
+  private async enrichQuery(query: string, productionData: any, insights: ProductionInsight[], context: MaxContext, conversationContext: any): Promise<string> {
     let enriched = query;
+    
+    // If this is a simple affirmative response to a previous question, enrich with context
+    if ((query.toLowerCase() === 'yes' || query.toLowerCase().includes('yes please')) && conversationContext.isResponse) {
+      enriched = `User responded "Yes" to your previous question: "${conversationContext.previousQuestion}"`;
+      
+      // If we offered to analyze alerts and user said yes, add context
+      if (conversationContext.alertsOffered) {
+        enriched += '\n\nThe user wants you to analyze the alerts you mentioned.';
+      }
+    }
     
     // Add production status if relevant
     if (query.toLowerCase().includes('status') || query.toLowerCase().includes('production')) {
       enriched += `\n\nCurrent Production Status: ${productionData.summary}`;
     }
 
-    // Add alert details if user specifically asks for alert details/analysis
-    // OR if they say "Yes" to analyzing alerts (contextual response)
-    const isRequestingAlertAnalysis = query.toLowerCase().includes('show me details about the alerts') || 
+    // Check if user wants alert analysis based on conversation context
+    const isRequestingAlertAnalysis = 
+        // Direct requests
+        query.toLowerCase().includes('show me details about the alerts') || 
         query.toLowerCase().includes('analyze the alerts') ||
         query.toLowerCase().includes('alert analysis') ||
         query.toLowerCase().includes('review the alerts') ||
-        (query.toLowerCase().includes('yes') && query.toLowerCase().includes('alert'));
+        // Contextual response - user saying yes after we offered alert analysis
+        (conversationContext.alertsOffered && (query.toLowerCase() === 'yes' || query.toLowerCase().includes('yes please')));
     
     if (isRequestingAlertAnalysis) {
       try {
@@ -256,7 +390,6 @@ export class MaxAIService {
             enriched += `\n${index + 1}. ${alert.title} (${alert.severity?.toUpperCase()})`;
             enriched += `\n   - ${alert.description}`;
             enriched += `\n   - Created: ${alert.createdAt?.toLocaleString()}`;
-            if (alert.category) enriched += `\n   - Category: ${alert.category}`;
             enriched += `\n   - Type: ${alert.type}`;
           });
           enriched += `\n\nUser is asking for help with these alerts. Provide specific analysis and actionable recommendations for each alert listed above.`;
