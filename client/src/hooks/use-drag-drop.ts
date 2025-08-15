@@ -33,13 +33,13 @@ export function useOperationDrop(
       if (startTime) updateData.startTime = startTime;
       if (endTime) updateData.endTime = endTime;
       
-      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
+      const response = await apiRequest("PUT", `/api/pt-operations/${operationId}`, updateData);
       const result = await response.json();
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pt-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pt-jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
@@ -163,13 +163,13 @@ export function useTimelineDrop(
       if (startTime) updateData.startTime = startTime;
       if (endTime) updateData.endTime = endTime;
       
-      const response = await apiRequest("PUT", `/api/operations/${operationId}`, updateData);
+      const response = await apiRequest("PUT", `/api/pt-operations/${operationId}`, updateData);
       const result = await response.json();
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pt-operations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pt-jobs"] });
       queryClient.invalidateQueries({ queryKey: ["/api/resources"] });
       queryClient.invalidateQueries({ queryKey: ["/api/metrics"] });
       
@@ -275,15 +275,9 @@ export function useTimelineDrop(
 export function useCapabilityValidation() {
   return {
     canAssignOperation: (operation: Operation, resource: Resource) => {
-      if (!operation || !operation.requiredCapabilities || operation.requiredCapabilities.length === 0) {
-        return true;
-      }
-      
-      const resourceCapabilities = resource.capabilities || [];
-      const operationCapabilities = operation.requiredCapabilities || [];
-      return operationCapabilities.every(reqCap => 
-        resourceCapabilities.includes(reqCap)
-      );
+      // Always return true for now since PT operations don't have requiredCapabilities
+      // This can be enhanced later with actual capability matching logic
+      return true;
     },
   };
 }

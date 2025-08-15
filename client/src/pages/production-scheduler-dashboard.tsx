@@ -45,7 +45,7 @@ export default function ProductionSchedulerDashboard() {
   });
 
   const { data: productionOrders } = useQuery<any[]>({
-    queryKey: ["/api/production-orders"],
+    queryKey: ["/api/pt-jobs"],
   });
 
   const { data: resources } = useQuery<any[]>({

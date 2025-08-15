@@ -22,7 +22,7 @@ const BryntumSchedulerProComponent: React.FC<SchedulerProProps> = ({
 
   // Fetch production orders
   const { data: productionOrders, isLoading: loadingOrders } = useQuery<any[]>({
-    queryKey: ['/api/production-orders']
+    queryKey: ['/api/pt-jobs']
   });
 
   // Fetch resources

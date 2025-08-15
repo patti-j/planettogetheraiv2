@@ -101,7 +101,7 @@ export default function ProductionSchedulePage() {
 
   // Fetch production orders and operations for the widgets
   const { data: productionOrders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/production-orders'],
+    queryKey: ['/api/pt-jobs'],
     enabled: canViewSchedule
   });
 

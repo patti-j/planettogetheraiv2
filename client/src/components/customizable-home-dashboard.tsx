@@ -164,7 +164,7 @@ function DashboardDropZone({ children, onDrop, isEditing }: DashboardDropZonePro
 // Widget renderers for different widget types
 function MetricWidget({ widget }: { widget: DashboardWidget }) {
   const { data: productionOrders } = useQuery({
-    queryKey: ['/api/production-orders'],
+    queryKey: ['/api/pt-jobs'],
     refetchInterval: 60000
   });
 
@@ -254,7 +254,7 @@ function MetricWidget({ widget }: { widget: DashboardWidget }) {
 
 function ChartWidget({ widget }: { widget: DashboardWidget }) {
   const { data: productionOrders } = useQuery({
-    queryKey: ['/api/production-orders'],
+    queryKey: ['/api/pt-jobs'],
     refetchInterval: 60000
   });
 

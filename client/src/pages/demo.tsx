@@ -14,7 +14,7 @@ export default function DemoPage() {
 
   // Fetch production orders/jobs
   const { data: productionOrders } = useQuery({
-    queryKey: ['/api/production-orders'],
+    queryKey: ['/api/pt-jobs'],
     enabled: true
   });
   
