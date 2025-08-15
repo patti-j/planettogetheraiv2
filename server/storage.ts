@@ -2486,43 +2486,48 @@ export class DatabaseStorage implements IStorage {
     console.log("getOperations: Redirecting to PT Publish Job Operations table");
     
     try {
-      // Get operations from PT Publish tables - use only existing columns
-      const ptOperations = await db
-        .select({
-          id: ptPublishJobOperations.id,
-          jobId: ptPublishJobOperations.jobId,
-          operationId: ptPublishJobOperations.operationId,
-          name: ptPublishJobOperations.name,
-          description: ptPublishJobOperations.description,
-          scheduledStart: ptPublishJobOperations.scheduledStart,
-          scheduledEnd: ptPublishJobOperations.scheduledEnd,
-          setupHours: ptPublishJobOperations.setupHours,
-          runHours: ptPublishJobOperations.runHours,
-          postProcessingHours: ptPublishJobOperations.postProcessingHours,
-          notes: ptPublishJobOperations.notes,
-          publishDate: ptPublishJobOperations.publishDate
-        })
-        .from(ptPublishJobOperations)
-        .orderBy(asc(ptPublishJobOperations.id));
+      // Get operations from PT Publish tables using raw SQL to avoid column mapping issues
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          job_id,
+          operation_id,
+          name,
+          description,
+          scheduled_start,
+          scheduled_end,
+          setup_hours,
+          run_hrs,
+          post_processing_hours,
+          notes,
+          publish_date
+        FROM pt_publish_job_operations
+        ORDER BY id ASC
+      `);
+      
+      const ptOperations = result.rows || [];
       
       console.log("PT Publish operations count:", ptOperations.length);
+      if (ptOperations.length > 0) {
+        console.log("First operation sample:", ptOperations[0]);
+      }
       
       // Map PT Publish Job Operations to Operation format for backward compatibility
       const mappedOps: Operation[] = ptOperations.map(op => ({
         id: op.id,
-        name: op.name || `Operation ${op.operationId}`,
+        name: op.name || `Operation ${op.operation_id}`,
         description: op.description,
-        duration: Number(op.setupHours || 1) * 60, // Convert hours to minutes
-        jobId: Number(op.jobId),
-        productionOrderId: Number(op.jobId), // Map job_id to production_order_id
+        duration: Number(op.setup_hours || 1) * 60, // Convert hours to minutes
+        jobId: Number(op.job_id),
+        productionOrderId: Number(op.job_id), // Map job_id to production_order_id
         order: op.id, // Use id as order since sequence_number doesn't exist
         status: 'planned' as const, // Default status
         assignedResourceId: null,
-        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
-        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+        startTime: op.scheduled_start ? new Date(op.scheduled_start) : null,
+        endTime: op.scheduled_end ? new Date(op.scheduled_end) : null,
         routingId: null,
-        operationName: op.name || `Operation ${op.operationId}`,
-        standardDuration: Number(op.setupHours || 1) * 60,
+        operationName: op.name || `Operation ${op.operation_id}`,
+        standardDuration: Number(op.setup_hours || 1) * 60,
         actualDuration: null,
         workCenterId: null,
         priority: 3,
@@ -2530,8 +2535,8 @@ export class DatabaseStorage implements IStorage {
         qualityCheckRequired: false,
         qualityStatus: null,
         notes: op.notes || null,
-        createdAt: op.publishDate || new Date(),
-        updatedAt: op.publishDate || new Date()
+        createdAt: op.publish_date || new Date(),
+        updatedAt: op.publish_date || new Date()
       } as Operation));
       
       console.log("Successfully mapped PT operations, total:", mappedOps.length);
