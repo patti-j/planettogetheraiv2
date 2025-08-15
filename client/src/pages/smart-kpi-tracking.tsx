@@ -280,7 +280,7 @@ export default function SmartKpiTrackingPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full mb-6">
           <TabsTrigger value="realtime" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
             <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Real-Time</span>
@@ -314,9 +314,9 @@ export default function SmartKpiTrackingPage() {
         </TabsList>
 
         {/* Real-Time Performance Tab */}
-        <TabsContent value="realtime" className="space-y-4">
+        <TabsContent value="realtime" className="space-y-4 pb-6">
           {/* Live Performance Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-6">
             <Card className="border-green-200 bg-green-50 dark:bg-green-950">
               <CardHeader className="pb-2 p-3 sm:p-4">
                 <CardTitle className="text-xs sm:text-sm font-medium">On Track</CardTitle>
@@ -488,7 +488,7 @@ export default function SmartKpiTrackingPage() {
         </TabsContent>
 
         {/* Accountability Tab */}
-        <TabsContent value="accountability" className="space-y-4">
+        <TabsContent value="accountability" className="space-y-4 pb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Team Performance Leaderboard */}
             <Card className="md:col-span-2">
@@ -620,7 +620,7 @@ export default function SmartKpiTrackingPage() {
         </TabsContent>
 
         {/* Celebrations Tab */}
-        <TabsContent value="celebrations" className="space-y-4">
+        <TabsContent value="celebrations" className="space-y-4 pb-6">
           {/* Success Stories */}
           <Card className="border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
             <CardHeader className="p-3 sm:p-4 md:p-6">
@@ -751,7 +751,7 @@ export default function SmartKpiTrackingPage() {
         </TabsContent>
 
         {/* Learning Tab */}
-        <TabsContent value="learning" className="space-y-4">
+        <TabsContent value="learning" className="space-y-4 pb-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -868,7 +868,7 @@ export default function SmartKpiTrackingPage() {
         </TabsContent>
 
         {/* Improvements Tab */}
-        <TabsContent value="improvements" className="space-y-4">
+        <TabsContent value="improvements" className="space-y-4 pb-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -939,7 +939,7 @@ export default function SmartKpiTrackingPage() {
         </TabsContent>
 
         {/* Meetings Tab */}
-        <TabsContent value="meetings" className="space-y-4">
+        <TabsContent value="meetings" className="space-y-4 pb-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
