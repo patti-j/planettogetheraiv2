@@ -25,6 +25,40 @@ Note on concurrent work:
 - **Schema Alignment**: ✅ COMPLETE - Full alignment achieved between schema.ts definitions and original SQL script structure
 - **Database Structure**: All PT Publish tables contain complete column sets matching original PlanetTogether database design
 
+### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
+**NEVER modify PT Publish table structures.** The PT Publish tables must remain exactly as defined in the original creation script. This is a non-negotiable architectural requirement.
+- ❌ Do NOT add, remove, or modify columns in PT tables
+- ❌ Do NOT change data types or constraints
+- ❌ Do NOT alter relationships or foreign keys
+- ✅ DO adapt queries to work with existing structure
+- ✅ DO create complex joins and subqueries as needed
+- ✅ DO handle data transformation in application layer
+- ✅ DO map old table queries to PT table structure
+
+**Rationale**: PT tables represent the canonical PlanetTogether data model. Maintaining exact structure ensures compatibility with external systems and preserves data integrity.
+
+### PT Table Migration & Query Adaptation Guidelines
+
+#### Data Mapping
+| Old Table | PT Publish Replacement | Key Differences |
+|-----------|------------------------|-----------------|
+| production_orders | pt_publish_jobs | Jobs have external_id, need_date_time (not due_date), scheduled_status |
+| operations | pt_publish_job_operations | Operations linked via job_id, have scheduled times, phases |
+| resources | pt_publish_resources | Resources have plant_id, no resource_type column, more attributes |
+| discrete_operations | pt_publish_job_activities | Activities track actual vs scheduled, production_status field |
+| process_operations | pt_publish_job_activities | Activities with activity_type field for process distinction |
+
+#### Query Adaptation Rules
+When migrating from old tables to PT Publish tables:
+1. **Column Name Mapping**: Always map to PT column names (e.g., due_date → need_date_time, status → scheduled_status)
+2. **Join Complexity**: Accept that PT tables require more complex joins due to normalized structure
+3. **Missing Columns**: If PT lacks a column, compute it in application layer or use alternative columns
+4. **Timestamp Handling**: Use PT's specific timestamp names (scheduled_start_date, actual_start, not start_date)
+5. **External IDs**: Utilize external_id fields for system integration references
+6. **Plant Relationships**: Join through plant_id when needing plant context
+
+**Golden Rule**: Always adapt queries to fit PT tables. Never modify PT table structure to simplify queries.
+
 ### Design Principles & Guidelines
 When writing code, always follow these core principles:
 - **User Experience First**: Prioritize intuitive interfaces and responsive design
