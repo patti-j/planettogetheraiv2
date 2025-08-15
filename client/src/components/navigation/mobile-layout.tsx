@@ -63,21 +63,32 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest("POST", "/api/ai-agent/chat", { 
+      return apiRequest("POST", "/api/max-ai/chat", { 
         message,
-        currentPage: location 
+        context: {
+          currentPage: location,
+          selectedData: null,
+          recentActions: []
+        }
       });
     },
     onSuccess: (data: any) => {
       console.log("Max AI Response:", data);
       
-      // Add message to Max panel
-      if (data?.message) {
+      // Add message to Max panel - new Max AI service returns 'content' instead of 'message'
+      if (data?.content) {
         addMessage({
           id: Date.now().toString(),
-          content: data.message,
+          content: data.content,
           role: 'assistant',
           timestamp: new Date()
+        });
+        
+        // Show toast notification with Max's response on mobile
+        toast({
+          title: "Max AI",
+          description: data.content,
+          duration: 5000,
         });
       }
 
@@ -94,11 +105,21 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         }
       }
 
-      // Show canvas for visual content
-      if (data?.canvasAction || data?.actions?.includes('ADD_CANVAS_CONTENT')) {
+      // Show suggestions if available
+      if (data?.suggestions && data.suggestions.length > 0) {
+        const suggestionText = "Suggestions: " + data.suggestions.join(", ");
+        toast({
+          title: "Max AI Suggestions",
+          description: suggestionText,
+          duration: 5000,
+        });
+      }
+
+      // Show canvas for visual content or if there's data to display
+      if (data?.canvasAction || data?.actions?.includes('ADD_CANVAS_CONTENT') || data?.data) {
         setCanvasVisible(true);
         setMaxOpen(true);
-      } else if (data?.message) {
+      } else if (data?.content) {
         // Only open Max panel if there's a message
         setMaxOpen(true);
       }
