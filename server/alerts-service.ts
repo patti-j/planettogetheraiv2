@@ -31,27 +31,44 @@ export class AlertsService {
     
     const conditions = [];
     
-    // User filtering: Show alerts created by user OR alerts they've acknowledged/resolved
-    if (userId) {
-      if (filters?.status === 'acknowledged') {
-        // For acknowledged alerts, show alerts acknowledged by this user OR created by this user
-        conditions.push(or(
-          eq(alerts.userId, userId),
-          eq(alerts.acknowledgedBy, userId)
+    // Combined user and status filtering
+    if (userId && filters?.status) {
+      if (filters.status === 'acknowledged') {
+        // For acknowledged alerts, show alerts with acknowledged status AND (acknowledged by this user OR created by this user)
+        conditions.push(and(
+          eq(alerts.status, 'acknowledged'),
+          or(
+            eq(alerts.userId, userId),
+            eq(alerts.acknowledgedBy, userId)
+          )
         ));
-      } else if (filters?.status === 'resolved') {
-        // For resolved alerts, show alerts resolved by this user OR created by this user
-        conditions.push(or(
-          eq(alerts.userId, userId),
-          eq(alerts.resolvedBy, userId)
+      } else if (filters.status === 'resolved') {
+        // For resolved alerts, show alerts with resolved status AND (resolved by this user OR created by this user)
+        conditions.push(and(
+          eq(alerts.status, 'resolved'),
+          or(
+            eq(alerts.userId, userId),
+            eq(alerts.resolvedBy, userId)
+          )
         ));
       } else {
-        // For other statuses, show alerts created by this user
+        // For other statuses, show alerts with that status AND created by this user
+        conditions.push(and(
+          eq(alerts.status, filters.status as any),
+          eq(alerts.userId, userId)
+        ));
+      }
+    } else {
+      // Handle user filtering without status filter
+      if (userId) {
         conditions.push(eq(alerts.userId, userId));
+      }
+      // Handle status filtering without user filter  
+      if (filters?.status) {
+        conditions.push(eq(alerts.status, filters.status as any));
       }
     }
     
-    if (filters?.status) conditions.push(eq(alerts.status, filters.status as any));
     if (filters?.severity) conditions.push(eq(alerts.severity, filters.severity as any));
     if (filters?.type) conditions.push(eq(alerts.type, filters.type as any));
     if (filters?.plantId) conditions.push(eq(alerts.plantId, filters.plantId));
