@@ -2305,6 +2305,187 @@ export const cockpitTemplates = pgTable("cockpit_templates", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Comprehensive Alerts System
+export const alerts = pgTable("alerts", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  severity: text("severity").notNull(), // critical, high, medium, low, info
+  status: text("status").notNull().default("active"), // active, acknowledged, resolved, escalated, dismissed
+  type: text("type").notNull(), // production, quality, maintenance, inventory, resource, schedule, ai_detected, custom
+  category: text("category"), // delay, breakdown, quality_issue, shortage, capacity, safety, performance
+  
+  // Entity associations
+  plantId: integer("plant_id").references(() => plants.id),
+  departmentId: integer("department_id").references(() => departments.id),
+  resourceId: integer("resource_id").references(() => resources.id),
+  jobId: integer("job_id").references(() => productionOrders.id),
+  operationId: integer("operation_id").references(() => discreteOperations.id),
+  itemId: integer("item_id").references(() => items.id),
+  
+  // Alert metadata
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  metrics: jsonb("metrics").$type<{
+    currentValue?: number;
+    thresholdValue?: number;
+    deviation?: number;
+    trend?: 'up' | 'down' | 'stable';
+    impactScore?: number; // 1-100
+  }>().default({}),
+  
+  // AI-generated insights
+  aiGenerated: boolean("ai_generated").default(false),
+  aiConfidence: numeric("ai_confidence", { precision: 5, scale: 2 }), // 0-100%
+  aiInsights: text("ai_insights"),
+  aiModel: text("ai_model"), // which AI model generated this
+  suggestedActions: jsonb("suggested_actions").$type<string[]>().default([]),
+  
+  // Learning and improvement
+  trainingData: jsonb("training_data").$type<{
+    userFeedback?: 'helpful' | 'not_helpful' | 'neutral';
+    actionTaken?: string;
+    outcomeEffective?: boolean;
+    improvementNotes?: string;
+  }>().default({}),
+  
+  // Alert rules and conditions
+  alertRule: jsonb("alert_rule").$type<{
+    condition: {
+      field: string;
+      operator: '>' | '<' | '=' | '!=' | 'between' | 'contains' | 'trend';
+      value: any;
+      value2?: any; // for between operator
+    };
+    frequency?: 'once' | 'recurring' | 'continuous';
+    cooldownMinutes?: number;
+  }>(),
+  
+  // Notification settings
+  notificationChannels: jsonb("notification_channels").$type<string[]>().default(['in_app']), // in_app, email, sms, teams, slack
+  notificationsSent: jsonb("notifications_sent").$type<Array<{
+    channel: string;
+    sentAt: string;
+    recipient: string;
+    status: 'sent' | 'failed' | 'pending';
+  }>>().default([]),
+  
+  // Alert lifecycle
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  escalatedAt: timestamp("escalated_at"),
+  escalatedTo: integer("escalated_to").references(() => users.id),
+  dismissedAt: timestamp("dismissed_at"),
+  dismissedBy: integer("dismissed_by").references(() => users.id),
+  
+  // Resolution details
+  resolution: text("resolution"),
+  rootCause: text("root_cause"),
+  preventiveMeasures: text("preventive_measures"),
+  estimatedDowntime: numeric("estimated_downtime", { precision: 10, scale: 2 }), // in minutes
+  actualDowntime: numeric("actual_downtime", { precision: 10, scale: 2 }), // in minutes
+  estimatedCost: numeric("estimated_cost", { precision: 15, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 15, scale: 2 }),
+  
+  // Priority and scheduling
+  priority: integer("priority").default(50), // 1-100, higher is more urgent
+  dueDate: timestamp("due_date"),
+  slaMinutes: integer("sla_minutes"), // SLA for resolution in minutes
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: jsonb("recurring_pattern").$type<{
+    frequency: 'daily' | 'weekly' | 'monthly';
+    interval: number;
+    daysOfWeek?: number[]; // 0-6
+    dayOfMonth?: number;
+    endDate?: string;
+  }>(),
+  
+  // Related alerts
+  parentAlertId: integer("parent_alert_id").references(() => alerts.id),
+  relatedAlertIds: jsonb("related_alert_ids").$type<number[]>().default([]),
+  
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  severityIdx: index().on(table.severity),
+  statusIdx: index().on(table.status),
+  typeIdx: index().on(table.type),
+  plantIdx: index().on(table.plantId),
+  createdAtIdx: index().on(table.createdAt),
+  priorityIdx: index().on(table.priority),
+}));
+
+// Alert Comments and Activity Log
+export const alertComments = pgTable("alert_comments", {
+  id: serial("id").primaryKey(),
+  alertId: integer("alert_id").references(() => alerts.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  comment: text("comment").notNull(),
+  attachments: jsonb("attachments").$type<string[]>().default([]), // URLs or base64
+  isInternal: boolean("is_internal").default(false), // internal notes vs customer-visible
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Alert Templates for common issues
+export const alertTemplates = pgTable("alert_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(),
+  category: text("category"),
+  severity: text("severity").notNull(),
+  defaultTitle: text("default_title").notNull(),
+  defaultDescription: text("default_description").notNull(),
+  suggestedActions: jsonb("suggested_actions").$type<string[]>().default([]),
+  alertRule: jsonb("alert_rule").$type<any>(),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI Alert Training Data
+export const alertTrainingData = pgTable("alert_training_data", {
+  id: serial("id").primaryKey(),
+  alertId: integer("alert_id").references(() => alerts.id),
+  contextData: jsonb("context_data").$type<any>().notNull(), // System state when alert was created
+  alertAccuracy: text("alert_accuracy"), // accurate, false_positive, missed
+  userAction: text("user_action"), // what action the user took
+  outcome: text("outcome"), // successful, partially_successful, unsuccessful
+  feedbackNotes: text("feedback_notes"),
+  improvementSuggestions: text("improvement_suggestions"),
+  modelVersion: text("model_version"),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Alert Subscription Preferences
+export const alertSubscriptions = pgTable("alert_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  alertTypes: jsonb("alert_types").$type<string[]>().default([]), // which types to subscribe to
+  severities: jsonb("severities").$type<string[]>().default(['critical', 'high']),
+  plants: jsonb("plants").$type<number[]>().default([]), // empty means all plants
+  departments: jsonb("departments").$type<number[]>().default([]),
+  notificationChannels: jsonb("notification_channels").$type<{
+    inApp: boolean;
+    email: boolean;
+    sms: boolean;
+    teams: boolean;
+    slack: boolean;
+  }>().default({ inApp: true, email: false, sms: false, teams: false, slack: false }),
+  quietHours: jsonb("quiet_hours").$type<{
+    enabled: boolean;
+    startTime: string; // HH:mm
+    endTime: string; // HH:mm
+    timezone: string;
+  }>(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Canvas Content Storage
 export const canvasContent = pgTable("canvas_content", {
   id: serial("id").primaryKey(),
@@ -2323,6 +2504,29 @@ export const canvasContent = pgTable("canvas_content", {
   createdAt: timestamp("created_at").defaultNow(),
   isVisible: boolean("is_visible").default(true),
 });
+
+// Alert schemas for insert/select operations
+export const insertAlertSchema = createInsertSchema(alerts, {
+  severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
+  status: z.enum(['active', 'acknowledged', 'resolved', 'escalated', 'dismissed']),
+  type: z.enum(['production', 'quality', 'maintenance', 'inventory', 'resource', 'schedule', 'ai_detected', 'custom']),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertAlertCommentSchema = createInsertSchema(alertComments, {}).omit({ id: true, createdAt: true });
+export const insertAlertTemplateSchema = createInsertSchema(alertTemplates, {}).omit({ id: true, createdAt: true });
+export const insertAlertTrainingDataSchema = createInsertSchema(alertTrainingData, {}).omit({ id: true, createdAt: true });
+export const insertAlertSubscriptionSchema = createInsertSchema(alertSubscriptions, {}).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type Alert = typeof alerts.$inferSelect;
+export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type AlertComment = typeof alertComments.$inferSelect;
+export type InsertAlertComment = z.infer<typeof insertAlertCommentSchema>;
+export type AlertTemplate = typeof alertTemplates.$inferSelect;
+export type InsertAlertTemplate = z.infer<typeof insertAlertTemplateSchema>;
+export type AlertTrainingData = typeof alertTrainingData.$inferSelect;
+export type InsertAlertTrainingData = z.infer<typeof insertAlertTrainingDataSchema>;
+export type AlertSubscription = typeof alertSubscriptions.$inferSelect;
+export type InsertAlertSubscription = z.infer<typeof insertAlertSubscriptionSchema>;
 
 // User settings for canvas retention
 export const canvasSettings = pgTable("canvas_settings", {

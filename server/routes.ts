@@ -74,6 +74,7 @@ import {
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
 import { emailService } from "./email";
 import registerScheduleRoutes from "./routes/schedule-routes";
+import alertsRouter from "./routes/alerts";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -23647,6 +23648,9 @@ Be careful to preserve data integrity and relationships.`;
 
   // Register schedule routes
   registerScheduleRoutes(app);
+  
+  // Register alerts routes
+  app.use(alertsRouter);
 
   // Algorithm Version Control Routes
   app.get('/api/algorithm-versions', createSafeHandler(async (req, res) => {

@@ -123,6 +123,10 @@ import {
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
   resourceRequirements, resourceRequirementAssignments, resourceRequirementBlocks,
   type ResourceRequirement, type ResourceRequirementAssignment, type ResourceRequirementBlock,
+  alerts, alertComments, alertTemplates, alertTrainingData, alertSubscriptions,
+  type Alert, type InsertAlert, type AlertComment, type InsertAlertComment,
+  type AlertTemplate, type InsertAlertTemplate, type AlertTrainingData, type InsertAlertTrainingData,
+  type AlertSubscription, type InsertAlertSubscription,
   type InsertResourceRequirement, type InsertResourceRequirementAssignment, type InsertResourceRequirementBlock,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
@@ -1865,6 +1869,61 @@ export interface IStorage {
   createDemandCollaborationSession(session: InsertDemandCollaborationSession): Promise<DemandCollaborationSession>;
   updateDemandCollaborationSession(id: number, session: Partial<InsertDemandCollaborationSession>): Promise<DemandCollaborationSession | undefined>;
   deleteDemandCollaborationSession(id: number): Promise<boolean>;
+
+  // Alerts System
+  getAlerts(filters?: { 
+    severity?: string; 
+    status?: string; 
+    type?: string;
+    plantId?: number;
+    departmentId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<Alert[]>;
+  getAlert(id: number): Promise<Alert | undefined>;
+  createAlert(alert: InsertAlert): Promise<Alert>;
+  updateAlert(id: number, alert: Partial<InsertAlert>): Promise<Alert | undefined>;
+  deleteAlert(id: number): Promise<boolean>;
+  acknowledgeAlert(id: number, userId: number, comment?: string): Promise<Alert | undefined>;
+  resolveAlert(id: number, userId: number, resolution: string, rootCause?: string): Promise<Alert | undefined>;
+  escalateAlert(id: number, userId: number, escalatedTo: number, reason?: string): Promise<Alert | undefined>;
+  dismissAlert(id: number, userId: number, reason?: string): Promise<Alert | undefined>;
+  
+  // Alert Comments
+  getAlertComments(alertId: number): Promise<AlertComment[]>;
+  createAlertComment(comment: InsertAlertComment): Promise<AlertComment>;
+  
+  // Alert Templates
+  getAlertTemplates(type?: string, isActive?: boolean): Promise<AlertTemplate[]>;
+  getAlertTemplate(id: number): Promise<AlertTemplate | undefined>;
+  createAlertTemplate(template: InsertAlertTemplate): Promise<AlertTemplate>;
+  updateAlertTemplate(id: number, template: Partial<InsertAlertTemplate>): Promise<AlertTemplate | undefined>;
+  deleteAlertTemplate(id: number): Promise<boolean>;
+  
+  // Alert Training Data
+  createAlertTrainingData(data: InsertAlertTrainingData): Promise<AlertTrainingData>;
+  getAlertTrainingData(alertId?: number): Promise<AlertTrainingData[]>;
+  
+  // Alert Subscriptions
+  getAlertSubscriptions(userId: number): Promise<AlertSubscription | undefined>;
+  createOrUpdateAlertSubscription(subscription: InsertAlertSubscription): Promise<AlertSubscription>;
+  
+  // Alert Statistics
+  getAlertStats(filters?: {
+    plantId?: number;
+    departmentId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{
+    total: number;
+    active: number;
+    acknowledged: number;
+    resolved: number;
+    bySeverity: Record<string, number>;
+    byType: Record<string, number>;
+    avgResolutionTime: number;
+    trendsLastWeek: Array<{ date: string; count: number }>;
+  }>;
 }
 
 export class MemStorage implements Partial<IStorage> {

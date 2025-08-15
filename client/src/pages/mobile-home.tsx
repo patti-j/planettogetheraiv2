@@ -127,6 +127,7 @@ import {
 import { WidgetConfig } from '@/lib/widget-library';
 import DesignStudio from '@/components/design-studio/design-studio-clean';
 import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studio-mobile';
+import { MobileAlerts } from '@/components/alerts/mobile-alerts';
 
 // Import page components for mobile routing - only import existing pages
 import ProductionSchedulePage from "@/pages/production-schedule";
@@ -1845,6 +1846,19 @@ export default function MobileHomePage() {
                 )
               ))}
             </div>
+
+            {/* AI-Powered Alerts Section */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-orange-500" />
+                  Alerts & Notifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <MobileAlerts />
+              </CardContent>
+            </Card>
 
             {/* Priority Tasks */}
             {highPriorityTasks.length > 0 && (
