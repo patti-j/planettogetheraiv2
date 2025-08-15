@@ -116,15 +116,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         }
       }
 
-      // Show suggestions if available
-      if (data?.suggestions && data.suggestions.length > 0) {
-        const suggestionText = "Suggestions: " + data.suggestions.join(", ");
-        toast({
-          title: "Max AI Suggestions",
-          description: suggestionText,
-          duration: 5000,
-        });
-      }
+      // Suggestions are now shown in the purple banner, no need for toast
 
       // Show canvas for visual content or if there's data to display
       if (data?.canvasAction || data?.actions?.includes('ADD_CANVAS_CONTENT') || data?.data) {
@@ -294,6 +286,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                           onClick={() => {
                             setMaxCommand(suggestion);
                             setShowMaxResponse(false);
+                            // Automatically execute the suggestion
+                            addMessage({
+                              id: Date.now().toString(),
+                              content: suggestion,
+                              role: 'user',
+                              timestamp: new Date()
+                            });
+                            sendMessageMutation.mutate(suggestion);
                           }}
                           className="text-xs px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
                         >
