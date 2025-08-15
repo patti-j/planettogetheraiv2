@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,65 +22,77 @@ import {
   ArrowLeft
 } from "lucide-react";
 
+interface Channel {
+  id: number;
+  name: string;
+  type: string;
+  description?: string;
+  isPrivate: boolean;
+  createdAt: string;
+  lastMessageAt?: string;
+  participants: number;
+  unreadCount: number;
+  lastMessage?: string;
+}
+
+interface Message {
+  id: number;
+  channelId: number;
+  senderId: number;
+  content: string;
+  messageType: string;
+  createdAt: string;
+  sender: {
+    id: number;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    displayName: string;
+  };
+  reactions: Record<string, any[]>;
+}
+
 export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
 
-  // Mock data for development
-  const channels = [
-    {
-      id: 1,
-      name: "General Discussion",
-      type: "general",
-      participants: 8,
-      unreadCount: 3,
-      lastMessage: "Meeting starts in 5 minutes"
-    },
-    {
-      id: 2,
-      name: "Production Team",
-      type: "group",
-      participants: 12,
-      unreadCount: 0,
-      lastMessage: "Shift report uploaded"
-    },
-    {
-      id: 3,
-      name: "Quality Control",
-      type: "group",
-      participants: 6,
-      unreadCount: 1,
-      lastMessage: "Inspection results ready"
-    }
-  ];
+  const queryClient = useQueryClient();
 
-  const messages = [
-    {
-      id: 1,
-      sender: "John Smith",
-      content: "Good morning everyone! Ready for today's production goals?",
-      timestamp: "9:15 AM",
-      avatar: null
+  // Fetch channels
+  const { data: channels = [], isLoading: channelsLoading } = useQuery<Channel[]>({
+    queryKey: ["/api/chat/channels"],
+    queryFn: () => apiRequest("GET", "/api/chat/channels").then(res => res.json()),
+  });
+
+  // Fetch messages for selected channel
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
+    queryKey: ["/api/chat/channels", selectedChannelId, "messages"],
+    queryFn: () => apiRequest("GET", `/api/chat/channels/${selectedChannelId}/messages`).then(res => res.json()),
+    enabled: !!selectedChannelId,
+  });
+
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: (data: { content: string; messageType?: string }) => 
+      apiRequest("POST", `/api/chat/channels/${selectedChannelId}/messages`, data).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/channels", selectedChannelId, "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/channels"] });
+      setNewMessage("");
     },
-    {
-      id: 2,
-      sender: "Sarah Johnson",
-      content: "Yes, we're on track. Line 2 is running smoothly.",
-      timestamp: "9:18 AM",
-      avatar: null
-    },
-    {
-      id: 3,
-      sender: "Mike Wilson",
-      content: "Quality metrics looking good this morning.",
-      timestamp: "9:22 AM",
-      avatar: null
-    }
-  ];
+  });
 
   const selectedChannel = channels.find(c => c.id === selectedChannelId);
+
+  // Auto-select first channel if none selected
+  useEffect(() => {
+    if (channels.length > 0 && !selectedChannelId) {
+      setSelectedChannelId(channels[0].id);
+    }
+  }, [channels, selectedChannelId]);
 
   const handleChannelSelect = (channelId: number) => {
     setSelectedChannelId(channelId);
@@ -100,11 +114,18 @@ export default function Chat() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    // In a real app, this would send the message to the API
-    console.log("Sending message:", newMessage);
-    setNewMessage("");
+    if (!newMessage.trim() || !selectedChannelId || sendMessageMutation.isPending) return;
+    
+    sendMessageMutation.mutate({
+      content: newMessage.trim(),
+      messageType: "text",
+    });
   };
 
   const ChannelsList = () => (
@@ -130,38 +151,47 @@ export default function Chat() {
 
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {channels
-            .filter(channel => 
-              !searchQuery || 
-              channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .map((channel) => (
-              <Button
-                key={channel.id}
-                variant={selectedChannelId === channel.id ? "secondary" : "ghost"}
-                className="w-full justify-start p-3 h-auto"
-                onClick={() => handleChannelSelect(channel.id)}
-              >
-                <div className="flex items-start space-x-3 w-full">
-                  <div className="mt-0.5">
-                    {getChannelIcon(channel.type)}
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium truncate">{channel.name}</span>
-                      {channel.unreadCount > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          {channel.unreadCount}
-                        </Badge>
+          {channelsLoading ? (
+            <div className="text-center text-muted-foreground p-4">Loading channels...</div>
+          ) : (
+            channels
+              .filter(channel => 
+                !searchQuery || 
+                channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((channel) => (
+                <Button
+                  key={channel.id}
+                  variant={selectedChannelId === channel.id ? "secondary" : "ghost"}
+                  className="w-full justify-start p-3 h-auto"
+                  onClick={() => handleChannelSelect(channel.id)}
+                >
+                  <div className="flex items-start space-x-3 w-full">
+                    <div className="mt-0.5">
+                      {getChannelIcon(channel.type)}
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium truncate">{channel.name}</span>
+                        {channel.unreadCount > 0 && (
+                          <Badge variant="destructive" className="text-xs">
+                            {channel.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {channel.participants} participant{channel.participants !== 1 ? 's' : ''}
+                      </p>
+                      {channel.lastMessage && (
+                        <p className="text-xs text-muted-foreground truncate mt-1">
+                          {channel.lastMessage}
+                        </p>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {channel.participants} participant{channel.participants !== 1 ? 's' : ''}
-                    </p>
                   </div>
-                </div>
-              </Button>
-            ))}
+                </Button>
+              ))
+          )}
         </div>
       </ScrollArea>
     </div>
@@ -230,23 +260,33 @@ export default function Chat() {
             {/* Messages Area */}
             <ScrollArea className="flex-1 p-3 sm:p-4">
               <div className="space-y-3 sm:space-y-4">
-                {messages.map((message) => (
-                  <div key={message.id} className="flex items-start space-x-2 sm:space-x-3">
-                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
-                      <AvatarImage src={message.avatar || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(message.sender)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-xs sm:text-sm truncate">{message.sender}</span>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">{message.timestamp}</span>
+                {messagesLoading ? (
+                  <div className="text-center text-muted-foreground p-4">Loading messages...</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center text-muted-foreground p-4">No messages yet. Start the conversation!</div>
+                ) : (
+                  messages.map((message) => (
+                    <div key={message.id} className="flex items-start space-x-2 sm:space-x-3">
+                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
+                        <AvatarImage src={message.sender.avatar || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(message.sender.displayName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-xs sm:text-sm truncate">
+                            {message.sender.displayName}
+                          </span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            {formatTime(message.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1 break-words">{message.content}</p>
                       </div>
-                      <p className="text-sm mt-1 break-words">{message.content}</p>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </ScrollArea>
 
@@ -268,10 +308,14 @@ export default function Chat() {
                 <Button 
                   size="sm" 
                   onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
+                  disabled={!newMessage.trim() || sendMessageMutation.isPending}
                   className="flex-shrink-0"
                 >
-                  <Send className="h-4 w-4" />
+                  {sendMessageMutation.isPending ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>

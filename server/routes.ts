@@ -75,6 +75,7 @@ import { processAICommand, processShiftAIRequest, processShiftAssignmentAIReques
 import { emailService } from "./email";
 import registerScheduleRoutes from "./routes/schedule-routes";
 import alertsRouter from "./routes/alerts";
+import chatRouter from "./routes/chat-simple";
 import commentsRouter from "./routes/comments";
 import multer from "multer";
 import session from "express-session";
@@ -23652,6 +23653,9 @@ Be careful to preserve data integrity and relationships.`;
   
   // Register alerts routes
   app.use(alertsRouter);
+  
+  // Register chat routes
+  app.use("/api/chat", chatRouter);
   
   // Register comments routes
   app.use(commentsRouter);
