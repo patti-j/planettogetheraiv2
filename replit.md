@@ -16,6 +16,50 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Application Behavior Documentation
+
+### Design Principles & Guidelines
+When writing code, always follow these core principles:
+- **User Experience First**: Prioritize intuitive interfaces and responsive design
+- **Data Integrity**: Never use mock data; always connect to real data sources
+- **Performance**: Optimize for fast loading and smooth interactions
+- **Accessibility**: Ensure mobile-responsive design with proper touch targets
+- **Consistency**: Maintain uniform styling, patterns, and user flows across all features
+
+### Feature Requirements & Specifications
+Document specific feature requirements here:
+
+#### Max AI Assistant
+- **Behavior**: Conversational manufacturing intelligence with context awareness
+- **Response Format**: Always include actionable suggestions and relevant data insights
+- **UI Requirements**: Prominent thinking indicator, disabled input during processing
+- **Integration**: Access to production data, alerts, scheduling information
+
+#### Data Schema Visualization
+- **Layout Algorithms**: Support circular, grid, hierarchical, and force-directed layouts
+- **Interaction**: Lasso selection tool for focused analysis of table groups
+- **Persistence**: Save custom positions per filter combination in localStorage
+- **Performance**: Load schema data efficiently (2-3 seconds target)
+
+#### Production Scheduling
+- **Visualization**: Bryntum Gantt chart with drag-drop capabilities
+- **Real-time Updates**: Live status monitoring and conflict detection
+- **Optimization**: AI-powered scheduling recommendations and bottleneck analysis
+
+### Code Standards & Patterns
+- **React Patterns**: Use React Query for server state, proper hook dependencies
+- **TypeScript**: Strong typing, no `any` types unless absolutely necessary
+- **Error Handling**: Comprehensive error boundaries with user-friendly messages
+- **State Management**: Local state for UI, React Query for server state
+- **File Organization**: Group related components, use barrel exports
+
+### Business Logic Requirements
+Document domain-specific rules here:
+- **Manufacturing Workflows**: Production order → Operations → Resources → Scheduling
+- **Data Relationships**: Enforce foreign key constraints and referential integrity
+- **Authorization**: Role-based permissions (Production Manager, Plant Manager, etc.)
+- **Audit Trail**: Track all changes with timestamps and user attribution
+
 ## System Architecture
 
 ### Navigation Architecture
