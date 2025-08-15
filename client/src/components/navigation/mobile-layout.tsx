@@ -27,6 +27,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [maxResponse, setMaxResponse] = useState<{content: string, suggestions?: string[]} | null>(null);
   const [showMaxResponse, setShowMaxResponse] = useState(false);
+  const [showMaxThinking, setShowMaxThinking] = useState(false);
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -66,6 +67,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      setShowMaxThinking(true);
+      setShowMaxResponse(false);
       const response = await apiRequest("POST", "/api/max-ai/chat", { 
         message,
         context: {
@@ -77,6 +80,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       return response.json();
     },
     onSuccess: (data: any) => {
+      setShowMaxThinking(false);
       console.log("Max AI Full Response:", data);
       
       // Store response for display
@@ -129,6 +133,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       }
     },
     onError: (error: any) => {
+      setShowMaxThinking(false);
       console.error("Max AI Error:", error);
       toast({
         title: "Error",
@@ -256,10 +261,33 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
       
+      {/* Max AI Thinking Indicator - shows when processing */}
+      {showMaxThinking && (
+        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-amber-500 to-orange-500 shadow-xl">
+          <div className="relative bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Max is thinking...</h3>
+                <div className="flex items-center gap-1 mt-1">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Max AI Response Display - shows below header when there's a response */}
       {showMaxResponse && maxResponse && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: 'calc(100vh - 240px)' }}>
-          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg max-h-full overflow-y-auto p-4">
+        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: 'calc(100vh - 240px)', overflow: 'hidden' }}>
+          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg h-full overflow-y-auto p-4" style={{ maxHeight: 'calc(100vh - 264px)' }}>
             {/* Close button */}
             <button
               onClick={() => setShowMaxResponse(false)}
@@ -294,7 +322,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() => {
-                        setShowMaxResponse(false);
                         // Create contextual response based on Max's message content
                         let contextualYes = "Yes, please help me with that.";
                         const content = maxResponse.content.toLowerCase();
@@ -323,7 +350,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                     </button>
                     <button
                       onClick={() => {
-                        setShowMaxResponse(false);
                         const contextualNo = `No, I don't need help with that right now.`;
                         addMessage({
                           id: Date.now().toString(),
@@ -348,7 +374,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                           key={idx}
                           onClick={() => {
                             setMaxCommand(suggestion);
-                            setShowMaxResponse(false);
                             // Automatically execute the suggestion
                             addMessage({
                               id: Date.now().toString(),
