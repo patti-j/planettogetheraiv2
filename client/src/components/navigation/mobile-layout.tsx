@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import TopMenu from "@/components/top-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Bot } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { navigationGroups } from "@/config/navigation-menu";
 import { useAuth, usePermissions } from "@/hooks/useAuth";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -24,6 +25,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [recentDialogOpen, setRecentDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [maxResponse, setMaxResponse] = useState<{content: string, suggestions?: string[]} | null>(null);
+  const [showMaxResponse, setShowMaxResponse] = useState(false);
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -73,22 +76,44 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       });
     },
     onSuccess: (data: any) => {
-      console.log("Max AI Response:", data);
+      console.log("Max AI Full Response:", data);
       
-      // Add message to Max panel - new Max AI service returns 'content' instead of 'message'
-      if (data?.content) {
+      // Store response for display
+      if (data?.content || data?.message) {
+        const responseContent = data.content || data.message;
+        
+        setMaxResponse({
+          content: responseContent,
+          suggestions: data.suggestions
+        });
+        setShowMaxResponse(true);
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          setShowMaxResponse(false);
+        }, 10000);
+        
+        // Also add to Max panel
         addMessage({
           id: Date.now().toString(),
-          content: data.content,
+          content: responseContent,
           role: 'assistant',
           timestamp: new Date()
         });
         
-        // Show toast notification with Max's response on mobile
+        // Show toast as backup
         toast({
           title: "Max AI",
-          description: data.content,
-          duration: 5000,
+          description: responseContent,
+          duration: 8000,
+          className: "max-w-md",
+        });
+      } else {
+        // Debug toast to see what we're getting
+        toast({
+          title: "Max AI Debug",
+          description: `Received: ${JSON.stringify(data).substring(0, 100)}`,
+          duration: 8000,
         });
       }
 
@@ -258,8 +283,41 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       </div>
       
+      {/* Max AI Response Display - shows below header when there's a response */}
+      {showMaxResponse && maxResponse && (
+        <div className="fixed top-16 left-0 right-0 z-30 p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-b border-purple-200 dark:border-purple-800 shadow-lg">
+          <Alert className="border-purple-200 dark:border-purple-700 bg-white/90 dark:bg-gray-900/90">
+            <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <AlertTitle className="text-purple-900 dark:text-purple-100">Max AI Response</AlertTitle>
+            <AlertDescription className="mt-2 text-gray-700 dark:text-gray-300">
+              {maxResponse.content}
+            </AlertDescription>
+            {maxResponse.suggestions && maxResponse.suggestions.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-purple-100 dark:border-purple-800">
+                <p className="text-xs font-medium text-purple-700 dark:text-purple-300 mb-2">Suggestions:</p>
+                <div className="flex flex-wrap gap-1">
+                  {maxResponse.suggestions.map((suggestion, idx) => (
+                    <span key={idx} className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-800/50 text-purple-700 dark:text-purple-300 rounded-full">
+                      {suggestion}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowMaxResponse(false)}
+              className="absolute top-2 right-2 h-6 w-6 p-0"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </Alert>
+        </div>
+      )}
+      
       {/* Main content area - with padding for fixed header and footer */}
-      <div className="pt-16 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0">
+      <div className={`${showMaxResponse ? 'pt-48' : 'pt-16'} pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0 transition-all duration-300`}>
         {children}
       </div>
       
