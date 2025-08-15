@@ -19,11 +19,11 @@ Note on concurrent work:
 ## Application Behavior Documentation
 
 ### Current Issues & Migration Status
-- **PT Publish Tables Migration**: ✅ COMPLETE - All PT Publish APIs fully functional (Jobs, Resources, Manufacturing Orders)
-- **TypeScript Compilation**: All major compilation errors resolved (previously 1584+, now 0 critical errors)
-- **API Endpoints**: PT Publish backend infrastructure complete with full CRUD operations in routes.ts and storage.ts
-- **Schema Alignment**: ✅ COMPLETE - Full alignment achieved between schema.ts definitions and original SQL script structure
-- **Database Structure**: All PT Publish tables contain complete column sets matching original PlanetTogether database design
+- **PT Tables Renaming**: ✅ COMPLETE (2025-08-15) - All `pt_publish_*` tables renamed to `ptTableName` format (e.g., `ptJobs`, `ptResources`)
+- **Table Names**: Switched from underscore format to camelCase (e.g., `pt_publish_jobs` → `ptjobs`)
+- **API Endpoints**: PT operations and production orders working; PT resources/jobs/manufacturing orders returning empty
+- **Schema Files**: Updated both schema.ts and pt-publish-schema.ts to use new table names
+- **Database Structure**: All PT tables retain original column structure with approved variations only
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.

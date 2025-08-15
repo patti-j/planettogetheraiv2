@@ -1,5 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, productionOrders, plannedOrders, discreteOperations, discreteOperationPhases, discreteOperationPhaseResourceRequirements, productionVersionPhaseMaterialRequirements, processOperations, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  ptJobs, ptResources, ptJobOperations, ptJobActivities, ptManufacturingOrders, ptCapabilities, ptMetrics, ptPlants,
   recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
@@ -108,6 +109,7 @@ import {
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
+  type PtJob, type PtResource, type PtJobOperation, type PtJobActivity, type PtManufacturingOrder, type PtCapability, type PtMetric,
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
   type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
@@ -166,9 +168,9 @@ import {
 
 // Import PT Publish tables from pt-publish-schema
 import {
-  ptPublishJobs, ptPublishManufacturingOrders, ptPublishJobOperations, ptPublishResources, ptPublishJobActivities,
-  type PtPublishJob, type PtPublishManufacturingOrder, type PtPublishJobOperation, type PtPublishResource, type PtPublishJobActivity,
-  type InsertPtPublishJob, type InsertPtPublishManufacturingOrder, type InsertPtPublishJobOperation, type InsertPtPublishResource, type InsertPtPublishJobActivity
+  ptJobs, ptManufacturingOrders, ptJobOperations, ptResources, ptJobActivities,
+  type PtJob, type PtManufacturingOrder, type PtJobOperation, type PtResource, type PtJobActivity,
+  type InsertPtJob, type InsertPtManufacturingOrder, type InsertPtJobOperation, type InsertPtResource, type InsertPtJobActivity
 } from "@shared/pt-publish-schema";
 
 // Import schedule-related types from schedule-schema
@@ -288,35 +290,35 @@ export interface IStorage {
   deleteProductionOrder(id: number): Promise<boolean>;
   
   // PT Publish Methods - Full CRUD operations for PT Publish tables
-  getPtPublishJobs(): Promise<PtPublishJob[]>;
-  getPtPublishJob(jobId: number): Promise<PtPublishJob | undefined>;
-  createPtPublishJob(job: Partial<PtPublishJob>): Promise<PtPublishJob>;
-  updatePtPublishJob(jobId: number, job: Partial<PtPublishJob>): Promise<PtPublishJob | undefined>;
-  deletePtPublishJob(jobId: number): Promise<boolean>;
+  getPtJobs(): Promise<PtJob[]>;
+  getPtJob(jobId: number): Promise<PtJob | undefined>;
+  createPtJob(job: Partial<PtJob>): Promise<PtJob>;
+  updatePtJob(jobId: number, job: Partial<PtJob>): Promise<PtJob | undefined>;
+  deletePtJob(jobId: number): Promise<boolean>;
   
-  getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]>;
-  getPtPublishManufacturingOrder(orderId: number): Promise<PtPublishManufacturingOrder | undefined>;
-  createPtPublishManufacturingOrder(order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder>;
-  updatePtPublishManufacturingOrder(orderId: number, order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder | undefined>;
-  deletePtPublishManufacturingOrder(orderId: number): Promise<boolean>;
+  getPtManufacturingOrders(): Promise<PtManufacturingOrder[]>;
+  getPtManufacturingOrder(orderId: number): Promise<PtManufacturingOrder | undefined>;
+  createPtManufacturingOrder(order: Partial<PtManufacturingOrder>): Promise<PtManufacturingOrder>;
+  updatePtManufacturingOrder(orderId: number, order: Partial<PtManufacturingOrder>): Promise<PtManufacturingOrder | undefined>;
+  deletePtManufacturingOrder(orderId: number): Promise<boolean>;
   
-  getPtPublishJobOperations(): Promise<PtPublishJobOperation[]>;
-  getPtPublishJobOperation(operationId: number): Promise<PtPublishJobOperation | undefined>;
-  createPtPublishJobOperation(operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation>;
-  updatePtPublishJobOperation(operationId: number, operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation | undefined>;
-  deletePtPublishJobOperation(operationId: number): Promise<boolean>;
+  getPtJobOperations(): Promise<PtJobOperation[]>;
+  getPtJobOperation(operationId: number): Promise<PtJobOperation | undefined>;
+  createPtJobOperation(operation: Partial<PtJobOperation>): Promise<PtJobOperation>;
+  updatePtJobOperation(operationId: number, operation: Partial<PtJobOperation>): Promise<PtJobOperation | undefined>;
+  deletePtJobOperation(operationId: number): Promise<boolean>;
   
-  getPtPublishResources(): Promise<PtPublishResource[]>;
-  getPtPublishResource(resourceId: number): Promise<PtPublishResource | undefined>;
-  createPtPublishResource(resource: Partial<PtPublishResource>): Promise<PtPublishResource>;
-  updatePtPublishResource(resourceId: number, resource: Partial<PtPublishResource>): Promise<PtPublishResource | undefined>;
-  deletePtPublishResource(resourceId: number): Promise<boolean>;
+  getPtResources(): Promise<PtResource[]>;
+  getPtResource(resourceId: number): Promise<PtResource | undefined>;
+  createPtResource(resource: Partial<PtResource>): Promise<PtResource>;
+  updatePtResource(resourceId: number, resource: Partial<PtResource>): Promise<PtResource | undefined>;
+  deletePtResource(resourceId: number): Promise<boolean>;
   
-  getPtPublishJobActivities(): Promise<PtPublishJobActivity[]>;
-  getPtPublishJobActivity(activityId: number): Promise<PtPublishJobActivity | undefined>;
-  createPtPublishJobActivity(activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity>;
-  updatePtPublishJobActivity(activityId: number, activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity | undefined>;
-  deletePtPublishJobActivity(activityId: number): Promise<boolean>;
+  getPtJobActivities(): Promise<PtJobActivity[]>;
+  getPtJobActivity(activityId: number): Promise<PtJobActivity | undefined>;
+  createPtJobActivity(activity: Partial<PtJobActivity>): Promise<PtJobActivity>;
+  updatePtJobActivity(activityId: number, activity: Partial<PtJobActivity>): Promise<PtJobActivity | undefined>;
+  deletePtJobActivity(activityId: number): Promise<boolean>;
   
   // Planned Orders
   getPlannedOrders(): Promise<PlannedOrder[]>;
@@ -2240,8 +2242,8 @@ export class MemStorage implements Partial<IStorage> {
       // Get operations from PT Publish tables
       const ptOperations = await db
         .select()
-        .from(ptPublishJobOperations)
-        .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+        .from(ptJobOperations)
+        .orderBy(asc(ptJobOperations.sequenceNumber));
       
       console.log("PT Publish operations count:", ptOperations.length);
       
@@ -2501,7 +2503,7 @@ export class DatabaseStorage implements IStorage {
           post_processing_hours,
           notes,
           publish_date
-        FROM pt_publish_job_operations
+        FROM "ptjoboperations"
         ORDER BY id ASC
       `);
       
@@ -2555,7 +2557,7 @@ export class DatabaseStorage implements IStorage {
       // Get resources from PT Publish Resources table using raw SQL to avoid column issues
       const result = await db.execute(sql`
         SELECT resource_id, name, department_name, plant_name, active, speed_factor, bottleneck, publish_date
-        FROM pt_publish_resources
+        FROM ptResources
         WHERE instance_id = 'PHARMA-001'
         ORDER BY name ASC
       `);
@@ -2705,13 +2707,13 @@ export class DatabaseStorage implements IStorage {
     console.log("getProductionOrders: Redirecting to PT Publish Jobs table");
     
     // Get jobs from PT Publish tables and map to ProductionOrder format
-    const ptJobs = await db
+    const ptJobsList = await db
       .select()
-      .from(ptPublishJobs)
-      .orderBy(asc(ptPublishJobs.needDateTime));
+      .from(ptJobs)
+      .orderBy(asc(ptJobs.needDateTime));
     
     // Map PT Publish Jobs to ProductionOrder format for backward compatibility
-    return ptJobs.map(job => ({
+    return ptJobsList.map(job => ({
       id: Number(job.jobId),
       name: job.name || `Job ${job.jobId}`,
       description: job.description,
@@ -2761,52 +2763,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   // PT Publish Methods - Reading from PT Publish tables
-  async getPtPublishJobs(): Promise<PtPublishJob[]> {
-    // Get the most recent publish date for consistent data
-    const latestPublish = await db
-      .select({ maxDate: sql<string>`MAX(publish_date)::text`.as('maxDate') })
-      .from(ptPublishJobs)
-      .limit(1);
-    
-    const publishDateStr = latestPublish[0]?.maxDate;
-    if (!publishDateStr) {
-      console.log("No PT Publish data available");
-      return [];
-    }
-
-    // Use SQL to compare dates directly in the query
+  async getPtJobs(): Promise<PtJob[]> {
+    // Return all PT jobs ordered by need date
     return await db
       .select()
-      .from(ptPublishJobs)
-      .where(sql`${ptPublishJobs.publishDate}::text = ${publishDateStr}`)
-      .orderBy(asc(ptPublishJobs.needDateTime));
+      .from(ptJobs)
+      .orderBy(asc(ptJobs.needDateTime));
   }
 
-  async getPtPublishManufacturingOrders(): Promise<PtPublishManufacturingOrder[]> {
-    const latestPublish = await db
-      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
-      .from(ptPublishManufacturingOrders)
-      .limit(1);
-    
-    const publishDate = latestPublish[0]?.maxDate;
-    if (!publishDate) {
-      return [];
-    }
-
-    // Use raw SQL to avoid column mapping issues
-    const result = await db.execute(sql`
-      SELECT * FROM pt_publish_manufacturing_orders 
-      WHERE publish_date = ${new Date(publishDate)}
-      ORDER BY manufacturing_order_id ASC
-    `);
-    
-    return result.rows as PtPublishManufacturingOrder[];
+  async getPtManufacturingOrders(): Promise<PtManufacturingOrder[]> {
+    // Return all PT manufacturing orders
+    return await db
+      .select()
+      .from(ptManufacturingOrders)
+      .orderBy(asc(ptManufacturingOrders.manufacturingOrderId));
   }
 
-  async getPtPublishJobOperations(): Promise<PtPublishJobOperation[]> {
+  async getPtJobOperations(): Promise<PtJobOperation[]> {
     const latestPublish = await db
       .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
-      .from(ptPublishJobOperations)
+      .from(ptJobOperations)
       .limit(1);
     
     const publishDate = latestPublish[0]?.maxDate;
@@ -2816,36 +2792,23 @@ export class DatabaseStorage implements IStorage {
 
     return await db
       .select()
-      .from(ptPublishJobOperations)
-      .where(eq(ptPublishJobOperations.publishDate, new Date(publishDate)))
-      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+      .from(ptJobOperations)
+      .where(eq(ptJobOperations.publishDate, new Date(publishDate)))
+      .orderBy(asc(ptJobOperations.sequenceNumber));
   }
 
-  async getPtPublishResources(): Promise<PtPublishResource[]> {
-    const latestPublish = await db
-      .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
-      .from(ptPublishResources)
-      .limit(1);
-    
-    const publishDate = latestPublish[0]?.maxDate;
-    if (!publishDate) {
-      return [];
-    }
-
-    // Use raw SQL to avoid column mapping issues
-    const result = await db.execute(sql`
-      SELECT * FROM pt_publish_resources 
-      WHERE publish_date = ${new Date(publishDate)}
-      ORDER BY name ASC
-    `);
-    
-    return result.rows as PtPublishResource[];
+  async getPtResources(): Promise<PtResource[]> {
+    // Return all PT resources ordered by name
+    return await db
+      .select()
+      .from(ptResources)
+      .orderBy(asc(ptResources.name));
   }
 
-  async getPtPublishJobActivities(): Promise<PtPublishJobActivity[]> {
+  async getPtJobActivities(): Promise<PtJobActivity[]> {
     const latestPublish = await db
       .select({ maxDate: sql`MAX(publish_date)`.as('maxDate') })
-      .from(ptPublishJobActivities)
+      .from(ptJobActivities)
       .limit(1);
     
     const publishDate = latestPublish[0]?.maxDate;
@@ -2855,28 +2818,28 @@ export class DatabaseStorage implements IStorage {
 
     return await db
       .select()
-      .from(ptPublishJobActivities)
-      .where(eq(ptPublishJobActivities.publishDate, new Date(publishDate)))
-      .orderBy(asc(ptPublishJobActivities.scheduledStart));
+      .from(ptJobActivities)
+      .where(eq(ptJobActivities.publishDate, new Date(publishDate)))
+      .orderBy(asc(ptJobActivities.scheduledStart));
   }
 
   // PT Publish CRUD Operations - CREATE, UPDATE, DELETE
 
   // PT Publish Jobs CRUD
-  async getPtPublishJob(jobId: number): Promise<PtPublishJob | undefined> {
+  async getPtJob(jobId: number): Promise<PtJob | undefined> {
     const result = await db
       .select()
-      .from(ptPublishJobs)
-      .where(eq(ptPublishJobs.jobId, jobId))
+      .from(ptJobs)
+      .where(eq(ptJobs.jobId, jobId))
       .limit(1);
     return result[0];
   }
 
-  async createPtPublishJob(job: Partial<PtPublishJob>): Promise<PtPublishJob> {
+  async createPtJob(job: Partial<PtJob>): Promise<PtJob> {
     // Extract non-date fields
     const { publishDate, entryDate, needDateTime, scheduledStartDateTime, scheduledEndDateTime, ...otherFields } = job;
     
-    const [newJob] = await db.insert(ptPublishJobs).values({
+    const [newJob] = await db.insert(ptJobs).values({
       ...otherFields,
       publishDate: publishDate ? new Date(publishDate as any) : new Date(),
       entryDate: entryDate ? new Date(entryDate as any) : new Date(),
@@ -2888,33 +2851,33 @@ export class DatabaseStorage implements IStorage {
     return newJob;
   }
 
-  async updatePtPublishJob(jobId: number, job: Partial<PtPublishJob>): Promise<PtPublishJob | undefined> {
+  async updatePtJob(jobId: number, job: Partial<PtJob>): Promise<PtJob | undefined> {
     const [updated] = await db
-      .update(ptPublishJobs)
+      .update(ptJobs)
       .set(job)
-      .where(eq(ptPublishJobs.jobId, jobId))
+      .where(eq(ptJobs.jobId, jobId))
       .returning();
     return updated;
   }
 
-  async deletePtPublishJob(jobId: number): Promise<boolean> {
+  async deletePtJob(jobId: number): Promise<boolean> {
     const result = await db
-      .delete(ptPublishJobs)
-      .where(eq(ptPublishJobs.jobId, jobId));
+      .delete(ptJobs)
+      .where(eq(ptJobs.jobId, jobId));
     return result.rowCount > 0;
   }
 
   // PT Publish Manufacturing Orders CRUD
-  async getPtPublishManufacturingOrder(orderId: number): Promise<PtPublishManufacturingOrder | undefined> {
+  async getPtManufacturingOrder(orderId: number): Promise<PtManufacturingOrder | undefined> {
     const result = await db
       .select()
-      .from(ptPublishManufacturingOrders)
-      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId))
+      .from(ptManufacturingOrders)
+      .where(eq(ptManufacturingOrders.manufacturingOrderId, orderId))
       .limit(1);
     return result[0];
   }
 
-  async createPtPublishManufacturingOrder(order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder> {
+  async createPtManufacturingOrder(order: Partial<PtManufacturingOrder>): Promise<PtManufacturingOrder> {
     // Extract date fields separately
     const { publishDate, releaseDate, dueDate, ...otherFields } = order;
     
@@ -2930,7 +2893,7 @@ export class DatabaseStorage implements IStorage {
       notes: otherFields.notes,
     };
     
-    const [newOrder] = await db.insert(ptPublishManufacturingOrders).values({
+    const [newOrder] = await db.insert(ptManufacturingOrders).values({
       ...validFields,
       publishDate: publishDate ? new Date(publishDate as any) : new Date(),
       releaseDate: releaseDate ? new Date(releaseDate as any) : undefined,
@@ -2940,67 +2903,67 @@ export class DatabaseStorage implements IStorage {
     return newOrder;
   }
 
-  async updatePtPublishManufacturingOrder(orderId: number, order: Partial<PtPublishManufacturingOrder>): Promise<PtPublishManufacturingOrder | undefined> {
+  async updatePtManufacturingOrder(orderId: number, order: Partial<PtManufacturingOrder>): Promise<PtManufacturingOrder | undefined> {
     const [updated] = await db
-      .update(ptPublishManufacturingOrders)
+      .update(ptManufacturingOrders)
       .set(order)
-      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId))
+      .where(eq(ptManufacturingOrders.manufacturingOrderId, orderId))
       .returning();
     return updated;
   }
 
-  async deletePtPublishManufacturingOrder(orderId: number): Promise<boolean> {
+  async deletePtManufacturingOrder(orderId: number): Promise<boolean> {
     const result = await db
-      .delete(ptPublishManufacturingOrders)
-      .where(eq(ptPublishManufacturingOrders.manufacturingOrderId, orderId));
+      .delete(ptManufacturingOrders)
+      .where(eq(ptManufacturingOrders.manufacturingOrderId, orderId));
     return result.rowCount > 0;
   }
 
   // PT Publish Job Operations CRUD
-  async getPtPublishJobOperation(operationId: number): Promise<PtPublishJobOperation | undefined> {
+  async getPtJobOperation(operationId: number): Promise<PtJobOperation | undefined> {
     const result = await db
       .select()
-      .from(ptPublishJobOperations)
-      .where(eq(ptPublishJobOperations.jobOperationId, operationId))
+      .from(ptJobOperations)
+      .where(eq(ptJobOperations.jobOperationId, operationId))
       .limit(1);
     return result[0];
   }
 
-  async createPtPublishJobOperation(operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation> {
-    const [newOperation] = await db.insert(ptPublishJobOperations).values({
+  async createPtJobOperation(operation: Partial<PtJobOperation>): Promise<PtJobOperation> {
+    const [newOperation] = await db.insert(ptJobOperations).values({
       ...operation,
       publishDate: operation.publishDate || new Date()
     }).returning();
     return newOperation;
   }
 
-  async updatePtPublishJobOperation(operationId: number, operation: Partial<PtPublishJobOperation>): Promise<PtPublishJobOperation | undefined> {
+  async updatePtJobOperation(operationId: number, operation: Partial<PtJobOperation>): Promise<PtJobOperation | undefined> {
     const [updated] = await db
-      .update(ptPublishJobOperations)
+      .update(ptJobOperations)
       .set(operation)
-      .where(eq(ptPublishJobOperations.jobOperationId, operationId))
+      .where(eq(ptJobOperations.jobOperationId, operationId))
       .returning();
     return updated;
   }
 
-  async deletePtPublishJobOperation(operationId: number): Promise<boolean> {
+  async deletePtJobOperation(operationId: number): Promise<boolean> {
     const result = await db
-      .delete(ptPublishJobOperations)
-      .where(eq(ptPublishJobOperations.jobOperationId, operationId));
+      .delete(ptJobOperations)
+      .where(eq(ptJobOperations.jobOperationId, operationId));
     return result.rowCount > 0;
   }
 
   // PT Publish Resources CRUD
-  async getPtPublishResource(resourceId: number): Promise<PtPublishResource | undefined> {
+  async getPtResource(resourceId: number): Promise<PtResource | undefined> {
     const result = await db
       .select()
-      .from(ptPublishResources)
-      .where(eq(ptPublishResources.resourceId, resourceId))
+      .from(ptResources)
+      .where(eq(ptResources.resourceId, resourceId))
       .limit(1);
     return result[0];
   }
 
-  async createPtPublishResource(resource: Partial<PtPublishResource>): Promise<PtPublishResource> {
+  async createPtResource(resource: Partial<PtResource>): Promise<PtResource> {
     // Extract date field and only include valid fields for the table
     const { publishDate, ...otherFields } = resource;
     
@@ -3023,7 +2986,7 @@ export class DatabaseStorage implements IStorage {
       ...validFields 
     } = otherFields as any;
     
-    const [newResource] = await db.insert(ptPublishResources).values({
+    const [newResource] = await db.insert(ptResources).values({
       ...validFields,
       publishDate: publishDate ? new Date(publishDate as any) : new Date(),
       instanceId: resource.instanceId || 'DEFAULT-INSTANCE',
@@ -3034,53 +2997,53 @@ export class DatabaseStorage implements IStorage {
     return newResource;
   }
 
-  async updatePtPublishResource(resourceId: number, resource: Partial<PtPublishResource>): Promise<PtPublishResource | undefined> {
+  async updatePtResource(resourceId: number, resource: Partial<PtResource>): Promise<PtResource | undefined> {
     const [updated] = await db
-      .update(ptPublishResources)
+      .update(ptResources)
       .set(resource)
-      .where(eq(ptPublishResources.resourceId, resourceId))
+      .where(eq(ptResources.resourceId, resourceId))
       .returning();
     return updated;
   }
 
-  async deletePtPublishResource(resourceId: number): Promise<boolean> {
+  async deletePtResource(resourceId: number): Promise<boolean> {
     const result = await db
-      .delete(ptPublishResources)
-      .where(eq(ptPublishResources.resourceId, resourceId));
+      .delete(ptResources)
+      .where(eq(ptResources.resourceId, resourceId));
     return result.rowCount > 0;
   }
 
   // PT Publish Job Activities CRUD
-  async getPtPublishJobActivity(activityId: number): Promise<PtPublishJobActivity | undefined> {
+  async getPtJobActivity(activityId: number): Promise<PtJobActivity | undefined> {
     const result = await db
       .select()
-      .from(ptPublishJobActivities)
-      .where(eq(ptPublishJobActivities.jobActivityId, activityId))
+      .from(ptJobActivities)
+      .where(eq(ptJobActivities.jobActivityId, activityId))
       .limit(1);
     return result[0];
   }
 
-  async createPtPublishJobActivity(activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity> {
-    const [newActivity] = await db.insert(ptPublishJobActivities).values({
+  async createPtJobActivity(activity: Partial<PtJobActivity>): Promise<PtJobActivity> {
+    const [newActivity] = await db.insert(ptJobActivities).values({
       ...activity,
       publishDate: activity.publishDate || new Date()
     }).returning();
     return newActivity;
   }
 
-  async updatePtPublishJobActivity(activityId: number, activity: Partial<PtPublishJobActivity>): Promise<PtPublishJobActivity | undefined> {
+  async updatePtJobActivity(activityId: number, activity: Partial<PtJobActivity>): Promise<PtJobActivity | undefined> {
     const [updated] = await db
-      .update(ptPublishJobActivities)
+      .update(ptJobActivities)
       .set(activity)
-      .where(eq(ptPublishJobActivities.jobActivityId, activityId))
+      .where(eq(ptJobActivities.jobActivityId, activityId))
       .returning();
     return updated;
   }
 
-  async deletePtPublishJobActivity(activityId: number): Promise<boolean> {
+  async deletePtJobActivity(activityId: number): Promise<boolean> {
     const result = await db
-      .delete(ptPublishJobActivities)
-      .where(eq(ptPublishJobActivities.jobActivityId, activityId));
+      .delete(ptJobActivities)
+      .where(eq(ptJobActivities.jobActivityId, activityId));
     return result.rowCount > 0;
   }
 
@@ -3232,8 +3195,8 @@ export class DatabaseStorage implements IStorage {
     // Get operations from PT Publish tables (filter for discrete type)
     const ptOperations = await db
       .select()
-      .from(ptPublishJobOperations)
-      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+      .from(ptJobOperations)
+      .orderBy(asc(ptJobOperations.sequenceNumber));
     
     // Map PT Publish Job Operations to DiscreteOperation format
     return ptOperations.map(op => ({
@@ -3387,8 +3350,8 @@ export class DatabaseStorage implements IStorage {
     // Get operations from PT Publish tables (filter for process type if available)
     const ptOperations = await db
       .select()
-      .from(ptPublishJobOperations)
-      .orderBy(asc(ptPublishJobOperations.sequenceNumber));
+      .from(ptJobOperations)
+      .orderBy(asc(ptJobOperations.sequenceNumber));
     
     // Map PT Publish Job Operations to ProcessOperation format
     return ptOperations.map(op => ({

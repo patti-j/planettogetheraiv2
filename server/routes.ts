@@ -74,9 +74,9 @@ import {
 
 // Import PT Publish schemas
 import {
-  insertPtPublishJobSchema, insertPtPublishManufacturingOrderSchema, 
-  insertPtPublishJobOperationSchema, insertPtPublishResourceSchema, 
-  insertPtPublishJobActivitySchema
+  insertPtJobSchema, insertPtManufacturingOrderSchema, 
+  insertPtJobOperationSchema, insertPtResourceSchema, 
+  insertPtJobActivitySchema
 } from "@shared/pt-publish-schema";
 
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
@@ -2197,7 +2197,7 @@ Rules:
   app.get("/api/pt-publish/jobs", createSafeHandler('Get PT Publish Jobs')(async (req, res) => {
     try {
       console.log('[API] GET /api/pt-publish/jobs');
-      const jobs = await storage.getPtPublishJobs();
+      const jobs = await storage.getPtJobs();
       res.json(jobs);
     } catch (error) {
       console.error('Error fetching PT Publish jobs:', error);
@@ -2208,7 +2208,7 @@ Rules:
   app.post("/api/pt-publish/jobs", createSafeHandler('Create PT Publish Job')(async (req, res) => {
     try {
       console.log('[API] POST /api/pt-publish/jobs', req.body);
-      const job = await storage.createPtPublishJob(req.body);
+      const job = await storage.createPtJob(req.body);
       res.status(201).json(job);
     } catch (error) {
       console.error('Error creating PT Publish job:', error);
@@ -2220,7 +2220,7 @@ Rules:
   app.get("/api/pt-publish/manufacturing-orders", createSafeHandler('Get PT Publish Manufacturing Orders')(async (req, res) => {
     try {
       console.log('[API] GET /api/pt-publish/manufacturing-orders');
-      const orders = await storage.getPtPublishManufacturingOrders();
+      const orders = await storage.getPtManufacturingOrders();
       res.json(orders);
     } catch (error) {
       console.error('Error fetching PT Publish manufacturing orders:', error);
@@ -2231,7 +2231,7 @@ Rules:
   app.post("/api/pt-publish/manufacturing-orders", createSafeHandler('Create PT Publish Manufacturing Order')(async (req, res) => {
     try {
       console.log('[API] POST /api/pt-publish/manufacturing-orders', req.body);
-      const order = await storage.createPtPublishManufacturingOrder(req.body);
+      const order = await storage.createPtManufacturingOrder(req.body);
       res.status(201).json(order);
     } catch (error) {
       console.error('Error creating PT Publish manufacturing order:', error);
@@ -2243,7 +2243,7 @@ Rules:
   app.get("/api/pt-publish/job-operations", createSafeHandler('Get PT Publish Job Operations')(async (req, res) => {
     try {
       console.log('[API] GET /api/pt-publish/job-operations');
-      const operations = await storage.getPtPublishJobOperations();
+      const operations = await storage.getPtJobOperations();
       res.json(operations);
     } catch (error) {
       console.error('Error fetching PT Publish job operations:', error);
@@ -2254,7 +2254,7 @@ Rules:
   app.post("/api/pt-publish/job-operations", createSafeHandler('Create PT Publish Job Operation')(async (req, res) => {
     try {
       console.log('[API] POST /api/pt-publish/job-operations', req.body);
-      const operation = await storage.createPtPublishJobOperation(req.body);
+      const operation = await storage.createPtJobOperation(req.body);
       res.status(201).json(operation);
     } catch (error) {
       console.error('Error creating PT Publish job operation:', error);
@@ -2266,7 +2266,7 @@ Rules:
   app.get("/api/pt-publish/resources", createSafeHandler('Get PT Publish Resources')(async (req, res) => {
     try {
       console.log('[API] GET /api/pt-publish/resources');
-      const resources = await storage.getPtPublishResources();
+      const resources = await storage.getPtResources();
       res.json(resources);
     } catch (error) {
       console.error('Error fetching PT Publish resources:', error);
@@ -2277,7 +2277,7 @@ Rules:
   app.post("/api/pt-publish/resources", createSafeHandler('Create PT Publish Resource')(async (req, res) => {
     try {
       console.log('[API] POST /api/pt-publish/resources', req.body);
-      const resource = await storage.createPtPublishResource(req.body);
+      const resource = await storage.createPtResource(req.body);
       res.status(201).json(resource);
     } catch (error) {
       console.error('Error creating PT Publish resource:', error);
@@ -2289,7 +2289,7 @@ Rules:
   app.get("/api/pt-publish/job-activities", createSafeHandler('Get PT Publish Job Activities')(async (req, res) => {
     try {
       console.log('[API] GET /api/pt-publish/job-activities');
-      const activities = await storage.getPtPublishJobActivities();
+      const activities = await storage.getPtJobActivities();
       res.json(activities);
     } catch (error) {
       console.error('Error fetching PT Publish job activities:', error);
@@ -2300,7 +2300,7 @@ Rules:
   app.post("/api/pt-publish/job-activities", createSafeHandler('Create PT Publish Job Activity')(async (req, res) => {
     try {
       console.log('[API] POST /api/pt-publish/job-activities', req.body);
-      const activity = await storage.createPtPublishJobActivity(req.body);
+      const activity = await storage.createPtJobActivity(req.body);
       res.status(201).json(activity);
     } catch (error) {
       console.error('Error creating PT Publish job activity:', error);
@@ -2315,7 +2315,7 @@ Rules:
     
     if (usePtPublish) {
       console.log("[API] Fetching production orders from PT Publish tables");
-      const ptJobs = await storage.getPtPublishJobs();
+      const ptJobs = await storage.getPtJobs();
       console.log(`[API] Found ${ptJobs.length} PT Publish jobs`);
       
       // Transform PT Publish jobs to match production order format
@@ -2506,7 +2506,7 @@ Rules:
       // PT Publish operations query using correct column names
       const ptOperationsQuery = `
         SELECT 
-          -- Operation core data from pt_publish_job_operations
+          -- Operation core data from ptjoboperations
           jo.id as operation_id,
           jo.external_id as operation_external_id,
           jo.name as operation_name,
@@ -2526,7 +2526,7 @@ Rules:
           jo.output_name,
           jo.percent_finished,
           
-          -- Job information from pt_publish_jobs
+          -- Job information from ptjobs
           j.id as job_id,
           j.external_id as job_external_id,
           j.name as job_name,
@@ -2541,7 +2541,7 @@ Rules:
           mo.name as mo_name,
           mo.description as mo_description,
           
-          -- Activity information from pt_publish_job_activities
+          -- Activity information from ptjobactivities
           ja.id as activity_id,
           ja.external_id as activity_external_id,
           ja.production_status as activity_status,
@@ -2549,7 +2549,7 @@ Rules:
           ja.scheduled_start_date as activity_start_date,
           ja.scheduled_end_date as activity_end_date,
           
-          -- Resource information from pt_publish_job_resources and pt_publish_resources
+          -- Resource information from ptjobresources and ptresources
           jr.id as job_resource_id,
           jr.default_resource_id as resource_assignment_id,
           jr.is_primary as is_primary_resource,
@@ -2558,19 +2558,19 @@ Rules:
           r.name as resource_name,
           r.description as resource_description,
           
-          -- Plant information from pt_publish_plants
+          -- Plant information from ptplants
           p.id as plant_id,
           p.external_id as plant_external_id,
           p.name as plant_name,
           p.description as plant_description
           
-        FROM pt_publish_job_operations jo
-        LEFT JOIN pt_publish_jobs j ON jo.job_id = j.id
-        LEFT JOIN pt_publish_manufacturing_orders mo ON jo.manufacturing_order_id = mo.id
-        LEFT JOIN pt_publish_job_activities ja ON ja.operation_id = jo.id
-        LEFT JOIN pt_publish_job_resources jr ON jr.operation_id = jo.id AND jr.is_primary = true
-        LEFT JOIN pt_publish_resources r ON jr.default_resource_id = r.id
-        LEFT JOIN pt_publish_plants p ON r.plant_id = p.id
+        FROM ptjoboperations jo
+        LEFT JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptmanufacturingorders mo ON jo.manufacturing_order_id = mo.id
+        LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
+        LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.id
+        LEFT JOIN ptplants p ON r.plant_id = p.id
         ORDER BY 
           jo.scheduled_start ASC NULLS LAST,
           jo.id ASC

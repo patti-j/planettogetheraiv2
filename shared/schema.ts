@@ -9053,7 +9053,7 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
 // ===== MRP (Material Requirements Planning) TABLES =====
 
 // MRP Master Production Schedule - defines what we plan to produce
-export const masterProductionSchedule = pgTable("pt_publish_master_production_schedule", {
+export const masterProductionSchedule = pgTable("ptMasterProductionSchedule", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
@@ -11221,7 +11221,7 @@ export type InsertCommentWatcher = z.infer<typeof insertCommentWatcherSchema>;
 // ========================================
 
 // PT Publish Jobs - Manufacturing orders from PlanetTogether
-export const ptPublishJobs = pgTable("pt_publish_jobs", {
+export const ptJobs = pgTable("ptJobs", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11312,7 +11312,7 @@ export const ptPublishJobs = pgTable("pt_publish_jobs", {
 });
 
 // PT Publish Resources - Resources from PlanetTogether
-export const ptPublishResources = pgTable("pt_publish_resources", {
+export const ptResources = pgTable("ptResources", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11404,7 +11404,7 @@ export const ptPublishResources = pgTable("pt_publish_resources", {
 });
 
 // PT Publish Job Operations - Operations from PlanetTogether
-export const ptPublishJobOperations = pgTable("pt_publish_job_operations", {
+export const ptJobOperations = pgTable("ptJobOperations", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11428,7 +11428,7 @@ export const ptPublishJobOperations = pgTable("pt_publish_job_operations", {
 });
 
 // PT Publish Capabilities - Resource capabilities from PlanetTogether
-export const ptPublishCapabilities = pgTable("pt_publish_capabilities", {
+export const ptCapabilities = pgTable("ptCapabilities", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11440,7 +11440,7 @@ export const ptPublishCapabilities = pgTable("pt_publish_capabilities", {
 });
 
 // PT Publish Metrics - Calculated metrics from PlanetTogether
-export const ptPublishMetrics = pgTable("pt_publish_metrics", {
+export const ptMetrics = pgTable("ptMetrics", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11455,7 +11455,7 @@ export const ptPublishMetrics = pgTable("pt_publish_metrics", {
 });
 
 // PT Publish Manufacturing Orders - Manufacturing orders from PlanetTogether
-export const ptPublishManufacturingOrders = pgTable("pt_publish_manufacturing_orders", {
+export const ptManufacturingOrders = pgTable("ptManufacturingOrders", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11532,48 +11532,48 @@ export const ptPublishManufacturingOrders = pgTable("pt_publish_manufacturing_or
 });
 
 // Insert schemas for PT Publish tables
-export const insertPtPublishJobSchema = createInsertSchema(ptPublishJobs).omit({
+export const insertPtJobSchema = createInsertSchema(ptJobs).omit({
   id: true,
 });
 
-export const insertPtPublishResourceSchema = createInsertSchema(ptPublishResources).omit({
+export const insertPtResourceSchema = createInsertSchema(ptResources).omit({
   id: true,
 });
 
-export const insertPtPublishJobOperationSchema = createInsertSchema(ptPublishJobOperations).omit({
+export const insertPtJobOperationSchema = createInsertSchema(ptJobOperations).omit({
   id: true,
 });
 
-export const insertPtPublishCapabilitySchema = createInsertSchema(ptPublishCapabilities).omit({
+export const insertPtCapabilitySchema = createInsertSchema(ptCapabilities).omit({
   id: true,
 });
 
-export const insertPtPublishMetricSchema = createInsertSchema(ptPublishMetrics).omit({
+export const insertPtMetricSchema = createInsertSchema(ptMetrics).omit({
   id: true,
   calculatedAt: true,
 });
 
-export const insertPtPublishManufacturingOrderSchema = createInsertSchema(ptPublishManufacturingOrders).omit({
+export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturingOrders).omit({
   id: true,
 });
 
 // Types for PT Publish tables
-export type PtPublishJob = typeof ptPublishJobs.$inferSelect;
+export type PtJob = typeof ptJobs.$inferSelect;
 export type InsertPtPublishJob = z.infer<typeof insertPtPublishJobSchema>;
 
-export type PtPublishResource = typeof ptPublishResources.$inferSelect;
+export type PtResource = typeof ptResources.$inferSelect;
 export type InsertPtPublishResource = z.infer<typeof insertPtPublishResourceSchema>;
 
-export type PtPublishJobOperation = typeof ptPublishJobOperations.$inferSelect;
+export type PtJobOperation = typeof ptJobOperations.$inferSelect;
 export type InsertPtPublishJobOperation = z.infer<typeof insertPtPublishJobOperationSchema>;
 
-export type PtPublishCapability = typeof ptPublishCapabilities.$inferSelect;
+export type PtCapability = typeof ptCapabilities.$inferSelect;
 export type InsertPtPublishCapability = z.infer<typeof insertPtPublishCapabilitySchema>;
 
-export type PtPublishMetric = typeof ptPublishMetrics.$inferSelect;
+export type PtMetric = typeof ptMetrics.$inferSelect;
 export type InsertPtPublishMetric = z.infer<typeof insertPtPublishMetricSchema>;
 
-export type PtPublishManufacturingOrder = typeof ptPublishManufacturingOrders.$inferSelect;
+export type PtManufacturingOrder = typeof ptManufacturingOrders.$inferSelect;
 export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrderSchema>;
 
 // Create unified Operation type that combines different operation types

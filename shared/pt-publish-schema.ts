@@ -8,24 +8,24 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums for PT Publish tables
-export const ptPublishJobClassificationEnum = pgEnum('pt_publish_job_classification', [
+export const ptJobClassificationEnum = pgEnum('ptjob_classification', [
   'production', 'maintenance', 'quality', 'setup', 'changeover', 'other'
 ]);
 
-export const ptPublishJobTypeEnum = pgEnum('pt_publish_job_type', [
+export const ptJobTypeEnum = pgEnum('ptjob_type', [
   'manufacturing', 'assembly', 'packaging', 'processing', 'inspection', 'rework'
 ]);
 
-export const ptPublishColorCodeEnum = pgEnum('pt_publish_color_code', [
+export const ptColorCodeEnum = pgEnum('ptcolor_code', [
   'red', 'yellow', 'green', 'blue', 'purple', 'orange', 'black', 'white', 'gray'
 ]);
 
-export const ptPublishScheduledStatusEnum = pgEnum('pt_publish_scheduled_status', [
+export const ptScheduledStatusEnum = pgEnum('ptscheduled_status', [
   'scheduled', 'unscheduled', 'partial', 'in_progress', 'completed', 'cancelled'
 ]);
 
 // PT Publish Jobs table - Main production orders/jobs
-export const ptPublishJobs = pgTable("pt_publish_jobs", {
+export const ptJobs = pgTable("ptjobs", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -45,8 +45,8 @@ export const ptPublishJobs = pgTable("pt_publish_jobs", {
   earliestDelivery: text("earliest_delivery"),
   
   // Classification and priority
-  classification: ptPublishJobClassificationEnum("classification"),
-  type: ptPublishJobTypeEnum("type"),
+  classification: ptJobClassificationEnum("classification"),
+  type: ptJobTypeEnum("type"),
   priority: integer("priority"),
   importance: integer("importance"),
   hot: boolean("hot"),
@@ -54,7 +54,7 @@ export const ptPublishJobs = pgTable("pt_publish_jobs", {
   
   // Status and progress
   scheduled: boolean("scheduled"),
-  scheduledStatus: ptPublishScheduledStatusEnum("scheduled_status"),
+  scheduledStatus: ptScheduledStatusEnum("scheduled_status"),
   finished: boolean("finished"),
   started: boolean("started"),
   percentFinished: integer("percent_finished"),
@@ -120,7 +120,7 @@ export const ptPublishJobs = pgTable("pt_publish_jobs", {
   doNotDelete: boolean("do_not_delete"),
   doNotSchedule: boolean("do_not_schedule"),
   template: boolean("template"),
-  colorCode: ptPublishColorCodeEnum("color_code"),
+  colorCode: ptColorCodeEnum("color_code"),
   entryMethod: text("entry_method"),
   
   // Preservation flags
@@ -142,7 +142,7 @@ export const ptPublishJobs = pgTable("pt_publish_jobs", {
 });
 
 // PT Publish Manufacturing Orders
-export const ptPublishManufacturingOrders = pgTable("pt_publish_manufacturing_orders", {
+export const ptManufacturingOrders = pgTable("ptmanufacturing_orders", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -195,7 +195,7 @@ export const ptPublishManufacturingOrders = pgTable("pt_publish_manufacturing_or
 });
 
 // PT Publish Job Operations
-export const ptPublishJobOperations = pgTable("pt_publish_job_operations", {
+export const ptJobOperations = pgTable("ptjob_operations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -256,7 +256,7 @@ export const ptPublishJobOperations = pgTable("pt_publish_job_operations", {
 });
 
 // PT Publish Resources
-export const ptPublishResources = pgTable("pt_publish_resources", {
+export const ptResources = pgTable("ptresources", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -302,7 +302,7 @@ export const ptPublishResources = pgTable("pt_publish_resources", {
 });
 
 // PT Publish Job Activities
-export const ptPublishJobActivities = pgTable("pt_publish_job_activities", {
+export const ptJobActivities = pgTable("ptjob_activities", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -330,24 +330,24 @@ export const ptPublishJobActivities = pgTable("pt_publish_job_activities", {
 });
 
 // Create insert schemas
-export const insertPtPublishJobsSchema = createInsertSchema(ptPublishJobs);
-export const insertPtPublishManufacturingOrdersSchema = createInsertSchema(ptPublishManufacturingOrders);
-export const insertPtPublishJobOperationsSchema = createInsertSchema(ptPublishJobOperations);
-export const insertPtPublishResourcesSchema = createInsertSchema(ptPublishResources);
-export const insertPtPublishJobActivitiesSchema = createInsertSchema(ptPublishJobActivities);
+export const insertPtPublishJobsSchema = createInsertSchema(ptJobs);
+export const insertPtPublishManufacturingOrdersSchema = createInsertSchema(ptManufacturingOrders);
+export const insertPtPublishJobOperationsSchema = createInsertSchema(ptJobOperations);
+export const insertPtPublishResourcesSchema = createInsertSchema(ptResources);
+export const insertPtPublishJobActivitiesSchema = createInsertSchema(ptJobActivities);
 
 // Type exports
-export type PtPublishJob = typeof ptPublishJobs.$inferSelect;
+export type PtPublishJob = typeof ptJobs.$inferSelect;
 export type InsertPtPublishJob = z.infer<typeof insertPtPublishJobsSchema>;
 
-export type PtPublishManufacturingOrder = typeof ptPublishManufacturingOrders.$inferSelect;
+export type PtPublishManufacturingOrder = typeof ptManufacturingOrders.$inferSelect;
 export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrdersSchema>;
 
-export type PtPublishJobOperation = typeof ptPublishJobOperations.$inferSelect;
+export type PtPublishJobOperation = typeof ptJobOperations.$inferSelect;
 export type InsertPtPublishJobOperation = z.infer<typeof insertPtPublishJobOperationsSchema>;
 
-export type PtPublishResource = typeof ptPublishResources.$inferSelect;
+export type PtPublishResource = typeof ptResources.$inferSelect;
 export type InsertPtPublishResource = z.infer<typeof insertPtPublishResourcesSchema>;
 
-export type PtPublishJobActivity = typeof ptPublishJobActivities.$inferSelect;
+export type PtPublishJobActivity = typeof ptJobActivities.$inferSelect;
 export type InsertPtPublishJobActivity = z.infer<typeof insertPtPublishJobActivitiesSchema>;
