@@ -17,6 +17,14 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-15**: PT Publish Tables Enum Type Conversion
+- **✅ Created 25 PostgreSQL enum types for standardized column values**
+- **✅ Converted 27 columns from text to proper enum types**
+- **✅ Added 13 check constraints for numeric priority and grade columns**
+- **✅ Improved data integrity across 61 PT Publish tables**
+- **✅ Enum types include: production_status, scheduled_status, material_status, job_type, priority_class, etc.**
+- **✅ Database now enforces valid values for status, type, code, and priority columns**
+
 **2025-08-15**: PT Publish Tables Date/Time Column Migration
 - **✅ Converted all 128 date/time columns from TEXT to TIMESTAMP**
 - **✅ Migration completed successfully using safe dynamic conversion script**
