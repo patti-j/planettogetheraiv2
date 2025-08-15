@@ -18,6 +18,12 @@ Note on concurrent work:
 
 ## Application Behavior Documentation
 
+### Current Issues & Migration Status
+- **PT Publish Tables Migration**: System currently uses old tables (resources, productionOrders) while PT Publish tables exist but remain unused. Migration analysis documented in pt-publish-migration-analysis.md
+- **TypeScript Compilation**: All major compilation errors resolved (previously 1584+, now 0 critical errors)
+- **API Endpoints**: 15+ endpoints need migration from old tables to PT Publish tables
+- **Storage Implementation**: DatabaseStorage class missing some IStorage interface methods
+
 ### Design Principles & Guidelines
 When writing code, always follow these core principles:
 - **User Experience First**: Prioritize intuitive interfaces and responsive design

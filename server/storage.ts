@@ -2564,38 +2564,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getResources(): Promise<Resource[]> {
-    // Query from PT Publish table instead of local resources table
-    const result = await db.raw(`
-      SELECT DISTINCT ON (r.resource_id)
-        r.resource_id as id,
-        r.name,
-        r.resource_type as type,
-        CASE 
-          WHEN r.active = true THEN 'active'
-          ELSE 'inactive'
-        END as status,
-        COALESCE(
-          ARRAY(
-            SELECT DISTINCT rc.capability_id 
-            FROM pt_publish_resource_capabilities rc
-            WHERE rc.resource_id = r.resource_id
-              AND rc.publish_date = r.publish_date
-          ), 
-          '{}'::bigint[]
-        ) as capabilities,
-        NULL as photo,
-        false as "isDrum",
-        NULL as "drumDesignationDate",
-        NULL as "drumDesignationReason",
-        NULL as "drumDesignationMethod"
-      FROM pt_publish_resources r
-      WHERE r.publish_date = (
-        SELECT MAX(publish_date) FROM pt_publish_resources
-      )
-      ORDER BY r.resource_id, r.publish_date DESC
-    `);
-    
-    return result.rows || [];
+    // Use the original resources table for now until PT Publish migration is complete
+    const result = await db.select().from(resources);
+    return result || [];
   }
 
   async getResource(id: number): Promise<Resource | undefined> {
