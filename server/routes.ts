@@ -2668,7 +2668,7 @@ Rules:
           // Detailed timing breakdown
           setupTime: setupHours * 60,
           cycleTime: cycleHours * 60,
-          cleanupTime: cleanHours * 60,
+          cleanupTime: 0, // cleanup_hours not available in PT tables
           postProcessTime: postProcessHours * 60,
           // Progress tracking
           completionPercentage: row.production_status === 'completed' ? 100 : 

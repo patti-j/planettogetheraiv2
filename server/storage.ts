@@ -2481,6 +2481,68 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Operations - REDIRECTED TO PT PUBLISH TABLES
+  async getOperations(): Promise<Operation[]> {
+    console.log("getOperations: Redirecting to PT Publish Job Operations table");
+    
+    try {
+      // Get operations from PT Publish tables - use only existing columns
+      const ptOperations = await db
+        .select({
+          id: ptPublishJobOperations.id,
+          jobId: ptPublishJobOperations.jobId,
+          operationId: ptPublishJobOperations.operationId,
+          name: ptPublishJobOperations.name,
+          description: ptPublishJobOperations.description,
+          scheduledStart: ptPublishJobOperations.scheduledStart,
+          scheduledEnd: ptPublishJobOperations.scheduledEnd,
+          setupHours: ptPublishJobOperations.setupHours,
+          runHours: ptPublishJobOperations.runHours,
+          postProcessingHours: ptPublishJobOperations.postProcessingHours,
+          notes: ptPublishJobOperations.notes,
+          publishDate: ptPublishJobOperations.publishDate
+        })
+        .from(ptPublishJobOperations)
+        .orderBy(asc(ptPublishJobOperations.id));
+      
+      console.log("PT Publish operations count:", ptOperations.length);
+      
+      // Map PT Publish Job Operations to Operation format for backward compatibility
+      const mappedOps: Operation[] = ptOperations.map(op => ({
+        id: op.id,
+        name: op.name || `Operation ${op.operationId}`,
+        description: op.description,
+        duration: Number(op.setupHours || 1) * 60, // Convert hours to minutes
+        jobId: Number(op.jobId),
+        productionOrderId: Number(op.jobId), // Map job_id to production_order_id
+        order: op.id, // Use id as order since sequence_number doesn't exist
+        status: 'planned' as const, // Default status
+        assignedResourceId: null,
+        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+        routingId: null,
+        operationName: op.name || `Operation ${op.operationId}`,
+        standardDuration: Number(op.setupHours || 1) * 60,
+        actualDuration: null,
+        workCenterId: null,
+        priority: 3,
+        completionPercentage: 0,
+        qualityCheckRequired: false,
+        qualityStatus: null,
+        notes: op.notes || null,
+        createdAt: op.publishDate || new Date(),
+        updatedAt: op.publishDate || new Date()
+      } as Operation));
+      
+      console.log("Successfully mapped PT operations, total:", mappedOps.length);
+      return mappedOps;
+    } catch (error) {
+      console.error("Error in PT Publish getOperations:", error);
+      console.error("Error stack:", error.stack);
+      return [];
+    }
+  }
+
   async getResources(): Promise<Resource[]> {
     console.log("getResources: Redirecting to PT Publish Resources table");
     
