@@ -268,6 +268,16 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     return <span>{elements}</span>;
   };
 
+  // Prevent body scroll when mobile menu or dialogs are open
+  useEffect(() => {
+    if (mobileMenuOpen || recentDialogOpen || profileDialogOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [mobileMenuOpen, recentDialogOpen, profileDialogOpen]);
+
   // Voice input handling
   useEffect(() => {
     if (!isVoiceEnabled || !(window as any).webkitSpeechRecognition) return;
@@ -652,7 +662,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               </div>
               
               {/* Navigation Menu */}
-              <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+              <div className="flex-1 p-4 space-y-4 overflow-y-auto overscroll-contain">
                 {filteredNavigationGroups.map((group) => (
                   <div key={group.title} className="space-y-2">
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
@@ -694,9 +704,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={() => setRecentDialogOpen(false)}
           />
           {/* Dialog Panel */}
-          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl p-6 w-full max-w-md pb-safe-area animate-slide-up" style={{ zIndex: 100000 }}>
-            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
-            <div className="flex items-center justify-between mb-5">
+          <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl shadow-2xl w-full max-w-md pb-safe-area animate-slide-up flex flex-col max-h-[80vh]" style={{ zIndex: 100000 }}>
+            <div className="w-12 h-1 bg-gray-400 dark:bg-gray-600 rounded-full mx-auto mt-4 mb-4"></div>
+            <div className="flex items-center justify-between mb-5 px-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Pages</h3>
               <Button
                 variant="ghost"
@@ -707,7 +717,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6">
+              <div className="space-y-2">
               {recentPages.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -759,15 +770,13 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                           <span className="font-semibold text-gray-900 dark:text-white block">
                             {page.label}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(page.timestamp).toLocaleDateString()}
-                          </span>
                         </div>
                       </Button>
                     );
                   })}
                 </>
               )}
+              </div>
             </div>
           </div>
         </div>
