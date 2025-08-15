@@ -4565,12 +4565,23 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
-  // Users API for resource assignment widget
+  // Users API for resource assignment widget and mentions
   app.get("/api/users", requireAuth, async (req, res) => {
     try {
-      const { role } = req.query;
-      const users = await storage.getUsers({ role: role as string });
-      res.json(users);
+      const { role, search, limit } = req.query;
+      
+      if (search && typeof search === 'string') {
+        // Search users for mentions
+        const searchTerm = search.toLowerCase();
+        const limitNum = limit ? parseInt(limit as string) : 10;
+        
+        const users = await storage.searchUsers(searchTerm, limitNum);
+        res.json(users);
+      } else {
+        // Return all users (role filtering not implemented yet)
+        const users = await storage.getUsers();
+        res.json(users);
+      }
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });
@@ -7638,29 +7649,6 @@ Return ONLY a valid JSON object with this exact structure:
   });
 
   // User Management API Routes
-
-  // Users
-  app.get("/api/users", async (req, res) => {
-    try {
-      const { search, limit } = req.query;
-      
-      if (search && typeof search === 'string') {
-        // Search users for mentions
-        const searchTerm = search.toLowerCase();
-        const limitNum = limit ? parseInt(limit as string) : 10;
-        
-        const users = await storage.searchUsers(searchTerm, limitNum);
-        res.json(users);
-      } else {
-        // Return all users
-        const users = await storage.getUsers();
-        res.json(users);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ error: "Failed to fetch users" });
-    }
-  });
 
   app.get("/api/users/:id", async (req, res) => {
     try {
