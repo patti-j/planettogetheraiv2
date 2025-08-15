@@ -2773,11 +2773,14 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    return await db
-      .select()
-      .from(ptPublishManufacturingOrders)
-      .where(eq(ptPublishManufacturingOrders.publishDate, new Date(publishDate)))
-      .orderBy(asc(ptPublishManufacturingOrders.manufacturingOrderId));
+    // Use raw SQL to avoid column mapping issues
+    const result = await db.execute(sql`
+      SELECT * FROM pt_publish_manufacturing_orders 
+      WHERE publish_date = ${new Date(publishDate)}
+      ORDER BY manufacturing_order_id ASC
+    `);
+    
+    return result.rows as PtPublishManufacturingOrder[];
   }
 
   async getPtPublishJobOperations(): Promise<PtPublishJobOperation[]> {
@@ -2809,11 +2812,14 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    return await db
-      .select()
-      .from(ptPublishResources)
-      .where(eq(ptPublishResources.publishDate, new Date(publishDate)))
-      .orderBy(asc(ptPublishResources.name));
+    // Use raw SQL to avoid column mapping issues
+    const result = await db.execute(sql`
+      SELECT * FROM pt_publish_resources 
+      WHERE publish_date = ${new Date(publishDate)}
+      ORDER BY name ASC
+    `);
+    
+    return result.rows as PtPublishResource[];
   }
 
   async getPtPublishJobActivities(): Promise<PtPublishJobActivity[]> {
