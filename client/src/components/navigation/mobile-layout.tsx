@@ -291,32 +291,47 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                     <button
                       onClick={() => {
                         setShowMaxResponse(false);
+                        // Create contextual response based on Max's message content
+                        let contextualYes = "Yes, please help me with that.";
+                        const content = maxResponse.content.toLowerCase();
+                        
+                        if (content.includes('alert')) {
+                          contextualYes = "Yes, please show me details about the alerts.";
+                        } else if (content.includes('review') || content.includes('check')) {
+                          contextualYes = "Yes, please review that for me.";
+                        } else if (content.includes('analyze') || content.includes('analysis')) {
+                          contextualYes = "Yes, please analyze that.";
+                        } else if (content.includes('schedule') || content.includes('production')) {
+                          contextualYes = "Yes, please help with the production schedule.";
+                        }
+                        
                         addMessage({
                           id: Date.now().toString(),
-                          content: "Yes",
+                          content: contextualYes,
                           role: 'user',
                           timestamp: new Date()
                         });
-                        sendMessageMutation.mutate("Yes");
+                        sendMessageMutation.mutate(contextualYes);
                       }}
                       className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium"
                     >
-                      Yes
+                      Yes, help me
                     </button>
                     <button
                       onClick={() => {
                         setShowMaxResponse(false);
+                        const contextualNo = `No, I don't need help with that right now.`;
                         addMessage({
                           id: Date.now().toString(),
-                          content: "No",
+                          content: contextualNo,
                           role: 'user',
                           timestamp: new Date()
                         });
-                        sendMessageMutation.mutate("No");
+                        sendMessageMutation.mutate(contextualNo);
                       }}
                       className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
                     >
-                      No
+                      No, thanks
                     </button>
                   </div>
                 )}
