@@ -2532,8 +2532,8 @@ Rules:
           j.name as job_name,
           j.description as job_description,
           j.priority as job_priority,
-          j.due_date as job_due_date,
-          j.status as job_status,
+          j.need_date_time as job_due_date,
+          j.scheduled_status as job_status,
           
           -- Manufacturing Order information
           mo.id as mo_id,
@@ -2546,8 +2546,8 @@ Rules:
           ja.external_id as activity_external_id,
           ja.production_status as activity_status,
           ja.comments as activity_comments,
-          ja.start_date as activity_start_date,
-          ja.end_date as activity_end_date,
+          ja.scheduled_start_date as activity_start_date,
+          ja.scheduled_end_date as activity_end_date,
           
           -- Resource information from pt_publish_job_resources and pt_publish_resources
           jr.id as job_resource_id,
@@ -2557,7 +2557,6 @@ Rules:
           r.external_id as resource_external_id,
           r.name as resource_name,
           r.description as resource_description,
-          r.resource_type,
           
           -- Plant information from pt_publish_plants
           p.id as plant_id,
