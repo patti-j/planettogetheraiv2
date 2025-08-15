@@ -21,9 +21,11 @@ Note on concurrent work:
 ### Current Issues & Migration Status
 - **PT Tables Renaming**: ✅ COMPLETE (2025-08-15) - All `pt_publish_*` tables renamed to `ptTableName` format (e.g., `ptJobs`, `ptResources`)
 - **Table Names**: Switched from underscore format to camelCase (e.g., `pt_publish_jobs` → `ptjobs`)
-- **API Endpoints**: PT operations and production orders working; PT resources/jobs/manufacturing orders returning empty
+- **Old Tables Archival**: ✅ COMPLETE (2025-08-15) - 47 old manufacturing tables archived with `archived_` prefix
+- **API Endpoints**: PT operations and production orders working with sample data
 - **Schema Files**: Updated both schema.ts and pt-publish-schema.ts to use new table names
 - **Database Structure**: All PT tables retain original column structure with approved variations only
+- **Current State**: 62 active PT tables with sample data, 47 archived legacy tables preserved
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.
