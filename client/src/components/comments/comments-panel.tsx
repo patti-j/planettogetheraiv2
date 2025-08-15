@@ -154,15 +154,12 @@ export function CommentsPanel({
       parentCommentId?: number;
       mentions?: number[];
     }) => {
-      return await apiRequest("/api/comments", {
-        method: "POST",
-        body: JSON.stringify({
-          entityType,
-          entityId,
-          content: data.content,
-          parentCommentId: data.parentCommentId,
-          mentions: data.mentions
-        })
+      return await apiRequest("POST", "/api/comments", {
+        entityType,
+        entityId,
+        content: data.content,
+        parentCommentId: data.parentCommentId,
+        mentions: data.mentions
       });
     },
     onSuccess: () => {
@@ -186,10 +183,7 @@ export function CommentsPanel({
   // Update comment mutation
   const updateCommentMutation = useMutation({
     mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
-      return await apiRequest(`/api/comments/${commentId}`, {
-        method: "PUT",
-        body: JSON.stringify({ content })
-      });
+      return await apiRequest("PUT", `/api/comments/${commentId}`, { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/comments", entityType, entityId] });
@@ -205,9 +199,7 @@ export function CommentsPanel({
   // Delete comment mutation
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: number) => {
-      return await apiRequest(`/api/comments/${commentId}`, {
-        method: "DELETE"
-      });
+      return await apiRequest("DELETE", `/api/comments/${commentId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/comments", entityType, entityId] });
@@ -221,10 +213,7 @@ export function CommentsPanel({
   // Add reaction mutation
   const addReactionMutation = useMutation({
     mutationFn: async ({ commentId, reactionType }: { commentId: number; reactionType: string }) => {
-      return await apiRequest(`/api/comments/${commentId}/reactions`, {
-        method: "POST",
-        body: JSON.stringify({ reactionType })
-      });
+      return await apiRequest("POST", `/api/comments/${commentId}/reactions`, { reactionType });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/comments", entityType, entityId] });
@@ -234,13 +223,10 @@ export function CommentsPanel({
   // Watch thread mutation
   const watchThreadMutation = useMutation({
     mutationFn: async ({ watchType, watchId }: { watchType: string; watchId: number }) => {
-      return await apiRequest("/api/watch", {
-        method: "POST",
-        body: JSON.stringify({ 
-          watchType, 
-          watchId,
-          entityType: watchType === "entity" ? entityType : undefined
-        })
+      return await apiRequest("POST", "/api/watch", { 
+        watchType, 
+        watchId,
+        entityType: watchType === "entity" ? entityType : undefined
       });
     },
     onSuccess: () => {
