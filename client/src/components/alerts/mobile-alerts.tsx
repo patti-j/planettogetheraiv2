@@ -129,15 +129,8 @@ export function MobileAlerts() {
     }
   });
 
-  // Fetch AI insights
-  const { data: aiInsights } = useQuery({
-    queryKey: ['/api/alerts/ai-insights'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/alerts/ai-insights');
-      return response.json();
-    },
-    refetchInterval: 60000 // Refresh every minute
-  });
+  // AI insights will be integrated with Max AI service
+  const aiInsights = null;
 
   // Acknowledge alert mutation
   const acknowledgeMutation = useMutation({
@@ -273,7 +266,7 @@ export function MobileAlerts() {
                 <div>
                   <p className="text-xs text-muted-foreground">Critical</p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {stats.bySeverity.critical}
+                    {stats.critical || 0}
                   </p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-red-500 opacity-50" />
@@ -286,7 +279,7 @@ export function MobileAlerts() {
                 <div>
                   <p className="text-xs text-muted-foreground">High Priority</p>
                   <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {stats.bySeverity.high}
+                    {stats.high || 0}
                   </p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-orange-500 opacity-50" />

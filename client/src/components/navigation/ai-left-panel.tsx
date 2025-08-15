@@ -114,21 +114,64 @@ export function AILeftPanel() {
       id: '1',
       role: 'assistant',
       content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
-      timestamp: '10:00 AM'
-    },
-    {
-      id: '2',
-      role: 'user',
-      content: 'What\'s the current status of production line A?',
-      timestamp: '10:02 AM'
-    },
-    {
-      id: '3',
-      role: 'assistant',
-      content: 'Production Line A is currently operating at 77% capacity, which is 23% below expected performance. I\'ve detected an unusual delay pattern that started 2 hours ago. The issue appears to be related to material feed rate inconsistencies. Would you like me to suggest optimization strategies?',
-      timestamp: '10:02 AM'
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
+  
+  // Get current page location
+  const [location] = useState(() => window.location.pathname);
+  
+  // Fetch production status from Max AI
+  const { data: productionStatus } = useQuery({
+    queryKey: [`/api/max-ai/production-status?page=${location}`],
+    refetchInterval: 30000, // Refresh every 30 seconds
+    enabled: activeTab === 'insights'
+  });
+  
+  // Fetch proactive insights from Max AI
+  const { data: maxInsights } = useQuery({
+    queryKey: [`/api/max-ai/insights?page=${location}`],
+    refetchInterval: 60000, // Refresh every minute
+    enabled: activeTab === 'insights' || activeTab === 'anomalies'
+  });
+  
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      return apiRequest('/api/max-ai/chat', 'POST', {
+        message,
+        context: {
+          currentPage: location,
+          selectedData: null,
+          recentActions: []
+        }
+      });
+    },
+    onSuccess: (response: any) => {
+      const aiResponse: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: response?.content || 'I\'m processing your request...',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatMessages(prev => [...prev, aiResponse]);
+      
+      // If there are insights, show them
+      if (response?.insights && response.insights.length > 0) {
+        // Switch to insights tab to show them
+        setActiveTab('insights');
+      }
+    },
+    onError: (error) => {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your request. Please try again.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    }
+  });
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Listen for toggle event from command palette
@@ -175,52 +218,18 @@ export function AILeftPanel() {
     };
   }, [isResizing, panelWidth]);
 
-  // Mock AI insights data - in production, this would come from the backend
-  const mockInsights: AIInsight[] = [
-    {
-      id: '1',
-      type: 'anomaly',
-      title: 'Unusual Production Delay Detected',
-      description: 'Production line A is operating 23% below expected capacity',
-      priority: 'high',
-      timestamp: '2 minutes ago',
-      actionable: true,
-      impact: 'May delay 3 orders by 2-4 hours',
-      recommendation: 'Reallocate resources from Line B or schedule overtime'
-    },
-    {
-      id: '2',
-      type: 'insight',
-      title: 'Optimal Resource Allocation Found',
-      description: 'Rescheduling Order #PO-2025-003 could improve overall efficiency by 15%',
-      priority: 'medium',
-      timestamp: '10 minutes ago',
-      actionable: true,
-      impact: 'Save 4 hours of production time',
-      recommendation: 'Move to Tuesday morning slot'
-    },
-    {
-      id: '3',
-      type: 'recommendation',
-      title: 'Preventive Maintenance Suggested',
-      description: 'CNC Machine 1 showing early signs of wear',
-      priority: 'medium',
-      timestamp: '1 hour ago',
-      actionable: true,
-      impact: 'Prevent potential 8-hour downtime',
-      recommendation: 'Schedule maintenance for next weekend'
-    },
-    {
-      id: '4',
-      type: 'simulation',
-      title: 'What-If Scenario Available',
-      description: 'Impact analysis for rush order insertion completed',
-      priority: 'low',
-      timestamp: '2 hours ago',
-      actionable: false,
-      impact: 'Minimal disruption with proper sequencing'
-    }
-  ];
+  // Transform Max AI insights to display format
+  const displayInsights: AIInsight[] = maxInsights?.map((insight: any, index: number) => ({
+    id: insight.id || `insight-${index}`,
+    type: insight.type || 'insight',
+    title: insight.title,
+    description: insight.description,
+    priority: insight.severity || 'medium',
+    timestamp: 'Now',
+    actionable: insight.actionable || false,
+    impact: insight.data?.impact,
+    recommendation: insight.recommendation
+  })) || [];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -254,16 +263,8 @@ export function AILeftPanel() {
     setChatMessages(prev => [...prev, newMessage]);
     setPrompt('');
 
-    // Simulate AI response after a short delay
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'I\'m analyzing your request and will provide insights based on current production data. Let me check the system for you...',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    // Send message to Max AI
+    sendMessageMutation.mutate(prompt);
   };
 
   return (
@@ -405,8 +406,8 @@ export function AILeftPanel() {
             <TabsContent value="insights" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
                 <div className="space-y-3 pt-2 pb-4">
-                {mockInsights
-                  .filter(i => i.type === 'insight' || i.type === 'recommendation')
+                {displayInsights
+                  .filter(i => i.type === 'insight' || i.type === 'recommendation' || i.type === 'optimization')
                   .map(insight => (
                     <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
                       <CardHeader className="pb-3">
@@ -449,8 +450,8 @@ export function AILeftPanel() {
             <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
                 <div className="space-y-3 pt-2 pb-4">
-                {mockInsights
-                  .filter(i => i.type === 'anomaly')
+                {displayInsights
+                  .filter(i => i.type === 'anomaly' || i.type === 'bottleneck' || i.type === 'conflict')
                   .map(insight => (
                     <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors border-orange-200">
                       <CardHeader className="pb-3">
@@ -526,7 +527,7 @@ export function AILeftPanel() {
                   </CardContent>
                 </Card>
 
-                {mockInsights
+                {displayInsights
                   .filter(i => i.type === 'simulation')
                   .map(insight => (
                     <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">

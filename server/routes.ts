@@ -3634,6 +3634,116 @@ Return ONLY a valid JSON object with this exact structure:
   });
 
   // Clear all AI memories
+  // Max AI endpoints for manufacturing intelligence
+  app.post("/api/max-ai/chat", requireAuth, async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      const userId = (req as any).userId;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+
+      // Import the Max AI service
+      const { maxAI } = await import("./services/max-ai-service");
+      
+      // Get user role
+      const user = await storage.getUser(userId);
+      const role = user?.activeRoleId ? await storage.getRole(user.activeRoleId) : null;
+      
+      // Generate AI response with context
+      const response = await maxAI.generateResponse(message, {
+        userId,
+        userRole: role?.name || 'User',
+        currentPage: context?.currentPage || '/',
+        selectedData: context?.selectedData,
+        recentActions: context?.recentActions
+      });
+      
+      res.json(response);
+    } catch (error) {
+      console.error("Max AI chat error:", error);
+      res.status(500).json({ error: "Failed to generate AI response" });
+    }
+  });
+
+  app.get("/api/max-ai/production-status", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      
+      // Import the Max AI service
+      const { maxAI } = await import("./services/max-ai-service");
+      
+      // Get user role
+      const user = await storage.getUser(userId);
+      const role = user?.activeRoleId ? await storage.getRole(user.activeRoleId) : null;
+      
+      // Get production status
+      const status = await maxAI.getProductionStatus({
+        userId,
+        userRole: role?.name || 'User',
+        currentPage: req.query.page as string || '/',
+      });
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Max AI production status error:", error);
+      res.status(500).json({ error: "Failed to get production status" });
+    }
+  });
+
+  app.get("/api/max-ai/insights", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      
+      // Import the Max AI service
+      const { maxAI } = await import("./services/max-ai-service");
+      
+      // Get user role
+      const user = await storage.getUser(userId);
+      const role = user?.activeRoleId ? await storage.getRole(user.activeRoleId) : null;
+      
+      // Get proactive insights
+      const insights = await maxAI.getProactiveInsights({
+        userId,
+        userRole: role?.name || 'User',
+        currentPage: req.query.page as string || '/',
+      });
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("Max AI insights error:", error);
+      res.status(500).json({ error: "Failed to get insights" });
+    }
+  });
+
+  app.post("/api/max-ai/analyze-schedule", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const { timeRange, criteria } = req.body;
+      
+      // Import the Max AI service
+      const { maxAI } = await import("./services/max-ai-service");
+      
+      // Get user role
+      const user = await storage.getUser(userId);
+      const role = user?.activeRoleId ? await storage.getRole(user.activeRoleId) : null;
+      
+      // Analyze schedule
+      const analysis = await maxAI.analyzeSchedule({
+        userId,
+        userRole: role?.name || 'User',
+        currentPage: '/production-schedule',
+        selectedData: { timeRange, criteria }
+      });
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Max AI schedule analysis error:", error);
+      res.status(500).json({ error: "Failed to analyze schedule" });
+    }
+  });
+
   app.post("/api/ai-agent/memory/clear", requireAuth, async (req, res) => {
     try {
       const userId = req.user?.id || 'demo';
