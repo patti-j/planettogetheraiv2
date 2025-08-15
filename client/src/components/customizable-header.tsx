@@ -205,6 +205,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
   const [headerItems, setHeaderItems] = useState<HeaderItem[]>([]);
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
+  const [showHeaderText, setShowHeaderText] = useState<boolean>(true);
+  const [tempShowHeaderText, setTempShowHeaderText] = useState<boolean>(true);
   const { addRecentPage } = useNavigation();
 
   // Widget state
@@ -239,16 +241,21 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       const defaultItems = defaultHeaderItemsByRole[roleName] || defaultHeaderItemsByRole['Operator'];
       setHeaderItems(defaultItems);
     }
+    
+    // Load header text display setting
+    const showText = (preferences as any)?.dashboardLayout?.showHeaderText ?? true;
+    setShowHeaderText(showText);
   }, [preferences, currentRole]);
 
   // Save header configuration
   const saveHeaderMutation = useMutation({
-    mutationFn: async (items: HeaderItem[]) => {
+    mutationFn: async ({ items, showText }: { items: HeaderItem[], showText: boolean }) => {
       const updatedPreferences = {
         ...(preferences as any),
         dashboardLayout: {
           ...(preferences as any)?.dashboardLayout,
-          headerItems: items
+          headerItems: items,
+          showHeaderText: showText
         }
       };
       return apiRequest('PUT', '/api/user-preferences', updatedPreferences);
@@ -298,7 +305,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   // Save customizations
   const saveCustomizations = () => {
     setHeaderItems(tempHeaderItems);
-    saveHeaderMutation.mutate(tempHeaderItems);
+    setShowHeaderText(tempShowHeaderText);
+    saveHeaderMutation.mutate({ items: tempHeaderItems, showText: tempShowHeaderText });
     setCustomizeOpen(false);
   };
 
@@ -359,7 +367,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         )}
       >
         <Icon className="h-4 w-4" />
-        <span className="hidden lg:inline text-sm">{item.label}</span>
+        {showHeaderText && <span className="hidden lg:inline text-sm">{item.label}</span>}
       </Button>
     );
   };
@@ -379,7 +387,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             className="flex items-center gap-2 px-3 py-2 h-9"
           >
             <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
-            <span className="hidden lg:inline font-semibold">PlanetTogether</span>
+            {showHeaderText && <span className="hidden lg:inline font-semibold">PlanetTogether</span>}
           </Button>
 
           {/* Separator */}
@@ -399,12 +407,13 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             size="sm"
             onClick={() => {
               setTempHeaderItems([...headerItems]);
+              setTempShowHeaderText(showHeaderText);
               setCustomizeOpen(true);
             }}
             className="flex items-center gap-2 px-3 py-2 h-9"
           >
             <Edit2 className="h-4 w-4" />
-            <span className="hidden lg:inline text-sm">Customize</span>
+            {showHeaderText && <span className="hidden lg:inline text-sm">Customize</span>}
           </Button>
 
           {/* Fullscreen toggle button */}
@@ -420,9 +429,11 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             ) : (
               <Maximize className="h-4 w-4" />
             )}
-            <span className="hidden lg:inline text-sm">
-              {isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
-            </span>
+            {showHeaderText && (
+              <span className="hidden lg:inline text-sm">
+                {isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+              </span>
+            )}
           </Button>
 
           {/* Theme (always visible) */}
@@ -448,7 +459,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
-                <span className="hidden lg:inline text-sm">{user?.firstName}</span>
+                {showHeaderText && <span className="hidden lg:inline text-sm">{user?.firstName}</span>}
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -630,6 +641,25 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                   </div>
                 </div>
               </ScrollArea>
+            </div>
+          </div>
+
+          {/* Header text display setting */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="show-header-text" className="text-sm font-medium">
+                  Show Text Labels
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Display text labels alongside icons in the header
+                </p>
+              </div>
+              <Switch
+                id="show-header-text"
+                checked={tempShowHeaderText}
+                onCheckedChange={setTempShowHeaderText}
+              />
             </div>
           </div>
 
