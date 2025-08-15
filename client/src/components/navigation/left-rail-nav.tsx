@@ -73,50 +73,77 @@ export function LeftRailNav() {
 
 
           {/* Home Section */}
-          <div className="p-2 border-b">
-            <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={location === '/' ? 'default' : 'ghost'}
-                    className={cn(
-                      "flex-1 justify-start",
-                      isCollapsed && "justify-center"
-                    )}
-                    onClick={() => setLocation('/')}
-                  >
-                    <Home className="h-4 w-4" />
-                    {!isCollapsed && <span className="ml-2">Home</span>}
-                  </Button>
-                </TooltipTrigger>
-                {isCollapsed && (
+          <div className="p-2 border-b relative">
+            {!isCollapsed ? (
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={location === '/' ? 'default' : 'ghost'}
+                      className="flex-1 justify-start"
+                      onClick={() => setLocation('/')}
+                    >
+                      <Home className="h-4 w-4" />
+                      <span className="ml-2">Home</span>
+                    </Button>
+                  </TooltipTrigger>
+                </Tooltip>
+                
+                {/* Collapse Button - expanded state */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsCollapsed(!isCollapsed)}
+                      className="h-8 w-8 p-0 flex-shrink-0"
+                      aria-label="Collapse navigation"
+                    >
+                      <ChevronRight className="h-3 w-3 transition-transform rotate-180" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Collapse navigation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center space-y-1">
+                {/* Home Button - collapsed state */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={location === '/' ? 'default' : 'ghost'}
+                      className="w-10 h-10 p-0 justify-center"
+                      onClick={() => setLocation('/')}
+                    >
+                      <Home className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
                   <TooltipContent side="right">
                     <p>Home</p>
                   </TooltipContent>
-                )}
-              </Tooltip>
-              
-              {/* Collapse Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="h-8 w-8 p-0 flex-shrink-0"
-                    aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
-                  >
-                    <ChevronRight className={cn(
-                      "h-3 w-3 transition-transform",
-                      isCollapsed ? "rotate-0" : "rotate-180"
-                    )} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{isCollapsed ? "Expand navigation" : "Collapse navigation"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+                </Tooltip>
+                
+                {/* Collapse Button - collapsed state */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsCollapsed(!isCollapsed)}
+                      className="w-6 h-6 p-0 flex-shrink-0"
+                      aria-label="Expand navigation"
+                    >
+                      <ChevronRight className="h-3 w-3 transition-transform rotate-0" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Expand navigation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </div>
 
           {/* Menu Button */}
