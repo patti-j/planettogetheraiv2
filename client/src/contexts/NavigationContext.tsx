@@ -100,6 +100,9 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/enterprise-map': { label: 'Global Control Tower', icon: 'Globe' },
   '/smart-kpi-tracking': { label: 'Smart KPI Tracking', icon: 'TrendingUp' },
   '/implementation-consultant': { label: 'Implementation Consultant', icon: 'Users' },
+  '/alerts': { label: 'Alerts & Notifications', icon: 'AlertTriangle' },
+  '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Brain' },
+  '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Bot' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }
 };
 
