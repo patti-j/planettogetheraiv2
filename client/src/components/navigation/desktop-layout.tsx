@@ -64,8 +64,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           {/* TopMenu for navigation menu - hidden in full screen */}
           {!isFullScreen && <TopMenu />}
           
-          {/* Main content area */}
-          <div className="flex-1 overflow-auto">
+          {/* Main content area - with bottom padding for activity center */}
+          <div className="flex-1 overflow-auto pb-10">
             {children}
           </div>
         </div>
