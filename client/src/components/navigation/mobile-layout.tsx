@@ -367,14 +367,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                   </div>
                 )}
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowMaxResponse(false)}
-                className="flex-shrink-0 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
