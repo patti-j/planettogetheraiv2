@@ -343,7 +343,7 @@ const featureTableMapping: Record<string, string[]> = {
   ],
   'planning': [
     'demand_forecasts', 'production_plans', 'material_requirements', 'capacity_requirements',
-    'master_production_schedule', 'sales_orders', 'planned_orders', 'mrp_runs',
+    'pt_publish_master_production_schedule', 'sales_orders', 'planned_orders', 'mrp_runs',
     'demand_planning_scenarios', 'capacity_planning'
   ],
   'maintenance': [

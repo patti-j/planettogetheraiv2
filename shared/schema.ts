@@ -9053,7 +9053,7 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
 // ===== MRP (Material Requirements Planning) TABLES =====
 
 // MRP Master Production Schedule - defines what we plan to produce
-export const masterProductionSchedule = pgTable("master_production_schedule", {
+export const masterProductionSchedule = pgTable("pt_publish_master_production_schedule", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
   plantId: integer("plant_id").references(() => plants.id).notNull(),
