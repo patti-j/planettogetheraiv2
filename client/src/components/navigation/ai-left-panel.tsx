@@ -138,13 +138,16 @@ export function AILeftPanel() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      return apiRequest('/api/max-ai/chat', 'POST', {
-        message,
-        context: {
-          currentPage: location,
-          selectedData: null,
-          recentActions: []
-        }
+      return apiRequest('/api/max-ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          message,
+          context: {
+            currentPage: location,
+            selectedData: null,
+            recentActions: []
+          }
+        })
       });
     },
     onSuccess: (response: any) => {
@@ -264,7 +267,7 @@ export function AILeftPanel() {
       
       // Add the clickable element
       elements.push(
-        <button
+        <span
           key={`link-${index}`}
           onClick={() => {
             const userMessage: ChatMessage = {
@@ -281,7 +284,7 @@ export function AILeftPanel() {
           title={`Click to: ${replacement.query}`}
         >
           {replacement.text}
-        </button>
+        </span>
       );
       
       lastEnd = replacement.end;
