@@ -70,53 +70,53 @@ export function LeftRailNav() {
           isMinimized && "hidden",
           isCollapsed ? "w-16" : "w-64"
         )}>
-          {/* Header with Collapse Button */}
+
+
+          {/* Home Section */}
           <div className="p-2 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                {!isCollapsed && (
-                  <span className="text-xs font-medium text-muted-foreground">Navigation</span>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={location === '/' ? 'default' : 'ghost'}
+                    className={cn(
+                      "flex-1 justify-start",
+                      isCollapsed && "justify-center"
+                    )}
+                    onClick={() => setLocation('/')}
+                  >
+                    <Home className="h-4 w-4" />
+                    {!isCollapsed && <span className="ml-2">Home</span>}
+                  </Button>
+                </TooltipTrigger>
+                {isCollapsed && (
+                  <TooltipContent side="right">
+                    <p>Home</p>
+                  </TooltipContent>
                 )}
-              </div>
+              </Tooltip>
               
               {/* Collapse Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="h-6 w-6 p-0 flex-shrink-0"
-                aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
-              >
-                <ChevronRight className={cn(
-                  "h-3 w-3 transition-transform",
-                  isCollapsed ? "rotate-0" : "rotate-180"
-                )} />
-              </Button>
-            </div>
-          </div>
-
-          {/* Home Button */}
-          <div className="p-2 border-b">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={location === '/' ? 'default' : 'ghost'}
-                  className={cn(
-                    "w-full justify-start",
-                    isCollapsed && "justify-center"
-                  )}
-                  onClick={() => setLocation('/')}
-                >
-                  <Home className="h-4 w-4" />
-                  {!isCollapsed && <span className="ml-2">Home</span>}
-                </Button>
-              </TooltipTrigger>
-              {isCollapsed && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="h-8 w-8 p-0 flex-shrink-0"
+                    aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+                  >
+                    <ChevronRight className={cn(
+                      "h-3 w-3 transition-transform",
+                      isCollapsed ? "rotate-0" : "rotate-180"
+                    )} />
+                  </Button>
+                </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p>Home</p>
+                  <p>{isCollapsed ? "Expand navigation" : "Collapse navigation"}</p>
                 </TooltipContent>
-              )}
-            </Tooltip>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Menu Button */}
