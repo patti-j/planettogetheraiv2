@@ -83,6 +83,23 @@ export default function AIAnalysisConfig() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    isActive: true,
+    triggerType: 'scheduled' as const,
+    scheduleExpression: '0 */6 * * *', // Every 6 hours
+    dataSources: [] as string[],
+    analysisScope: 'global' as const,
+    lookbackHours: 24,
+    analysisPrompt: '',
+    confidenceThreshold: 0.8,
+    minIntervalMinutes: 60,
+    maxAlertsPerRun: 10,
+    autoCreateAlerts: true,
+    alertSeverity: 'medium',
+    alertType: 'operational'
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -133,6 +150,90 @@ export default function AIAnalysisConfig() {
       queryClient.invalidateQueries({ queryKey: ['/api/alerts/ai-analysis-configs'] });
     }
   });
+
+  // Create configuration mutation
+  const createConfigMutation = useMutation({
+    mutationFn: (data: typeof formData) => 
+      apiRequest('/api/alerts/ai-analysis-configs', { 
+        method: 'POST', 
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+    onSuccess: () => {
+      toast({
+        title: "Configuration Created",
+        description: "AI analysis configuration created successfully.",
+      });
+      setShowCreateDialog(false);
+      setFormData({
+        name: '',
+        description: '',
+        isActive: true,
+        triggerType: 'scheduled',
+        scheduleExpression: '0 */6 * * *',
+        dataSources: [],
+        analysisScope: 'global',
+        lookbackHours: 24,
+        analysisPrompt: '',
+        confidenceThreshold: 0.8,
+        minIntervalMinutes: 60,
+        maxAlertsPerRun: 10,
+        autoCreateAlerts: true,
+        alertSeverity: 'medium',
+        alertType: 'operational'
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/alerts/ai-analysis-configs'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create configuration. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateConfig = () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a configuration name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!formData.analysisPrompt.trim()) {
+      toast({
+        title: "Validation Error", 
+        description: "Please enter an analysis prompt.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createConfigMutation.mutate(formData);
+  };
+
+  const presetSchedules = [
+    { label: "Every 15 minutes", value: "*/15 * * * *" },
+    { label: "Every hour", value: "0 * * * *" },
+    { label: "Every 6 hours", value: "0 */6 * * *" },
+    { label: "Every 12 hours", value: "0 */12 * * *" },
+    { label: "Daily at 6 AM", value: "0 6 * * *" },
+    { label: "Daily at midnight", value: "0 0 * * *" },
+    { label: "Weekdays at 9 AM", value: "0 9 * * 1-5" },
+    { label: "Weekly on Sunday", value: "0 0 * * 0" },
+  ];
+
+  const dataSources = [
+    "production_orders",
+    "operations", 
+    "resources",
+    "quality_data",
+    "inventory_levels",
+    "schedule_performance",
+    "equipment_status",
+    "workforce_data"
+  ];
 
   const getTriggerTypeColor = (type: string) => {
     switch (type) {
@@ -365,6 +466,309 @@ export default function AIAnalysisConfig() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Configuration Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create AI Analysis Configuration</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Configuration Name</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., Production Line Performance Analysis"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe what this analysis will monitor and detect..."
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                />
+                <Label htmlFor="isActive">Enable this configuration</Label>
+              </div>
+            </div>
+
+            {/* Trigger Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Trigger & Scheduling</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="triggerType">Trigger Type</Label>
+                <Select 
+                  value={formData.triggerType} 
+                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, triggerType: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled">Scheduled (Time-based)</SelectItem>
+                    <SelectItem value="event_based">Event-based (Data changes)</SelectItem>
+                    <SelectItem value="threshold_based">Threshold-based (Metrics)</SelectItem>
+                    <SelectItem value="continuous">Continuous (Real-time)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.triggerType === 'scheduled' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="schedulePreset">Schedule Preset</Label>
+                    <Select 
+                      value={formData.scheduleExpression} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, scheduleExpression: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a preset schedule" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {presetSchedules.map((preset) => (
+                          <SelectItem key={preset.value} value={preset.value}>
+                            {preset.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduleExpression">Custom Cron Expression</Label>
+                    <Input
+                      id="scheduleExpression"
+                      placeholder="0 */6 * * * (every 6 hours)"
+                      value={formData.scheduleExpression}
+                      onChange={(e) => setFormData(prev => ({ ...prev, scheduleExpression: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Format: minute hour day month weekday. Examples: "0 */6 * * *" (every 6 hours), "0 9 * * 1-5" (weekdays at 9 AM)
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minIntervalMinutes">Minimum Interval (minutes)</Label>
+                  <Input
+                    id="minIntervalMinutes"
+                    type="number"
+                    min="1"
+                    value={formData.minIntervalMinutes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, minIntervalMinutes: parseInt(e.target.value) || 60 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Prevents too frequent analysis runs</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lookbackHours">Data Lookback (hours)</Label>
+                  <Input
+                    id="lookbackHours"
+                    type="number"
+                    min="1"
+                    value={formData.lookbackHours}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lookbackHours: parseInt(e.target.value) || 24 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">How far back to analyze data</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Data Sources & Scope */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Data Sources & Scope</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="analysisScope">Analysis Scope</Label>
+                <Select 
+                  value={formData.analysisScope} 
+                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, analysisScope: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">Global (All Plants)</SelectItem>
+                    <SelectItem value="plant">Plant-specific</SelectItem>
+                    <SelectItem value="department">Department-specific</SelectItem>
+                    <SelectItem value="resource">Resource-specific</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data Sources to Analyze</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {dataSources.map((source) => (
+                    <div key={source} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={source}
+                        checked={formData.dataSources.includes(source)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              dataSources: [...prev.dataSources, source] 
+                            }));
+                          } else {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              dataSources: prev.dataSources.filter(s => s !== source) 
+                            }));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <Label htmlFor={source} className="text-sm capitalize">
+                        {source.replace(/_/g, ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Analysis Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">AI Analysis Settings</h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="analysisPrompt">Analysis Prompt</Label>
+                <Textarea
+                  id="analysisPrompt"
+                  placeholder="Analyze production data for efficiency issues, quality problems, and optimization opportunities..."
+                  value={formData.analysisPrompt}
+                  onChange={(e) => setFormData(prev => ({ ...prev, analysisPrompt: e.target.value }))}
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Describe what the AI should look for and analyze in the data
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="confidenceThreshold">Confidence Threshold</Label>
+                  <Input
+                    id="confidenceThreshold"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={formData.confidenceThreshold}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confidenceThreshold: parseFloat(e.target.value) || 0.8 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">0.0 to 1.0 (higher = more certain)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="maxAlertsPerRun">Max Alerts per Run</Label>
+                  <Input
+                    id="maxAlertsPerRun"
+                    type="number"
+                    min="1"
+                    value={formData.maxAlertsPerRun}
+                    onChange={(e) => setFormData(prev => ({ ...prev, maxAlertsPerRun: parseInt(e.target.value) || 10 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Prevents alert flooding</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Alert Generation */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Alert Generation</h3>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="autoCreateAlerts"
+                  checked={formData.autoCreateAlerts}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, autoCreateAlerts: checked }))}
+                />
+                <Label htmlFor="autoCreateAlerts">Automatically create alerts from analysis</Label>
+              </div>
+
+              {formData.autoCreateAlerts && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="alertSeverity">Default Alert Severity</Label>
+                    <Select 
+                      value={formData.alertSeverity} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, alertSeverity: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="alertType">Default Alert Type</Label>
+                    <Select 
+                      value={formData.alertType} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, alertType: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="operational">Operational</SelectItem>
+                        <SelectItem value="quality">Quality</SelectItem>
+                        <SelectItem value="safety">Safety</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="performance">Performance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateDialog(false)}
+                disabled={createConfigMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateConfig}
+                disabled={createConfigMutation.isPending}
+              >
+                {createConfigMutation.isPending ? "Creating..." : "Create Configuration"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
