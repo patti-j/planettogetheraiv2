@@ -145,62 +145,124 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   // Function to render content with clickable keywords
   const renderContentWithClickableKeywords = (content: string) => {
-    // Define clickable keywords with their follow-up questions
-    const clickableKeywords = {
-      'Equipment usage': 'Show me detailed equipment usage analytics',
-      'Labor allocation': 'Analyze current labor allocation and efficiency',
-      'Material consumption': 'Review material consumption patterns and waste',
-      'Defect rates': 'Show me current defect rates and quality trends',
-      'Process stability': 'Analyze process stability and control charts',
-      'Compliance with standards': 'Review compliance status with quality standards',
-      'Equipment scheduling': 'Check equipment scheduling conflicts and optimization',
-      'Workforce scheduling': 'Analyze workforce scheduling and availability',
-      'Material availability': 'Review material availability and supply chain status',
-      'active alerts': 'Please analyze the 3 active alerts in detail',
-      '3 active alerts': 'Please analyze the 3 active alerts in detail',
-      'alerts': 'Show me alert details and recommendations'
-    };
+    // Define important patterns to make clickable - now much more comprehensive
+    const importantPatterns = [
+      // Specific alerts and issues
+      { pattern: /Resource Overutilization Alert/gi, query: 'Tell me more about the resource overutilization issue' },
+      { pattern: /Material Shortage Alert/gi, query: 'Analyze the material shortage situation in detail' },
+      { pattern: /Quality Deviation Alert/gi, query: 'Explain the quality deviation issue and how to fix it' },
+      { pattern: /CNC Milling Machine/gi, query: 'Show me detailed status of the CNC Milling Machine' },
+      { pattern: /Aluminum Sheets/gi, query: 'Check inventory levels for Aluminum Sheets' },
+      { pattern: /defect rate/gi, query: 'Analyze defect rates and quality trends' },
+      { pattern: /120% capacity/gi, query: 'Explain the capacity overload situation' },
+      { pattern: /8%/gi, query: 'Analyze the 8% metric in detail' },
+      
+      // Generic important terms
+      { pattern: /potential breakdowns/gi, query: 'How can we prevent potential breakdowns?' },
+      { pattern: /quality issues/gi, query: 'Show me all quality issues and recommendations' },
+      { pattern: /running low/gi, query: 'What items are running low and need replenishment?' },
+      { pattern: /delay/gi, query: 'Analyze potential delays and their impact' },
+      { pattern: /significant deviation/gi, query: 'Explain the deviation and corrective actions' },
+      { pattern: /above the acceptable threshold/gi, query: 'What are the current thresholds and violations?' },
+      
+      // Resource and capacity terms
+      { pattern: /equipment usage/gi, query: 'Show me detailed equipment usage analytics' },
+      { pattern: /labor allocation/gi, query: 'Analyze current labor allocation and efficiency' },
+      { pattern: /material consumption/gi, query: 'Review material consumption patterns and waste' },
+      { pattern: /equipment scheduling/gi, query: 'Check equipment scheduling conflicts' },
+      { pattern :/workforce scheduling/gi, query: 'Analyze workforce scheduling' },
+      { pattern: /material availability/gi, query: 'Review material availability status' },
+      
+      // Metrics and analytics
+      { pattern: /utilization metrics/gi, query: 'Show detailed utilization metrics analysis' },
+      { pattern: /completion metrics/gi, query: 'Analyze completion metrics and trends' },
+      { pattern: /data capture systems/gi, query: 'Check data capture system status' },
+      { pattern: /system downtime/gi, query: 'Analyze system downtime and causes' },
+      { pattern: /maintenance activities/gi, query: 'Review maintenance activities and schedule' },
+      
+      // Actions and recommendations
+      { pattern: /addressing any of these/gi, query: 'Yes, help me address these issues' },
+      { pattern: /assistance/gi, query: 'Yes, I need assistance with this' },
+      { pattern: /recommendations/gi, query: 'Show me all recommendations' }
+    ];
 
-    // Create a regex pattern to match all clickable keywords
-    const keywordPattern = new RegExp(`(${Object.keys(clickableKeywords).join('|')})`, 'gi');
+    // Process the content
+    let processedContent = content;
+    const replacements: Array<{start: number, end: number, text: string, query: string}> = [];
     
-    // Split content by keywords and create clickable spans
-    const parts = content.split(keywordPattern);
+    // Find all matches
+    importantPatterns.forEach(({pattern, query}) => {
+      let match;
+      while ((match = pattern.exec(content)) !== null) {
+        replacements.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          text: match[0],
+          query: query
+        });
+      }
+    });
     
-    return (
-      <span>
-        {parts.map((part, index) => {
-          const lowercasePart = part.toLowerCase();
-          const matchedKeyword = Object.keys(clickableKeywords).find(
-            keyword => keyword.toLowerCase() === lowercasePart
-          );
-          
-          if (matchedKeyword) {
-            return (
-              <button
-                key={index}
-                onClick={() => {
-                  const followUpQuestion = clickableKeywords[matchedKeyword];
-                  addMessage({
-                    id: Date.now().toString(),
-                    content: followUpQuestion,
-                    role: 'user',
-                    timestamp: new Date()
-                  });
-                  sendMessageMutation.mutate(followUpQuestion);
-                }}
-                className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline font-medium transition-colors cursor-pointer"
-                title={`Click to: ${clickableKeywords[matchedKeyword]}`}
-              >
-                {part}
-              </button>
-            );
-          }
-          
-          return <span key={index}>{part}</span>;
-        })}
-      </span>
-    );
+    // Sort replacements by position (reverse order for processing)
+    replacements.sort((a, b) => b.start - a.start);
+    
+    // Remove overlapping replacements (keep the longer ones)
+    const finalReplacements = replacements.filter((current, index) => {
+      return !replacements.slice(0, index).some(other => 
+        current.start >= other.start && current.end <= other.end
+      );
+    });
+    
+    // Build the result
+    if (finalReplacements.length === 0) {
+      return <span>{content}</span>;
+    }
+    
+    // Sort back to normal order for rendering
+    finalReplacements.sort((a, b) => a.start - b.start);
+    
+    const elements: JSX.Element[] = [];
+    let lastEnd = 0;
+    
+    finalReplacements.forEach((replacement, index) => {
+      // Add text before the match
+      if (replacement.start > lastEnd) {
+        elements.push(
+          <span key={`text-${index}`}>{content.substring(lastEnd, replacement.start)}</span>
+        );
+      }
+      
+      // Add the clickable element
+      elements.push(
+        <button
+          key={`link-${index}`}
+          onClick={() => {
+            addMessage({
+              id: Date.now().toString(),
+              content: replacement.query,
+              role: 'user',
+              timestamp: new Date()
+            });
+            sendMessageMutation.mutate(replacement.query);
+          }}
+          className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 underline font-medium transition-colors cursor-pointer"
+          title={`Click to: ${replacement.query}`}
+        >
+          {replacement.text}
+        </button>
+      );
+      
+      lastEnd = replacement.end;
+    });
+    
+    // Add remaining text
+    if (lastEnd < content.length) {
+      elements.push(
+        <span key="text-final">{content.substring(lastEnd)}</span>
+      );
+    }
+    
+    return <span>{elements}</span>;
   };
 
   // Voice input handling
