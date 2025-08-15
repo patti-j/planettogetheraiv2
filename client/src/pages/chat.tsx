@@ -268,15 +268,15 @@ export default function Chat() {
                   messages.map((message) => (
                     <div key={message.id} className="flex items-start space-x-2 sm:space-x-3">
                       <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
-                        <AvatarImage src={message.sender.avatar || undefined} />
+                        <AvatarImage src={message.sender?.avatar || undefined} />
                         <AvatarFallback className="text-xs">
-                          {getInitials(message.sender.displayName)}
+                          {getInitials(message.sender?.displayName || message.sender?.username || 'Unknown')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <span className="font-medium text-xs sm:text-sm truncate">
-                            {message.sender.displayName}
+                            {message.sender?.displayName || message.sender?.username || 'Unknown User'}
                           </span>
                           <span className="text-xs text-muted-foreground flex-shrink-0">
                             {formatTime(message.createdAt)}
