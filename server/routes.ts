@@ -2374,89 +2374,105 @@ Rules:
   // New PT-based operations endpoint for Production Gantt
   app.get("/api/pt-operations", async (req, res) => {
     try {
-      console.log("Fetching PT operations for Gantt chart - SIMPLIFIED VERSION...");
-      console.log("Query will use only pt_job_operations table with basic columns");
+      console.log("Fetching PT Publish operations for production dashboard...");
       
-      // PT operations query using PURE ID-based joins (NO external_id columns in joins)
+      // PT Publish operations query using correct column names
       const ptOperationsQuery = `
         SELECT 
-          -- Operation core data
+          -- Operation core data from pt_publish_job_operations
           jo.id as operation_id,
-          jo.external_id,
+          jo.external_id as operation_external_id,
           jo.name as operation_name,
-          jo.job_external_id,
-          jo.mo_external_id,
+          jo.description as operation_description,
+          jo.operation_id as base_operation_id,
           jo.required_finish_qty,
           jo.cycle_hrs,
-          jo.setup_hrs,
-          jo.clean_hrs,
-          jo.post_processing_hrs,
-          jo.operation_sequence,
-          jo.description,
-          jo.output_name,
-          jo.product_code,
+          jo.setup_hours,
+          jo.post_processing_hours,
+          jo.scheduled_start,
+          jo.scheduled_end,
           jo.commit_start_date,
           jo.commit_end_date,
           jo.on_hold,
           jo.hold_reason,
           jo.notes,
+          jo.output_name,
+          jo.percent_finished,
           
-          -- Job information (PURE ID-based join: jo.job_id -> j.id)
+          -- Job information from pt_publish_jobs
           j.id as job_id,
+          j.external_id as job_external_id,
           j.name as job_name,
           j.description as job_description,
           j.priority as job_priority,
           j.due_date as job_due_date,
+          j.status as job_status,
           
-          -- Activity information (PURE ID-based join: ja.operation_id -> jo.id)
+          -- Manufacturing Order information
+          mo.id as mo_id,
+          mo.external_id as mo_external_id,
+          mo.name as mo_name,
+          mo.description as mo_description,
+          
+          -- Activity information from pt_publish_job_activities
           ja.id as activity_id,
-          ja.external_id as activity_number,
+          ja.external_id as activity_external_id,
           ja.production_status as activity_status,
-          ja.comments as activity_description,
+          ja.comments as activity_comments,
+          ja.start_date as activity_start_date,
+          ja.end_date as activity_end_date,
           
-          -- Plant information (PURE ID-based join: r.plant_id -> p.id)
-          p.id as plant_id,
-          p.name as plant_name,
-          p.description as plant_description,
-          
-          -- Resource information (PURE ID-based join: jra.resource_id -> r.id)
+          -- Resource information from pt_publish_job_resources and pt_publish_resources
+          jr.id as job_resource_id,
+          jr.default_resource_id as resource_assignment_id,
+          jr.is_primary as is_primary_resource,
           r.id as resource_id,
+          r.external_id as resource_external_id,
           r.name as resource_name,
           r.description as resource_description,
-          r.resource_type
+          r.resource_type,
           
-        FROM pt_job_operations jo
-        LEFT JOIN pt_jobs j ON jo.job_id = j.id
-        LEFT JOIN pt_job_activities ja ON ja.operation_id = jo.id
-        LEFT JOIN pt_job_resource_assignments jra ON jra.operation_id = jo.id
-        LEFT JOIN pt_resources r ON jra.resource_id = r.id
-        LEFT JOIN pt_plants p ON r.plant_id = p.id
+          -- Plant information from pt_publish_plants
+          p.id as plant_id,
+          p.external_id as plant_external_id,
+          p.name as plant_name,
+          p.description as plant_description
+          
+        FROM pt_publish_job_operations jo
+        LEFT JOIN pt_publish_jobs j ON jo.job_id = j.id
+        LEFT JOIN pt_publish_manufacturing_orders mo ON jo.manufacturing_order_id = mo.id
+        LEFT JOIN pt_publish_job_activities ja ON ja.operation_id = jo.id
+        LEFT JOIN pt_publish_job_resources jr ON jr.operation_id = jo.id AND jr.is_primary = true
+        LEFT JOIN pt_publish_resources r ON jr.default_resource_id = r.id
+        LEFT JOIN pt_publish_plants p ON r.plant_id = p.id
         ORDER BY 
-          jo.operation_sequence ASC,
-          jo.id
+          jo.scheduled_start ASC NULLS LAST,
+          jo.id ASC
       `;
       
       const ptOperations = await storage.db.execute(ptOperationsQuery);
       
-      // Transform PT data to Gantt format
+      // Transform PT Publish data to Gantt format
       const ganttOperations = ptOperations.rows.map((row: any, index: number) => {
-        // Calculate timing
-        const setupHours = parseFloat(row.setup_hrs || row.scheduled_setup_hrs || '0') || 0;
-        const cycleHours = parseFloat(row.cycle_hrs || row.scheduled_cycle_hrs || '0') || 0;
-        const cleanHours = parseFloat(row.clean_hrs || row.scheduled_clean_hrs || '0') || 0;
-        const postProcessHours = parseFloat(row.post_processing_hrs || row.scheduled_post_processing_hrs || '0') || 0;
-        const totalDuration = (setupHours + cycleHours + cleanHours + postProcessHours) * 60; // Convert to minutes
+        // Calculate timing from PT Publish columns
+        const setupHours = parseFloat(row.setup_hours || '0') || 0;
+        const cycleHours = parseFloat(row.cycle_hrs || '0') || 0;
+        const postProcessHours = parseFloat(row.post_processing_hours || '0') || 0;
+        const totalDuration = (setupHours + cycleHours + postProcessHours) * 60; // Convert to minutes
         
         // Determine start and end times
         let startTime: Date;
         let endTime: Date;
         
-        if (row.activity_start_date) {
+        if (row.scheduled_start) {
+          startTime = new Date(row.scheduled_start);
+          endTime = row.scheduled_end ? new Date(row.scheduled_end) : new Date(startTime.getTime() + totalDuration * 60000);
+        } else if (row.activity_start_date) {
           startTime = new Date(row.activity_start_date);
-          endTime = new Date(startTime.getTime() + totalDuration * 60000);
+          endTime = row.activity_end_date ? new Date(row.activity_end_date) : new Date(startTime.getTime() + totalDuration * 60000);
         } else if (row.commit_start_date) {
           startTime = new Date(row.commit_start_date);
-          endTime = new Date(row.commit_end_date || startTime.getTime() + totalDuration * 60000);
+          endTime = row.commit_end_date ? new Date(row.commit_end_date) : new Date(startTime.getTime() + totalDuration * 60000);
         } else {
           // Default scheduling: start operations at intervals
           const baseDate = new Date();
@@ -2467,60 +2483,62 @@ Rules:
         
         return {
           id: row.operation_id || index + 1000,
-          name: `${row.job_name || 'Job'}: ${row.operation_name || 'Operation'}`,
+          name: `${row.job_name || row.job_external_id || 'Job'}: ${row.operation_name || 'Operation'}`,
           
           // Core Operation Data
           operationId: row.operation_id,
+          operationExternalId: row.operation_external_id,
           operationName: row.operation_name || 'Unknown Operation',
-          operationSequence: row.operation_sequence || 1,
-          operationDescription: row.description || null,
+          operationDescription: row.operation_description || null,
+          percentFinished: row.percent_finished || 0,
           
-          // Job Data (ID-based)
+          // Job Data
           jobId: row.job_id,
-          jobName: row.job_name || 'Unknown Job',
-          jobNumber: row.job_external_id,
+          jobExternalId: row.job_external_id,
+          jobName: row.job_name || row.job_external_id || 'Unknown Job',
           jobDescription: row.job_description || null,
           jobPriority: row.job_priority || 'Medium',
           jobDueDate: row.job_due_date,
+          jobStatus: row.job_status || 'scheduled',
           
-          // Activity Data (ID-based)
+          // Manufacturing Order Data
+          manufacturingOrderId: row.mo_id,
+          manufacturingOrderExternalId: row.mo_external_id,
+          manufacturingOrderName: row.mo_name || row.mo_external_id || null,
+          manufacturingOrderDescription: row.mo_description || null,
+          
+          // Activity Data
           activityId: row.activity_id,
-          activityName: row.activity_status || null,
-          activityNumber: row.activity_number || null,
+          activityExternalId: row.activity_external_id,
           activityStatus: row.activity_status || 'Planned',
-          activityDescription: row.activity_description || null,
+          activityComments: row.activity_comments || null,
           
-          // Plant Data (ID-based)
+          // Plant Data
           plantId: row.plant_id,
+          plantExternalId: row.plant_external_id,
           plantName: row.plant_name || null,
           plantDescription: row.plant_description || null,
           
-          // Resource Data (ID-based)  
+          // Resource Data
           resourceId: row.resource_id,
+          resourceExternalId: row.resource_external_id,
           resourceName: row.resource_name || null,
           resourceDescription: row.resource_description || null,
           resourceType: row.resource_type || null,
+          isPrimaryResource: row.is_primary_resource || false,
           
-          // Manufacturing Order Data (ID-based)
-          manufacturingOrderId: row.manufacturing_order_id,
-          manufacturingOrderName: row.manufacturing_order_name || null,
-          
-          // Item Data (ID-based)
-          itemId: row.item_id,
-          itemName: row.item_name || null,
-          itemDescription: row.item_description || null,
-          manufacturingOrderId: row.mo_external_id,
-          manufacturingOrderName: row.manufacturing_order_name,
-          description: row.description || `${row.operation_name} for ${row.job_name}`,
+          // Gantt-specific fields
+          description: row.operation_description || `${row.operation_name} for ${row.job_name || row.job_external_id}`,
           duration: Math.max(totalDuration, 60), // Minimum 1 hour
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
-          status: row.production_status || row.job_status || 'scheduled',
-          priority: parseInt(row.priority) || parseInt(row.job_priority) || 5,
-          assignedResourceId: row.resource_external_id,
+          status: row.activity_status || row.job_status || 'scheduled',
+          priority: parseInt(row.job_priority) || 5,
+          assignedResourceId: row.resource_external_id || row.resource_id,
           assignedResourceName: row.resource_name,
-          workCenterId: row.resource_external_id,
+          workCenterId: row.resource_external_id || row.resource_id,
           workCenterName: row.resource_name,
+          
           // Detailed timing breakdown
           setupTime: setupHours * 60,
           cycleTime: cycleHours * 60,
