@@ -17,6 +17,14 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Changes
+**2025-08-15**: Alert System Filtering Bug Fixed - Complete Visibility
+- **✅ Fixed major alerts filtering issue that prevented acknowledged/resolved alerts from displaying**
+- **✅ Enhanced AlertsService logic to include system alerts (null user_id) in all filter views**
+- **✅ Added support for showing alerts that user has acknowledged or resolved regardless of original creator**
+- **✅ Improved SQL queries to properly filter: user alerts + system alerts + user-acted alerts**
+- **✅ Alert counts now show correctly: 9 total (3 active, 4 acknowledged, 2 resolved)**
+- **✅ All alert filter states (Active, Acknowledged, Resolved, All) now work as expected**
+
 **2025-08-15**: Enhanced AI Alert System with Comprehensive Scheduling and Analysis Controls
 - **✅ Created AI analysis configuration system with database tables (ai_alert_analysis_config, ai_analysis_runs)**
 - **✅ Added configurable AI analysis triggers (scheduled, event-based, threshold-based, continuous)**

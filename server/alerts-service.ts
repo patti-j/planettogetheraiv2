@@ -13,7 +13,7 @@ import {
   type AlertSubscription,
   type AlertAiTraining
 } from "@shared/alerts-schema";
-import { eq, and, or, gte, lte, desc, asc, inArray, sql } from "drizzle-orm";
+import { eq, and, or, gte, lte, desc, asc, inArray, sql, isNull } from "drizzle-orm";
 import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -31,42 +31,55 @@ export class AlertsService {
     
     const conditions = [];
     
-    // Combined user and status filtering
-    if (userId && filters?.status) {
+    // Status-based filtering with user context
+    if (filters?.status) {
       if (filters.status === 'acknowledged') {
-        // For acknowledged alerts, show alerts with acknowledged status AND (acknowledged by this user OR created by this user)
+        // For acknowledged alerts, show alerts with acknowledged status AND (acknowledged by this user OR created by this user OR system alerts)
         conditions.push(and(
           eq(alerts.status, 'acknowledged'),
           or(
             eq(alerts.userId, userId),
-            eq(alerts.acknowledgedBy, userId)
+            eq(alerts.acknowledgedBy, userId),
+            isNull(alerts.userId) // Include system alerts (null user_id)
           )
         ));
       } else if (filters.status === 'resolved') {
-        // For resolved alerts, show alerts with resolved status AND (resolved by this user OR created by this user)
+        // For resolved alerts, show alerts with resolved status AND (resolved by this user OR created by this user OR system alerts)
         conditions.push(and(
           eq(alerts.status, 'resolved'),
           or(
             eq(alerts.userId, userId),
-            eq(alerts.resolvedBy, userId)
+            eq(alerts.resolvedBy, userId),
+            isNull(alerts.userId) // Include system alerts (null user_id)
+          )
+        ));
+      } else if (filters.status === 'active') {
+        // For active alerts, show all active alerts (user-specific and system alerts)
+        conditions.push(and(
+          eq(alerts.status, 'active'),
+          or(
+            eq(alerts.userId, userId),
+            isNull(alerts.userId) // Include system alerts (null user_id)
           )
         ));
       } else {
-        // For other statuses, show alerts with that status AND created by this user
+        // For other statuses, show alerts with that status AND (created by this user OR system alerts)
         conditions.push(and(
           eq(alerts.status, filters.status as any),
-          eq(alerts.userId, userId)
+          or(
+            eq(alerts.userId, userId),
+            isNull(alerts.userId) // Include system alerts (null user_id)
+          )
         ));
       }
-    } else {
-      // Handle user filtering without status filter
-      if (userId) {
-        conditions.push(eq(alerts.userId, userId));
-      }
-      // Handle status filtering without user filter  
-      if (filters?.status) {
-        conditions.push(eq(alerts.status, filters.status as any));
-      }
+    } else if (userId) {
+      // No status filter - show all alerts relevant to user: user alerts, system alerts, and alerts acted upon by user
+      conditions.push(or(
+        eq(alerts.userId, userId),              // Alerts created by user
+        isNull(alerts.userId),                  // System alerts (null user_id)
+        eq(alerts.acknowledgedBy, userId),      // Alerts acknowledged by user
+        eq(alerts.resolvedBy, userId)           // Alerts resolved by user
+      ));
     }
     
     if (filters?.severity) conditions.push(eq(alerts.severity, filters.severity as any));
