@@ -276,6 +276,50 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                   {maxResponse.content}
                 </p>
+                {/* Quick Yes/No buttons for questions */}
+                {(maxResponse.content.includes('?') && (
+                  maxResponse.content.toLowerCase().includes('would you like') ||
+                  maxResponse.content.toLowerCase().includes('do you want') ||
+                  maxResponse.content.toLowerCase().includes('should') ||
+                  maxResponse.content.toLowerCase().includes('need help') ||
+                  maxResponse.content.toLowerCase().includes('want help') ||
+                  maxResponse.content.toLowerCase().includes('assistance') ||
+                  maxResponse.content.toLowerCase().includes('review') ||
+                  maxResponse.content.toLowerCase().includes('check')
+                )) && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setShowMaxResponse(false);
+                        addMessage({
+                          id: Date.now().toString(),
+                          content: "Yes",
+                          role: 'user',
+                          timestamp: new Date()
+                        });
+                        sendMessageMutation.mutate("Yes");
+                      }}
+                      className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowMaxResponse(false);
+                        addMessage({
+                          id: Date.now().toString(),
+                          content: "No",
+                          role: 'user',
+                          timestamp: new Date()
+                        });
+                        sendMessageMutation.mutate("No");
+                      }}
+                      className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
+                    >
+                      No
+                    </button>
+                  </div>
+                )}
                 {maxResponse.suggestions && maxResponse.suggestions.length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Quick Actions:</p>
