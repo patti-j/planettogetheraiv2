@@ -114,7 +114,8 @@ export function MobileAlerts() {
       const params = new URLSearchParams();
       if (severityFilter !== 'all') params.append('severity', severityFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
-      return apiRequest(`/api/alerts?${params}`);
+      const response = await apiRequest('GET', `/api/alerts?${params}`);
+      return response.json();
     },
     refetchInterval: 30000 // Refresh every 30 seconds
   });
@@ -122,23 +123,28 @@ export function MobileAlerts() {
   // Fetch alert statistics
   const { data: stats } = useQuery({
     queryKey: ['/api/alerts/stats'],
-    queryFn: () => apiRequest('/api/alerts/stats')
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/alerts/stats');
+      return response.json();
+    }
   });
 
   // Fetch AI insights
   const { data: aiInsights } = useQuery({
     queryKey: ['/api/alerts/ai-insights'],
-    queryFn: () => apiRequest('/api/alerts/ai-insights'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/alerts/ai-insights');
+      return response.json();
+    },
     refetchInterval: 60000 // Refresh every minute
   });
 
   // Acknowledge alert mutation
   const acknowledgeMutation = useMutation({
-    mutationFn: ({ id, comment }: { id: number; comment?: string }) =>
-      apiRequest(`/api/alerts/${id}/acknowledge`, {
-        method: 'POST',
-        body: JSON.stringify({ comment })
-      }),
+    mutationFn: async ({ id, comment }: { id: number; comment?: string }) => {
+      const response = await apiRequest('POST', `/api/alerts/${id}/acknowledge`, { comment });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/alerts/stats'] });
@@ -153,11 +159,10 @@ export function MobileAlerts() {
 
   // Resolve alert mutation
   const resolveMutation = useMutation({
-    mutationFn: ({ id, resolution, rootCause }: { id: number; resolution: string; rootCause?: string }) =>
-      apiRequest(`/api/alerts/${id}/resolve`, {
-        method: 'POST',
-        body: JSON.stringify({ resolution, rootCause })
-      }),
+    mutationFn: async ({ id, resolution, rootCause }: { id: number; resolution: string; rootCause?: string }) => {
+      const response = await apiRequest('POST', `/api/alerts/${id}/resolve`, { resolution, rootCause });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/alerts/stats'] });
@@ -173,16 +178,15 @@ export function MobileAlerts() {
 
   // Generate AI alert mutation
   const generateAIAlertMutation = useMutation({
-    mutationFn: (context: any) =>
-      apiRequest('/api/alerts/ai', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: "AI-Generated Alert",
-          description: "Analyzing system conditions...",
-          type: "ai_analysis",
-          context
-        })
-      }),
+    mutationFn: async (context: any) => {
+      const response = await apiRequest('POST', '/api/alerts/ai', {
+        title: "AI-Generated Alert",
+        description: "Analyzing system conditions...",
+        type: "ai_analysis",
+        context
+      });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
       toast({
