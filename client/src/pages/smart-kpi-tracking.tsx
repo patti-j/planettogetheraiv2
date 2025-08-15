@@ -257,141 +257,150 @@ export default function SmartKpiTrackingPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 max-w-7xl">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Smart KPI Performance Center</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">Smart KPI Performance Center</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Real-time factory performance management, accountability tracking, and success celebration
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries()}>
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh
+              <RefreshCw className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
             <Button size="sm">
-              <Bell className="h-4 w-4 mr-1" />
-              Subscribe to Alerts
+              <Bell className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Subscribe to Alerts</span>
             </Button>
           </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="realtime" className="flex items-center gap-1">
-            <Activity className="h-4 w-4" />
-            Real-Time
+        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
+          <TabsTrigger value="realtime" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Real-Time</span>
+            <span className="sm:hidden">Live</span>
           </TabsTrigger>
-          <TabsTrigger value="accountability" className="flex items-center gap-1">
-            <UserCheck className="h-4 w-4" />
-            Accountability
+          <TabsTrigger value="accountability" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Accountability</span>
+            <span className="sm:hidden">Team</span>
           </TabsTrigger>
-          <TabsTrigger value="celebrations" className="flex items-center gap-1">
-            <Trophy className="h-4 w-4" />
-            Celebrations
+          <TabsTrigger value="celebrations" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Celebrations</span>
+            <span className="sm:hidden">Wins</span>
           </TabsTrigger>
-          <TabsTrigger value="learning" className="flex items-center gap-1">
-            <GraduationCap className="h-4 w-4" />
-            Learning
+          <TabsTrigger value="learning" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Learning</span>
+            <span className="sm:hidden">Learn</span>
           </TabsTrigger>
-          <TabsTrigger value="improvements" className="flex items-center gap-1">
-            <TrendingUp className="h-4 w-4" />
-            Improvements
+          <TabsTrigger value="improvements" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Improvements</span>
+            <span className="sm:hidden">Improve</span>
           </TabsTrigger>
-          <TabsTrigger value="meetings" className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            Meetings
+          <TabsTrigger value="meetings" className="flex items-center gap-1 px-2 text-xs sm:text-sm">
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Meetings</span>
+            <span className="sm:hidden">Meet</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Real-Time Performance Tab */}
         <TabsContent value="realtime" className="space-y-4">
           {/* Live Performance Metrics */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
             <Card className="border-green-200 bg-green-50 dark:bg-green-950">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">On Track</CardTitle>
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">On Track</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">
                   {kpiDefinitions.filter(kpi => {
                     const perf = calculateKpiPerformance(kpi.id);
                     return perf?.status === "on-track";
                   }).length}
                 </div>
-                <p className="text-xs text-muted-foreground">KPIs meeting targets</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">KPIs meeting targets</p>
               </CardContent>
             </Card>
 
             <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">At Risk</CardTitle>
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">At Risk</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-600">
                   {kpiDefinitions.filter(kpi => {
                     const perf = calculateKpiPerformance(kpi.id);
                     return perf?.status === "at-risk";
                   }).length}
                 </div>
-                <p className="text-xs text-muted-foreground">Need attention</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Need attention</p>
               </CardContent>
             </Card>
 
             <Card className="border-red-200 bg-red-50 dark:bg-red-950">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Critical</CardTitle>
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">Critical</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-red-600">
                   {alerts.filter(a => a.severity === "critical").length}
                 </div>
-                <p className="text-xs text-muted-foreground">Immediate action required</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Immediate action required</p>
               </CardContent>
             </Card>
 
             <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Overall Health</CardTitle>
+              <CardHeader className="pb-2 p-3 sm:p-4">
+                <CardTitle className="text-xs sm:text-sm font-medium">Overall Health</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">
                   {dashboardData?.targetAchievement || 0}%
                 </div>
-                <Progress value={dashboardData?.targetAchievement || 0} className="mt-2" />
+                <Progress value={dashboardData?.targetAchievement || 0} className="mt-1 sm:mt-2 h-1 sm:h-2" />
               </CardContent>
             </Card>
           </div>
 
           {/* Live KPI Grid */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-green-500 animate-pulse" />
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 animate-pulse" />
                 Live KPI Performance
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Real-time monitoring updated every {refreshInterval/1000} seconds
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {kpiDefinitions.map(kpi => {
                   const performance = calculateKpiPerformance(kpi.id);
                   const level = performance ? getPerformanceLevel(performance.performance) : null;
                   
                   return (
-                    <div key={kpi.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div key={kpi.id} className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-semibold text-sm">{kpi.name}</h4>
-                          <p className="text-xs text-muted-foreground">{kpi.category}</p>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-xs sm:text-sm truncate">{kpi.name}</h4>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{kpi.category}</p>
                         </div>
                         {performance && (
-                          <Badge variant={performance.status === "on-track" ? "default" : performance.status === "at-risk" ? "secondary" : "destructive"}>
+                          <Badge 
+                            variant={performance.status === "on-track" ? "default" : performance.status === "at-risk" ? "secondary" : "destructive"}
+                            className="text-[10px] sm:text-xs ml-2"
+                          >
                             {performance.status.replace("-", " ")}
                           </Badge>
                         )}
@@ -399,29 +408,29 @@ export default function SmartKpiTrackingPage() {
                       
                       {performance ? (
                         <>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-2xl font-bold">{performance.actual}</span>
-                              <span className="text-sm text-muted-foreground">/ {performance.target} {kpi.measurementUnit}</span>
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-1">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <span className="text-lg sm:text-xl md:text-2xl font-bold">{performance.actual}</span>
+                              <span className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">/ {performance.target} {kpi.measurementUnit}</span>
                             </div>
-                            <div className={cn("text-lg font-bold", level?.color)}>
+                            <div className={cn("text-sm sm:text-base md:text-lg font-bold", level?.color)}>
                               {level?.icon} {performance.performance}%
                             </div>
                           </div>
-                          <Progress value={Math.min(performance.performance, 100)} className="h-2" />
+                          <Progress value={Math.min(performance.performance, 100)} className="h-1.5 sm:h-2" />
                           <div className="flex justify-between items-center mt-2">
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">
                               Gap: {performance.gap > 0 ? "+" : ""}{performance.gap.toFixed(1)}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">
                               Target: {kpi.targetDirection}
                             </span>
                           </div>
                         </>
                       ) : (
-                        <div className="text-center py-4 text-muted-foreground">
-                          <Clock className="h-8 w-8 mx-auto mb-2" />
-                          <p className="text-xs">Awaiting data</p>
+                        <div className="text-center py-3 sm:py-4 text-muted-foreground">
+                          <Clock className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2" />
+                          <p className="text-[10px] sm:text-xs">Awaiting data</p>
                         </div>
                       )}
                     </div>
@@ -480,52 +489,52 @@ export default function SmartKpiTrackingPage() {
 
         {/* Accountability Tab */}
         <TabsContent value="accountability" className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Team Performance Leaderboard */}
-            <Card className="col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5" />
+            <Card className="md:col-span-2">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <UserCheck className="h-4 w-4 sm:h-5 sm:w-5" />
                   Team Performance Accountability
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Individual and team performance tracking
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="space-y-3 sm:space-y-4">
                   {teamMembers
                     .sort((a, b) => b.performance - a.performance)
                     .map((member, index) => {
                       const level = getPerformanceLevel(member.performance);
                       return (
-                        <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl font-bold text-muted-foreground">
+                        <div key={member.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 sm:p-3 border rounded-lg gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="text-lg sm:text-xl md:text-2xl font-bold text-muted-foreground">
                               #{index + 1}
                             </div>
-                            <Avatar>
+                            <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                               <AvatarImage src={member.avatar} />
                               <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
-                            <div>
-                              <p className="font-semibold">{member.name}</p>
-                              <p className="text-sm text-muted-foreground">{member.role}</p>
-                              <div className="flex gap-1 mt-1">
+                            <div className="flex-1">
+                              <p className="font-semibold text-xs sm:text-sm">{member.name}</p>
+                              <p className="text-[10px] sm:text-xs text-muted-foreground">{member.role}</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
                                 {member.achievements.map(achievement => (
-                                  <Badge key={achievement} variant="outline" className="text-xs">
+                                  <Badge key={achievement} variant="outline" className="text-[9px] sm:text-[10px] md:text-xs px-1 py-0">
                                     {achievement}
                                   </Badge>
                                 ))}
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className={cn("text-2xl font-bold", level.color)}>
+                          <div className="text-right ml-auto sm:ml-0">
+                            <div className={cn("text-lg sm:text-xl md:text-2xl font-bold", level.color)}>
                               {level.icon} {member.performance}%
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Flame className="h-3 w-3 text-orange-500" />
+                            <div className="flex items-center justify-end gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                              <Flame className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-orange-500" />
                               {member.streak} day streak
                             </div>
                           </div>
@@ -614,91 +623,91 @@ export default function SmartKpiTrackingPage() {
         <TabsContent value="celebrations" className="space-y-4">
           {/* Success Stories */}
           <Card className="border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950 dark:to-orange-950">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-yellow-600" />
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg">
+                <Trophy className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-yellow-600" />
                 Today's Wins & Celebrations
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 Recognizing excellence and achievement across the factory floor
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Star className="h-5 w-5 text-yellow-500" />
-                    <h3 className="font-semibold">Star Performer</h3>
+            <CardContent className="p-3 sm:p-4 md:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-2">
+                    <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+                    <h3 className="font-semibold text-xs sm:text-sm">Star Performer</h3>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>EC</AvatarFallback>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                      <AvatarFallback className="text-xs sm:text-sm">EC</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-semibold">Emily Davis</p>
-                      <p className="text-sm text-muted-foreground">Achieved 100% First Pass Yield</p>
-                      <Badge className="mt-1" variant="default">
-                        <Sparkles className="h-3 w-3 mr-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm truncate">Emily Davis</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">Achieved 100% First Pass Yield</p>
+                      <Badge className="mt-1 text-[9px] sm:text-[10px] px-1 sm:px-2" variant="default">
+                        <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                         Perfect Quality
                       </Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Flame className="h-5 w-5 text-orange-500" />
-                    <h3 className="font-semibold">Longest Streak</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-2">
+                    <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+                    <h3 className="font-semibold text-xs sm:text-sm">Longest Streak</h3>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>SC</AvatarFallback>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                      <AvatarFallback className="text-xs sm:text-sm">SC</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-semibold">Sarah Chen</p>
-                      <p className="text-sm text-muted-foreground">7 days meeting all targets</p>
-                      <Badge className="mt-1" variant="default">
-                        <TrendingUp className="h-3 w-3 mr-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm truncate">Sarah Chen</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">7 days meeting all targets</p>
+                      <Badge className="mt-1 text-[9px] sm:text-[10px] px-1 sm:px-2" variant="default">
+                        <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                         Consistency Champion
                       </Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Award className="h-5 w-5 text-purple-500" />
-                    <h3 className="font-semibold">Most Improved</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-2">
+                    <Award className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
+                    <h3 className="font-semibold text-xs sm:text-sm">Most Improved</h3>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>TW</AvatarFallback>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                      <AvatarFallback className="text-xs sm:text-sm">TW</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-semibold">Tom Wilson</p>
-                      <p className="text-sm text-muted-foreground">+15% performance this week</p>
-                      <Badge className="mt-1" variant="default">
-                        <ArrowUp className="h-3 w-3 mr-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm truncate">Tom Wilson</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">+15% performance this week</p>
+                      <Badge className="mt-1 text-[9px] sm:text-[10px] px-1 sm:px-2" variant="default">
+                        <ArrowUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                         Rising Star
                       </Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HandshakeIcon className="h-5 w-5 text-blue-500" />
-                    <h3 className="font-semibold">Team Player</h3>
+                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 sm:p-4 shadow-sm">
+                  <div className="flex items-center gap-1 sm:gap-2 mb-2">
+                    <HandshakeIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                    <h3 className="font-semibold text-xs sm:text-sm">Team Player</h3>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback>MJ</AvatarFallback>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                      <AvatarFallback className="text-xs sm:text-sm">MJ</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-semibold">Mike Johnson</p>
-                      <p className="text-sm text-muted-foreground">Helped 3 teams hit targets</p>
-                      <Badge className="mt-1" variant="default">
-                        <Users className="h-3 w-3 mr-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm truncate">Mike Johnson</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2">Helped 3 teams hit targets</p>
+                      <Badge className="mt-1 text-[9px] sm:text-[10px] px-1 sm:px-2" variant="default">
+                        <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                         Collaboration Hero
                       </Badge>
                     </div>
