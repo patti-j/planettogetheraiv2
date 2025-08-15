@@ -1068,7 +1068,7 @@ function DataSchemaViewContent() {
   const [hasAppliedFilters, setHasAppliedFilters] = useState(true);
 
   // Fetch database schema information only when filters are applied
-  const { data: schemaData, isLoading, error } = useQuery({
+  const { data: schemaData, isLoading, error } = useQuery<SchemaTable[]>({
     queryKey: ['/api/database/schema'],
     enabled: Boolean(hasAppliedFilters), // Always fetch schema since it's fast now
   });
@@ -1349,7 +1349,7 @@ function DataSchemaViewContent() {
     
     // Apply focus mode filtering
     if (focusMode && focusTable) {
-      const connectedTableNames = getConnectedTables(focusTable, schemaData);
+      const connectedTableNames = getConnectedTables(focusTable, schemaData as SchemaTable[]);
       tables = tables.filter(table => connectedTableNames.includes(table.name));
     }
     
@@ -1425,7 +1425,7 @@ function DataSchemaViewContent() {
     
     // Get connected tables if in focus mode
     const connectedTableNames = focusMode && focusTable && schemaData 
-      ? getConnectedTables(focusTable, schemaData) 
+      ? getConnectedTables(focusTable, schemaData as SchemaTable[]) 
       : [];
     
     const flowNodes: Node[] = filteredTables.map(table => {
@@ -3283,20 +3283,6 @@ function DataSchemaViewContent() {
 }
 
 export default function DataSchemaView() {
-  // Temporary redirect to test homepage access
-  const [, setLocation] = useLocation();
-  
-  useEffect(() => {
-    console.log('📊 Data Schema page loaded - checking if we should redirect to homepage...');
-    const urlParams = new URLSearchParams(window.location.search);
-    const shouldRedirect = urlParams.get('redirect_home');
-    
-    if (shouldRedirect === 'true') {
-      console.log('🏠 Redirecting to homepage...');
-      setLocation('/');
-    }
-  }, [setLocation]);
-  
   return (
     <ReactFlowProvider>
       <DataSchemaViewContent />
