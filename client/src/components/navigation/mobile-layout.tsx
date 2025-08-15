@@ -89,11 +89,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         });
         setShowMaxResponse(true);
         
-        // Auto-hide after 30 seconds (increased from 10)
-        setTimeout(() => {
-          setShowMaxResponse(false);
-        }, 30000);
-        
         // Also add to Max panel
         addMessage({
           id: Date.now().toString(),
@@ -265,13 +260,22 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       {showMaxResponse && maxResponse && (
         <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl max-h-96 overflow-y-auto">
           <div className="relative bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
+            {/* Close button */}
+            <button
+              onClick={() => setShowMaxResponse(false)}
+              className="absolute top-2 right-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              title="Close"
+            >
+              <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            </button>
+            
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
                   <Bot className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-6">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max AI Assistant</h3>
                 <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-64 overflow-y-auto">
                   {maxResponse.content}
