@@ -1,18 +1,24 @@
 # CRITICAL CONSTRAINT: PT Table Structure Integrity
 
-## Absolute Rule
-**PT Publish tables must NEVER be modified from their original structure as defined in the creation script.**
+## Core Principle
+**PT Publish tables should maintain their original structure as defined in the creation script, with minimal approved variations when absolutely necessary.**
 
 ## What This Means
 
-### ❌ NEVER DO:
-- Add new columns to PT tables
+### ❌ AVOID WITHOUT APPROVAL:
+- Add new columns to PT tables (requires explicit approval)
 - Remove existing columns from PT tables
 - Modify column data types
 - Change column constraints
 - Alter foreign key relationships
 - Rename columns or tables
 - Add or remove indexes (except for performance)
+
+### ✅ APPROVED VARIATIONS (Case-by-Case):
+- Adding essential columns for data migration when extension tables are insufficient
+- Preserving critical business data that cannot be stored elsewhere
+- Modifications required for system integration
+**All variations must be documented and approved before implementation**
 
 ### ✅ ALWAYS DO:
 - Adapt application queries to work with existing PT structure

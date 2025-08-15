@@ -26,16 +26,19 @@ Note on concurrent work:
 - **Database Structure**: All PT Publish tables contain complete column sets matching original PlanetTogether database design
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
-**NEVER modify PT Publish table structures.** The PT Publish tables must remain exactly as defined in the original creation script. This is a non-negotiable architectural requirement.
-- ❌ Do NOT add, remove, or modify columns in PT tables
-- ❌ Do NOT change data types or constraints
-- ❌ Do NOT alter relationships or foreign keys
-- ✅ DO adapt queries to work with existing structure
-- ✅ DO create complex joins and subqueries as needed
-- ✅ DO handle data transformation in application layer
-- ✅ DO map old table queries to PT table structure
+**Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.
+- ⚠️ Request approval before adding columns to PT tables
+- ❌ Do NOT remove existing columns or change data types
+- ❌ Do NOT alter core relationships or foreign keys
+- ✅ DO adapt queries to work with existing structure when possible
+- ✅ DO create extension tables for additional data when feasible
+- ✅ DO document all approved variations with rationale
+- ✅ DO preserve legacy tables by renaming rather than deletion
 
-**Rationale**: PT tables represent the canonical PlanetTogether data model. Maintaining exact structure ensures compatibility with external systems and preserves data integrity.
+**Rationale**: PT tables represent the canonical PlanetTogether data model. While strict adherence is preferred, some variations may be necessary for business continuity and data preservation.
+
+**Approved Variations (as of 2025-08-15)**:
+- Plant table: Additional location and operational columns to preserve critical business data
 
 ### PT Table Migration & Query Adaptation Guidelines
 
