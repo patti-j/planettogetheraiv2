@@ -210,7 +210,15 @@ export class MaxAIService {
     // Add alert details if user is asking about alerts
     if (query.toLowerCase().includes('alert') || query.toLowerCase().includes('show me details about the alerts')) {
       try {
-        const activeAlerts = await db.select()
+        const activeAlerts = await db.select({
+          id: alerts.id,
+          title: alerts.title,
+          description: alerts.description,
+          severity: alerts.severity,
+          type: alerts.type,
+          category: alerts.category,
+          createdAt: alerts.createdAt
+        })
           .from(alerts)
           .where(eq(alerts.status, 'active'))
           .orderBy(desc(alerts.createdAt))
@@ -223,9 +231,9 @@ export class MaxAIService {
             enriched += `\n   - ${alert.description}`;
             enriched += `\n   - Created: ${alert.createdAt?.toLocaleString()}`;
             if (alert.category) enriched += `\n   - Category: ${alert.category}`;
-            if (alert.metadata) enriched += `\n   - Details: ${JSON.stringify(alert.metadata)}`;
+            enriched += `\n   - Type: ${alert.type}`;
           });
-          enriched += `\n\nUser is asking for help with these alerts. Provide specific analysis and actionable recommendations.`;
+          enriched += `\n\nUser is asking for help with these alerts. Provide specific analysis and actionable recommendations for each alert listed above.`;
         }
       } catch (error) {
         console.error('Error fetching alerts for enrichment:', error);
