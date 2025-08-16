@@ -991,24 +991,13 @@ export default function UIDesignStudio() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Header */}
-        <div className="text-center py-4 md:py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-            <div className="p-3 sm:p-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg">
-              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-            </div>
-            <div className="text-center sm:text-left space-y-1">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                UI Design Studio
-              </h1>
-              <p className="text-sm sm:text-base md:text-lg text-muted-foreground px-2 sm:px-0">
-                Create and manage user interface elements - widgets, dashboards, pages, and menus
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-3 mb-6">
+          <Sparkles className="w-6 h-6 text-purple-600" />
+          <h1 className="text-2xl font-bold">UI Design Studio</h1>
         </div>
 
 
