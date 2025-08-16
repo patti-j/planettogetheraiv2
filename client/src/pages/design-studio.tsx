@@ -17,6 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
 import { SmartKPIWidgetStudio } from "@/components/smart-kpi-widget-studio";
+import { WidgetStudio } from "@/components/widget-studio";
 import { DashboardVisualDesigner } from "@/components/dashboard-visual-designer";
 
 import { 
@@ -201,6 +202,9 @@ export default function UIDesignStudio() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = useState(false);
+  const [widgetStudioOpen, setWidgetStudioOpen] = useState(false);
+  const [widgetStudioType, setWidgetStudioType] = useState<'chart' | 'gauge' | 'table' | 'activity' | undefined>(undefined);
+  const [widgetToEdit, setWidgetToEdit] = useState<any>(null);
 
   const [showVisualDesigner, setShowVisualDesigner] = useState(false);
   const [dashboardToEdit, setDashboardToEdit] = useState<any>(null);
@@ -453,27 +457,92 @@ export default function UIDesignStudio() {
 
     setIsGenerating(true);
     try {
-      const response = await apiRequest('POST', '/api/ai/generate-design', {
-        prompt: aiPrompt,
-        type: activeTab,
-        targetPlatform: createForm.targetPlatform
-      });
+      // Analyze prompt to determine widget type
+      const promptLower = aiPrompt.toLowerCase();
       
-      const result = await response.json();
-      
-      setCreateForm({
-        ...createForm,
-        title: result.title || `AI Generated ${activeTab.slice(0, -1)}`,
-        description: result.description || aiPrompt,
-        configuration: result.configuration || {}
-      });
-      
-      toast({
-        title: "AI Generation Complete",
-        description: "Review and customize the generated design."
-      });
-      
-      setShowAIAssistant(false);
+      if (activeTab === 'widgets') {
+        // Detect and open appropriate widget studio based on prompt
+        if (promptLower.includes('kpi') || promptLower.includes('metric') || promptLower.includes('performance')) {
+          // SMART KPI Widget
+          setSelectedItem({
+            id: '',
+            type: 'widget',
+            title: aiPrompt.split(' ').slice(0, 5).join(' '),
+            description: aiPrompt,
+            configuration: {},
+            status: 'draft',
+            targetPlatform: 'both',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          setSmartKPIStudioOpen(true);
+          setShowAIAssistant(false);
+        } else if (promptLower.includes('chart') || promptLower.includes('graph') || promptLower.includes('trend')) {
+          // Chart Widget
+          setWidgetToEdit(null);
+          setWidgetStudioType('chart');
+          setWidgetStudioOpen(true);
+          setShowAIAssistant(false);
+        } else if (promptLower.includes('gauge') || promptLower.includes('meter') || promptLower.includes('progress')) {
+          // Gauge Widget
+          setWidgetToEdit(null);
+          setWidgetStudioType('gauge');
+          setWidgetStudioOpen(true);
+          setShowAIAssistant(false);
+        } else if (promptLower.includes('table') || promptLower.includes('grid') || promptLower.includes('list')) {
+          // Table Widget
+          setWidgetToEdit(null);
+          setWidgetStudioType('table');
+          setWidgetStudioOpen(true);
+          setShowAIAssistant(false);
+        } else if (promptLower.includes('activity') || promptLower.includes('feed') || promptLower.includes('timeline') || promptLower.includes('alert')) {
+          // Activity Widget
+          setWidgetToEdit(null);
+          setWidgetStudioType('activity');
+          setWidgetStudioOpen(true);
+          setShowAIAssistant(false);
+        } else {
+          // Default to chart widget
+          setWidgetToEdit(null);
+          setWidgetStudioType('chart');
+          setWidgetStudioOpen(true);
+          setShowAIAssistant(false);
+        }
+        
+        toast({
+          title: "Opening Widget Studio",
+          description: "Creating your widget based on the prompt."
+        });
+      } else {
+        // For dashboards and other types, use the existing flow
+        const response = await apiRequest('POST', '/api/ai/design-studio', {
+          prompt: aiPrompt,
+          context: activeTab
+        });
+        
+        const result = await response.json();
+        
+        if (result.action === 'create_dashboard' && activeTab === 'dashboards') {
+          // Open visual designer for dashboard creation
+          setDashboardToEdit(null);
+          setShowVisualDesigner(true);
+          setShowAIAssistant(false);
+        } else {
+          setCreateForm({
+            ...createForm,
+            title: result.title || `AI Generated ${activeTab.slice(0, -1)}`,
+            description: result.description || aiPrompt,
+            configuration: result.configuration || {}
+          });
+        }
+        
+        toast({
+          title: "AI Generation Complete",
+          description: "Review and customize the generated design."
+        });
+        
+        setShowAIAssistant(false);
+      }
     } catch (error) {
       toast({
         title: "Generation Failed",
@@ -504,12 +573,30 @@ export default function UIDesignStudio() {
                             item.title?.toLowerCase().includes('kpi') ||
                             item.data?.template; // Has template field indicating it's from SMART KPI studio
     
-    if (activeTab === 'widgets' && isSmartKPIWidget) {
-      // Open SMART KPI Widget Studio with existing data
-      setSelectedItem(item);
-      setSmartKPIStudioOpen(true);
+    // Check for other widget types
+    const widgetType = item.data?.widgetType || item.configuration?.widgetType;
+    const isChartWidget = widgetType === 'chart' || item.title?.toLowerCase().includes('chart');
+    const isGaugeWidget = widgetType === 'gauge' || item.title?.toLowerCase().includes('gauge');
+    const isTableWidget = widgetType === 'table' || item.title?.toLowerCase().includes('table');
+    const isActivityWidget = widgetType === 'activity' || item.title?.toLowerCase().includes('activity');
+    
+    if (activeTab === 'widgets') {
+      if (isSmartKPIWidget) {
+        // Open SMART KPI Widget Studio with existing data
+        setSelectedItem(item);
+        setSmartKPIStudioOpen(true);
+      } else if (isChartWidget || isGaugeWidget || isTableWidget || isActivityWidget) {
+        // Open Widget Studio for other widget types
+        setWidgetToEdit(item);
+        setWidgetStudioType(undefined); // Let studio determine type from widget
+        setWidgetStudioOpen(true);
+      } else {
+        // For unknown widgets, use regular edit mode
+        setSelectedItem(item);
+        setEditMode(true);
+      }
     } else {
-      // For other widgets, use regular edit mode
+      // For non-widget items, use regular edit mode
       setSelectedItem(item);
       setEditMode(true);
     }
@@ -833,6 +920,104 @@ export default function UIDesignStudio() {
                           </CardContent>
                         </Card>
                         
+                        {/* Other Widget Types */}
+                        <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+                          {/* Charts */}
+                          <Card className="border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
+                            setWidgetStudioType('chart');
+                            setWidgetToEdit(null);
+                            setWidgetStudioOpen(true);
+                          }}>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="flex items-center gap-2 text-sm">
+                                <div className="p-1 bg-green-600 rounded">
+                                  <BarChart3 className="h-3 w-3 text-white" />
+                                </div>
+                                Charts
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Line, bar, pie, area charts
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Create Chart Widget
+                              </Button>
+                            </CardContent>
+                          </Card>
+
+                          {/* Gauges */}
+                          <Card className="border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
+                            setWidgetStudioType('gauge');
+                            setWidgetToEdit(null);
+                            setWidgetStudioOpen(true);
+                          }}>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="flex items-center gap-2 text-sm">
+                                <div className="p-1 bg-purple-600 rounded">
+                                  <Gauge className="h-3 w-3 text-white" />
+                                </div>
+                                Gauges
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Radial, linear, speedometer
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Create Gauge Widget
+                              </Button>
+                            </CardContent>
+                          </Card>
+
+                          {/* Tables */}
+                          <Card className="border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
+                            setWidgetStudioType('table');
+                            setWidgetToEdit(null);
+                            setWidgetStudioOpen(true);
+                          }}>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="flex items-center gap-2 text-sm">
+                                <div className="p-1 bg-orange-600 rounded">
+                                  <Grid className="h-3 w-3 text-white" />
+                                </div>
+                                Tables
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Data tables, pivot tables
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Create Table Widget
+                              </Button>
+                            </CardContent>
+                          </Card>
+
+                          {/* Activity */}
+                          <Card className="border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
+                            setWidgetStudioType('activity');
+                            setWidgetToEdit(null);
+                            setWidgetStudioOpen(true);
+                          }}>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="flex items-center gap-2 text-sm">
+                                <div className="p-1 bg-teal-600 rounded">
+                                  <Activity className="h-3 w-3 text-white" />
+                                </div>
+                                Activity
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Feeds, timelines, alerts
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full">
+                                Create Activity Widget
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </div>
 
                       </div>
                     ) : activeTab === 'dashboards' ? (
@@ -1522,6 +1707,13 @@ export default function UIDesignStudio() {
           }}
         />
         
+        {/* General Widget Studio for Charts, Gauges, Tables, Activity */}
+        <WidgetStudio
+          open={widgetStudioOpen}
+          onOpenChange={setWidgetStudioOpen}
+          existingWidget={widgetToEdit}
+          widgetType={widgetStudioType}
+        />
 
       </div>
     </div>
