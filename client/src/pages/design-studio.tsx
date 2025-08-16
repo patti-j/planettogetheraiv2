@@ -538,12 +538,12 @@ export default function UIDesignStudio() {
             type: 'dashboard' as const,
             title: dashboard.name || 'Untitled Dashboard',
             description: dashboard.description || '',
-            configuration: dashboard.config || {},
+            configuration: dashboard.configuration || {}, // Use dashboard.configuration instead of dashboard.config
             status: dashboard.isActive ? 'active' : 'draft',
-            targetPlatform: 'both',
-            createdAt: dashboard.createdAt || new Date().toISOString(),
-            updatedAt: dashboard.updatedAt || dashboard.createdAt || new Date().toISOString(),
-            createdBy: dashboard.userId?.toString(),
+            targetPlatform: dashboard.target_platform || dashboard.targetPlatform || 'both',
+            createdAt: dashboard.created_at || dashboard.createdAt || new Date().toISOString(),
+            updatedAt: dashboard.updated_at || dashboard.updatedAt || dashboard.created_at || dashboard.createdAt || new Date().toISOString(),
+            createdBy: dashboard.created_by?.toString() || dashboard.createdBy?.toString() || dashboard.userId?.toString(),
             tags: dashboard.tags || []
           }));
         }
@@ -1584,6 +1584,9 @@ export default function UIDesignStudio() {
                           
                           if (activeTab === 'dashboards') {
                             // Open dashboard in visual designer for viewing/editing
+                            console.log('Dashboard clicked:', item);
+                            console.log('Dashboard configuration:', item.configuration);
+                            
                             setDashboardToEdit({
                               id: item.id,
                               name: item.title,
