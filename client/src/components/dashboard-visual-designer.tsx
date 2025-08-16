@@ -241,7 +241,7 @@ function CanvasWidget({
   };
 
   // Find the widget definition for the icon
-  const widgetDef = widgetLibrary.find(w => w.id === widget.widgetId);
+  const widgetDef = widgetLibrary?.find(w => w.id === widget.widgetId);
   const Icon = widgetDef?.icon || Target;
 
   return (
@@ -415,7 +415,7 @@ function DashboardCanvas({
           isSelected={selectedWidgetId === widget.id}
           onSelect={onSelectWidget}
           gridSize={gridSize}
-          widgetLibrary={widgetLibrary}
+          widgetLibrary={widgetLibrary || []}
         />
       ))}
     </div>
@@ -656,7 +656,7 @@ export function DashboardVisualDesigner({
         dashboardConfig
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if (data.updatedConfig) {
         // Apply AI-generated changes to the dashboard
         const updatedConfig = data.updatedConfig;
