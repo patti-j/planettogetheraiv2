@@ -710,12 +710,7 @@ export default function TopMenu() {
                                 ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                               `}>
-                                <div className={`
-                                  ${isAI ? getThemeClasses(false) : color} 
-                                  p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                `}>
-                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 text-white`} strokeWidth={1.5} fill="none" />
-                                </div>
+                                <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${isAI ? 'text-purple-600' : iconColorClass}`} strokeWidth={1.5} fill="none" />
                                 <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
                                   {page.label}
                                 </span>
