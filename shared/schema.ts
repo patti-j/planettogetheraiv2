@@ -2305,6 +2305,63 @@ export const cockpitTemplates = pgTable("cockpit_templates", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Workspace-specific dashboards for production schedule pages
+export const workspaceDashboards = pgTable("workspace_dashboards", {
+  id: serial("id").primaryKey(),
+  pageIdentifier: text("page_identifier").notNull(), // production-schedule, capacity-planning, etc.
+  plantId: integer("plant_id").references(() => plants.id).notNull(), // Workspace identifier via plant
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  
+  // Dashboard configuration
+  configuration: jsonb("configuration").$type<{
+    layout: {
+      type: 'grid' | 'flex' | 'masonry';
+      columns: number;
+      gap: number;
+      padding: number;
+    };
+    widgets: Array<{
+      id: string;
+      type: 'kpi' | 'chart' | 'table' | 'alert' | 'metric' | 'progress' | 'custom';
+      title: string;
+      subtitle?: string;
+      position: { x: number; y: number; w: number; h: number };
+      configuration: {
+        dataSource?: string;
+        filters?: Record<string, any>;
+        chartType?: string;
+        metrics?: string[];
+        aggregation?: string;
+        refreshInterval?: number;
+        thresholds?: Array<{ value: number; color: string; label?: string }>;
+        customConfig?: Record<string, any>;
+      };
+      isVisible: boolean;
+    }>;
+    refreshInterval: number;
+    autoRefresh: boolean;
+    theme: string;
+  }>().notNull(),
+  
+  // Access and sharing
+  isShared: boolean("is_shared").default(true), // Shared across workspace by default
+  sharedWithRoles: jsonb("shared_with_roles").$type<string[]>().default([]), // Role-based access
+  
+  // Audit trail
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  lastModifiedAt: timestamp("last_modified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Ensure one active dashboard per page per workspace
+  pageWorkspaceActiveUnique: unique().on(table.pageIdentifier, table.plantId, table.isActive),
+  pageIdentifierIdx: index("workspace_dashboards_page_idx").on(table.pageIdentifier),
+  plantIdIdx: index("workspace_dashboards_plant_idx").on(table.plantId),
+}));
+
 // Comprehensive Alerts System
 export const alerts = pgTable("alerts", {
   id: serial("id").primaryKey(),
@@ -2939,6 +2996,13 @@ export const insertCockpitTemplateSchema = createInsertSchema(cockpitTemplates).
   updatedAt: true,
 });
 
+export const insertWorkspaceDashboardSchema = createInsertSchema(workspaceDashboards).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastModifiedAt: true,
+});
+
 // Cockpit Types
 export type InsertCockpitLayout = z.infer<typeof insertCockpitLayoutSchema>;
 export type CockpitLayout = typeof cockpitLayouts.$inferSelect;
@@ -2948,6 +3012,9 @@ export type CockpitWidget = typeof cockpitWidgets.$inferSelect;
 
 export type InsertCockpitAlert = z.infer<typeof insertCockpitAlertSchema>;
 export type CockpitAlert = typeof cockpitAlerts.$inferSelect;
+
+export type WorkspaceDashboard = typeof workspaceDashboards.$inferSelect;
+export type InsertWorkspaceDashboard = z.infer<typeof insertWorkspaceDashboardSchema>;
 
 export type InsertCockpitTemplate = z.infer<typeof insertCockpitTemplateSchema>;
 export type CockpitTemplate = typeof cockpitTemplates.$inferSelect;

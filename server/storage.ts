@@ -67,6 +67,7 @@ import {
   demandChangeRequests, demandChangeComments, demandChangeApprovals, demandCollaborationSessions,
   type DemandChangeRequest, type DemandChangeComment, type DemandChangeApproval, type DemandCollaborationSession,
   type InsertDemandChangeRequest, type InsertDemandChangeComment, type InsertDemandChangeApproval, type InsertDemandCollaborationSession,
+  workspaceDashboards, type WorkspaceDashboard, type InsertWorkspaceDashboard,
   errorLogs, errorReports,
   type ErrorLog, type ErrorReport,
   type InsertErrorLog, type InsertErrorReport,
@@ -954,6 +955,13 @@ export interface IStorage {
   updateHomeDashboardLayout(id: number, layout: Partial<InsertHomeDashboardLayout>): Promise<HomeDashboardLayout | undefined>;
   deleteHomeDashboardLayout(id: number): Promise<boolean>;
   setDefaultHomeDashboardLayout(userId: number, layoutId: number): Promise<boolean>;
+
+  // Workspace Dashboards
+  getWorkspaceDashboard(pageIdentifier: string, plantId: number): Promise<WorkspaceDashboard | undefined>;
+  getWorkspaceDashboardsByPlant(plantId: number): Promise<WorkspaceDashboard[]>;
+  createWorkspaceDashboard(dashboard: InsertWorkspaceDashboard): Promise<WorkspaceDashboard>;
+  updateWorkspaceDashboard(id: number, dashboard: Partial<InsertWorkspaceDashboard>): Promise<WorkspaceDashboard | undefined>;
+  deleteWorkspaceDashboard(id: number): Promise<boolean>;
 
   // Master Production Schedule Management
   getMasterProductionSchedules(plantId?: number, itemNumber?: string, timePeriod?: 'daily' | 'weekly' | 'monthly' | 'quarterly', planningHorizon?: number): Promise<MasterProductionSchedule[]>;
@@ -15678,6 +15686,54 @@ export class DatabaseStorage implements IStorage {
       console.error('Error setting default home dashboard layout:', error);
       return false;
     }
+  }
+
+  // ==================== WORKSPACE DASHBOARD IMPLEMENTATION ====================
+
+  async getWorkspaceDashboard(pageIdentifier: string, plantId: number): Promise<WorkspaceDashboard | undefined> {
+    const [dashboard] = await db.select()
+      .from(workspaceDashboards)
+      .where(
+        and(
+          eq(workspaceDashboards.pageIdentifier, pageIdentifier),
+          eq(workspaceDashboards.plantId, plantId),
+          eq(workspaceDashboards.isActive, true)
+        )
+      );
+    return dashboard || undefined;
+  }
+
+  async getWorkspaceDashboardsByPlant(plantId: number): Promise<WorkspaceDashboard[]> {
+    return await db.select()
+      .from(workspaceDashboards)
+      .where(
+        and(
+          eq(workspaceDashboards.plantId, plantId),
+          eq(workspaceDashboards.isActive, true)
+        )
+      )
+      .orderBy(workspaceDashboards.pageIdentifier);
+  }
+
+  async createWorkspaceDashboard(dashboard: InsertWorkspaceDashboard): Promise<WorkspaceDashboard> {
+    const [created] = await db.insert(workspaceDashboards)
+      .values(dashboard)
+      .returning();
+    return created;
+  }
+
+  async updateWorkspaceDashboard(id: number, dashboard: Partial<InsertWorkspaceDashboard>): Promise<WorkspaceDashboard | undefined> {
+    const [updated] = await db.update(workspaceDashboards)
+      .set(dashboard)
+      .where(eq(workspaceDashboards.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteWorkspaceDashboard(id: number): Promise<boolean> {
+    const result = await db.delete(workspaceDashboards)
+      .where(eq(workspaceDashboards.id, id));
+    return result.rowCount > 0;
   }
 
   // ==================== MASTER PRODUCTION SCHEDULE IMPLEMENTATION ====================

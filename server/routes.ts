@@ -69,7 +69,9 @@ import {
   insertMrpActionMessageSchema, insertMrpPlanningParametersSchema,
   // Collaborative Demand Management Schemas
   insertDemandChangeRequestSchema, insertDemandChangeCommentSchema,
-  insertDemandChangeApprovalSchema, insertDemandCollaborationSessionSchema
+  insertDemandChangeApprovalSchema, insertDemandCollaborationSessionSchema,
+  // Workspace Dashboard Schema
+  insertWorkspaceDashboardSchema
 } from "@shared/schema";
 
 // Import PT Publish schemas
@@ -24357,6 +24359,110 @@ Be careful to preserve data integrity and relationships.`;
       res.status(500).json({ error: "Failed to create widget" });
     }
   });
+
+  // ==================== WORKSPACE DASHBOARD ROUTES ====================
+
+  // Get workspace dashboard for a specific page and plant
+  app.get("/api/workspace-dashboards/:pageIdentifier/:plantId", requireAuth, createSafeHandler(async (req, res) => {
+    const { pageIdentifier, plantId } = req.params;
+    const plantIdNum = parseInt(plantId);
+    
+    if (isNaN(plantIdNum)) {
+      return res.status(400).json({ error: "Invalid plant ID" });
+    }
+    
+    const dashboard = await storage.getWorkspaceDashboard(pageIdentifier, plantIdNum);
+    if (!dashboard) {
+      return res.status(404).json({ error: "Workspace dashboard not found" });
+    }
+    
+    res.json(dashboard);
+  }));
+
+  // Create or update workspace dashboard
+  app.post("/api/workspace-dashboards", requireAuth, createSafeHandler(async (req, res) => {
+    const dashboardData = insertWorkspaceDashboardSchema.parse(req.body);
+    const userId = req.session?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Check if dashboard already exists for this page and plant
+    const existing = await storage.getWorkspaceDashboard(dashboardData.pageIdentifier, dashboardData.plantId);
+    
+    if (existing) {
+      // Update existing dashboard
+      const updated = await storage.updateWorkspaceDashboard(existing.id, {
+        ...dashboardData,
+        lastModifiedBy: userId,
+        lastModifiedAt: new Date(),
+      });
+      res.json(updated);
+    } else {
+      // Create new dashboard
+      const created = await storage.createWorkspaceDashboard({
+        ...dashboardData,
+        createdBy: userId,
+      });
+      res.status(201).json(created);
+    }
+  }));
+
+  // Update workspace dashboard
+  app.put("/api/workspace-dashboards/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    const dashboardData = insertWorkspaceDashboardSchema.partial().parse(req.body);
+    const userId = req.session?.userId;
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid dashboard ID" });
+    }
+    
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const updated = await storage.updateWorkspaceDashboard(id, {
+      ...dashboardData,
+      lastModifiedBy: userId,
+      lastModifiedAt: new Date(),
+    });
+    
+    if (!updated) {
+      return res.status(404).json({ error: "Workspace dashboard not found" });
+    }
+    
+    res.json(updated);
+  }));
+
+  // Delete workspace dashboard
+  app.delete("/api/workspace-dashboards/:id", requireAuth, createSafeHandler(async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid dashboard ID" });
+    }
+    
+    const deleted = await storage.deleteWorkspaceDashboard(id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Workspace dashboard not found" });
+    }
+    
+    res.status(204).send();
+  }));
+
+  // Get all workspace dashboards for a plant
+  app.get("/api/workspace-dashboards/plant/:plantId", requireAuth, createSafeHandler(async (req, res) => {
+    const plantId = parseInt(req.params.plantId);
+    
+    if (isNaN(plantId)) {
+      return res.status(400).json({ error: "Invalid plant ID" });
+    }
+    
+    const dashboards = await storage.getWorkspaceDashboardsByPlant(plantId);
+    res.json(dashboards);
+  }));
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 
 // Import PT Gantt styles
 import '../styles/pt-gantt.css';
@@ -27,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { WorkspaceDashboard } from '@/components/workspace-dashboard';
 
 interface ScheduleFilters {
   dateRange: string;
@@ -93,6 +94,8 @@ export default function ProductionSchedulePage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
   const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
+  const [showDashboard, setShowDashboard] = useState(true);
+  const [isDashboardEditMode, setIsDashboardEditMode] = useState(false);
 
   // Check permissions - allow all in development for demo purposes
   const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
@@ -114,6 +117,25 @@ export default function ProductionSchedulePage() {
   const { data: resources, isLoading: resourcesLoading } = useQuery({
     queryKey: ['/api/resources'],
     enabled: canViewSchedule
+  });
+
+  // Fetch workspace dashboard for production schedule page
+  const { data: workspaceDashboard, isLoading: dashboardLoading } = useQuery({
+    queryKey: ['/api/workspace-dashboards/production-schedule/1'], // Using plant ID 1 for now
+    enabled: canViewSchedule
+  });
+
+  // Mutation for creating/updating workspace dashboard
+  const createDashboardMutation = useMutation({
+    mutationFn: async (dashboardData: any) => {
+      return apiRequest('/api/workspace-dashboards', {
+        method: 'POST',
+        body: JSON.stringify(dashboardData)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workspace-dashboards/production-schedule/1'] });
+    }
   });
 
   // Auto-refresh functionality
@@ -215,10 +237,20 @@ export default function ProductionSchedulePage() {
           </div>
         </div>
         
-        {/* Right side: Export and Refresh buttons with proper spacing */}
+        {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
         <div className="flex items-center gap-2 flex-shrink-0 pr-24">
           {!isMobile && (
             <>
+              <Button 
+                variant={showDashboard ? "default" : "outline"} 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setShowDashboard(!showDashboard)}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Dashboard
+                {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -247,6 +279,22 @@ export default function ProductionSchedulePage() {
           )}
         </div>
       </div>
+
+      {/* Workspace Dashboard */}
+      {showDashboard && (
+        <WorkspaceDashboard 
+          workspaceDashboard={workspaceDashboard}
+          isLoading={dashboardLoading}
+          isEditMode={isDashboardEditMode}
+          onToggleEditMode={setIsDashboardEditMode}
+          onSave={(dashboardData) => createDashboardMutation.mutate(dashboardData)}
+          productionData={{
+            orders: productionOrders,
+            operations: ptOperations,
+            resources: resources
+          }}
+        />
+      )}
 
       {/* Filters and Controls */}
       {layoutConfig.showFilters && (
