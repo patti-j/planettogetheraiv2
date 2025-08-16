@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { DndProvider, useDrag, useDrop, useDragLayer } from "react-dnd";
+import { HTML5Backend, getEmptyImage } from "react-dnd-html5-backend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,15 +97,87 @@ interface DashboardVisualDesignerProps {
 // Widget Library Definition - Empty initially, will be populated from database
 const WIDGET_LIBRARY: WidgetDefinition[] = [];
 
+// Custom Drag Layer for better visual feedback
+function CustomDragLayer({ widgetLibrary = [] }: { widgetLibrary?: WidgetDefinition[] }) {
+  const {
+    itemType,
+    isDragging,
+    item,
+    initialOffset,
+    currentOffset,
+  } = useDragLayer((monitor) => ({
+    item: monitor.getItem(),
+    itemType: monitor.getItemType(),
+    initialOffset: monitor.getInitialSourceClientOffset(),
+    currentOffset: monitor.getSourceClientOffset(),
+    isDragging: monitor.isDragging(),
+  }));
+
+  if (!isDragging || !currentOffset) {
+    return null;
+  }
+
+  const transform = `translate(${currentOffset.x}px, ${currentOffset.y}px)`;
+
+  // Render appropriate preview based on item type
+  const renderPreview = () => {
+    if (itemType === "library-widget") {
+      const Icon = item.icon || Target;
+      return (
+        <div className="bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-3 min-w-[200px] opacity-90">
+          <div className="flex items-center gap-2">
+            <Icon className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium">{item.title}</span>
+          </div>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+            {item.description}
+          </p>
+        </div>
+      );
+    } else if (itemType === "canvas-widget") {
+      const widgetDef = widgetLibrary.find(w => w.id === item.widgetId);
+      const Icon = widgetDef?.icon || Target;
+      return (
+        <div 
+          className="bg-white dark:bg-gray-800 border rounded-lg shadow-lg opacity-90"
+          style={{ width: item.size.width, height: item.size.height }}
+        >
+          <div className="flex items-center justify-between p-2 border-b">
+            <div className="flex items-center gap-2">
+              <GripVertical className="w-4 h-4 text-gray-400" />
+              <Icon className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium truncate">{item.title}</span>
+            </div>
+          </div>
+          <div className="p-3 flex items-center justify-center h-[calc(100%-40px)]">
+            <span className="text-xs text-gray-500">Widget Preview</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="fixed top-0 left-0 pointer-events-none z-50" style={{ transform }}>
+      {renderPreview()}
+    </div>
+  );
+}
+
 // Draggable Widget from Library
 function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boolean } }) {
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag, preview] = useDrag({
     type: "library-widget",
     item: widget,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
+
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
 
   const Icon = widget.icon;
   const isSystemWidget = widget.isSystem || widget.category === "System";
@@ -195,13 +267,17 @@ function CanvasWidget({
   gridSize?: number;
   widgetLibrary?: WidgetDefinition[];
 }) {
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag, preview] = useDrag({
     type: "canvas-widget",
     item: { ...widget, type: "canvas-widget" },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
+
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
 
   const [isResizing, setIsResizing] = useState(false);
   const resizeRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number }>({
@@ -864,6 +940,7 @@ export function DashboardVisualDesigner({
 
   return (
     <DndProvider backend={HTML5Backend}>
+      <CustomDragLayer widgetLibrary={COMBINED_WIDGET_LIBRARY} />
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 flex flex-col">
           {/* Header */}
