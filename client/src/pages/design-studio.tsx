@@ -69,14 +69,34 @@ import {
 
 // Widget Preview Component - Enhanced for SMART KPI widgets
 const WidgetPreview = ({ widget }: { widget: any }) => {
+  // Debug logging to understand widget structure
+  console.log('Widget Preview Data:', widget);
+  
+  // Get widget type from various possible locations
+  const widgetType = widget?.widget_type || 
+                     widget?.widgetType || 
+                     widget?.configuration?.widgetType ||
+                     widget?.data?.widgetType ||
+                     widget?.type;
+                     
+  // Get widget subtype
+  const widgetSubtype = widget?.widget_subtype || 
+                        widget?.widgetSubtype || 
+                        widget?.configuration?.widgetSubtype ||
+                        widget?.data?.widgetSubtype;
+  
   // Check if this is a SMART KPI widget
-  const isSmartKPI = widget?.widgetType === 'smart-kpi' || 
-                     widget?.data?.widgetType === 'smart-kpi' ||
-                     widget?.configuration?.widgetType === 'smart-kpi' ||
-                     widget?.data?.template;
+  const isSmartKPI = widgetType === 'smart-kpi' || 
+                     widget?.data?.template ||
+                     widgetSubtype === 'kpi';
+  
+  // Check if this is a system widget
+  const isSystemWidget = widget?.is_system_widget || 
+                        widget?.configuration?.isSystemWidget || 
+                        widget?.data?.isSystemWidget;
   
   // Get configuration from various possible locations
-  const config = widget?.data?.configuration || widget?.configuration || {};
+  const config = widget?.data?.configuration || widget?.configuration || widget?.data || {};
   
   if (isSmartKPI) {
     // Generate sample data for KPI preview
@@ -252,18 +272,27 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
   // Check if this is a pre-built widget with a component property
   const componentName = widget?.data?.component || widget?.configuration?.component;
   
-  // Render other widget types
-  if (widget?.configuration?.widgetType || widget?.widgetType) {
-    const widgetType = widget?.configuration?.widgetType || widget?.widgetType;
-    
+  // Render other widget types - check widgetType from all possible locations
+  if (widgetType) {
     return (
       <div className="w-full min-h-64 border rounded-lg bg-white p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{widget.title}</h3>
-          <Badge>{widgetType}</Badge>
+          <div className="flex gap-2">
+            {isSystemWidget && (
+              <Badge variant="outline" className="bg-gray-100 text-gray-600">
+                <Settings className="h-3 w-3 mr-1" />
+                System
+              </Badge>
+            )}
+            <Badge>{widgetType}</Badge>
+            {widgetSubtype && (
+              <Badge variant="outline">{widgetSubtype}</Badge>
+            )}
+          </div>
         </div>
         
-        {widgetType === 'chart' && (
+        {(widgetType === 'chart' || widgetSubtype === 'chart') && (
           <div className="h-48 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
               <BarChart3 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
@@ -273,7 +302,7 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
           </div>
         )}
         
-        {widgetType === 'gauge' && (
+        {(widgetType === 'gauge' || widgetSubtype === 'gauge') && (
           <div className="h-48 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
               <Gauge className="h-8 w-8 mx-auto mb-2 text-purple-600" />
@@ -283,7 +312,7 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
           </div>
         )}
         
-        {widgetType === 'table' && (
+        {(widgetType === 'table' || widgetSubtype === 'table') && (
           <div className="h-48 bg-gray-50 rounded-lg p-4">
             <div className="space-y-2">
               <div className="flex gap-4 text-xs font-semibold text-gray-600 border-b pb-2">
@@ -304,12 +333,35 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
           </div>
         )}
         
-        {widgetType === 'activity' && (
+        {(widgetType === 'activity' || widgetSubtype === 'activity') && (
           <div className="h-48 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
               <Activity className="h-8 w-8 mx-auto mb-2 text-teal-600" />
               <p className="text-sm text-gray-600">Activity Feed</p>
               <p className="text-xs text-gray-400">Real-time updates</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Fallback for metrics/KPI widgets that aren't SMART KPIs */}
+        {(widgetType === 'kpi' || widgetType === 'metric' || widgetSubtype === 'metric') && !isSmartKPI && (
+          <div className="h-48 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <Target className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <p className="text-sm text-gray-600">KPI Metric</p>
+              <p className="text-xs text-gray-400">{config.metric || 'Performance Indicator'}</p>
+              <p className="text-2xl font-bold mt-2">{config.value || '85%'}</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Generic widget preview if no specific type matches */}
+        {!widgetType && !widgetSubtype && (
+          <div className="h-48 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <Package className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+              <p className="text-sm text-gray-600">Widget</p>
+              <p className="text-xs text-gray-400">Custom Component</p>
             </div>
           </div>
         )}
@@ -321,12 +373,37 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
     );
   }
 
-  // Return placeholder for unknown widgets
+  // Return a more detailed placeholder for unknown widgets
   return (
-    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-sm text-gray-500">Widget Preview</p>
-        <p className="text-xs text-gray-400">{widget.title || 'Dashboard Component'}</p>
+    <div className="w-full min-h-64 border rounded-lg bg-white p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">{widget.title || 'Untitled Widget'}</h3>
+        {isSystemWidget && (
+          <Badge variant="outline" className="bg-gray-100 text-gray-600">
+            <Settings className="h-3 w-3 mr-1" />
+            System
+          </Badge>
+        )}
+      </div>
+      
+      <div className="h-48 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-8 w-8 mx-auto mb-2 text-gray-600" />
+          <p className="text-sm text-gray-600">Widget Preview</p>
+          <p className="text-xs text-gray-400">
+            {widgetType || widgetSubtype || 'Custom Component'}
+          </p>
+          {widget.description && (
+            <p className="text-xs text-gray-500 mt-2 px-4">{widget.description}</p>
+          )}
+        </div>
+      </div>
+      
+      {/* Show debug info in development */}
+      <div className="mt-4 p-2 bg-gray-50 rounded text-xs text-gray-500">
+        <p>Type: {widgetType || 'Not specified'}</p>
+        <p>Subtype: {widgetSubtype || 'Not specified'}</p>
+        <p>Platform: {widget.targetPlatform || widget.target_platform || 'both'}</p>
       </div>
     </div>
   );
