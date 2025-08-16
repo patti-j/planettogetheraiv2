@@ -769,12 +769,7 @@ export default function TopMenu() {
                           ${location === item.feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700'}
                           ${item.feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
                         `}>
-                          <div className={`
-                            ${item.feature.isAI ? getThemeClasses(false) : item.feature.color} 
-                            p-1.5 sm:p-2 rounded-lg flex items-center justify-center flex-shrink-0
-                          `}>
-                            <item.feature.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={1.5} fill="none" />
-                          </div>
+                          <item.feature.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${item.feature.isAI ? 'text-purple-600' : item.feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
                           <div className="space-y-0.5">
                             <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
                               {item.feature.label}
@@ -848,9 +843,7 @@ export default function TopMenu() {
                                 
                                 return (
                                   <>
-                                    <div className={`${bgColor} p-2 rounded-lg flex items-center justify-center flex-shrink-0`}>
-                                      {FirstIcon && <FirstIcon className="w-5 h-5 text-white" strokeWidth={1.5} />}
-                                    </div>
+                                    {FirstIcon && <FirstIcon className={`w-5 h-5 flex-shrink-0 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
                                     <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
                                       {group.title}
                                     </h3>
@@ -889,12 +882,7 @@ export default function TopMenu() {
                                     ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                     ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                                   `}>
-                                    <div className={`
-                                      ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
-                                      p-1 rounded-md flex items-center justify-center flex-shrink-0
-                                    `}>
-                                      <feature.icon className="w-3 h-3 text-white" strokeWidth={1.5} fill="none" />
-                                    </div>
+                                    <feature.icon className={`w-3 h-3 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
                                     <span className="text-xs text-gray-700 dark:text-white leading-tight line-clamp-2 overflow-hidden">
                                       {feature.label}
                                     </span>
@@ -929,9 +917,7 @@ export default function TopMenu() {
                           
                           return (
                             <>
-                              <div className={`${bgColor} p-1.5 rounded-md flex items-center justify-center flex-shrink-0 mr-2.5`}>
-                                {FirstIcon && <FirstIcon className="w-4 h-4 text-white" strokeWidth={1.5} />}
-                              </div>
+                              {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
                               {group.title}
                             </>
                           );
@@ -952,16 +938,11 @@ export default function TopMenu() {
                               ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                               ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                             `}>
-                              <div className={`
-                                ${feature.isAI ? 'bg-gradient-to-r from-purple-500 to-pink-600' : feature.color}
-                                p-1.5 rounded-md flex items-center justify-center flex-shrink-0
-                              `}>
-                                <feature.icon 
-                                  className={`${getIconSize(group.priority)} text-white`} 
-                                  strokeWidth={1.5} 
-                                  fill="none"
-                                />
-                              </div>
+                              <feature.icon 
+                                className={`${getIconSize(group.priority)} flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`}
+                                strokeWidth={1.5} 
+                                fill="none"
+                              />
                               <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
                                 {feature.label}
                               </span>
