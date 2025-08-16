@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -44,6 +45,7 @@ import {
   Smartphone,
   Globe,
   ChevronRight,
+  ChevronDown,
   Brain,
   Zap,
   Search,
@@ -1054,13 +1056,95 @@ export default function UIDesignStudio() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      onClick={() => setShowCreateDialog(true)}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Create {activeTab.slice(0, -1)}
-                    </Button>
+                    {activeTab === 'widgets' ? (
+                      <>
+                        {/* Dropdown menu for widget creation */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Create Widget
+                              <ChevronDown className="h-4 w-4 ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            {/* SMART KPI */}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedItem(null);
+                                setSmartKPIStudioOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Target className="h-4 w-4 mr-2 text-purple-600" />
+                              SMART KPI Widget
+                            </DropdownMenuItem>
+                            
+                            {/* Chart */}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setWidgetStudioType('chart');
+                                setWidgetToEdit(null);
+                                setWidgetStudioOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <BarChart3 className="h-4 w-4 mr-2 text-green-600" />
+                              Chart Widget
+                            </DropdownMenuItem>
+                            
+                            {/* Gauge */}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setWidgetStudioType('gauge');
+                                setWidgetToEdit(null);
+                                setWidgetStudioOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Gauge className="h-4 w-4 mr-2 text-purple-600" />
+                              Gauge Widget
+                            </DropdownMenuItem>
+                            
+                            {/* Table */}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setWidgetStudioType('table');
+                                setWidgetToEdit(null);
+                                setWidgetStudioOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Grid className="h-4 w-4 mr-2 text-orange-600" />
+                              Table Widget
+                            </DropdownMenuItem>
+                            
+                            {/* Activity */}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setWidgetStudioType('activity');
+                                setWidgetToEdit(null);
+                                setWidgetStudioOpen(true);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <Activity className="h-4 w-4 mr-2 text-teal-600" />
+                              Activity Widget
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    ) : (
+                      <Button 
+                        onClick={() => setShowCreateDialog(true)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create {activeTab.slice(0, -1)}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
