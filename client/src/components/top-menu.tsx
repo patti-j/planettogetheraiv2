@@ -625,14 +625,23 @@ export default function TopMenu() {
                         // Find the icon and color from the feature groups
                         for (const group of featureGroups) {
                           const feature = group.features.find(f => f.href === path);
-                          if (feature) return { 
-                            icon: feature.icon, 
-                            color: feature.color, 
-                            isAI: (feature as any).isAI || false 
-                          };
+                          if (feature) {
+                            // Ensure we have proper color with dark mode support
+                            let bgColor = feature.color || "bg-gray-500";
+                            // Add dark mode variant if not already present
+                            if (!bgColor.includes('dark:') && !bgColor.includes('gradient')) {
+                              const baseColor = bgColor.replace('bg-', '').replace('-500', '').replace('-600', '').replace('-700', '');
+                              bgColor = `${bgColor} dark:${bgColor.replace('-500', '-600').replace('-600', '-700')}`;
+                            }
+                            return { 
+                              icon: feature.icon, 
+                              color: bgColor, 
+                              isAI: (feature as any).isAI || false 
+                            };
+                          }
                         }
-                        // Default fallback
-                        return { icon: FileText, color: "bg-gray-500", isAI: false };
+                        // Default fallback with dark mode support
+                        return { icon: FileText, color: "bg-gray-500 dark:bg-gray-600", isAI: false };
                       };
                       
                       const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
@@ -702,11 +711,10 @@ export default function TopMenu() {
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                               `}>
                                 <div className={`
-                                  ${isAI ? getThemeClasses(false) : ''} 
+                                  ${isAI ? getThemeClasses(false) : color} 
                                   p-1.5 rounded-full flex items-center justify-center flex-shrink-0
-                                  ${!isAI && color.includes('bg-') ? color : ''}
                                 `}>
-                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${isAI ? 'text-white' : iconColorClass}`} strokeWidth={1.5} fill="none" />
+                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 text-white`} strokeWidth={1.5} fill="none" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
                                   {page.label}
