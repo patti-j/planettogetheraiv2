@@ -39,7 +39,7 @@ import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
-  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize
+  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -51,7 +51,7 @@ const iconMap = {
   Home, Calendar, BarChart3, Package, Factory, TrendingUp,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle,
   Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase,
-  Search, Bell, Settings, User, Maximize, Minimize
+  Search, Bell, Settings, User, Maximize, Minimize, Building2
 };
 
 // Default header items by role
@@ -123,6 +123,7 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', type: 'action' },
     { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications', type: 'action' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', type: 'action' },
   ];
 
   // Widget items with enhanced configuration
@@ -344,6 +345,14 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           // Toggle Max AI dock
           const event = new CustomEvent('toggle-max-ai');
           document.dispatchEvent(event);
+          break;
+        case 'workspace-switcher':
+          // For now, we'll show a toast as the workspace switcher
+          // functionality would need to be fully integrated with the workspace system
+          toast({
+            title: "Workspace Switcher",
+            description: "Workspace switcher is now available in the header customization."
+          });
           break;
       }
     }
