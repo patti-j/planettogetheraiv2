@@ -223,11 +223,17 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
 
   const createWidgetMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/widgets', {
-        ...data,
-        type: 'smart-kpi',
-        category: selectedTemplate?.category || 'KPI',
-        targetPlatform: 'both'
+      const response = await apiRequest('POST', '/api/canvas/widgets', {
+        title: data.title,
+        widgetType: 'smart-kpi',
+        widgetSubtype: selectedTemplate?.category || 'KPI',
+        targetPlatform: 'both',
+        data: {
+          template: selectedTemplate?.id,
+          configuration: data.configuration
+        },
+        configuration: data.configuration,
+        isVisible: true
       });
       return response.json();
     },
@@ -236,7 +242,7 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
         title: "Success",
         description: "SMART KPI widget created successfully!"
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/widgets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
       onOpenChange(false);
       resetForm();
     },

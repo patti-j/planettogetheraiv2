@@ -24329,6 +24329,35 @@ Be careful to preserve data integrity and relationships.`;
     });
   }));
 
+  // Generic widget creation endpoint (alias for canvas widgets)
+  app.post("/api/widgets", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? parseInt(req.user.id.split('_')[1]) || 0 : req.user.id;
+      
+      const widgetData = {
+        title: req.body.title,
+        widgetType: req.body.type || 'smart-kpi',
+        widgetSubtype: req.body.category || 'KPI',
+        targetPlatform: req.body.targetPlatform || 'both',
+        data: req.body.configuration || {},
+        configuration: req.body.configuration || {},
+        userId,
+        createdByMax: false,
+        isVisible: true
+      };
+
+      const validatedData = insertCanvasWidgetSchema.parse(widgetData);
+      const widget = await storage.createCanvasWidget(validatedData);
+      res.status(201).json(widget);
+    } catch (error) {
+      console.error("Error creating widget:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ error: "Invalid widget data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create widget" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   // TODO: Fix errorMiddleware import issue
