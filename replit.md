@@ -29,6 +29,7 @@ Note on concurrent work:
 - **Current State**: 62 active PT tables with sample data, 47 archived legacy tables preserved
 - **Dashboard Dialog Overflow**: ✅ FIXED (2025-08-16) - Dashboard descriptions now properly truncated in selection dialogs to prevent overflow
 - **Visual Dashboard Designer**: ✅ ADDED (2025-08-16) - New drag-and-drop visual dashboard designer integrated into UI Design Studio
+- **Widget Studio Field Selection**: ✅ ENHANCED (2025-08-16) - X-axis, Y-axis, value field, and event field inputs now use dropdown selections with database table fields instead of free text entry
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.

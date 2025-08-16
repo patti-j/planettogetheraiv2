@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -307,6 +307,7 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
   const [step, setStep] = useState(1);
   const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [availableFields, setAvailableFields] = useState<Array<{name: string, type: string, label: string}>>([]);
   
   const [widgetConfig, setWidgetConfig] = useState({
     title: '',
@@ -366,6 +367,22 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch table fields when data source changes
+  const { data: tableFields } = useQuery({
+    queryKey: ['/api/database/table-fields', widgetConfig.dataSource],
+    enabled: !!widgetConfig.dataSource && widgetConfig.dataSource !== 'custom',
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Update available fields when table fields change
+  useEffect(() => {
+    if (tableFields) {
+      setAvailableFields(tableFields);
+    } else {
+      setAvailableFields([]);
+    }
+  }, [tableFields]);
 
   // Initialize with existing widget data if editing
   useEffect(() => {
@@ -735,25 +752,65 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>X-Axis Field</Label>
-                          <Input
+                          <Select
                             value={widgetConfig.chartConfig.xAxis}
-                            onChange={(e) => setWidgetConfig({
+                            onValueChange={(value) => setWidgetConfig({
                               ...widgetConfig,
-                              chartConfig: { ...widgetConfig.chartConfig, xAxis: e.target.value }
+                              chartConfig: { ...widgetConfig.chartConfig, xAxis: value }
                             })}
-                            placeholder="e.g., date"
-                          />
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select X-axis field" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableFields.map((field) => (
+                                <SelectItem key={field.name} value={field.name}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{field.label}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {field.type}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              {availableFields.length === 0 && (
+                                <SelectItem value="" disabled>
+                                  Select a data source first
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label>Y-Axis Field</Label>
-                          <Input
+                          <Select
                             value={widgetConfig.chartConfig.yAxis}
-                            onChange={(e) => setWidgetConfig({
+                            onValueChange={(value) => setWidgetConfig({
                               ...widgetConfig,
-                              chartConfig: { ...widgetConfig.chartConfig, yAxis: e.target.value }
+                              chartConfig: { ...widgetConfig.chartConfig, yAxis: value }
                             })}
-                            placeholder="e.g., quantity"
-                          />
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Y-axis field" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableFields.map((field) => (
+                                <SelectItem key={field.name} value={field.name}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{field.label}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {field.type}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              {availableFields.length === 0 && (
+                                <SelectItem value="" disabled>
+                                  Select a data source first
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -784,14 +841,36 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Value Field</Label>
-                        <Input
+                        <Select
                           value={widgetConfig.gaugeConfig.valueField}
-                          onChange={(e) => setWidgetConfig({
+                          onValueChange={(value) => setWidgetConfig({
                             ...widgetConfig,
-                            gaugeConfig: { ...widgetConfig.gaugeConfig, valueField: e.target.value }
+                            gaugeConfig: { ...widgetConfig.gaugeConfig, valueField: value }
                           })}
-                          placeholder="e.g., efficiency"
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select value field" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFields.filter(field => 
+                              field.type === 'numeric' || field.type === 'integer' || field.type === 'real'
+                            ).map((field) => (
+                              <SelectItem key={field.name} value={field.name}>
+                                <div className="flex items-center gap-2">
+                                  <span>{field.label}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {field.type}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                            {availableFields.length === 0 && (
+                              <SelectItem value="" disabled>
+                                Select a data source first
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -891,14 +970,34 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
                       </div>
                       <div className="space-y-2">
                         <Label>Event Field</Label>
-                        <Input
+                        <Select
                           value={widgetConfig.activityConfig.eventField}
-                          onChange={(e) => setWidgetConfig({
+                          onValueChange={(value) => setWidgetConfig({
                             ...widgetConfig,
-                            activityConfig: { ...widgetConfig.activityConfig, eventField: e.target.value }
+                            activityConfig: { ...widgetConfig.activityConfig, eventField: value }
                           })}
-                          placeholder="e.g., event_type"
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select event field" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFields.map((field) => (
+                              <SelectItem key={field.name} value={field.name}>
+                                <div className="flex items-center gap-2">
+                                  <span>{field.label}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {field.type}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                            {availableFields.length === 0 && (
+                              <SelectItem value="" disabled>
+                                Select a data source first
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex items-center justify-between">
                         <Label>Show Notifications</Label>

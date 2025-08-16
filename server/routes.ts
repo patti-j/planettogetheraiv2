@@ -6104,6 +6104,71 @@ User Prompt: "${prompt}"`;
     }
   });
 
+  // Get database table fields for widget configuration
+  app.get("/api/database/table-fields/:tableName", async (req, res) => {
+    try {
+      const tableName = req.params.tableName;
+      
+      // Map table names to actual database tables
+      const tableMapping: Record<string, string> = {
+        'ptjobs': 'ptjobs',
+        'ptresources': 'ptresources', 
+        'ptoperations': 'ptjoboperations',
+        'inventory': 'ptinventories',
+        'quality': 'quality_metrics',
+        'maintenance': 'maintenance',
+        'alerts': 'alerts'
+      };
+      
+      const actualTableName = tableMapping[tableName] || tableName;
+      
+      // Query to get column information from database
+      // Define common fields for each table type
+      const tableFields: Record<string, Array<{name: string, type: string, label: string}>> = {
+        'ptjobs': [
+          { name: 'job_id', type: 'text', label: 'Job ID' },
+          { name: 'name', type: 'text', label: 'Job Name' },
+          { name: 'priority', type: 'integer', label: 'Priority' },
+          { name: 'qty', type: 'numeric', label: 'Quantity' },
+          { name: 'need_date_time', type: 'timestamp', label: 'Due Date' },
+          { name: 'scheduled_start_date_time', type: 'timestamp', label: 'Start Date' },
+          { name: 'scheduled_end_date_time', type: 'timestamp', label: 'End Date' },
+          { name: 'percent_finished', type: 'numeric', label: 'Completion %' },
+          { name: 'late', type: 'boolean', label: 'Late Status' },
+          { name: 'lateness_days', type: 'numeric', label: 'Lateness Days' },
+          { name: 'revenue', type: 'numeric', label: 'Revenue' },
+          { name: 'total_cost', type: 'numeric', label: 'Total Cost' }
+        ],
+        'ptresources': [
+          { name: 'resource_id', type: 'text', label: 'Resource ID' },
+          { name: 'name', type: 'text', label: 'Resource Name' },
+          { name: 'department_name', type: 'text', label: 'Department' },
+          { name: 'plant_name', type: 'text', label: 'Plant' },
+          { name: 'active', type: 'boolean', label: 'Active' },
+          { name: 'speed_factor', type: 'numeric', label: 'Speed Factor' },
+          { name: 'bottleneck', type: 'boolean', label: 'Bottleneck' }
+        ],
+        'ptoperations': [
+          { name: 'id', type: 'integer', label: 'Operation ID' },
+          { name: 'job_id', type: 'text', label: 'Job ID' },
+          { name: 'operation_id', type: 'text', label: 'Operation ID' },
+          { name: 'name', type: 'text', label: 'Operation Name' },
+          { name: 'scheduled_start', type: 'text', label: 'Scheduled Start' },
+          { name: 'scheduled_end', type: 'text', label: 'Scheduled End' },
+          { name: 'setup_hours', type: 'numeric', label: 'Setup Hours' },
+          { name: 'run_hrs', type: 'numeric', label: 'Run Hours' }
+        ]
+      };
+      
+      const formattedFields = tableFields[tableName] || [];
+      
+      res.json(formattedFields);
+    } catch (error) {
+      console.error("Error fetching table fields:", error);
+      res.status(500).json({ error: "Failed to fetch table fields" });
+    }
+  });
+
   // Create sample System widgets for testing
   app.post("/api/canvas/widgets/create-system-samples", async (req, res) => {
     try {
