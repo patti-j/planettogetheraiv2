@@ -1061,15 +1061,6 @@ export default function UIDesignStudio() {
                       <Plus className="h-4 w-4 mr-1" />
                       Create {activeTab.slice(0, -1)}
                     </Button>
-                    {activeTab === 'widgets' && (
-                      <Button 
-                        variant="outline"
-                        onClick={() => setShowDesignStudio(true)}
-                      >
-                        <Palette className="h-4 w-4 mr-1" />
-                        Design Studio
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
