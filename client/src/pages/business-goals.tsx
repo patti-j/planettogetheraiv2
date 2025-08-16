@@ -957,13 +957,13 @@ export default function BusinessGoalsPage() {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="actions">Actions</TabsTrigger>
                   <TabsTrigger value="risks">
                     Risks ({risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length})
                   </TabsTrigger>
                   <TabsTrigger value="issues">
                     Issues ({issues.filter((i: GoalIssue) => i.goalId === selectedGoal.id && i.status !== 'resolved').length})
                   </TabsTrigger>
-                  <TabsTrigger value="actions">Actions</TabsTrigger>
                 </TabsList>
 
                 <div className="flex-1 overflow-y-auto mt-4">

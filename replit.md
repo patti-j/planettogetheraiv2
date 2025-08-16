@@ -76,3 +76,11 @@ Note on concurrent work:
 - **Date Handling**: date-fns
 - **Charting**: Recharts, Chart.js
 - **Session Management**: connect-pg-simple
+
+## Recent Updates & Improvements
+
+### August 16, 2025
+- **Dashboard Data Loading Fix**: ✅ FIXED - Fixed dashboard configuration mapping issue causing all dashboards to show same content
+- **Menu Organization Update**: ✅ IMPROVED - Moved SMART KPI Tracking from Planning & Scheduling to Business Management category, positioned directly under Business Goals
+- **Planning Process Flow Organization**: ✅ IMPROVED - Reorganized Planning & Scheduling menu items to follow logical manufacturing planning process flow from demand planning through execution and optimization
+- **Business Goals Dialog Tab Reordering**: ✅ IMPROVED - Moved Actions tab to immediately follow Overview tab in business goals dialog for better workflow sequence (Overview → Actions → Risks → Issues)
