@@ -110,6 +110,34 @@ function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boo
   const Icon = widget.icon;
   const isSystemWidget = widget.isSystem || widget.category === "System";
 
+  // Get a user-friendly type label
+  const getTypeLabel = () => {
+    if (widget.category === "Metrics") return "KPI";
+    if (widget.category === "Gauges") return "Gauge";
+    if (widget.category === "Charts") return "Chart";
+    if (widget.category === "Tables") return "Table";
+    if (widget.category === "Activity") return "Activity Feed";
+    if (widget.category === "Progress") return "Progress";
+    if (widget.category === "System") return "System";
+    return widget.category;
+  };
+
+  // Get category-specific colors
+  const getCategoryColors = () => {
+    switch(widget.category) {
+      case "Metrics": return { bg: "bg-blue-50 dark:bg-blue-900/20", text: "text-blue-600 dark:text-blue-400" };
+      case "Gauges": return { bg: "bg-purple-50 dark:bg-purple-900/20", text: "text-purple-600 dark:text-purple-400" };
+      case "Charts": return { bg: "bg-green-50 dark:bg-green-900/20", text: "text-green-600 dark:text-green-400" };
+      case "Tables": return { bg: "bg-orange-50 dark:bg-orange-900/20", text: "text-orange-600 dark:text-orange-400" };
+      case "Activity": return { bg: "bg-teal-50 dark:bg-teal-900/20", text: "text-teal-600 dark:text-teal-400" };
+      case "Progress": return { bg: "bg-indigo-50 dark:bg-indigo-900/20", text: "text-indigo-600 dark:text-indigo-400" };
+      case "System": return { bg: "bg-gray-200 dark:bg-gray-700", text: "text-gray-600 dark:text-gray-400" };
+      default: return { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400" };
+    }
+  };
+
+  const colors = getCategoryColors();
+
   return (
     <div
       ref={drag}
@@ -118,16 +146,8 @@ function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boo
       } ${isSystemWidget ? "border-gray-300 bg-gray-50/50 dark:bg-gray-900/50" : ""}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded ${
-          isSystemWidget 
-            ? "bg-gray-200 dark:bg-gray-700" 
-            : "bg-gray-100 dark:bg-gray-800"
-        }`}>
-          <Icon className={`w-5 h-5 ${
-            isSystemWidget 
-              ? "text-gray-500 dark:text-gray-400" 
-              : "text-gray-600 dark:text-gray-400"
-          }`} />
+        <div className={`p-2 rounded ${colors.bg}`}>
+          <Icon className={`w-5 h-5 ${colors.text}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -138,14 +158,14 @@ function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boo
           </div>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{widget.description}</p>
           <div className="flex items-center gap-2 mt-2">
-            {!isSystemWidget && (
-              <Badge variant="outline" className="text-xs">
-                {widget.category}
+            <Badge variant="outline" className="text-xs">
+              {getTypeLabel()}
+            </Badge>
+            {!widget.configurable && (
+              <Badge variant="secondary" className="text-xs">
+                Read-only
               </Badge>
             )}
-            <span className="text-xs text-gray-400">
-              {widget.defaultSize.width}x{widget.defaultSize.height}
-            </span>
           </div>
         </div>
       </div>
@@ -539,6 +559,11 @@ export function DashboardVisualDesigner({
     queryFn: () => apiRequest('GET', '/api/canvas/widgets')
   });
 
+  // Debug log the raw data
+  if (canvasWidgets && canvasWidgets.length > 0) {
+    console.log("Raw canvas widgets sample:", canvasWidgets[0]);
+  }
+
   // Convert canvas widgets to widget definitions
   const customWidgetDefs: WidgetDefinition[] = Array.isArray(canvasWidgets) ? canvasWidgets.map((widget: any) => {
     // Determine the widget category and type from configuration or data
@@ -547,43 +572,62 @@ export function DashboardVisualDesigner({
     let widgetType = "custom";
     
     // Check if it's a system widget (title starts with "System")
-    const isSystemWidget = widget.is_system_widget || widget.title?.startsWith("System");
+    const isSystemWidget = widget.is_system_widget || widget.isSystemWidget || widget.title?.startsWith("System");
+    
+    // Use the widget_type/widgetType first if available
+    const actualWidgetType = widget.widgetType || widget.widget_type;
+    const actualWidgetSubtype = widget.widgetSubtype || widget.widget_subtype;
     
     // Extract visualization type from configuration or data
     const visualization = widget.configuration?.visualization || widget.data?.configuration?.visualization;
     const widgetTemplate = widget.data?.template;
     
+    // Determine category based on widget type, subtype, or visualization
     if (isSystemWidget) {
       category = "System";
       icon = Shield;
-    } else if (visualization === 'gauge' || widgetTemplate === 'delivery') {
+      widgetType = actualWidgetType || "custom";
+    } else if (actualWidgetType === 'kpi' || actualWidgetSubtype === 'kpi' || visualization === 'metric') {
       category = "Metrics";
+      icon = Target;
+      widgetType = "metric";
+    } else if (actualWidgetType === 'gauge' || actualWidgetSubtype === 'gauge' || visualization === 'gauge') {
+      category = "Gauges";
       icon = Activity;
       widgetType = "metric";
-    } else if (visualization === 'line' || visualization === 'bar' || visualization === 'pie' || visualization === 'chart') {
+    } else if (actualWidgetType === 'chart' || actualWidgetSubtype === 'chart' || 
+               visualization === 'line' || visualization === 'bar' || visualization === 'pie') {
       category = "Charts";  
       icon = BarChart3;
       widgetType = "chart";
-    } else if (visualization === 'table' || widgetTemplate === 'inventory' || widgetTemplate === 'resources') {
+    } else if (actualWidgetType === 'table' || actualWidgetSubtype === 'table' || visualization === 'table') {
       category = "Tables";
       icon = Grid;
       widgetType = "table";
+    } else if (actualWidgetType === 'activity' || actualWidgetSubtype === 'activity' || visualization === 'activity') {
+      category = "Activity";
+      icon = MessageSquare;
+      widgetType = "custom";
+    } else if (actualWidgetType === 'progress' || actualWidgetSubtype === 'progress' || visualization === 'progress') {
+      category = "Progress";
+      icon = TrendingUp;
+      widgetType = "progress";
     } else if (widgetTemplate === 'production' || widgetTemplate === 'schedule' || widgetTemplate === 'operations') {
       category = "Production";
       icon = Package;
       widgetType = "custom";
-    } else if (widget.title?.includes("Progress") || widget.title?.includes("Status")) {
-      category = "Progress";
-      icon = Activity;
-      widgetType = "progress";
     }
     
-    // Override icon based on specific widget titles
+    // Override icon based on specific widget titles or types
     if (widget.title?.includes("Alert")) icon = AlertTriangle;
     if (widget.title?.includes("Resource")) icon = Users;
     if (widget.title?.includes("Schedule")) icon = Clock;
-    if (widget.title?.includes("Chart")) icon = BarChart3;
+    if (widget.title?.includes("Gauge")) icon = Activity;
+    if (widget.title?.includes("Activity")) icon = MessageSquare;
+    if (widget.title?.includes("Progress")) icon = TrendingUp;
     if (widget.title?.includes("Delivery")) icon = CheckCircle;
+    if (widget.title?.includes("Table")) icon = Grid;
+    if (widget.title?.includes("KPI")) icon = Target;
     
     return {
       id: `widget-${widget.id}`,
@@ -654,7 +698,9 @@ export function DashboardVisualDesigner({
     selectedCategory,
     filteredWidgetsCount: filteredWidgets.length,
     customWidgetsCount: customWidgetDefs.length,
-    staticWidgetsCount: WIDGET_LIBRARY.length
+    staticWidgetsCount: WIDGET_LIBRARY.length,
+    canvasWidgetsLength: canvasWidgets?.length || 0,
+    isLoading: isLoadingWidgets
   });
 
   // Add widget to canvas
@@ -893,25 +939,22 @@ export function DashboardVisualDesigner({
               {/* Widget Library */}
               <div className="flex-1 flex flex-col">
                 <div className="p-4 pb-2">
-                  <h3 className="font-medium mb-3">Widget Library</h3>
+                  <h3 className="font-medium mb-3">Widget Library ({canvasWidgets?.length || 0} widgets)</h3>
                   <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <TabsList className={`grid h-8 ${
-                      categories.length <= 3 ? 'grid-cols-3' : 
-                      categories.length === 4 ? 'grid-cols-4' : 
-                      'grid-cols-2'
-                    }`}>
-                      {categories.map(cat => (
-                        <TabsTrigger key={cat} value={cat} className="text-xs">
-                          {cat === "All" ? "All" : 
-                           cat === "System" ? (
-                            <span className="flex items-center gap-1">
-                              <Shield className="w-3 h-3" />
-                              {cat}
-                            </span>
-                           ) : cat}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
+                    <ScrollArea className="w-full">
+                      <TabsList className="inline-flex h-9 items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground w-full">
+                        {categories.map(cat => (
+                          <TabsTrigger 
+                            key={cat} 
+                            value={cat} 
+                            className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium"
+                          >
+                            {cat === "System" && <Shield className="w-3 h-3 mr-1" />}
+                            {cat}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
+                    </ScrollArea>
                   </Tabs>
                 </div>
                 
