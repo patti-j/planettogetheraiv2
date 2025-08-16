@@ -560,6 +560,66 @@ export default function UIDesignStudio() {
     }
   };
 
+  const getWidgetTypeInfo = (item: DesignItem) => {
+    // Check various indicators for KPI widgets
+    const isKPI = item.data?.widgetType === 'smart-kpi' || 
+                  item.configuration?.widgetType === 'smart-kpi' ||
+                  item.configuration?.widgetType === 'metric' ||
+                  item.title?.toLowerCase().includes('kpi') ||
+                  item.data?.template || // Has template field indicating it's from SMART KPI studio
+                  item.configuration?.metricName || // Has metric configuration
+                  item.data?.calculation; // Has calculation data
+
+    const widgetType = item.configuration?.widgetType || item.data?.widgetType;
+    
+    if (isKPI) {
+      return {
+        category: 'KPI',
+        icon: <Target className="h-3 w-3" />,
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        description: 'Key Performance Indicator'
+      };
+    }
+
+    switch (widgetType) {
+      case 'chart':
+        return {
+          category: 'Chart',
+          icon: <BarChart3 className="h-3 w-3" />,
+          color: 'bg-green-100 text-green-800 border-green-200',
+          description: 'Data Visualization'
+        };
+      case 'gauge':
+        return {
+          category: 'Gauge',
+          icon: <Gauge className="h-3 w-3" />,
+          color: 'bg-purple-100 text-purple-800 border-purple-200',
+          description: 'Gauge Display'
+        };
+      case 'table':
+        return {
+          category: 'Table',
+          icon: <Grid className="h-3 w-3" />,
+          color: 'bg-orange-100 text-orange-800 border-orange-200',
+          description: 'Data Table'
+        };
+      case 'activity':
+        return {
+          category: 'Activity',
+          icon: <Activity className="h-3 w-3" />,
+          color: 'bg-teal-100 text-teal-800 border-teal-200',
+          description: 'Activity Monitor'
+        };
+      default:
+        return {
+          category: 'Widget',
+          icon: <Package className="h-3 w-3" />,
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          description: 'Custom Widget'
+        };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -844,21 +904,69 @@ export default function UIDesignStudio() {
                   <>
                     {/* Creation Toolbar based on active tab */}
                     {activeTab === 'widgets' && (
-                      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
-                        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Plus className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Widget Creation</span>
+                      <div className="mb-6 space-y-4">
+                        {/* Quick Creation */}
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Plus className="h-4 w-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Widget Creation</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                onClick={() => setSmartKPIStudioOpen(true)}
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                              >
+                                <Target className="h-3 w-3 mr-1" />
+                                SMART KPI Widget
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              onClick={() => setSmartKPIStudioOpen(true)}
-                              size="sm"
-                              className="bg-purple-600 hover:bg-purple-700 text-white"
-                            >
-                              <Gauge className="h-3 w-3 mr-1" />
-                              SMART KPI Widget
-                            </Button>
+                        </div>
+                        
+                        {/* Widget Categories */}
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Filter className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Widget Categories</span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-blue-200 dark:border-blue-700">
+                              <Target className="h-4 w-4 text-blue-600" />
+                              <div className="text-xs">
+                                <div className="font-medium text-blue-800 dark:text-blue-300">KPI</div>
+                                <div className="text-gray-500">Performance Metrics</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-700">
+                              <BarChart3 className="h-4 w-4 text-green-600" />
+                              <div className="text-xs">
+                                <div className="font-medium text-green-800 dark:text-green-300">Chart</div>
+                                <div className="text-gray-500">Data Visualization</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-purple-200 dark:border-purple-700">
+                              <Gauge className="h-4 w-4 text-purple-600" />
+                              <div className="text-xs">
+                                <div className="font-medium text-purple-800 dark:text-purple-300">Gauge</div>
+                                <div className="text-gray-500">Visual Meters</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-orange-200 dark:border-orange-700">
+                              <Grid className="h-4 w-4 text-orange-600" />
+                              <div className="text-xs">
+                                <div className="font-medium text-orange-800 dark:text-orange-300">Table</div>
+                                <div className="text-gray-500">Data Tables</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded border border-teal-200 dark:border-teal-700">
+                              <Activity className="h-4 w-4 text-teal-600" />
+                              <div className="text-xs">
+                                <div className="font-medium text-teal-800 dark:text-teal-300">Activity</div>
+                                <div className="text-gray-500">Live Monitoring</div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -925,15 +1033,38 @@ export default function UIDesignStudio() {
                               {getItemIcon(activeTab)}
                               <CardTitle className="text-base">{item.title}</CardTitle>
                             </div>
-                            <Badge className={getStatusColor(item.status)}>
-                              {item.status}
-                            </Badge>
+                            <div className="flex flex-col gap-1 items-end">
+                              <Badge className={getStatusColor(item.status)}>
+                                {item.status}
+                              </Badge>
+                              {activeTab === 'widgets' && (() => {
+                                const typeInfo = getWidgetTypeInfo(item);
+                                return (
+                                  <Badge variant="outline" className={`text-xs border ${typeInfo.color}`}>
+                                    <div className="flex items-center gap-1">
+                                      {typeInfo.icon}
+                                      {typeInfo.category}
+                                    </div>
+                                  </Badge>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                            {item.description || `No description provided`}
-                          </p>
+                          <div className="space-y-2 mb-3">
+                            <p className="text-sm text-gray-600 line-clamp-2">
+                              {item.description || `No description provided`}
+                            </p>
+                            {activeTab === 'widgets' && (() => {
+                              const typeInfo = getWidgetTypeInfo(item);
+                              return (
+                                <p className="text-xs text-gray-500 italic">
+                                  {typeInfo.description}
+                                </p>
+                              );
+                            })()}
+                          </div>
                           <div className="flex items-center justify-between">
                             <div className="flex gap-1">
                               {item.targetPlatform === 'mobile' || item.targetPlatform === 'both' ? (
