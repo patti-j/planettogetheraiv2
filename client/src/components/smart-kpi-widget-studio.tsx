@@ -212,18 +212,43 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
   // Initialize with existing widget data if editing
   React.useEffect(() => {
     if (existingWidget) {
+      const config = existingWidget.configuration || existingWidget.data?.configuration || {};
       setWidgetConfig({
         ...widgetConfig,
-        ...existingWidget.configuration,
+        ...config,
         title: existingWidget.title || '',
         description: existingWidget.description || ''
       });
+      
+      // Try to find and set the template if it exists
+      const templateId = existingWidget.data?.template || config.templateId;
+      if (templateId) {
+        const template = kpiTemplates.find(t => t.id === templateId);
+        if (template) {
+          setSelectedTemplate(template);
+          setStep(2); // Skip template selection and go to configuration
+        }
+      } else if (existingWidget.title) {
+        // Try to guess template from title or widget type
+        const possibleTemplate = kpiTemplates.find(t => 
+          existingWidget.title?.toLowerCase().includes(t.name.toLowerCase()) ||
+          t.metrics.some(metric => existingWidget.title?.toLowerCase().includes(metric.toLowerCase()))
+        );
+        if (possibleTemplate) {
+          setSelectedTemplate(possibleTemplate);
+          setStep(2);
+        }
+      }
     }
   }, [existingWidget]);
 
   const createWidgetMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', '/api/canvas/widgets', {
+      const isEditing = !!existingWidget;
+      const method = isEditing ? 'PUT' : 'POST';
+      const url = isEditing ? `/api/canvas/widgets/${existingWidget.id}` : '/api/canvas/widgets';
+      
+      const payload = {
         title: data.title,
         widgetType: 'smart-kpi',
         widgetSubtype: selectedTemplate?.category || 'KPI',
@@ -234,22 +259,27 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
         },
         configuration: data.configuration,
         isVisible: true
-      });
+      };
+
+      const response = await apiRequest(method, url, payload);
       return response.json();
     },
     onSuccess: () => {
+      const isEditing = !!existingWidget;
       toast({
         title: "Success",
-        description: "SMART KPI widget created successfully!"
+        description: isEditing ? "SMART KPI widget updated successfully!" : "SMART KPI widget created successfully!"
       });
       queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/design-studio/widgets'] });
       onOpenChange(false);
       resetForm();
     },
     onError: (error) => {
+      const isEditing = !!existingWidget;
       toast({
         title: "Error",
-        description: "Failed to create widget",
+        description: isEditing ? "Failed to update widget" : "Failed to create widget",
         variant: "destructive"
       });
     }
@@ -311,16 +341,23 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
     });
   };
 
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
-            Smart KPI Widget Studio
+            {existingWidget ? 'Edit SMART KPI Widget' : 'SMART KPI Widget Studio'}
           </DialogTitle>
           <DialogDescription>
-            Create powerful KPI widgets with guided templates and intelligent configuration
+            {existingWidget ? 'Update your KPI widget configuration and settings' : 'Create powerful KPI widgets with guided templates and intelligent configuration'}
           </DialogDescription>
         </DialogHeader>
 
@@ -728,7 +765,10 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                   </Button>
                   <Button onClick={handleSave} disabled={createWidgetMutation.isPending}>
                     <Save className="h-4 w-4 mr-1" />
-                    {createWidgetMutation.isPending ? 'Creating...' : 'Create Widget'}
+                    {createWidgetMutation.isPending 
+                      ? (existingWidget ? 'Updating...' : 'Creating...') 
+                      : (existingWidget ? 'Update Widget' : 'Create Widget')
+                    }
                   </Button>
                 </div>
               </div>

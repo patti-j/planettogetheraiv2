@@ -429,6 +429,24 @@ export default function UIDesignStudio() {
     setAiPrompt("");
   };
 
+  const handleEditWidget = (item: DesignItem) => {
+    // Check if this is a SMART KPI widget by checking widget type
+    const isSmartKPIWidget = item.data?.widgetType === 'smart-kpi' || 
+                            item.configuration?.widgetType === 'smart-kpi' ||
+                            item.title?.toLowerCase().includes('kpi') ||
+                            item.data?.template; // Has template field indicating it's from SMART KPI studio
+    
+    if (activeTab === 'widgets' && isSmartKPIWidget) {
+      // Open SMART KPI Widget Studio with existing data
+      setSelectedItem(item);
+      setSmartKPIStudioOpen(true);
+    } else {
+      // For other widgets, use regular edit mode
+      setSelectedItem(item);
+      setEditMode(true);
+    }
+  };
+
   const handleCreate = () => {
     if (!createForm.title) {
       toast({
@@ -738,8 +756,7 @@ export default function UIDesignStudio() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedItem(item);
-                                  setEditMode(true);
+                                  handleEditWidget(item);
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -923,6 +940,7 @@ export default function UIDesignStudio() {
         <SmartKPIWidgetStudio
           open={smartKPIStudioOpen}
           onOpenChange={setSmartKPIStudioOpen}
+          existingWidget={selectedItem && smartKPIStudioOpen ? selectedItem : undefined}
         />
       </div>
     </div>
