@@ -279,7 +279,8 @@ function CanvasWidget({
   onConfigure,
   isSelected,
   onSelect,
-  gridSize = 20 
+  gridSize = 20,
+  widgetLibrary = WIDGET_LIBRARY
 }: { 
   widget: DashboardWidget;
   onMove: (id: string, position: { x: number; y: number }) => void;
@@ -289,6 +290,7 @@ function CanvasWidget({
   isSelected: boolean;
   onSelect: (id: string) => void;
   gridSize?: number;
+  widgetLibrary?: WidgetDefinition[];
 }) {
   const [{ isDragging }, drag] = useDrag({
     type: "canvas-widget",
@@ -336,8 +338,8 @@ function CanvasWidget({
   };
 
   // Find the widget definition for the icon
-  const widgetDef = WIDGET_LIBRARY.find(w => w.id === widget.widgetId);
-  const Icon = widgetDef?.icon || Grid;
+  const widgetDef = widgetLibrary.find(w => w.id === widget.widgetId);
+  const Icon = widgetDef?.icon || Target;
 
   return (
     <div
@@ -509,6 +511,7 @@ function DashboardCanvas({
           isSelected={selectedWidgetId === widget.id}
           onSelect={onSelectWidget}
           gridSize={gridSize}
+          widgetLibrary={COMBINED_WIDGET_LIBRARY}
         />
       ))}
     </div>
@@ -641,13 +644,34 @@ export function DashboardVisualDesigner({
   const [previewMode, setPreviewMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Get unique categories
-  const categories = ["All", ...new Set(WIDGET_LIBRARY.map(w => w.category))];
+  // Load custom canvas widgets
+  const { data: canvasWidgets = [] } = useQuery({
+    queryKey: ['/api/canvas/widgets'],
+    queryFn: () => apiRequest('GET', '/api/canvas/widgets')
+  });
+
+  // Convert canvas widgets to widget definitions
+  const customWidgetDefs: WidgetDefinition[] = Array.isArray(canvasWidgets) ? canvasWidgets.map((widget: any) => ({
+    id: `custom-${widget.id}`,
+    title: widget.title,
+    type: widget.widgetType || "custom",
+    icon: Target, // Default icon for custom widgets
+    category: "Custom Widgets",
+    defaultSize: { width: 300, height: 200 },
+    description: widget.data?.description || "Custom widget created by user",
+    configurable: true
+  })) : [];
+
+  // Combine static and custom widgets
+  const COMBINED_WIDGET_LIBRARY = [...WIDGET_LIBRARY, ...customWidgetDefs];
+
+  // Get unique categories including custom widgets
+  const categories = ["All", ...new Set(COMBINED_WIDGET_LIBRARY.map(w => w.category))];
 
   // Filter widgets by category
   const filteredWidgets = selectedCategory === "All" 
-    ? WIDGET_LIBRARY 
-    : WIDGET_LIBRARY.filter(w => w.category === selectedCategory);
+    ? COMBINED_WIDGET_LIBRARY 
+    : COMBINED_WIDGET_LIBRARY.filter(w => w.category === selectedCategory);
 
   // Add widget to canvas
   const handleAddWidget = (widgetDef: WidgetDefinition, position: { x: number; y: number }) => {
