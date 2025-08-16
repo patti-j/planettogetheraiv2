@@ -513,43 +513,7 @@ export default function UIDesignStudio() {
           </div>
         </div>
 
-        {/* SMART KPI Widget Studio - Featured */}
-        <Card className="mb-6 border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-2 bg-purple-600 rounded-lg">
-                <Gauge className="h-5 w-5 text-white" />
-              </div>
-              SMART KPI Widget Studio
-            </CardTitle>
-            <CardDescription>
-              Create powerful KPI widgets with guided templates and intelligent configuration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => setSmartKPIStudioOpen(true)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white mb-3"
-            >
-              <Target className="h-4 w-4 mr-2" />
-              Create SMART KPI Widget
-            </Button>
-            <div className="flex flex-wrap gap-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Activity className="h-3 w-3" />
-                <span>Real-time metrics</span>
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <BarChart3 className="h-3 w-3" />
-                <span>Multiple visualizations</span>
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Target className="h-3 w-3" />
-                <span>SMART framework</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* AI Assistant Card */}
         <Card className="mb-6">
@@ -699,18 +663,105 @@ export default function UIDesignStudio() {
                     <p className="text-gray-500 mb-4">
                       {searchTerm ? `No results for "${searchTerm}"` : `Create your first ${activeTab.slice(0, -1)} to get started`}
                     </p>
-                    <Button 
-                      onClick={() => setShowCreateDialog(true)}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Create {activeTab.slice(0, -1)}
-                    </Button>
+                    
+                    {/* Widget Creation Options */}
+                    {activeTab === 'widgets' ? (
+                      <div className="space-y-4">
+                        {/* SMART KPI Widget Studio - Featured Option */}
+                        <Card className="max-w-md mx-auto border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <div className="p-1 bg-purple-600 rounded">
+                                <Gauge className="h-4 w-4 text-white" />
+                              </div>
+                              SMART KPI Widget Studio
+                            </CardTitle>
+                            <CardDescription className="text-sm">
+                              Create powerful KPI widgets with guided templates and intelligent configuration
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <Button 
+                              onClick={() => setSmartKPIStudioOpen(true)}
+                              className="w-full bg-purple-600 hover:bg-purple-700 text-white mb-3"
+                            >
+                              <Target className="h-4 w-4 mr-2" />
+                              Create SMART KPI Widget
+                            </Button>
+                            <div className="flex flex-wrap gap-2 justify-center">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Activity className="h-3 w-3" />
+                                <span>Real-time metrics</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <BarChart3 className="h-3 w-3" />
+                                <span>Multiple visualizations</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Target className="h-3 w-3" />
+                                <span>SMART framework</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* General Widget Creation */}
+                        <div className="pt-4 border-t border-gray-200">
+                          <Button 
+                            onClick={() => setShowCreateDialog(true)}
+                            variant="outline"
+                            className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create Custom Widget
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={() => setShowCreateDialog(true)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create {activeTab.slice(0, -1)}
+                      </Button>
+                    )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredItems.map((item) => (
-                      <Card 
+                  <>
+                    {/* Widget Creation Toolbar - Only for widgets tab */}
+                    {activeTab === 'widgets' && (
+                      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Widget Creation</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={() => setSmartKPIStudioOpen(true)}
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                            >
+                              <Gauge className="h-3 w-3 mr-1" />
+                              SMART KPI Widget
+                            </Button>
+                            <Button
+                              onClick={() => setShowCreateDialog(true)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Custom Widget
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredItems.map((item) => (
+                        <Card 
                         key={item.id} 
                         className="hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={() => setSelectedItem(item)}
@@ -776,8 +827,9 @@ export default function UIDesignStudio() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </TabsContent>
             </Tabs>
