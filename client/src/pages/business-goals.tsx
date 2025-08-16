@@ -33,6 +33,8 @@ export default function BusinessGoalsPage() {
   const [showIssueForm, setShowIssueForm] = useState(false);
   const [editingRisk, setEditingRisk] = useState<GoalRisk | null>(null);
   const [editingIssue, setEditingIssue] = useState<GoalIssue | null>(null);
+  const [showActionForm, setShowActionForm] = useState(false);
+  const [editingAction, setEditingAction] = useState<GoalAction | null>(null);
   const [formData, setFormData] = useState({
     goalTitle: "",
     goalDescription: "",
@@ -64,6 +66,23 @@ export default function BusinessGoalsPage() {
     assignedTo: "",
     resolutionPlan: "",
     estimatedResolutionDate: "",
+  });
+  const [actionFormData, setActionFormData] = useState({
+    actionTitle: "",
+    actionDescription: "",
+    actionType: "strategic_initiative",
+    priority: "medium",
+    assignedTo: "",
+    budget: "",
+    expectedImpact: "",
+    successCriteria: "",
+    dependencies: "",
+    startDate: "",
+    targetDate: "",
+    resourcesPeople: "",
+    resourcesEquipment: "",
+    resourcesSkills: "",
+    resourcesExternalSupport: "",
   });
   const queryClient = useQueryClient();
 
@@ -183,6 +202,40 @@ export default function BusinessGoalsPage() {
     },
   });
 
+  // Create action mutation
+  const createActionMutation = useMutation({
+    mutationFn: (action: InsertGoalAction) =>
+      apiRequest("POST", "/api/goal-actions", action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goal-actions"] });
+      setShowActionForm(false);
+      resetActionForm();
+    },
+  });
+
+  // Update action mutation
+  const updateActionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: InsertGoalAction }) => {
+      return await apiRequest("PUT", `/api/goal-actions/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goal-actions"] });
+      setShowActionForm(false);
+      setEditingAction(null);
+      resetActionForm();
+    },
+  });
+
+  // Delete action mutation
+  const deleteActionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/goal-actions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goal-actions"] });
+    },
+  });
+
   // Helper functions to reset forms
   const resetForm = () => {
     setFormData({
@@ -222,6 +275,26 @@ export default function BusinessGoalsPage() {
       assignedTo: "",
       resolutionPlan: "",
       estimatedResolutionDate: "",
+    });
+  };
+
+  const resetActionForm = () => {
+    setActionFormData({
+      actionTitle: "",
+      actionDescription: "",
+      actionType: "strategic_initiative",
+      priority: "medium",
+      assignedTo: "",
+      budget: "",
+      expectedImpact: "",
+      successCriteria: "",
+      dependencies: "",
+      startDate: "",
+      targetDate: "",
+      resourcesPeople: "",
+      resourcesEquipment: "",
+      resourcesSkills: "",
+      resourcesExternalSupport: "",
     });
   };
 
@@ -296,6 +369,38 @@ export default function BusinessGoalsPage() {
     }
   };
 
+  const handleActionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGoal) return;
+    
+    const actionData: InsertGoalAction = {
+      goalId: selectedGoal.id,
+      actionTitle: actionFormData.actionTitle,
+      actionDescription: actionFormData.actionDescription,
+      actionType: actionFormData.actionType as "strategic_initiative" | "operational_improvement" | "investment" | "policy_change" | "training",
+      priority: actionFormData.priority as "low" | "medium" | "high" | "critical",
+      assignedTo: actionFormData.assignedTo,
+      budget: actionFormData.budget ? parseInt(actionFormData.budget) * 100 : 0, // Convert to cents
+      expectedImpact: actionFormData.expectedImpact,
+      success_criteria: actionFormData.successCriteria,
+      dependencies: actionFormData.dependencies ? actionFormData.dependencies.split(',').map(d => d.trim()).filter(Boolean) : [],
+      resources_required: {
+        people: actionFormData.resourcesPeople ? parseInt(actionFormData.resourcesPeople) : undefined,
+        equipment: actionFormData.resourcesEquipment ? actionFormData.resourcesEquipment.split(',').map(e => e.trim()).filter(Boolean) : [],
+        skills: actionFormData.resourcesSkills ? actionFormData.resourcesSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
+        external_support: actionFormData.resourcesExternalSupport ? actionFormData.resourcesExternalSupport.split(',').map(e => e.trim()).filter(Boolean) : [],
+      },
+      startDate: actionFormData.startDate ? new Date(actionFormData.startDate) : null,
+      targetDate: actionFormData.targetDate ? new Date(actionFormData.targetDate) : null,
+    };
+
+    if (editingAction) {
+      updateActionMutation.mutate({ id: editingAction.id, data: actionData });
+    } else {
+      createActionMutation.mutate(actionData);
+    }
+  };
+
   const calculateRiskSeverity = (probability: string, impact: string): number => {
     const probMap = { low: 1, medium: 2, high: 3 };
     const impactMap = { low: 1, medium: 2, high: 3, critical: 4 };
@@ -346,6 +451,33 @@ export default function BusinessGoalsPage() {
       resetIssueForm();
     }
     setShowIssueForm(true);
+  };
+
+  const openActionForm = (action?: GoalAction) => {
+    if (action) {
+      setEditingAction(action);
+      setActionFormData({
+        actionTitle: action.actionTitle,
+        actionDescription: action.actionDescription,
+        actionType: action.actionType,
+        priority: action.priority,
+        assignedTo: action.assignedTo,
+        budget: action.budget ? (action.budget / 100).toString() : "", // Convert from cents
+        expectedImpact: action.expectedImpact || "",
+        successCriteria: action.success_criteria || "",
+        dependencies: Array.isArray(action.dependencies) ? action.dependencies.join(', ') : "",
+        startDate: action.startDate ? new Date(action.startDate).toISOString().split('T')[0] : "",
+        targetDate: action.targetDate ? new Date(action.targetDate).toISOString().split('T')[0] : "",
+        resourcesPeople: action.resources_required?.people?.toString() || "",
+        resourcesEquipment: Array.isArray(action.resources_required?.equipment) ? action.resources_required.equipment.join(', ') : "",
+        resourcesSkills: Array.isArray(action.resources_required?.skills) ? action.resources_required.skills.join(', ') : "",
+        resourcesExternalSupport: Array.isArray(action.resources_required?.external_support) ? action.resources_required.external_support.join(', ') : "",
+      });
+    } else {
+      setEditingAction(null);
+      resetActionForm();
+    }
+    setShowActionForm(true);
   };
 
   // Calculate goal metrics
@@ -1063,15 +1195,147 @@ export default function BusinessGoalsPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="actions">
-                    <div className="text-center py-8">
-                      <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        Action Planning
-                      </h3>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        Action planning and KPI management features coming soon.
-                      </p>
+                  <TabsContent value="actions" className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Action Planning</h3>
+                      <Button onClick={() => openActionForm()} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Action
+                      </Button>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {actions
+                        .filter((action: GoalAction) => action.goalId === selectedGoal.id)
+                        .map((action: GoalAction) => (
+                          <Card key={action.id} className="border-l-4 border-blue-500">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <CardTitle className="text-base">{action.actionTitle}</CardTitle>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant={action.status === 'completed' ? 'default' : action.status === 'in_progress' ? 'secondary' : 'outline'}>
+                                      {action.status.replace('_', ' ')}
+                                    </Badge>
+                                    <Badge variant="outline">{action.actionType.replace('_', ' ')}</Badge>
+                                    <Badge className={action.priority === 'critical' ? 'bg-red-600' : action.priority === 'high' ? 'bg-orange-600' : action.priority === 'medium' ? 'bg-yellow-600' : 'bg-green-600'}>
+                                      {action.priority}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="ghost" onClick={() => openActionForm(action)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => deleteActionMutation.mutate(action.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-gray-600 dark:text-gray-400 mb-3">{action.actionDescription}</p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Assigned To</p>
+                                  <p className="text-gray-900 dark:text-white">{action.assignedTo}</p>
+                                </div>
+                                {action.budget > 0 && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Budget</p>
+                                    <p className="text-gray-900 dark:text-white">${(action.budget / 100).toLocaleString()}</p>
+                                  </div>
+                                )}
+                                {action.progress > 0 && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Progress</p>
+                                    <div className="flex items-center gap-2">
+                                      <Progress value={action.progress} className="h-2 flex-1" />
+                                      <span className="text-sm text-gray-600">{action.progress}%</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {(action.startDate || action.targetDate) && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  {action.startDate && (
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Start Date</p>
+                                      <p className="text-gray-900 dark:text-white">{new Date(action.startDate).toLocaleDateString()}</p>
+                                    </div>
+                                  )}
+                                  {action.targetDate && (
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Target Date</p>
+                                      <p className="text-gray-900 dark:text-white">{new Date(action.targetDate).toLocaleDateString()}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {action.expectedImpact && (
+                                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded mb-3">
+                                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                                    Expected Impact
+                                  </p>
+                                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                                    {action.expectedImpact}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {action.success_criteria && (
+                                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded mb-3">
+                                  <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-1">
+                                    Success Criteria
+                                  </p>
+                                  <p className="text-sm text-green-700 dark:text-green-300">
+                                    {action.success_criteria}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {action.dependencies && action.dependencies.length > 0 && (
+                                <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded">
+                                  <p className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">
+                                    Dependencies
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {action.dependencies.map((dep, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {dep}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      
+                      {actions.filter((action: GoalAction) => action.goalId === selectedGoal.id).length === 0 && (
+                        <Card>
+                          <CardContent className="p-6 text-center">
+                            <Activity className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                              No Actions Planned
+                            </h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-4">
+                              Create action plans and initiatives to achieve this business goal.
+                            </p>
+                            <Button onClick={() => openActionForm()} className="bg-blue-600 hover:bg-blue-700 text-white">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create First Action
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </TabsContent>
                 </div>
@@ -1390,6 +1654,254 @@ export default function BusinessGoalsPage() {
                 {createIssueMutation.isPending || updateIssueMutation.isPending 
                   ? (editingIssue ? "Updating..." : "Creating...") 
                   : (editingIssue ? "Update Issue" : "Report Issue")}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Form Dialog */}
+      <Dialog open={showActionForm} onOpenChange={(open) => {
+        setShowActionForm(open);
+        if (!open) {
+          setEditingAction(null);
+          resetActionForm();
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAction ? "Edit Action Plan" : "Create New Action Plan"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleActionSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Basic Information</h4>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="actionTitle">Action Title *</Label>
+                  <Input
+                    id="actionTitle"
+                    value={actionFormData.actionTitle}
+                    onChange={(e) => setActionFormData({...actionFormData, actionTitle: e.target.value})}
+                    placeholder="Brief title for this action plan"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="actionDescription">Action Description *</Label>
+                  <Textarea
+                    id="actionDescription"
+                    value={actionFormData.actionDescription}
+                    onChange={(e) => setActionFormData({...actionFormData, actionDescription: e.target.value})}
+                    placeholder="Detailed description of what needs to be done"
+                    rows={3}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Details */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Action Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="actionType">Action Type *</Label>
+                  <Select 
+                    value={actionFormData.actionType} 
+                    onValueChange={(value) => setActionFormData({...actionFormData, actionType: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select action type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="strategic_initiative">Strategic Initiative</SelectItem>
+                      <SelectItem value="operational_improvement">Operational Improvement</SelectItem>
+                      <SelectItem value="investment">Investment</SelectItem>
+                      <SelectItem value="policy_change">Policy Change</SelectItem>
+                      <SelectItem value="training">Training</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="priority">Priority *</Label>
+                  <Select 
+                    value={actionFormData.priority} 
+                    onValueChange={(value) => setActionFormData({...actionFormData, priority: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="assignedTo">Assigned To *</Label>
+                  <Select 
+                    value={actionFormData.assignedTo} 
+                    onValueChange={(value) => setActionFormData({...actionFormData, assignedTo: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user: any) => (
+                        <SelectItem key={user.id} value={user.username}>
+                          {user.firstName} {user.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline and Budget */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Timeline & Budget</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="startDate">Start Date</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={actionFormData.startDate}
+                    onChange={(e) => setActionFormData({...actionFormData, startDate: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="targetDate">Target Date</Label>
+                  <Input
+                    id="targetDate"
+                    type="date"
+                    value={actionFormData.targetDate}
+                    onChange={(e) => setActionFormData({...actionFormData, targetDate: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="budget">Budget ($)</Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    value={actionFormData.budget}
+                    onChange={(e) => setActionFormData({...actionFormData, budget: e.target.value})}
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Impact and Success */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Impact & Success Criteria</h4>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="expectedImpact">Expected Impact</Label>
+                  <Textarea
+                    id="expectedImpact"
+                    value={actionFormData.expectedImpact}
+                    onChange={(e) => setActionFormData({...actionFormData, expectedImpact: e.target.value})}
+                    placeholder="Describe the expected impact of this action"
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="successCriteria">Success Criteria</Label>
+                  <Textarea
+                    id="successCriteria"
+                    value={actionFormData.successCriteria}
+                    onChange={(e) => setActionFormData({...actionFormData, successCriteria: e.target.value})}
+                    placeholder="Define how success will be measured"
+                    rows={2}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="dependencies">Dependencies</Label>
+                  <Input
+                    id="dependencies"
+                    value={actionFormData.dependencies}
+                    onChange={(e) => setActionFormData({...actionFormData, dependencies: e.target.value})}
+                    placeholder="List dependencies separated by commas"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Resources Required */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Resources Required</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="resourcesPeople">People Required</Label>
+                  <Input
+                    id="resourcesPeople"
+                    type="number"
+                    value={actionFormData.resourcesPeople}
+                    onChange={(e) => setActionFormData({...actionFormData, resourcesPeople: e.target.value})}
+                    placeholder="Number of people needed"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="resourcesEquipment">Equipment Needed</Label>
+                  <Input
+                    id="resourcesEquipment"
+                    value={actionFormData.resourcesEquipment}
+                    onChange={(e) => setActionFormData({...actionFormData, resourcesEquipment: e.target.value})}
+                    placeholder="Equipment needed, separated by commas"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="resourcesSkills">Skills Required</Label>
+                  <Input
+                    id="resourcesSkills"
+                    value={actionFormData.resourcesSkills}
+                    onChange={(e) => setActionFormData({...actionFormData, resourcesSkills: e.target.value})}
+                    placeholder="Required skills, separated by commas"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="resourcesExternalSupport">External Support</Label>
+                  <Input
+                    id="resourcesExternalSupport"
+                    value={actionFormData.resourcesExternalSupport}
+                    onChange={(e) => setActionFormData({...actionFormData, resourcesExternalSupport: e.target.value})}
+                    placeholder="External support needed, separated by commas"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setShowActionForm(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createActionMutation.isPending || updateActionMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {createActionMutation.isPending || updateActionMutation.isPending 
+                  ? (editingAction ? "Updating..." : "Creating...") 
+                  : (editingAction ? "Update Action" : "Create Action")}
               </Button>
             </div>
           </form>
