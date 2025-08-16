@@ -39,7 +39,12 @@ import {
   Palette,
   Database,
   Calculator,
-  X
+  X,
+  Filter,
+  Function,
+  Code,
+  Trash,
+  ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -60,6 +65,105 @@ interface KPITemplate {
   defaultConfig: any;
   color: string;
 }
+
+// Available data sources for formula building
+const dataSources = [
+  {
+    id: 'ptjobs',
+    name: 'Production Jobs',
+    table: 'ptjobs',
+    fields: [
+      { name: 'job_id', type: 'string', label: 'Job ID' },
+      { name: 'external_id', type: 'string', label: 'External ID' },
+      { name: 'name', type: 'string', label: 'Job Name' },
+      { name: 'need_date_time', type: 'datetime', label: 'Need Date' },
+      { name: 'quantity', type: 'number', label: 'Quantity' },
+      { name: 'priority', type: 'number', label: 'Priority' },
+      { name: 'scheduled_status', type: 'string', label: 'Status' },
+      { name: 'due_date', type: 'datetime', label: 'Due Date' },
+      { name: 'late_days', type: 'number', label: 'Days Late' },
+      { name: 'completion_percentage', type: 'number', label: 'Completion %' }
+    ]
+  },
+  {
+    id: 'ptjoboperations',
+    name: 'Job Operations',
+    table: 'ptjoboperations',
+    fields: [
+      { name: 'job_id', type: 'string', label: 'Job ID' },
+      { name: 'operation_id', type: 'string', label: 'Operation ID' },
+      { name: 'name', type: 'string', label: 'Operation Name' },
+      { name: 'scheduled_start', type: 'datetime', label: 'Scheduled Start' },
+      { name: 'scheduled_end', type: 'datetime', label: 'Scheduled End' },
+      { name: 'actual_start', type: 'datetime', label: 'Actual Start' },
+      { name: 'actual_end', type: 'datetime', label: 'Actual End' },
+      { name: 'setup_hours', type: 'number', label: 'Setup Hours' },
+      { name: 'run_hrs', type: 'number', label: 'Run Hours' },
+      { name: 'efficiency', type: 'number', label: 'Efficiency %' },
+      { name: 'delay_hours', type: 'number', label: 'Delay Hours' }
+    ]
+  },
+  {
+    id: 'ptresources',
+    name: 'Resources',
+    table: 'ptresources',
+    fields: [
+      { name: 'resource_id', type: 'string', label: 'Resource ID' },
+      { name: 'name', type: 'string', label: 'Resource Name' },
+      { name: 'department_name', type: 'string', label: 'Department' },
+      { name: 'plant_name', type: 'string', label: 'Plant' },
+      { name: 'active', type: 'boolean', label: 'Active' },
+      { name: 'speed_factor', type: 'number', label: 'Speed Factor' },
+      { name: 'bottleneck', type: 'boolean', label: 'Is Bottleneck' },
+      { name: 'utilization', type: 'number', label: 'Utilization %' },
+      { name: 'efficiency', type: 'number', label: 'Efficiency %' }
+    ]
+  },
+  {
+    id: 'ptjobactivities',
+    name: 'Job Activities',
+    table: 'ptjobactivities',
+    fields: [
+      { name: 'job_id', type: 'string', label: 'Job ID' },
+      { name: 'activity_name', type: 'string', label: 'Activity Name' },
+      { name: 'resource_id', type: 'string', label: 'Resource ID' },
+      { name: 'scheduled_start_date', type: 'datetime', label: 'Scheduled Start' },
+      { name: 'scheduled_end_date', type: 'datetime', label: 'Scheduled End' },
+      { name: 'actual_start', type: 'datetime', label: 'Actual Start' },
+      { name: 'actual_end', type: 'datetime', label: 'Actual End' },
+      { name: 'production_status', type: 'string', label: 'Production Status' },
+      { name: 'activity_type', type: 'string', label: 'Activity Type' }
+    ]
+  }
+];
+
+// Aggregation functions
+const aggregationFunctions = [
+  { value: 'AVG', label: 'Average' },
+  { value: 'SUM', label: 'Sum' },
+  { value: 'COUNT', label: 'Count' },
+  { value: 'MIN', label: 'Minimum' },
+  { value: 'MAX', label: 'Maximum' },
+  { value: 'STDDEV', label: 'Standard Deviation' },
+  { value: 'VARIANCE', label: 'Variance' },
+  { value: 'MEDIAN', label: 'Median' }
+];
+
+// Filter operators
+const filterOperators = [
+  { value: '=', label: 'Equals' },
+  { value: '!=', label: 'Not Equals' },
+  { value: '>', label: 'Greater Than' },
+  { value: '>=', label: 'Greater Than or Equal' },
+  { value: '<', label: 'Less Than' },
+  { value: '<=', label: 'Less Than or Equal' },
+  { value: 'LIKE', label: 'Contains' },
+  { value: 'NOT LIKE', label: 'Does Not Contain' },
+  { value: 'IN', label: 'In List' },
+  { value: 'NOT IN', label: 'Not In List' },
+  { value: 'IS NULL', label: 'Is Empty' },
+  { value: 'IS NOT NULL', label: 'Is Not Empty' }
+];
 
 const kpiTemplates: KPITemplate[] = [
   {
@@ -203,7 +307,17 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
     tags: [] as string[],
     isShared: false,
     alertsEnabled: true,
-    alertRecipients: [] as string[]
+    alertRecipients: [] as string[],
+    // Advanced formula configuration
+    formulaConfig: {
+      sourceTable: '',
+      selectField: '',
+      filters: [] as any[],
+      groupBy: '',
+      aggregationFunction: 'AVG',
+      customFormula: '',
+      useCustomFormula: false
+    }
   });
 
   const { toast } = useToast();
@@ -337,7 +451,16 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
       tags: [],
       isShared: false,
       alertsEnabled: true,
-      alertRecipients: []
+      alertRecipients: [],
+      formulaConfig: {
+        sourceTable: '',
+        selectField: '',
+        filters: [],
+        groupBy: '',
+        aggregationFunction: 'AVG',
+        customFormula: '',
+        useCustomFormula: false
+      }
     });
   };
 
@@ -448,115 +571,586 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
           {/* Step 2: KPI Configuration */}
           {step === 2 && (
             <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Basic Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Widget Title *</Label>
-                      <Input
-                        id="title"
-                        value={widgetConfig.title}
-                        onChange={(e) => setWidgetConfig({ ...widgetConfig, title: e.target.value })}
-                        placeholder="e.g., Production Efficiency"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="metric">Metric *</Label>
-                      <Select
-                        value={widgetConfig.metric}
-                        onValueChange={(value) => setWidgetConfig({ ...widgetConfig, metric: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a metric" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectedTemplate?.metrics.map((metric) => (
-                            <SelectItem key={metric} value={metric}>
-                              {metric}
-                            </SelectItem>
-                          )) || (
-                            <>
-                              <SelectItem value="custom">Custom Metric</SelectItem>
-                              <SelectItem value="oee">OEE</SelectItem>
-                              <SelectItem value="quality">Quality Rate</SelectItem>
-                              <SelectItem value="performance">Performance Rate</SelectItem>
-                            </>
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                  <TabsTrigger value="formula">Formula Builder</TabsTrigger>
+                  <TabsTrigger value="thresholds">Thresholds</TabsTrigger>
+                  <TabsTrigger value="display">Display</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="basic" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Basic Configuration
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="title">Widget Title *</Label>
+                          <Input
+                            id="title"
+                            value={widgetConfig.title}
+                            onChange={(e) => setWidgetConfig({ ...widgetConfig, title: e.target.value })}
+                            placeholder="e.g., Production Efficiency"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="metric">Metric *</Label>
+                          <Select
+                            value={widgetConfig.metric}
+                            onValueChange={(value) => setWidgetConfig({ ...widgetConfig, metric: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a metric" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedTemplate?.metrics.map((metric) => (
+                                <SelectItem key={metric} value={metric}>
+                                  {metric}
+                                </SelectItem>
+                              )) || (
+                                <>
+                                  <SelectItem value="custom">Custom Metric</SelectItem>
+                                  <SelectItem value="oee">OEE</SelectItem>
+                                  <SelectItem value="quality">Quality Rate</SelectItem>
+                                  <SelectItem value="performance">Performance Rate</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={widgetConfig.description}
+                          onChange={(e) => setWidgetConfig({ ...widgetConfig, description: e.target.value })}
+                          placeholder="Describe what this KPI measures..."
+                          rows={3}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Formula Builder Tab */}
+                <TabsContent value="formula" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5" />
+                        Formula Builder
+                      </CardTitle>
+                      <CardDescription>
+                        Define how your KPI is calculated with flexible data sources and conditions
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Data Source Selection */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Database className="h-4 w-4" />
+                          <Label className="text-base font-medium">Data Source</Label>
+                        </div>
+                        <Select
+                          value={widgetConfig.formulaConfig.sourceTable}
+                          onValueChange={(value) => setWidgetConfig({
+                            ...widgetConfig,
+                            formulaConfig: { ...widgetConfig.formulaConfig, sourceTable: value, selectField: '' }
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select data source table" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {dataSources.map((source) => (
+                              <SelectItem key={source.id} value={source.id}>
+                                {source.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Field Selection */}
+                      {widgetConfig.formulaConfig.sourceTable && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            <Label className="text-base font-medium">Calculate Field</Label>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Field to Calculate</Label>
+                              <Select
+                                value={widgetConfig.formulaConfig.selectField}
+                                onValueChange={(value) => setWidgetConfig({
+                                  ...widgetConfig,
+                                  formulaConfig: { ...widgetConfig.formulaConfig, selectField: value }
+                                })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {dataSources
+                                    .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                    ?.fields.filter(field => field.type === 'number' || field.type === 'datetime')
+                                    .map((field) => (
+                                      <SelectItem key={field.name} value={field.name}>
+                                        {field.label} ({field.type})
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Aggregation Function</Label>
+                              <Select
+                                value={widgetConfig.formulaConfig.aggregationFunction}
+                                onValueChange={(value) => setWidgetConfig({
+                                  ...widgetConfig,
+                                  formulaConfig: { ...widgetConfig.formulaConfig, aggregationFunction: value }
+                                })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {aggregationFunctions.map((func) => (
+                                    <SelectItem key={func.value} value={func.value}>
+                                      {func.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Filters Section */}
+                      {widgetConfig.formulaConfig.sourceTable && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Filter className="h-4 w-4" />
+                              <Label className="text-base font-medium">Filters & Conditions</Label>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newFilter = {
+                                  id: Date.now(),
+                                  field: '',
+                                  operator: '=',
+                                  value: '',
+                                  type: 'string'
+                                };
+                                setWidgetConfig({
+                                  ...widgetConfig,
+                                  formulaConfig: {
+                                    ...widgetConfig.formulaConfig,
+                                    filters: [...widgetConfig.formulaConfig.filters, newFilter]
+                                  }
+                                });
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add Filter
+                            </Button>
+                          </div>
+
+                          {widgetConfig.formulaConfig.filters.length === 0 && (
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500">
+                              No filters added. Click "Add Filter" to add conditions like "priority {'>'} 1"
+                            </div>
                           )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={widgetConfig.description}
-                      onChange={(e) => setWidgetConfig({ ...widgetConfig, description: e.target.value })}
-                      placeholder="Describe what this KPI measures..."
-                      rows={3}
-                    />
-                  </div>
+                          {widgetConfig.formulaConfig.filters.map((filter, index) => (
+                            <div key={filter.id} className="border rounded-lg p-4 space-y-3 bg-gray-50">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Filter {index + 1}</Label>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newFilters = widgetConfig.formulaConfig.filters.filter(f => f.id !== filter.id);
+                                    setWidgetConfig({
+                                      ...widgetConfig,
+                                      formulaConfig: { ...widgetConfig.formulaConfig, filters: newFilters }
+                                    });
+                                  }}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                <Select
+                                  value={filter.field}
+                                  onValueChange={(value) => {
+                                    const field = dataSources
+                                      .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                      ?.fields.find(f => f.name === value);
+                                    const newFilters = [...widgetConfig.formulaConfig.filters];
+                                    newFilters[index] = { ...filter, field: value, type: field?.type || 'string' };
+                                    setWidgetConfig({
+                                      ...widgetConfig,
+                                      formulaConfig: { ...widgetConfig.formulaConfig, filters: newFilters }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Field" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {dataSources
+                                      .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                      ?.fields.map((field) => (
+                                        <SelectItem key={field.name} value={field.name}>
+                                          {field.label}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={filter.operator}
+                                  onValueChange={(value) => {
+                                    const newFilters = [...widgetConfig.formulaConfig.filters];
+                                    newFilters[index] = { ...filter, operator: value };
+                                    setWidgetConfig({
+                                      ...widgetConfig,
+                                      formulaConfig: { ...widgetConfig.formulaConfig, filters: newFilters }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {filterOperators.map((op) => (
+                                      <SelectItem key={op.value} value={op.value}>
+                                        {op.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Input
+                                  placeholder="Value"
+                                  value={filter.value}
+                                  onChange={(e) => {
+                                    const newFilters = [...widgetConfig.formulaConfig.filters];
+                                    newFilters[index] = { ...filter, value: e.target.value };
+                                    setWidgetConfig({
+                                      ...widgetConfig,
+                                      formulaConfig: { ...widgetConfig.formulaConfig, filters: newFilters }
+                                    });
+                                  }}
+                                />
+                                <Badge variant="secondary" className="self-center justify-center">
+                                  {filter.type}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dataSource">Data Source</Label>
-                      <Select
-                        value={widgetConfig.dataSource}
-                        onValueChange={(value) => setWidgetConfig({ ...widgetConfig, dataSource: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="production">Production Data</SelectItem>
-                          <SelectItem value="quality">Quality System</SelectItem>
-                          <SelectItem value="erp">ERP System</SelectItem>
-                          <SelectItem value="iot">IoT Sensors</SelectItem>
-                          <SelectItem value="manual">Manual Entry</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      {/* Formula Preview */}
+                      {widgetConfig.formulaConfig.sourceTable && widgetConfig.formulaConfig.selectField && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Code className="h-4 w-4" />
+                            <Label className="text-base font-medium">Formula Preview</Label>
+                          </div>
+                          <div className="bg-gray-100 border rounded-lg p-4 font-mono text-sm">
+                            <div className="text-blue-600">
+                              SELECT {widgetConfig.formulaConfig.aggregationFunction}({widgetConfig.formulaConfig.selectField})
+                            </div>
+                            <div className="text-green-600">
+                              FROM {dataSources.find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)?.table}
+                            </div>
+                            {widgetConfig.formulaConfig.filters.length > 0 && (
+                              <div className="text-purple-600">
+                                WHERE {widgetConfig.formulaConfig.filters.map(f => 
+                                  f.field && f.operator && f.value ? 
+                                  `${f.field} ${f.operator} ${f.type === 'string' ? `'${f.value}'` : f.value}` : ''
+                                ).filter(Boolean).join(' AND ')}
+                              </div>
+                            )}
+                            {widgetConfig.formulaConfig.groupBy && (
+                              <div className="text-orange-600">
+                                GROUP BY {widgetConfig.formulaConfig.groupBy}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <strong>Example:</strong> For "average job lateness for jobs over priority 1":
+                            <br />
+                            • Data Source: Production Jobs
+                            • Calculate Field: Days Late
+                            • Aggregation: Average
+                            • Filter: Priority {'>'} 1
+                          </div>
+                        </div>
+                      )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="aggregation">Aggregation</Label>
-                      <Select
-                        value={widgetConfig.aggregation}
-                        onValueChange={(value) => setWidgetConfig({ ...widgetConfig, aggregation: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="average">Average</SelectItem>
-                          <SelectItem value="sum">Sum</SelectItem>
-                          <SelectItem value="min">Minimum</SelectItem>
-                          <SelectItem value="max">Maximum</SelectItem>
-                          <SelectItem value="count">Count</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      {/* Advanced Options */}
+                      <div className="space-y-4">
+                        <Label className="text-base font-medium">Advanced Options</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Group By (Optional)</Label>
+                            <Select
+                              value={widgetConfig.formulaConfig.groupBy}
+                              onValueChange={(value) => setWidgetConfig({
+                                ...widgetConfig,
+                                formulaConfig: { ...widgetConfig.formulaConfig, groupBy: value }
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="No grouping" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">No grouping</SelectItem>
+                                {dataSources
+                                  .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                  ?.fields.filter(field => field.type === 'string')
+                                  .map((field) => (
+                                    <SelectItem key={field.name} value={field.name}>
+                                      {field.label}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center space-x-2 pt-6">
+                            <Switch
+                              checked={widgetConfig.formulaConfig.useCustomFormula}
+                              onCheckedChange={(checked) => setWidgetConfig({
+                                ...widgetConfig,
+                                formulaConfig: { ...widgetConfig.formulaConfig, useCustomFormula: checked }
+                              })}
+                            />
+                            <Label>Use custom SQL formula</Label>
+                          </div>
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="unit">Unit</Label>
-                      <Input
-                        id="unit"
-                        value={widgetConfig.unit}
-                        onChange={(e) => setWidgetConfig({ ...widgetConfig, unit: e.target.value })}
-                        placeholder="%, $, units, etc."
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                        {widgetConfig.formulaConfig.useCustomFormula && (
+                          <div className="space-y-2">
+                            <Label>Custom SQL Formula</Label>
+                            <Textarea
+                              value={widgetConfig.formulaConfig.customFormula}
+                              onChange={(e) => setWidgetConfig({
+                                ...widgetConfig,
+                                formulaConfig: { ...widgetConfig.formulaConfig, customFormula: e.target.value }
+                              })}
+                              placeholder="Enter custom SQL formula (advanced users only)"
+                              rows={4}
+                              className="font-mono"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
+                {/* Thresholds Tab */}
+                <TabsContent value="thresholds" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="h-5 w-5" />
+                        Thresholds & Targets
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Target Value: {widgetConfig.targetValue}</Label>
+                        <Slider
+                          value={[widgetConfig.targetValue]}
+                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, targetValue: value })}
+                          max={200}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Warning Threshold: {widgetConfig.warningThreshold}</Label>
+                        <Slider
+                          value={[widgetConfig.warningThreshold]}
+                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, warningThreshold: value })}
+                          max={200}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Critical Threshold: {widgetConfig.criticalThreshold}</Label>
+                        <Slider
+                          value={[widgetConfig.criticalThreshold]}
+                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, criticalThreshold: value })}
+                          max={200}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="unit">Unit</Label>
+                        <Input
+                          id="unit"
+                          value={widgetConfig.unit}
+                          onChange={(e) => setWidgetConfig({ ...widgetConfig, unit: e.target.value })}
+                          placeholder="%, $, units, etc."
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Display Tab */}
+                <TabsContent value="display" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Palette className="h-5 w-5" />
+                        Display Options
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label>Visualization Type</Label>
+                          <Select
+                            value={widgetConfig.visualization}
+                            onValueChange={(value) => setWidgetConfig({ ...widgetConfig, visualization: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gauge">Gauge Chart</SelectItem>
+                              <SelectItem value="number">Number Display</SelectItem>
+                              <SelectItem value="line">Line Chart</SelectItem>
+                              <SelectItem value="bar">Bar Chart</SelectItem>
+                              <SelectItem value="progress">Progress Bar</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Size</Label>
+                          <Select
+                            value={widgetConfig.size}
+                            onValueChange={(value) => setWidgetConfig({ ...widgetConfig, size: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="small">Small</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="large">Large</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Color Scheme</Label>
+                          <Select
+                            value={widgetConfig.colorScheme}
+                            onValueChange={(value) => setWidgetConfig({ ...widgetConfig, colorScheme: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="default">Default</SelectItem>
+                              <SelectItem value="blue">Blue</SelectItem>
+                              <SelectItem value="green">Green</SelectItem>
+                              <SelectItem value="red">Red</SelectItem>
+                              <SelectItem value="purple">Purple</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={widgetConfig.showTrend}
+                            onCheckedChange={(checked) => setWidgetConfig({ ...widgetConfig, showTrend: checked })}
+                          />
+                          <Label>Show Trend</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={widgetConfig.showComparison}
+                            onCheckedChange={(checked) => setWidgetConfig({ ...widgetConfig, showComparison: checked })}
+                          />
+                          <Label>Show Comparison</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={widgetConfig.showSparkline}
+                            onCheckedChange={(checked) => setWidgetConfig({ ...widgetConfig, showSparkline: checked })}
+                          />
+                          <Label>Show Sparkline</Label>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Refresh Interval (seconds)</Label>
+                        <Slider
+                          value={[widgetConfig.refreshInterval]}
+                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, refreshInterval: value })}
+                          min={5}
+                          max={300}
+                          step={5}
+                          className="w-full"
+                        />
+                        <div className="text-sm text-gray-500">{widgetConfig.refreshInterval} seconds</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                  Back to Templates
+                </Button>
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={() => setStep(3)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Preview
+                  </Button>
+                  <Button onClick={handleSave}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {existingWidget ? 'Update Widget' : 'Create Widget'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Preview & Save */}
+          {step === 3 && (
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
