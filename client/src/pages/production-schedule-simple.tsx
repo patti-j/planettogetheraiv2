@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Filter, Search, RefreshCw, Download, Settings } from 'lucide-react';
+import { Calendar, Filter, Search, RefreshCw, Download, Settings, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
@@ -37,6 +37,7 @@ export default function ProductionSchedulePage() {
   });
 
   const [showFilters, setShowFilters] = useState(!isMobile);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   // Check permissions - allow all in development for demo purposes
   const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
@@ -78,6 +79,17 @@ export default function ProductionSchedulePage() {
         
         {/* Right side buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Dashboard toggle button */}
+          <Button 
+            variant={showDashboard ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setShowDashboard(!showDashboard)}
+            className={isMobile ? 'p-2' : 'gap-2'}
+          >
+            <BarChart3 className="w-4 h-4" />
+            {!isMobile && 'Dashboard'}
+            {!isMobile && (showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
@@ -86,6 +98,18 @@ export default function ProductionSchedulePage() {
           >
             <Filter className="w-4 h-4" />
             {!isMobile && 'Filters'}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              // Export functionality - placeholder for now
+              console.log('Export clicked');
+            }}
+            className={isMobile ? 'p-2' : 'gap-2'}
+          >
+            <Download className="w-4 h-4" />
+            {!isMobile && 'Export'}
           </Button>
           <Button 
             variant="outline" 
@@ -138,6 +162,50 @@ export default function ProductionSchedulePage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dashboard Panel */}
+      {showDashboard && (
+        <div className={`bg-muted/30 border-b ${isMobile ? 'p-2' : 'p-4'}`}>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Jobs</p>
+                  <p className="text-2xl font-bold">24</p>
+                </div>
+                <Calendar className="h-8 w-8 text-blue-600" />
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">On Time</p>
+                  <p className="text-2xl font-bold">18</p>
+                </div>
+                <Badge variant="outline" className="text-green-600">75%</Badge>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Behind Schedule</p>
+                  <p className="text-2xl font-bold">6</p>
+                </div>
+                <Badge variant="outline" className="text-red-600">25%</Badge>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Resources Busy</p>
+                  <p className="text-2xl font-bold">12</p>
+                </div>
+                <Settings className="h-8 w-8 text-orange-600" />
+              </div>
+            </Card>
           </div>
         </div>
       )}
