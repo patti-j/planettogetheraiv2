@@ -649,7 +649,7 @@ export function DashboardVisualDesigner({
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   // AI prompt state
-  const [aiPromptOpen, setAiPromptOpen] = useState(false);
+
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
 
@@ -1010,16 +1010,36 @@ export function DashboardVisualDesigner({
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAiPromptOpen(true)}
-                    className="h-7 text-purple-600 border-purple-200 hover:bg-purple-50"
-                  >
-                    <Wand2 className="w-3 h-3 mr-1" />
-                    AI Edit
-                  </Button>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 ml-2">
+                  <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-md px-2 py-1">
+                    <Wand2 className="w-3 h-3 text-purple-600 flex-shrink-0" />
+                    <Input
+                      placeholder="Describe changes you want to make..."
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAiPrompt();
+                        }
+                      }}
+                      className="h-6 text-xs border-0 bg-transparent focus:ring-0 focus:border-0 min-w-80 placeholder:text-purple-400"
+                      disabled={aiProcessing}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAiPrompt}
+                      disabled={aiProcessing || !aiPrompt.trim()}
+                      className="h-6 px-2 text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-800"
+                    >
+                      {aiProcessing ? (
+                        <Sparkles className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Send className="w-3 h-3" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Grid className="w-3 h-3" />
                     {layout === "grid" ? "Grid Layout" : "Freeform Layout"}
                   </div>
@@ -1052,84 +1072,7 @@ export function DashboardVisualDesigner({
             onSave={handleSaveWidgetConfig}
           />
 
-          {/* AI Prompt Dialog */}
-          <Dialog open={aiPromptOpen} onOpenChange={setAiPromptOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-purple-600" />
-                  AI Dashboard Editor
-                </DialogTitle>
-                <DialogDescription>
-                  Describe the changes you want to make to your dashboard. AI will understand and apply your modifications automatically.
-                </DialogDescription>
-              </DialogHeader>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ai-prompt">What would you like to change?</Label>
-                  <Textarea
-                    id="ai-prompt"
-                    placeholder="Examples:
-- Add a production KPI widget to the top left
-- Remove the chart widgets and add a table instead
-- Rename this dashboard to 'Plant Operations'
-- Move all widgets to the right side
-- Add gauges for temperature monitoring
-- Change layout to freeform"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    className="min-h-32 resize-none"
-                    disabled={aiProcessing}
-                  />
-                </div>
-
-                {widgets.length > 0 && (
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Layout className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Current Dashboard</span>
-                    </div>
-                    <div className="text-xs text-gray-600 space-y-1">
-                      <div>Name: {dashboardName || "Untitled Dashboard"}</div>
-                      <div>Widgets: {widgets.length} ({widgets.map(w => w.title).join(", ")})</div>
-                      <div>Layout: {layout === "grid" ? "Grid" : "Freeform"} • Platform: {targetPlatform}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setAiPromptOpen(false);
-                    setAiPrompt("");
-                  }}
-                  disabled={aiProcessing}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleAiPrompt}
-                  disabled={aiProcessing || !aiPrompt.trim()}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  {aiProcessing ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      AI Working...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Apply Changes
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </DialogContent>
       </Dialog>
     </DndProvider>
