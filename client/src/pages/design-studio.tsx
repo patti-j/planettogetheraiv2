@@ -69,13 +69,78 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
   // Check if this is a pre-built widget with a component property
   const componentName = widget?.data?.component || widget?.configuration?.component;
   
-  // No widget components available - using dashboard approach instead
+  // Render based on widget type and configuration
+  if (widget?.configuration?.widgetType) {
+    return (
+      <div className="w-full min-h-64 border rounded-lg bg-white p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{widget.title}</h3>
+          <Badge>{widget.configuration.widgetType}</Badge>
+        </div>
+        
+        {widget.configuration.widgetType === 'chart' && (
+          <div className="h-48 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <BarChart3 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+              <p className="text-sm text-gray-600">Chart Widget</p>
+              <p className="text-xs text-gray-400">{widget.configuration.chartType || 'Bar Chart'}</p>
+            </div>
+          </div>
+        )}
+        
+        {widget.configuration.widgetType === 'metric' && (
+          <div className="h-48 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <p className="text-2xl font-bold text-gray-800">123.5K</p>
+              <p className="text-sm text-gray-600">{widget.configuration.metricName || 'Sample Metric'}</p>
+            </div>
+          </div>
+        )}
+        
+        {widget.configuration.widgetType === 'table' && (
+          <div className="h-48 bg-gray-50 rounded-lg p-4">
+            <div className="space-y-2">
+              <div className="flex gap-4 text-xs font-semibold text-gray-600 border-b pb-2">
+                <div className="flex-1">Name</div>
+                <div className="w-20">Status</div>
+                <div className="w-20">Value</div>
+              </div>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex gap-4 text-sm">
+                  <div className="flex-1">Item {i}</div>
+                  <div className="w-20">
+                    <Badge variant="outline">Active</Badge>
+                  </div>
+                  <div className="w-20">100{i}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {(!widget.configuration.widgetType || widget.configuration.widgetType === 'custom') && (
+          <div className="h-48 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <Package className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+              <p className="text-sm text-gray-600">Custom Widget</p>
+              <p className="text-xs text-gray-400">{widget.title}</p>
+            </div>
+          </div>
+        )}
+        
+        {widget.description && (
+          <p className="text-sm text-gray-500 mt-3">{widget.description}</p>
+        )}
+      </div>
+    );
+  }
 
-  // Return placeholder for dashboard components
+  // Return placeholder for unknown widgets
   return (
     <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
       <div className="text-center">
-        <p className="text-sm text-gray-500">Component Preview</p>
+        <p className="text-sm text-gray-500">Widget Preview</p>
         <p className="text-xs text-gray-400">{widget.title || 'Dashboard Component'}</p>
       </div>
     </div>
@@ -1056,18 +1121,204 @@ export default function UIDesignStudio() {
                 <WidgetPreview widget={selectedItem} />
               )}
               {selectedItem?.type === 'dashboard' && (
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-gray-600">Dashboard preview would appear here</p>
+                <div className="w-full min-h-96 bg-white rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-semibold">{selectedItem.title}</h3>
+                      <p className="text-sm text-gray-500">{selectedItem.description}</p>
+                    </div>
+                    <Badge>{selectedItem.configuration?.layout || 'grid'}</Badge>
+                  </div>
+                  
+                  {/* Dashboard Layout Preview */}
+                  <div className={`grid gap-4 ${
+                    selectedItem.configuration?.layout === 'masonry' 
+                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                      : `grid-cols-${selectedItem.configuration?.gridColumns || 12}`
+                  }`}>
+                    
+                    {/* Sample Dashboard Widgets */}
+                    <div className="col-span-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 h-32 flex items-center justify-center">
+                      <div className="text-center">
+                        <BarChart3 className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                        <p className="text-sm font-medium">Production Chart</p>
+                      </div>
+                    </div>
+                    
+                    <div className="col-span-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 h-32 flex items-center justify-center">
+                      <div className="text-center">
+                        <Activity className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                        <p className="text-xl font-bold">94.2%</p>
+                        <p className="text-sm">Efficiency</p>
+                      </div>
+                    </div>
+                    
+                    <div className="col-span-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 h-32 flex items-center justify-center">
+                      <div className="text-center">
+                        <Target className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+                        <p className="text-xl font-bold">87</p>
+                        <p className="text-sm">Active Orders</p>
+                      </div>
+                    </div>
+                    
+                    <div className="col-span-6 bg-gray-50 rounded-lg p-4 h-40">
+                      <h4 className="font-medium mb-3">Recent Activities</h4>
+                      <div className="space-y-2">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="flex items-center gap-3 text-sm">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span>Order #{1000 + i} completed</span>
+                            <span className="text-gray-400 ml-auto">2 min ago</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="col-span-6 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 h-40 flex items-center justify-center">
+                      <div className="text-center">
+                        <AlertTriangle className="h-6 w-6 mx-auto mb-2 text-orange-600" />
+                        <p className="text-lg font-bold">3</p>
+                        <p className="text-sm">Alerts</p>
+                        <p className="text-xs text-gray-500 mt-1">Requires attention</p>
+                      </div>
+                    </div>
+                    
+                  </div>
+                  
+                  {selectedItem.configuration?.widgets && selectedItem.configuration.widgets.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-sm text-gray-600">
+                        Contains {selectedItem.configuration.widgets.length} custom widget(s)
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
               {selectedItem?.type === 'page' && (
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-gray-600">Page preview would appear here</p>
+                <div className="w-full min-h-96 bg-white rounded-lg border overflow-hidden">
+                  {/* Page Header */}
+                  <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
+                    <h3 className="font-medium">{selectedItem.title}</h3>
+                    <Badge>{selectedItem.targetPlatform}</Badge>
+                  </div>
+                  
+                  {/* Page Content Preview */}
+                  <div className="p-6">
+                    <div className="space-y-6">
+                      {/* Header Section */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="h-6 bg-gray-300 rounded w-48 mb-2"></div>
+                          <div className="h-4 bg-gray-200 rounded w-72"></div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-blue-500 rounded w-20"></div>
+                          <div className="h-8 bg-gray-300 rounded w-16"></div>
+                        </div>
+                      </div>
+                      
+                      {/* Content Sections */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="h-4 bg-gray-300 rounded w-20 mb-2"></div>
+                          <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                          <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <div className="h-4 bg-gray-300 rounded w-16 mb-2"></div>
+                          <div className="h-8 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                        </div>
+                      </div>
+                      
+                      {/* Table/List Section */}
+                      <div className="border rounded-lg">
+                        <div className="bg-gray-50 px-4 py-2 border-b">
+                          <div className="h-4 bg-gray-300 rounded w-32"></div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="flex items-center gap-4">
+                              <div className="h-3 bg-gray-200 rounded flex-1"></div>
+                              <div className="h-3 bg-gray-200 rounded w-20"></div>
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {selectedItem.description && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-700">{selectedItem.description}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               {selectedItem?.type === 'menu' && (
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="text-gray-600">Menu structure preview would appear here</p>
+                <div className="w-full min-h-64 bg-white rounded-lg border overflow-hidden">
+                  {/* Menu Header */}
+                  <div className="bg-gray-50 px-4 py-3 border-b flex items-center justify-between">
+                    <h3 className="font-medium">{selectedItem.title}</h3>
+                    <Badge>{selectedItem.targetPlatform}</Badge>
+                  </div>
+                  
+                  {/* Menu Structure Preview */}
+                  <div className="p-4">
+                    <div className="space-y-2">
+                      {/* Main Menu Items */}
+                      <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <Layout className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Dashboard</span>
+                        <Badge variant="outline" className="ml-auto">Home</Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <BarChart3 className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Production</span>
+                        <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+                      </div>
+                      
+                      {/* Sub-menu items */}
+                      <div className="ml-6 space-y-1">
+                        <div className="flex items-center gap-3 p-2 pl-4 hover:bg-gray-50 rounded text-sm">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span>Orders</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-2 pl-4 hover:bg-gray-50 rounded text-sm">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span>Operations</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-2 pl-4 hover:bg-gray-50 rounded text-sm">
+                          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                          <span>Resources</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <Activity className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Analytics</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+                        <Settings className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium">Settings</span>
+                        <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
+                      </div>
+                    </div>
+                    
+                    {selectedItem.description && (
+                      <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-700">{selectedItem.description}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
