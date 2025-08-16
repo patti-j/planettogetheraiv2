@@ -12,7 +12,6 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 import AIAnalyticsManager from "@/components/ai-analytics-manager";
-import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,7 +56,6 @@ interface DraggableDashboardCardProps {
   onMove: (dragIndex: number, dropIndex: number) => void;
   generateWidgetData: () => any;
   isLivePaused: boolean;
-  setDashboardManagerOpen: (open: boolean) => void;
 }
 
 function DraggableDashboardCard({ 
@@ -65,8 +63,7 @@ function DraggableDashboardCard({
   index, 
   onMove, 
   generateWidgetData, 
-  isLivePaused,
-  setDashboardManagerOpen
+  isLivePaused
 }: DraggableDashboardCardProps) {
   const [size, setSize] = useState(() => {
     // Auto-calculate size based on widgets with better bounds
@@ -184,7 +181,12 @@ function DraggableDashboardCard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setDashboardManagerOpen(true)}
+                onClick={() => {
+                  toast({
+                    title: "Dashboard Manager",
+                    description: "Dashboard editing is now available in the UI Design Studio",
+                  });
+                }}
                 className="flex items-center"
               >
                 <Settings className="h-4 w-4" />
@@ -253,7 +255,6 @@ function DraggableDashboardCard({
 
 export default function Analytics() {
   const [isMaximized, setIsMaximized] = useState(false);
-  const [dashboardManagerOpen, setDashboardManagerOpen] = useState(false);
   const [aiAnalyticsOpen, setAiAnalyticsOpen] = useState(false);
   const [visibleDashboards, setVisibleDashboards] = useState<Set<number>>(new Set());
   const [isLivePaused, setIsLivePaused] = useState(false);
@@ -275,10 +276,9 @@ export default function Analytics() {
     const handleAICreateDashboard = (event: CustomEvent) => {
       const dashboard = event.detail?.dashboard;
       if (dashboard) {
-        setDashboardManagerOpen(true);
         toast({
-          title: "Dashboard Manager Opened",
-          description: `Ready to create: ${dashboard.name}`
+          title: "Dashboard Creation",
+          description: `Use the UI Design Studio to create: ${dashboard.name}`
         });
       }
     };
@@ -291,7 +291,10 @@ export default function Analytics() {
           setAiAnalyticsOpen(true);
           break;
         case 'open_dashboard_manager':
-          setDashboardManagerOpen(true);
+          toast({
+            title: "Dashboard Manager",
+            description: "Dashboard management is now available in the UI Design Studio"
+          });
           break;
         case 'maximize_view':
           setIsMaximized(true);
@@ -375,69 +378,7 @@ export default function Analytics() {
 
 
 
-  // Dashboard management mutations
-  const createDashboardMutation = useMutation({
-    mutationFn: async (dashboardData: any) => {
-      const response = await apiRequest("POST", "/api/dashboard-configs", dashboardData);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-      toast({
-        title: "Success",
-        description: "Dashboard created successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create dashboard",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateDashboardMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
-      const response = await apiRequest("PUT", `/api/dashboard-configs/${id}`, data);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-      toast({
-        title: "Success",
-        description: "Dashboard updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update dashboard",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteDashboardMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/dashboard-configs/${id}`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard-configs"] });
-      toast({
-        title: "Success",
-        description: "Dashboard deleted successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete dashboard",
-        variant: "destructive",
-      });
-    },
-  });
+  // Dashboard mutations removed - now handled by UI Design Studio
 
   // Fetch live data for widgets
   const { data: jobs = [] } = useQuery<any[]>({
@@ -548,7 +489,7 @@ export default function Analytics() {
                     onMove={handleDashboardMove}
                     generateWidgetData={generateWidgetData}
                     isLivePaused={isLivePaused}
-                    setDashboardManagerOpen={setDashboardManagerOpen}
+
                   />
                 </div>
               ))}
@@ -669,7 +610,12 @@ export default function Analytics() {
               
               <Button
                 variant="outline"
-                onClick={() => setDashboardManagerOpen(true)}
+                onClick={() => {
+                  toast({
+                    title: "Dashboard Manager",
+                    description: "Dashboard editing is now available in the UI Design Studio",
+                  });
+                }}
                 className="flex items-center gap-2 text-sm"
               >
                 <Settings className="h-4 w-4" />
@@ -733,7 +679,12 @@ export default function Analytics() {
                   
                   <Button
                     variant="outline"
-                    onClick={() => setDashboardManagerOpen(true)}
+                    onClick={() => {
+                      toast({
+                        title: "Dashboard Manager",
+                        description: "Dashboard editing is now available in the UI Design Studio",
+                      });
+                    }}
                     className="flex items-center gap-2"
                   >
                     <Settings className="h-4 w-4" />
@@ -777,25 +728,7 @@ export default function Analytics() {
         )}
       </div>
 
-      {/* Modals */}
-      <EnhancedDashboardManager
-        open={dashboardManagerOpen}
-        onOpenChange={setDashboardManagerOpen}
-        dashboards={dashboards}
-        currentDashboard={null}
-        onDashboardSelect={() => {}}
-        onDashboardCreate={(dashboard) => {
-          createDashboardMutation.mutate(dashboard);
-        }}
-        onDashboardUpdate={(dashboard) => {
-          updateDashboardMutation.mutate({ id: dashboard.id, data: dashboard });
-        }}
-        onDashboardDelete={(dashboardId) => {
-          deleteDashboardMutation.mutate(dashboardId);
-        }}
-        standardWidgets={[]}
-        customWidgets={[]}
-      />
+      {/* Modals - Dashboard editing moved to UI Design Studio */}
 
       <AIAnalyticsManager
         open={aiAnalyticsOpen}
