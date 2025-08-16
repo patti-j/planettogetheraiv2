@@ -717,6 +717,61 @@ export default function UIDesignStudio() {
                           </Button>
                         </div>
                       </div>
+                    ) : activeTab === 'dashboards' ? (
+                      <div className="space-y-4">
+                        {/* Dashboard Creation Options */}
+                        <Card className="max-w-md mx-auto border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <div className="p-1 bg-green-600 rounded">
+                                <Layout className="h-4 w-4 text-white" />
+                              </div>
+                              Dashboard Designer
+                            </CardTitle>
+                            <CardDescription className="text-sm">
+                              Create comprehensive dashboards with drag-and-drop widgets and real-time data visualization
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <Button 
+                              onClick={() => {
+                                // Navigate to the Analytics page with dashboard creation mode
+                                window.location.href = '/analytics?mode=create';
+                              }}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white mb-3"
+                            >
+                              <Layout className="h-4 w-4 mr-2" />
+                              Open Dashboard Designer
+                            </Button>
+                            <div className="flex flex-wrap gap-2 justify-center">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Grid className="h-3 w-3" />
+                                <span>Drag & drop widgets</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Activity className="h-3 w-3" />
+                                <span>Real-time updates</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Smartphone className="h-3 w-3" />
+                                <span>Responsive layouts</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Quick Dashboard Creation */}
+                        <div className="pt-4 border-t border-gray-200">
+                          <Button 
+                            onClick={() => setShowCreateDialog(true)}
+                            variant="outline"
+                            className="bg-gradient-to-r from-green-500 to-teal-600 text-white hover:from-green-600 hover:to-teal-700"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Create Dashboard Template
+                          </Button>
+                        </div>
+                      </div>
                     ) : (
                       <Button 
                         onClick={() => setShowCreateDialog(true)}
@@ -729,7 +784,7 @@ export default function UIDesignStudio() {
                   </div>
                 ) : (
                   <>
-                    {/* Widget Creation Toolbar - Only for widgets tab */}
+                    {/* Creation Toolbar based on active tab */}
                     {activeTab === 'widgets' && (
                       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
                         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
@@ -753,6 +808,37 @@ export default function UIDesignStudio() {
                             >
                               <Plus className="h-3 w-3 mr-1" />
                               Custom Widget
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {activeTab === 'dashboards' && (
+                      <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Layout className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Dashboard Creation</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              onClick={() => {
+                                window.location.href = '/analytics?mode=create';
+                              }}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <Layout className="h-3 w-3 mr-1" />
+                              Dashboard Designer
+                            </Button>
+                            <Button
+                              onClick={() => setShowCreateDialog(true)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              New Template
                             </Button>
                           </div>
                         </div>

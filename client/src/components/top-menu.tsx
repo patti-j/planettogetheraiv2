@@ -702,10 +702,11 @@ export default function TopMenu() {
                                 ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                               `}>
                                 <div className={`
-                                  ${isAI ? getThemeClasses(false) : 'bg-gray-100 dark:bg-gray-600'} 
+                                  ${isAI ? getThemeClasses(false) : ''} 
                                   p-1.5 rounded-full flex items-center justify-center flex-shrink-0
+                                  ${!isAI && color.includes('bg-') ? color : ''}
                                 `}>
-                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${iconColorClass}`} strokeWidth={1.5} fill="none" />
+                                  <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 ${isAI ? 'text-white' : iconColorClass}`} strokeWidth={1.5} fill="none" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
                                   {page.label}
