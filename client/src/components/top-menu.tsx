@@ -636,7 +636,49 @@ export default function TopMenu() {
                       };
                       
                       const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
-                      const iconColorClass = isAI ? 'text-white' : color.replace('bg-', 'text-').replace('-500', '-600');
+                      
+                      // Better icon color mapping that handles various color formats
+                      const getIconColor = (bgColor: string, isAIIcon: boolean) => {
+                        if (isAIIcon) return 'text-white';
+                        
+                        // Map background colors to proper text colors
+                        const colorMap: Record<string, string> = {
+                          'bg-blue-500': 'text-blue-600',
+                          'bg-purple-500': 'text-purple-600',
+                          'bg-green-500': 'text-green-600',
+                          'bg-orange-500': 'text-orange-600',
+                          'bg-red-500': 'text-red-600',
+                          'bg-yellow-500': 'text-yellow-600',
+                          'bg-indigo-500': 'text-indigo-600',
+                          'bg-pink-500': 'text-pink-600',
+                          'bg-cyan-500': 'text-cyan-600',
+                          'bg-teal-500': 'text-teal-600',
+                          'bg-lime-500': 'text-lime-600',
+                          'bg-emerald-500': 'text-emerald-600',
+                          'bg-violet-500': 'text-violet-600',
+                          'bg-fuchsia-500': 'text-fuchsia-600',
+                          'bg-rose-500': 'text-rose-600',
+                          'bg-sky-500': 'text-sky-600',
+                          'bg-amber-500': 'text-amber-600',
+                          'bg-slate-500': 'text-slate-600',
+                          'bg-gray-500': 'text-gray-600',
+                        };
+                        
+                        // Try direct mapping first
+                        if (colorMap[bgColor]) {
+                          return colorMap[bgColor];
+                        }
+                        
+                        // Fallback: try basic string replacement
+                        if (bgColor.includes('bg-')) {
+                          return bgColor.replace('bg-', 'text-').replace('-500', '-600');
+                        }
+                        
+                        // Default fallback
+                        return 'text-gray-600';
+                      };
+                      
+                      const iconColorClass = getIconColor(color, isAI);
                       
                       return {
                         id: `recent-${page.path}-${index}`,
