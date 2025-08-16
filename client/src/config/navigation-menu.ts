@@ -32,6 +32,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "business-intelligence", action: "view", color: "bg-indigo-600" },
       { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "financial-management", action: "view", color: "bg-green-600" },
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
+      { icon: Target, label: "SMART KPI Tracking", href: "/smart-kpi-tracking", feature: "business-goals", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: DollarSign, label: "Sales", href: "/sales", feature: "sales", action: "view", color: "bg-green-500" },
       { icon: Headphones, label: "Customer Service", href: "/customer-service", feature: "customer-service", action: "view", color: "bg-blue-500" },
 
@@ -60,7 +61,6 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Brain, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
       { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "demand-supply-alignment", action: "view", color: "bg-blue-700" },
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
-      { icon: Target, label: "SMART KPI Tracking", href: "/smart-kpi-tracking", feature: "planning-scheduling", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" }
     ]
   },
