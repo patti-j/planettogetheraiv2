@@ -236,16 +236,22 @@ export default function ProductionSchedulePage() {
         
         {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Dashboard toggle button - always visible */}
           <Button 
             variant={showDashboard ? "default" : "outline"} 
             size="sm" 
-            className="gap-2"
-            onClick={() => setShowDashboard(!showDashboard)}
+            className="gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
+            onClick={() => {
+              console.log('Dashboard button clicked, showDashboard:', showDashboard);
+              setShowDashboard(!showDashboard);
+            }}
           >
             <BarChart3 className="w-4 h-4" />
             {!isMobile && "Dashboard"}
             {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
+          
+          {/* Desktop-only buttons */}
           {!isMobile && (
             <>
               <Button 
