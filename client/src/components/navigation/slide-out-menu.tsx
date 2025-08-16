@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { X, Search, Pin, PinOff } from 'lucide-react';
+import { X, Search, Pin, PinOff, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -160,30 +160,57 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                   Recent Pages
                 </h3>
                 <div className="space-y-1">
-                  {recentPages.slice(0, 4).map((page) => (
-                    <Button
-                      key={page.path}
-                      variant={location === page.path ? 'secondary' : 'ghost'}
-                      className="w-full justify-start group h-7 px-2 text-sm font-normal"
-                      onClick={() => {
-                        setLocation(page.path);
-                        onClose();
-                      }}
-                    >
-                      <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
+                  {recentPages.slice(0, 4).map((page) => {
+                    // Find the icon and color for this page from navigation menu
+                    const getIconAndColorForPage = (path: string) => {
+                      for (const group of navigationGroups) {
+                        const feature = group.features.find((f: any) => f.href === path);
+                        if (feature) {
+                          let bgColor = feature.color || "bg-gray-500";
+                          // Add dark mode variant if not already present
+                          if (!bgColor.includes('dark:') && !bgColor.includes('gradient')) {
+                            bgColor = `${bgColor} dark:${bgColor.replace('-500', '-600').replace('-600', '-700')}`;
+                          }
+                          return { 
+                            icon: feature.icon, 
+                            color: bgColor,
+                            isAI: (feature as any).isAI || false 
+                          };
+                        }
+                      }
+                      return { icon: FileText, color: "bg-gray-500 dark:bg-gray-600", isAI: false };
+                    };
+                    
+                    const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
+                    
+                    return (
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePinPage(page.path);
+                        key={page.path}
+                        variant={location === page.path ? 'secondary' : 'ghost'}
+                        className="w-full justify-start group h-7 px-2 text-sm font-normal"
+                        onClick={() => {
+                          setLocation(page.path);
+                          onClose();
                         }}
                       >
-                        {page.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                        <div className={`${color} p-1 rounded mr-2 flex-shrink-0`}>
+                          <IconComponent className="h-3 w-3 text-white" />
+                        </div>
+                        <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePinPage(page.path);
+                          }}
+                        >
+                          {page.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                        </Button>
                       </Button>
-                    </Button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

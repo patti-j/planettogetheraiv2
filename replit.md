@@ -19,7 +19,7 @@ Note on concurrent work:
 ## Application Behavior Documentation
 
 ### Current Issues & Migration Status
-- **Recent Menu Icons**: ✅ FIXED (2025-08-16) - Desktop Recent menu now shows properly colored icons instead of black/white
+- **Recent Menu Icons**: ✅ FIXED (2025-08-16) - Desktop Recent menu now shows properly colored icons in both top menu cards and slide-out navigation
 - **PT Tables Renaming**: ✅ COMPLETE (2025-08-15) - All `pt_publish_*` tables renamed to `ptTableName` format (e.g., `ptJobs`, `ptResources`)
 - **Table Names**: Switched from underscore format to camelCase (e.g., `pt_publish_jobs` → `ptjobs`)
 - **Old Tables Archival**: ✅ COMPLETE (2025-08-15) - 47 old manufacturing tables archived with `archived_` prefix
