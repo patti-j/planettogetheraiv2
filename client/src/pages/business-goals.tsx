@@ -662,7 +662,9 @@ export default function BusinessGoalsPage() {
             const daysUntilTarget = getDaysUntilTarget(goal.targetDate);
             
             return (
-              <Card key={goal.id} className="cursor-pointer hover:shadow-lg transition-shadow"
+              <Card key={goal.id} className={`cursor-pointer hover:shadow-lg transition-shadow ${
+                metrics.risks > 0 ? 'border-l-4 border-l-red-500 bg-red-50/30 dark:bg-red-900/10' : ''
+              }`}
                     onClick={() => openGoalDetails(goal)}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -718,11 +720,27 @@ export default function BusinessGoalsPage() {
                     </div>
                   </div>
                   
+                  {/* Risk and Issue Indicators */}
+                  {(metrics.risks > 0 || metrics.issues > 0) && (
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                      {metrics.risks > 0 && (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="text-xs font-medium">{metrics.risks} active risk{metrics.risks > 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                      {metrics.issues > 0 && (
+                        <div className="flex items-center gap-1 text-orange-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span className="text-xs font-medium">{metrics.issues} open issue{metrics.issues > 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Metrics */}
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <div className="flex items-center gap-4">
-                      <span>{metrics.risks || 0} risks</span>
-                      <span>{metrics.issues || 0} issues</span>
                       <span>{metrics.actions || 0} actions</span>
                       <span>{metrics.kpis || 0} KPIs</span>
                     </div>
@@ -950,6 +968,44 @@ export default function BusinessGoalsPage() {
 
                 <div className="flex-1 overflow-y-auto mt-4">
                   <TabsContent value="overview" className="space-y-4">
+                    {/* Active Risk Alert */}
+                    {risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length > 0 && (
+                      <Alert className="border-red-200 bg-red-50 dark:bg-red-900/20">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="flex items-center justify-between">
+                          <span className="text-red-800 dark:text-red-200">
+                            This goal has {risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length} active risk{risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length > 1 ? 's' : ''} that may impact achievement.
+                          </span>
+                          <Button 
+                            size="sm" 
+                            onClick={() => setActiveTab("risks")}
+                            className="bg-red-600 hover:bg-red-700 text-white ml-3"
+                          >
+                            View Risks
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Open Issues Alert */}
+                    {issues.filter((i: GoalIssue) => i.goalId === selectedGoal.id && i.status !== 'resolved').length > 0 && (
+                      <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="flex items-center justify-between">
+                          <span className="text-orange-800 dark:text-orange-200">
+                            This goal has {issues.filter((i: GoalIssue) => i.goalId === selectedGoal.id && i.status !== 'resolved').length} open issue{issues.filter((i: GoalIssue) => i.goalId === selectedGoal.id && i.status !== 'resolved').length > 1 ? 's' : ''} requiring attention.
+                          </span>
+                          <Button 
+                            size="sm" 
+                            onClick={() => setActiveTab("issues")}
+                            className="bg-orange-600 hover:bg-orange-700 text-white ml-3"
+                          >
+                            View Issues
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <Card>
                         <CardHeader>
