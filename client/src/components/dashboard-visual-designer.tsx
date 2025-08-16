@@ -637,9 +637,30 @@ export function DashboardVisualDesigner({
   const [selectedCategory, setSelectedCategory] = useState("All");
   
   // AI prompt state
-
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
+
+  // Effect to update state when dashboard prop changes (for editing existing dashboards)
+  useEffect(() => {
+    if (dashboard) {
+      setDashboardName(dashboard.name || "");
+      setDashboardDescription(dashboard.description || "");
+      setLayout(dashboard.layout || "grid");
+      setGridColumns(dashboard.gridColumns || 12);
+      setTargetPlatform(dashboard.targetPlatform || "both");
+      setWidgets(dashboard.widgets || []);
+    } else {
+      // Reset to defaults when no dashboard is provided (creating new)
+      setDashboardName("");
+      setDashboardDescription("");
+      setLayout("grid");
+      setGridColumns(12);
+      setTargetPlatform("both");
+      setWidgets([]);
+    }
+    // Reset selection when dashboard changes
+    setSelectedWidgetId(null);
+  }, [dashboard]);
 
   // Load custom canvas widgets
   const { data: canvasWidgetsResponse, isLoading: isLoadingCanvasWidgets } = useQuery({
