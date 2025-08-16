@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Bot,
   Sparkles,
@@ -29,6 +30,17 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const [aiDesignStudioOpen, setAiDesignStudioOpen] = React.useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = React.useState(false);
   const [dashboardManagerOpen, setDashboardManagerOpen] = React.useState(false);
+
+  // Add queries to load dashboard data
+  const { data: dashboards = [], isLoading: dashboardsLoading } = useQuery({
+    queryKey: ["/api/dashboard-configs"],
+    enabled: dashboardManagerOpen, // Only load when needed
+  });
+
+  const { data: widgets = [], isLoading: widgetsLoading } = useQuery({
+    queryKey: ["/api/canvas/widgets"],
+    enabled: dashboardManagerOpen, // Only load when needed
+  });
 
   if (!open) {
     return null;
@@ -228,14 +240,20 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
       <EnhancedDashboardManager
         open={dashboardManagerOpen}
         onOpenChange={setDashboardManagerOpen}
-        dashboards={[]}
+        dashboards={dashboards}
         currentDashboard={null}
         onDashboardSelect={() => {}}
-        onDashboardCreate={() => {}}
-        onDashboardUpdate={() => {}}
-        onDashboardDelete={() => {}}
-        standardWidgets={[]}
-        customWidgets={[]}
+        onDashboardCreate={(dashboard) => {
+          console.log('Creating dashboard:', dashboard);
+        }}
+        onDashboardUpdate={(dashboard) => {
+          console.log('Updating dashboard:', dashboard);
+        }}
+        onDashboardDelete={(dashboardId) => {
+          console.log('Deleting dashboard:', dashboardId);
+        }}
+        standardWidgets={widgets.filter(w => w.widgetType === 'standard') || []}
+        customWidgets={widgets.filter(w => w.widgetType === 'custom') || []}
       />
     </>
   );
