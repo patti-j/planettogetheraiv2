@@ -910,17 +910,17 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                           <div className="space-y-2">
                             <Label>Group By (Optional)</Label>
                             <Select
-                              value={widgetConfig.formulaConfig.groupBy}
+                              value={widgetConfig.formulaConfig.groupBy || 'none'}
                               onValueChange={(value) => setWidgetConfig({
                                 ...widgetConfig,
-                                formulaConfig: { ...widgetConfig.formulaConfig, groupBy: value }
+                                formulaConfig: { ...widgetConfig.formulaConfig, groupBy: value === 'none' ? '' : value }
                               })}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="No grouping" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">No grouping</SelectItem>
+                                <SelectItem value="none">No grouping</SelectItem>
                                 {dataSources
                                   .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
                                   ?.fields.filter(field => field.type === 'string')
