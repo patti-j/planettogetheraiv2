@@ -240,7 +240,7 @@ export default function ProductionSchedulePage() {
           <Button 
             variant={showDashboard ? "default" : "outline"} 
             size="sm" 
-            className="gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
+            className="gap-2"
             onClick={() => {
               console.log('Dashboard button clicked, showDashboard:', showDashboard);
               setShowDashboard(!showDashboard);
@@ -292,9 +292,9 @@ export default function ProductionSchedulePage() {
           onToggleEditMode={setIsDashboardEditMode}
           onSave={(dashboardData) => createDashboardMutation.mutate(dashboardData)}
           productionData={{
-            orders: productionOrders || [],
-            operations: ptOperations || [],
-            resources: resources || []
+            orders: Array.isArray(productionOrders) ? productionOrders : [],
+            operations: Array.isArray(ptOperations) ? ptOperations : [],
+            resources: Array.isArray(resources) ? resources : []
           }}
         />
       )}
