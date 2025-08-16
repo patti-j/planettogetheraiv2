@@ -17,7 +17,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
 import { SmartKPIWidgetStudio } from "@/components/smart-kpi-widget-studio";
-import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 import { DashboardVisualDesigner } from "@/components/dashboard-visual-designer";
 
 import { 
@@ -137,7 +136,7 @@ export default function UIDesignStudio() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = useState(false);
-  const [showDashboardManager, setShowDashboardManager] = useState(false);
+
   const [showVisualDesigner, setShowVisualDesigner] = useState(false);
   const [dashboardToEdit, setDashboardToEdit] = useState<any>(null);
   
@@ -838,16 +837,6 @@ export default function UIDesignStudio() {
                               Visual Designer
                             </Button>
                             <Button
-                              onClick={() => {
-                                setShowDashboardManager(true);
-                              }}
-                              size="sm"
-                              variant="outline"
-                            >
-                              <Settings className="h-3 w-3 mr-1" />
-                              Manage Dashboards
-                            </Button>
-                            <Button
                               onClick={() => setShowCreateDialog(true)}
                               variant="outline"
                               size="sm"
@@ -1169,58 +1158,7 @@ export default function UIDesignStudio() {
           }}
         />
         
-        {/* Enhanced Dashboard Manager */}
-        <EnhancedDashboardManager
-          open={showDashboardManager}
-          onOpenChange={setShowDashboardManager}
-          dashboards={activeTab === 'dashboards' ? items.map((item: any) => ({
-            id: item.id,
-            name: item.title || item.name,
-            description: item.description,
-            configuration: item.configuration || {
-              standardWidgets: [],
-              customWidgets: []
-            },
-            isDefault: false,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt
-          })) : []}
-          currentDashboard={null}
-          onDashboardSelect={(dashboard) => {
-            toast({
-              title: "Dashboard Selected",
-              description: `Selected ${dashboard.name}`
-            });
-            setShowDashboardManager(false);
-          }}
-          onDashboardCreate={async (dashboard) => {
-            const response = await apiRequest("POST", "/api/dashboard-configs", dashboard);
-            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
-            toast({
-              title: "Dashboard Created",
-              description: `Successfully created ${dashboard.name}`
-            });
-            setShowDashboardManager(false);
-          }}
-          onDashboardUpdate={async (dashboard) => {
-            await apiRequest("PATCH", `/api/dashboard-configs/${dashboard.id}`, dashboard);
-            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
-            toast({
-              title: "Dashboard Updated",
-              description: `Successfully updated ${dashboard.name}`
-            });
-          }}
-          onDashboardDelete={async (dashboardId) => {
-            await apiRequest("DELETE", `/api/dashboard-configs/${dashboardId}`);
-            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
-            toast({
-              title: "Dashboard Deleted",
-              description: "Dashboard has been deleted successfully"
-            });
-          }}
-          standardWidgets={[]}
-          customWidgets={[]}
-        />
+
       </div>
     </div>
   );
