@@ -416,6 +416,7 @@ interface DesignItem {
   description?: string;
   configuration: any;
   data?: any; // Preserve original data field for pre-built widgets
+  widgetType?: string; // The actual widget type from database (kpi, gauge, chart, etc.)
   status: 'draft' | 'active' | 'archived';
   targetPlatform: 'mobile' | 'desktop' | 'both';
   createdAt: string;
@@ -523,6 +524,7 @@ export default function UIDesignStudio() {
             description: widget.subtitle || widget.description || '',
             configuration: widget.configuration || widget.config || {},
             data: widget.data || {}, // Preserve the data field for pre-built widgets
+            widgetType: widget.widget_type || widget.widgetType, // Add the actual widget type from database
             status: widget.isVisible || widget.is_visible ? 'active' : 'draft',
             targetPlatform: widget.targetPlatform || widget.target_platform || 'both',
             createdAt: widget.createdAt || widget.created_at || new Date().toISOString(),
@@ -919,16 +921,19 @@ export default function UIDesignStudio() {
   };
 
   const getWidgetTypeInfo = (item: DesignItem) => {
+    // Use the widgetType field from the item if available (this is from the database)
+    const widgetType = item.widgetType || item.configuration?.widgetType || item.data?.widgetType;
+    
     // Check various indicators for KPI widgets
-    const isKPI = item.data?.widgetType === 'smart-kpi' || 
+    const isKPI = widgetType === 'kpi' ||
+                  widgetType === 'smart-kpi' || 
+                  item.data?.widgetType === 'smart-kpi' || 
                   item.configuration?.widgetType === 'smart-kpi' ||
                   item.configuration?.widgetType === 'metric' ||
                   item.title?.toLowerCase().includes('kpi') ||
                   item.data?.template || // Has template field indicating it's from SMART KPI studio
                   item.configuration?.metricName || // Has metric configuration
                   item.data?.calculation; // Has calculation data
-
-    const widgetType = item.configuration?.widgetType || item.data?.widgetType;
     
     if (isKPI) {
       return {
