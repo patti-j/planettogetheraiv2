@@ -348,6 +348,8 @@ function DashboardCanvas({
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ["library-widget", "canvas-widget"],
     drop: (item: any, monitor) => {
+      console.log('Drop event triggered:', { item, monitor: monitor.getItemType() });
+      
       const offset = monitor.getClientOffset();
       const canvasRect = canvasRef.current?.getBoundingClientRect();
       
@@ -355,12 +357,21 @@ function DashboardCanvas({
         const x = Math.round((offset.x - canvasRect.left) / gridSize) * gridSize;
         const y = Math.round((offset.y - canvasRect.top) / gridSize) * gridSize;
 
-        if (item.type === "canvas-widget") {
+        const itemType = monitor.getItemType();
+        console.log('Item type:', itemType, 'Position:', { x, y });
+
+        if (itemType === "canvas-widget") {
           // Moving existing widget
+          console.log('Moving widget:', item.id);
           onMoveWidget(item.id, { x, y });
-        } else {
+        } else if (itemType === "library-widget") {
           // Adding new widget from library
-          onAddWidget(item, { x, y });
+          console.log('Adding widget from library:', item);
+          try {
+            onAddWidget(item, { x, y });
+          } catch (error) {
+            console.error('Error adding widget:', error);
+          }
         }
       }
     },
@@ -707,17 +718,27 @@ export function DashboardVisualDesigner({
 
   // Add widget to canvas
   const handleAddWidget = (widgetDef: WidgetDefinition, position: { x: number; y: number }) => {
-    const newWidget: DashboardWidget = {
-      id: `widget-${Date.now()}`,
-      widgetId: widgetDef.id,
-      title: widgetDef.title,
-      type: widgetDef.type,
-      position,
-      size: widgetDef.defaultSize,
-      config: {},
-    };
-    setWidgets([...widgets, newWidget]);
-    setSelectedWidgetId(newWidget.id);
+    console.log('handleAddWidget called with:', { widgetDef, position });
+    
+    try {
+      const newWidget: DashboardWidget = {
+        id: `widget-${Date.now()}`,
+        widgetId: widgetDef.id,
+        title: widgetDef.title,
+        type: widgetDef.type,
+        position,
+        size: widgetDef.defaultSize || { width: 300, height: 200 },
+        config: {},
+      };
+      
+      console.log('New widget created:', newWidget);
+      setWidgets([...widgets, newWidget]);
+      setSelectedWidgetId(newWidget.id);
+      
+      console.log('Widget added successfully');
+    } catch (error) {
+      console.error('Error in handleAddWidget:', error);
+    }
   };
 
   // Move widget
