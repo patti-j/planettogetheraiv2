@@ -48,7 +48,8 @@ import {
   Wand2,
   Send,
   Bot,
-  MessageSquare
+  MessageSquare,
+  Shield
 } from "lucide-react";
 
 interface WidgetDefinition {
@@ -235,7 +236,7 @@ const WIDGET_LIBRARY: WidgetDefinition[] = [
 ];
 
 // Draggable Widget from Library
-function LibraryWidget({ widget }: { widget: WidgetDefinition }) {
+function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boolean } }) {
   const [{ isDragging }, drag] = useDrag({
     type: "library-widget",
     item: widget,
@@ -245,25 +246,41 @@ function LibraryWidget({ widget }: { widget: WidgetDefinition }) {
   });
 
   const Icon = widget.icon;
+  const isSystemWidget = widget.isSystem || widget.category === "System";
 
   return (
     <div
       ref={drag}
       className={`p-3 border rounded-lg cursor-move transition-all hover:shadow-md hover:border-blue-400 ${
         isDragging ? "opacity-50" : ""
-      }`}
+      } ${isSystemWidget ? "border-gray-300 bg-gray-50/50 dark:bg-gray-900/50" : ""}`}
     >
       <div className="flex items-start gap-3">
-        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded">
-          <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+        <div className={`p-2 rounded ${
+          isSystemWidget 
+            ? "bg-gray-200 dark:bg-gray-700" 
+            : "bg-gray-100 dark:bg-gray-800"
+        }`}>
+          <Icon className={`w-5 h-5 ${
+            isSystemWidget 
+              ? "text-gray-500 dark:text-gray-400" 
+              : "text-gray-600 dark:text-gray-400"
+          }`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm">{widget.title}</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium text-sm">{widget.title}</h4>
+            {isSystemWidget && (
+              <Shield className="w-3 h-3 text-gray-400" />
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{widget.description}</p>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant="outline" className="text-xs">
-              {widget.category}
-            </Badge>
+            {!isSystemWidget && (
+              <Badge variant="outline" className="text-xs">
+                {widget.category}
+              </Badge>
+            )}
             <span className="text-xs text-gray-400">
               {widget.defaultSize.width}x{widget.defaultSize.height}
             </span>
@@ -440,6 +457,7 @@ function DashboardCanvas({
   gridColumns?: number;
   selectedWidgetId: string | null;
   onSelectWidget: (id: string | null) => void;
+  widgetLibrary?: WidgetDefinition[];
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const gridSize = layout === "grid" ? 20 : 1;
@@ -515,7 +533,7 @@ function DashboardCanvas({
           isSelected={selectedWidgetId === widget.id}
           onSelect={onSelectWidget}
           gridSize={gridSize}
-          widgetLibrary={COMBINED_WIDGET_LIBRARY}
+          widgetLibrary={widgetLibrary}
         />
       ))}
     </div>
@@ -664,11 +682,12 @@ export function DashboardVisualDesigner({
     id: `custom-${widget.id}`,
     title: widget.title,
     type: widget.widgetType || "custom",
-    icon: Target, // Default icon for custom widgets
-    category: "Custom Widgets",
+    icon: widget.isSystemWidget ? Shield : Target, // Use Shield icon for system widgets
+    category: widget.isSystemWidget ? "System" : (widget.widgetSubtype || "Custom"),
     defaultSize: { width: 300, height: 200 },
-    description: widget.data?.description || "Custom widget created by user",
-    configurable: true
+    description: widget.data?.description || (widget.isSystemWidget ? "System-generated widget" : "Custom widget created by user"),
+    configurable: !widget.isSystemWidget, // System widgets are not configurable
+    isSystem: widget.isSystemWidget // Add isSystem flag
   })) : [];
 
   // Combine static and custom widgets
@@ -697,7 +716,6 @@ export function DashboardVisualDesigner({
           description: data.explanation || "Dashboard updated successfully with AI suggestions"
         });
       }
-      setAiPromptOpen(false);
       setAiPrompt("");
       setAiProcessing(false);
     },
@@ -1069,6 +1087,7 @@ export function DashboardVisualDesigner({
                   gridColumns={gridColumns}
                   selectedWidgetId={selectedWidgetId}
                   onSelectWidget={setSelectedWidgetId}
+                  widgetLibrary={COMBINED_WIDGET_LIBRARY}
                 />
               </div>
             </div>
