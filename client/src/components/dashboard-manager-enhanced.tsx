@@ -384,14 +384,11 @@ export function EnhancedDashboardManager({
                       <Card key={dashboard.id} className="relative">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-1">
-                                <CardTitle className="text-base">{dashboard.name}</CardTitle>
-                                <p className="text-sm text-gray-600">•</p>
-                                <p className="text-sm text-gray-600">{dashboard.description}</p>
-                              </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base mb-1">{dashboard.name}</CardTitle>
+                              <p className="text-sm text-gray-600 truncate">{dashboard.description}</p>
                             </div>
-                            <div className="flex items-center gap-1 ml-2">
+                            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
                               <Button
                                 variant="ghost"
                                 size="sm"

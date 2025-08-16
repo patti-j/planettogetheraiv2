@@ -26,6 +26,7 @@ Note on concurrent work:
 - **Schema Files**: Updated both schema.ts and pt-publish-schema.ts to use new table names
 - **Database Structure**: All PT tables retain original column structure with approved variations only
 - **Current State**: 62 active PT tables with sample data, 47 archived legacy tables preserved
+- **Dashboard Dialog Overflow**: ✅ FIXED (2025-08-16) - Dashboard descriptions now properly truncated in selection dialogs to prevent overflow
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.

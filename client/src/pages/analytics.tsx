@@ -165,14 +165,14 @@ function DraggableDashboardCard({
               <div className="cursor-move">
                 <GripVertical className="h-4 w-4 text-gray-400 dark:text-gray-500" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span>{dashboard.name}</span>
+                  <span className="truncate">{dashboard.name}</span>
                   {dashboard.isDefault && (
                     <Badge variant="secondary">Default</Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
+                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{dashboard.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
