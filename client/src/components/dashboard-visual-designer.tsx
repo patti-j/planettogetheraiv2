@@ -792,6 +792,14 @@ export function DashboardVisualDesigner({
                 <Save className="w-4 h-4 mr-2" />
                 Save Dashboard
               </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="ml-2"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
