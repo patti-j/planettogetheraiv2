@@ -719,6 +719,16 @@ export function DashboardVisualDesigner({
     ? COMBINED_WIDGET_LIBRARY 
     : COMBINED_WIDGET_LIBRARY.filter(w => w.category === selectedCategory);
 
+  // Debug logging
+  console.log("Dashboard Visual Designer Debug:", {
+    totalWidgets: COMBINED_WIDGET_LIBRARY.length,
+    categories,
+    selectedCategory,
+    filteredWidgetsCount: filteredWidgets.length,
+    customWidgetsCount: customWidgetDefs.length,
+    staticWidgetsCount: WIDGET_LIBRARY.length
+  });
+
   // Add widget to canvas
   const handleAddWidget = (widgetDef: WidgetDefinition, position: { x: number; y: number }) => {
     const newWidget: DashboardWidget = {
