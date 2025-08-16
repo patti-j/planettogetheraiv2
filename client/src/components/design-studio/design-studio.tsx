@@ -17,7 +17,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { AiDesignStudioMobile } from './ai-design-studio-mobile';
 import AIDesignStudio from '@/components/ai-design-studio';
 import { SmartKPIWidgetStudio } from '@/components/smart-kpi-widget-studio';
-import { DashboardDesigner } from '@/components/dashboard-designer';
+import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
 
 interface DesignStudioProps {
   open: boolean;
@@ -28,7 +28,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const deviceType = useDeviceType();
   const [aiDesignStudioOpen, setAiDesignStudioOpen] = React.useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = React.useState(false);
-  const [dashboardDesignerOpen, setDashboardDesignerOpen] = React.useState(false);
+  const [dashboardManagerOpen, setDashboardManagerOpen] = React.useState(false);
 
   if (!open) {
     return null;
@@ -112,7 +112,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
               </CardHeader>
               <CardContent>
                 <Button 
-                  onClick={() => setDashboardDesignerOpen(true)}
+                  onClick={() => setDashboardManagerOpen(true)}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
@@ -224,13 +224,18 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
         onOpenChange={setAiDesignStudioOpen}
       />
 
-      {/* Dashboard Designer Dialog */}
-      <DashboardDesigner
-        open={dashboardDesignerOpen}
-        onOpenChange={setDashboardDesignerOpen}
-        onSave={(dashboard) => {
-          console.log('Dashboard saved:', dashboard);
-        }}
+      {/* Enhanced Dashboard Manager Dialog */}
+      <EnhancedDashboardManager
+        open={dashboardManagerOpen}
+        onOpenChange={setDashboardManagerOpen}
+        dashboards={[]}
+        currentDashboard={null}
+        onDashboardSelect={() => {}}
+        onDashboardCreate={() => {}}
+        onDashboardUpdate={() => {}}
+        onDashboardDelete={() => {}}
+        standardWidgets={[]}
+        customWidgets={[]}
       />
     </>
   );

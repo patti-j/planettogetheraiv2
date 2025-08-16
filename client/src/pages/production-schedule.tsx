@@ -235,11 +235,7 @@ export default function ProductionSchedulePage() {
         </div>
         
         {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
-        <div className="flex items-center gap-2 flex-shrink-0 bg-red-100 border-2 border-red-500">
-          {/* TEST: Simple button to verify container renders */}
-          <Button variant="outline" size="sm" className="bg-yellow-200">
-            TEST
-          </Button>
+        <div className="flex items-center gap-2 flex-shrink-0">
           
           {/* Dashboard toggle button - always visible */}
           <Button 
