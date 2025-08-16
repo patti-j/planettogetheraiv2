@@ -153,20 +153,29 @@ export function WorkspaceSwitcher({
     switchRoleMutation.mutate({ roleId });
   };
 
-  // Determine the current workspace name
-  const currentWorkspace = currentRoleData?.activeRole?.name 
-    ? getWorkspaceFromRole(currentRoleData.activeRole.name)
+  // Determine the current workspace name - use active role if available, otherwise use first assigned role
+  let currentRoleName = null;
+  if (currentRoleData?.activeRole?.name) {
+    currentRoleName = currentRoleData.activeRole.name;
+  } else if (assignedRoles.length > 0) {
+    // If no active role is set, use the first assigned role
+    currentRoleName = assignedRoles[0].name;
+  }
+  
+  const currentWorkspace = currentRoleName 
+    ? getWorkspaceFromRole(currentRoleName)
     : 'Workspace';
 
   const isCompact = variant === 'compact';
 
-  if (assignedRoles.length <= 1) {
-    // If user only has one role or no roles, show current workspace without dropdown
+  // Always show dropdown if user has any assigned roles
+  if (assignedRoles.length === 0) {
+    // Only show static display if user has no roles at all
     return (
       <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-3 py-2'}`}>
         {showIcon && <Building2 className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} text-muted-foreground`} />}
         <span className={`font-medium text-foreground ${isCompact ? 'text-sm' : ''}`}>
-          {currentWorkspace}
+          No Workspace
         </span>
       </div>
     );
@@ -200,7 +209,9 @@ export function WorkspaceSwitcher({
         
         {assignedRoles.map((role: Role) => {
           const workspace = getWorkspaceFromRole(role.name);
-          const isCurrentRole = currentRoleData?.activeRole?.id === role.id;
+          // Consider role current if it's the active role OR if no active role set and it's the first role
+          const isCurrentRole = currentRoleData?.activeRole?.id === role.id || 
+            (!currentRoleData?.activeRole && assignedRoles[0]?.id === role.id);
           
           return (
             <DropdownMenuItem
