@@ -1400,40 +1400,33 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
 function KPIWidgetPreview({ config }: { config: any }) {
   // Generate sample data based on configuration
   const generateSampleValue = () => {
-    const baseValue = config.targetValue || 85;
-    return Math.round(baseValue + (Math.random() - 0.5) * 20);
+    const baseValue = config.targetValue || 95;
+    return Math.round(baseValue + (Math.random() - 0.5) * 10);
   };
 
   const currentValue = generateSampleValue();
-  const previousValue = Math.round(currentValue * (0.85 + Math.random() * 0.3));
+  const previousValue = Math.round(currentValue * (0.9 + Math.random() * 0.2));
   const trend = currentValue > previousValue ? 'up' : 'down';
   const trendPercentage = Math.abs(((currentValue - previousValue) / previousValue) * 100);
+  const achievement = Math.round((currentValue / (config.targetValue || 100)) * 100);
+
+  // Generate sparkline data
+  const sparklineData = Array.from({ length: 15 }, () => 
+    Math.round(config.targetValue * (0.8 + Math.random() * 0.4))
+  );
+  const maxSparkValue = Math.max(...sparklineData);
+  const minSparkValue = Math.min(...sparklineData);
 
   const getStatusColor = () => {
-    if (currentValue >= (config.targetValue || 95)) return 'text-emerald-600';
-    if (currentValue >= (config.warningThreshold || 85)) return 'text-amber-600';
-    return 'text-red-500';
+    if (achievement >= 95) return '#10b981'; // emerald
+    if (achievement >= 85) return '#f59e0b'; // amber
+    return '#ef4444'; // red
   };
 
-  const getStatusBg = () => {
-    if (currentValue >= (config.targetValue || 95)) return 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200/60 shadow-emerald-100/50';
-    if (currentValue >= (config.warningThreshold || 85)) return 'bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200/60 shadow-amber-100/50';
-    return 'bg-gradient-to-br from-red-50 to-red-100/50 border-red-200/60 shadow-red-100/50';
-  };
-
-  const getIconColor = () => {
-    if (currentValue >= (config.targetValue || 95)) return 'text-emerald-500';
-    if (currentValue >= (config.warningThreshold || 85)) return 'text-amber-500';
-    return 'text-red-500';
-  };
-
-  const getSizeClasses = () => {
-    switch (config.size) {
-      case 'small': return 'h-36 w-64 p-4';
-      case 'large': return 'h-52 w-80 p-6';
-      case 'xlarge': return 'h-60 w-96 p-8';
-      default: return 'h-44 w-72 p-5';
-    }
+  const getStatusText = () => {
+    if (achievement >= 95) return 'On Target';
+    if (achievement >= 85) return 'Near Target';
+    return 'Below Target';
   };
 
   const renderVisualization = () => {
@@ -1442,21 +1435,31 @@ function KPIWidgetPreview({ config }: { config: any }) {
     switch (config.visualization) {
       case 'gauge':
         return (
-          <div className="flex items-center justify-center relative">
-            <div className="relative w-28 h-28">
-              <div className="w-28 h-28 rounded-full border-8 border-gray-200">
-                <div 
-                  className={`w-28 h-28 rounded-full border-8 ${getIconColor() === 'text-emerald-500' ? 'border-emerald-500' : getIconColor() === 'text-amber-500' ? 'border-amber-500' : 'border-red-500'} border-t-transparent transform -rotate-90`}
-                  style={{ 
-                    background: `conic-gradient(${getIconColor() === 'text-emerald-500' ? '#10b981' : getIconColor() === 'text-amber-500' ? '#f59e0b' : '#ef4444'} ${percentage * 3.6}deg, transparent 0deg)`
-                  }}
-                />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900">{currentValue}</div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">{config.unit || '%'}</div>
-                </div>
+          <div className="relative w-32 h-32">
+            <svg className="w-32 h-32 transform -rotate-90">
+              <circle
+                cx="64"
+                cy="64"
+                r="56"
+                stroke="#e5e7eb"
+                strokeWidth="12"
+                fill="none"
+              />
+              <circle
+                cx="64"
+                cy="64"
+                r="56"
+                stroke={getStatusColor()}
+                strokeWidth="12"
+                fill="none"
+                strokeDasharray={`${percentage * 3.52} 352`}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">{currentValue}</div>
+                <div className="text-xs text-gray-500">{config.unit || 'units'}</div>
               </div>
             </div>
           </div>
@@ -1464,140 +1467,197 @@ function KPIWidgetPreview({ config }: { config: any }) {
         
       case 'bar':
         return (
-          <div className="flex items-end justify-center h-20 gap-2">
-            <div className="bg-gray-200 w-10 h-20 relative rounded-lg overflow-hidden">
-              <div 
-                className={`w-full ${getIconColor() === 'text-emerald-500' ? 'bg-gradient-to-t from-emerald-600 to-emerald-400' : getIconColor() === 'text-amber-500' ? 'bg-gradient-to-t from-amber-600 to-amber-400' : 'bg-gradient-to-t from-red-600 to-red-400'} rounded-lg transition-all duration-300 shadow-lg`}
-                style={{ height: `${percentage}%` }}
-              />
-              <div className="absolute bottom-2 left-0 right-0 text-center">
-                <span className="text-xs font-semibold text-white drop-shadow">{currentValue}</span>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'line':
-        return (
-          <div className="flex items-center justify-center">
-            <div className="relative">
-              <Activity className={`h-16 w-16 ${getIconColor()}`} />
-              <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-1 shadow-md">
-                <div className={`text-xs font-bold ${getStatusColor()}`}>{currentValue}</div>
-              </div>
-            </div>
+          <div className="flex items-end justify-center h-24 gap-1">
+            {sparklineData.slice(-5).map((value, i) => {
+              const height = (value / maxSparkValue) * 100;
+              const isLatest = i === 4;
+              return (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <div className="relative w-8 h-20 bg-gray-100 rounded">
+                    <div 
+                      className={`absolute bottom-0 w-full rounded transition-all duration-300 ${
+                        isLatest ? 'opacity-100' : 'opacity-60'
+                      }`}
+                      style={{ 
+                        height: `${height}%`,
+                        backgroundColor: isLatest ? getStatusColor() : '#d1d5db'
+                      }}
+                    />
+                  </div>
+                  {isLatest && (
+                    <div className="text-xs font-semibold text-gray-900">{value}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
         
       case 'progress':
         return (
           <div className="w-full space-y-3">
+            <div className="text-center mb-2">
+              <div className="text-3xl font-bold text-gray-900">{currentValue}</div>
+              <div className="text-xs text-gray-500">{config.unit || 'units'}</div>
+            </div>
             <div className="relative">
-              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div 
-                  className={`h-4 ${getIconColor() === 'text-emerald-500' ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : getIconColor() === 'text-amber-500' ? 'bg-gradient-to-r from-amber-500 to-amber-400' : 'bg-gradient-to-r from-red-500 to-red-400'} rounded-full transition-all duration-300 shadow-inner`}
-                  style={{ width: `${percentage}%` }}
+                  className="h-3 rounded-full transition-all duration-500 ease-out"
+                  style={{ 
+                    width: `${percentage}%`,
+                    backgroundColor: getStatusColor()
+                  }}
                 />
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-semibold text-white drop-shadow">{currentValue}{config.unit || '%'}</span>
               </div>
             </div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>0</span>
-              <span>{config.targetValue || 100}</span>
+              <span className="font-medium">{config.targetValue || 100}</span>
             </div>
           </div>
         );
         
       default: // number display
         return (
-          <div className="text-center space-y-2">
-            <div className={`text-5xl font-bold ${getStatusColor()}`}>{currentValue}</div>
-            {config.unit && (
-              <div className="text-sm text-gray-500 font-medium uppercase tracking-wide">{config.unit}</div>
-            )}
+          <div className="text-center">
+            <div className="text-4xl font-bold text-gray-900 mb-1">{currentValue}</div>
+            <div className="text-sm text-gray-500">{config.unit || 'units'}</div>
+            <div className="mt-3 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+                 style={{ backgroundColor: `${getStatusColor()}20`, color: getStatusColor() }}>
+              {achievement}% of target
+            </div>
           </div>
         );
     }
   };
 
   return (
-    <Card className={`${getSizeClasses()} ${getStatusBg()} border-2 shadow-lg hover:shadow-xl transition-all duration-200`}>
-      <CardContent className="h-full flex flex-col justify-between p-0 relative overflow-hidden">
-        {/* Header */}
-        <div className="relative z-10">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <h3 className="font-bold text-lg text-gray-900 mb-1 leading-tight">
-                {config.title || 'KPI Widget'}
-              </h3>
-              {config.description && (
-                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                  {config.description}
-                </p>
-              )}
+    <div className="w-full max-w-md mx-auto">
+      <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-6">
+          {/* Header Section */}
+          <div className="mb-4">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {config.title || 'On-Time Delivery'}
+                </h3>
+                {config.description && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {config.description}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+                   style={{ backgroundColor: `${getStatusColor()}15`, color: getStatusColor() }}>
+                {getStatusText()}
+              </div>
             </div>
-            {config.showTrend && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                trend === 'up' 
-                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                  : 'bg-red-100 text-red-700 border border-red-200'
-              }`}>
-                {trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                <span>{trendPercentage.toFixed(1)}%</span>
+          </div>
+
+          {/* Main Metrics Section */}
+          <div className="mb-6">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">{currentValue}</span>
+                  <span className="text-sm text-gray-500">{config.unit || 'units'}</span>
+                </div>
+                {config.showTrend && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className={`flex items-center gap-1 text-sm font-medium ${
+                      trend === 'up' ? 'text-emerald-600' : 'text-red-600'
+                    }`}>
+                      {trend === 'up' ? (
+                        <ArrowUp className="h-4 w-4" />
+                      ) : (
+                        <ArrowDown className="h-4 w-4" />
+                      )}
+                      <span>{trendPercentage.toFixed(1)}%</span>
+                    </div>
+                    <span className="text-sm text-gray-500">vs last period</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Visualization */}
+              <div>
+                {renderVisualization()}
+              </div>
+            </div>
+
+            {/* Sparkline Trend */}
+            {config.showSparkline && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-500">15-DAY TREND</span>
+                  <span className="text-xs text-gray-400">
+                    Min: {minSparkValue} / Max: {maxSparkValue}
+                  </span>
+                </div>
+                <div className="flex items-end gap-0.5 h-12">
+                  {sparklineData.map((value, i) => {
+                    const height = ((value - minSparkValue) / (maxSparkValue - minSparkValue)) * 100;
+                    const isLatest = i === sparklineData.length - 1;
+                    return (
+                      <div 
+                        key={i}
+                        className="flex-1 rounded-sm transition-all duration-200 hover:opacity-80"
+                        style={{ 
+                          height: `${height}%`,
+                          backgroundColor: isLatest ? getStatusColor() : '#e5e7eb',
+                          minHeight: '2px'
+                        }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Main Visualization */}
-        <div className="flex-1 flex items-center justify-center py-2">
-          {renderVisualization()}
-        </div>
-
-        {/* Footer */}
-        <div className="space-y-3 relative z-10">
-          {config.showComparison && (
-            <div className="flex justify-between items-center text-sm bg-white/60 rounded-lg p-2 backdrop-blur-sm">
-              <span className="text-gray-600">Previous Period</span>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">{previousValue}</span>
-                <span className={`text-sm font-semibold ${getStatusColor()}`}>
-                  {trend === 'up' ? '+' : ''}{(currentValue - previousValue).toFixed(0)}
-                </span>
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+            <div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Target</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {config.targetValue || 95} {config.unit || 'units'}
               </div>
             </div>
-          )}
-          
-          {config.showSparkline && (
-            <div className="flex items-end justify-center gap-1 h-8 bg-white/40 rounded-lg p-2">
-              {[...Array(12)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-2 ${getIconColor() === 'text-emerald-500' ? 'bg-emerald-400' : getIconColor() === 'text-amber-500' ? 'bg-amber-400' : 'bg-red-400'} rounded-full transition-all duration-200`}
-                  style={{ height: `${8 + Math.random() * 16}px` }}
-                />
-              ))}
+            
+            {config.showComparison && (
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Previous</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {previousValue} {config.unit || 'units'}
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Achievement</div>
+              <div className="text-sm font-semibold" style={{ color: getStatusColor() }}>
+                {achievement}%
+              </div>
             </div>
-          )}
-          
-          <div className="flex justify-between items-center text-xs bg-white/40 rounded-lg p-2 backdrop-blur-sm">
-            <span className="text-gray-600 font-medium">
-              Target: {config.targetValue || 95}{config.unit || '%'}
-            </span>
-            <Badge variant="outline" className="text-xs bg-white/80 border-gray-300">
-              <Clock className="h-3 w-3 mr-1" />
-              {config.refreshInterval}s
-            </Badge>
           </div>
-        </div>
 
-        {/* Background Pattern */}
-        <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
-          <Target className="w-full h-full" />
-        </div>
-      </CardContent>
-    </Card>
+          {/* Footer Info */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Clock className="h-3 w-3" />
+              <span>Updates every {config.refreshInterval || 30}s</span>
+            </div>
+            {config.alertsEnabled && (
+              <div className="flex items-center gap-1 text-xs text-amber-600">
+                <AlertTriangle className="h-3 w-3" />
+                <span>Alerts enabled</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
