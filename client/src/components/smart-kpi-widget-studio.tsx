@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
+import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
   BarChart3,
@@ -44,7 +45,10 @@ import {
   Function,
   Code,
   Trash,
-  ArrowRight
+  ArrowRight,
+  TrendingDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -287,6 +291,8 @@ const refreshIntervals = [
 export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: SmartKPIWidgetStudioProps) {
   const [step, setStep] = useState(1);
   const [selectedTemplate, setSelectedTemplate] = useState<KPITemplate | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  
   const [widgetConfig, setWidgetConfig] = useState({
     title: '',
     description: '',
@@ -472,8 +478,9 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
@@ -1353,7 +1360,7 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                     <X className="h-4 w-4 mr-1" />
                     Cancel
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setShowPreview(true)}>
                     <Eye className="h-4 w-4 mr-1" />
                     Preview
                   </Button>
@@ -1371,5 +1378,172 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
         </div>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={showPreview} onOpenChange={setShowPreview}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Widget Preview</DialogTitle>
+          <DialogDescription>
+            This is how your KPI widget will appear on the dashboard
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-4">
+          <KPIWidgetPreview config={widgetConfig} />
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
+  );
+}
+
+// KPI Widget Preview Component
+function KPIWidgetPreview({ config }: { config: any }) {
+  // Generate sample data based on configuration
+  const generateSampleValue = () => {
+    const baseValue = config.targetValue || 85;
+    return Math.round(baseValue + (Math.random() - 0.5) * 20);
+  };
+
+  const currentValue = generateSampleValue();
+  const previousValue = Math.round(currentValue * (0.85 + Math.random() * 0.3));
+  const trend = currentValue > previousValue ? 'up' : 'down';
+  const trendPercentage = Math.abs(((currentValue - previousValue) / previousValue) * 100);
+
+  const getStatusColor = () => {
+    if (currentValue >= (config.targetValue || 95)) return 'text-green-600';
+    if (currentValue >= (config.warningThreshold || 85)) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getStatusBg = () => {
+    if (currentValue >= (config.targetValue || 95)) return 'bg-green-50 border-green-200';
+    if (currentValue >= (config.warningThreshold || 85)) return 'bg-yellow-50 border-yellow-200';
+    return 'bg-red-50 border-red-200';
+  };
+
+  const getSizeClasses = () => {
+    switch (config.size) {
+      case 'small': return 'h-32 p-3';
+      case 'large': return 'h-48 p-6';
+      case 'xlarge': return 'h-56 p-8';
+      default: return 'h-40 p-4';
+    }
+  };
+
+  const renderVisualization = () => {
+    switch (config.visualization) {
+      case 'gauge':
+        const percentage = Math.min((currentValue / (config.targetValue || 100)) * 100, 100);
+        return (
+          <div className="flex items-center justify-center relative">
+            <div className="relative w-24 h-24">
+              <Progress value={percentage} className="transform rotate-180" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold">{currentValue}</span>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'bar':
+        const barHeight = Math.min((currentValue / (config.targetValue || 100)) * 100, 100);
+        return (
+          <div className="flex items-end justify-center h-16">
+            <div className="bg-blue-200 w-8 relative rounded-t">
+              <div 
+                className="bg-blue-500 w-full rounded-t transition-all duration-300"
+                style={{ height: `${barHeight}%` }}
+              />
+            </div>
+          </div>
+        );
+        
+      case 'line':
+        return (
+          <div className="flex items-center justify-center">
+            <Activity className="h-12 w-12 text-blue-500" />
+          </div>
+        );
+        
+      case 'progress':
+        const progressValue = Math.min((currentValue / (config.targetValue || 100)) * 100, 100);
+        return (
+          <div className="space-y-2">
+            <Progress value={progressValue} className="h-3" />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>0</span>
+              <span>{config.targetValue || 100}</span>
+            </div>
+          </div>
+        );
+        
+      default: // number display
+        return (
+          <div className="text-center">
+            <div className="text-4xl font-bold mb-1">{currentValue}</div>
+            {config.unit && (
+              <div className="text-sm text-gray-500">{config.unit}</div>
+            )}
+          </div>
+        );
+    }
+  };
+
+  return (
+    <Card className={`${getSizeClasses()} ${getStatusBg()}`}>
+      <CardContent className="h-full flex flex-col justify-between p-0">
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-sm truncate">{config.title || 'KPI Widget'}</h3>
+            {config.showTrend && (
+              <div className={`flex items-center text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                {trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                <span>{trendPercentage.toFixed(1)}%</span>
+              </div>
+            )}
+          </div>
+          
+          {config.description && (
+            <p className="text-xs text-gray-600 mb-3 line-clamp-2">{config.description}</p>
+          )}
+        </div>
+
+        <div className="flex-1 flex items-center justify-center">
+          {renderVisualization()}
+        </div>
+
+        <div className="space-y-2">
+          {config.showComparison && (
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Previous: {previousValue}</span>
+              <span className={getStatusColor()}>
+                {trend === 'up' ? '+' : ''}{(currentValue - previousValue).toFixed(0)}
+              </span>
+            </div>
+          )}
+          
+          {config.showSparkline && (
+            <div className="flex items-center gap-1 justify-center">
+              {[...Array(8)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className="w-1 bg-blue-300 rounded-full"
+                  style={{ height: `${4 + Math.random() * 8}px` }}
+                />
+              ))}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-gray-500">
+              Target: {config.targetValue || 95}{config.unit || ''}
+            </span>
+            <Badge variant="outline" className="text-xs">
+              {config.refreshInterval}s refresh
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
