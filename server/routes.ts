@@ -5192,6 +5192,115 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
+  // AI-powered dashboard editing endpoint
+  app.post("/api/dashboard-configs/ai-edit", async (req, res) => {
+    try {
+      const { prompt, dashboardConfig } = req.body;
+      
+      if (!prompt || !dashboardConfig) {
+        return res.status(400).json({ error: "Prompt and dashboard configuration are required" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Create a detailed context about the current dashboard
+      const dashboardContext = {
+        name: dashboardConfig.name,
+        description: dashboardConfig.description,
+        layout: dashboardConfig.layout,
+        targetPlatform: dashboardConfig.targetPlatform,
+        widgets: dashboardConfig.widgets?.map(w => ({
+          id: w.id,
+          title: w.title,
+          type: w.type,
+          position: w.position,
+          size: w.size,
+          config: w.config
+        })) || []
+      };
+
+      const systemPrompt = `You are an AI assistant that helps users edit dashboard configurations through natural language prompts. 
+
+Current Dashboard Context:
+${JSON.stringify(dashboardContext, null, 2)}
+
+Available Widget Types:
+- metric: KPI displays, gauges, counters
+- chart: line charts, bar charts, pie charts
+- table: data tables, lists
+- progress: progress bars, completion status
+- custom: user-defined widgets
+
+Available Actions:
+- Add widgets (specify type, title, position, size)
+- Remove widgets (by title or id)
+- Move widgets (change position)
+- Resize widgets (change size)
+- Update widget configurations
+- Change dashboard layout or properties
+- Rename dashboard or change description
+
+Layout Types: "grid" or "freeform"
+Target Platforms: "desktop", "mobile", or "both"
+
+Return a JSON object with:
+{
+  "action": "modify_dashboard",
+  "changes": {
+    "name": "updated name if changed",
+    "description": "updated description if changed", 
+    "layout": "grid or freeform if changed",
+    "targetPlatform": "desktop/mobile/both if changed",
+    "widgets": [...updated widgets array...]
+  },
+  "explanation": "Brief explanation of what was changed"
+}
+
+User Prompt: "${prompt}"`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const aiResponse = JSON.parse(response.choices[0].message.content);
+      
+      // Merge the AI changes with the existing dashboard config
+      const updatedConfig = {
+        ...dashboardConfig,
+        ...aiResponse.changes
+      };
+
+      res.json({
+        updatedConfig,
+        explanation: aiResponse.explanation,
+        success: true
+      });
+
+    } catch (error) {
+      console.error("AI dashboard editing error:", error);
+      res.status(500).json({ 
+        error: "Failed to process AI dashboard editing request",
+        details: error.message 
+      });
+    }
+  });
+
   // Test endpoint to verify routing works without database
   app.get("/api/test", async (req, res) => {
     res.json({ status: "working", message: "Test endpoint success" });

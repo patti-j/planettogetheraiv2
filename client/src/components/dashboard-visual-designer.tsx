@@ -44,7 +44,11 @@ import {
   GripVertical,
   Palette,
   Layout,
-  Layers
+  Layers,
+  Wand2,
+  Send,
+  Bot,
+  MessageSquare
 } from "lucide-react";
 
 interface WidgetDefinition {
@@ -643,6 +647,11 @@ export function DashboardVisualDesigner({
   // View state
   const [previewMode, setPreviewMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  
+  // AI prompt state
+  const [aiPromptOpen, setAiPromptOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   // Load custom canvas widgets
   const { data: canvasWidgets = [] } = useQuery({
@@ -664,6 +673,43 @@ export function DashboardVisualDesigner({
 
   // Combine static and custom widgets
   const COMBINED_WIDGET_LIBRARY = [...WIDGET_LIBRARY, ...customWidgetDefs];
+
+  // AI-powered dashboard editing mutation
+  const aiEditMutation = useMutation({
+    mutationFn: async ({ prompt, dashboardConfig }: { prompt: string; dashboardConfig: any }) => {
+      return apiRequest('POST', '/api/dashboard-configs/ai-edit', {
+        prompt,
+        dashboardConfig
+      });
+    },
+    onSuccess: (data) => {
+      if (data.updatedConfig) {
+        // Apply AI-generated changes to the dashboard
+        const updatedConfig = data.updatedConfig;
+        if (updatedConfig.name) setDashboardName(updatedConfig.name);
+        if (updatedConfig.description) setDashboardDescription(updatedConfig.description);
+        if (updatedConfig.layout) setLayout(updatedConfig.layout);
+        if (updatedConfig.targetPlatform) setTargetPlatform(updatedConfig.targetPlatform);
+        if (updatedConfig.widgets) setWidgets(updatedConfig.widgets);
+        
+        toast({
+          title: "AI Edit Applied",
+          description: data.explanation || "Dashboard updated successfully with AI suggestions"
+        });
+      }
+      setAiPromptOpen(false);
+      setAiPrompt("");
+      setAiProcessing(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "AI Edit Failed",
+        description: error.message || "Failed to apply AI changes to dashboard",
+        variant: "destructive"
+      });
+      setAiProcessing(false);
+    }
+  });
 
   // Get unique categories including custom widgets
   const categories = ["All", ...new Set(COMBINED_WIDGET_LIBRARY.map(w => w.category))];
@@ -778,6 +824,35 @@ export function DashboardVisualDesigner({
         setSelectedWidgetId(newWidget.id);
       }
     }
+  };
+
+  // Handle AI prompt submission
+  const handleAiPrompt = () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a description of changes you want to make",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAiProcessing(true);
+
+    // Create current dashboard config for AI context
+    const currentConfig = {
+      name: dashboardName,
+      description: dashboardDescription,
+      layout,
+      targetPlatform,
+      gridColumns,
+      widgets
+    };
+
+    aiEditMutation.mutate({
+      prompt: aiPrompt,
+      dashboardConfig: currentConfig
+    });
   };
 
   return (
@@ -942,9 +1017,20 @@ export function DashboardVisualDesigner({
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Grid className="w-3 h-3" />
-                  {layout === "grid" ? "Grid Layout" : "Freeform Layout"}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAiPromptOpen(true)}
+                    className="h-7 text-purple-600 border-purple-200 hover:bg-purple-50"
+                  >
+                    <Wand2 className="w-3 h-3 mr-1" />
+                    AI Edit
+                  </Button>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 ml-2">
+                    <Grid className="w-3 h-3" />
+                    {layout === "grid" ? "Grid Layout" : "Freeform Layout"}
+                  </div>
                 </div>
               </div>
 
@@ -973,6 +1059,85 @@ export function DashboardVisualDesigner({
             onOpenChange={setConfigDialogOpen}
             onSave={handleSaveWidgetConfig}
           />
+
+          {/* AI Prompt Dialog */}
+          <Dialog open={aiPromptOpen} onOpenChange={setAiPromptOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-purple-600" />
+                  AI Dashboard Editor
+                </DialogTitle>
+                <DialogDescription>
+                  Describe the changes you want to make to your dashboard. AI will understand and apply your modifications automatically.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-prompt">What would you like to change?</Label>
+                  <Textarea
+                    id="ai-prompt"
+                    placeholder="Examples:
+- Add a production KPI widget to the top left
+- Remove the chart widgets and add a table instead
+- Rename this dashboard to 'Plant Operations'
+- Move all widgets to the right side
+- Add gauges for temperature monitoring
+- Change layout to freeform"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    className="min-h-32 resize-none"
+                    disabled={aiProcessing}
+                  />
+                </div>
+
+                {widgets.length > 0 && (
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Layout className="w-4 h-4 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-700">Current Dashboard</span>
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>Name: {dashboardName || "Untitled Dashboard"}</div>
+                      <div>Widgets: {widgets.length} ({widgets.map(w => w.title).join(", ")})</div>
+                      <div>Layout: {layout === "grid" ? "Grid" : "Freeform"} • Platform: {targetPlatform}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setAiPromptOpen(false);
+                    setAiPrompt("");
+                  }}
+                  disabled={aiProcessing}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleAiPrompt}
+                  disabled={aiProcessing || !aiPrompt.trim()}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {aiProcessing ? (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                      AI Working...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Apply Changes
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </DialogContent>
       </Dialog>
     </DndProvider>
