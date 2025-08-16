@@ -18,6 +18,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
 import { SmartKPIWidgetStudio } from "@/components/smart-kpi-widget-studio";
 import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
+import { DashboardVisualDesigner } from "@/components/dashboard-visual-designer";
 
 import { 
   Plus, 
@@ -137,6 +138,8 @@ export default function UIDesignStudio() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = useState(false);
   const [showDashboardManager, setShowDashboardManager] = useState(false);
+  const [showVisualDesigner, setShowVisualDesigner] = useState(false);
+  const [dashboardToEdit, setDashboardToEdit] = useState<any>(null);
   
   // Menu builder state
   const [menuStructure, setMenuStructure] = useState<MenuStructure[]>([]);
@@ -736,12 +739,13 @@ export default function UIDesignStudio() {
                           <CardContent className="pt-0">
                             <Button 
                               onClick={() => {
-                                setShowDashboardManager(true);
+                                setDashboardToEdit(null);
+                                setShowVisualDesigner(true);
                               }}
                               className="w-full bg-green-600 hover:bg-green-700 text-white mb-3"
                             >
                               <Layout className="h-4 w-4 mr-2" />
-                              Open Dashboard Designer
+                              Open Visual Dashboard Designer
                             </Button>
                             <div className="flex flex-wrap gap-2 justify-center">
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -824,13 +828,24 @@ export default function UIDesignStudio() {
                           <div className="flex flex-wrap gap-2">
                             <Button
                               onClick={() => {
-                                setShowDashboardManager(true);
+                                setDashboardToEdit(null);
+                                setShowVisualDesigner(true);
                               }}
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <Layout className="h-3 w-3 mr-1" />
-                              Dashboard Designer
+                              Visual Designer
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setShowDashboardManager(true);
+                              }}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Settings className="h-3 w-3 mr-1" />
+                              Manage Dashboards
                             </Button>
                             <Button
                               onClick={() => setShowCreateDialog(true)}
@@ -850,7 +865,23 @@ export default function UIDesignStudio() {
                         <Card 
                         key={item.id} 
                         className="hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => setSelectedItem(item)}
+                        onClick={() => {
+                          if (activeTab === 'dashboards') {
+                            // Open dashboard in visual designer for viewing/editing
+                            setDashboardToEdit({
+                              id: item.id,
+                              name: item.title,
+                              description: item.description,
+                              layout: item.configuration?.layout || "grid",
+                              gridColumns: item.configuration?.gridColumns || 12,
+                              widgets: item.configuration?.customWidgets || item.configuration?.widgets || [],
+                              targetPlatform: item.targetPlatform
+                            });
+                            setShowVisualDesigner(true);
+                          } else {
+                            setSelectedItem(item);
+                          }
+                        }}
                       >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
@@ -893,7 +924,21 @@ export default function UIDesignStudio() {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleEditWidget(item);
+                                  if (activeTab === 'dashboards') {
+                                    // Edit dashboard with visual designer
+                                    setDashboardToEdit({
+                                      id: item.id,
+                                      name: item.title,
+                                      description: item.description,
+                                      layout: item.configuration?.layout || "grid",
+                                      gridColumns: item.configuration?.gridColumns || 12,
+                                      widgets: item.configuration?.customWidgets || item.configuration?.widgets || [],
+                                      targetPlatform: item.targetPlatform
+                                    });
+                                    setShowVisualDesigner(true);
+                                  } else {
+                                    handleEditWidget(item);
+                                  }
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -1079,6 +1124,49 @@ export default function UIDesignStudio() {
           open={smartKPIStudioOpen}
           onOpenChange={setSmartKPIStudioOpen}
           existingWidget={selectedItem && smartKPIStudioOpen ? selectedItem : undefined}
+        />
+        
+        {/* Dashboard Visual Designer */}
+        <DashboardVisualDesigner
+          open={showVisualDesigner}
+          onOpenChange={setShowVisualDesigner}
+          dashboard={dashboardToEdit}
+          onSave={async (dashboardConfig) => {
+            // Save dashboard configuration
+            const dashboardData = {
+              name: dashboardConfig.name,
+              description: dashboardConfig.description,
+              targetPlatform: dashboardConfig.targetPlatform,
+              configuration: {
+                layout: dashboardConfig.layout,
+                gridColumns: dashboardConfig.gridColumns,
+                widgets: dashboardConfig.widgets,
+                standardWidgets: [],
+                customWidgets: dashboardConfig.widgets
+              }
+            };
+            
+            if (dashboardConfig.id) {
+              // Update existing dashboard
+              await apiRequest("PATCH", `/api/dashboard-configs/${dashboardConfig.id}`, dashboardData);
+            } else {
+              // Create new dashboard
+              await apiRequest("POST", "/api/dashboard-configs", dashboardData);
+            }
+            
+            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
+            toast({
+              title: "Success",
+              description: `Dashboard "${dashboardConfig.name}" has been saved successfully`
+            });
+            setShowVisualDesigner(false);
+            setDashboardToEdit(null);
+            
+            // Refresh the dashboard list if we're on the dashboards tab
+            if (activeTab === 'dashboards') {
+              queryClient.invalidateQueries({ queryKey: [`/api/design-studio/dashboards`] });
+            }
+          }}
         />
         
         {/* Enhanced Dashboard Manager */}

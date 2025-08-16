@@ -27,6 +27,7 @@ Note on concurrent work:
 - **Database Structure**: All PT tables retain original column structure with approved variations only
 - **Current State**: 62 active PT tables with sample data, 47 archived legacy tables preserved
 - **Dashboard Dialog Overflow**: ✅ FIXED (2025-08-16) - Dashboard descriptions now properly truncated in selection dialogs to prevent overflow
+- **Visual Dashboard Designer**: ✅ ADDED (2025-08-16) - New drag-and-drop visual dashboard designer integrated into UI Design Studio
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.
@@ -142,7 +143,7 @@ Document domain-specific rules here:
 - **Inventory Management**: Stock-centric system tracking specific records.
 - **Master Data Management**: Unified interface with AI-powered modification and validation.
 - **Scheduling & Optimization**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management. Includes detailed analysis and strategy for Bryntum Scheduler Pro algorithms like ChronoGraph.
-- **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and live data previews.
+- **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, live data previews, and visual drag-and-drop dashboard designer with widget library.
 - **Role-Based Access Control**: Unified permission system with feature-action permissions.
 - **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, comprehensive error handling, and reusable widget system.
 - **Communication & Collaboration**: Integrated chat, feedback system, visual factory displays, and email notifications. Max AI service provides real-time production intelligence, status monitoring, schedule analysis, bottleneck detection, resource conflict detection, and optimization recommendations. It integrates OpenAI GPT-4o for context-aware responses and proactive insights.
