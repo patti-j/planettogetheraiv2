@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { WorkspaceDashboard } from '@/components/workspace-dashboard';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 
@@ -58,8 +58,8 @@ export default function ProductionSchedulePage() {
   });
 
   // Fetch available dashboards
-  const { data: dashboards = [], isLoading: dashboardsLoading } = useQuery({
-    queryKey: ['/api/workspace-dashboards/plant/1'], // Using plant ID 1 for demo
+  const { data: dashboards = [], isLoading: dashboardsLoading, error: dashboardsError } = useQuery({
+    queryKey: ['/api/dashboard-configs'],
     enabled: canViewSchedule
   });
 
@@ -68,6 +68,11 @@ export default function ProductionSchedulePage() {
   };
 
   const isLoading = operationsLoading || resourcesLoading;
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Dashboard data:', { dashboards, dashboardsLoading, dashboardsError });
+  }, [dashboards, dashboardsLoading, dashboardsError]);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -104,11 +109,21 @@ export default function ProductionSchedulePage() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Select Dashboard</DialogTitle>
+                <DialogDescription>
+                  Choose a dashboard created in the UI Design Studio to display above the production schedule.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
                 {dashboardsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <p className="ml-2 text-sm text-muted-foreground">Loading dashboards...</p>
+                  </div>
+                ) : dashboardsError ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm mb-3">Error loading dashboards</p>
+                    <p className="text-xs">{dashboardsError.message || 'Please try again'}</p>
                   </div>
                 ) : dashboards.length > 0 ? (
                   dashboards.map((dashboard: any) => (
@@ -123,7 +138,12 @@ export default function ProductionSchedulePage() {
                       }}
                     >
                       <BarChart3 className="w-4 h-4 mr-2" />
-                      {dashboard.name || dashboard.title || `Dashboard ${dashboard.id}`}
+                      {dashboard.name || `Dashboard ${dashboard.id}`}
+                      {dashboard.description && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          • {dashboard.description}
+                        </span>
+                      )}
                     </Button>
                   ))
                 ) : (
