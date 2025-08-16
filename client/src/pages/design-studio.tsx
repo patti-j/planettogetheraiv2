@@ -773,17 +773,7 @@ export default function UIDesignStudio() {
                           </CardContent>
                         </Card>
                         
-                        {/* General Widget Creation */}
-                        <div className="pt-4 border-t border-gray-200">
-                          <Button 
-                            onClick={() => setShowCreateDialog(true)}
-                            variant="outline"
-                            className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Create Custom Widget
-                          </Button>
-                        </div>
+
                       </div>
                     ) : activeTab === 'dashboards' ? (
                       <div className="space-y-4">
@@ -868,14 +858,6 @@ export default function UIDesignStudio() {
                             >
                               <Gauge className="h-3 w-3 mr-1" />
                               SMART KPI Widget
-                            </Button>
-                            <Button
-                              onClick={() => setShowCreateDialog(true)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Custom Widget
                             </Button>
                           </div>
                         </div>
