@@ -787,7 +787,7 @@ export function DashboardVisualDesigner({
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div>
-              <h2 className="text-xl font-semibold">Dashboard Designer</h2>
+              <h2 className="text-xl font-semibold">Visual Dashboard Designer</h2>
               <p className="text-sm text-gray-500">
                 Create and customize your dashboard visually
               </p>
