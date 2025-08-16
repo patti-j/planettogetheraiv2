@@ -595,7 +595,7 @@ export function DashboardVisualDesigner({
     } else if (actualWidgetType === 'gauge' || actualWidgetSubtype === 'gauge' || visualization === 'gauge') {
       category = "Gauges";
       icon = Activity;
-      widgetType = "metric";
+      widgetType = "gauge";  // Changed from "metric" to "gauge"
     } else if (actualWidgetType === 'chart' || actualWidgetSubtype === 'chart' || 
                visualization === 'line' || visualization === 'bar' || visualization === 'pie') {
       category = "Charts";  
