@@ -161,27 +161,18 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                 </h3>
                 <div className="space-y-1">
                   {recentPages.slice(0, 4).map((page) => {
-                    // Find the icon and color for this page from navigation menu
-                    const getIconAndColorForPage = (path: string) => {
+                    // Find the icon for this page from navigation menu
+                    const getIconForPage = (path: string) => {
                       for (const group of navigationGroups) {
                         const feature = group.features.find((f: any) => f.href === path);
                         if (feature) {
-                          let bgColor = feature.color || "bg-gray-500";
-                          // Add dark mode variant if not already present
-                          if (!bgColor.includes('dark:') && !bgColor.includes('gradient')) {
-                            bgColor = `${bgColor} dark:${bgColor.replace('-500', '-600').replace('-600', '-700')}`;
-                          }
-                          return { 
-                            icon: feature.icon, 
-                            color: bgColor,
-                            isAI: (feature as any).isAI || false 
-                          };
+                          return feature.icon;
                         }
                       }
-                      return { icon: FileText, color: "bg-gray-500 dark:bg-gray-600", isAI: false };
+                      return FileText;
                     };
                     
-                    const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
+                    const IconComponent = getIconForPage(page.path);
                     
                     return (
                       <Button
@@ -193,9 +184,10 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                           onClose();
                         }}
                       >
-                        <div className={`${color} p-1 rounded mr-2 flex-shrink-0`}>
-                          <IconComponent className="h-3 w-3 text-white" />
-                        </div>
+                        <IconComponent className={cn(
+                          "h-3.5 w-3.5 flex-shrink-0 mr-2.5",
+                          location === page.path ? "text-primary" : "text-foreground/60"
+                        )} />
                         <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
                         <Button
                           variant="ghost"
