@@ -278,15 +278,42 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     }
   });
 
-  // Handle drag end for reordering
+  // Handle drag end for reordering and moving between lists
   const handleDragEnd = (result) => {
     if (!result.destination) return;
 
-    const items = Array.from(tempHeaderItems);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const { source, destination } = result;
 
-    setTempHeaderItems(items);
+    // If dropped in the same position, do nothing
+    if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      return;
+    }
+
+    // Moving within header items (reordering)
+    if (source.droppableId === 'header-items' && destination.droppableId === 'header-items') {
+      const items = Array.from(tempHeaderItems);
+      const [reorderedItem] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, reorderedItem);
+      setTempHeaderItems(items);
+    }
+    // Moving from header items to available items (removing from header)
+    else if (source.droppableId === 'header-items' && destination.droppableId === 'available-items') {
+      const headerItems = Array.from(tempHeaderItems);
+      const [removedItem] = headerItems.splice(source.index, 1);
+      setTempHeaderItems(headerItems);
+    }
+    // Moving from available items to header items (adding to header)
+    else if (source.droppableId === 'available-items' && destination.droppableId === 'header-items') {
+      // Find the item being dragged from available items
+      const draggedItemId = result.draggableId;
+      const itemToAdd = availableItems.find(item => item.id === draggedItemId);
+      
+      if (itemToAdd && !tempHeaderItems.find(item => item.id === itemToAdd.id)) {
+        const headerItems = Array.from(tempHeaderItems);
+        headerItems.splice(destination.index, 0, itemToAdd);
+        setTempHeaderItems(headerItems);
+      }
+    }
   };
 
   // Add item to header
@@ -584,27 +611,36 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             <div>
               <Label className="text-base font-semibold mb-3 block">Available Items</Label>
               <ScrollArea className="h-[400px] border rounded-md p-3">
-                <div className="space-y-4">
+                <Droppable droppableId="available-items">
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
                   {/* Pages Section */}
                   <div>
                     <Label className="text-sm font-medium text-muted-foreground mb-2 block">Pages</Label>
                     <div className="space-y-2">
                       {availableItems
                         .filter(item => item.type === 'page' && !tempHeaderItems.find(i => i.id === item.id))
-                        .map(item => {
+                        .map((item, index) => {
                           const Icon = iconMap[item.icon] || HelpCircle;
                           return (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
-                              onClick={() => addHeaderItem(item)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" />
-                                <span className="text-sm">{item.label}</span>
-                              </div>
-                              <Plus className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            <Draggable key={item.id} draggableId={item.id} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                                  onClick={() => addHeaderItem(item)}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    <Icon className="h-4 w-4" />
+                                    <span className="text-sm">{item.label}</span>
+                                  </div>
+                                  <Plus className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </Draggable>
                           );
                         })}
                     </div>
@@ -616,21 +652,29 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                     <div className="space-y-2">
                       {availableItems
                         .filter(item => item.type === 'widget' && !tempHeaderItems.find(i => i.id === item.id))
-                        .map(item => {
+                        .map((item, index) => {
                           const Icon = iconMap[item.icon] || HelpCircle;
+                          const pageItemsCount = availableItems.filter(i => i.type === 'page' && !tempHeaderItems.find(h => h.id === i.id)).length;
                           return (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
-                              onClick={() => addHeaderItem(item)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" />
-                                <span className="text-sm">{item.label}</span>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Widget</span>
-                              </div>
-                              <Plus className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            <Draggable key={item.id} draggableId={item.id} index={pageItemsCount + index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                                  onClick={() => addHeaderItem(item)}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    <Icon className="h-4 w-4" />
+                                    <span className="text-sm">{item.label}</span>
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Widget</span>
+                                  </div>
+                                  <Plus className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </Draggable>
                           );
                         })}
                     </div>
@@ -642,25 +686,37 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                     <div className="space-y-2">
                       {availableItems
                         .filter(item => item.type === 'action' && !tempHeaderItems.find(i => i.id === item.id))
-                        .map(item => {
+                        .map((item, index) => {
                           const Icon = iconMap[item.icon] || HelpCircle;
+                          const pageItemsCount = availableItems.filter(i => i.type === 'page' && !tempHeaderItems.find(h => h.id === i.id)).length;
+                          const widgetItemsCount = availableItems.filter(i => i.type === 'widget' && !tempHeaderItems.find(h => h.id === i.id)).length;
                           return (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
-                              onClick={() => addHeaderItem(item)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4" />
-                                <span className="text-sm">{item.label}</span>
-                              </div>
-                              <Plus className="h-4 w-4 text-muted-foreground" />
-                            </div>
+                            <Draggable key={item.id} draggableId={item.id} index={pageItemsCount + widgetItemsCount + index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="flex items-center justify-between p-2 rounded-md border bg-card hover:bg-accent cursor-pointer"
+                                  onClick={() => addHeaderItem(item)}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    <Icon className="h-4 w-4" />
+                                    <span className="text-sm">{item.label}</span>
+                                  </div>
+                                  <Plus className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </Draggable>
                           );
                         })}
                     </div>
+                    </div>
+                    {provided.placeholder}
                   </div>
-                </div>
+                  )}
+                </Droppable>
               </ScrollArea>
             </div>
           </div>
