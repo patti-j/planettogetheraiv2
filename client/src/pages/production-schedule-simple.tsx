@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Filter, Search, RefreshCw, Download, Settings, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, Filter, Search, RefreshCw, Download, Settings, BarChart3, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { WorkspaceDashboard } from '@/components/workspace-dashboard';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 
 interface ScheduleFilters {
@@ -38,6 +40,8 @@ export default function ProductionSchedulePage() {
 
   const [showFilters, setShowFilters] = useState(!isMobile);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [selectedDashboard, setSelectedDashboard] = useState<string | null>(null);
+  const [dashboardSelectorOpen, setDashboardSelectorOpen] = useState(false);
 
   // Check permissions - allow all in development for demo purposes
   const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
@@ -50,6 +54,12 @@ export default function ProductionSchedulePage() {
 
   const { data: resources, isLoading: resourcesLoading } = useQuery({
     queryKey: ['/api/resources'],
+    enabled: canViewSchedule
+  });
+
+  // Fetch available dashboards
+  const { data: dashboards = [], isLoading: dashboardsLoading } = useQuery({
+    queryKey: ['/api/workspace-dashboards/plant/1'], // Using plant ID 1 for demo
     enabled: canViewSchedule
   });
 
@@ -79,17 +89,67 @@ export default function ProductionSchedulePage() {
         
         {/* Right side buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Dashboard toggle button */}
-          <Button 
-            variant={showDashboard ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setShowDashboard(!showDashboard)}
-            className={isMobile ? 'p-2' : 'gap-2'}
-          >
-            <BarChart3 className="w-4 h-4" />
-            {!isMobile && 'Dashboard'}
-            {!isMobile && (showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-          </Button>
+          {/* Dashboard selector button */}
+          <Dialog open={dashboardSelectorOpen} onOpenChange={setDashboardSelectorOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant={showDashboard ? "default" : "outline"} 
+                size="sm" 
+                className={isMobile ? 'p-2' : 'gap-2'}
+              >
+                <BarChart3 className="w-4 h-4" />
+                {!isMobile && (selectedDashboard ? 'Dashboard' : 'Add Dashboard')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Select Dashboard</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {dashboardsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : dashboards.length > 0 ? (
+                  dashboards.map((dashboard: any) => (
+                    <Button
+                      key={dashboard.id}
+                      variant={selectedDashboard === dashboard.id ? "default" : "outline"}
+                      className="w-full justify-start"
+                      onClick={() => {
+                        setSelectedDashboard(dashboard.id);
+                        setShowDashboard(true);
+                        setDashboardSelectorOpen(false);
+                      }}
+                    >
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      {dashboard.name || dashboard.title || `Dashboard ${dashboard.id}`}
+                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                    <p className="text-sm mb-3">No dashboards available</p>
+                    <p className="text-xs">Create dashboards in the UI Design Studio</p>
+                  </div>
+                )}
+                
+                {selectedDashboard && (
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedDashboard(null);
+                      setShowDashboard(false);
+                      setDashboardSelectorOpen(false);
+                    }}
+                  >
+                    Remove Dashboard
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button 
             variant="outline" 
             size="sm" 
@@ -166,47 +226,24 @@ export default function ProductionSchedulePage() {
         </div>
       )}
 
-      {/* Dashboard Panel */}
-      {showDashboard && (
+      {/* Selected Dashboard Panel */}
+      {showDashboard && selectedDashboard && (
         <div className={`bg-muted/30 border-b ${isMobile ? 'p-2' : 'p-4'}`}>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Jobs</p>
-                  <p className="text-2xl font-bold">24</p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">On Time</p>
-                  <p className="text-2xl font-bold">18</p>
-                </div>
-                <Badge variant="outline" className="text-green-600">75%</Badge>
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Behind Schedule</p>
-                  <p className="text-2xl font-bold">6</p>
-                </div>
-                <Badge variant="outline" className="text-red-600">25%</Badge>
-              </div>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Resources Busy</p>
-                  <p className="text-2xl font-bold">12</p>
-                </div>
-                <Settings className="h-8 w-8 text-orange-600" />
-              </div>
-            </Card>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium">Production Dashboard</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDashboard(false)}
+            >
+              <ChevronUp className="w-4 h-4" />
+            </Button>
           </div>
+          <WorkspaceDashboard
+            dashboardId={selectedDashboard}
+            workspaceId="production-schedule"
+            compact={true}
+          />
         </div>
       )}
 
