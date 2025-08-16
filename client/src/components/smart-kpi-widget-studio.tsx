@@ -616,11 +616,13 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                               <SelectValue placeholder="Select a metric" />
                             </SelectTrigger>
                             <SelectContent>
-                              {selectedTemplate?.metrics.map((metric) => (
-                                <SelectItem key={metric} value={metric}>
-                                  {metric}
-                                </SelectItem>
-                              )) || (
+                              {selectedTemplate?.metrics && selectedTemplate.metrics.length > 0 ? (
+                                selectedTemplate.metrics.map((metric) => (
+                                  <SelectItem key={metric} value={metric}>
+                                    {metric}
+                                  </SelectItem>
+                                ))
+                              ) : (
                                 <>
                                   <SelectItem value="custom">Custom Metric</SelectItem>
                                   <SelectItem value="oee">OEE</SelectItem>
@@ -707,14 +709,25 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                                   <SelectValue placeholder="Select field" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {dataSources
-                                    .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
-                                    ?.fields.filter(field => field.type === 'number' || field.type === 'datetime')
-                                    .map((field) => (
+                                  {(() => {
+                                    const fields = dataSources
+                                      .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                      ?.fields.filter(field => field.type === 'number' || field.type === 'datetime');
+                                    
+                                    if (!fields || fields.length === 0) {
+                                      return (
+                                        <SelectItem value="_no_fields" disabled>
+                                          No numeric fields available
+                                        </SelectItem>
+                                      );
+                                    }
+                                    
+                                    return fields.map((field) => (
                                       <SelectItem key={field.name} value={field.name}>
                                         {field.label} ({field.type})
                                       </SelectItem>
-                                    ))}
+                                    ));
+                                  })()}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -819,13 +832,25 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                                     <SelectValue placeholder="Field" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {dataSources
-                                      .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
-                                      ?.fields.map((field) => (
+                                    {(() => {
+                                      const fields = dataSources
+                                        .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                        ?.fields;
+                                      
+                                      if (!fields || fields.length === 0) {
+                                        return (
+                                          <SelectItem value="_no_fields" disabled>
+                                            No fields available
+                                          </SelectItem>
+                                        );
+                                      }
+                                      
+                                      return fields.map((field) => (
                                         <SelectItem key={field.name} value={field.name}>
                                           {field.label}
                                         </SelectItem>
-                                      ))}
+                                      ));
+                                    })()}
                                   </SelectContent>
                                 </Select>
                                 <Select
@@ -928,14 +953,21 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">No grouping</SelectItem>
-                                {dataSources
-                                  .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
-                                  ?.fields.filter(field => field.type === 'string')
-                                  .map((field) => (
+                                {(() => {
+                                  const fields = dataSources
+                                    .find(ds => ds.id === widgetConfig.formulaConfig.sourceTable)
+                                    ?.fields.filter(field => field.type === 'string');
+                                  
+                                  if (!fields || fields.length === 0) {
+                                    return null; // We already have "No grouping" option
+                                  }
+                                  
+                                  return fields.map((field) => (
                                     <SelectItem key={field.name} value={field.name}>
                                       {field.label}
                                     </SelectItem>
-                                  ))}
+                                  ));
+                                })()}
                               </SelectContent>
                             </Select>
                           </div>
