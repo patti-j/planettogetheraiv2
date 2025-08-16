@@ -370,6 +370,7 @@ export default function UIDesignStudio() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPlatform, setFilterPlatform] = useState("all");
+  const [filterSource, setFilterSource] = useState("all");
   const [selectedItem, setSelectedItem] = useState<DesignItem | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -480,7 +481,16 @@ export default function UIDesignStudio() {
                          item.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
     const matchesPlatform = filterPlatform === 'all' || item.targetPlatform === filterPlatform;
-    return matchesSearch && matchesStatus && matchesPlatform;
+    
+    // For widgets, filter by source (user/system)
+    let matchesSource = true;
+    if (activeTab === 'widgets' && filterSource !== 'all') {
+      const isSystemWidget = item.configuration?.isSystemWidget || item.data?.isSystemWidget;
+      matchesSource = (filterSource === 'system' && isSystemWidget) || 
+                     (filterSource === 'user' && !isSystemWidget);
+    }
+    
+    return matchesSearch && matchesStatus && matchesPlatform && matchesSource;
   });
 
   // Create mutation
@@ -879,6 +889,13 @@ export default function UIDesignStudio() {
           color: 'bg-teal-100 text-teal-800 border-teal-200',
           description: 'Activity Monitor'
         };
+      case 'system':
+        return {
+          category: 'System',
+          icon: <Settings className="h-3 w-3" />,
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          description: 'System Widget'
+        };
       default:
         return {
           category: 'Widget',
@@ -1023,6 +1040,18 @@ export default function UIDesignStudio() {
                         <SelectItem value="both">Both</SelectItem>
                       </SelectContent>
                     </Select>
+                    {activeTab === 'widgets' && (
+                      <Select value={filterSource} onValueChange={setFilterSource}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Sources</SelectItem>
+                          <SelectItem value="user">User Created</SelectItem>
+                          <SelectItem value="system">System</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -1199,6 +1228,26 @@ export default function UIDesignStudio() {
                               </Button>
                             </CardContent>
                           </Card>
+
+                          {/* System Widgets */}
+                          <Card className="border border-gray-500 bg-gray-50 dark:bg-gray-900 dark:border-gray-600">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="flex items-center gap-2 text-sm">
+                                <div className="p-1 bg-gray-600 rounded">
+                                  <Settings className="h-3 w-3 text-white" />
+                                </div>
+                                System Widgets
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                System-created, read-only
+                              </p>
+                              <Button variant="outline" size="sm" className="w-full" disabled>
+                                Created by System Only
+                              </Button>
+                            </CardContent>
+                          </Card>
                         </div>
 
                       </div>
@@ -1372,11 +1421,21 @@ export default function UIDesignStudio() {
                     )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {filteredItems.map((item) => (
+                      {filteredItems.map((item) => {
+                        const isSystemWidget = item.configuration?.isSystemWidget || item.data?.isSystemWidget;
+                        const widgetTypeInfo = getWidgetTypeInfo(item);
+                        
+                        return (
                         <Card 
                         key={item.id} 
-                        className="hover:shadow-lg transition-shadow cursor-pointer"
+                        className={`transition-shadow ${
+                          isSystemWidget 
+                            ? 'bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700 cursor-default opacity-75'
+                            : 'hover:shadow-lg cursor-pointer'
+                        }`}
                         onClick={() => {
+                          if (isSystemWidget) return; // Prevent editing System widgets
+                          
                           if (activeTab === 'dashboards') {
                             // Open dashboard in visual designer for viewing/editing
                             setDashboardToEdit({
@@ -1407,12 +1466,20 @@ export default function UIDesignStudio() {
                               {activeTab === 'widgets' && (() => {
                                 const typeInfo = getWidgetTypeInfo(item);
                                 return (
-                                  <Badge variant="outline" className={`text-xs border ${typeInfo.color}`}>
-                                    <div className="flex items-center gap-1">
-                                      {typeInfo.icon}
-                                      {typeInfo.category}
-                                    </div>
-                                  </Badge>
+                                  <div className="flex flex-col gap-1 items-end">
+                                    <Badge variant="outline" className={`text-xs border ${typeInfo.color}`}>
+                                      <div className="flex items-center gap-1">
+                                        {typeInfo.icon}
+                                        {typeInfo.category}
+                                      </div>
+                                    </Badge>
+                                    {isSystemWidget && (
+                                      <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600 border-gray-300">
+                                        <Settings className="h-2 w-2 mr-1" />
+                                        System
+                                      </Badge>
+                                    )}
+                                  </div>
                                 );
                               })()}
                             </div>
@@ -1456,8 +1523,10 @@ export default function UIDesignStudio() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                disabled={isSystemWidget}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (isSystemWidget) return;
                                   if (activeTab === 'dashboards') {
                                     // Edit dashboard with visual designer
                                     setDashboardToEdit({
@@ -1480,8 +1549,10 @@ export default function UIDesignStudio() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                disabled={isSystemWidget}
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  if (isSystemWidget) return;
                                   setItemToDelete(item);
                                   setShowDeleteDialog(true);
                                 }}
@@ -1492,7 +1563,8 @@ export default function UIDesignStudio() {
                           </div>
                         </CardContent>
                       </Card>
-                      ))}
+                        );
+                      })}
                     </div>
                   </>
                 )}

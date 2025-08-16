@@ -6104,6 +6104,105 @@ User Prompt: "${prompt}"`;
     }
   });
 
+  // Create sample System widgets for testing
+  app.post("/api/canvas/widgets/create-system-samples", async (req, res) => {
+    try {
+      const systemWidgets = [
+        {
+          title: "System Production Overview",
+          widgetType: "system",
+          targetPlatform: "both",
+          data: {
+            type: "dashboard",
+            component: "SystemProductionOverview",
+            description: "Real-time production metrics and alerts",
+            isSystemWidget: true
+          },
+          configuration: {
+            isSystemWidget: true,
+            widgetType: "system",
+            readonly: true
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: true,
+          sessionId: "system-widgets",
+          metadata: {
+            createdBy: "system",
+            systemGenerated: true
+          }
+        },
+        {
+          title: "System Resource Monitor",
+          widgetType: "system", 
+          targetPlatform: "both",
+          data: {
+            type: "gauge",
+            component: "SystemResourceMonitor",
+            description: "Monitor system resource utilization",
+            isSystemWidget: true
+          },
+          configuration: {
+            isSystemWidget: true,
+            widgetType: "system",
+            readonly: true
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: true,
+          sessionId: "system-widgets",
+          metadata: {
+            createdBy: "system",
+            systemGenerated: true
+          }
+        },
+        {
+          title: "System Alert Center",
+          widgetType: "system",
+          targetPlatform: "both", 
+          data: {
+            type: "activity",
+            component: "SystemAlertCenter",
+            description: "Critical system alerts and notifications",
+            isSystemWidget: true
+          },
+          configuration: {
+            isSystemWidget: true,
+            widgetType: "system",
+            readonly: true
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: true,
+          sessionId: "system-widgets",
+          metadata: {
+            createdBy: "system",
+            systemGenerated: true
+          }
+        }
+      ];
+
+      const createdWidgets = [];
+      for (const widget of systemWidgets) {
+        try {
+          const created = await storage.createCanvasWidget(widget);
+          createdWidgets.push(created);
+        } catch (error) {
+          console.error("Error creating system widget:", error);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        created: createdWidgets.length,
+        widgets: createdWidgets 
+      });
+    } catch (error) {
+      console.error("Error creating system widgets:", error);
+      res.status(500).json({ error: "Failed to create system widgets" });
+    }
+  });
+
   // Max AI endpoint for creating widgets (no auth required for AI systems)
   app.post("/api/max/canvas/widgets", async (req, res) => {
     try {

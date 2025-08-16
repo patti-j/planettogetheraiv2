@@ -9995,13 +9995,14 @@ export const canvasWidgets = pgTable("canvas_widgets", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   targetPlatform: text("target_platform").notNull().default("both"), // "mobile", "desktop", "both"
-  widgetType: text("widget_type").notNull(), // 'chart', 'table', 'metric', 'alert', 'list', 'custom'
+  widgetType: text("widget_type").notNull(), // 'chart', 'table', 'metric', 'alert', 'list', 'custom', 'system'
   widgetSubtype: text("widget_subtype"), // 'bar', 'pie', 'line', 'gauge', etc.
   data: jsonb("data").$type<Record<string, any>>().notNull(), // Widget data content
   configuration: jsonb("configuration").$type<Record<string, any>>().default({}), // Widget display configuration
   position: jsonb("position").$type<{ x: number; y: number; width: number; height: number }>(), // Canvas position
   isVisible: boolean("is_visible").default(true),
   createdByMax: boolean("created_by_max").default(false), // True if created by Max AI
+  isSystemWidget: boolean("is_system_widget").default(false), // True if created by system and cannot be edited
   sessionId: text("session_id"), // Session identifier for grouping widgets
   userId: integer("user_id").references(() => users.id), // User who requested the widget
   plantId: integer("plant_id").references(() => plants.id), // Plant context if applicable
