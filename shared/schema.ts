@@ -2068,6 +2068,7 @@ export const smartKpiDefinitions = pgTable("smart_kpi_definitions", {
 export const smartKpiTargets = pgTable("smart_kpi_targets", {
   id: serial("id").primaryKey(),
   kpiDefinitionId: integer("kpi_definition_id").references(() => smartKpiDefinitions.id).notNull(),
+  businessGoalId: integer("business_goal_id").references(() => businessGoals.id), // Optional relationship to business goals
   targetPeriod: text("target_period").notNull(), // daily, weekly, monthly, quarterly, yearly
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
@@ -2075,6 +2076,8 @@ export const smartKpiTargets = pgTable("smart_kpi_targets", {
   minimumAcceptable: numeric("minimum_acceptable", { precision: 15, scale: 5 }),
   stretchGoal: numeric("stretch_goal", { precision: 15, scale: 5 }),
   businessJustification: text("business_justification"),
+  contributionToGoal: text("contribution_to_goal"), // How this KPI supports the business goal
+  goalWeight: integer("goal_weight").default(100), // Weight percentage this KPI contributes to the business goal (0-100)
   resourcesRequired: jsonb("resources_required").$type<Array<{
     type: string; // labor, equipment, budget, training
     description: string;

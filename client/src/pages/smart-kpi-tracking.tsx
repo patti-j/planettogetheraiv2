@@ -77,6 +77,7 @@ interface SmartKpiDefinition {
 interface SmartKpiTarget {
   id: number;
   kpiDefinitionId: number;
+  businessGoalId?: number; // Optional relationship to business goals
   targetValue: number;
   targetPeriod: string;
   periodStartDate: string;
@@ -85,6 +86,8 @@ interface SmartKpiTarget {
   baselineValue: number;
   stretchTarget: number;
   minimumAcceptable: number;
+  contributionToGoal?: string; // How this KPI supports the business goal
+  goalWeight?: number; // Weight percentage this KPI contributes to the business goal (0-100)
   status: string;
 }
 
@@ -195,6 +198,12 @@ export default function SmartKpiTrackingPage() {
     queryKey: ["/api/smart-kpi-improvements", { status: "in_progress" }]
   });
 
+  // Fetch business goals for relationship tracking
+  const { data: businessGoals = [] } = useQuery({
+    queryKey: ["/api/business-goals"],
+    select: (data) => data.filter((goal: any) => goal.status === 'active')
+  });
+
   // Mock team performance data (would be fetched from API)
   const teamMembers: TeamMember[] = [
     { id: 1, name: "Sarah Chen", role: "Production Manager", performance: 92, streak: 5, achievements: ["5-Day Streak", "Quality Champion"] },
@@ -258,6 +267,30 @@ export default function SmartKpiTrackingPage() {
       gap: gap,
       status: performance >= 100 ? "on-track" : performance >= 90 ? "at-risk" : "off-track"
     };
+  };
+
+  // Get business goal information for a KPI target
+  const getBusinessGoalForKpi = (kpiTarget: SmartKpiTarget) => {
+    if (!kpiTarget.businessGoalId) return null;
+    return businessGoals.find((goal: any) => goal.id === kpiTarget.businessGoalId);
+  };
+
+  // Get all KPIs linked to business goals
+  const getKpisLinkedToGoals = () => {
+    return targets.filter(target => target.businessGoalId).map(target => {
+      const kpiDef = kpiDefinitions.find(kpi => kpi.id === target.kpiDefinitionId);
+      const businessGoal = getBusinessGoalForKpi(target);
+      const performance = calculateKpiPerformance(target.kpiDefinitionId);
+      
+      return {
+        target,
+        kpiDefinition: kpiDef,
+        businessGoal,
+        performance,
+        contributionToGoal: target.contributionToGoal,
+        goalWeight: target.goalWeight
+      };
+    }).filter(item => item.kpiDefinition && item.businessGoal);
   };
 
   return (
@@ -448,6 +481,127 @@ export default function SmartKpiTrackingPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Business Goal Alignment Section */}
+          {getKpisLinkedToGoals().length > 0 && (
+            <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                  <Flag className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                  Business Goal Alignment
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  KPIs linked to strategic business objectives and their contribution tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-4 md:p-6">
+                <div className="space-y-4">
+                  {getKpisLinkedToGoals().map((kpiData) => {
+                    const { target, kpiDefinition, businessGoal, performance, contributionToGoal, goalWeight } = kpiData;
+                    
+                    return (
+                      <div key={target.id} className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          {/* KPI Info */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Target className="h-4 w-4 text-blue-600" />
+                              <h4 className="font-semibold text-sm">{kpiDefinition?.name}</h4>
+                              {performance && (
+                                <Badge 
+                                  variant={performance.status === "on-track" ? "default" : performance.status === "at-risk" ? "secondary" : "destructive"}
+                                  className="text-xs"
+                                >
+                                  {performance.status.replace("-", " ")}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* Business Goal Link */}
+                            <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 mb-2">
+                              <Flag className="h-3 w-3" />
+                              <span className="font-medium">→ {businessGoal?.title}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {businessGoal?.category}
+                              </Badge>
+                            </div>
+                            
+                            {/* Contribution Details */}
+                            {contributionToGoal && (
+                              <p className="text-xs text-muted-foreground mb-2 italic">
+                                "{contributionToGoal}"
+                              </p>
+                            )}
+                            
+                            {/* Weight & Performance */}
+                            <div className="flex items-center gap-4 text-xs">
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground">Weight:</span>
+                                <span className="font-medium">{goalWeight}%</span>
+                              </div>
+                              {performance && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-muted-foreground">Performance:</span>
+                                  <span className="font-medium">{performance.actual} / {performance.target} {kpiDefinition?.measurementUnit}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Performance Visual */}
+                          {performance && (
+                            <div className="flex flex-col items-center text-center min-w-[80px]">
+                              <div className={cn("text-2xl font-bold mb-1", 
+                                performance.status === "on-track" ? "text-green-600" : 
+                                performance.status === "at-risk" ? "text-yellow-600" : "text-red-600"
+                              )}>
+                                {performance.performance}%
+                              </div>
+                              <Progress 
+                                value={Math.min(performance.performance, 100)} 
+                                className="w-16 h-2 mb-1" 
+                              />
+                              <span className="text-xs text-muted-foreground">
+                                Goal Achievement
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Summary Stats */}
+                <div className="mt-6 pt-4 border-t border-blue-200 dark:border-blue-800">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">{getKpisLinkedToGoals().length}</div>
+                      <div className="text-xs text-muted-foreground">Linked KPIs</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-green-600">
+                        {getKpisLinkedToGoals().filter(k => k.performance?.status === "on-track").length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">On Track</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-yellow-600">
+                        {getKpisLinkedToGoals().filter(k => k.performance?.status === "at-risk").length}
+                      </div>
+                      <div className="text-xs text-muted-foreground">At Risk</div>
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-blue-600">
+                        {Math.round(getKpisLinkedToGoals().reduce((sum, k) => sum + (k.goalWeight || 0), 0) / Math.max(getKpisLinkedToGoals().length, 1))}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">Avg Weight</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Active Alerts */}
           {alerts.length > 0 && (

@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 
 interface SmartKPIWidgetStudioProps {
   open: boolean;
@@ -314,6 +315,10 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
     isShared: false,
     alertsEnabled: true,
     alertRecipients: [] as string[],
+    // Business goal relationship
+    businessGoalId: null as number | null,
+    contributionToGoal: '',
+    goalWeight: 100,
     // Advanced formula configuration
     formulaConfig: {
       sourceTable: '',
@@ -328,6 +333,12 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch business goals for the dropdown
+  const { data: businessGoals = [] } = useQuery({
+    queryKey: ['/api/business-goals'],
+    select: (data) => data.filter((goal: any) => goal.status === 'active')
+  });
 
   // Initialize with existing widget data if editing
   React.useEffect(() => {
@@ -458,6 +469,9 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
       isShared: false,
       alertsEnabled: true,
       alertRecipients: [],
+      businessGoalId: null,
+      contributionToGoal: '',
+      goalWeight: 100,
       formulaConfig: {
         sourceTable: '',
         selectField: '',
@@ -644,6 +658,79 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                           placeholder="Describe what this KPI measures..."
                           rows={3}
                         />
+                      </div>
+
+                      {/* Business Goal Relationship Section */}
+                      <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-blue-600" />
+                          <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">Business Goal Alignment (Optional)</Label>
+                        </div>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          Link this KPI to a business goal to track contribution and alignment with organizational objectives.
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="businessGoal">Business Goal</Label>
+                            <Select
+                              value={widgetConfig.businessGoalId?.toString() || ''}
+                              onValueChange={(value) => setWidgetConfig({ 
+                                ...widgetConfig, 
+                                businessGoalId: value ? parseInt(value) : null 
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a business goal" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">No business goal</SelectItem>
+                                {businessGoals.map((goal: any) => (
+                                  <SelectItem key={goal.id} value={goal.id.toString()}>
+                                    {goal.title} ({goal.category})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {widgetConfig.businessGoalId && (
+                            <div className="space-y-2">
+                              <Label htmlFor="goalWeight">Goal Weight (%)</Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  id="goalWeight"
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={widgetConfig.goalWeight}
+                                  onChange={(e) => setWidgetConfig({ 
+                                    ...widgetConfig, 
+                                    goalWeight: parseInt(e.target.value) || 100 
+                                  })}
+                                  className="flex-1"
+                                />
+                                <span className="text-sm text-muted-foreground">%</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                How much this KPI contributes to the business goal
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {widgetConfig.businessGoalId && (
+                          <div className="space-y-2">
+                            <Label htmlFor="contributionToGoal">Contribution Description</Label>
+                            <Textarea
+                              id="contributionToGoal"
+                              value={widgetConfig.contributionToGoal}
+                              onChange={(e) => setWidgetConfig({ ...widgetConfig, contributionToGoal: e.target.value })}
+                              placeholder="Describe how this KPI supports the business goal..."
+                              rows={2}
+                            />
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
