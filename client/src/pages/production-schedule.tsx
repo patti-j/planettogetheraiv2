@@ -128,10 +128,7 @@ export default function ProductionSchedulePage() {
   // Mutation for creating/updating workspace dashboard
   const createDashboardMutation = useMutation({
     mutationFn: async (dashboardData: any) => {
-      return apiRequest('/api/workspace-dashboards', {
-        method: 'POST',
-        body: JSON.stringify(dashboardData)
-      });
+      return apiRequest('POST', '/api/workspace-dashboards', dashboardData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/workspace-dashboards/production-schedule/1'] });
@@ -289,9 +286,9 @@ export default function ProductionSchedulePage() {
           onToggleEditMode={setIsDashboardEditMode}
           onSave={(dashboardData) => createDashboardMutation.mutate(dashboardData)}
           productionData={{
-            orders: productionOrders,
-            operations: ptOperations,
-            resources: resources
+            orders: productionOrders || [],
+            operations: ptOperations || [],
+            resources: resources || []
           }}
         />
       )}
