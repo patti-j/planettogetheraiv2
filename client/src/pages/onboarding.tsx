@@ -151,9 +151,16 @@ const onboardingSteps: OnboardingStep[] = [
     isSkippable: false
   },
   {
+    id: 'business-goals',
+    title: 'Business Goals Setup',
+    description: 'Define strategic objectives to guide feature prioritization and optimization',
+    isCompleted: false,
+    isSkippable: false
+  },
+  {
     id: 'feature-selection',
     title: 'Feature Selection',
-    description: 'Choose the manufacturing features you want to use',
+    description: 'Choose the manufacturing features aligned with your business goals',
     isCompleted: false,
     isSkippable: false
   },
@@ -195,14 +202,14 @@ export default function OnboardingPage() {
   
   console.log('Onboarding URL parsing:', { location, stepParam, initialStep });
   
-  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 5)));
+  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 6)));
 
   // Update step when URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     const stepParam = urlParams.get('step');
     if (stepParam) {
-      const newStep = Math.max(0, Math.min(parseInt(stepParam, 10), 5));
+      const newStep = Math.max(0, Math.min(parseInt(stepParam, 10), 6));
       console.log('URL step parameter changed, setting step to:', newStep);
       setCurrentStep(newStep);
     }
@@ -217,6 +224,7 @@ export default function OnboardingPage() {
     numberOfPlants: '',
     products: ''
   });
+  const [businessGoals, setBusinessGoals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [selectedIndustryTemplates, setSelectedIndustryTemplates] = useState<any[]>([]);
@@ -511,7 +519,12 @@ export default function OnboardingPage() {
         console.log('Company onboarding initialized successfully');
       }
 
-      if (currentStep === 1 && selectedFeatures.length > 0) {
+      if (currentStep === 1 && businessGoals.length > 0) {
+        console.log('Business goals defined for step 1:', businessGoals);
+        // Save business goals would be implemented here
+      }
+
+      if (currentStep === 2 && selectedFeatures.length > 0) {
         // Save selected features to main onboarding record
         console.log('Selected features for step 1:', selectedFeatures);
         try {
@@ -617,8 +630,10 @@ export default function OnboardingPage() {
       case 0:
         return companyInfo.name && companyInfo.industry;
       case 1:
-        return selectedFeatures.length > 0;
+        return businessGoals.length > 0;
       case 2:
+        return selectedFeatures.length > 0;
+      case 3:
         return true; // Data setup has its own validation
       default:
         return true;
@@ -936,10 +951,189 @@ export default function OnboardingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-6 h-6" />
+                Define Your Business Goals
+              </CardTitle>
+              <CardDescription>
+                Set strategic objectives that will guide feature prioritization and optimization algorithms. 
+                These goals help determine which manufacturing capabilities to implement first and how to optimize your operations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Why Business Goals Matter</h4>
+                      <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                        <li>• <strong>Feature Prioritization:</strong> Determines which manufacturing features to implement first</li>
+                        <li>• <strong>Algorithm Selection:</strong> Guides optimization approaches (efficiency vs. quality vs. throughput)</li>
+                        <li>• <strong>KPI Alignment:</strong> Links performance metrics to strategic objectives</li>
+                        <li>• <strong>Resource Allocation:</strong> Optimizes investment in equipment and personnel</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Your Strategic Objectives</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setBusinessGoals([...businessGoals, { 
+                        title: '', 
+                        category: 'operational-efficiency', 
+                        description: '', 
+                        priority: 'medium',
+                        timeframe: '3-6-months'
+                      }])}
+                    >
+                      <Target className="w-4 h-4 mr-2" />
+                      Add Goal
+                    </Button>
+                  </div>
+
+                  {businessGoals.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Target className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">No Business Goals Defined</p>
+                      <p className="text-sm">Add your first strategic objective to guide system optimization</p>
+                    </div>
+                  )}
+
+                  {businessGoals.map((goal, index) => (
+                    <Card key={index} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <Input
+                              placeholder="Goal title (e.g., Reduce production lead time by 20%)"
+                              value={goal.title}
+                              onChange={(e) => {
+                                const updatedGoals = [...businessGoals];
+                                updatedGoals[index].title = e.target.value;
+                                setBusinessGoals(updatedGoals);
+                              }}
+                            />
+                            <Select
+                              value={goal.category}
+                              onValueChange={(value) => {
+                                const updatedGoals = [...businessGoals];
+                                updatedGoals[index].category = value;
+                                setBusinessGoals(updatedGoals);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="operational-efficiency">Operational Efficiency</SelectItem>
+                                <SelectItem value="quality-improvement">Quality Improvement</SelectItem>
+                                <SelectItem value="cost-reduction">Cost Reduction</SelectItem>
+                                <SelectItem value="capacity-expansion">Capacity Expansion</SelectItem>
+                                <SelectItem value="customer-satisfaction">Customer Satisfaction</SelectItem>
+                                <SelectItem value="sustainability">Sustainability</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-3">
+                            <Select
+                              value={goal.priority}
+                              onValueChange={(value) => {
+                                const updatedGoals = [...businessGoals];
+                                updatedGoals[index].priority = value;
+                                setBusinessGoals(updatedGoals);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="high">High Priority</SelectItem>
+                                <SelectItem value="medium">Medium Priority</SelectItem>
+                                <SelectItem value="low">Low Priority</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={goal.timeframe}
+                              onValueChange={(value) => {
+                                const updatedGoals = [...businessGoals];
+                                updatedGoals[index].timeframe = value;
+                                setBusinessGoals(updatedGoals);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="immediate">Immediate (0-3 months)</SelectItem>
+                                <SelectItem value="3-6-months">Short-term (3-6 months)</SelectItem>
+                                <SelectItem value="6-12-months">Medium-term (6-12 months)</SelectItem>
+                                <SelectItem value="12-months-plus">Long-term (12+ months)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Textarea
+                              placeholder="Describe the goal and expected impact on your manufacturing operations..."
+                              value={goal.description}
+                              onChange={(e) => {
+                                const updatedGoals = [...businessGoals];
+                                updatedGoals[index].description = e.target.value;
+                                setBusinessGoals(updatedGoals);
+                              }}
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end mt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const updatedGoals = businessGoals.filter((_, i) => i !== index);
+                              setBusinessGoals(updatedGoals);
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {businessGoals.length > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-medium text-green-900">Impact on System Configuration</h4>
+                        <div className="text-sm text-green-700 mt-2 space-y-1">
+                          <p><strong>Goals defined:</strong> {businessGoals.length}</p>
+                          <p><strong>High priority goals:</strong> {businessGoals.filter(g => g.priority === 'high').length}</p>
+                          <p><strong>Next step:</strong> Features will be recommended based on your {businessGoals.filter(g => g.priority === 'high').length > 0 ? 'high-priority' : 'defined'} objectives</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-6 h-6" />
                 Choose Your Features
               </CardTitle>
               <CardDescription>
-                Select the manufacturing features that match your current needs. You can always add more later.
+                Select the manufacturing features aligned with your business goals. You can always add more later.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -1026,7 +1220,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1067,7 +1261,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 4 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1103,7 +1297,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1143,7 +1337,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 5 && (
+        {currentStep === 6 && (
           <Card>
             <CardHeader className="text-center">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
