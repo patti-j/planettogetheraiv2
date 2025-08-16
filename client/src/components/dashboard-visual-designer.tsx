@@ -252,6 +252,7 @@ function CanvasWidget({
   onResize, 
   onRemove, 
   onConfigure,
+  onDuplicate,
   isSelected,
   onSelect,
   gridSize = 20,
@@ -262,6 +263,7 @@ function CanvasWidget({
   onResize: (id: string, size: { width: number; height: number }) => void;
   onRemove: (id: string) => void;
   onConfigure: (id: string) => void;
+  onDuplicate: (id: string) => void;
   isSelected: boolean;
   onSelect: (id: string) => void;
   gridSize?: number;
@@ -348,6 +350,17 @@ function CanvasWidget({
             className="h-6 w-6 p-0"
             onClick={(e) => {
               e.stopPropagation();
+              onDuplicate(widget.id);
+            }}
+          >
+            <Copy className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
               onConfigure(widget.id);
             }}
           >
@@ -400,6 +413,7 @@ function DashboardCanvas({
   onResizeWidget, 
   onRemoveWidget,
   onConfigureWidget,
+  onDuplicateWidget,
   layout = "grid",
   gridColumns = 12,
   selectedWidgetId,
@@ -412,6 +426,7 @@ function DashboardCanvas({
   onResizeWidget: (id: string, size: { width: number; height: number }) => void;
   onRemoveWidget: (id: string) => void;
   onConfigureWidget: (id: string) => void;
+  onDuplicateWidget: (id: string) => void;
   layout?: "grid" | "freeform";
   gridColumns?: number;
   selectedWidgetId: string | null;
@@ -500,6 +515,7 @@ function DashboardCanvas({
           onResize={onResizeWidget}
           onRemove={onRemoveWidget}
           onConfigure={onConfigureWidget}
+          onDuplicate={onDuplicateWidget}
           isSelected={selectedWidgetId === widget.id}
           onSelect={onSelectWidget}
           gridSize={gridSize}
@@ -912,9 +928,10 @@ export function DashboardVisualDesigner({
   };
 
   // Duplicate selected widget
-  const handleDuplicateWidget = () => {
-    if (selectedWidgetId) {
-      const widget = widgets.find(w => w.id === selectedWidgetId);
+  const handleDuplicateWidget = (widgetId?: string) => {
+    const targetId = widgetId || selectedWidgetId;
+    if (targetId) {
+      const widget = widgets.find(w => w.id === targetId);
       if (widget) {
         const newWidget: DashboardWidget = {
           ...widget,
@@ -1109,29 +1126,7 @@ export function DashboardVisualDesigner({
                   <Badge variant="outline">
                     {widgets.length} widget{widgets.length !== 1 ? "s" : ""}
                   </Badge>
-                  {selectedWidgetId && (
-                    <>
-                      <Separator orientation="vertical" className="h-5" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleDuplicateWidget}
-                        className="h-7"
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        Duplicate
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleConfigureWidget(selectedWidgetId)}
-                        className="h-7"
-                      >
-                        <Settings className="w-3 h-3 mr-1" />
-                        Configure
-                      </Button>
-                    </>
-                  )}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-md px-2 py-1">
@@ -1179,6 +1174,7 @@ export function DashboardVisualDesigner({
                   onResizeWidget={handleResizeWidget}
                   onRemoveWidget={handleRemoveWidget}
                   onConfigureWidget={handleConfigureWidget}
+                  onDuplicateWidget={handleDuplicateWidget}
                   layout={layout}
                   gridColumns={gridColumns}
                   selectedWidgetId={selectedWidgetId}

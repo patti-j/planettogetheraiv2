@@ -38,6 +38,7 @@ Note on concurrent work:
 - **Business Goals Risk Visibility**: ✅ ENHANCED (2025-08-16) - Added prominent visual indicators for active risks including goal card highlights, alert banners, and quick navigation buttons
 - **Visual Dashboard Designer Drag Preview**: ✅ FIXED (2025-08-16) - Implemented custom drag layer with proper widget card previews instead of text-only drag visualization
 - **Dashboard Edit State Population**: ✅ FIXED (2025-08-16) - Added useEffect to properly populate dashboard name and settings when editing existing dashboards
+- **Widget Button Reorganization**: ✅ IMPROVED (2025-08-16) - Removed configure and duplicate buttons from header, moved duplicate functionality to individual widgets alongside existing configure button
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.
