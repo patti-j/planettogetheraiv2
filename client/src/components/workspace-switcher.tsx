@@ -194,9 +194,14 @@ export function WorkspaceSwitcher({
               <RefreshCw className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} animate-spin`} /> :
               <Building2 className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} text-muted-foreground`} />
           )}
-          <span className={`font-medium ${isCompact ? 'text-xs' : 'text-sm'}`}>
-            {currentWorkspace}
-          </span>
+          <div className={`flex flex-col items-start ${isCompact ? 'text-xs' : 'text-sm'}`}>
+            {!isCompact && (
+              <span className="text-xs text-muted-foreground leading-tight">Workspace</span>
+            )}
+            <span className="font-medium leading-tight">
+              {currentWorkspace}
+            </span>
+          </div>
           <ChevronDown className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} text-muted-foreground`} />
         </Button>
       </DropdownMenuTrigger>
