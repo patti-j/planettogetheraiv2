@@ -327,7 +327,8 @@ function DashboardCanvas({
   layout = "grid",
   gridColumns = 12,
   selectedWidgetId,
-  onSelectWidget
+  onSelectWidget,
+  widgetLibrary
 }: {
   widgets: DashboardWidget[];
   onAddWidget: (widget: WidgetDefinition, position: { x: number; y: number }) => void;
@@ -578,6 +579,16 @@ export function DashboardVisualDesigner({
     // Use the widget_type/widgetType first if available
     const actualWidgetType = widget.widgetType || widget.widget_type;
     const actualWidgetSubtype = widget.widgetSubtype || widget.widget_subtype;
+    
+    // Debug log for gauge widgets
+    if (widget.title?.includes("Gauge") || actualWidgetType === 'gauge') {
+      console.log('Gauge widget debug:', {
+        title: widget.title,
+        actualWidgetType,
+        actualWidgetSubtype,
+        isGaugeCheck: actualWidgetType === 'gauge' || actualWidgetSubtype === 'gauge'
+      });
+    }
     
     // Extract visualization type from configuration or data
     const visualization = widget.configuration?.visualization || widget.data?.configuration?.visualization;
