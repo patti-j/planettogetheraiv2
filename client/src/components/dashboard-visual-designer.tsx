@@ -554,15 +554,16 @@ export function DashboardVisualDesigner({
   const [aiProcessing, setAiProcessing] = useState(false);
 
   // Load custom canvas widgets
-  const { data: canvasWidgets = [] } = useQuery({
+  const { data: canvasWidgetsResponse, isLoading: isLoadingCanvasWidgets } = useQuery({
     queryKey: ['/api/canvas/widgets'],
-    queryFn: () => apiRequest('GET', '/api/canvas/widgets')
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0 // Don't cache
   });
+  
+  // Ensure canvasWidgets is always an array
+  const canvasWidgets = Array.isArray(canvasWidgetsResponse) ? canvasWidgetsResponse : [];
 
-  // Debug log the raw data
-  if (canvasWidgets && canvasWidgets.length > 0) {
-    console.log("Raw canvas widgets sample:", canvasWidgets[0]);
-  }
+
 
   // Convert canvas widgets to widget definitions
   const customWidgetDefs: WidgetDefinition[] = Array.isArray(canvasWidgets) ? canvasWidgets.map((widget: any) => {
@@ -691,17 +692,7 @@ export function DashboardVisualDesigner({
     ? COMBINED_WIDGET_LIBRARY 
     : COMBINED_WIDGET_LIBRARY.filter(w => w.category === selectedCategory);
 
-  // Debug logging
-  console.log("Dashboard Visual Designer Debug:", {
-    totalWidgets: COMBINED_WIDGET_LIBRARY.length,
-    categories,
-    selectedCategory,
-    filteredWidgetsCount: filteredWidgets.length,
-    customWidgetsCount: customWidgetDefs.length,
-    staticWidgetsCount: WIDGET_LIBRARY.length,
-    canvasWidgetsLength: canvasWidgets?.length || 0,
-    isLoading: isLoadingWidgets
-  });
+
 
   // Add widget to canvas
   const handleAddWidget = (widgetDef: WidgetDefinition, position: { x: number; y: number }) => {

@@ -33,6 +33,7 @@ Note on concurrent work:
 - **Widget Preview Fix**: ✅ FIXED (2025-08-16) - Preview dialogs now show proper content for all widget types instead of blank windows
 - **Select.Item Error**: ✅ FIXED (2025-08-16) - Fixed "must have value prop" error in SMART KPI Widget Studio by adding fallback items for empty field lists
 - **Sample Widgets Created**: ✅ ADDED (2025-08-16) - Created 8 sample widgets covering all types (KPI, Chart, Table, Gauge, Activity, Progress) for testing and demonstration
+- **Widget Type Display**: ✅ FIXED (2025-08-16) - Visual dashboard designer now correctly shows widget types (Chart, Gauge, KPI, etc.) instead of all showing as "KPI", with color-coded categories and type badges
 
 ### ⚠️ CRITICAL CONSTRAINT: PT Table Structure Integrity
 **Minimize modifications to PT Publish table structures.** The PT Publish tables should maintain their original structure, with approved variations only when absolutely necessary.
