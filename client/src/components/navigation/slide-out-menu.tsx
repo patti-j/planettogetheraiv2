@@ -166,13 +166,20 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                       for (const group of navigationGroups) {
                         const feature = group.features.find((f: any) => f.href === path);
                         if (feature) {
-                          return feature.icon;
+                          // Convert bg-color to text-color
+                          const bgToText = (bgColor: string) => {
+                            if (!bgColor) return 'text-blue-500';
+                            if (bgColor.includes('gradient')) return 'text-purple-500';
+                            return bgColor.replace('bg-', 'text-');
+                          };
+                          return { icon: feature.icon, color: bgToText(feature.color) };
                         }
                       }
-                      return FileText;
+                      return { icon: FileText, color: 'text-gray-500' };
                     };
                     
-                    const IconComponent = getIconForPage(page.path);
+                    const pageIcon = getIconForPage(page.path);
+                    const IconComponent = pageIcon.icon;
                     
                     return (
                       <Button
@@ -186,7 +193,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                       >
                         <IconComponent className={cn(
                           "h-3.5 w-3.5 flex-shrink-0 mr-2.5",
-                          location === page.path ? "text-primary" : "text-foreground/60"
+                          pageIcon.color || "text-blue-500"
                         )} />
                         <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
                         <Button

@@ -9,6 +9,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { SlideOutMenu } from './slide-out-menu';
+import { navigationGroups } from '@/config/navigation-menu';
 
 export function LeftRailNav() {
   const [location, setLocation] = useLocation();
@@ -226,7 +227,21 @@ export function LeftRailNav() {
                       >
                         {(() => {
                           const IconComponent = getIconComponent(page.icon || 'FileText');
-                          return <IconComponent className="h-4 w-4 mr-2 flex-shrink-0" />;
+                          // Find the color from navigation config
+                          const getColorForPage = () => {
+                            for (const group of navigationGroups) {
+                              const feature = group.features.find((f: any) => f.href === page.path);
+                              if (feature) {
+                                // Convert bg-color to text-color
+                                const bgColor = feature.color;
+                                if (!bgColor) return 'text-blue-500';
+                                if (bgColor.includes('gradient')) return 'text-purple-500';
+                                return bgColor.replace('bg-', 'text-');
+                              }
+                            }
+                            return 'text-gray-500';
+                          };
+                          return <IconComponent className={cn("h-4 w-4 mr-2 flex-shrink-0", getColorForPage())} />;
                         })()}
                         {!isCollapsed && (
                           <>
