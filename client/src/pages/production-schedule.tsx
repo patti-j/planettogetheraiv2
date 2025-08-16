@@ -238,19 +238,19 @@ export default function ProductionSchedulePage() {
         </div>
         
         {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
-        <div className="flex items-center gap-2 flex-shrink-0 pr-24">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button 
+            variant={showDashboard ? "default" : "outline"} 
+            size="sm" 
+            className="gap-2"
+            onClick={() => setShowDashboard(!showDashboard)}
+          >
+            <BarChart3 className="w-4 h-4" />
+            {!isMobile && "Dashboard"}
+            {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </Button>
           {!isMobile && (
             <>
-              <Button 
-                variant={showDashboard ? "default" : "outline"} 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setShowDashboard(!showDashboard)}
-              >
-                <BarChart3 className="w-4 h-4" />
-                Dashboard
-                {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
