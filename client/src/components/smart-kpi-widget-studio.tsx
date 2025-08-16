@@ -481,19 +481,19 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-500" />
             {existingWidget ? 'Edit SMART KPI Widget' : 'SMART KPI Widget Studio'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mb-2">
             {existingWidget ? 'Update your KPI widget configuration and settings' : 'Create powerful KPI widgets with guided templates and intelligent configuration'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pt-2">
           {/* Progress Steps */}
-          <div className="flex items-center justify-between mb-6 px-4">
+          <div className="flex items-center justify-between mb-8 px-4 pt-4">
             <div className="flex items-center gap-2">
               <div className={`rounded-full h-8 w-8 flex items-center justify-center text-sm font-semibold ${
                 step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
@@ -1381,13 +1381,13 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
 
     <Dialog open={showPreview} onOpenChange={setShowPreview}>
       <DialogContent className="max-w-lg">
-        <DialogHeader>
+        <DialogHeader className="pb-6">
           <DialogTitle>Widget Preview</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mb-4">
             This is how your KPI widget will appear on the dashboard
           </DialogDescription>
         </DialogHeader>
-        <div className="mt-4">
+        <div className="mt-2">
           <KPIWidgetPreview config={widgetConfig} />
         </div>
       </DialogContent>
@@ -1533,9 +1533,9 @@ function KPIWidgetPreview({ config }: { config: any }) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto mt-4">
       <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <CardContent className="p-6">
+        <CardContent className="p-6 space-y-4">
           {/* Header Section */}
           <div className="mb-4">
             <div className="flex items-start justify-between mb-2">
@@ -1582,7 +1582,7 @@ function KPIWidgetPreview({ config }: { config: any }) {
               </div>
               
               {/* Visualization */}
-              <div>
+              <div className="flex items-center justify-center min-h-[140px] pt-2">
                 {renderVisualization()}
               </div>
             </div>
