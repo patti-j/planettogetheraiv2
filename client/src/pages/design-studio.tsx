@@ -65,41 +65,223 @@ import {
 
 
 
-// Widget Preview Component
+// Widget Preview Component - Enhanced for SMART KPI widgets
 const WidgetPreview = ({ widget }: { widget: any }) => {
+  // Check if this is a SMART KPI widget
+  const isSmartKPI = widget?.widgetType === 'smart-kpi' || 
+                     widget?.data?.widgetType === 'smart-kpi' ||
+                     widget?.configuration?.widgetType === 'smart-kpi' ||
+                     widget?.data?.template;
+  
+  // Get configuration from various possible locations
+  const config = widget?.data?.configuration || widget?.configuration || {};
+  
+  if (isSmartKPI) {
+    // Generate sample data for KPI preview
+    const targetValue = config.targetValue || 95;
+    const currentValue = Math.round(targetValue + (Math.random() - 0.5) * 10);
+    const previousValue = Math.round(currentValue * (0.9 + Math.random() * 0.2));
+    const trend = currentValue > previousValue ? 'up' : 'down';
+    const trendPercentage = Math.abs(((currentValue - previousValue) / previousValue) * 100);
+    const achievement = Math.round((currentValue / targetValue) * 100);
+    
+    // Generate sparkline data
+    const sparklineData = Array.from({ length: 15 }, () => 
+      Math.round(targetValue * (0.8 + Math.random() * 0.4))
+    );
+    const maxSparkValue = Math.max(...sparklineData);
+    const minSparkValue = Math.min(...sparklineData);
+    
+    const getStatusColor = () => {
+      if (achievement >= 95) return '#10b981';
+      if (achievement >= 85) return '#f59e0b';
+      return '#ef4444';
+    };
+    
+    const getStatusText = () => {
+      if (achievement >= 95) return 'On Target';
+      if (achievement >= 85) return 'Near Target';
+      return 'Below Target';
+    };
+    
+    return (
+      <div className="w-full bg-white rounded-lg border shadow-sm">
+        <div className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{widget.title}</h3>
+              <p className="text-sm text-gray-500">{config.metric || config.description || 'Key Performance Indicator'}</p>
+            </div>
+            <Badge className="text-xs" style={{ backgroundColor: getStatusColor() }}>
+              {getStatusText()}
+            </Badge>
+          </div>
+          
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-900">{currentValue}</span>
+                <span className="text-sm text-gray-500">{config.unit || '%'}</span>
+              </div>
+              {config.showTrend !== false && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    trend === 'up' ? 'text-emerald-600' : 'text-red-600'
+                  }`}>
+                    <ChevronRight className={`h-4 w-4 transition-transform ${
+                      trend === 'up' ? '-rotate-90' : 'rotate-90'
+                    }`} />
+                    <span>{trendPercentage.toFixed(1)}%</span>
+                  </div>
+                  <span className="text-sm text-gray-500">vs last period</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Gauge Visualization */}
+            {config.visualization === 'gauge' && (
+              <div className="relative w-32 h-32">
+                <svg className="w-32 h-32 transform -rotate-90">
+                  <circle cx="64" cy="64" r="56" stroke="#e5e7eb" strokeWidth="12" fill="none" />
+                  <circle
+                    cx="64" cy="64" r="56"
+                    stroke={getStatusColor()}
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={`${achievement * 3.52} 352`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">{achievement}%</div>
+                    <div className="text-xs text-gray-500">of target</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Bar Visualization */}
+            {config.visualization === 'bar' && (
+              <div className="w-32 h-24 flex items-end gap-1">
+                {[75, 85, 65, 90, achievement].map((val, i) => (
+                  <div key={i} className="flex-1 bg-gray-200 rounded-t relative">
+                    <div 
+                      className="absolute bottom-0 left-0 right-0 rounded-t transition-all"
+                      style={{ 
+                        height: `${val}%`,
+                        backgroundColor: i === 4 ? getStatusColor() : '#e5e7eb'
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Progress Bar Visualization */}
+            {config.visualization === 'progress' && (
+              <div className="w-48">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>0</span>
+                  <span>Target: {targetValue}</span>
+                </div>
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full transition-all rounded-full"
+                    style={{ 
+                      width: `${Math.min(achievement, 100)}%`,
+                      backgroundColor: getStatusColor()
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Sparkline */}
+          {config.showSparkline !== false && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500">15-DAY TREND</span>
+                <span className="text-xs text-gray-400">
+                  Min: {minSparkValue} / Max: {maxSparkValue}
+                </span>
+              </div>
+              <div className="flex items-end gap-0.5 h-12">
+                {sparklineData.map((value, i) => {
+                  const height = ((value - minSparkValue) / (maxSparkValue - minSparkValue)) * 100;
+                  const isLatest = i === sparklineData.length - 1;
+                  return (
+                    <div 
+                      key={i}
+                      className="flex-1 rounded-sm transition-all duration-200 hover:opacity-80"
+                      style={{ 
+                        height: `${height}%`,
+                        backgroundColor: isLatest ? getStatusColor() : '#e5e7eb',
+                        minHeight: '2px'
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          {/* Key Metrics */}
+          <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+            <div>
+              <p className="text-xs text-gray-500">Target</p>
+              <p className="text-sm font-semibold">{targetValue} {config.unit || '%'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Achievement</p>
+              <p className="text-sm font-semibold">{achievement}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Gap</p>
+              <p className="text-sm font-semibold">{Math.abs(targetValue - currentValue)} {config.unit || '%'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   // Check if this is a pre-built widget with a component property
   const componentName = widget?.data?.component || widget?.configuration?.component;
   
-  // Render based on widget type and configuration
-  if (widget?.configuration?.widgetType) {
+  // Render other widget types
+  if (widget?.configuration?.widgetType || widget?.widgetType) {
+    const widgetType = widget?.configuration?.widgetType || widget?.widgetType;
+    
     return (
       <div className="w-full min-h-64 border rounded-lg bg-white p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{widget.title}</h3>
-          <Badge>{widget.configuration.widgetType}</Badge>
+          <Badge>{widgetType}</Badge>
         </div>
         
-        {widget.configuration.widgetType === 'chart' && (
+        {widgetType === 'chart' && (
           <div className="h-48 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
               <BarChart3 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
               <p className="text-sm text-gray-600">Chart Widget</p>
-              <p className="text-xs text-gray-400">{widget.configuration.chartType || 'Bar Chart'}</p>
+              <p className="text-xs text-gray-400">{config.chartType || 'Bar Chart'}</p>
             </div>
           </div>
         )}
         
-        {widget.configuration.widgetType === 'metric' && (
-          <div className="h-48 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg flex items-center justify-center">
+        {widgetType === 'gauge' && (
+          <div className="h-48 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
-              <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
-              <p className="text-2xl font-bold text-gray-800">123.5K</p>
-              <p className="text-sm text-gray-600">{widget.configuration.metricName || 'Sample Metric'}</p>
+              <Gauge className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+              <p className="text-sm text-gray-600">Gauge Widget</p>
+              <p className="text-xs text-gray-400">{config.gaugeType || 'Radial Gauge'}</p>
             </div>
           </div>
         )}
         
-        {widget.configuration.widgetType === 'table' && (
+        {widgetType === 'table' && (
           <div className="h-48 bg-gray-50 rounded-lg p-4">
             <div className="space-y-2">
               <div className="flex gap-4 text-xs font-semibold text-gray-600 border-b pb-2">
@@ -120,12 +302,12 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
           </div>
         )}
         
-        {(!widget.configuration.widgetType || widget.configuration.widgetType === 'custom') && (
-          <div className="h-48 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg flex items-center justify-center">
+        {widgetType === 'activity' && (
+          <div className="h-48 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-lg flex items-center justify-center">
             <div className="text-center">
-              <Package className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-              <p className="text-sm text-gray-600">Custom Widget</p>
-              <p className="text-xs text-gray-400">{widget.title}</p>
+              <Activity className="h-8 w-8 mx-auto mb-2 text-teal-600" />
+              <p className="text-sm text-gray-600">Activity Feed</p>
+              <p className="text-xs text-gray-400">Real-time updates</p>
             </div>
           </div>
         )}
