@@ -55,12 +55,14 @@ import {
 interface WidgetDefinition {
   id: string;
   title: string;
-  type: "metric" | "chart" | "table" | "progress" | "custom";
+  type: "metric" | "chart" | "table" | "progress" | "custom" | string;
   icon: React.ElementType;
   category: string;
   defaultSize: { width: number; height: number };
   description: string;
   configurable: boolean;
+  isSystem?: boolean;
+  originalWidget?: any;
 }
 
 interface DashboardWidget {
@@ -92,148 +94,8 @@ interface DashboardVisualDesignerProps {
   onSave: (dashboard: DashboardConfig) => void;
 }
 
-// Widget Library Definition
-const WIDGET_LIBRARY: WidgetDefinition[] = [
-  // Metrics
-  {
-    id: "kpi-metric",
-    title: "KPI Metric",
-    type: "metric",
-    icon: Target,
-    category: "Metrics",
-    defaultSize: { width: 200, height: 120 },
-    description: "Display a single KPI with trend",
-    configurable: true
-  },
-  {
-    id: "gauge-metric",
-    title: "Gauge",
-    type: "metric",
-    icon: Activity,
-    category: "Metrics",
-    defaultSize: { width: 200, height: 200 },
-    description: "Circular gauge indicator",
-    configurable: true
-  },
-  {
-    id: "counter",
-    title: "Counter",
-    type: "metric",
-    icon: TrendingUp,
-    category: "Metrics",
-    defaultSize: { width: 150, height: 100 },
-    description: "Simple numeric counter",
-    configurable: true
-  },
-  
-  // Charts
-  {
-    id: "line-chart",
-    title: "Line Chart",
-    type: "chart",
-    icon: Activity,
-    category: "Charts",
-    defaultSize: { width: 400, height: 300 },
-    description: "Time series line chart",
-    configurable: true
-  },
-  {
-    id: "bar-chart",
-    title: "Bar Chart",
-    type: "chart",
-    icon: BarChart3,
-    category: "Charts",
-    defaultSize: { width: 400, height: 300 },
-    description: "Comparative bar chart",
-    configurable: true
-  },
-  {
-    id: "pie-chart",
-    title: "Pie Chart",
-    type: "chart",
-    icon: PieChart,
-    category: "Charts",
-    defaultSize: { width: 300, height: 300 },
-    description: "Distribution pie chart",
-    configurable: true
-  },
-  
-  // Tables
-  {
-    id: "data-table",
-    title: "Data Table",
-    type: "table",
-    icon: Grid,
-    category: "Tables",
-    defaultSize: { width: 500, height: 400 },
-    description: "Tabular data display",
-    configurable: true
-  },
-  {
-    id: "resource-list",
-    title: "Resource List",
-    type: "table",
-    icon: Users,
-    category: "Tables",
-    defaultSize: { width: 400, height: 300 },
-    description: "List of resources",
-    configurable: true
-  },
-  
-  // Progress
-  {
-    id: "progress-bar",
-    title: "Progress Bar",
-    type: "progress",
-    icon: Activity,
-    category: "Progress",
-    defaultSize: { width: 300, height: 80 },
-    description: "Linear progress indicator",
-    configurable: true
-  },
-  {
-    id: "milestone-tracker",
-    title: "Milestone Tracker",
-    type: "progress",
-    icon: CheckCircle,
-    category: "Progress",
-    defaultSize: { width: 400, height: 150 },
-    description: "Project milestone progress",
-    configurable: true
-  },
-  
-  // Production
-  {
-    id: "production-status",
-    title: "Production Status",
-    type: "custom",
-    icon: Package,
-    category: "Production",
-    defaultSize: { width: 350, height: 200 },
-    description: "Current production status",
-    configurable: true
-  },
-  {
-    id: "schedule-overview",
-    title: "Schedule Overview",
-    type: "custom",
-    icon: Clock,
-    category: "Production",
-    defaultSize: { width: 400, height: 250 },
-    description: "Production schedule summary",
-    configurable: true
-  },
-  {
-    id: "alerts-panel",
-    title: "Alerts Panel",
-    type: "custom",
-    icon: AlertTriangle,
-    category: "Production",
-    defaultSize: { width: 350, height: 300 },
-    description: "Active alerts and notifications",
-    configurable: true
-  }
-];
+// Widget Library Definition - Empty initially, will be populated from database
+const WIDGET_LIBRARY: WidgetDefinition[] = [];
 
 // Draggable Widget from Library
 function LibraryWidget({ widget }: { widget: WidgetDefinition & { isSystem?: boolean } }) {
@@ -678,17 +540,65 @@ export function DashboardVisualDesigner({
   });
 
   // Convert canvas widgets to widget definitions
-  const customWidgetDefs: WidgetDefinition[] = Array.isArray(canvasWidgets) ? canvasWidgets.map((widget: any) => ({
-    id: `custom-${widget.id}`,
-    title: widget.title,
-    type: widget.widgetType || "custom",
-    icon: widget.isSystemWidget ? Shield : Target, // Use Shield icon for system widgets
-    category: widget.isSystemWidget ? "System" : (widget.widgetSubtype || "Custom"),
-    defaultSize: { width: 300, height: 200 },
-    description: widget.data?.description || (widget.isSystemWidget ? "System-generated widget" : "Custom widget created by user"),
-    configurable: !widget.isSystemWidget, // System widgets are not configurable
-    isSystem: widget.isSystemWidget // Add isSystem flag
-  })) : [];
+  const customWidgetDefs: WidgetDefinition[] = Array.isArray(canvasWidgets) ? canvasWidgets.map((widget: any) => {
+    // Determine the widget category and type from configuration or data
+    let category = "Custom";
+    let icon = Target;
+    let widgetType = "custom";
+    
+    // Check if it's a system widget (title starts with "System")
+    const isSystemWidget = widget.is_system_widget || widget.title?.startsWith("System");
+    
+    // Extract visualization type from configuration or data
+    const visualization = widget.configuration?.visualization || widget.data?.configuration?.visualization;
+    const widgetTemplate = widget.data?.template;
+    
+    if (isSystemWidget) {
+      category = "System";
+      icon = Shield;
+    } else if (visualization === 'gauge' || widgetTemplate === 'delivery') {
+      category = "Metrics";
+      icon = Activity;
+      widgetType = "metric";
+    } else if (visualization === 'line' || visualization === 'bar' || visualization === 'pie' || visualization === 'chart') {
+      category = "Charts";  
+      icon = BarChart3;
+      widgetType = "chart";
+    } else if (visualization === 'table' || widgetTemplate === 'inventory' || widgetTemplate === 'resources') {
+      category = "Tables";
+      icon = Grid;
+      widgetType = "table";
+    } else if (widgetTemplate === 'production' || widgetTemplate === 'schedule' || widgetTemplate === 'operations') {
+      category = "Production";
+      icon = Package;
+      widgetType = "custom";
+    } else if (widget.title?.includes("Progress") || widget.title?.includes("Status")) {
+      category = "Progress";
+      icon = Activity;
+      widgetType = "progress";
+    }
+    
+    // Override icon based on specific widget titles
+    if (widget.title?.includes("Alert")) icon = AlertTriangle;
+    if (widget.title?.includes("Resource")) icon = Users;
+    if (widget.title?.includes("Schedule")) icon = Clock;
+    if (widget.title?.includes("Chart")) icon = BarChart3;
+    if (widget.title?.includes("Delivery")) icon = CheckCircle;
+    
+    return {
+      id: `widget-${widget.id}`,
+      title: widget.title || "Untitled Widget",
+      type: widgetType,
+      icon,
+      category,
+      defaultSize: { width: 300, height: 200 },
+      description: widget.configuration?.description || widget.data?.description || 
+                   (isSystemWidget ? "System-generated widget" : "User-created widget"),
+      configurable: !isSystemWidget,
+      isSystem: isSystemWidget,
+      originalWidget: widget // Store original widget data
+    };
+  }) : [];
 
   // Combine static and custom widgets
   const COMBINED_WIDGET_LIBRARY = [...WIDGET_LIBRARY, ...customWidgetDefs];
@@ -985,10 +895,20 @@ export function DashboardVisualDesigner({
                 <div className="p-4 pb-2">
                   <h3 className="font-medium mb-3">Widget Library</h3>
                   <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <TabsList className="grid grid-cols-3 h-8">
-                      {categories.slice(0, 3).map(cat => (
+                    <TabsList className={`grid h-8 ${
+                      categories.length <= 3 ? 'grid-cols-3' : 
+                      categories.length === 4 ? 'grid-cols-4' : 
+                      'grid-cols-2'
+                    }`}>
+                      {categories.map(cat => (
                         <TabsTrigger key={cat} value={cat} className="text-xs">
-                          {cat}
+                          {cat === "All" ? "All" : 
+                           cat === "System" ? (
+                            <span className="flex items-center gap-1">
+                              <Shield className="w-3 h-3" />
+                              {cat}
+                            </span>
+                           ) : cat}
                         </TabsTrigger>
                       ))}
                     </TabsList>
@@ -997,9 +917,21 @@ export function DashboardVisualDesigner({
                 
                 <ScrollArea className="flex-1 px-4">
                   <div className="space-y-2 pb-4">
-                    {filteredWidgets.map((widget) => (
-                      <LibraryWidget key={widget.id} widget={widget} />
-                    ))}
+                    {filteredWidgets.length > 0 ? (
+                      filteredWidgets.map((widget) => (
+                        <LibraryWidget key={widget.id} widget={widget} />
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm font-medium">No widgets available</p>
+                        <p className="text-xs mt-1">
+                          {selectedCategory === "All" 
+                            ? "Create widgets in the Widget Studio first"
+                            : `No ${selectedCategory.toLowerCase()} widgets found`}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               </div>
