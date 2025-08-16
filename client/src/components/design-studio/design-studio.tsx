@@ -10,12 +10,14 @@ import {
   Activity,
   BarChart3,
   Plus,
-  Palette
+  Palette,
+  Grid3x3
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { AiDesignStudioMobile } from './ai-design-studio-mobile';
 import AIDesignStudio from '@/components/ai-design-studio';
 import { SmartKPIWidgetStudio } from '@/components/smart-kpi-widget-studio';
+import { DashboardDesigner } from '@/components/dashboard-designer';
 
 interface DesignStudioProps {
   open: boolean;
@@ -26,6 +28,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
   const deviceType = useDeviceType();
   const [aiDesignStudioOpen, setAiDesignStudioOpen] = React.useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = React.useState(false);
+  const [dashboardDesignerOpen, setDashboardDesignerOpen] = React.useState(false);
 
   if (!open) {
     return null;
@@ -89,6 +92,44 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <BarChart3 className="h-3 w-3" />
                     <span>Multiple visualizations</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Dashboard Designer - Secondary Action */}
+            <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <Grid3x3 className="h-5 w-5 text-white" />
+                  </div>
+                  Dashboard Designer
+                </CardTitle>
+                <CardDescription>
+                  Create custom dashboards with drag-and-drop widgets for comprehensive data visualization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => setDashboardDesignerOpen(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Design New Dashboard
+                </Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Grid3x3 className="h-3 w-3" />
+                    <span>Drag & drop</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <BarChart3 className="h-3 w-3" />
+                    <span>Widget library</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Target className="h-3 w-3" />
+                    <span>Custom layouts</span>
                   </div>
                 </div>
               </CardContent>
@@ -181,6 +222,15 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
       <AIDesignStudio
         open={aiDesignStudioOpen}
         onOpenChange={setAiDesignStudioOpen}
+      />
+
+      {/* Dashboard Designer Dialog */}
+      <DashboardDesigner
+        open={dashboardDesignerOpen}
+        onOpenChange={setDashboardDesignerOpen}
+        onSave={(dashboard) => {
+          console.log('Dashboard saved:', dashboard);
+        }}
       />
     </>
   );
