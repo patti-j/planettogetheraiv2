@@ -19,34 +19,50 @@ import {
 } from 'lucide-react';
 
 interface WorkspaceDashboardProps {
-  workspaceDashboard: any;
-  isLoading: boolean;
-  isEditMode: boolean;
-  onToggleEditMode: (editMode: boolean) => void;
-  onSave: (dashboardData: any) => void;
-  productionData: {
+  // Legacy interface for backward compatibility
+  workspaceDashboard?: any;
+  isLoading?: boolean;
+  isEditMode?: boolean;
+  onToggleEditMode?: (editMode: boolean) => void;
+  onSave?: (dashboardData: any) => void;
+  productionData?: {
     orders: any[];
     operations: any[];
     resources: any[];
   };
+  
+  // New interface for production schedule usage
+  dashboardId?: number | string;
+  workspaceId?: string;
+  compact?: boolean;
 }
 
 export function WorkspaceDashboard({
   workspaceDashboard,
-  isLoading,
-  isEditMode,
-  onToggleEditMode,
-  onSave,
-  productionData
+  isLoading = false,
+  isEditMode = false,
+  onToggleEditMode = () => {},
+  onSave = () => {},
+  productionData,
+  dashboardId,
+  workspaceId,
+  compact = false
 }: WorkspaceDashboardProps) {
   const [widgets, setWidgets] = useState(workspaceDashboard?.config?.widgets || []);
   const [showKpiStudio, setShowKpiStudio] = useState(false);
 
+  // Provide safe default production data if not provided
+  const safeProductionData = productionData || {
+    orders: [],
+    operations: [],
+    resources: []
+  };
+
   // Calculate default KPIs from production data
   const defaultKpis = React.useMemo(() => {
-    if (!productionData.operations || !Array.isArray(productionData.operations)) return [];
+    if (!safeProductionData.operations || !Array.isArray(safeProductionData.operations)) return [];
     
-    const operations = productionData.operations;
+    const operations = safeProductionData.operations;
     const totalOperations = operations.length;
     const onTimeOperations = operations.filter(op => !op.onHold && op.scheduledStatus !== 'Late').length;
     const lateOperations = operations.filter(op => op.scheduledStatus === 'Late').length;
@@ -89,7 +105,7 @@ export function WorkspaceDashboard({
       {
         id: 'resource-utilization',
         title: 'Resource Utilization',
-        currentValue: productionData.resources ? Math.round(Math.random() * 30 + 70) : 0,
+        currentValue: safeProductionData.resources ? Math.round(Math.random() * 30 + 70) : 0,
         targetValue: 85,
         unit: '%',
         status: 'good',
@@ -98,7 +114,7 @@ export function WorkspaceDashboard({
         description: 'Average utilization across all production resources'
       }
     ];
-  }, [productionData]);
+  }, [safeProductionData]);
 
   const handleSave = () => {
     const dashboardData = {
