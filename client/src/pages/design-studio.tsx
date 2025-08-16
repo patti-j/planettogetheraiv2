@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
+import { SmartKPIWidgetStudio } from "@/components/smart-kpi-widget-studio";
 
 
 import { 
@@ -57,7 +58,8 @@ import {
   Code,
   Package,
   Layers,
-  Target
+  Target,
+  Gauge
 } from "lucide-react";
 
 
@@ -133,6 +135,7 @@ export default function UIDesignStudio() {
   // AI Creation state
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [smartKPIStudioOpen, setSmartKPIStudioOpen] = useState(false);
   
   // Menu builder state
   const [menuStructure, setMenuStructure] = useState<MenuStructure[]>([]);
@@ -491,6 +494,44 @@ export default function UIDesignStudio() {
             </div>
           </div>
         </div>
+
+        {/* SMART KPI Widget Studio - Featured */}
+        <Card className="mb-6 border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-2 bg-purple-600 rounded-lg">
+                <Gauge className="h-5 w-5 text-white" />
+              </div>
+              SMART KPI Widget Studio
+            </CardTitle>
+            <CardDescription>
+              Create powerful KPI widgets with guided templates and intelligent configuration
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => setSmartKPIStudioOpen(true)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white mb-3"
+            >
+              <Target className="h-4 w-4 mr-2" />
+              Create SMART KPI Widget
+            </Button>
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Activity className="h-3 w-3" />
+                <span>Real-time metrics</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <BarChart3 className="h-3 w-3" />
+                <span>Multiple visualizations</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Target className="h-3 w-3" />
+                <span>SMART framework</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* AI Assistant Card */}
         <Card className="mb-6">
@@ -877,6 +918,12 @@ export default function UIDesignStudio() {
             </div>
           </div>
         )}
+
+        {/* SMART KPI Widget Studio */}
+        <SmartKPIWidgetStudio
+          open={smartKPIStudioOpen}
+          onOpenChange={setSmartKPIStudioOpen}
+        />
       </div>
     </div>
   );
