@@ -234,7 +234,7 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Smart KPI widget created successfully!"
+        description: "SMART KPI widget created successfully!"
       });
       queryClient.invalidateQueries({ queryKey: ['/api/widgets'] });
       onOpenChange(false);

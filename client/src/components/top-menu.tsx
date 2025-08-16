@@ -180,7 +180,7 @@ export default function TopMenu() {
       if (!feature.feature) return true; // Always show items without permission requirements
       
       // Skip permission check for common menu items that should always be visible
-      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
       if (alwaysVisibleItems.includes(feature.label)) {
         return true;
       }

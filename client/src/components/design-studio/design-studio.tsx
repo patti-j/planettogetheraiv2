@@ -56,14 +56,14 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Smart KPI Widget Studio - Primary Action */}
+            {/* SMART KPI Widget Studio - Primary Action */}
             <Card className="border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <div className="p-2 bg-purple-600 rounded-lg">
                     <Gauge className="h-5 w-5 text-white" />
                   </div>
-                  Smart KPI Widget Studio
+                  SMART KPI Widget Studio
                 </CardTitle>
                 <CardDescription>
                   Create powerful KPI widgets with guided templates and intelligent configuration
@@ -75,7 +75,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   <Target className="h-4 w-4 mr-2" />
-                  Create Smart KPI Widget
+                  Create SMART KPI Widget
                 </Button>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -171,7 +171,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
         </div>
       </div>
 
-      {/* Smart KPI Widget Studio Dialog */}
+      {/* SMART KPI Widget Studio Dialog */}
       <SmartKPIWidgetStudio
         open={smartKPIStudioOpen}
         onOpenChange={setSmartKPIStudioOpen}

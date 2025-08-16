@@ -265,7 +265,7 @@ export default function SmartKpiTrackingPage() {
       <div className="mb-4 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">Smart KPI Performance Center</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">SMART KPI Performance Center</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Real-time factory performance management, accountability tracking, and success celebration
             </p>

@@ -51,7 +51,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     ...group,
     features: group.features.filter((feature) => {
       // Skip permission check for common menu items that should always be visible
-      const alwaysVisibleItems = ['Smart KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
       
       // Check permissions only if not in always visible list
       if (!alwaysVisibleItems.includes(feature.label)) {
@@ -556,7 +556,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Home button clicked, current location:', location);
               if (location !== '/mobile-home') {
                 setLocation('/mobile-home');
               }
@@ -575,7 +574,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Menu button clicked, current state:', mobileMenuOpen);
               setMobileMenuOpen(!mobileMenuOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
@@ -592,7 +590,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Recent button clicked, current state:', recentDialogOpen);
               setRecentDialogOpen(!recentDialogOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
@@ -609,7 +606,6 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Profile button clicked, current state:', profileDialogOpen);
               setProfileDialogOpen(!profileDialogOpen);
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
