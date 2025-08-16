@@ -31,6 +31,7 @@ import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
 import { AssignedRoleSwitcher } from './assigned-role-switcher';
+import { WorkspaceSwitcher } from './workspace-switcher';
 // Widget components
 import { WidgetFlyout } from './widget-flyout';
 import { WidgetModal } from './widget-modal';
@@ -347,12 +348,8 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           document.dispatchEvent(event);
           break;
         case 'workspace-switcher':
-          // For now, we'll show a toast as the workspace switcher
-          // functionality would need to be fully integrated with the workspace system
-          toast({
-            title: "Workspace Switcher",
-            description: "Workspace switcher is now available in the header customization."
-          });
+          // Workspace switcher is handled by the component directly
+          // No action needed here since it's a dropdown component
           break;
       }
     }
@@ -365,6 +362,18 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     // Special handling for theme toggle
     if (item.action === 'theme') {
       return <ThemeToggle key={item.id} />;
+    }
+
+    // Special handling for workspace switcher
+    if (item.action === 'workspace-switcher') {
+      return (
+        <WorkspaceSwitcher 
+          key={item.id}
+          userId={user?.id || 0}
+          variant="header" 
+          showIcon={true}
+        />
+      );
     }
 
     return (
