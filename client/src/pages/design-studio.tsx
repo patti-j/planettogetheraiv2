@@ -17,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { useMobile } from "@/hooks/use-mobile";
 import { SmartKPIWidgetStudio } from "@/components/smart-kpi-widget-studio";
-
+import { EnhancedDashboardManager } from "@/components/dashboard-manager-enhanced";
 
 import { 
   Plus, 
@@ -136,6 +136,7 @@ export default function UIDesignStudio() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [smartKPIStudioOpen, setSmartKPIStudioOpen] = useState(false);
+  const [showDashboardManager, setShowDashboardManager] = useState(false);
   
   // Menu builder state
   const [menuStructure, setMenuStructure] = useState<MenuStructure[]>([]);
@@ -735,8 +736,7 @@ export default function UIDesignStudio() {
                           <CardContent className="pt-0">
                             <Button 
                               onClick={() => {
-                                // Navigate to the Analytics page with dashboard creation mode
-                                window.location.href = '/analytics?mode=create';
+                                setShowDashboardManager(true);
                               }}
                               className="w-full bg-green-600 hover:bg-green-700 text-white mb-3"
                             >
@@ -824,7 +824,7 @@ export default function UIDesignStudio() {
                           <div className="flex flex-wrap gap-2">
                             <Button
                               onClick={() => {
-                                window.location.href = '/analytics?mode=create';
+                                setShowDashboardManager(true);
                               }}
                               size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white"
@@ -1079,6 +1079,59 @@ export default function UIDesignStudio() {
           open={smartKPIStudioOpen}
           onOpenChange={setSmartKPIStudioOpen}
           existingWidget={selectedItem && smartKPIStudioOpen ? selectedItem : undefined}
+        />
+        
+        {/* Enhanced Dashboard Manager */}
+        <EnhancedDashboardManager
+          open={showDashboardManager}
+          onOpenChange={setShowDashboardManager}
+          dashboards={activeTab === 'dashboards' ? items.map((item: any) => ({
+            id: item.id,
+            name: item.title || item.name,
+            description: item.description,
+            configuration: item.configuration || {
+              standardWidgets: [],
+              customWidgets: []
+            },
+            isDefault: false,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt
+          })) : []}
+          currentDashboard={null}
+          onDashboardSelect={(dashboard) => {
+            toast({
+              title: "Dashboard Selected",
+              description: `Selected ${dashboard.name}`
+            });
+            setShowDashboardManager(false);
+          }}
+          onDashboardCreate={async (dashboard) => {
+            const response = await apiRequest("POST", "/api/dashboard-configs", dashboard);
+            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
+            toast({
+              title: "Dashboard Created",
+              description: `Successfully created ${dashboard.name}`
+            });
+            setShowDashboardManager(false);
+          }}
+          onDashboardUpdate={async (dashboard) => {
+            await apiRequest("PATCH", `/api/dashboard-configs/${dashboard.id}`, dashboard);
+            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
+            toast({
+              title: "Dashboard Updated",
+              description: `Successfully updated ${dashboard.name}`
+            });
+          }}
+          onDashboardDelete={async (dashboardId) => {
+            await apiRequest("DELETE", `/api/dashboard-configs/${dashboardId}`);
+            queryClient.invalidateQueries({ queryKey: ['/api/dashboard-configs'] });
+            toast({
+              title: "Dashboard Deleted",
+              description: "Dashboard has been deleted successfully"
+            });
+          }}
+          standardWidgets={[]}
+          customWidgets={[]}
         />
       </div>
     </div>
