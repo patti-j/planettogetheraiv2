@@ -80,6 +80,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/chat': { label: 'Chat', icon: 'MessageSquare' },
   '/feedback': { label: 'Feedback', icon: 'MessageCircle' },
   '/onboarding': { label: 'Getting Started', icon: 'BookOpen' },
+  '/design-studio': { label: 'UI Design Studio', icon: 'Palette' },
   '/training': { label: 'Training', icon: 'GraduationCap' },
   '/presentation-system': { label: 'Presentation System', icon: 'Presentation' },
   '/data-import': { label: 'Master Data Import', icon: 'Database' },
@@ -146,7 +147,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         timestamp: Date.now(),
         isPinned: true
       };
-      return [gettingStartedPage, ...pages.slice(0, MAX_RECENT_PAGES - 1)];
+      // Add Getting Started without slicing other pages - increase the limit temporarily
+      return [gettingStartedPage, ...pages.slice(0, MAX_RECENT_PAGES)];
     }
     
     // If Getting Started exists, just make sure it's in the list - don't force pin
