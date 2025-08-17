@@ -1581,8 +1581,8 @@ function CreateTargetDialog({
                 <FormItem>
                   <FormLabel>Link to Business Goal (Optional)</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => field.onChange(value === "none" ? undefined : parseInt(value))} 
+                    value={field.value?.toString() || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -1590,7 +1590,7 @@ function CreateTargetDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No business goal</SelectItem>
+                      <SelectItem value="none">No business goal</SelectItem>
                       {businessGoals.map((goal) => (
                         <SelectItem key={goal.id} value={goal.id.toString()}>
                           {goal.title}
