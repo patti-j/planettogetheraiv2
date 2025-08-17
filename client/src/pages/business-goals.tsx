@@ -777,7 +777,7 @@ export default function BusinessGoalsPage() {
 
       {/* Create Goal Form Dialog */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl">Create New Business Goal</DialogTitle>
           </DialogHeader>
@@ -944,7 +944,7 @@ export default function BusinessGoalsPage() {
           setActiveTab("overview");
         }
       }}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden touch-pan-y">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-blue-600" />
@@ -966,7 +966,7 @@ export default function BusinessGoalsPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="flex-1 overflow-y-auto mt-4">
+                <div className="flex-1 overflow-y-auto mt-4 overscroll-behavior-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
                   <TabsContent value="overview" className="space-y-4">
                     {/* Active Risk Alert */}
                     {risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length > 0 && (
@@ -1409,7 +1409,7 @@ export default function BusinessGoalsPage() {
           resetRiskForm();
         }
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle>
               {editingRisk ? "Edit Risk" : "Add New Risk"}
@@ -1566,7 +1566,7 @@ export default function BusinessGoalsPage() {
           resetIssueForm();
         }
       }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle>
               {editingIssue ? "Edit Issue" : "Report New Issue"}
@@ -1724,7 +1724,7 @@ export default function BusinessGoalsPage() {
           resetActionForm();
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle>
               {editingAction ? "Edit Action Plan" : "Create New Action Plan"}
