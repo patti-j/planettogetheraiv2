@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { useTour } from "@/contexts/TourContext";
+import { WelcomeOverview } from "@/components/welcome-overview";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
   Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
@@ -202,7 +203,8 @@ export default function OnboardingPage() {
   
   console.log('Onboarding URL parsing:', { location, stepParam, initialStep });
   
-  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 6)));
+  const [currentStep, setCurrentStep] = useState(Math.max(0, Math.min(initialStep, 7)));
+  const [showWelcomeOverview, setShowWelcomeOverview] = useState(true);
 
   // Update step when URL changes
   useEffect(() => {
@@ -465,7 +467,10 @@ export default function OnboardingPage() {
     }
   };
 
-  const progressPercentage = ((currentStep + 1) / onboardingSteps.length) * 100;
+  // Adjust progress for welcome overview
+  const totalSteps = showWelcomeOverview ? onboardingSteps.length + 1 : onboardingSteps.length;
+  const adjustedStep = showWelcomeOverview ? currentStep : currentStep - 1;
+  const progressPercentage = ((adjustedStep + 1) / totalSteps) * 100;
 
   const handleFeatureToggle = (featureId: string) => {
     console.log('Feature toggle clicked:', featureId);
@@ -626,14 +631,18 @@ export default function OnboardingPage() {
   };
 
   const canProceed = () => {
-    switch (currentStep) {
+    // Adjusted for the new welcome overview step
+    const adjustedStep = showWelcomeOverview ? currentStep : currentStep - 1;
+    switch (adjustedStep) {
       case 0:
-        return companyInfo.name && companyInfo.industry;
+        return true; // Welcome overview
       case 1:
-        return businessGoals.length > 0;
+        return companyInfo.name && companyInfo.industry;
       case 2:
-        return selectedFeatures.length > 0;
+        return businessGoals.length > 0;
       case 3:
+        return selectedFeatures.length > 0;
+      case 4:
         return true; // Data setup has its own validation
       default:
         return true;
@@ -650,6 +659,20 @@ export default function OnboardingPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-600 text-lg">Loading your onboarding...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show welcome overview for new users
+  if (showWelcomeOverview && currentStep === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <WelcomeOverview 
+          onComplete={() => {
+            setShowWelcomeOverview(false);
+            setCurrentStep(1);
+          }} 
+        />
       </div>
     );
   }
@@ -709,7 +732,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step Content */}
-        {currentStep === 0 && (
+        {currentStep === 1 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -946,7 +969,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 1 && (
+        {currentStep === 2 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1125,7 +1148,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1220,7 +1243,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 3 && (
+        {currentStep === 4 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1261,7 +1284,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 4 && (
+        {currentStep === 5 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1297,7 +1320,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 5 && (
+        {currentStep === 6 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1337,7 +1360,7 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {currentStep === 6 && (
+        {currentStep === 7 && (
           <Card>
             <CardHeader className="text-center">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
