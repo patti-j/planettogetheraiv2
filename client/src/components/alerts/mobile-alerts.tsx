@@ -256,10 +256,10 @@ export function MobileAlerts() {
   const highAlerts = filteredAlerts.filter((a: Alert) => a.severity === 'high' && a.status === 'active');
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-3 sm:p-4">
       {/* Quick Stats */}
       {stats && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <Card className="bg-red-50 dark:bg-red-900/20">
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
@@ -314,9 +314,9 @@ export function MobileAlerts() {
       )}
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Select value={severityFilter} onValueChange={setSeverityFilter}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-full sm:w-[120px]">
             <SelectValue placeholder="Severity" />
           </SelectTrigger>
           <SelectContent>
@@ -329,7 +329,7 @@ export function MobileAlerts() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -441,10 +441,11 @@ export function MobileAlerts() {
                       )}
                       
                       {alert.status === 'active' && (
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex flex-col sm:flex-row gap-2 mt-3">
                           <Button
                             size="sm"
                             variant="secondary"
+                            className="w-full sm:w-auto justify-center"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedAlert(alert);
@@ -457,6 +458,7 @@ export function MobileAlerts() {
                           <Button
                             size="sm"
                             variant="default"
+                            className="w-full sm:w-auto justify-center"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedAlert(alert);

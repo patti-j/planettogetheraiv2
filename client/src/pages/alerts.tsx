@@ -227,18 +227,19 @@ export default function AlertsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-6 max-w-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Alerts Management</h1>
-          <p className="text-muted-foreground">Monitor and manage system alerts across your operations</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Alerts Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Monitor and manage system alerts across your operations</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2 w-full sm:w-auto" size="sm">
                 <Plus className="h-4 w-4" />
-                Create Alert
+                <span className="hidden sm:inline">Create Alert</span>
+                <span className="sm:hidden">Create</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -320,7 +321,7 @@ export default function AlertsPage() {
 
       {/* Statistics Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Alerts</CardTitle>
@@ -361,21 +362,22 @@ export default function AlertsPage() {
       )}
 
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="active">Active Alerts</TabsTrigger>
-          <TabsTrigger value="acknowledged">Acknowledged</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          <TabsTrigger value="all">All Alerts</TabsTrigger>
-          <TabsTrigger value="ai-settings" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            AI Settings
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <TabsTrigger value="active" className="text-xs sm:text-sm">Active</TabsTrigger>
+          <TabsTrigger value="acknowledged" className="text-xs sm:text-sm">Ack'd</TabsTrigger>
+          <TabsTrigger value="resolved" className="text-xs sm:text-sm">Resolved</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
+          <TabsTrigger value="ai-settings" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">AI Settings</span>
+            <span className="sm:hidden">AI</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Filters */}
-        <div className="flex gap-4 my-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 my-4">
           <Select value={severityFilter} onValueChange={setSeverityFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by severity" />
             </SelectTrigger>
             <SelectContent>
@@ -388,7 +390,7 @@ export default function AlertsPage() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -410,31 +412,32 @@ export default function AlertsPage() {
             <div className="grid gap-4">
               {alerts.map((alert: Alert) => (
                 <Card key={alert.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedAlert(alert)}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
                         {getSeverityIcon(alert.severity)}
-                        <CardTitle className="text-lg">{alert.title}</CardTitle>
-                        <Badge variant={getSeverityColor(alert.severity) as any}>{alert.severity}</Badge>
+                        <CardTitle className="text-base sm:text-lg truncate">{alert.title}</CardTitle>
+                        <Badge variant={getSeverityColor(alert.severity) as any} className="text-xs shrink-0">{alert.severity}</Badge>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                         {getStatusIcon(alert.status)}
-                        <span className="text-sm text-muted-foreground">{alert.status}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">{alert.status}</span>
                       </div>
                     </div>
-                    <CardDescription>{alert.description}</CardDescription>
+                    <CardDescription className="text-sm mt-2">{alert.description}</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <CardContent className="pt-0">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground mb-4">
                       <span>Type: {alert.type}</span>
-                      <span>Detected: {format(new Date(alert.detectedAt), 'MMM dd, yyyy HH:mm')}</span>
+                      <span>Detected: {format(new Date(alert.detectedAt), 'MMM dd, HH:mm')}</span>
                       <span>Priority: {alert.priority}</span>
                     </div>
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       {alert.status === 'active' && (
                         <Button
                           size="sm"
                           variant="outline"
+                          className="w-full sm:w-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             acknowledgeMutation.mutate(alert.id);
@@ -447,6 +450,7 @@ export default function AlertsPage() {
                       {(alert.status === 'active' || alert.status === 'acknowledged') && (
                         <Button
                           size="sm"
+                          className="w-full sm:w-auto"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedAlert(alert);
