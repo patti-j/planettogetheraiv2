@@ -126,22 +126,24 @@ export const AIImplementationConsultant: React.FC = () => {
       {/* Implementation Health Dashboard */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Brain className="h-6 w-6 text-purple-600" />
-              <CardTitle>Max AI Implementation Consultant</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Max AI Implementation Consultant</CardTitle>
             </div>
             <Button 
               onClick={() => setShowChat(!showChat)}
-              className="bg-gradient-to-r from-purple-500 to-pink-600 text-white"
+              className="bg-gradient-to-r from-purple-500 to-pink-600 text-white w-full sm:w-auto"
+              size="sm"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
-              Chat with Max
+              <span className="hidden sm:inline">Chat with Max</span>
+              <span className="sm:hidden">Chat</span>
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <MetricCard
               title="Health Score"
               value={`${implementationData?.healthScore}%`}
@@ -182,12 +184,12 @@ export const AIImplementationConsultant: React.FC = () => {
 
       {/* Main Implementation Tabs */}
       <Tabs defaultValue="roadmap" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="roadmap">Implementation Roadmap</TabsTrigger>
-          <TabsTrigger value="goals">Business Goals</TabsTrigger>
-          <TabsTrigger value="recommendations">AI Recommendations</TabsTrigger>
-          <TabsTrigger value="training">Training & Support</TabsTrigger>
-          <TabsTrigger value="success">Success Metrics</TabsTrigger>
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full">
+          <TabsTrigger value="roadmap" className="text-xs sm:text-sm">Roadmap</TabsTrigger>
+          <TabsTrigger value="goals" className="text-xs sm:text-sm">Goals</TabsTrigger>
+          <TabsTrigger value="recommendations" className="text-xs sm:text-sm">AI Rec.</TabsTrigger>
+          <TabsTrigger value="training" className="text-xs sm:text-sm">Training</TabsTrigger>
+          <TabsTrigger value="success" className="text-xs sm:text-sm">Metrics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roadmap">
@@ -281,10 +283,15 @@ const ProactiveConsultantMessage: React.FC<{ phase: string; company: any }> = ({
           <div className="flex-1">
             <h3 className="font-semibold text-lg mb-2">{message.title}</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">{message.content}</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               {message.actions.map((action, index) => (
-                <Button key={index} size="sm" variant={index === 0 ? "default" : "outline"}>
-                  {action}
+                <Button 
+                  key={index} 
+                  size="sm" 
+                  variant={index === 0 ? "default" : "outline"}
+                  className="w-full sm:w-auto justify-between sm:justify-center"
+                >
+                  <span>{action}</span>
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               ))}
@@ -312,33 +319,36 @@ const ImplementationRoadmap: React.FC<{
           {phases.map((phase, index) => (
             <div key={phase.id} className="relative">
               {index < phases.length - 1 && (
-                <div className="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
+                <div className="absolute left-5 sm:left-6 top-12 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700" />
               )}
               <div 
-                className={`flex items-start gap-4 cursor-pointer p-4 rounded-lg transition-colors
+                className={`flex items-start gap-3 sm:gap-4 cursor-pointer p-3 sm:p-4 rounded-lg transition-colors
                   ${activePhase === phase.id ? 'bg-blue-50 dark:bg-blue-950/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                 onClick={() => onPhaseSelect(phase.id)}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0
                   ${phase.status === 'completed' ? 'bg-green-500' : 
                     phase.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-300'} text-white`}>
-                  {phase.status === 'completed' ? <CheckCircle className="h-6 w-6" /> : index + 1}
+                  {phase.status === 'completed' ? <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" /> : index + 1}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-lg">{phase.name}</h4>
-                    <Badge variant={phase.status === 'completed' ? 'default' : 
-                                   phase.status === 'in-progress' ? 'secondary' : 'outline'}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                    <h4 className="font-semibold text-base sm:text-lg truncate">{phase.name}</h4>
+                    <Badge 
+                      variant={phase.status === 'completed' ? 'default' : 
+                               phase.status === 'in-progress' ? 'secondary' : 'outline'}
+                      className="text-xs w-fit"
+                    >
                       {phase.status}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400 mb-2">{phase.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm sm:text-base">{phase.description}</p>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                     <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                       {phase.duration}
                     </span>
-                    <span>{phase.tasks.filter(t => t.status === 'completed').length} of {phase.tasks.length} tasks completed</span>
+                    <span className="text-xs sm:text-sm">{phase.tasks.filter(t => t.status === 'completed').length} of {phase.tasks.length} tasks completed</span>
                   </div>
                   {phase.status === 'in-progress' && (
                     <Progress value={phase.progress} className="mt-3" />
