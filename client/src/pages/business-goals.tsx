@@ -35,6 +35,7 @@ export default function BusinessGoalsPage() {
   const [editingIssue, setEditingIssue] = useState<GoalIssue | null>(null);
   const [showActionForm, setShowActionForm] = useState(false);
   const [editingAction, setEditingAction] = useState<GoalAction | null>(null);
+  const [showKpiLinkForm, setShowKpiLinkForm] = useState(false);
   const [formData, setFormData] = useState({
     goalTitle: "",
     goalDescription: "",
@@ -83,6 +84,18 @@ export default function BusinessGoalsPage() {
     resourcesEquipment: "",
     resourcesSkills: "",
     resourcesExternalSupport: "",
+  });
+
+  // KPI linking form state
+  const [kpiLinkFormData, setKpiLinkFormData] = useState({
+    kpiDefinitionId: "",
+    targetPeriod: "monthly",
+    startDate: "",
+    endDate: "",
+    targetValue: "",
+    contributionToGoal: "",
+    goalWeight: "100",
+    businessJustification: "",
   });
   const queryClient = useQueryClient();
 
@@ -254,6 +267,18 @@ export default function BusinessGoalsPage() {
     },
   });
 
+  // Create KPI target mutation (for linking KPIs to business goals)
+  const createKpiTargetMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("POST", "/api/smart-kpi-targets", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-kpi-targets"] });
+      setShowKpiLinkForm(false);
+      resetKpiLinkForm();
+    },
+  });
+
   // Helper functions to reset forms
   const resetForm = () => {
     setFormData({
@@ -313,6 +338,19 @@ export default function BusinessGoalsPage() {
       resourcesEquipment: "",
       resourcesSkills: "",
       resourcesExternalSupport: "",
+    });
+  };
+
+  const resetKpiLinkForm = () => {
+    setKpiLinkFormData({
+      kpiDefinitionId: "",
+      targetPeriod: "monthly",
+      startDate: "",
+      endDate: "",
+      targetValue: "",
+      contributionToGoal: "",
+      goalWeight: "100",
+      businessJustification: "",
     });
   };
 
@@ -417,6 +455,27 @@ export default function BusinessGoalsPage() {
     } else {
       createActionMutation.mutate(actionData);
     }
+  };
+
+  const handleKpiLinkSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGoal) return;
+    
+    const kpiTargetData = {
+      kpiDefinitionId: parseInt(kpiLinkFormData.kpiDefinitionId),
+      businessGoalId: selectedGoal.id,
+      targetPeriod: kpiLinkFormData.targetPeriod,
+      startDate: new Date(kpiLinkFormData.startDate),
+      endDate: new Date(kpiLinkFormData.endDate),
+      targetValue: parseFloat(kpiLinkFormData.targetValue),
+      contributionToGoal: kpiLinkFormData.contributionToGoal,
+      goalWeight: parseInt(kpiLinkFormData.goalWeight),
+      businessJustification: kpiLinkFormData.businessJustification,
+      setBy: 1, // Using current user - should be dynamic
+      status: "active",
+    };
+
+    createKpiTargetMutation.mutate(kpiTargetData);
   };
 
   const calculateRiskSeverity = (probability: string, impact: string): number => {
@@ -1161,10 +1220,7 @@ export default function BusinessGoalsPage() {
                                   <p className="text-gray-500 dark:text-gray-400 mb-4">
                                     Link KPIs to this goal to track performance metrics.
                                   </p>
-                                  <Button variant="outline" onClick={() => {
-                                    // TODO: Add navigation to KPI linking
-                                    console.log('Navigate to KPI linking');
-                                  }}>
+                                  <Button variant="outline" onClick={() => setShowKpiLinkForm(true)}>
                                     <Target className="h-4 w-4 mr-2" />
                                     Link KPIs
                                   </Button>
@@ -2119,6 +2175,162 @@ export default function BusinessGoalsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* KPI Linking Dialog */}
+      {showKpiLinkForm && (
+        <Dialog open={showKpiLinkForm} onOpenChange={(open) => {
+          if (!open) {
+            setShowKpiLinkForm(false);
+            resetKpiLinkForm();
+          }
+        }}>
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                Link KPI to {selectedGoal?.title}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleKpiLinkSubmit} className="space-y-6">
+              {/* KPI Selection */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium">Select KPI</h4>
+                <div>
+                  <Label htmlFor="kpiDefinitionId">KPI Definition</Label>
+                  <Select value={kpiLinkFormData.kpiDefinitionId} onValueChange={(value) => 
+                    setKpiLinkFormData({...kpiLinkFormData, kpiDefinitionId: value})
+                  }>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a KPI to link" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kpiDefinitions.map((kpi: any) => (
+                        <SelectItem key={kpi.id} value={kpi.id.toString()}>
+                          {kpi.name} ({kpi.measurementUnit})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Target Configuration */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium">Target Configuration</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="targetPeriod">Target Period</Label>
+                    <Select value={kpiLinkFormData.targetPeriod} onValueChange={(value) => 
+                      setKpiLinkFormData({...kpiLinkFormData, targetPeriod: value})
+                    }>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="targetValue">Target Value</Label>
+                    <Input
+                      id="targetValue"
+                      type="number"
+                      step="0.01"
+                      value={kpiLinkFormData.targetValue}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, targetValue: e.target.value})}
+                      placeholder="Enter target value"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={kpiLinkFormData.startDate}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, startDate: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={kpiLinkFormData.endDate}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, endDate: e.target.value})}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Business Goal Alignment */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium">Business Goal Alignment</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="contributionToGoal">How this KPI contributes to the goal</Label>
+                    <Textarea
+                      id="contributionToGoal"
+                      value={kpiLinkFormData.contributionToGoal}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, contributionToGoal: e.target.value})}
+                      placeholder="Describe how achieving this KPI target will help meet the business goal"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="goalWeight">Goal Weight (%)</Label>
+                    <Input
+                      id="goalWeight"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={kpiLinkFormData.goalWeight}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, goalWeight: e.target.value})}
+                      placeholder="Percentage this KPI contributes to the goal (1-100)"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="businessJustification">Business Justification</Label>
+                    <Textarea
+                      id="businessJustification"
+                      value={kpiLinkFormData.businessJustification}
+                      onChange={(e) => setKpiLinkFormData({...kpiLinkFormData, businessJustification: e.target.value})}
+                      placeholder="Explain the business rationale for this target"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setShowKpiLinkForm(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createKpiTargetMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {createKpiTargetMutation.isPending ? "Linking..." : "Link KPI"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
