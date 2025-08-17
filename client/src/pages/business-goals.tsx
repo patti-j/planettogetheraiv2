@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,9 +140,19 @@ export default function BusinessGoalsPage() {
   });
 
   // Fetch KPI definitions
-  const { data: kpiDefinitions = [] } = useQuery({
+  const { data: kpiDefinitions = [], error: kpiDefinitionsError, isLoading: kpiDefinitionsLoading } = useQuery<any[]>({
     queryKey: ["/api/smart-kpi-definitions"],
   });
+
+  // Debug log for KPI definitions
+  React.useEffect(() => {
+    if (kpiDefinitionsError) {
+      console.error("KPI Definitions Error:", kpiDefinitionsError);
+    }
+    if (kpiDefinitions.length > 0) {
+      console.log("KPI Definitions loaded:", kpiDefinitions);
+    }
+  }, [kpiDefinitions, kpiDefinitionsError]);
 
   // Fetch today's KPI actuals for current performance
   const { data: kpiActuals = [] } = useQuery({
