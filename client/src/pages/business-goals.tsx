@@ -121,6 +121,24 @@ export default function BusinessGoalsPage() {
     queryKey: ["/api/users"],
   });
 
+  // Fetch KPI targets for performance tracking
+  const { data: kpiTargets = [] } = useQuery({
+    queryKey: ["/api/smart-kpi-targets", { status: "active" }],
+  });
+
+  // Fetch KPI definitions
+  const { data: kpiDefinitions = [] } = useQuery({
+    queryKey: ["/api/smart-kpi-definitions"],
+  });
+
+  // Fetch today's KPI actuals for current performance
+  const { data: kpiActuals = [] } = useQuery({
+    queryKey: ["/api/smart-kpi-actuals", { 
+      startDate: new Date(new Date().setHours(0,0,0,0)).toISOString(),
+      endDate: new Date(new Date().setHours(23,59,59,999)).toISOString()
+    }],
+  });
+
   // Create goal mutation
   const createGoalMutation = useMutation({
     mutationFn: (goal: InsertBusinessGoal) =>
@@ -480,6 +498,43 @@ export default function BusinessGoalsPage() {
     setShowActionForm(true);
   };
 
+  // Calculate KPI performance for a specific target
+  const calculateKpiPerformance = (targetId: number) => {
+    const target = kpiTargets.find((t: any) => t.id === targetId);
+    const actual = kpiActuals.find((a: any) => a.kpiDefinitionId === target?.kpiDefinitionId);
+    const definition = kpiDefinitions.find((d: any) => d.id === target?.kpiDefinitionId);
+    
+    if (!target || !actual || !definition) return null;
+    
+    const performance = (actual.actualValue / target.targetValue) * 100;
+    const gap = actual.actualValue - target.targetValue;
+    
+    return {
+      target,
+      actual,
+      definition,
+      performance: Math.round(performance),
+      gap: gap,
+      status: performance >= 100 ? "on-track" : performance >= 90 ? "at-risk" : "off-track"
+    };
+  };
+
+  // Get KPIs linked to a specific business goal
+  const getKpisForGoal = (goalId: number) => {
+    return kpiTargets
+      .filter((target: any) => target.businessGoalId === goalId)
+      .map((target: any) => {
+        const performance = calculateKpiPerformance(target.id);
+        const definition = kpiDefinitions.find((d: any) => d.id === target.kpiDefinitionId);
+        return {
+          ...target,
+          definition,
+          performance
+        };
+      })
+      .filter(item => item.definition);
+  };
+
   // Calculate goal metrics
   const goalMetrics = goals.reduce((acc: any, goal: BusinessGoal) => {
     const goalProgress = progressData.filter((p: GoalProgress) => p.goalId === goal.id);
@@ -490,12 +545,20 @@ export default function BusinessGoalsPage() {
     const currentProgress = latestProgress?.progressPercentage || 0;
     const progressPercent = Math.min(100, Math.max(0, currentProgress / 100));
     
+    // Get KPI performance for this goal
+    const goalKpis = getKpisForGoal(goal.id);
+    const avgKpiPerformance = goalKpis.length > 0 
+      ? goalKpis.reduce((sum, kpi) => sum + (kpi.performance?.performance || 0), 0) / goalKpis.length
+      : 0;
+    
     acc[goal.id] = {
       progress: progressPercent,
       risks: risks.filter((r: GoalRisk) => r.goalId === goal.id && r.status === 'active').length,
       issues: issues.filter((i: GoalIssue) => i.goalId === goal.id && i.status !== 'resolved').length,
       actions: actions.filter((a: GoalAction) => a.goalId === goal.id && a.status !== 'completed').length,
-      kpis: kpis.filter((k: GoalKpi) => k.goalId === goal.id && k.status === 'active').length
+      kpis: kpis.filter((k: GoalKpi) => k.goalId === goal.id && k.status === 'active').length,
+      kpiPerformance: Math.round(avgKpiPerformance),
+      linkedKpis: goalKpis.length
     };
     return acc;
   }, {});
@@ -1073,6 +1136,99 @@ export default function BusinessGoalsPage() {
                               {selectedGoal.targetValue.toLocaleString()} {selectedGoal.unit}
                             </p>
                           </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* KPI Performance Section */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5" />
+                            KPI Performance
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {(() => {
+                            const goalKpis = getKpisForGoal(selectedGoal.id);
+                            
+                            if (goalKpis.length === 0) {
+                              return (
+                                <div className="text-center py-6">
+                                  <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                    No KPIs Linked
+                                  </h3>
+                                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                                    Link KPIs to this goal to track performance metrics.
+                                  </p>
+                                  <Button variant="outline" onClick={() => {
+                                    // TODO: Add navigation to KPI linking
+                                    console.log('Navigate to KPI linking');
+                                  }}>
+                                    <Target className="h-4 w-4 mr-2" />
+                                    Link KPIs
+                                  </Button>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">Overall KPI Performance</span>
+                                  <span className="text-lg font-bold text-blue-600">
+                                    {goalMetrics[selectedGoal.id]?.kpiPerformance || 0}%
+                                  </span>
+                                </div>
+                                <Progress value={goalMetrics[selectedGoal.id]?.kpiPerformance || 0} className="h-2" />
+                                
+                                <div className="grid gap-3">
+                                  {goalKpis.map((kpi: any) => (
+                                    <div key={kpi.id} className="border rounded-lg p-3">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <h4 className="font-medium text-sm">{kpi.definition?.name}</h4>
+                                        <Badge 
+                                          variant={
+                                            kpi.performance?.status === "on-track" ? "default" :
+                                            kpi.performance?.status === "at-risk" ? "secondary" : "destructive"
+                                          }
+                                        >
+                                          {kpi.performance?.status}
+                                        </Badge>
+                                      </div>
+                                      
+                                      {kpi.performance && (
+                                        <div className="space-y-2">
+                                          <div className="flex justify-between text-xs text-gray-600">
+                                            <span>Current: {kpi.performance.actual.actualValue} {kpi.definition?.unit}</span>
+                                            <span>Target: {kpi.performance.target.targetValue} {kpi.definition?.unit}</span>
+                                          </div>
+                                          <Progress 
+                                            value={Math.min(100, kpi.performance.performance)} 
+                                            className="h-1" 
+                                          />
+                                          <div className="flex justify-between items-center text-xs">
+                                            <span className="text-gray-600">
+                                              {kpi.performance.performance}% of target
+                                            </span>
+                                            <span className={`font-medium ${
+                                              kpi.performance.gap >= 0 ? 'text-green-600' : 'text-red-600'
+                                            }`}>
+                                              {kpi.performance.gap >= 0 ? '+' : ''}{kpi.performance.gap.toFixed(1)} {kpi.definition?.unit}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {!kpi.performance && (
+                                        <p className="text-xs text-gray-500">No recent data available</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </CardContent>
                       </Card>
                     </div>
