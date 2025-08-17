@@ -944,7 +944,7 @@ export default function BusinessGoalsPage() {
           setActiveTab("overview");
         }
       }}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden touch-pan-y">
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto touch-pan-y overscroll-behavior-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-blue-600" />
@@ -953,8 +953,8 @@ export default function BusinessGoalsPage() {
           </DialogHeader>
           
           {selectedGoal && (
-            <div className="flex-1 overflow-hidden">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+            <div className="space-y-4">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="actions">Actions</TabsTrigger>
@@ -966,7 +966,7 @@ export default function BusinessGoalsPage() {
                   </TabsTrigger>
                 </TabsList>
 
-                <div className="flex-1 overflow-y-auto mt-4 overscroll-behavior-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <div className="mt-4 space-y-4">
                   <TabsContent value="overview" className="space-y-4">
                     {/* Active Risk Alert */}
                     {risks.filter((r: GoalRisk) => r.goalId === selectedGoal.id && r.status === 'active').length > 0 && (
