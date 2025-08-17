@@ -609,7 +609,12 @@ export async function processShiftAIRequest(request: any): Promise<AIAgentRespon
   try {
     // Get current system context for shift planning
     const context = await getSystemContext();
-    const resources = await storage.getResources();
+    let resources = [];
+    try {
+      resources = await storage.getResources();
+    } catch (error) {
+      console.log('Resources table not available, using empty array');
+    }
     const shiftTemplates = await storage.getShiftTemplates();
     
     const systemPrompt = `You are an AI shift planning expert for a manufacturing facility. You have access to:
@@ -711,7 +716,12 @@ export async function processShiftAssignmentAIRequest(request: any): Promise<AIA
   try {
     // Get current system context for shift assignment
     const context = await getSystemContext();
-    const resources = await storage.getResources();
+    let resources = [];
+    try {
+      resources = await storage.getResources();
+    } catch (error) {
+      console.log('Resources table not available, using empty array');
+    }
     const shiftTemplates = await storage.getShiftTemplates();
     const existingAssignments = await storage.getResourceShiftAssignments();
     
@@ -1133,7 +1143,10 @@ async function getSystemContext(): Promise<SystemContext> {
   const [productionOrders, operations, resources, capabilities, plants] = await Promise.all([
     storage.getProductionOrders().then(orders => orders.slice(0, 10)), // Max 10 production orders for context
     storage.getOperations().then(ops => ops.slice(0, 20)), // Max 20 operations
-    storage.getResources().then(res => res.slice(0, 10)), // Max 10 resources
+    storage.getResources().then(res => res.slice(0, 10)).catch(() => {
+      console.log('Resources table not available, using empty array');
+      return [];
+    }), // Max 10 resources
     storage.getCapabilities(),
     storage.getPlants() // Include all plants since there are typically fewer plants
   ]);
