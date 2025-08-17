@@ -1,5 +1,4 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
-import TopMenu from "@/components/top-menu";
 import { Input } from "@/components/ui/input";
 import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Bot, Clock, Trash2 } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";

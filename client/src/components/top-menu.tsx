@@ -315,10 +315,20 @@ export default function TopMenu() {
   }, []);
   
   // Show footer on mobile viewport (less than 768px) or on specific mobile pages
+  // BUT NOT when we're using MobileLayout component (which handles its own navigation)
   const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
   const isMobileViewport = windowWidth < 768;
   
-  // Always show on mobile viewport or mobile pages
+  // Don't render mobile navigation if we're on routes that use MobileLayout
+  const mobileLayoutRoutes = ['/mobile-home', '/mobile'];
+  const shouldUseMobileLayout = mobileLayoutRoutes.some(route => location.includes(route)) || (isMobileViewport && location === '/');
+  
+  // Skip mobile navigation rendering if MobileLayout should handle it
+  if (shouldUseMobileLayout) {
+    return null;
+  }
+  
+  // Always show on mobile viewport or mobile pages (but only if MobileLayout isn't handling it)
   if (isMobileViewport || isMobilePage) {
     return (
       <>
