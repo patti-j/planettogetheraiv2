@@ -68,8 +68,24 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       return;
     }
 
-    // Allow users to access all features regardless of onboarding completion
-    // Users can always return to Getting Started to work on more setup
+    // Check if user has completed initial onboarding
+    if (!onboardingData) {
+      // No onboarding data exists - this is a new user
+      setShouldEnforceOnboarding(true);
+      return;
+    }
+
+    // Check if minimum required steps are completed
+    const hasCompanyInfo = onboardingData.companyName && onboardingData.industry;
+    const hasSelectedFeatures = onboardingData.selectedFeatures && onboardingData.selectedFeatures.length > 0;
+    
+    if (!hasCompanyInfo || !hasSelectedFeatures) {
+      // User hasn't completed minimum setup
+      setShouldEnforceOnboarding(true);
+      return;
+    }
+
+    // User has completed minimum onboarding, allow access
     setShouldEnforceOnboarding(false);
   }, [user, onboardingData, isTourActive, location, authLoading, onboardingLoading]);
 

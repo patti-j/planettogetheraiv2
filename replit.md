@@ -79,6 +79,11 @@ Note on concurrent work:
 
 ## Recent Updates & Improvements
 
+### August 17, 2025
+- **Welcome/Overview Screen**: ✅ NEW - Created comprehensive welcome screen for new users showing system capabilities, expected ROI (30-50% lead time reduction, 25% resource utilization increase), and 5-phase implementation timeline
+- **Onboarding Enforcement**: ✅ ACTIVATED - Enabled automatic onboarding flow for new users. System now automatically redirects new users to welcome/onboarding screen until they complete company setup and feature selection
+- **Onboarding Integration**: ✅ IMPROVED - Welcome overview now appears as first step in onboarding process, providing clear introduction before company setup
+
 ### August 16, 2025
 - **Dashboard Data Loading Fix**: ✅ FIXED - Fixed dashboard configuration mapping issue causing all dashboards to show same content
 - **Menu Organization Update**: ✅ IMPROVED - Moved SMART KPI Tracking from Planning & Scheduling to Business Management category, positioned directly under Business Goals
