@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { format, formatDistanceToNow, isToday, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -143,10 +148,22 @@ interface TeamMember {
   achievements: string[];
 }
 
+// Form schema for creating KPI targets
+const createTargetSchema = z.object({
+  kpiDefinitionId: z.number(),
+  targetValue: z.number().min(0, "Target value must be positive"),
+  period: z.string().min(1, "Please select a period"),
+  businessGoalId: z.number().optional(),
+  notes: z.string().optional()
+});
+
+type CreateTargetFormData = z.infer<typeof createTargetSchema>;
+
 export default function SmartKpiTrackingPage() {
   const [activeTab, setActiveTab] = useState("realtime");
   const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
   const [selectedKpi, setSelectedKpi] = useState<number | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Auto-refresh for real-time data
@@ -225,6 +242,32 @@ export default function SmartKpiTrackingPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/smart-kpi-alerts"] });
       toast({ title: "Alert acknowledged", description: "The alert has been marked as acknowledged." });
+    }
+  });
+
+  // Create target mutation
+  const createTargetMutation = useMutation({
+    mutationFn: async (data: CreateTargetFormData) => {
+      const response = await fetch("/api/smart-kpi-targets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          setBy: 1, // Current user ID - would be from auth context
+          status: "active",
+          setDate: new Date().toISOString()
+        })
+      });
+      if (!response.ok) throw new Error("Failed to create target");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-kpi-targets"] });
+      toast({ title: "Target created", description: "New KPI target has been set successfully." });
+      setCreateDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create target. Please try again." });
     }
   });
 
@@ -934,7 +977,7 @@ export default function SmartKpiTrackingPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full text-sm">
+                  <Button className="w-full text-sm" onClick={() => setCreateDialogOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Set New Target
                   </Button>
@@ -1407,6 +1450,184 @@ export default function SmartKpiTrackingPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Create Target Dialog */}
+      <CreateTargetDialog 
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        kpiDefinitions={kpiDefinitions}
+        businessGoals={businessGoals}
+        onSubmit={(data) => createTargetMutation.mutate(data)}
+        isLoading={createTargetMutation.isPending}
+      />
     </div>
+  );
+}
+
+// Create Target Dialog Component
+function CreateTargetDialog({
+  open,
+  onOpenChange,
+  kpiDefinitions,
+  businessGoals,
+  onSubmit,
+  isLoading
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  kpiDefinitions: SmartKpiDefinition[];
+  businessGoals: any[];
+  onSubmit: (data: CreateTargetFormData) => void;
+  isLoading: boolean;
+}) {
+  const form = useForm<CreateTargetFormData>({
+    resolver: zodResolver(createTargetSchema),
+    defaultValues: {
+      targetValue: 0,
+      period: "",
+      notes: ""
+    }
+  });
+
+  const handleSubmit = (data: CreateTargetFormData) => {
+    onSubmit(data);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Set New KPI Target</DialogTitle>
+          <DialogDescription>
+            Define a new target for a KPI to track performance
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="kpiDefinitionId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>KPI</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select KPI" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {kpiDefinitions.map((kpi) => (
+                        <SelectItem key={kpi.id} value={kpi.id.toString()}>
+                          {kpi.name} ({kpi.measurementUnit})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="targetValue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Value</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="Enter target value"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="period"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time Period</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select period" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="businessGoalId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link to Business Goal (Optional)</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                    value={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select business goal" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No business goal</SelectItem>
+                      {businessGoals.map((goal) => (
+                        <SelectItem key={goal.id} value={goal.id.toString()}>
+                          {goal.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Additional notes or context" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Target"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
