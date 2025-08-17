@@ -140,7 +140,8 @@ import BoardsPage from "@/pages/boards";
 import DataImport from "@/pages/data-import";
 import DataSchema from "@/pages/data-schema";
 import MasterDataManagement from "@/pages/master-data-management";
-// Note: TasksPage, InboxPage, AccountSettings, DashboardManager, WidgetManager don't exist yet
+import InboxPage from "@/pages/inbox";
+// Note: TasksPage, AccountSettings, DashboardManager, WidgetManager don't exist yet
 
 // Icon mapping functions
 const getWidgetIcon = (type: string) => {
@@ -574,8 +575,13 @@ function MobilePageContent({ location }: { location: string }) {
           <MasterDataManagement />
         </MobilePageWrapper>
       );
-    case "/tasks":
     case "/inbox":
+      return (
+        <MobilePageWrapper>
+          <InboxPage />
+        </MobilePageWrapper>
+      );
+    case "/tasks":
     case "/account":
     case "/account-settings":
     case "/dashboard-manager":
