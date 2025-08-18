@@ -124,7 +124,7 @@ import {
 
 // Import widget components
 // Widget functionality replaced with dashboard-based components
-import { WidgetConfig } from '@/lib/widget-library';
+// import { WidgetConfig } from '@/lib/widget-library'; // Commented out - file doesn't exist
 import DesignStudio from '@/components/design-studio/design-studio-clean';
 import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studio-mobile';
 import { MobileAlerts } from '@/components/alerts/mobile-alerts';

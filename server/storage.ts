@@ -16184,6 +16184,51 @@ export class DatabaseStorage implements IStorage {
       .where(eq(demandCollaborationSessions.id, id));
     return result.rowCount > 0;
   }
+
+  // Widget methods for mobile compatibility
+  async getMobileCompatibleWidgets(): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(
+        or(
+          eq(unifiedWidgets.targetPlatform, 'mobile'),
+          eq(unifiedWidgets.targetPlatform, 'both')
+        )
+      )
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
+  async getAllWidgets(): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
+  async getWidgetById(id: number): Promise<UnifiedWidget | null> {
+    const [widget] = await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(eq(unifiedWidgets.id, id));
+    return widget || null;
+  }
+
+  async getWidgetsByCategory(category: string): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(eq(unifiedWidgets.category, category))
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
+  async getWidgetsByPlatform(platform: 'mobile' | 'desktop' | 'both'): Promise<UnifiedWidget[]> {
+    return await this.db
+      .select()
+      .from(unifiedWidgets)
+      .where(eq(unifiedWidgets.targetPlatform, platform))
+      .orderBy(desc(unifiedWidgets.createdAt));
+  }
 }
 
 export const storage = new DatabaseStorage();

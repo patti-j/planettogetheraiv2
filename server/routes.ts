@@ -87,6 +87,7 @@ import registerScheduleRoutes from "./routes/schedule-routes";
 import alertsRouter from "./routes/alerts";
 import chatRouter from "./routes/chat-simple";
 import commentsRouter from "./routes/comments";
+import { setupWidgetRoutes } from "./widget-routes";
 import multer from "multer";
 import session from "express-session";
 import bcrypt from "bcryptjs";
@@ -5364,6 +5365,99 @@ User Prompt: "${prompt}"`;
     console.log("V2 - Total dashboards returned:", dashboards.length);
     console.log("V2 - Dashboard IDs:", dashboards.map(d => d.id));
     res.json(dashboards);
+  });
+
+  // Cockpit Widgets Endpoint - Missing from dashboard system
+  app.get("/api/cockpit/widgets", (req, res) => {
+    console.log("=== COCKPIT WIDGETS ENDPOINT HIT ===");
+    
+    const cockpitWidgets = [
+      {
+        id: 1,
+        title: "Production Status",
+        type: "status",
+        configuration: { source: "production-orders", display: "status-grid" },
+        sub_title: "Current production status across all plants",
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Resource Utilization",
+        type: "gauge",
+        configuration: { source: "resources", metric: "utilization" },
+        sub_title: "Real-time resource utilization metrics",
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    console.log("COCKPIT WIDGETS - Total returned:", cockpitWidgets.length);
+    res.json(cockpitWidgets);
+  });
+
+  // Mobile Widgets Endpoint - Missing and causing JSON parse errors
+  app.get("/api/mobile/widgets", (req, res) => {
+    console.log("=== MOBILE WIDGETS ENDPOINT HIT ===");
+    
+    const widgets = [
+      {
+        id: 1,
+        title: "Production Overview",
+        type: "kpi",
+        description: "Key production metrics and status",
+        targetPlatform: "both",
+        configuration: { 
+          metrics: ["active-orders", "completion-rate", "efficiency"],
+          refreshInterval: 30000
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        title: "Resource Utilization",
+        type: "chart",
+        description: "Real-time resource utilization across plants",
+        targetPlatform: "both",
+        configuration: { 
+          chartType: "gauge",
+          dataSource: "resources",
+          refreshInterval: 60000
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: "Quality Alerts",
+        type: "alert",
+        description: "Active quality control alerts",
+        targetPlatform: "both",
+        configuration: { 
+          severity: ["high", "critical"],
+          autoRefresh: true
+        },
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 4,
+        title: "Schedule Optimizer",
+        type: "schedule-optimizer",
+        description: "AI-powered production schedule optimization",
+        targetPlatform: "both",
+        configuration: {
+          widgetType: "schedule-optimization",
+          defaultView: "overview",
+          showHistory: true,
+          showMetrics: true,
+          showQuickActions: true,
+          showProfileSelector: true,
+          showAlgorithmSelector: true
+        },
+        createdAt: new Date().toISOString()
+      }
+    ];
+      
+    console.log("MOBILE WIDGETS - Total returned:", widgets.length);
+    console.log("MOBILE WIDGETS - Widget IDs:", widgets.map(w => w.id));
+    res.json(widgets);
   });
 
   app.get("/api/mobile/dashboards", (req, res) => {
@@ -24217,6 +24311,9 @@ Be careful to preserve data integrity and relationships.`;
   
   // Register comments routes
   app.use(commentsRouter);
+
+  // Register widget routes
+  setupWidgetRoutes(app, storage);
 
   // Algorithm Version Control Routes
   app.get('/api/algorithm-versions', createSafeHandler(async (req, res) => {

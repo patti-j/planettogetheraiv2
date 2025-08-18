@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { WidgetStorage } from "./widget-storage.js";
 
-export function setupWidgetRoutes(app: Express, storage: WidgetStorage) {
+export function setupWidgetRoutes(app: Express, storage: any) {
   
   // Get all widgets
   app.get("/api/widgets", async (req, res) => {

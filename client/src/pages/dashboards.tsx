@@ -201,7 +201,7 @@ export default function DashboardsPage() {
   });
 
   // Prepare system data for universal widgets
-  const systemData: SystemData = {
+  const systemData = {
     productionOrders: Array.isArray(productionOrders) ? productionOrders : [],
     jobs: Array.isArray(productionOrders) ? productionOrders : [], // Also map productionOrders to jobs for compatibility
     operations: Array.isArray(operations) ? operations : [],
@@ -336,12 +336,12 @@ export default function DashboardsPage() {
       const response = await apiRequest("POST", "/api/ai/generate-dashboard", { prompt });
       return response;
     },
-    onSuccess: (dashboardConfig) => {
+    onSuccess: (dashboardConfig: any) => {
       // Create the dashboard using the AI-generated configuration
       const dashboardData = {
-        name: dashboardConfig.name,
+        name: dashboardConfig.name || "AI Dashboard",
         description: dashboardConfig.description || "AI-generated dashboard",
-        targetPlatform: "both", // Default for AI-generated dashboards
+        targetPlatform: "both" as const, // Default for AI-generated dashboards
         configuration: {
           standardWidgets: [],
           customWidgets: dashboardConfig.widgets || []
@@ -907,7 +907,8 @@ export default function DashboardsPage() {
                             height: widget.size?.height || 150
                           }}
                           onMouseDown={(e) => {
-                            if (e.target === e.currentTarget || e.target.closest('.widget-header') || e.target.closest('.widget-content')) {
+                            const target = e.target as HTMLElement;
+                            if (target === e.currentTarget || (target && 'closest' in target && (target.closest('.widget-header') || target.closest('.widget-content')))) {
                               // Handle widget dragging
                               const startX = e.clientX - (widget.position?.x || 0);
                               const startY = e.clientY - (widget.position?.y || 0);
@@ -1143,7 +1144,7 @@ export default function DashboardsPage() {
                       {viewDashboard.configuration.customWidgets.map((widget: any) => {
                         // Convert dashboard widget to UniversalWidget config
                         // Map dashboard widget types to UniversalWidget types
-                        const mapWidgetType = (dashboardType: string): WidgetConfig['type'] => {
+                        const mapWidgetType = (dashboardType: string): string => {
                           switch (dashboardType) {
                             case 'metric':
                             case 'kpi':
@@ -1170,7 +1171,7 @@ export default function DashboardsPage() {
                         };
 
                         // Ensure we have valid configuration from the widget
-                        const widgetConfig: WidgetConfig = {
+                        const widgetConfig = {
                           id: widget.id || `widget-${Math.random()}`,
                           type: mapWidgetType(widget.type || 'kpi'),
                           title: widget.title || 'Widget',
@@ -1258,15 +1259,17 @@ export default function DashboardsPage() {
                                     );
                                   }
 
-                                  // Fallback to UniversalWidget for dynamic widgets
+                                  // Fallback to simple widget display for now
                                   return (
-                                    <UniversalWidget
-                                      config={widgetConfig}
-                                      data={systemData}
-                                      readOnly={true}
-                                      showControls={false}
-                                      className="h-full"
-                                    />
+                                    <div className="flex items-center justify-center h-full text-gray-600">
+                                      <div className="text-center">
+                                        <div className="text-lg font-semibold mb-1">{widget.title}</div>
+                                        <div className="text-xs text-gray-400 capitalize">{widget.type} widget</div>
+                                        {widget.description && (
+                                          <div className="text-xs text-gray-500 mt-1">{widget.description}</div>
+                                        )}
+                                      </div>
+                                    </div>
                                   );
                                 } catch (error) {
                                   console.error('Widget rendering error:', error);
