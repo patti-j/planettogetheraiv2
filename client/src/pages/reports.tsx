@@ -298,41 +298,41 @@ export default function Reports() {
     switch (report.type) {
       case "production":
         return (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{report.data.totalJobs}</div>
-              <div className="text-sm text-gray-600">Total Jobs</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{report.data.totalJobs}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Jobs</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{report.data.completedJobs}</div>
-              <div className="text-sm text-gray-600">Completed</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{report.data.completedJobs}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Completed</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{report.data.activeJobs}</div>
-              <div className="text-sm text-gray-600">Active</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{report.data.activeJobs}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Active</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{report.data.overdueJobs}</div>
-              <div className="text-sm text-gray-600">Overdue</div>
+              <div className="text-xl sm:text-2xl font-bold text-red-600">{report.data.overdueJobs}</div>
+              <div className="text-xs sm:text-sm text-gray-600">Overdue</div>
             </div>
           </div>
         );
       case "resource":
         return (
           <div className="space-y-3">
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span>Total Resources:</span>
               <span className="font-semibold">{report.data.totalResources}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span>Active:</span>
               <span className="font-semibold text-green-600">{report.data.activeResources}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span>Maintenance:</span>
               <span className="font-semibold text-yellow-600">{report.data.maintenanceResources}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span>Utilization Rate:</span>
               <span className="font-semibold">{report.data.utilizationRate}%</span>
             </div>
@@ -387,10 +387,10 @@ export default function Reports() {
         {/* Maximize button moved to fixed top-right position */}
         
         {/* Controls positioned below header */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-2 md:gap-2">
+        <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="min-w-[280px] justify-between">
+                <Button variant="outline" className="w-full sm:min-w-[280px] justify-between">
                   {selectedConfigName}
                   <ChevronDown className="w-4 h-4" />
                 </Button>
@@ -467,12 +467,12 @@ export default function Reports() {
         {/* Content */}
         {reports.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center">
+            <div className="text-center px-4">
               <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                 <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Get started by creating your first production report
               </p>
             </div>

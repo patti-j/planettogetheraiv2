@@ -1023,27 +1023,27 @@ const ResourceDetailsDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto dialog-mobile">
         <DialogHeader>
-          <DialogTitle className="flex flex-col gap-2 pr-8">
-            <div className="flex items-center gap-2">
+          <DialogTitle className="flex flex-col gap-2 pr-6 sm:pr-8">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-2">
-                {resource.type === "machine" && <Wrench className="w-5 h-5" />}
-                {resource.type === "operator" && <Users className="w-5 h-5" />}
-                {resource.type === "facility" && <Building2 className="w-5 h-5" />}
-                <span className="text-lg sm:text-xl font-bold">{resource.name}</span>
+                {resource.type === "machine" && <Wrench className="w-4 sm:w-5 h-4 sm:h-5" />}
+                {resource.type === "operator" && <Users className="w-4 sm:w-5 h-4 sm:h-5" />}
+                {resource.type === "facility" && <Building2 className="w-4 sm:w-5 h-4 sm:h-5" />}
+                <span className="text-base sm:text-lg font-bold">{resource.name}</span>
               </div>
-              <Badge variant={status.status === "operational" ? "default" : "destructive"}>
+              <Badge variant={status.status === "operational" ? "default" : "destructive"} className="w-fit">
                 {status.status}
               </Badge>
             </div>
-            <div className="flex items-center gap-2 justify-start">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:justify-start">
               {isEditing ? (
-                <>
+                <div className="flex gap-2 w-full sm:w-auto">
                   <Button 
                     onClick={saveChanges} 
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 flex-1 sm:flex-none"
                   >
                     <Save className="w-4 h-4" />
                     Save
@@ -1052,16 +1052,17 @@ const ResourceDetailsDialog = ({
                     onClick={cancelEdit} 
                     variant="outline" 
                     size="sm"
+                    className="flex-1 sm:flex-none"
                   >
                     Cancel
                   </Button>
-                </>
+                </div>
               ) : (
                 <Button 
                   onClick={startEdit} 
                   variant="outline" 
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   <Edit className="w-4 h-4" />
                   Edit
