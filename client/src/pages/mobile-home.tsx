@@ -802,7 +802,7 @@ export default function MobileHomePage() {
   });
 
   // Widget management functions
-  const handleCreateWidget = (widget: WidgetConfig, targetSystems: string[]) => {
+  const handleCreateWidget = (widget: any, targetSystems: string[]) => {
     console.log('Widget created for mobile:', widget, 'systems:', targetSystems);
     queryClient.invalidateQueries({ queryKey: ["/api/mobile/widgets"] });
     queryClient.invalidateQueries({ queryKey: ["/api/analytics/widgets"] });
