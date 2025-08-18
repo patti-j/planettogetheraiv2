@@ -204,39 +204,39 @@ export default function Login() {
                     <Info className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col sm:max-w-2xl max-w-[95vw]">
                   <DialogHeader>
-                    <DialogTitle>Demo Accounts</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-base sm:text-lg">Demo Accounts</DialogTitle>
+                    <DialogDescription className="text-sm">
                       Use these accounts to test different role permissions and explore the system features.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                  <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 pr-2">
                     <div className="space-y-3">
                       {demoAccounts.map((account) => (
-                        <div key={account.username} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-gray-800 dark:text-gray-200">{account.username}</span>
-                                <span className="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">{account.role}</span>
+                        <div key={account.username} className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="font-medium text-gray-800 dark:text-gray-200 text-sm sm:text-base">{account.username}</span>
+                                <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap">{account.role}</span>
                               </div>
                               <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{account.name}</p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right sm:text-left">
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Password:</div>
                               <span className="text-sm font-mono text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 px-2 py-1 rounded border dark:border-gray-600">••••••••</span>
                             </div>
                           </div>
                           <div className="mt-3">
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Access & Permissions:</div>
-                            <p className="text-sm text-gray-700 dark:text-gray-300">{account.access}</p>
+                            <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{account.access}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
                         <strong>Note:</strong> Each account provides access to different features of the manufacturing production scheduling system. 
                         All demo accounts use the same secure password. The Trainer account has comprehensive view access to all modules for demonstration purposes.
                       </p>

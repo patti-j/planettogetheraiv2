@@ -235,7 +235,7 @@ export default function ProductionSchedulePage() {
         </div>
         
         {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           
           {/* Dashboard toggle button - always visible */}
           <Button 

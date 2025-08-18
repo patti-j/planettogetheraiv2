@@ -373,6 +373,80 @@
   border-image: linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to))) 1;
 }
 
+/* Enhanced Mobile Responsiveness Utilities */
+@media (max-width: 768px) {
+  /* Responsive dialog sizes */
+  .dialog-mobile {
+    @apply max-w-[95vw] w-full;
+  }
+  
+  /* Page headers */
+  .page-header {
+    @apply flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4;
+  }
+  
+  .page-title {
+    @apply text-xl sm:text-2xl;
+  }
+  
+  .page-description {
+    @apply text-sm sm:text-base;
+  }
+  
+  /* Card layouts */
+  .card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6;
+  }
+  
+  /* Button groups */
+  .button-group {
+    @apply flex flex-wrap items-center gap-1 sm:gap-2;
+  }
+  
+  .button-group-mobile {
+    @apply flex flex-col sm:flex-row gap-2 sm:gap-3;
+  }
+  
+  /* Dashboard layouts */
+  .dashboard-grid {
+    @apply grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6;
+  }
+  
+  /* Form layouts */
+  .form-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4;
+  }
+  
+  /* Content spacing */
+  .content-spacing {
+    @apply space-y-4 sm:space-y-6;
+  }
+  
+  .content-padding {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+  
+  /* Analytics and dashboard specific */
+  .analytics-header {
+    @apply flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4;
+  }
+  
+  /* Mobile responsive tables */
+  .mobile-table {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .mobile-table th,
+  .mobile-table td {
+    @apply px-2 sm:px-4 py-2 sm:py-3;
+  }
+  
+  /* Mobile navigation adjustments */
+  .mobile-nav-spacing {
+    @apply ml-8 sm:ml-12 md:ml-16;
+  }
+}
+
 /* Force mobile view with pull-to-refresh support */
 .force-mobile-view {
   position: relative !important;

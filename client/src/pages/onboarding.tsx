@@ -678,15 +678,15 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4 lg:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Progress Header */}
         <div className="mb-8">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Welcome to PlanetTogether
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-base sm:text-lg text-gray-600">
               Let's get your manufacturing operations set up in just a few simple steps
             </p>
             
@@ -706,8 +706,8 @@ export default function OnboardingPage() {
             )}
           </div>
           
-          <Card className="mb-6">
-            <CardContent className="pt-6">
+          <Card className="mb-4 sm:mb-6">
+            <CardContent className="pt-4 sm:pt-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium text-gray-700">
                   Step {currentStep + 1} of {onboardingSteps.length}
@@ -717,13 +717,13 @@ export default function OnboardingPage() {
                 </span>
               </div>
               <Progress value={progressPercentage} className="mb-4" />
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex justify-between text-xs text-gray-500 flex-wrap gap-1">
                 {onboardingSteps.map((step, index) => (
                   <span 
                     key={step.id}
-                    className={`${index <= currentStep ? 'text-blue-600 font-medium' : ''}`}
+                    className={`${index <= currentStep ? 'text-blue-600 font-medium' : ''} truncate`}
                   >
-                    {step.title}
+                    {isMobile ? step.title.split(' ')[0] : step.title}
                   </span>
                 ))}
               </div>
