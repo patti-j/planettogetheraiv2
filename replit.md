@@ -78,9 +78,71 @@ Note on concurrent work:
 - **Charting**: Recharts, Chart.js
 - **Session Management**: connect-pg-simple
 
+## Bryntum Gantt Integration Guide
+
+### Implementation Approach
+- **Integration Method**: Using UMD build loaded via HTML script tags (due to trial version limitations)
+- **Component**: BryntumSchedulerWrapper - custom wrapper component for Gantt integration
+- **Data Source**: PT (PlanetTogether) database tables with 521+ brewery operations
+
+### Key Technical Solutions
+
+#### 1. Loading Strategy
+- Load Bryntum Gantt UMD build in index.html via script tags
+- Wait for window.bryntum.gantt to be available before initialization
+- Use setTimeout retry pattern for library detection
+
+#### 2. Configuration Approach
+- Start with minimal configuration - avoid complex features initially
+- Basic config includes: columns, tasks, startDate, endDate, height
+- Add advanced features (eventDrag, eventResize) gradually after basic setup works
+
+#### 3. Critical Fixes Applied
+- **Dependency Array Fix**: Removed `isInitialized` from useEffect dependencies to prevent re-initialization loops
+- **Instance Guard**: Added check for existing scheduler instance to prevent duplicate initializations
+- **React Strict Mode**: Component handles double-mounting gracefully with proper cleanup
+
+#### 4. Working Minimal Configuration
+```javascript
+const config = {
+  appendTo: containerRef.current,
+  height: 400,
+  startDate: '2025-08-19',
+  endDate: '2025-08-31',
+  columns: [
+    { type: 'name', text: 'Task', width: 250 }
+  ],
+  tasks: simpleTasks // Array of {id, name, startDate, duration, percentDone}
+};
+```
+
+#### 5. Data Integration Pattern
+- Fetch operations from `/api/pt-operations`
+- Transform PT data to Gantt task format
+- Load first 20-50 tasks initially for performance
+- Update taskStore.data after initial render
+
+#### 6. Console Indicators of Success
+- "Bryntum.gantt available? true"
+- "✅ Gantt created successfully!"
+- "Loading real tasks: X tasks"
+- "Scheduler initialized successfully"
+
+### Common Issues & Solutions
+1. **"Cannot read properties of undefined"**: Bryntum library not loaded yet - add wait/retry logic
+2. **Component destroying immediately**: Fix dependency array in useEffect
+3. **Multiple instances created**: Add instance guard check
+4. **No visual output**: Check container height is set properly (use number not string)
+
 ## Recent Updates & Improvements
 
 ### August 19, 2025
+- **Bryntum Gantt Integration**: ✅ COMPLETE - Successfully integrated Bryntum Gantt chart with PT brewery production data
+- **Minimal Configuration Approach**: ✅ IMPLEMENTED - Using simple configuration without complex features, loading 521 operations
+- **Initialization Issues Fixed**: ✅ RESOLVED - Fixed dependency loops and premature destruction of Gantt instances
+- **UMD Build Solution**: ✅ WORKING - Using HTML script tag loading approach for trial version compatibility
+
+### August 19, 2025 (Earlier)
 - **External Partners Portal**: ✅ NEW ARCHITECTURE - Built AI-first multi-tenant portal for suppliers, customers, and OEM partners
 - **Portal Foundation**: ✅ IMPLEMENTED - Created portal database schema, authentication system, API routes, and frontend structure
 - **AI Assistant Integration**: ✅ BUILT - Developed Max AI assistant with natural language capabilities, document intelligence, and predictive analytics

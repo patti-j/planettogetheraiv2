@@ -1,67 +1,134 @@
-# Bryntum Trial Setup Instructions
+# Bryntum Gantt Integration Setup Guide
 
-## Quick Start Guide
+## Quick Start
 
-### 1. After Downloading the Trial ZIP
-
-Extract it and you'll see this structure:
-```
-bryntum-gantt-5.x.x-trial/
-├── build/           ← Main library files (upload this)
-├── lib/            ← React wrapper (upload gantt-react folder)
-├── examples/       ← Sample code (reference only)
-├── docs/          ← Documentation (reference only)
-└── resources/     ← CSS themes (upload if customizing)
+### 1. HTML Script Setup (client/index.html)
+```html
+<!-- Load Bryntum Gantt UMD build -->
+<script src="/bryntum-trial/gantt.umd.js"></script>
+<link rel="stylesheet" href="/bryntum-trial/gantt.stockholm.css">
 ```
 
-### 2. Upload to Replit
+### 2. Component Implementation (BryntumSchedulerWrapper.tsx)
 
-Create this folder structure in your project:
+#### Key Requirements:
+- Wait for `window.bryntum.gantt` to be available
+- Use minimal configuration initially
+- Add instance guard to prevent duplicates
+- Proper cleanup in useEffect
+
+#### Working Code Pattern:
+```typescript
+useEffect(() => {
+  // Guard conditions
+  if (isLoading || !containerRef.current || !operations || !resources) {
+    return;
+  }
+
+  const initScheduler = async () => {
+    // Prevent multiple instances
+    if (schedulerRef.current) {
+      return;
+    }
+    
+    // Wait for Bryntum
+    if (!window.bryntum?.gantt) {
+      setTimeout(initScheduler, 500);
+      return;
+    }
+
+    const { Gantt } = window.bryntum.gantt;
+    
+    // Minimal config
+    const config = {
+      appendTo: containerRef.current,
+      height: 400, // Use number, not string
+      startDate: '2025-08-19',
+      endDate: '2025-08-31',
+      columns: [
+        { type: 'name', text: 'Task', width: 250 }
+      ],
+      tasks: transformedTasks
+    };
+    
+    schedulerRef.current = new Gantt(config);
+  };
+
+  initScheduler();
+
+  // Cleanup
+  return () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.destroy();
+      schedulerRef.current = null;
+    }
+  };
+}, [isLoading, operations, resources]); // Don't include isInitialized!
 ```
-your-project/
-├── bryntum-trial/
-│   ├── build/     ← Upload entire build folder here
-│   └── lib/       ← Upload gantt-react folder here
+
+### 3. Data Transformation
+
+Transform PT operations to Gantt tasks:
+```typescript
+const tasks = operations.map(op => ({
+  id: op.id,
+  name: op.name,
+  startDate: op.scheduledStart.split('T')[0], // YYYY-MM-DD format
+  duration: Math.max(1, calculateDaysFromDates(op.scheduledStart, op.scheduledEnd)),
+  percentDone: op.percentComplete || 0
+}));
 ```
 
-### 3. What to Upload Specifically
+## Troubleshooting Checklist
 
-**MUST UPLOAD:**
-- `build/gantt.module.js` - Main Gantt library
-- `build/gantt.stockholm.css` - Default theme
-- `lib/BryntumGantt.js` - React wrapper component
+### Issue: "Cannot read properties of undefined"
+✅ Solution: Bryntum not loaded yet - add retry logic with setTimeout
 
-**OPTIONAL:**
-- `build/gantt.material.css` - Material theme
-- `build/gantt.classic.css` - Classic theme
-- `build/locales/` - If you need other languages
+### Issue: Component creates/destroys repeatedly
+✅ Solution: Remove `isInitialized` from useEffect dependencies
 
-### 4. File Size Note
+### Issue: Multiple Gantt instances created
+✅ Solution: Add `if (schedulerRef.current) return;` guard
 
-The trial files are large (~10-20MB). If Replit has issues:
-1. Upload only the `.module.js` version (smaller)
-2. Upload CSS separately
-3. Or use the "Upload Folder" option in Replit
+### Issue: No visual output
+✅ Solution: 
+- Use numeric height value (400 not "400px")
+- Ensure container has proper dimensions
+- Check browser console for errors
 
-### 5. After Upload
+### Issue: React Strict Mode double-mounting
+✅ Solution: Instance guard and proper cleanup handle this automatically
 
-Let me know when files are uploaded and I'll:
-1. Update package.json to reference local files
-2. Configure the imports correctly
-3. Activate the Gantt chart automatically
+## Console Success Indicators
 
-## Current Implementation Status
+Look for these messages in browser console:
+- ✅ "Bryntum.gantt available? true"
+- ✅ "Gantt constructor found: function"
+- ✅ "✅ Gantt created successfully!"
+- ✅ "Loading real tasks: 20 tasks"
+- ✅ "Scheduler initialized successfully"
 
-✅ **Prepared:**
-- Data transformation functions ready
-- Event handlers configured  
-- Custom styling prepared
-- Export functionality scaffolded
+## Files Involved
 
-⏳ **Waiting for:**
-- Trial files to be uploaded
-- Then automatic activation
+1. `/client/index.html` - Script tag loading
+2. `/client/src/components/bryntum/BryntumSchedulerWrapper.tsx` - Main wrapper component
+3. `/client/src/pages/demo.tsx` - Demo page using the component
+4. `/bryntum-trial/` - Bryntum trial files (gantt.umd.js, CSS files)
 
-## Questions?
+## API Endpoints Used
 
-The wrapper component (`gantt-bryntum-wrapper.tsx`) is ready and will automatically detect when Bryntum is available!
+- `/api/pt-operations` - Fetches operation data
+- `/api/resources` - Fetches resource data
+- `/api/pt-jobs` - Fetches job data
+
+## Next Steps for Advanced Features
+
+Once basic Gantt is working, gradually add:
+1. Resource assignments
+2. Dependencies between tasks
+3. Drag and drop (eventDrag, eventResize)
+4. Context menus
+5. Custom tooltips
+6. Export functionality
+
+Remember: Start simple, add complexity gradually!
