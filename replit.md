@@ -62,6 +62,7 @@ Note on concurrent work:
 - **Data Schema Visualization**: Interactive lasso selection tool for focused analysis of table groups.
 - **PT Table Structure Integrity**: Minimize modifications to PT Publish table structures. PT tables should maintain their original structure with approved variations only. All approved variations must be documented. Preserve legacy tables by renaming rather than deletion.
 - **PT Table Migration & Query Adaptation**: When migrating from old tables to PT Publish tables, always map to PT column names, accept more complex joins, compute missing columns in the application layer or use alternatives, use PT's specific timestamp names, utilize external_id fields, and join through plant_id for plant context. Never modify PT table structure to simplify queries.
+- **External Partners Portal**: Single multi-tenant portal architecture serving suppliers, customers, and OEM partners with AI-first approach. Features intelligent onboarding, natural language interfaces, predictive analytics, and role-based experiences. Portal served from `/portal` route with separate authentication and company-based access control.
 
 ## External Dependencies
 
@@ -78,6 +79,13 @@ Note on concurrent work:
 - **Session Management**: connect-pg-simple
 
 ## Recent Updates & Improvements
+
+### August 19, 2025
+- **External Partners Portal**: ✅ NEW ARCHITECTURE - Built AI-first multi-tenant portal for suppliers, customers, and OEM partners
+- **Portal Foundation**: ✅ IMPLEMENTED - Created portal database schema, authentication system, API routes, and frontend structure
+- **AI Assistant Integration**: ✅ BUILT - Developed Max AI assistant with natural language capabilities, document intelligence, and predictive analytics
+- **Supplier Dashboard**: ✅ CREATED - Built comprehensive supplier portal with purchase order management, delivery tracking, quality documents, and performance metrics
+- **Unified Architecture Decision**: ✅ STRATEGIC - Chose single multi-tenant portal approach over separate portals for better AI learning and resource sharing
 
 ### August 18, 2025
 - **Widget System Bug Fixes**: ✅ MAJOR FIX - Fixed critical JSON parse errors in mobile widgets endpoint that was returning HTML instead of JSON
