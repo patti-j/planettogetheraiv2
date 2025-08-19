@@ -264,7 +264,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           containerRef.current.innerHTML = '';
         }
 
-        // SchedulerPro configuration with project model
+        // SchedulerPro configuration - simplified approach
         const config = {
           appendTo: containerRef.current,
           height: 800,
@@ -275,11 +275,15 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           rowHeight: 50,
           barMargin: 5,
           
-          // SchedulerPro uses project model with assignments
-          project: {
-            resources: schedulerResources,
-            events: schedulerEvents,
-            assignments: schedulerAssignments
+          // Load data directly into stores
+          resourceStore: {
+            data: schedulerResources
+          },
+          eventStore: {
+            data: schedulerEvents
+          },
+          assignmentStore: {
+            data: schedulerAssignments
           },
           
           // Enhanced resource columns - use simple text instead of HTML
@@ -318,6 +322,9 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
         console.log('Assignments (first 5):', schedulerAssignments.slice(0, 5));
         
+        // Import SchedulerPro from the library
+        const bryntumLibrary = (window as any).bryntum.schedulerpro;
+        
         try {
           schedulerRef.current = new SchedulerPro(config);
           console.log('✅ Scheduler Pro created successfully with PT data!');
@@ -328,14 +335,22 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           const loadedResources = schedulerRef.current.resourceStore.records;
           console.log('Actually loaded resources:', loadedResources.map(r => ({ id: r.id, name: r.name })));
           
-          // Debug: Check events - basic Scheduler links events to resources via resourceId
-          const loadedEvents = schedulerRef.current.eventStore.records.slice(0, 5);
-          console.log('First 5 loaded events:', loadedEvents.map(e => ({ 
-            eventId: e.id,
-            name: e.name,
-            resourceId: e.resourceId,
-            resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
+          // Debug: Check assignments - SchedulerPro uses assignments to link events to resources
+          const loadedAssignments = schedulerRef.current.assignmentStore.records.slice(0, 5);
+          console.log('First 5 loaded assignments:', loadedAssignments.map(a => ({ 
+            assignmentId: a.id,
+            eventId: a.eventId,
+            resourceId: a.resourceId,
+            event: schedulerRef.current.eventStore.getById(a.eventId)?.name,
+            resource: schedulerRef.current.resourceStore.getById(a.resourceId)?.name
           })));
+          
+          // Debug: Check how events are assigned
+          const firstEvent = schedulerRef.current.eventStore.first;
+          if (firstEvent) {
+            console.log('First event assignments:', firstEvent.assignments);
+            console.log('First event resources:', firstEvent.resources);
+          }
           
           // Force refresh to ensure all resources are rendered
           schedulerRef.current.refresh();
