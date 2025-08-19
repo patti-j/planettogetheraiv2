@@ -164,21 +164,21 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         }
       }
       
-      if (typeof window === 'undefined' || !bryntumAvailable?.schedulerpro) {
-        console.log('Waiting for Bryntum Scheduler Pro library to load...');
+      if (typeof window === 'undefined' || !bryntumAvailable?.scheduler) {
+        console.log('Waiting for Bryntum Scheduler library to load...');
         setTimeout(initScheduler, 500);
         return;
       }
 
       try {
-        console.log('Initializing Bryntum Scheduler Pro with PT data (resource-centered view)...');
+        console.log('Initializing Bryntum Scheduler with PT data (resource-centered view)...');
         const bryntum = (window as any).bryntum;
         
-        if (!bryntum?.schedulerpro) {
-          throw new Error('Bryntum Scheduler Pro not found');
+        if (!bryntum?.scheduler) {
+          throw new Error('Bryntum Scheduler not found');
         }
         
-        const { SchedulerPro } = bryntum.schedulerpro;
+        const { Scheduler } = bryntum.scheduler;
         
         // Use actual PT resources - no duplicates after database cleanup
         const schedulerResources = (resources as any[] || []).map((resource) => {
@@ -202,29 +202,8 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         // Debug: Log first few operations to check what data we have
         console.log('First 3 operations raw data:', (operations as any[] || []).slice(0, 3));
         
-        // For Scheduler Pro, events don't have resourceId - they use assignments
+        // For basic Scheduler, events have resourceId directly
         const schedulerEvents = (operations as any[] || [])
-          .slice(0, 200)
-          .filter(op => op.resourceId || op.resourceName)
-          .map((op, index) => {
-            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
-            const endDate = op.scheduledEnd || op.endTime || 
-              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
-            
-            return {
-              id: op.id || index + 1,
-              name: op.name || op.operationName || `Operation ${op.id}`,
-              startDate: startDate,
-              endDate: endDate,
-              percentDone: op.percentFinished || 0,
-              draggable: true,
-              resizable: true
-              // Note: NO resourceId field for Scheduler Pro events
-            };
-          });
-        
-        // Create assignments to link events to resources
-        const schedulerAssignments = (operations as any[] || [])
           .slice(0, 200)
           .filter(op => op.resourceId || op.resourceName)
           .map((op, index) => {
@@ -238,24 +217,32 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
               return null;
             }
             
+            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
+            const endDate = op.scheduledEnd || op.endTime || 
+              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+            
             return {
-              id: `assignment-${op.id || index + 1}`,
-              eventId: op.id || index + 1,
-              resourceId: resourceId
+              id: op.id || index + 1,
+              name: op.name || op.operationName || `Operation ${op.id}`,
+              startDate: startDate,
+              endDate: endDate,
+              resourceId: resourceId, // Direct resourceId for basic Scheduler
+              percentDone: op.percentFinished || 0,
+              draggable: true,
+              resizable: true
             };
           })
-          .filter(assignment => assignment !== null);
+          .filter(event => event !== null);
 
         console.log(`Loading ${schedulerEvents.length} events`);
-        console.log(`Loading ${schedulerAssignments.length} assignments`);
         
-        // Debug: Check resource distribution through assignments
+        // Debug: Check resource distribution
         const resourceDistribution = new Map<number, number>();
-        schedulerAssignments.forEach(assignment => {
-          const count = resourceDistribution.get(assignment.resourceId) || 0;
-          resourceDistribution.set(assignment.resourceId, count + 1);
+        schedulerEvents.forEach(event => {
+          const count = resourceDistribution.get(event.resourceId) || 0;
+          resourceDistribution.set(event.resourceId, count + 1);
         });
-        console.log('Resource distribution via assignments:', Object.fromEntries(resourceDistribution));
+        console.log('Resource distribution:', Object.fromEntries(resourceDistribution));
         console.log('Unique resources used:', resourceDistribution.size);
         
         // Clear container before creating scheduler
@@ -263,7 +250,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           containerRef.current.innerHTML = '';
         }
 
-        // Try the simplest possible Scheduler Pro configuration
+        // Simple Scheduler configuration (not Pro)
         const config = {
           appendTo: containerRef.current,
           height: 800,
@@ -274,18 +261,9 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           rowHeight: 50,
           barMargin: 5,
           
-          // Use inline data configuration - the simplest approach
-          resourceStore: {
-            data: schedulerResources
-          },
-          
-          eventStore: {
-            data: schedulerEvents
-          },
-          
-          assignmentStore: {
-            data: schedulerAssignments
-          },
+          // Basic Scheduler uses resources and events directly
+          resources: schedulerResources,
+          events: schedulerEvents,
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
