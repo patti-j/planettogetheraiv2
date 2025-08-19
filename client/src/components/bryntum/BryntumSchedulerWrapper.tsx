@@ -159,16 +159,14 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             { 
               type: 'percentdone', 
               text: 'Progress', 
-              width: 80,
-              showCircle: true 
+              width: 80
             }
           ],
           
           features: {
             // Drag and drop features
             taskDrag: {
-              showTooltip: true,
-              constrainDragToResource: false
+              showTooltip: true
             },
             taskResize: {
               showTooltip: true
@@ -194,105 +192,43 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
                       <tr><td><strong>Start:</strong></td><td>${new Date(taskRecord.startDate).toLocaleString()}</td></tr>
                       <tr><td><strong>End:</strong></td><td>${new Date(taskRecord.endDate).toLocaleString()}</td></tr>
                       <tr><td><strong>Progress:</strong></td><td>${taskRecord.percentDone || 0}%</td></tr>
-                      <tr><td><strong>Duration:</strong></td><td>${taskRecord.duration} ${taskRecord.durationUnit || 'days'}</td></tr>
                     </table>
                   </div>
                 `;
-              },
-              hideDelay: 100,
-              showDelay: 500
-            },
-            
-            // Context menu
-            taskContextMenu: {
-              items: {
-                editTask: { text: 'Edit Operation', icon: 'b-fa b-fa-edit' },
-                deleteTask: false,
-                add: false,
-                convertToMilestone: false
               }
             },
             
-            // Visual features
-            progressLine: {
-              disabled: false,
-              statusDate: new Date()
-            },
-            indicators: true,
+            // Progress line
+            progressLine: true,
+            
+            // Time ranges
             timeRanges: {
-              showCurrentTimeLine: true,
-              showHeaderElements: true,
-              enableResizing: false
+              showCurrentTimeLine: true
             },
-            
-            // Dependencies (if operations have dependencies)
-            dependencies: true,
-            dependencyEdit: {
-              showTooltip: true
-            },
-            
-            // Editing features
-            taskEdit: {
-              items: {
-                generalTab: {
-                  items: {
-                    name: { label: 'Operation Name' },
-                    percentDone: { label: 'Progress %' },
-                    startDate: { label: 'Start Date' },
-                    endDate: { label: 'End Date' }
-                  }
-                },
-                notesTab: false,
-                predecessorsTab: false,
-                successorsTab: false,
-                resourcesTab: false,
-                advancedTab: false
-              }
-            },
-            
-            // Filtering and searching
-            filter: true,
-            search: true,
             
             // Column lines for better readability
             columnLines: true,
             
-            // Non-working time highlighting
-            nonWorkingTime: {
-              highlightWeekends: true
-            }
+            // Task editing
+            taskEdit: true
           },
           
           // Project configuration with data
           project: {
-            tasks: tasksWithResources,
-            autoLoad: true,
-            autoSync: false
-          },
-          
-          // Task renderer for custom styling
-          taskRenderer({ taskRecord, renderData }: any) {
-            if (taskRecord.leaf) {
-              // Color operations based on their name
-              const name = taskRecord.name.toLowerCase();
-              if (name.includes('milling')) renderData.style = 'background: #8B4513';
-              else if (name.includes('mashing')) renderData.style = 'background: #FFD700';
-              else if (name.includes('boiling')) renderData.style = 'background: #FF6347';
-              else if (name.includes('fermentation')) renderData.style = 'background: #32CD32';
-              else if (name.includes('conditioning')) renderData.style = 'background: #4169E1';
-              else if (name.includes('packaging')) renderData.style = 'background: #9370DB';
-              else if (name.includes('quality')) renderData.style = 'background: #FF69B4';
-              else if (name.includes('cleaning')) renderData.style = 'background: #00CED1';
-            }
-            return taskRecord.name;
+            tasks: tasksWithResources
           }
         };
         
         console.log('Creating Gantt with config:', config);
+        console.log('Tasks data:', tasksWithResources);
         
-        schedulerRef.current = new Gantt(config);
-        
-        console.log('✅ Gantt created successfully with PT data!');
+        try {
+          schedulerRef.current = new Gantt(config);
+          console.log('✅ Gantt created successfully with PT data!');
+        } catch (ganttError) {
+          console.error('Gantt creation error details:', ganttError);
+          throw ganttError;
+        }
 
         console.log('Scheduler initialized successfully');
         setIsInitialized(true);
