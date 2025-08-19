@@ -24,9 +24,9 @@ export default function ResourceTimeline() {
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [hoveredOperation, setHoveredOperation] = useState<Operation | null>(null);
 
-  // Fetch resources
+  // Fetch resources from PT tables
   const { data: resources = [], isLoading: loadingResources } = useQuery<Resource[]>({
-    queryKey: ['/api/pt-resources']
+    queryKey: ['/api/pt-resources-clean']
   });
 
   // Fetch operations
