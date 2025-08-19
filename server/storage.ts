@@ -2618,7 +2618,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.execute(sql`
         SELECT resource_id, name, department_name, plant_name, active, speed_factor, bottleneck, publish_date
         FROM ptResources
-        WHERE instance_id = 'PHARMA-001'
+        WHERE instance_id = 'BREW-SIM-001'
         ORDER BY name ASC
       `);
       
