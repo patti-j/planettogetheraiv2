@@ -126,10 +126,10 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       console.log('Bryntum object available:', !!bryntumAvailable);
       if (bryntumAvailable) {
         console.log('Bryntum modules:', Object.keys(bryntumAvailable));
-        if (bryntumAvailable.schedulerpro) {
-          // List all available classes and features in Scheduler Pro
-          const schedulerProModule = bryntumAvailable.schedulerpro;
-          console.log('Available Scheduler Pro classes:', Object.keys(schedulerProModule).filter(key => !key.startsWith('_')));
+        if (bryntumAvailable.scheduler || bryntumAvailable.schedulerpro) {
+          // List all available classes and features in Scheduler
+          const schedulerModule = bryntumAvailable.scheduler || bryntumAvailable.schedulerpro;
+          console.log('Available Scheduler classes:', Object.keys(schedulerModule).filter(key => !key.startsWith('_')));
           
           // Check for specific features and all available features
           const availableFeatures: string[] = [];
@@ -153,7 +153,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           ];
           
           featuresToCheck.forEach(feature => {
-            if (schedulerProModule[feature]) {
+            if (schedulerModule[feature]) {
               availableFeatures.push(feature);
               console.log(`✅ ${feature} available`);
             }
@@ -164,21 +164,22 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         }
       }
       
-      if (typeof window === 'undefined' || !bryntumAvailable?.scheduler) {
-        console.log('Waiting for Bryntum Scheduler library to load...');
+      if (typeof window === 'undefined' || !bryntumAvailable?.schedulerpro) {
+        console.log('Waiting for Bryntum Scheduler Pro library to load...');
         setTimeout(initScheduler, 500);
         return;
       }
 
       try {
-        console.log('Initializing Bryntum Scheduler with PT data (resource-centered view)...');
+        console.log('Initializing Bryntum Scheduler Pro with PT data (resource-centered view)...');
         const bryntum = (window as any).bryntum;
         
-        if (!bryntum?.scheduler) {
-          throw new Error('Bryntum Scheduler not found');
+        if (!bryntum?.schedulerpro) {
+          throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        const { Scheduler } = bryntum.scheduler;
+        // Use SchedulerPro but with simplified configuration (no project/assignments)
+        const { SchedulerPro } = bryntum.schedulerpro;
         
         // Use actual PT resources - no duplicates after database cleanup
         const schedulerResources = (resources as any[] || []).map((resource) => {
@@ -299,27 +300,24 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         console.log('Creating Scheduler Pro with config:', config);
         console.log('Resources:', schedulerResources);
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
-        console.log('Assignments (first 5):', schedulerAssignments.slice(0, 5));
         
         try {
           schedulerRef.current = new SchedulerPro(config);
           console.log('✅ Scheduler Pro created successfully with PT data!');
           console.log(`Scheduler initialized with ${schedulerRef.current.resourceStore.count} resources`);
           console.log(`Scheduler initialized with ${schedulerRef.current.eventStore.count} events`);
-          console.log(`Scheduler initialized with ${schedulerRef.current.assignmentStore.count} assignments`);
           
           // Debug: Check what resources are actually in the store
           const loadedResources = schedulerRef.current.resourceStore.records;
           console.log('Actually loaded resources:', loadedResources.map(r => ({ id: r.id, name: r.name })));
           
-          // Debug: Check assignments - this is how Scheduler Pro links events to resources
-          const loadedAssignments = schedulerRef.current.assignmentStore.records.slice(0, 5);
-          console.log('First 5 loaded assignments:', loadedAssignments.map(a => ({ 
-            assignmentId: a.id,
-            eventId: a.eventId,
-            resourceId: a.resourceId,
-            eventName: a.event?.name,
-            resourceName: a.resource?.name
+          // Debug: Check events - basic Scheduler links events to resources via resourceId
+          const loadedEvents = schedulerRef.current.eventStore.records.slice(0, 5);
+          console.log('First 5 loaded events:', loadedEvents.map(e => ({ 
+            eventId: e.id,
+            name: e.name,
+            resourceId: e.resourceId,
+            resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
           })));
           
           // Force refresh to ensure all resources are rendered
@@ -365,7 +363,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           });
           
         } catch (schedulerError: any) {
-          console.error('Scheduler Pro creation error:', schedulerError.message || schedulerError);
+          console.error('Scheduler creation error:', schedulerError.message || schedulerError);
           console.error('Stack trace:', schedulerError.stack);
           
           // Parse error to identify unavailable features
