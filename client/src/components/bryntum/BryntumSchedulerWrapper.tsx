@@ -72,6 +72,42 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       console.log('Bryntum object available:', !!bryntumAvailable);
       if (bryntumAvailable) {
         console.log('Bryntum modules:', Object.keys(bryntumAvailable));
+        if (bryntumAvailable.schedulerpro) {
+          // List all available classes and features in Scheduler Pro
+          const schedulerProModule = bryntumAvailable.schedulerpro;
+          console.log('Available Scheduler Pro classes:', Object.keys(schedulerProModule).filter(key => !key.startsWith('_')));
+          
+          // Check for specific features and all available features
+          const availableFeatures: string[] = [];
+          
+          // Check all possible feature names from Bryntum documentation
+          const featuresToCheck = [
+            'EventContextMenu', 'ContextMenu', 'EventMenu',
+            'EventSelection', 'Selection', 
+            'EventEdit', 'EventEditor',
+            'Dependencies', 'DependencyEdit',
+            'NonWorkingTime', 'ResourceNonWorkingTime',
+            'TimeRanges', 'EventDrag', 'EventResize',
+            'EventTooltip', 'ScheduleTooltip', 'Tooltip',
+            'ColumnLines', 'Stripe', 'Sort', 'Filter',
+            'Group', 'Tree', 'Labels', 'Summary',
+            'CellEdit', 'CellMenu', 'HeaderMenu',
+            'Search', 'QuickFind', 'RegionResize',
+            'Pan', 'EventCopyPaste', 'TaskEdit',
+            'ResourceTimeRanges', 'TimeAxisHeaderMenu',
+            'ScheduleMenu', 'EventDragCreate', 'SimpleEventEdit'
+          ];
+          
+          featuresToCheck.forEach(feature => {
+            if (schedulerProModule[feature]) {
+              availableFeatures.push(feature);
+              console.log(`✅ ${feature} available`);
+            }
+          });
+          
+          console.log('Total available features:', availableFeatures.length);
+          console.log('Available features list:', availableFeatures);
+        }
       }
       
       if (typeof window === 'undefined' || !bryntumAvailable?.schedulerpro) {
@@ -134,6 +170,10 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           
+          // Multi-selection settings (top-level properties)
+          multiEventSelect: true,
+          deselectOnClick: false,
+          
           // View configuration
           viewPreset: {
             base: 'dayAndWeek',
@@ -187,26 +227,152 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             }
           ],
           
-          // Advanced features configuration
+          // Advanced features configuration - using all available Bryntum features
           features: {
-            // Drag and drop with constraints
+            // Drag and drop with full configuration
             eventDrag: {
               showTooltip: true,
               constrainDragToResource: false,
               showExactDropPosition: true,
+              dragHelperConfig: {
+                cloneTarget: true,
+                hideOriginalElement: false
+              },
               validatorFn: ({ draggedRecords, newResource }: any) => {
                 // Custom validation logic
                 return {
                   valid: true,
-                  message: ''
+                  message: 'Drag to move operation'
                 };
               }
             },
             
-            // Resize with constraints
+            // Resize with full configuration
             eventResize: {
               showTooltip: true,
-              showExactResizePosition: true
+              showExactResizePosition: true,
+              tooltipTemplate: ({ startDate, endDate }: any) => {
+                const duration = Math.round((endDate - startDate) / (1000 * 60 * 60));
+                return `Duration: ${duration} hours`;
+              }
+            },
+            
+            // Context menu for events (right-click menu)
+            eventMenu: {
+              items: {
+                editEvent: {
+                  text: 'Edit Operation',
+                  icon: 'b-fa b-fa-edit',
+                  onItem: ({ eventRecord }: any) => {
+                    console.log('Edit operation:', eventRecord.name);
+                  }
+                },
+                deleteEvent: {
+                  text: 'Delete Operation',
+                  icon: 'b-fa b-fa-trash',
+                  cls: 'b-separator',
+                  onItem: ({ eventRecord }: any) => {
+                    console.log('Delete operation:', eventRecord.name);
+                  }
+                },
+                duplicateEvent: {
+                  text: 'Duplicate Operation',
+                  icon: 'b-fa b-fa-copy',
+                  onItem: ({ eventRecord }: any) => {
+                    console.log('Duplicate operation:', eventRecord.name);
+                  }
+                },
+                splitEvent: {
+                  text: 'Split Operation',
+                  icon: 'b-fa b-fa-cut',
+                  onItem: ({ eventRecord }: any) => {
+                    console.log('Split operation:', eventRecord.name);
+                  }
+                }
+              }
+            },
+            
+            // Context menu for schedule area
+            scheduleMenu: {
+              items: {
+                addEvent: {
+                  text: 'Add Operation Here',
+                  icon: 'b-fa b-fa-plus',
+                  onItem: ({ resourceRecord, date }: any) => {
+                    console.log('Add operation at:', date, 'for resource:', resourceRecord?.name);
+                  }
+                }
+              }
+            },
+            
+            // Cell context menu for resources
+            cellMenu: {
+              items: {
+                editResource: {
+                  text: 'Edit Resource',
+                  icon: 'b-fa b-fa-edit',
+                  onItem: ({ record }: any) => {
+                    console.log('Edit resource:', record.name);
+                  }
+                },
+                resourceUtilization: {
+                  text: 'View Utilization',
+                  icon: 'b-fa b-fa-chart-line',
+                  onItem: ({ record }: any) => {
+                    console.log('View utilization for:', record.name);
+                  }
+                }
+              }
+            },
+            
+            // Header context menu
+            headerMenu: {
+              items: {
+                zoomIn: {
+                  text: 'Zoom In',
+                  icon: 'b-fa b-fa-search-plus',
+                  onItem: () => {
+                    console.log('Zoom in timeline');
+                  }
+                },
+                zoomOut: {
+                  text: 'Zoom Out', 
+                  icon: 'b-fa b-fa-search-minus',
+                  onItem: () => {
+                    console.log('Zoom out timeline');
+                  }
+                }
+              }
+            },
+            
+            // Event editing (double-click to edit)
+            eventEdit: {
+              items: {
+                generalTab: {
+                  title: 'General',
+                  items: {
+                    nameField: { 
+                      type: 'text', 
+                      name: 'name', 
+                      label: 'Operation Name',
+                      required: true
+                    },
+                    resourceField: {
+                      type: 'combo',
+                      name: 'resourceId',
+                      label: 'Resource',
+                      required: true
+                    },
+                    percentDoneField: {
+                      type: 'number',
+                      name: 'percentDone',
+                      label: 'Progress (%)',
+                      min: 0,
+                      max: 100
+                    }
+                  }
+                }
+              }
             },
             
             // Enhanced tooltips
@@ -273,28 +439,34 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             // Group resources
             group: false, // Can be enabled for grouping by type
             
-            // Resource non-working time
-            resourceNonWorkingTime: false,
-            
             // Schedule tooltip on hover
             scheduleTooltip: true,
             
             // Stripe feature for alternating row colors
             stripe: true,
             
-            // Event selection
-            eventSelection: {
-              multiSelect: true,
-              checkbox: false
+            // Dependencies between events
+            dependencies: {
+              allowCreate: true,
+              showTooltip: true
             },
             
-            // Dependencies between events (if needed)
-            dependencies: false,
+            // Non-working time configuration
+            nonWorkingTime: {
+              highlightWeekends: true
+            },
+            
+            // Resource non-working time
+            resourceNonWorkingTime: {
+              maxTimeAxisUnit: 'week'
+            },
             
             // Summary feature for rollups
-            summary: false,
+            summary: {
+              renderer: ({ sum }: any) => `Total: ${sum}`
+            },
             
-            // Tree feature for hierarchical resources
+            // Tree feature for hierarchical resources (disabled - needs tree column)
             tree: false,
             
             // Labels on events
@@ -303,6 +475,46 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
                 field: 'name',
                 editor: false
               }
+            },
+            
+            // Pan feature for scrolling timeline
+            pan: true,
+            
+            // Event drag create - drag to create new events
+            eventDragCreate: {
+              showTooltip: true,
+              dragTolerance: 2
+            },
+            
+            // Quick find feature
+            quickFind: true,
+            
+            // Search feature
+            search: true,
+            
+            // Region resize
+            regionResize: true,
+            
+            // Simple event edit (inline editing)
+            simpleEventEdit: true,
+            
+            // Copy paste events
+            eventCopyPaste: {
+              keyMap: {
+                copy: 'Ctrl+C',
+                cut: 'Ctrl+X',
+                paste: 'Ctrl+V'
+              }
+            },
+            
+            // Export features
+            pdfExport: {
+              exportServer: false // Client-side export
+            },
+            
+            // Excel export
+            excelExporter: {
+              zipcelx: false
             }
           },
           
@@ -374,8 +586,42 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           console.error('Scheduler Pro creation error:', schedulerError.message || schedulerError);
           console.error('Stack trace:', schedulerError.stack);
           
-          // Try to create with minimal config if advanced features fail
-          console.log('Attempting fallback configuration...');
+          // Parse error to identify unavailable features
+          const errorMessage = schedulerError.message || '';
+          const unavailableFeatures: string[] = [];
+          const featureRegex = /Feature '(\w+)' not available/g;
+          let match;
+          while ((match = featureRegex.exec(errorMessage)) !== null) {
+            unavailableFeatures.push(match[1]);
+          }
+          
+          if (unavailableFeatures.length > 0) {
+            console.log('Unavailable features detected:', unavailableFeatures);
+            console.log('Creating scheduler with available features only...');
+            
+            // Create a copy of config without unavailable features
+            const safeConfig = { ...config };
+            if (safeConfig.features) {
+              unavailableFeatures.forEach(feature => {
+                if (safeConfig.features[feature]) {
+                  console.log(`Removing unavailable feature: ${feature}`);
+                  delete safeConfig.features[feature];
+                }
+              });
+            }
+            
+            try {
+              schedulerRef.current = new SchedulerPro(safeConfig);
+              console.log('✅ Scheduler Pro created with available features only!');
+              setIsInitialized(true);
+              return;
+            } catch (retryError: any) {
+              console.error('Retry with safe config failed:', retryError.message);
+            }
+          }
+          
+          // If still failing, try minimal config
+          console.log('Attempting minimal fallback configuration...');
           const fallbackConfig = {
             appendTo: containerRef.current,
             height: 600,
