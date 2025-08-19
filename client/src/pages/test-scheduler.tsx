@@ -73,7 +73,7 @@ export default function TestScheduler() {
           }
         ];
         
-        // Create scheduler with the absolute minimum config
+        // Create scheduler with explicit row configuration
         schedulerRef.current = new SchedulerPro({
           appendTo: containerRef.current,
           height: 600,
@@ -83,15 +83,42 @@ export default function TestScheduler() {
           events: testEvents,
           columns: [
             { text: 'Name', field: 'name', width: 200 }
-          ]
+          ],
+          rowHeight: 60,
+          barMargin: 10,
+          viewPreset: 'dayAndWeek',
+          // Force resource display
+          features: {
+            tree: false,
+            group: false,
+            filterBar: false,
+            eventDrag: true,
+            eventResize: true
+          },
+          // Try to force multiple rows
+          minHeight: 600,
+          autoHeight: false,
+          fillLastColumn: false
         });
         
         setStatus(`Scheduler created! Resources: ${schedulerRef.current.resourceStore.count}, Events: ${schedulerRef.current.eventStore.count}`);
         
-        // Check what's actually visible
+        // Try to force resources to show
         setTimeout(() => {
+          console.log('Attempting to force resource display...');
+          
+          // Try adding resources again
+          if (schedulerRef.current.resourceStore.count === 0) {
+            console.log('No resources found, adding them manually...');
+            schedulerRef.current.resourceStore.add(testResources);
+          }
+          
+          // Force refresh
+          schedulerRef.current.refresh();
+          
           const visibleRows = schedulerRef.current.rowManager?.visibleRows;
           console.log('Test scheduler visible rows:', visibleRows);
+          console.log('Resource store records:', schedulerRef.current.resourceStore.records);
           setStatus(prev => prev + ` | Visible rows: ${visibleRows ? visibleRows.length : 'null'}`);
         }, 1000);
         
