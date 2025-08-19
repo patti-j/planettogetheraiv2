@@ -256,20 +256,26 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
         // SchedulerPro configuration - simplified approach
         const config = {
           appendTo: containerRef.current,
-          height: '100%',  // Use full container height
+          height: 900,  // Increased height to show more resources
           width: '100%',
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           viewPreset: 'dayAndWeek',
-          rowHeight: 35,  // Reduced to fit more rows
-          barMargin: 3,
+          rowHeight: 35,  // Slightly larger for readability
+          barMargin: 2,
+          autoHeight: false,  // Don't auto-adjust height
+          fillTicks: true,  // Fill time cells
+          maintainSelectionOnDatasetChange: false,
           
           // Load data directly into stores (no assignments for basic Scheduler)
           resourceStore: {
-            data: schedulerResources
+            data: schedulerResources,
+            tree: false
           },
           eventStore: {
-            data: schedulerEvents
+            data: schedulerEvents,
+            // Don't filter out resources without events
+            useRawData: true
           },
           
           // Enhanced resource columns - use simple text instead of HTML
@@ -277,14 +283,15 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             { 
               text: 'Resource Name', 
               field: 'name', 
-              width: 200,
+              width: 180,
               editor: false,
-              htmlEncode: false
+              htmlEncode: false,
+              locked: true  // Keep resource column visible while scrolling
             },
             {
               text: 'Type',
               field: 'type',
-              width: 100,
+              width: 80,
               editor: false,
               renderer: ({ value }: any) => value || 'Equipment'
             }
@@ -299,8 +306,17 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             eventResize: true,
             
             // Simple tooltip
-            eventTooltip: true
-          }
+            eventTooltip: true,
+            
+            // Show all resources even without events
+            filterBar: false,
+            stripe: true,
+            tree: false  // Ensure flat resource list
+          },
+          
+          // Ensure all resources are visible
+          autoCreate: false,  // Use autoCreate instead of createEventOnDblClick
+          enableRecurringEvents: false
         };
         
         console.log('Creating Scheduler with config:', config);
@@ -329,8 +345,22 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
           })));
           
+          // Force all resources to be visible
+          schedulerRef.current.resourceStore.forEach((resource: any) => {
+            resource.cls = '';  // Clear any hidden classes
+          });
+          
+          // Debug: Check visible rows
+          console.log('Visible row count:', schedulerRef.current.visibleRowCount);
+          console.log('Total row count:', schedulerRef.current.rowManager?.count);
+          
           // Force refresh to ensure all resources are rendered
           schedulerRef.current.refresh();
+          schedulerRef.current.scrollToNow();  // Scroll to current time
+          
+          // Debug: check if resources are being filtered
+          console.log('Resource store filters:', schedulerRef.current.resourceStore.filters);
+          console.log('Resource store isFiltered:', schedulerRef.current.resourceStore.isFiltered);
           
           // Add event listeners for interaction
           schedulerRef.current.on({
