@@ -323,31 +323,34 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
         console.log('Resources:', schedulerResources);
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
         
-        // Try using basic Scheduler instead of SchedulerPro
-        const bryntumLibrary = (window as any).bryntum;
-        
-        // Use basic Scheduler if available, otherwise fallback to SchedulerPro
-        const SchedulerToUse = bryntumLibrary.scheduler?.Scheduler || SchedulerClass;
-        
-        console.log('Using scheduler class:', SchedulerToUse.name || 'SchedulerPro');
+        // Use the SchedulerClass already defined above
+        console.log('Using SchedulerClass from earlier initialization');
         
         try {
-          // Create scheduler with resources and events directly in config
-          schedulerRef.current = new SchedulerToUse({
+          // Create scheduler with explicit resource and event stores
+          schedulerRef.current = new SchedulerClass({
             appendTo: containerRef.current,
             height: 900,
             startDate: '2025-08-19',
             endDate: '2025-09-02',
             viewPreset: 'dayAndWeek',
             rowHeight: 40,
+            barMargin: 2,
             columns: [
-              { type: 'resourceInfo', text: 'Resource', width: 200, field: 'name' }
+              { text: 'Resource', field: 'name', width: 200 }
             ],
-            // Pass data directly in config
-            resources: schedulerResources,
-            events: schedulerEvents,
-            // Ensure resources are shown
-            hideEmptyResources: false
+            resourceStore: {
+              data: schedulerResources
+            },
+            eventStore: {
+              data: schedulerEvents  
+            },
+            // Critical: Force scheduler to display all resources
+            features: {
+              tree: false,
+              group: false,
+              filterBar: false
+            }
           });
           
           console.log('✅ Scheduler created with manual data loading!');
