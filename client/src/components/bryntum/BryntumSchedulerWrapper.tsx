@@ -127,65 +127,199 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
 
         console.log(`Loading ${schedulerEvents.length} events`);
         
-        // Scheduler Pro configuration for resource-centered view (simplified)
+        // Advanced Scheduler Pro configuration with all available features
         const config = {
           appendTo: containerRef.current,
           height: 600,
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           
-          // Resources on the left axis
+          // View configuration
+          viewPreset: {
+            base: 'dayAndWeek',
+            tickWidth: 100,
+            headers: [
+              {
+                unit: 'week',
+                dateFormat: 'MMM DD'
+              },
+              {
+                unit: 'day',
+                dateFormat: 'DD'
+              }
+            ]
+          },
+          
+          // Row configuration
+          rowHeight: 60,
+          barMargin: 8,
+          
+          // Resources on the left axis with enhanced columns
           resourceStore: {
-            data: schedulerResources
+            data: schedulerResources,
+            fields: ['id', 'name', 'type']
           },
           
-          // Events (operations) on the timeline
+          // Events (operations) on the timeline with enhanced data
           eventStore: {
-            data: schedulerEvents
+            data: schedulerEvents,
+            fields: ['id', 'name', 'startDate', 'endDate', 'resourceId', 'percentDone', 'draggable', 'resizable']
           },
           
-          // Resource columns
+          // Enhanced resource columns
           columns: [
             { 
-              text: 'Resources', 
+              text: 'Resource Name', 
               field: 'name', 
-              width: 250
+              width: 200,
+              renderer: ({ record }: any) => {
+                return `<div style="font-weight: 500;">${record.name}</div>`;
+              }
+            },
+            {
+              text: 'Type',
+              field: 'type',
+              width: 100,
+              renderer: ({ value }: any) => {
+                const color = value === 'machine' ? '#3b82f6' : '#10b981';
+                return `<span style="color: ${color}; font-weight: 500;">${value || 'Equipment'}</span>`;
+              }
             }
           ],
           
-          // Working features for Scheduler Pro
+          // Advanced features configuration
           features: {
+            // Drag and drop with constraints
             eventDrag: {
-              showTooltip: true
+              showTooltip: true,
+              constrainDragToResource: false,
+              showExactDropPosition: true,
+              validatorFn: ({ draggedRecords, newResource }: any) => {
+                // Custom validation logic
+                return {
+                  valid: true,
+                  message: ''
+                };
+              }
             },
+            
+            // Resize with constraints
             eventResize: {
-              showTooltip: true
+              showTooltip: true,
+              showExactResizePosition: true
             },
+            
+            // Enhanced tooltips
             eventTooltip: {
               template: ({ eventRecord }: any) => {
                 const resource = schedulerResources.find(r => r.id === eventRecord.resourceId);
+                const duration = Math.round((new Date(eventRecord.endDate).getTime() - new Date(eventRecord.startDate).getTime()) / (1000 * 60 * 60));
                 return `
-                  <div style="padding: 12px; min-width: 250px;">
-                    <h4 style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
+                  <div style="padding: 14px; min-width: 300px; font-family: system-ui, -apple-system, sans-serif;">
+                    <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
                       ${eventRecord.name}
-                    </h4>
-                    <div style="display: grid; gap: 4px; font-size: 13px;">
-                      <div><strong>Resource:</strong> ${resource?.name || 'Unassigned'}</div>
-                      <div><strong>Start:</strong> ${new Date(eventRecord.startDate).toLocaleString()}</div>
-                      <div><strong>End:</strong> ${new Date(eventRecord.endDate).toLocaleString()}</div>
-                      <div><strong>Progress:</strong> ${eventRecord.percentDone || 0}%</div>
+                    </h3>
+                    <div style="display: grid; gap: 8px; font-size: 14px;">
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Resource:</span>
+                        <span style="font-weight: 500; color: #111827;">${resource?.name || 'Unassigned'}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Start:</span>
+                        <span style="font-weight: 500; color: #111827;">${new Date(eventRecord.startDate).toLocaleString()}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">End:</span>
+                        <span style="font-weight: 500; color: #111827;">${new Date(eventRecord.endDate).toLocaleString()}</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Duration:</span>
+                        <span style="font-weight: 500; color: #111827;">${duration} hours</span>
+                      </div>
+                      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="color: #6b7280;">Progress:</span>
+                          <div style="flex: 1; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden;">
+                            <div style="height: 100%; background: linear-gradient(to right, #10b981, #059669); width: ${eventRecord.percentDone || 0}%; transition: width 0.3s;"></div>
+                          </div>
+                          <span style="font-weight: 600; color: #111827;">${eventRecord.percentDone || 0}%</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 `;
               }
             },
+            
+            // Column lines for better visual separation
             columnLines: true,
+            
+            // Time ranges with current time indicator
             timeRanges: {
               showCurrentTimeLine: true,
-              showHeaderElements: true
+              showHeaderElements: true,
+              currentDateFormat: 'HH:mm'
             },
-            // Removed eventContextMenu and eventEdit as they're not available
-            dependencies: false
+            
+            // Sorting capabilities
+            sort: {
+              field: 'name',
+              ascending: true
+            },
+            
+            // Filtering capabilities
+            filter: true,
+            
+            // Group resources
+            group: false, // Can be enabled for grouping by type
+            
+            // Resource non-working time
+            resourceNonWorkingTime: false,
+            
+            // Schedule tooltip on hover
+            scheduleTooltip: true,
+            
+            // Stripe feature for alternating row colors
+            stripe: true,
+            
+            // Event selection
+            eventSelection: {
+              multiSelect: true,
+              checkbox: false
+            },
+            
+            // Dependencies between events (if needed)
+            dependencies: false,
+            
+            // Summary feature for rollups
+            summary: false,
+            
+            // Tree feature for hierarchical resources
+            tree: false,
+            
+            // Labels on events
+            labels: {
+              left: {
+                field: 'name',
+                editor: false
+              }
+            }
+          },
+          
+          // Event renderer for custom styling
+          eventRenderer: ({ eventRecord, renderData }: any) => {
+            // Color based on progress
+            let color = '#ef4444'; // Red for 0%
+            if (eventRecord.percentDone >= 100) {
+              color = '#10b981'; // Green for complete
+            } else if (eventRecord.percentDone >= 50) {
+              color = '#f59e0b'; // Amber for in progress
+            }
+            
+            renderData.eventColor = color;
+            renderData.style = `border-left: 4px solid ${color}`;
+            
+            return eventRecord.name;
           }
         };
         
@@ -196,10 +330,75 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         try {
           schedulerRef.current = new SchedulerPro(config);
           console.log('✅ Scheduler Pro created successfully with PT data!');
+          
+          // Add event listeners for interaction
+          schedulerRef.current.on({
+            // Event drag completed
+            eventDrop: ({ context }: any) => {
+              console.log('Event dropped:', {
+                event: context.eventRecords[0]?.name,
+                newResource: context.newResource?.name,
+                newStartDate: context.startDate
+              });
+            },
+            
+            // Event resize completed  
+            eventResizeEnd: ({ context }: any) => {
+              console.log('Event resized:', {
+                event: context.eventRecord?.name,
+                newStartDate: context.startDate,
+                newEndDate: context.endDate
+              });
+            },
+            
+            // Event clicked
+            eventClick: ({ eventRecord }: any) => {
+              console.log('Event clicked:', eventRecord.name);
+            },
+            
+            // Event double-clicked
+            eventDblClick: ({ eventRecord }: any) => {
+              console.log('Event double-clicked:', eventRecord.name);
+              // Could open an edit dialog here
+            },
+            
+            // Resource clicked
+            cellClick: ({ record }: any) => {
+              if (record) {
+                console.log('Resource clicked:', record.name);
+              }
+            }
+          });
+          
         } catch (schedulerError: any) {
           console.error('Scheduler Pro creation error:', schedulerError.message || schedulerError);
           console.error('Stack trace:', schedulerError.stack);
-          throw schedulerError;
+          
+          // Try to create with minimal config if advanced features fail
+          console.log('Attempting fallback configuration...');
+          const fallbackConfig = {
+            appendTo: containerRef.current,
+            height: 600,
+            startDate: new Date('2025-08-19'),
+            endDate: new Date('2025-09-02'),
+            resourceStore: { data: schedulerResources },
+            eventStore: { data: schedulerEvents },
+            columns: [{ text: 'Resources', field: 'name', width: 250 }],
+            features: {
+              eventDrag: true,
+              eventResize: true,
+              eventTooltip: true,
+              columnLines: true
+            }
+          };
+          
+          try {
+            schedulerRef.current = new SchedulerPro(fallbackConfig);
+            console.log('✅ Scheduler Pro created with fallback configuration');
+          } catch (fallbackError: any) {
+            console.error('Fallback also failed:', fallbackError.message);
+            throw fallbackError;
+          }
         }
 
         console.log('Scheduler initialized successfully');

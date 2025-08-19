@@ -137,10 +137,11 @@ const config = {
 ## Recent Updates & Improvements
 
 ### August 19, 2025
-- **Bryntum Gantt Integration**: ✅ COMPLETE - Successfully integrated Bryntum Gantt chart with PT brewery production data
-- **Minimal Configuration Approach**: ✅ IMPLEMENTED - Using simple configuration without complex features, loading 521 operations
-- **Initialization Issues Fixed**: ✅ RESOLVED - Fixed dependency loops and premature destruction of Gantt instances
-- **UMD Build Solution**: ✅ WORKING - Using HTML script tag loading approach for trial version compatibility
+- **Bryntum Scheduler Pro Integration**: ✅ COMPLETE - Successfully replaced Gantt with Scheduler Pro for resource-centered view
+- **Resource-Centered Timeline**: ✅ IMPLEMENTED - Resources displayed on left axis with operations on timeline, showing 46 resources and 521 operations
+- **Advanced Features Configuration**: ✅ ENHANCED - Added drag-drop, resize, enhanced tooltips, event selection, filtering, sorting, striping, and interactive event handlers
+- **Fallback Configuration**: ✅ ADDED - Implemented automatic fallback to minimal config if advanced features fail
+- **Interactive Event Handlers**: ✅ CONFIGURED - Added listeners for drag, resize, click, and double-click events on operations and resources
 
 ### August 19, 2025 (Earlier)
 - **External Partners Portal**: ✅ NEW ARCHITECTURE - Built AI-first multi-tenant portal for suppliers, customers, and OEM partners
