@@ -8,6 +8,27 @@ interface BryntumSchedulerWrapperProps {
   width?: string;
 }
 
+// Helper function to get color based on operation type
+function getOperationColor(operationType: string): string {
+  const colors: Record<string, string> = {
+    'Milling': '#8B4513',
+    'Mashing': '#FFD700',
+    'Boiling': '#FF6347',
+    'Fermentation': '#32CD32',
+    'Conditioning': '#4169E1',
+    'Packaging': '#9370DB',
+    'Quality': '#FF69B4',
+    'Cleaning': '#00CED1'
+  };
+  
+  for (const [key, color] of Object.entries(colors)) {
+    if (operationType?.toLowerCase().includes(key.toLowerCase())) {
+      return color;
+    }
+  }
+  return '#6B7280'; // Default gray
+}
+
 export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: BryntumSchedulerWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const schedulerRef = useRef<any>(null);
@@ -57,86 +78,152 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         console.log('Bryntum library detected, checking available components...');
         const bryntum = (window as any).bryntum;
         
-        // Log what's available in the bryntum object
+        // Use SchedulerPro for resource-centered view
         console.log('Bryntum object keys:', Object.keys(bryntum));
-        console.log('Bryntum.gantt available?', !!bryntum.gantt);
+        console.log('Bryntum.schedulerpro available?', !!bryntum.schedulerpro);
         
-        if (!bryntum.gantt) {
-          throw new Error('Bryntum Gantt module not found in bryntum object');
+        // Try SchedulerPro first, fallback to Scheduler, then Gantt
+        let SchedulerClass;
+        if (bryntum.schedulerpro) {
+          SchedulerClass = bryntum.schedulerpro.SchedulerPro;
+          console.log('Using SchedulerPro for resource view');
+        } else if (bryntum.scheduler) {
+          SchedulerClass = bryntum.scheduler.Scheduler;
+          console.log('Using Scheduler for resource view');
+        } else if (bryntum.gantt) {
+          // Use Gantt in resource mode
+          SchedulerClass = bryntum.gantt.Gantt;
+          console.log('Using Gantt in resource mode');
+        } else {
+          throw new Error('No Bryntum scheduling component found');
         }
-        
-        const { Gantt } = bryntum.gantt;
-        console.log('Gantt constructor found:', typeof Gantt);
 
-        // Create the simplest possible task data
-        const simpleTasks = [
-          {
-            id: 1,
-            name: 'Task 1',
-            startDate: '2025-08-19',
-            duration: 3,
-            percentDone: 50
-          },
-          {
-            id: 2,
-            name: 'Task 2',
-            startDate: '2025-08-22',
-            duration: 2,
-            percentDone: 0
-          },
-          {
-            id: 3,
-            name: 'Task 3',
-            startDate: '2025-08-24',
-            duration: 4,
-            percentDone: 75
+        // Transform resources for scheduler
+        const schedulerResources = (resources as any[] || []).slice(0, 20).map(resource => ({
+          id: resource.id,
+          name: resource.name || `Resource ${resource.id}`,
+          type: resource.resourceType || resource.type || 'equipment'
+        }));
+
+        // Add some default resources if none exist
+        if (schedulerResources.length === 0) {
+          schedulerResources.push(
+            { id: 1, name: 'Grain Mill 1', type: 'mill' },
+            { id: 2, name: 'Mash Tun 1', type: 'vessel' },
+            { id: 3, name: 'Brew Kettle 1', type: 'kettle' },
+            { id: 4, name: 'Fermenter 1', type: 'fermenter' },
+            { id: 5, name: 'Packaging Line 1', type: 'packaging' }
+          );
+        }
+
+        // Transform operations to events for scheduler
+        const schedulerEvents = (operations as any[] || []).slice(0, 100).map((op, index) => {
+          const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
+          const endDate = op.scheduledEnd || op.endTime || 
+            new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+          
+          return {
+            id: op.id || index + 1,
+            name: op.name || op.operationName || `Operation ${index + 1}`,
+            startDate: startDate,
+            endDate: endDate,
+            resourceId: op.resourceId || schedulerResources[index % schedulerResources.length]?.id,
+            eventColor: getOperationColor(op.operationName || op.name)
+          };
+        });
+
+        console.log('Resources:', schedulerResources.length, 'Events:', schedulerEvents.length);
+        console.log('Sample resource:', schedulerResources[0]);
+        console.log('Sample event:', schedulerEvents[0]);
+        
+        // For Gantt, we need to structure data as tasks with resource assignments
+        // Group operations by resource to create a resource-oriented view
+        const resourceTasks: any[] = [];
+        const tasksByResource = new Map();
+        
+        // Group events by resource
+        schedulerEvents.forEach(event => {
+          if (!tasksByResource.has(event.resourceId)) {
+            tasksByResource.set(event.resourceId, []);
           }
-        ];
+          tasksByResource.get(event.resourceId).push(event);
+        });
         
-        console.log('Using simple test tasks:', simpleTasks);
+        // Create parent tasks for each resource with operations as children
+        schedulerResources.forEach((resource, index) => {
+          const resourceEvents = tasksByResource.get(resource.id) || [];
+          
+          // Parent task for resource
+          const resourceTask = {
+            id: `resource-${resource.id}`,
+            name: resource.name,
+            startDate: resourceEvents.length > 0 
+              ? resourceEvents.reduce((min: any, e: any) => 
+                  new Date(e.startDate) < new Date(min) ? e.startDate : min, 
+                  resourceEvents[0].startDate)
+              : new Date('2025-08-19').toISOString(),
+            endDate: resourceEvents.length > 0
+              ? resourceEvents.reduce((max: any, e: any) => 
+                  new Date(e.endDate) > new Date(max) ? e.endDate : max, 
+                  resourceEvents[0].endDate)
+              : new Date('2025-08-20').toISOString(),
+            expanded: true,
+            children: resourceEvents.map(event => ({
+              id: event.id,
+              name: event.name,
+              startDate: event.startDate,
+              endDate: event.endDate,
+              percentDone: 0,
+              leaf: true,
+              eventColor: event.eventColor
+            }))
+          };
+          
+          if (resourceTask.children.length > 0 || index < 5) {
+            resourceTasks.push(resourceTask);
+          }
+        });
         
-        // Most minimal config possible
+        console.log('Resource tasks structure:', resourceTasks.slice(0, 2));
+        
+        // Gantt configuration with resource-oriented task structure
         const config = {
           appendTo: containerRef.current,
-          height: 400,
-          startDate: '2025-08-19',
-          endDate: '2025-08-31',
+          height: 600,
+          startDate: new Date('2025-08-19'),
+          endDate: new Date('2025-09-02'),
+          viewPreset: 'dayAndWeek',
+          rowHeight: 40,
+          barMargin: 5,
           
+          // Columns showing resources and operations
           columns: [
-            { type: 'name', text: 'Task', width: 250 }
+            { 
+              type: 'name',
+              text: 'Resources / Operations', 
+              field: 'name', 
+              width: 250,
+              renderer: ({ record }: any) => {
+                // Style parent rows differently
+                if (!record.leaf) {
+                  return `<strong>${record.name}</strong>`;
+                }
+                return record.name;
+              }
+            }
           ],
           
-          tasks: simpleTasks
+          // Task data with resource hierarchy
+          project: {
+            tasks: resourceTasks
+          }
         };
         
-        console.log('Attempting to create Gantt with minimal config:', config);
+        console.log('Creating resource-centered scheduler with config:', config);
         
-        schedulerRef.current = new Gantt(config);
+        schedulerRef.current = new SchedulerClass(config);
         
-        console.log('✅ Gantt created successfully!');
-        
-        // Now that we know it works, let's add real data
-        if (operations && Array.isArray(operations) && operations.length > 0) {
-          const realTasks = (operations as any[]).slice(0, 20).map((op: any, index: number) => {
-            const startDate = op.scheduledStart ? new Date(op.scheduledStart) : new Date();
-            const endDate = op.scheduledEnd ? new Date(op.scheduledEnd) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
-            const durationDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-            
-            return {
-              id: op.id || index + 1,
-              name: op.name || `Operation ${index + 1}`,
-              startDate: startDate.toISOString().split('T')[0],
-              duration: durationDays,
-              percentDone: op.percentComplete || 0
-            };
-          });
-          
-          console.log('Loading real tasks:', realTasks.length, 'tasks');
-          console.log('First real task:', realTasks[0]);
-          
-          // Update with real data
-          schedulerRef.current.taskStore.data = realTasks;
-        }
+        console.log('✅ Resource scheduler created successfully!');
 
         console.log('Scheduler initialized successfully');
         setIsInitialized(true);
@@ -162,27 +249,6 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       }
     };
   }, [isLoading, operations, resources]); // Removed isInitialized to prevent re-initialization loop
-
-  // Helper function to get color based on operation type
-  function getOperationColor(operationType: string): string {
-    const colors: Record<string, string> = {
-      'Milling': '#8B4513',
-      'Mashing': '#FFD700',
-      'Boiling': '#FF6347',
-      'Fermentation': '#32CD32',
-      'Conditioning': '#4169E1',
-      'Packaging': '#9370DB',
-      'Quality': '#FF69B4',
-      'Cleaning': '#00CED1'
-    };
-    
-    for (const [key, color] of Object.entries(colors)) {
-      if (operationType?.toLowerCase().includes(key.toLowerCase())) {
-        return color;
-      }
-    }
-    return '#6B7280'; // Default gray
-  }
 
   if (isLoading) {
     return (
