@@ -178,8 +178,9 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        // Use SchedulerPro but with simplified configuration (no project/assignments)
-        const { SchedulerPro } = bryntum.schedulerpro;
+        // Try using basic Scheduler if available, otherwise use SchedulerPro
+        const { SchedulerPro, Scheduler } = bryntum.schedulerpro;
+        const SchedulerClass = Scheduler || SchedulerPro;
         
         // Use actual PT resources - no duplicates after database cleanup
         const schedulerResources = (resources as any[] || []).map((resource) => {
@@ -203,29 +204,8 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         // Debug: Log first few operations to check what data we have
         console.log('First 3 operations raw data:', (operations as any[] || []).slice(0, 3));
         
-        // For SchedulerPro, events don't have resourceId - use assignments instead
+        // For basic Scheduler, events have resourceId directly
         const schedulerEvents = (operations as any[] || [])
-          .slice(0, 200)
-          .filter(op => op.resourceId || op.resourceName)
-          .map((op, index) => {
-            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
-            const endDate = op.scheduledEnd || op.endTime || 
-              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
-            
-            return {
-              id: op.id || index + 1,
-              name: op.name || op.operationName || `Operation ${op.id}`,
-              startDate: startDate,
-              endDate: endDate,
-              // NO resourceId for SchedulerPro - use assignments instead
-              percentDone: op.percentFinished || 0,
-              draggable: true,
-              resizable: true
-            };
-          });
-        
-        // Create assignments to link events to resources
-        const schedulerAssignments = (operations as any[] || [])
           .slice(0, 200)
           .filter(op => op.resourceId || op.resourceName)
           .map((op, index) => {
@@ -236,27 +216,36 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             }
             
             if (!resourceId) {
+              console.warn(`No resource found for operation: ${op.name}`, op);
               return null;
             }
             
+            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
+            const endDate = op.scheduledEnd || op.endTime || 
+              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+            
             return {
-              id: `assignment-${op.id || index + 1}`,
-              eventId: op.id || index + 1,
-              resourceId: resourceId
+              id: op.id || index + 1,
+              name: op.name || op.operationName || `Operation ${op.id}`,
+              startDate: startDate,
+              endDate: endDate,
+              resourceId: resourceId, // Direct resourceId for basic Scheduler
+              percentDone: op.percentFinished || 0,
+              draggable: true,
+              resizable: true
             };
           })
-          .filter(assignment => assignment !== null);
+          .filter(event => event !== null);
 
         console.log(`Loading ${schedulerEvents.length} events`);
-        console.log(`Loading ${schedulerAssignments.length} assignments`);
         
-        // Debug: Check resource distribution via assignments
+        // Debug: Check resource distribution via events
         const resourceDistribution = new Map<number, number>();
-        schedulerAssignments.forEach(assignment => {
-          const count = resourceDistribution.get(assignment.resourceId) || 0;
-          resourceDistribution.set(assignment.resourceId, count + 1);
+        schedulerEvents.forEach(event => {
+          const count = resourceDistribution.get(event.resourceId) || 0;
+          resourceDistribution.set(event.resourceId, count + 1);
         });
-        console.log('Resource distribution via assignments:', Object.fromEntries(resourceDistribution));
+        console.log('Resource distribution:', Object.fromEntries(resourceDistribution));
         console.log('Unique resources used:', resourceDistribution.size);
         
         // Clear container before creating scheduler
@@ -275,15 +264,12 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           rowHeight: 50,
           barMargin: 5,
           
-          // Load data directly into stores
+          // Load data directly into stores (no assignments for basic Scheduler)
           resourceStore: {
             data: schedulerResources
           },
           eventStore: {
             data: schedulerEvents
-          },
-          assignmentStore: {
-            data: schedulerAssignments
           },
           
           // Enhanced resource columns - use simple text instead of HTML
@@ -317,17 +303,16 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           }
         };
         
-        console.log('Creating Scheduler Pro with config:', config);
+        console.log('Creating Scheduler with config:', config);
         console.log('Resources:', schedulerResources);
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
-        console.log('Assignments (first 5):', schedulerAssignments.slice(0, 5));
         
         // Import SchedulerPro from the library
         const bryntumLibrary = (window as any).bryntum.schedulerpro;
         
         try {
-          schedulerRef.current = new SchedulerPro(config);
-          console.log('✅ Scheduler Pro created successfully with PT data!');
+          schedulerRef.current = new SchedulerClass(config);
+          console.log('✅ Scheduler created successfully with PT data!');
           console.log(`Scheduler initialized with ${schedulerRef.current.resourceStore.count} resources`);
           console.log(`Scheduler initialized with ${schedulerRef.current.eventStore.count} events`);
           
@@ -335,22 +320,14 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           const loadedResources = schedulerRef.current.resourceStore.records;
           console.log('Actually loaded resources:', loadedResources.map(r => ({ id: r.id, name: r.name })));
           
-          // Debug: Check assignments - SchedulerPro uses assignments to link events to resources
-          const loadedAssignments = schedulerRef.current.assignmentStore.records.slice(0, 5);
-          console.log('First 5 loaded assignments:', loadedAssignments.map(a => ({ 
-            assignmentId: a.id,
-            eventId: a.eventId,
-            resourceId: a.resourceId,
-            event: schedulerRef.current.eventStore.getById(a.eventId)?.name,
-            resource: schedulerRef.current.resourceStore.getById(a.resourceId)?.name
+          // Debug: Check events with their resource assignments
+          const loadedEvents = schedulerRef.current.eventStore.records.slice(0, 5);
+          console.log('First 5 loaded events with resources:', loadedEvents.map(e => ({ 
+            eventId: e.id,
+            name: e.name,
+            resourceId: e.resourceId,
+            resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
           })));
-          
-          // Debug: Check how events are assigned
-          const firstEvent = schedulerRef.current.eventStore.first;
-          if (firstEvent) {
-            console.log('First event assignments:', firstEvent.assignments);
-            console.log('First event resources:', firstEvent.resources);
-          }
           
           // Force refresh to ensure all resources are rendered
           schedulerRef.current.refresh();
