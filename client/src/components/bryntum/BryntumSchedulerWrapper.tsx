@@ -257,20 +257,17 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           containerRef.current.innerHTML = '';
         }
 
-        // Use simple direct configuration
+        // Simple minimal config with inline data
         const config = {
           appendTo: containerRef.current,
           height: 900,
-          width: '100%',
-          startDate: new Date('2025-08-19'),
-          endDate: new Date('2025-09-02'),
+          startDate: '2025-08-19',
+          endDate: '2025-09-02',
           viewPreset: 'dayAndWeek',
           rowHeight: 40,
           barMargin: 2,
-          autoHeight: false,
-          fillTicks: true,
           
-          // Direct data assignment
+          // Direct inline resources - this should force display
           resources: schedulerResources,
           events: schedulerEvents,
           
@@ -326,14 +323,36 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
         console.log('Resources:', schedulerResources);
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
         
-        // Import SchedulerPro from the library
-        const bryntumLibrary = (window as any).bryntum.schedulerpro;
+        // Try using basic Scheduler instead of SchedulerPro
+        const bryntumLibrary = (window as any).bryntum;
+        
+        // Use basic Scheduler if available, otherwise fallback to SchedulerPro
+        const SchedulerToUse = bryntumLibrary.scheduler?.Scheduler || SchedulerClass;
+        
+        console.log('Using scheduler class:', SchedulerToUse.name || 'SchedulerPro');
         
         try {
-          schedulerRef.current = new SchedulerClass(config);
-          console.log('✅ Scheduler created successfully with PT data!');
-          console.log(`Scheduler initialized with ${schedulerRef.current.resourceStore.count} resources`);
-          console.log(`Scheduler initialized with ${schedulerRef.current.eventStore.count} events`);
+          // Create scheduler with resources and events directly in config
+          schedulerRef.current = new SchedulerToUse({
+            appendTo: containerRef.current,
+            height: 900,
+            startDate: '2025-08-19',
+            endDate: '2025-09-02',
+            viewPreset: 'dayAndWeek',
+            rowHeight: 40,
+            columns: [
+              { type: 'resourceInfo', text: 'Resource', width: 200, field: 'name' }
+            ],
+            // Pass data directly in config
+            resources: schedulerResources,
+            events: schedulerEvents,
+            // Ensure resources are shown
+            hideEmptyResources: false
+          });
+          
+          console.log('✅ Scheduler created with manual data loading!');
+          console.log(`Resources in store: ${schedulerRef.current.resourceStore.count}`);
+          console.log(`Events in store: ${schedulerRef.current.eventStore.count}`);
           
           // Debug: Check what resources are actually in the store
           const loadedResources = schedulerRef.current.resourceStore.records;
