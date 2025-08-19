@@ -199,16 +199,35 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         });
         console.log('Resource mapping:', Object.fromEntries(resourceMapping));
         
+        // Debug: Log first few operations to check what data we have
+        console.log('First 3 operations raw data:', (operations as any[] || []).slice(0, 3));
+        
         const schedulerEvents = (operations as any[] || [])
           .slice(0, 200)
-          .filter(op => op.resourceName) // Only include operations with assigned resources
+          .filter(op => op.resourceId || op.resourceName) // Include operations with resource assignment
           .map((op, index) => {
-            const resourceName = op.resourceName;
-            const resourceId = resourceMapping.get(resourceName);
+            // Use the resourceId directly from the operation
+            // The API returns resourceId as a number from the database
+            let resourceId = op.resourceId;
+            
+            // Debug specific mapping for first 10 operations
+            if (index < 10) {
+              console.log(`Operation ${index}: ${op.name}`);
+              console.log(`  - op.resourceId: ${op.resourceId} (type: ${typeof op.resourceId})`);
+              console.log(`  - op.resourceName: "${op.resourceName}"`);
+              console.log(`  - Using resourceId: ${resourceId}`);
+            }
             
             if (!resourceId) {
-              console.log(`Warning: Resource "${resourceName}" not found for operation ${op.name}`);
-              return null;
+              console.log(`Warning: No resourceId for operation ${op.name} - this shouldn't happen!`);
+              // Try to map by name as fallback
+              if (op.resourceName) {
+                resourceId = resourceMapping.get(op.resourceName);
+                console.log(`  Fallback mapping by name "${op.resourceName}" => ${resourceId}`);
+              }
+              if (!resourceId) {
+                return null;
+              }
             }
             
             const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
@@ -247,7 +266,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         // Simple Scheduler Pro configuration focused on resource display
         const config = {
           appendTo: containerRef.current,
-          height: 1200, // Increased to accommodate all 23 resources
+          height: 800, // Standard height with scrolling
           width: '100%',
           autoHeight: false,
           startDate: new Date('2025-08-19'),
@@ -257,24 +276,20 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           viewPreset: 'dayAndWeek',
           
           // Row configuration for better visibility
-          rowHeight: 45, // Slightly reduced to fit more resources
+          rowHeight: 50, // Standard row height
           barMargin: 5,
           
-          // Resources on the left axis - preload with data
-          resourceStore: {
-            fields: ['id', 'name', 'type'],
-            data: schedulerResources, // Load resources immediately
-            tree: false
-          },
+          // Enable vertical scrolling for resources
+          scrollable: true,
+          
+          // Resources on the left axis
+          resources: schedulerResources,
+          
+          // Events (operations) on the timeline
+          events: schedulerEvents,
           
           // Show all resources, even those without events
           hideUnscheduledResources: false,
-          
-          // Events (operations) on the timeline - preload with data
-          eventStore: {
-            fields: ['id', 'name', 'startDate', 'endDate', 'resourceId', 'percentDone', 'draggable', 'resizable'],
-            data: schedulerEvents // Load events immediately
-          },
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
@@ -309,7 +324,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         
         console.log('Creating Scheduler Pro with config:', config);
         console.log('Resources:', schedulerResources);
-        console.log('Events:', schedulerEvents);
+        console.log('Events (first 5):', schedulerEvents.slice(0, 5));
         
         try {
           schedulerRef.current = new SchedulerPro(config);
@@ -320,6 +335,14 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           // Debug: Check what resources are actually in the store
           const loadedResources = schedulerRef.current.resourceStore.records;
           console.log('Actually loaded resources:', loadedResources.map(r => ({ id: r.id, name: r.name })));
+          
+          // Debug: Check what events are loaded and their resource assignments
+          const loadedEvents = schedulerRef.current.eventStore.records.slice(0, 5);
+          console.log('First 5 loaded events:', loadedEvents.map(e => ({ 
+            name: e.name, 
+            resourceId: e.resourceId,
+            resource: e.resource?.name 
+          })));
           
           // Force refresh to ensure all resources are rendered
           schedulerRef.current.refresh();
