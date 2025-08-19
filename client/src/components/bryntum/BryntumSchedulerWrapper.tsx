@@ -257,7 +257,7 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           containerRef.current.innerHTML = '';
         }
 
-        // SchedulerPro configuration - simplified approach
+        // FIX: Force all resources to display by using data stores
         const config = {
           appendTo: containerRef.current,
           height: 900,  // Increased height to show more resources
@@ -265,15 +265,24 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           viewPreset: 'dayAndWeek',
-          rowHeight: 35,  // Slightly larger for readability
+          rowHeight: 40,  // Make rows more visible
           barMargin: 2,
-          autoHeight: false,  // Don't auto-adjust height
-          fillTicks: true,  // Fill time cells
+          autoHeight: false,
+          fillTicks: true,
           maintainSelectionOnDatasetChange: false,
           
-          // Initialize stores with all resources, even those without events
-          resources: schedulerResources,
-          events: schedulerEvents,
+          // Critical: Use stores to ensure all resources display
+          resourceStore: {
+            data: schedulerResources,
+            tree: false,
+            autoLoad: false,
+            // Force all resources to show even without events
+            filterEmptyResources: false
+          },
+          eventStore: {
+            data: schedulerEvents,
+            autoLoad: false
+          },
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
