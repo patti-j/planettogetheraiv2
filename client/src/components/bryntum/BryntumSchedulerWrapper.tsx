@@ -40,6 +40,12 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
     }
 
     const initScheduler = async () => {
+      // Prevent multiple initializations
+      if (schedulerRef.current) {
+        console.log('Scheduler already exists, skipping initialization');
+        return;
+      }
+      
       // Check if Bryntum is available
       if (typeof window === 'undefined' || !(window as any).bryntum?.gantt) {
         console.log('Waiting for Bryntum library to load...');
@@ -48,76 +54,88 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       }
 
       try {
-        console.log('Bryntum library detected, initializing Scheduler...');
-        const { Gantt } = (window as any).bryntum.gantt;
-
-        // Transform resources
-        const schedulerResources = (resources as any[]).map(resource => ({
-          id: resource.id,
-          name: resource.name,
-          type: resource.type || 'machine'
-        }));
-
-        // Transform operations to events (scheduler format)
-        const events = (operations as any[]).map((op: any) => {
-          const startDate = op.scheduledStart ? new Date(op.scheduledStart) : new Date();
-          const endDate = op.scheduledEnd ? new Date(op.scheduledEnd) : new Date(startDate.getTime() + (op.duration || 60) * 60000);
-          
-          return {
-            id: op.id,
-            name: op.name || `Operation ${op.id}`,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            resourceId: op.resourceId || (schedulerResources[0]?.id),
-            eventColor: getOperationColor(op.operationName || op.name),
-            // Additional fields
-            jobName: op.jobName,
-            operationName: op.operationName,
-            percentDone: op.percentComplete || 0
-          };
-        });
-
-        console.log('Creating Gantt with:', {
-          resources: schedulerResources.length,
-          events: events.length
-        });
-
-        // Create minimal Gantt instance - start simple
-        const tasks = events.slice(0, 50).map((event, index) => ({
-          id: event.id,
-          name: event.name,
-          startDate: event.startDate,
-          duration: Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / (1000 * 60 * 60 * 24)), // days
-          percentDone: event.percentDone || 0
-        }));
+        console.log('Bryntum library detected, checking available components...');
+        const bryntum = (window as any).bryntum;
         
-        console.log('Sample task:', tasks[0]);
+        // Log what's available in the bryntum object
+        console.log('Bryntum object keys:', Object.keys(bryntum));
+        console.log('Bryntum.gantt available?', !!bryntum.gantt);
         
+        if (!bryntum.gantt) {
+          throw new Error('Bryntum Gantt module not found in bryntum object');
+        }
+        
+        const { Gantt } = bryntum.gantt;
+        console.log('Gantt constructor found:', typeof Gantt);
+
+        // Create the simplest possible task data
+        const simpleTasks = [
+          {
+            id: 1,
+            name: 'Task 1',
+            startDate: '2025-08-19',
+            duration: 3,
+            percentDone: 50
+          },
+          {
+            id: 2,
+            name: 'Task 2',
+            startDate: '2025-08-22',
+            duration: 2,
+            percentDone: 0
+          },
+          {
+            id: 3,
+            name: 'Task 3',
+            startDate: '2025-08-24',
+            duration: 4,
+            percentDone: 75
+          }
+        ];
+        
+        console.log('Using simple test tasks:', simpleTasks);
+        
+        // Most minimal config possible
         const config = {
           appendTo: containerRef.current,
-          height: 500, // Use number instead of string
+          height: 400,
+          startDate: '2025-08-19',
+          endDate: '2025-08-31',
           
-          // Minimal columns
           columns: [
-            { type: 'name', text: 'Operation', width: 250 }
+            { type: 'name', text: 'Task', width: 250 }
           ],
           
-          // Start and end dates
-          startDate: new Date('2025-08-19'),
-          endDate: new Date('2025-09-19'),
-          
-          // Simple task data
-          tasks: tasks
+          tasks: simpleTasks
         };
         
-        console.log('Creating Gantt with config:', config);
+        console.log('Attempting to create Gantt with minimal config:', config);
         
-        try {
-          schedulerRef.current = new Gantt(config);
-          console.log('Gantt created successfully!');
-        } catch (initError) {
-          console.error('Failed to create Gantt:', initError);
-          throw initError;
+        schedulerRef.current = new Gantt(config);
+        
+        console.log('✅ Gantt created successfully!');
+        
+        // Now that we know it works, let's add real data
+        if (operations && Array.isArray(operations) && operations.length > 0) {
+          const realTasks = (operations as any[]).slice(0, 20).map((op: any, index: number) => {
+            const startDate = op.scheduledStart ? new Date(op.scheduledStart) : new Date();
+            const endDate = op.scheduledEnd ? new Date(op.scheduledEnd) : new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+            const durationDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+            
+            return {
+              id: op.id || index + 1,
+              name: op.name || `Operation ${index + 1}`,
+              startDate: startDate.toISOString().split('T')[0],
+              duration: durationDays,
+              percentDone: op.percentComplete || 0
+            };
+          });
+          
+          console.log('Loading real tasks:', realTasks.length, 'tasks');
+          console.log('First real task:', realTasks[0]);
+          
+          // Update with real data
+          schedulerRef.current.taskStore.data = realTasks;
         }
 
         console.log('Scheduler initialized successfully');
@@ -143,7 +161,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         }
       }
     };
-  }, [isLoading, operations, resources, isInitialized, height, width]);
+  }, [isLoading, operations, resources]); // Removed isInitialized to prevent re-initialization loop
 
   // Helper function to get color based on operation type
   function getOperationColor(operationType: string): string {
