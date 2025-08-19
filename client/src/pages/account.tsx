@@ -303,7 +303,7 @@ export default function AccountPage() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {getPlanIcon(accountInfo.subscriptionPlan)}
+                {getPlanIcon(accountInfo.subscriptionTier || 'basic')}
                 Subscription Overview
               </CardTitle>
             </CardHeader>
@@ -311,12 +311,12 @@ export default function AccountPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold capitalize">
-                    {SUBSCRIPTION_PLANS.find(p => p.name === accountInfo.subscriptionPlan)?.displayName || accountInfo.subscriptionPlan}
+                    {SUBSCRIPTION_PLANS.find(p => p.name === (accountInfo.subscriptionTier || 'basic'))?.displayName || accountInfo.subscriptionTier || 'Basic'}
                   </h3>
-                  <p className="text-gray-600">{formatCurrency(accountInfo.totalAmount/accountInfo.currentUsers)}/user/{accountInfo.billingCycle === 'monthly' ? 'month' : 'year'}</p>
+                  <p className="text-gray-600">{formatCurrency((accountInfo.totalAmount || 0)/(accountInfo.currentUsers || 1))}/user/{accountInfo.billingCycle === 'annual' ? 'year' : 'month'}</p>
                 </div>
                 <div className="text-right">
-                  {getStatusBadge(accountInfo.subscriptionStatus)}
+                  {getStatusBadge(accountInfo.subscriptionStatus || (accountInfo.isActive ? 'active' : 'inactive'))}
                   {accountInfo.subscriptionStatus === 'trial' && accountInfo.trialEndsAt && (
                     <p className="text-sm text-gray-600 mt-1">
                       Trial ends {formatDate(accountInfo.trialEndsAt)}
@@ -331,12 +331,12 @@ export default function AccountPage() {
                 <div>
                   <p className="text-sm text-gray-600">Users</p>
                   <p className="text-lg font-semibold">
-                    {accountInfo.currentUsers}/{accountInfo.maxUsers === -1 ? '∞' : accountInfo.maxUsers}
+                    {accountInfo.currentUsers || 1}/{accountInfo.maxUsers === -1 ? '∞' : accountInfo.maxUsers || 'Unlimited'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Next Billing</p>
-                  <p className="text-lg font-semibold">{formatDate(accountInfo.nextBillingDate)}</p>
+                  <p className="text-lg font-semibold">{accountInfo.nextBillingDate ? formatDate(accountInfo.nextBillingDate) : 'N/A'}</p>
                 </div>
               </div>
 
@@ -421,14 +421,14 @@ export default function AccountPage() {
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">API Calls</span>
                   <span className="text-sm">
-                    {accountInfo.usage.apiCalls.toLocaleString()}/{accountInfo.usage.apiLimit === -1 ? '∞' : accountInfo.usage.apiLimit.toLocaleString()}
+                    {accountInfo.usage?.apiCalls?.toLocaleString() || '0'}/{accountInfo.usage?.apiLimit === -1 ? '∞' : accountInfo.usage?.apiLimit?.toLocaleString() || 'Unlimited'}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-blue-600 h-2 rounded-full" 
                     style={{ 
-                      width: accountInfo.usage.apiLimit === -1 ? '0%' : `${Math.min((accountInfo.usage.apiCalls / accountInfo.usage.apiLimit) * 100, 100)}%` 
+                      width: accountInfo.usage?.apiLimit === -1 || !accountInfo.usage ? '0%' : `${Math.min(((accountInfo.usage?.apiCalls || 0) / (accountInfo.usage?.apiLimit || 1)) * 100, 100)}%` 
                     }}
                   ></div>
                 </div>
@@ -438,14 +438,14 @@ export default function AccountPage() {
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Storage</span>
                   <span className="text-sm">
-                    {accountInfo.usage.storage.toFixed(1)} GB/{accountInfo.usage.storageLimit === -1 ? '∞' : `${accountInfo.usage.storageLimit} GB`}
+                    {(accountInfo.usage?.storage || 0).toFixed(1)} GB/{accountInfo.usage?.storageLimit === -1 ? '∞' : `${accountInfo.usage?.storageLimit || 'Unlimited'} GB`}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className="bg-green-600 h-2 rounded-full" 
                     style={{ 
-                      width: accountInfo.usage.storageLimit === -1 ? '0%' : `${Math.min((accountInfo.usage.storage / accountInfo.usage.storageLimit) * 100, 100)}%` 
+                      width: accountInfo.usage?.storageLimit === -1 || !accountInfo.usage ? '0%' : `${Math.min(((accountInfo.usage?.storage || 0) / (accountInfo.usage?.storageLimit || 1)) * 100, 100)}%` 
                     }}
                   ></div>
                 </div>
@@ -463,7 +463,7 @@ export default function AccountPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {accountInfo.features.map((feature, index) => (
+                {(accountInfo.features || ['Basic Features', 'Standard Support', 'Cloud Storage']).map((feature, index) => (
                   <div key={index} className="flex items-center">
                     <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                     <span className="text-sm">{feature}</span>
@@ -539,17 +539,17 @@ export default function AccountPage() {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">Company</p>
-                <p className="text-sm">{accountInfo.companyName}</p>
+                <p className="text-sm">{accountInfo.companyName || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Primary Email</p>
-                <p className="text-sm">{accountInfo.contactInfo.primaryEmail}</p>
+                <p className="text-sm">{accountInfo.contactInfo?.primaryEmail || accountInfo.billingEmail || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Billing Email</p>
-                <p className="text-sm">{accountInfo.contactInfo.billingEmail}</p>
+                <p className="text-sm">{accountInfo.contactInfo?.billingEmail || accountInfo.billingEmail || 'Not specified'}</p>
               </div>
-              {accountInfo.contactInfo.phone && (
+              {accountInfo.contactInfo?.phone && (
                 <div>
                   <p className="text-sm text-gray-600">Phone</p>
                   <p className="text-sm">{accountInfo.contactInfo.phone}</p>
