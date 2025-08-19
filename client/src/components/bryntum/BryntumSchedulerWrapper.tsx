@@ -202,34 +202,11 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         // Debug: Log first few operations to check what data we have
         console.log('First 3 operations raw data:', (operations as any[] || []).slice(0, 3));
         
+        // For Scheduler Pro, events don't have resourceId - they use assignments
         const schedulerEvents = (operations as any[] || [])
           .slice(0, 200)
-          .filter(op => op.resourceId || op.resourceName) // Include operations with resource assignment
+          .filter(op => op.resourceId || op.resourceName)
           .map((op, index) => {
-            // Use the resourceId directly from the operation
-            // The API returns resourceId as a number from the database
-            let resourceId = op.resourceId;
-            
-            // Debug specific mapping for first 10 operations
-            if (index < 10) {
-              console.log(`Operation ${index}: ${op.name}`);
-              console.log(`  - op.resourceId: ${op.resourceId} (type: ${typeof op.resourceId})`);
-              console.log(`  - op.resourceName: "${op.resourceName}"`);
-              console.log(`  - Using resourceId: ${resourceId}`);
-            }
-            
-            if (!resourceId) {
-              console.log(`Warning: No resourceId for operation ${op.name} - this shouldn't happen!`);
-              // Try to map by name as fallback
-              if (op.resourceName) {
-                resourceId = resourceMapping.get(op.resourceName);
-                console.log(`  Fallback mapping by name "${op.resourceName}" => ${resourceId}`);
-              }
-              if (!resourceId) {
-                return null;
-              }
-            }
-            
             const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
             const endDate = op.scheduledEnd || op.endTime || 
               new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
@@ -239,23 +216,46 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
               name: op.name || op.operationName || `Operation ${op.id}`,
               startDate: startDate,
               endDate: endDate,
-              resourceId: resourceId,
               percentDone: op.percentFinished || 0,
               draggable: true,
               resizable: true
+              // Note: NO resourceId field for Scheduler Pro events
+            };
+          });
+        
+        // Create assignments to link events to resources
+        const schedulerAssignments = (operations as any[] || [])
+          .slice(0, 200)
+          .filter(op => op.resourceId || op.resourceName)
+          .map((op, index) => {
+            let resourceId = op.resourceId;
+            
+            if (!resourceId && op.resourceName) {
+              resourceId = resourceMapping.get(op.resourceName);
+            }
+            
+            if (!resourceId) {
+              return null;
+            }
+            
+            return {
+              id: `assignment-${op.id || index + 1}`,
+              eventId: op.id || index + 1,
+              resourceId: resourceId
             };
           })
-          .filter(event => event !== null); // Remove null events
+          .filter(assignment => assignment !== null);
 
         console.log(`Loading ${schedulerEvents.length} events`);
+        console.log(`Loading ${schedulerAssignments.length} assignments`);
         
-        // Debug: Check resource distribution
+        // Debug: Check resource distribution through assignments
         const resourceDistribution = new Map<number, number>();
-        schedulerEvents.forEach(event => {
-          const count = resourceDistribution.get(event.resourceId) || 0;
-          resourceDistribution.set(event.resourceId, count + 1);
+        schedulerAssignments.forEach(assignment => {
+          const count = resourceDistribution.get(assignment.resourceId) || 0;
+          resourceDistribution.set(assignment.resourceId, count + 1);
         });
-        console.log('Resource distribution:', Object.fromEntries(resourceDistribution));
+        console.log('Resource distribution via assignments:', Object.fromEntries(resourceDistribution));
         console.log('Unique resources used:', resourceDistribution.size);
         
         // Clear container before creating scheduler
@@ -285,8 +285,11 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           // Resources on the left axis
           resources: schedulerResources,
           
-          // Events (operations) on the timeline
+          // Events (operations) on the timeline - without resourceId
           events: schedulerEvents,
+          
+          // Assignments to link events to resources - THIS IS CRITICAL FOR SCHEDULER PRO
+          assignments: schedulerAssignments,
           
           // Show all resources, even those without events
           hideUnscheduledResources: false,
@@ -325,6 +328,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         console.log('Creating Scheduler Pro with config:', config);
         console.log('Resources:', schedulerResources);
         console.log('Events (first 5):', schedulerEvents.slice(0, 5));
+        console.log('Assignments (first 5):', schedulerAssignments.slice(0, 5));
         
         try {
           schedulerRef.current = new SchedulerPro(config);
