@@ -178,9 +178,10 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        // Use SchedulerPro directly - don't fallback to basic Scheduler
+        // Try using basic Scheduler instead of SchedulerPro
+        const { Scheduler } = bryntum.scheduler || {};
         const { SchedulerPro } = bryntum.schedulerpro;
-        const SchedulerClass = SchedulerPro;
+        const SchedulerClass = Scheduler || SchedulerPro;
         
         if (!SchedulerClass) {
           throw new Error('SchedulerPro class not found');
@@ -327,7 +328,20 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
         console.log('Using SchedulerClass from earlier initialization');
         
         try {
-          // Create scheduler with explicit resource and event stores
+          // Try creating stores separately first - use whichever is available
+          const ResourceStore = bryntum.schedulerpro?.ResourceStore || bryntum.scheduler?.ResourceStore;
+          const EventStore = bryntum.schedulerpro?.EventStore || bryntum.scheduler?.EventStore;
+          
+          const resourceStore = new ResourceStore({
+            data: schedulerResources,
+            tree: false
+          });
+          
+          const eventStore = new EventStore({
+            data: schedulerEvents
+          });
+          
+          // Create scheduler with pre-built stores
           schedulerRef.current = new SchedulerClass({
             appendTo: containerRef.current,
             height: 900,
@@ -339,17 +353,14 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             columns: [
               { text: 'Resource', field: 'name', width: 200 }
             ],
-            resourceStore: {
-              data: schedulerResources
-            },
-            eventStore: {
-              data: schedulerEvents  
-            },
-            // Critical: Force scheduler to display all resources
+            resourceStore: resourceStore,
+            eventStore: eventStore,
+            // Disable features that might interfere
             features: {
               tree: false,
               group: false,
-              filterBar: false
+              filterBar: false,
+              regionResize: false
             }
           });
           
