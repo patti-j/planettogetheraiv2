@@ -82,39 +82,43 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           events: events.length
         });
 
-        // Create simple Gantt instance with minimal config
+        // Create minimal Gantt instance - start simple
+        const tasks = events.slice(0, 50).map((event, index) => ({
+          id: event.id,
+          name: event.name,
+          startDate: event.startDate,
+          duration: Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / (1000 * 60 * 60 * 24)), // days
+          percentDone: event.percentDone || 0
+        }));
+        
+        console.log('Sample task:', tasks[0]);
+        
         const config = {
           appendTo: containerRef.current,
-          height,
-          width,
+          height: 500, // Use number instead of string
           
-          // Basic columns
+          // Minimal columns
           columns: [
-            { type: 'name', field: 'name', text: 'Task', width: 250 }
+            { type: 'name', text: 'Operation', width: 250 }
           ],
           
-          // Basic project data
-          project: {
-            // Transform operations to tasks for Gantt
-            tasks: events.map((event, index) => ({
-              id: event.id,
-              name: event.name,
-              startDate: event.startDate,
-              endDate: event.endDate,
-              duration: Math.ceil((new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) / (1000 * 60 * 60)), // hours
-              percentDone: event.percentDone || 0,
-              leaf: true // Mark as leaf nodes for now
-            }))
-          },
+          // Start and end dates
+          startDate: new Date('2025-08-19'),
+          endDate: new Date('2025-09-19'),
           
-          // View configuration
-          viewPreset: 'dayAndWeek',
-          startDate: new Date(),
-          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days ahead
+          // Simple task data
+          tasks: tasks
         };
         
-        console.log('Gantt config:', config);
-        schedulerRef.current = new Gantt(config);
+        console.log('Creating Gantt with config:', config);
+        
+        try {
+          schedulerRef.current = new Gantt(config);
+          console.log('Gantt created successfully!');
+        } catch (initError) {
+          console.error('Failed to create Gantt:', initError);
+          throw initError;
+        }
 
         console.log('Scheduler initialized successfully');
         setIsInitialized(true);
