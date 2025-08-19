@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
   CheckSquare,
@@ -95,11 +100,65 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [showNewTaskDialog, setShowNewTaskDialog] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    priority: "medium" as "high" | "medium" | "low",
+    dueDate: "",
+    type: "",
+    assignedTo: ""
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // In a real app, this would be a proper API call
   const { data: tasks = mockTasks } = useQuery({
     queryKey: ["/api/tasks"],
     queryFn: () => Promise.resolve(mockTasks)
+  });
+
+  // Create task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: typeof newTask) => {
+      // Simulate API call - in real app this would be:
+      // return apiRequest('POST', '/api/tasks', taskData);
+      const id = Date.now().toString();
+      const task: Task = {
+        ...taskData,
+        id,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      };
+      
+      // For demo, add to mock data
+      mockTasks.unshift(task);
+      return task;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      setShowNewTaskDialog(false);
+      setNewTask({
+        title: "",
+        description: "",
+        priority: "medium",
+        dueDate: "",
+        type: "",
+        assignedTo: ""
+      });
+      toast({
+        title: "Task Created",
+        description: "Your task has been created successfully."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create task. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   const getPriorityColor = (priority: string) => {
@@ -167,7 +226,11 @@ export default function TasksPage() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowNewTaskDialog(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             New Task
           </Button>
@@ -304,6 +367,120 @@ export default function TasksPage() {
           )}
         </div>
       </div>
+
+      {/* New Task Dialog */}
+      <Dialog open={showNewTaskDialog} onOpenChange={setShowNewTaskDialog}>
+        <DialogContent className="sm:max-w-[425px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Add a new task to your workflow. Fill in the details below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input
+                id="task-title"
+                placeholder="Enter task title..."
+                value={newTask.title}
+                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="task-description">Description</Label>
+              <Textarea
+                id="task-description"
+                placeholder="Enter task description..."
+                value={newTask.description}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="task-priority">Priority</Label>
+                <Select value={newTask.priority} onValueChange={(value) => setNewTask({...newTask, priority: value as "high" | "medium" | "low"})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="task-type">Type</Label>
+                <Select value={newTask.type} onValueChange={(value) => setNewTask({...newTask, type: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approval">Approval</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="report">Report</SelectItem>
+                    <SelectItem value="verification">Verification</SelectItem>
+                    <SelectItem value="training">Training</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="task-due-date">Due Date</Label>
+              <Input
+                id="task-due-date"
+                type="date"
+                value={newTask.dueDate}
+                onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="task-assigned-to">Assigned To</Label>
+              <Input
+                id="task-assigned-to"
+                placeholder="Enter assignee name..."
+                value={newTask.assignedTo}
+                onChange={(e) => setNewTask({...newTask, assignedTo: e.target.value})}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowNewTaskDialog(false);
+                setNewTask({
+                  title: "",
+                  description: "",
+                  priority: "medium",
+                  dueDate: "",
+                  type: "",
+                  assignedTo: ""
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => createTaskMutation.mutate(newTask)}
+              disabled={!newTask.title || !newTask.type || createTaskMutation.isPending}
+            >
+              {createTaskMutation.isPending ? "Creating..." : "Create Task"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
