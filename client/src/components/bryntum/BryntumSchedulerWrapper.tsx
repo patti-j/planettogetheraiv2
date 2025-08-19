@@ -256,7 +256,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           containerRef.current.innerHTML = '';
         }
 
-        // Advanced Scheduler Pro configuration with all available features
+        // Simple Scheduler Pro configuration focused on resource display
         const config = {
           appendTo: containerRef.current,
           height: 600,
@@ -265,29 +265,12 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           
-          // Multi-selection settings (top-level properties)
-          multiEventSelect: true,
-          deselectOnClick: false,
+          // View configuration - simple day view
+          viewPreset: 'dayAndWeek',
           
-          // View configuration
-          viewPreset: {
-            base: 'dayAndWeek',
-            tickWidth: 100,
-            headers: [
-              {
-                unit: 'week',
-                dateFormat: 'MMM DD'
-              },
-              {
-                unit: 'day',
-                dateFormat: 'DD'
-              }
-            ]
-          },
-          
-          // Row configuration
-          rowHeight: 60,
-          barMargin: 8,
+          // Row configuration for better visibility
+          rowHeight: 50,
+          barMargin: 5,
           
           // Resources on the left axis - initialize empty, load after creation
           resourceStore: {
@@ -322,311 +305,16 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             }
           ],
           
-          // Advanced features configuration - using all available Bryntum features
+          // Minimal features configuration
           features: {
-            // Drag and drop with full configuration
-            eventDrag: {
-              showTooltip: true,
-              constrainDragToResource: false,
-              showExactDropPosition: true,
-              dragHelperConfig: {
-                cloneTarget: true,
-                hideOriginalElement: false
-              },
-              validatorFn: ({ draggedRecords, newResource }: any) => {
-                // Custom validation logic
-                return {
-                  valid: true,
-                  message: 'Drag to move operation'
-                };
-              }
-            },
+            // Basic drag and drop
+            eventDrag: true,
             
-            // Resize with full configuration
-            eventResize: {
-              showTooltip: true,
-              showExactResizePosition: true,
-              tooltipTemplate: ({ startDate, endDate }: any) => {
-                const duration = Math.round((endDate - startDate) / (1000 * 60 * 60));
-                return `Duration: ${duration} hours`;
-              }
-            },
+            // Basic resize
+            eventResize: true,
             
-            // Context menu for events (right-click menu)
-            eventMenu: {
-              items: {
-                editEvent: {
-                  text: 'Edit Operation',
-                  icon: 'b-fa b-fa-edit',
-                  onItem: ({ eventRecord }: any) => {
-                    console.log('Edit operation:', eventRecord.name);
-                  }
-                },
-                deleteEvent: {
-                  text: 'Delete Operation',
-                  icon: 'b-fa b-fa-trash',
-                  cls: 'b-separator',
-                  onItem: ({ eventRecord }: any) => {
-                    console.log('Delete operation:', eventRecord.name);
-                  }
-                },
-                duplicateEvent: {
-                  text: 'Duplicate Operation',
-                  icon: 'b-fa b-fa-copy',
-                  onItem: ({ eventRecord }: any) => {
-                    console.log('Duplicate operation:', eventRecord.name);
-                  }
-                },
-                splitEvent: {
-                  text: 'Split Operation',
-                  icon: 'b-fa b-fa-cut',
-                  onItem: ({ eventRecord }: any) => {
-                    console.log('Split operation:', eventRecord.name);
-                  }
-                }
-              }
-            },
-            
-            // Context menu for schedule area
-            scheduleMenu: {
-              items: {
-                addEvent: {
-                  text: 'Add Operation Here',
-                  icon: 'b-fa b-fa-plus',
-                  onItem: ({ resourceRecord, date }: any) => {
-                    console.log('Add operation at:', date, 'for resource:', resourceRecord?.name);
-                  }
-                }
-              }
-            },
-            
-            // Cell context menu for resources
-            cellMenu: {
-              items: {
-                editResource: {
-                  text: 'Edit Resource',
-                  icon: 'b-fa b-fa-edit',
-                  onItem: ({ record }: any) => {
-                    console.log('Edit resource:', record.name);
-                  }
-                },
-                resourceUtilization: {
-                  text: 'View Utilization',
-                  icon: 'b-fa b-fa-chart-line',
-                  onItem: ({ record }: any) => {
-                    console.log('View utilization for:', record.name);
-                  }
-                }
-              }
-            },
-            
-            // Header context menu
-            headerMenu: {
-              items: {
-                zoomIn: {
-                  text: 'Zoom In',
-                  icon: 'b-fa b-fa-search-plus',
-                  onItem: () => {
-                    console.log('Zoom in timeline');
-                  }
-                },
-                zoomOut: {
-                  text: 'Zoom Out', 
-                  icon: 'b-fa b-fa-search-minus',
-                  onItem: () => {
-                    console.log('Zoom out timeline');
-                  }
-                }
-              }
-            },
-            
-            // Event editing (double-click to edit)
-            eventEdit: {
-              items: {
-                generalTab: {
-                  title: 'General',
-                  items: {
-                    nameField: { 
-                      type: 'text', 
-                      name: 'name', 
-                      label: 'Operation Name',
-                      required: true
-                    },
-                    resourceField: {
-                      type: 'combo',
-                      name: 'resourceId',
-                      label: 'Resource',
-                      required: true
-                    },
-                    percentDoneField: {
-                      type: 'number',
-                      name: 'percentDone',
-                      label: 'Progress (%)',
-                      min: 0,
-                      max: 100
-                    }
-                  }
-                }
-              }
-            },
-            
-            // Enhanced tooltips
-            eventTooltip: {
-              template: ({ eventRecord }: any) => {
-                const resource = schedulerResources.find(r => r.id === eventRecord.resourceId);
-                const duration = Math.round((new Date(eventRecord.endDate).getTime() - new Date(eventRecord.startDate).getTime()) / (1000 * 60 * 60));
-                return `
-                  <div style="padding: 14px; min-width: 300px; font-family: system-ui, -apple-system, sans-serif;">
-                    <h3 style="margin: 0 0 12px 0; color: #111827; font-size: 16px; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
-                      ${eventRecord.name}
-                    </h3>
-                    <div style="display: grid; gap: 8px; font-size: 14px;">
-                      <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #6b7280;">Resource:</span>
-                        <span style="font-weight: 500; color: #111827;">${resource?.name || 'Unassigned'}</span>
-                      </div>
-                      <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #6b7280;">Start:</span>
-                        <span style="font-weight: 500; color: #111827;">${new Date(eventRecord.startDate).toLocaleString()}</span>
-                      </div>
-                      <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #6b7280;">End:</span>
-                        <span style="font-weight: 500; color: #111827;">${new Date(eventRecord.endDate).toLocaleString()}</span>
-                      </div>
-                      <div style="display: flex; justify-content: space-between;">
-                        <span style="color: #6b7280;">Duration:</span>
-                        <span style="font-weight: 500; color: #111827;">${duration} hours</span>
-                      </div>
-                      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <span style="color: #6b7280;">Progress:</span>
-                          <div style="flex: 1; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden;">
-                            <div style="height: 100%; background: linear-gradient(to right, #10b981, #059669); width: ${eventRecord.percentDone || 0}%; transition: width 0.3s;"></div>
-                          </div>
-                          <span style="font-weight: 600; color: #111827;">${eventRecord.percentDone || 0}%</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }
-            },
-            
-            // Column lines for better visual separation
-            columnLines: true,
-            
-            // Time ranges with current time indicator
-            timeRanges: {
-              showCurrentTimeLine: true,
-              showHeaderElements: true,
-              currentDateFormat: 'HH:mm'
-            },
-            
-            // Sorting capabilities
-            sort: {
-              field: 'name',
-              ascending: true
-            },
-            
-            // Filtering capabilities
-            filter: true,
-            
-            // Group resources
-            group: false, // Can be enabled for grouping by type
-            
-            // Schedule tooltip on hover
-            scheduleTooltip: true,
-            
-            // Stripe feature for alternating row colors
-            stripe: true,
-            
-            // Dependencies between events
-            dependencies: {
-              allowCreate: true,
-              showTooltip: true
-            },
-            
-            // Non-working time configuration
-            nonWorkingTime: {
-              highlightWeekends: true
-            },
-            
-            // Resource non-working time
-            resourceNonWorkingTime: {
-              maxTimeAxisUnit: 'week'
-            },
-            
-            // Summary feature for rollups
-            summary: {
-              renderer: ({ sum }: any) => `Total: ${sum}`
-            },
-            
-            // Tree feature for hierarchical resources (disabled - needs tree column)
-            tree: false,
-            
-            // Labels on events
-            labels: {
-              left: {
-                field: 'name',
-                editor: false
-              }
-            },
-            
-            // Pan feature for scrolling timeline
-            pan: true,
-            
-            // Event drag create - drag to create new events
-            eventDragCreate: {
-              showTooltip: true,
-              dragTolerance: 2
-            },
-            
-            // Quick find feature
-            quickFind: true,
-            
-            // Search feature
-            search: true,
-            
-            // Region resize
-            regionResize: true,
-            
-            // Simple event edit (inline editing)
-            simpleEventEdit: true,
-            
-            // Copy paste events
-            eventCopyPaste: {
-              keyMap: {
-                copy: 'Ctrl+C',
-                cut: 'Ctrl+X',
-                paste: 'Ctrl+V'
-              }
-            },
-            
-            // Export features
-            pdfExport: {
-              exportServer: false // Client-side export
-            },
-            
-            // Excel export
-            excelExporter: {
-              zipcelx: false
-            }
-          },
-          
-          // Event renderer for custom styling
-          eventRenderer: ({ eventRecord, renderData }: any) => {
-            // Color based on progress
-            let color = '#ef4444'; // Red for 0%
-            if (eventRecord.percentDone >= 100) {
-              color = '#10b981'; // Green for complete
-            } else if (eventRecord.percentDone >= 50) {
-              color = '#f59e0b'; // Amber for in progress
-            }
-            
-            renderData.eventColor = color;
-            renderData.style = `border-left: 4px solid ${color}`;
-            
-            return eventRecord.name;
+            // Simple tooltip
+            eventTooltip: true
           }
         };
         
