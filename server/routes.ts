@@ -6744,6 +6744,137 @@ User Prompt: "${prompt}"`;
     }
   });
 
+  // Portal API routes
+  app.post('/api/portal/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      const user = await storage.authenticateExternalUser(email, password);
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const company = await storage.getExternalCompany(user.companyId);
+      if (!company || company.status !== 'active') {
+        return res.status(403).json({ error: 'Company account is not active' });
+      }
+      
+      // Create session token
+      const token = 'portal-' + Date.now() + '-' + Math.random().toString(36).substr(2);
+      const session = await storage.createPortalSession({
+        token,
+        userId: user.id,
+        companyId: company.id,
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        expiresAt: new Date(Date.now() + 3600000) // 1 hour
+      });
+      
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          companyId: company.id,
+          companyName: company.name,
+          companyType: company.type
+        }
+      });
+    } catch (error) {
+      console.error('Portal login error:', error);
+      res.status(500).json({ error: 'Login failed' });
+    }
+  });
+  
+  app.post('/api/portal/register/company', async (req, res) => {
+    try {
+      const company = await storage.createExternalCompany(req.body);
+      res.json({ 
+        message: 'Company registration submitted. Our team will review and activate your account.',
+        companyId: company.id 
+      });
+    } catch (error) {
+      console.error('Company registration error:', error);
+      res.status(500).json({ error: 'Registration failed' });
+    }
+  });
+  
+  app.post('/api/portal/register/user', async (req, res) => {
+    try {
+      const { companyId, ...userData } = req.body;
+      
+      const company = await storage.getExternalCompany(companyId);
+      if (!company) {
+        return res.status(400).json({ error: 'Invalid company ID' });
+      }
+      
+      const user = await storage.createExternalUser({
+        ...userData,
+        companyId: company.id,
+      });
+      
+      res.json({ 
+        message: 'Registration successful. Please check your email to verify your account.',
+        userId: user.id 
+      });
+    } catch (error) {
+      console.error('User registration error:', error);
+      res.status(500).json({ error: 'Registration failed' });
+    }
+  });
+  
+  app.get('/api/portal/session', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+      }
+      
+      const session = await storage.getPortalSession(token);
+      if (!session) {
+        return res.status(401).json({ error: 'Invalid or expired session' });
+      }
+      
+      const user = await storage.getExternalUser(session.userId);
+      const company = await storage.getExternalCompany(session.companyId);
+      
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          companyId: company.id,
+          companyName: company.name,
+          companyType: company.type
+        }
+      });
+    } catch (error) {
+      console.error('Session validation error:', error);
+      res.status(500).json({ error: 'Session validation failed' });
+    }
+  });
+  
+  app.post('/api/portal/logout', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        const session = await storage.getPortalSession(token);
+        if (session) {
+          await storage.updatePortalSession(session.id, { expiresAt: new Date() });
+        }
+      }
+      res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ error: 'Logout failed' });
+    }
+  });
+
   // Error Logging and Monitoring API routes
   app.post("/api/errors/log", async (req, res) => {
     try {

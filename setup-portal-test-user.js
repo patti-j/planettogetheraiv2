@@ -4,6 +4,7 @@
 const bcrypt = require('bcryptjs');
 const { db } = require('./server/db');
 const { externalCompanies, externalUsers } = require('./portal/shared/schema');
+const { v4: uuidv4 } = require('uuid');
 
 async function setupTestPortalAccess() {
   console.log('Setting up test portal access...\n');

@@ -1,11 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { portalAuth, requireCompanyType, requireRole, rateLimit, createToken, hashPassword, comparePassword, PortalRequest } from './auth';
-import { DatabaseStorage } from '../../server/storage';
+import { storage } from '../../server/storage';
 import { insertExternalUserSchema, insertExternalCompanySchema } from '../shared/schema';
 import { z } from 'zod';
-
-const router = Router();
-const storage = new DatabaseStorage();
 
 // ============= Public Routes (No Auth Required) =============
 
@@ -28,15 +25,15 @@ router.post('/api/portal/register/company', rateLimit(5, 3600000), async (req: R
   }
 });
 
-// User registration (requires company invite code)
+// User registration (requires company ID)
 router.post('/api/portal/register/user', rateLimit(5, 3600000), async (req: Request, res: Response) => {
   try {
-    const { inviteCode, ...userData } = req.body;
+    const { companyId, ...userData } = req.body;
     
-    // Verify invite code and get company
-    const company = await storage.verifyInviteCode(inviteCode);
+    // Verify company exists
+    const company = await storage.getExternalCompany(companyId);
     if (!company) {
-      return res.status(400).json({ error: 'Invalid invite code' });
+      return res.status(400).json({ error: 'Invalid company ID' });
     }
 
     // Validate user data
@@ -45,13 +42,9 @@ router.post('/api/portal/register/user', rateLimit(5, 3600000), async (req: Requ
       return res.status(400).json({ error: validation.error.errors });
     }
 
-    // Hash password
-    const passwordHash = await hashPassword(validation.data.password);
-
-    // Create user
+    // Create user (storage method handles password hashing)
     const user = await storage.createExternalUser({
       ...validation.data,
-      passwordHash,
       companyId: company.id,
     });
 
@@ -70,17 +63,9 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
   try {
     const { email, password } = req.body;
 
-    // Get user
-    const user = await storage.getPortalUserByEmail(email);
+    // Authenticate user (this method handles password verification and last login update)
+    const user = await storage.authenticateExternalUser(email, password);
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Check password
-    const validPassword = await comparePassword(password, user.passwordHash);
-    if (!validPassword) {
-      // Increment login attempts
-      await storage.incrementLoginAttempts(user.id);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -106,13 +91,10 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
       token,
       userId: user.id,
       companyId: company.id,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
       expiresAt: new Date(Date.now() + 3600000),
     });
-
-    // Update last login
-    await storage.updateLastLogin(user.id);
 
     res.json({
       token,

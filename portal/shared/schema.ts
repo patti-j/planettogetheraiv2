@@ -174,18 +174,9 @@ export const portalActivityLog = pgTable('portal_activity_log', {
 });
 
 // Create Zod schemas for validation
-export const insertExternalCompanySchema = createInsertSchema(externalCompanies).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertExternalCompanySchema = createInsertSchema(externalCompanies);
 
-export const insertExternalUserSchema = createInsertSchema(externalUsers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  passwordHash: true,
-}).extend({
+export const insertExternalUserSchema = createInsertSchema(externalUsers).extend({
   password: z.string().min(8).max(100),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -193,15 +184,24 @@ export const insertExternalUserSchema = createInsertSchema(externalUsers).omit({
   path: ["confirmPassword"],
 });
 
+export const insertPortalSessionSchema = createInsertSchema(portalSessions);
+export const insertPortalPermissionSchema = createInsertSchema(portalPermissions);
+export const insertAiOnboardingProgressSchema = createInsertSchema(aiOnboardingProgress);
+export const insertPortalActivityLogSchema = createInsertSchema(portalActivityLog);
+
 // Type exports
 export type ExternalCompany = typeof externalCompanies.$inferSelect;
 export type InsertExternalCompany = z.infer<typeof insertExternalCompanySchema>;
 export type ExternalUser = typeof externalUsers.$inferSelect;
 export type InsertExternalUser = z.infer<typeof insertExternalUserSchema>;
 export type PortalSession = typeof portalSessions.$inferSelect;
+export type InsertPortalSession = z.infer<typeof insertPortalSessionSchema>;
 export type PortalPermission = typeof portalPermissions.$inferSelect;
-export type AIOnboardingProgress = typeof aiOnboardingProgress.$inferSelect;
+export type InsertPortalPermission = z.infer<typeof insertPortalPermissionSchema>;
+export type AiOnboardingProgress = typeof aiOnboardingProgress.$inferSelect;
+export type InsertAiOnboardingProgress = z.infer<typeof insertAiOnboardingProgressSchema>;
 export type PortalActivityLog = typeof portalActivityLog.$inferSelect;
+export type InsertPortalActivityLog = z.infer<typeof insertPortalActivityLogSchema>;
 
 // Company types enum
 export const CompanyType = {

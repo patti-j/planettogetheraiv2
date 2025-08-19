@@ -167,6 +167,13 @@ import {
   type InsertAlgorithmUsageLog,
 } from "@shared/schema";
 
+// Import portal schemas
+import {
+  externalCompanies, externalUsers, portalSessions, portalPermissions, aiOnboardingProgress, portalActivityLog,
+  type ExternalCompany, type ExternalUser, type PortalSession, type PortalPermission, type AiOnboardingProgress, type PortalActivityLog,
+  type InsertExternalCompany, type InsertExternalUser, type InsertPortalSession, type InsertPortalPermission, type InsertAiOnboardingProgress, type InsertPortalActivityLog
+} from "../portal/shared/schema";
+
 // Import PT Publish tables from pt-publish-schema
 import {
   ptJobs, ptManufacturingOrders, ptJobOperations, ptResources, ptJobActivities,
@@ -184,6 +191,7 @@ import {
   type InsertScheduleApproval, type InsertScheduleComparison, type InsertScheduleSnapshot,
   type InsertScheduleSubscription
 } from "@shared/schedule-schema";
+
 import { db } from "./db";
 import { eq, sql, desc, asc, or, and, count, isNull, isNotNull, lte, gte, gt, lt, like, ilike, ne, not, inArray, notInArray, avg, max, countDistinct } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -1017,6 +1025,50 @@ export interface IStorage {
   
   getSystemHealth(): Promise<SystemHealth[]>;
   logSystemHealth(healthData: InsertSystemHealth): Promise<SystemHealth>;
+
+  // External Portal Methods
+  // Company Management
+  getExternalCompanies(type?: string): Promise<ExternalCompany[]>;
+  getExternalCompany(id: string): Promise<ExternalCompany | undefined>;
+  getExternalCompanyByErpLink(erpLinkId: string): Promise<ExternalCompany | undefined>;
+  createExternalCompany(company: InsertExternalCompany): Promise<ExternalCompany>;
+  updateExternalCompany(id: string, updates: Partial<InsertExternalCompany>): Promise<ExternalCompany | undefined>;
+  deleteExternalCompany(id: string): Promise<boolean>;
+  
+  // External User Management
+  getExternalUsers(companyId?: string): Promise<ExternalUser[]>;
+  getExternalUser(id: string): Promise<ExternalUser | undefined>;
+  getExternalUserByEmail(email: string): Promise<ExternalUser | undefined>;
+  createExternalUser(user: Omit<InsertExternalUser, 'confirmPassword'> & { password: string }): Promise<ExternalUser>;
+  updateExternalUser(id: string, updates: Partial<InsertExternalUser>): Promise<ExternalUser | undefined>;
+  deleteExternalUser(id: string): Promise<boolean>;
+  authenticateExternalUser(email: string, password: string): Promise<ExternalUser | null>;
+  
+  // Portal Session Management
+  createPortalSession(session: InsertPortalSession): Promise<PortalSession>;
+  getPortalSession(token: string): Promise<PortalSession | undefined>;
+  getPortalSessionsByUser(userId: string): Promise<PortalSession[]>;
+  updatePortalSession(id: string, updates: Partial<InsertPortalSession>): Promise<PortalSession | undefined>;
+  deletePortalSession(token: string): Promise<boolean>;
+  cleanupExpiredPortalSessions(): Promise<number>;
+  
+  // Portal Permissions Management
+  getPortalPermissions(userId?: string, companyId?: string): Promise<PortalPermission[]>;
+  getPortalPermission(id: string): Promise<PortalPermission | undefined>;
+  createPortalPermission(permission: InsertPortalPermission): Promise<PortalPermission>;
+  updatePortalPermission(id: string, updates: Partial<InsertPortalPermission>): Promise<PortalPermission | undefined>;
+  deletePortalPermission(id: string): Promise<boolean>;
+  checkPortalPermission(userId: string, resourceType: string, action: string): Promise<boolean>;
+  
+  // AI Onboarding Progress
+  getAiOnboardingProgress(userId?: string, companyId?: string): Promise<AiOnboardingProgress[]>;
+  getAiOnboardingProgressById(id: string): Promise<AiOnboardingProgress | undefined>;
+  createAiOnboardingProgress(progress: InsertAiOnboardingProgress): Promise<AiOnboardingProgress>;
+  updateAiOnboardingProgress(id: string, updates: Partial<InsertAiOnboardingProgress>): Promise<AiOnboardingProgress | undefined>;
+  
+  // Portal Activity Logging
+  logPortalActivity(activity: InsertPortalActivityLog): Promise<PortalActivityLog>;
+  getPortalActivityLogs(filters?: { userId?: string; companyId?: string; action?: string; limit?: number }): Promise<PortalActivityLog[]>;
 
   // Smart KPI Management System
   // Smart KPI Meetings
@@ -16238,6 +16290,297 @@ export class DatabaseStorage implements IStorage {
       .from(unifiedWidgets)
       .where(eq(unifiedWidgets.targetPlatform, platform))
       .orderBy(desc(unifiedWidgets.createdAt));
+  }
+
+  // External Portal Methods Implementation
+  // Company Management
+  async getExternalCompanies(type?: string): Promise<ExternalCompany[]> {
+    let query = this.db.select().from(externalCompanies);
+    if (type) {
+      query = query.where(eq(externalCompanies.type, type));
+    }
+    return await query.orderBy(desc(externalCompanies.createdAt));
+  }
+
+  async getExternalCompany(id: string): Promise<ExternalCompany | undefined> {
+    const [company] = await this.db
+      .select()
+      .from(externalCompanies)
+      .where(eq(externalCompanies.id, id));
+    return company;
+  }
+
+  async getExternalCompanyByErpLink(erpLinkId: string): Promise<ExternalCompany | undefined> {
+    const [company] = await this.db
+      .select()
+      .from(externalCompanies)
+      .where(eq(externalCompanies.erpLinkId, erpLinkId));
+    return company;
+  }
+
+  async createExternalCompany(company: InsertExternalCompany): Promise<ExternalCompany> {
+    const [newCompany] = await this.db
+      .insert(externalCompanies)
+      .values(company)
+      .returning();
+    return newCompany;
+  }
+
+  async updateExternalCompany(id: string, updates: Partial<InsertExternalCompany>): Promise<ExternalCompany | undefined> {
+    const [updated] = await this.db
+      .update(externalCompanies)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(externalCompanies.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteExternalCompany(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(externalCompanies)
+      .where(eq(externalCompanies.id, id));
+    return result.rowCount > 0;
+  }
+
+  // External User Management
+  async getExternalUsers(companyId?: string): Promise<ExternalUser[]> {
+    let query = this.db.select().from(externalUsers);
+    if (companyId) {
+      query = query.where(eq(externalUsers.companyId, companyId));
+    }
+    return await query.orderBy(desc(externalUsers.createdAt));
+  }
+
+  async getExternalUser(id: string): Promise<ExternalUser | undefined> {
+    const [user] = await this.db
+      .select()
+      .from(externalUsers)
+      .where(eq(externalUsers.id, id));
+    return user;
+  }
+
+  async getExternalUserByEmail(email: string): Promise<ExternalUser | undefined> {
+    const [user] = await this.db
+      .select()
+      .from(externalUsers)
+      .where(eq(externalUsers.email, email));
+    return user;
+  }
+
+  async createExternalUser(user: Omit<InsertExternalUser, 'confirmPassword'> & { password: string }): Promise<ExternalUser> {
+    const { password, ...userData } = user;
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    const [newUser] = await this.db
+      .insert(externalUsers)
+      .values({
+        ...userData,
+        passwordHash,
+      })
+      .returning();
+    return newUser;
+  }
+
+  async updateExternalUser(id: string, updates: Partial<InsertExternalUser>): Promise<ExternalUser | undefined> {
+    const [updated] = await this.db
+      .update(externalUsers)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(externalUsers.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteExternalUser(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(externalUsers)
+      .where(eq(externalUsers.id, id));
+    return result.rowCount > 0;
+  }
+
+  async authenticateExternalUser(email: string, password: string): Promise<ExternalUser | null> {
+    const user = await this.getExternalUserByEmail(email);
+    if (!user) return null;
+    
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) return null;
+    
+    // Update last login
+    await this.db
+      .update(externalUsers)
+      .set({ lastLogin: new Date() })
+      .where(eq(externalUsers.id, user.id));
+    
+    return user;
+  }
+
+  // Portal Session Management
+  async createPortalSession(session: InsertPortalSession): Promise<PortalSession> {
+    const [newSession] = await this.db
+      .insert(portalSessions)
+      .values(session)
+      .returning();
+    return newSession;
+  }
+
+  async getPortalSession(token: string): Promise<PortalSession | undefined> {
+    const [session] = await this.db
+      .select()
+      .from(portalSessions)
+      .where(eq(portalSessions.token, token));
+    return session;
+  }
+
+  async getPortalSessionsByUser(userId: string): Promise<PortalSession[]> {
+    return await this.db
+      .select()
+      .from(portalSessions)
+      .where(eq(portalSessions.userId, userId))
+      .orderBy(desc(portalSessions.createdAt));
+  }
+
+  async updatePortalSession(id: string, updates: Partial<InsertPortalSession>): Promise<PortalSession | undefined> {
+    const [updated] = await this.db
+      .update(portalSessions)
+      .set({ ...updates, lastActivityAt: new Date() })
+      .where(eq(portalSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePortalSession(token: string): Promise<boolean> {
+    const result = await this.db
+      .delete(portalSessions)
+      .where(eq(portalSessions.token, token));
+    return result.rowCount > 0;
+  }
+
+  async cleanupExpiredPortalSessions(): Promise<number> {
+    const result = await this.db
+      .delete(portalSessions)
+      .where(lt(portalSessions.expiresAt, new Date()));
+    return result.rowCount || 0;
+  }
+
+  // Portal Permissions Management
+  async getPortalPermissions(userId?: string, companyId?: string): Promise<PortalPermission[]> {
+    let query = this.db.select().from(portalPermissions);
+    const conditions = [];
+    if (userId) conditions.push(eq(portalPermissions.userId, userId));
+    if (companyId) conditions.push(eq(portalPermissions.companyId, companyId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    return await query.orderBy(desc(portalPermissions.createdAt));
+  }
+
+  async getPortalPermission(id: string): Promise<PortalPermission | undefined> {
+    const [permission] = await this.db
+      .select()
+      .from(portalPermissions)
+      .where(eq(portalPermissions.id, id));
+    return permission;
+  }
+
+  async createPortalPermission(permission: InsertPortalPermission): Promise<PortalPermission> {
+    const [newPermission] = await this.db
+      .insert(portalPermissions)
+      .values(permission)
+      .returning();
+    return newPermission;
+  }
+
+  async updatePortalPermission(id: string, updates: Partial<InsertPortalPermission>): Promise<PortalPermission | undefined> {
+    const [updated] = await this.db
+      .update(portalPermissions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(portalPermissions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePortalPermission(id: string): Promise<boolean> {
+    const result = await this.db
+      .delete(portalPermissions)
+      .where(eq(portalPermissions.id, id));
+    return result.rowCount > 0;
+  }
+
+  async checkPortalPermission(userId: string, resourceType: string, action: string): Promise<boolean> {
+    const permissions = await this.getPortalPermissions(userId);
+    return permissions.some(p => 
+      p.resourceType === resourceType && 
+      p.actions && 
+      (p.actions as string[]).includes(action)
+    );
+  }
+
+  // AI Onboarding Progress
+  async getAiOnboardingProgress(userId?: string, companyId?: string): Promise<AiOnboardingProgress[]> {
+    let query = this.db.select().from(aiOnboardingProgress);
+    const conditions = [];
+    if (userId) conditions.push(eq(aiOnboardingProgress.userId, userId));
+    if (companyId) conditions.push(eq(aiOnboardingProgress.companyId, companyId));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    return await query.orderBy(desc(aiOnboardingProgress.startedAt));
+  }
+
+  async getAiOnboardingProgressById(id: string): Promise<AiOnboardingProgress | undefined> {
+    const [progress] = await this.db
+      .select()
+      .from(aiOnboardingProgress)
+      .where(eq(aiOnboardingProgress.id, id));
+    return progress;
+  }
+
+  async createAiOnboardingProgress(progress: InsertAiOnboardingProgress): Promise<AiOnboardingProgress> {
+    const [newProgress] = await this.db
+      .insert(aiOnboardingProgress)
+      .values(progress)
+      .returning();
+    return newProgress;
+  }
+
+  async updateAiOnboardingProgress(id: string, updates: Partial<InsertAiOnboardingProgress>): Promise<AiOnboardingProgress | undefined> {
+    const [updated] = await this.db
+      .update(aiOnboardingProgress)
+      .set({ ...updates, lastInteractionAt: new Date() })
+      .where(eq(aiOnboardingProgress.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Portal Activity Logging
+  async logPortalActivity(activity: InsertPortalActivityLog): Promise<PortalActivityLog> {
+    const [logged] = await this.db
+      .insert(portalActivityLog)
+      .values(activity)
+      .returning();
+    return logged;
+  }
+
+  async getPortalActivityLogs(filters?: { userId?: string; companyId?: string; action?: string; limit?: number }): Promise<PortalActivityLog[]> {
+    let query = this.db.select().from(portalActivityLog);
+    const conditions = [];
+    
+    if (filters?.userId) conditions.push(eq(portalActivityLog.userId, filters.userId));
+    if (filters?.companyId) conditions.push(eq(portalActivityLog.companyId, filters.companyId));
+    if (filters?.action) conditions.push(eq(portalActivityLog.action, filters.action));
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    query = query.orderBy(desc(portalActivityLog.timestamp));
+    
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    return await query;
   }
 }
 
