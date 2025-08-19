@@ -75,155 +75,93 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       }
 
       try {
-        console.log('Bryntum library detected, checking available components...');
+        console.log('Initializing Bryntum Gantt with PT data...');
         const bryntum = (window as any).bryntum;
         
-        // Use SchedulerPro for resource-centered view
-        console.log('Bryntum object keys:', Object.keys(bryntum));
-        console.log('Bryntum.schedulerpro available?', !!bryntum.schedulerpro);
-        
-        // Try SchedulerPro first, fallback to Scheduler, then Gantt
-        let SchedulerClass;
-        if (bryntum.schedulerpro) {
-          SchedulerClass = bryntum.schedulerpro.SchedulerPro;
-          console.log('Using SchedulerPro for resource view');
-        } else if (bryntum.scheduler) {
-          SchedulerClass = bryntum.scheduler.Scheduler;
-          console.log('Using Scheduler for resource view');
-        } else if (bryntum.gantt) {
-          // Use Gantt in resource mode
-          SchedulerClass = bryntum.gantt.Gantt;
-          console.log('Using Gantt in resource mode');
-        } else {
-          throw new Error('No Bryntum scheduling component found');
+        if (!bryntum?.gantt) {
+          throw new Error('Bryntum Gantt not found');
         }
-
-        // Transform resources for scheduler
-        const schedulerResources = (resources as any[] || []).slice(0, 20).map(resource => ({
+        
+        const { Gantt } = bryntum.gantt;
+        
+        // Transform PT resources
+        const bryntumResources = (resources as any[] || []).map(resource => ({
           id: resource.id,
           name: resource.name || `Resource ${resource.id}`,
-          type: resource.resourceType || resource.type || 'equipment'
+          calendar: 'general'
         }));
 
-        // Add some default resources if none exist
-        if (schedulerResources.length === 0) {
-          schedulerResources.push(
-            { id: 1, name: 'Grain Mill 1', type: 'mill' },
-            { id: 2, name: 'Mash Tun 1', type: 'vessel' },
-            { id: 3, name: 'Brew Kettle 1', type: 'kettle' },
-            { id: 4, name: 'Fermenter 1', type: 'fermenter' },
-            { id: 5, name: 'Packaging Line 1', type: 'packaging' }
-          );
-        }
-
-        // Transform operations to events for scheduler
-        const schedulerEvents = (operations as any[] || []).slice(0, 100).map((op, index) => {
+        // Group operations by resource for resource-centered view
+        const resourceTaskGroups = new Map();
+        
+        // First, group operations by resource
+        (operations as any[] || []).slice(0, 200).forEach(op => {
+          const resourceId = op.resourceId || 1;
+          const resourceName = op.resourceName || 
+            bryntumResources.find(r => r.id === resourceId)?.name || 
+            `Resource ${resourceId}`;
+            
+          if (!resourceTaskGroups.has(resourceId)) {
+            resourceTaskGroups.set(resourceId, {
+              id: `resource-${resourceId}`,
+              name: resourceName,
+              expanded: true,
+              children: []
+            });
+          }
+          
           const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
           const endDate = op.scheduledEnd || op.endTime || 
             new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
           
-          return {
-            id: op.id || index + 1,
-            name: op.name || op.operationName || `Operation ${index + 1}`,
+          resourceTaskGroups.get(resourceId).children.push({
+            id: op.id,
+            name: op.name || op.operationName || `Operation ${op.id}`,
             startDate: startDate,
             endDate: endDate,
-            resourceId: op.resourceId || schedulerResources[index % schedulerResources.length]?.id,
-            eventColor: getOperationColor(op.operationName || op.name)
-          };
+            percentDone: op.percentFinished || 0,
+            leaf: true
+          });
         });
 
-        console.log('Resources:', schedulerResources.length, 'Events:', schedulerEvents.length);
-        console.log('Sample resource:', schedulerResources[0]);
-        console.log('Sample event:', schedulerEvents[0]);
+        // Convert map to array of tasks with hierarchy
+        const tasksWithResources = Array.from(resourceTaskGroups.values())
+          .filter(group => group.children.length > 0)
+          .slice(0, 20); // Limit to 20 resources for performance
+
+        console.log(`Loading ${tasksWithResources.length} resources with operations`);
         
-        // For Gantt, we need to structure data as tasks with resource assignments
-        // Group operations by resource to create a resource-oriented view
-        const resourceTasks: any[] = [];
-        const tasksByResource = new Map();
-        
-        // Group events by resource
-        schedulerEvents.forEach(event => {
-          if (!tasksByResource.has(event.resourceId)) {
-            tasksByResource.set(event.resourceId, []);
-          }
-          tasksByResource.get(event.resourceId).push(event);
-        });
-        
-        // Create parent tasks for each resource with operations as children
-        schedulerResources.forEach((resource, index) => {
-          const resourceEvents = tasksByResource.get(resource.id) || [];
-          
-          // Parent task for resource
-          const resourceTask = {
-            id: `resource-${resource.id}`,
-            name: resource.name,
-            startDate: resourceEvents.length > 0 
-              ? resourceEvents.reduce((min: any, e: any) => 
-                  new Date(e.startDate) < new Date(min) ? e.startDate : min, 
-                  resourceEvents[0].startDate)
-              : new Date('2025-08-19').toISOString(),
-            endDate: resourceEvents.length > 0
-              ? resourceEvents.reduce((max: any, e: any) => 
-                  new Date(e.endDate) > new Date(max) ? e.endDate : max, 
-                  resourceEvents[0].endDate)
-              : new Date('2025-08-20').toISOString(),
-            expanded: true,
-            children: resourceEvents.map(event => ({
-              id: event.id,
-              name: event.name,
-              startDate: event.startDate,
-              endDate: event.endDate,
-              percentDone: 0,
-              leaf: true,
-              eventColor: event.eventColor
-            }))
-          };
-          
-          if (resourceTask.children.length > 0 || index < 5) {
-            resourceTasks.push(resourceTask);
-          }
-        });
-        
-        console.log('Resource tasks structure:', resourceTasks.slice(0, 2));
-        
-        // Gantt configuration with resource-oriented task structure
+        // Simple Gantt configuration 
         const config = {
           appendTo: containerRef.current,
           height: 600,
-          startDate: new Date('2025-08-19'),
-          endDate: new Date('2025-09-02'),
-          viewPreset: 'dayAndWeek',
-          rowHeight: 40,
-          barMargin: 5,
+          startDate: '2025-08-19',
+          endDate: '2025-09-02',
+          viewPreset: 'weekAndDayLetter',
           
-          // Columns showing resources and operations
           columns: [
-            { 
-              type: 'name',
-              text: 'Resources / Operations', 
-              field: 'name', 
-              width: 250,
-              renderer: ({ record }: any) => {
-                // Style parent rows differently
-                if (!record.leaf) {
-                  return `<strong>${record.name}</strong>`;
-                }
-                return record.name;
-              }
-            }
+            { type: 'name', text: 'Resource / Operation', width: 300 }
           ],
           
-          // Task data with resource hierarchy
-          project: {
-            tasks: resourceTasks
-          }
+          features: {
+            taskDrag: true,
+            taskResize: true,
+            taskTooltip: true,
+            progressLine: true,
+            timeRanges: {
+              showCurrentTimeLine: true
+            }
+          },
+          
+          // Use tasks directly
+          tasks: tasksWithResources
         };
         
-        console.log('Creating resource-centered scheduler with config:', config);
+        console.log('Creating Gantt with config:', config);
         
-        schedulerRef.current = new SchedulerClass(config);
+        schedulerRef.current = new Gantt(config);
         
-        console.log('✅ Resource scheduler created successfully!');
+        console.log('✅ Gantt created successfully with PT data!');
 
         console.log('Scheduler initialized successfully');
         setIsInitialized(true);
