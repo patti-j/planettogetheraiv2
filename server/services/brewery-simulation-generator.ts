@@ -192,27 +192,7 @@ export async function generateBrewerySimulationData() {
           const dueDate = new Date(currentDate);
           dueDate.setDate(dueDate.getDate() + product.brewTime + Math.floor(Math.random() * 7)); // Add some buffer
           
-          await db.execute(sql`
-            INSERT INTO ptmanufacturingorders (
-              id, external_id, name, description, 
-              scheduled_start, scheduled_end, priority, publish_date, instance_id, job_id, manufacturing_order_id
-            )
-            VALUES (
-              ${moId},
-              ${moExternalId},
-              ${`${product.name} - ${customer.customer}`},
-              ${`Batch production of ${batchSize} liters for ${customer.customer} (${customer.region})`},
-              ${currentDate.toISOString()},
-              ${dueDate.toISOString()},
-              ${customer.priority === 'Urgent' ? 10 : customer.priority === 'High' ? 8 : customer.priority === 'Medium' ? 5 : 3},
-              NOW(),
-              'BREW-SIM-001',
-              ${jobId},
-              ${moId}
-            )
-          `);
-
-          // Create job for this manufacturing order
+          // Create job FIRST (before manufacturing order, due to foreign key constraint)
           const jobExternalId = `JOB-${product.sku}-${jobId.toString().padStart(5, '0')}`;
           const jobPriority = customer.priority === 'Urgent' ? 10 : customer.priority === 'High' ? 8 : customer.priority === 'Medium' ? 5 : 3;
           
@@ -235,6 +215,30 @@ export async function generateBrewerySimulationData() {
             )
           `);
 
+          // Now create manufacturing order (after job exists)
+          await db.execute(sql`
+            INSERT INTO ptmanufacturingorders (
+              id, external_id, name, description, 
+              scheduled_start, scheduled_end, publish_date, instance_id, job_id, manufacturing_order_id,
+              required_qty, expected_finish_qty, product_name
+            )
+            VALUES (
+              ${moId},
+              ${moExternalId},
+              ${`${product.name} - ${customer.customer}`},
+              ${`Batch production of ${batchSize} liters for ${customer.customer} (${customer.region})`},
+              ${currentDate.toISOString()},
+              ${dueDate.toISOString()},
+              NOW(),
+              'BREW-SIM-001',
+              ${jobId},
+              ${moId},
+              ${batchSize},
+              ${batchSize},
+              ${product.name}
+            )
+          `);
+
           // Create operations for each brewing stage
           let operationStartDate = new Date(currentDate);
           operationStartDate.setHours(6 + orderNum * 2, 0, 0, 0); // Stagger start times
@@ -248,15 +252,15 @@ export async function generateBrewerySimulationData() {
             operationEndDate.setHours(operationEndDate.getHours() + stage.duration);
             
             // Determine status based on dates
-            let operationStatus = 'scheduled';
+            let operationStatus = 'Not Started';
             let percentComplete = 0;
             const now = new Date();
             
             if (operationEndDate < now) {
-              operationStatus = 'completed';
+              operationStatus = 'Completed';
               percentComplete = 100;
             } else if (operationStartDate < now && operationEndDate > now) {
-              operationStatus = 'in_progress';
+              operationStatus = 'In Progress';
               const totalDuration = operationEndDate.getTime() - operationStartDate.getTime();
               const elapsed = now.getTime() - operationStartDate.getTime();
               percentComplete = Math.floor((elapsed / totalDuration) * 100);
@@ -372,26 +376,7 @@ export async function generateBrewerySimulationData() {
       const maintenanceEndDate = new Date(maintenanceDate);
       maintenanceEndDate.setHours(maintenanceEndDate.getHours() + 4); // 4 hours maintenance
       
-      await db.execute(sql`
-        INSERT INTO ptmanufacturingorders (
-          id, external_id, name, description,
-          scheduled_start, scheduled_end, priority, publish_date, instance_id, job_id, manufacturing_order_id
-        )
-        VALUES (
-          ${moId},
-          ${moExternalId},
-          ${'Equipment Maintenance'},
-          ${'Scheduled maintenance and cleaning'},
-          ${maintenanceDate.toISOString()},
-          ${maintenanceEndDate.toISOString()},
-          ${7},
-          NOW(),
-          'BREW-SIM-001',
-          ${jobId},
-          ${moId}
-        )
-      `);
-
+      // Create job FIRST (before manufacturing order, due to foreign key constraint)
       const jobExternalId = `JOB-MAINT-${jobId.toString().padStart(5, '0')}`;
       
       await db.execute(sql`
@@ -410,6 +395,29 @@ export async function generateBrewerySimulationData() {
           NOW(),
           'BREW-SIM-001',
           ${jobId}
+        )
+      `);
+
+      // Now create manufacturing order (after job exists)
+      await db.execute(sql`
+        INSERT INTO ptmanufacturingorders (
+          id, external_id, name, description,
+          scheduled_start, scheduled_end, publish_date, instance_id, job_id, manufacturing_order_id,
+          required_qty, expected_finish_qty
+        )
+        VALUES (
+          ${moId},
+          ${moExternalId},
+          ${'Equipment Maintenance'},
+          ${'Scheduled maintenance and cleaning'},
+          ${maintenanceDate.toISOString()},
+          ${maintenanceEndDate.toISOString()},
+          NOW(),
+          'BREW-SIM-001',
+          ${jobId},
+          ${moId},
+          ${0},
+          ${0}
         )
       `);
 
