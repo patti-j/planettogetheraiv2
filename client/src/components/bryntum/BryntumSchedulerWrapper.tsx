@@ -178,9 +178,13 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        // Try using basic Scheduler if available, otherwise use SchedulerPro
-        const { SchedulerPro, Scheduler } = bryntum.schedulerpro;
-        const SchedulerClass = Scheduler || SchedulerPro;
+        // Use SchedulerPro directly - don't fallback to basic Scheduler
+        const { SchedulerPro } = bryntum.schedulerpro;
+        const SchedulerClass = SchedulerPro;
+        
+        if (!SchedulerClass) {
+          throw new Error('SchedulerPro class not found');
+        }
         
         // Use actual PT resources - no duplicates after database cleanup
         const schedulerResources = (resources as any[] || []).map((resource) => {
@@ -267,16 +271,9 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           fillTicks: true,  // Fill time cells
           maintainSelectionOnDatasetChange: false,
           
-          // Load data directly into stores (no assignments for basic Scheduler)
-          resourceStore: {
-            data: schedulerResources,
-            tree: false
-          },
-          eventStore: {
-            data: schedulerEvents,
-            // Don't filter out resources without events
-            useRawData: true
-          },
+          // Initialize stores with all resources, even those without events
+          resources: schedulerResources,
+          events: schedulerEvents,
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
@@ -311,12 +308,19 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             // Show all resources even without events
             filterBar: false,
             stripe: true,
-            tree: false  // Ensure flat resource list
+            tree: false,  // Ensure flat resource list
+            
+            // Important: Show resources even if they have no events
+            hideEmptyResources: false
           },
           
           // Ensure all resources are visible
-          autoCreate: false,  // Use autoCreate instead of createEventOnDblClick
-          enableRecurringEvents: false
+          autoCreate: false,
+          enableRecurringEvents: false,
+          
+          // Force display of all resources
+          hideEmptyResources: false,
+          filterEmptyResources: false
         };
         
         console.log('Creating Scheduler with config:', config);
@@ -345,22 +349,27 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
           })));
           
-          // Force all resources to be visible
-          schedulerRef.current.resourceStore.forEach((resource: any) => {
-            resource.cls = '';  // Clear any hidden classes
-          });
-          
-          // Debug: Check visible rows
-          console.log('Visible row count:', schedulerRef.current.visibleRowCount);
-          console.log('Total row count:', schedulerRef.current.rowManager?.count);
-          
-          // Force refresh to ensure all resources are rendered
-          schedulerRef.current.refresh();
-          schedulerRef.current.scrollToNow();  // Scroll to current time
-          
-          // Debug: check if resources are being filtered
-          console.log('Resource store filters:', schedulerRef.current.resourceStore.filters);
-          console.log('Resource store isFiltered:', schedulerRef.current.resourceStore.isFiltered);
+          // Force all resources to be visible by re-adding them
+          setTimeout(() => {
+            if (schedulerRef.current) {
+              // Clear any existing filters
+              schedulerRef.current.resourceStore.clearFilters();
+              
+              // Re-add all resources to force display
+              const allResources = schedulerResources;
+              schedulerRef.current.resourceStore.data = allResources;
+              
+              console.log('Re-added resources:', schedulerRef.current.resourceStore.count);
+              console.log('Visible after re-add:', schedulerRef.current.visibleRowCount);
+              
+              // Force complete refresh
+              schedulerRef.current.refresh();
+              schedulerRef.current.refreshRows();
+              
+              // Scroll to show current time
+              schedulerRef.current.scrollToNow();
+            }
+          }, 100);
           
           // Add event listeners for interaction
           schedulerRef.current.on({
