@@ -12778,6 +12778,53 @@ Return a JSON object with this exact structure:
     }
   });
 
+  // Brewery Simulation Data Generator Endpoint
+  app.post("/api/brewery/generate-simulation-data", requireAuth, async (req, res) => {
+    try {
+      console.log("🍺 Generating brewery simulation data...");
+      
+      // Import the brewery simulation generator
+      const { generateBrewerySimulationData } = await import("./services/brewery-simulation-generator");
+      
+      // Generate the data
+      const result = await generateBrewerySimulationData();
+      
+      console.log("✅ Brewery simulation data generated successfully!");
+      res.json({
+        success: true,
+        message: "Brewery simulation data generated successfully",
+        stats: result.stats
+      });
+    } catch (error) {
+      console.error("❌ Error generating brewery simulation data:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to generate brewery simulation data",
+        details: error.message 
+      });
+    }
+  });
+
+  // Get current brewery production status
+  app.get("/api/brewery/production-status", requireAuth, async (req, res) => {
+    try {
+      const { getBreweryProductionStatus } = await import("./services/brewery-simulation-generator");
+      const status = await getBreweryProductionStatus();
+      
+      res.json({
+        success: true,
+        status
+      });
+    } catch (error) {
+      console.error("Error getting brewery production status:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to get brewery production status",
+        details: error.message 
+      });
+    }
+  });
+
   // Tours API endpoints
   app.get("/api/tours", requireAuth, async (req, res) => {
     try {
