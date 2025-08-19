@@ -1324,23 +1324,37 @@ export default function Feedback() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="h-10 w-full justify-start overflow-x-auto sm:grid sm:grid-cols-4 sm:overflow-x-visible">
-            <TabsTrigger value="submit" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
-              <span className="sm:hidden">Submit</span>
-              <span className="hidden sm:inline">Submit Feedback</span>
-            </TabsTrigger>
-            <TabsTrigger value="view" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
-              <span className="sm:hidden">View</span>
-              <span className="hidden sm:inline">View Feedback</span>
-            </TabsTrigger>
-            <TabsTrigger value="algorithm" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
-              <span className="sm:hidden">Algorithm</span>
-              <span className="hidden sm:inline">Algorithm Feedback</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
-              Analytics
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto">
+            <TabsList className="h-10 inline-flex sm:w-full sm:grid sm:grid-cols-4">
+              <TabsTrigger 
+                value="submit" 
+                className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs sm:text-sm"
+              >
+                <span className="sm:hidden">Submit</span>
+                <span className="hidden sm:inline">Submit Feedback</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="view" 
+                className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs sm:text-sm"
+              >
+                <span className="sm:hidden">View</span>
+                <span className="hidden sm:inline">View Feedback</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="algorithm" 
+                className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs sm:text-sm"
+              >
+                <span className="sm:hidden">Algorithm</span>
+                <span className="hidden sm:inline">Algorithm Feedback</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analytics" 
+                className="flex-shrink-0 whitespace-nowrap px-3 py-2 text-xs sm:text-sm"
+              >
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="submit" className="mt-6">
             <PageContent />
