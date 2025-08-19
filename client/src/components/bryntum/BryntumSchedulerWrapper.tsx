@@ -178,10 +178,9 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        // Try using basic Scheduler instead of SchedulerPro
-        const { Scheduler } = bryntum.scheduler || {};
+        // Use SchedulerPro directly
         const { SchedulerPro } = bryntum.schedulerpro;
-        const SchedulerClass = Scheduler || SchedulerPro;
+        const SchedulerClass = SchedulerPro;
         
         if (!SchedulerClass) {
           throw new Error('SchedulerPro class not found');
@@ -328,39 +327,29 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
         console.log('Using SchedulerClass from earlier initialization');
         
         try {
-          // Try creating stores separately first - use whichever is available
-          const ResourceStore = bryntum.schedulerpro?.ResourceStore || bryntum.scheduler?.ResourceStore;
-          const EventStore = bryntum.schedulerpro?.EventStore || bryntum.scheduler?.EventStore;
-          
-          const resourceStore = new ResourceStore({
-            data: schedulerResources,
-            tree: false
-          });
-          
-          const eventStore = new EventStore({
-            data: schedulerEvents
-          });
-          
-          // Create scheduler with pre-built stores
+          // Create scheduler with inline data
           schedulerRef.current = new SchedulerClass({
             appendTo: containerRef.current,
             height: 900,
             startDate: '2025-08-19',
             endDate: '2025-09-02',
             viewPreset: 'dayAndWeek',
-            rowHeight: 40,
-            barMargin: 2,
+            rowHeight: 50,
+            barMargin: 5,
             columns: [
-              { text: 'Resource', field: 'name', width: 200 }
+              { text: 'Resource', field: 'name', width: 250, locked: true }
             ],
-            resourceStore: resourceStore,
-            eventStore: eventStore,
+            resources: schedulerResources,
+            events: schedulerEvents,
             // Disable features that might interfere
             features: {
               tree: false,
               group: false,
               filterBar: false,
-              regionResize: false
+              regionResize: false,
+              eventDrag: true,
+              eventResize: true,
+              eventTooltip: true
             }
           });
           

@@ -119,6 +119,7 @@ import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
+import TestScheduler from "@/pages/test-scheduler";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import Help from "@/pages/help";
@@ -294,6 +295,7 @@ function Router() {
     <OnboardingGate>
       <Switch>
         <Route path="/demo" component={DemoPage} />
+        <Route path="/test-scheduler" component={TestScheduler} />
         <Route path="/marketing" component={MarketingLandingPage} />
         <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/onboarding" component={Onboarding} />
@@ -693,6 +695,11 @@ function Router() {
   // Check if we're on the demo page - it should render without any layout
   if (location === '/demo') {
     return <DemoPage />;
+  }
+  
+  // Check if we're on the test-scheduler page - it should render without any layout
+  if (location === '/test-scheduler') {
+    return <TestScheduler />;
   }
   
   // Force mobile layout for mobile-specific routes regardless of screen width
