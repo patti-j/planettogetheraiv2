@@ -120,6 +120,7 @@ import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
+import ResourceTimeline from "@/pages/resource-timeline";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import Help from "@/pages/help";
@@ -700,6 +701,11 @@ function Router() {
   // Check if we're on the test-scheduler page - it should render without any layout
   if (location === '/test-scheduler') {
     return <TestScheduler />;
+  }
+  
+  // Check if we're on the resource-timeline page - it should render without any layout
+  if (location === '/resource-timeline') {
+    return <ResourceTimeline />;
   }
   
   // Force mobile layout for mobile-specific routes regardless of screen width
