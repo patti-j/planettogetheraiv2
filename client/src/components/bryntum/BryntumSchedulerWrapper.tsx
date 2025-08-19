@@ -131,7 +131,7 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
 
         console.log(`Loading ${tasksWithResources.length} resources with operations`);
         
-        // Simple Gantt configuration 
+        // Simple Gantt configuration with proper project structure
         const config = {
           appendTo: containerRef.current,
           height: 600,
@@ -153,8 +153,10 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             }
           },
           
-          // Use tasks directly
-          tasks: tasksWithResources
+          // Use project configuration with proper data structure
+          project: {
+            tasks: tasksWithResources
+          }
         };
         
         console.log('Creating Gantt with config:', config);
