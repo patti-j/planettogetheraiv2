@@ -267,24 +267,21 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             fields: ['id', 'name', 'startDate', 'endDate', 'resourceId', 'percentDone', 'draggable', 'resizable']
           },
           
-          // Enhanced resource columns
+          // Enhanced resource columns - use simple text instead of HTML
           columns: [
             { 
               text: 'Resource Name', 
               field: 'name', 
               width: 200,
-              renderer: ({ record }: any) => {
-                return `<div style="font-weight: 500;">${record.name}</div>`;
-              }
+              editor: false,
+              htmlEncode: false
             },
             {
               text: 'Type',
               field: 'type',
               width: 100,
-              renderer: ({ value }: any) => {
-                const color = value === 'machine' ? '#3b82f6' : '#10b981';
-                return `<span style="color: ${color}; font-weight: 500;">${value || 'Equipment'}</span>`;
-              }
+              editor: false,
+              renderer: ({ value }: any) => value || 'Equipment'
             }
           ],
           
