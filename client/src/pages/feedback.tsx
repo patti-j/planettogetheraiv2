@@ -1324,11 +1324,22 @@ export default function Feedback() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="submit">Submit Feedback</TabsTrigger>
-            <TabsTrigger value="view">View Feedback</TabsTrigger>
-            <TabsTrigger value="algorithm">Algorithm Feedback</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsList className="h-10 w-full justify-start overflow-x-auto sm:grid sm:grid-cols-4 sm:overflow-x-visible">
+            <TabsTrigger value="submit" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
+              <span className="sm:hidden">Submit</span>
+              <span className="hidden sm:inline">Submit Feedback</span>
+            </TabsTrigger>
+            <TabsTrigger value="view" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
+              <span className="sm:hidden">View</span>
+              <span className="hidden sm:inline">View Feedback</span>
+            </TabsTrigger>
+            <TabsTrigger value="algorithm" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
+              <span className="sm:hidden">Algorithm</span>
+              <span className="hidden sm:inline">Algorithm Feedback</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex-shrink-0 px-2 sm:px-3 text-xs sm:text-sm">
+              Analytics
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="submit" className="mt-6">
