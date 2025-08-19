@@ -195,38 +195,25 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         const schedulerResources = Array.from(uniqueResources.values()).slice(0, 20);
         console.log(`Loading ${schedulerResources.length} resources`);
 
-        // Create events (operations) for Scheduler Pro - remove duplicates and ensure unique IDs
-        const seenOperations = new Set<string>();
-        const schedulerEvents = (operations as any[] || [])
-          .slice(0, 200)
-          .filter((op) => {
-            // Create unique key to identify duplicates
-            const key = `${op.id}-${op.name}-${op.resourceName}`;
-            if (seenOperations.has(key)) {
-              return false; // Skip duplicate
-            }
-            seenOperations.add(key);
-            return true;
-          })
-          .map((op, index) => {
-            const resourceName = op.resourceName || 'Unassigned';
-            const resource = schedulerResources.find(r => r.name === resourceName);
-            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
-            const endDate = op.scheduledEnd || op.endTime || 
-              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
-            
-            return {
-              id: op.id || index + 1,
-              name: op.name || op.operationName || `Operation ${op.id}`,
-              startDate: startDate,
-              endDate: endDate,
-              resourceId: resource?.id || 1,
-              percentDone: op.percentFinished || 0,
-              draggable: true,
-              resizable: true,
-              eventStyle: 'rounded' // Better visual appearance
-            };
-          });
+        // Create events (operations) for Scheduler Pro
+        const schedulerEvents = (operations as any[] || []).slice(0, 200).map((op, index) => {
+          const resourceName = op.resourceName || 'Unassigned';
+          const resource = schedulerResources.find(r => r.name === resourceName);
+          const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
+          const endDate = op.scheduledEnd || op.endTime || 
+            new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+          
+          return {
+            id: op.id || index + 1,
+            name: op.name || op.operationName || `Operation ${op.id}`,
+            startDate: startDate,
+            endDate: endDate,
+            resourceId: resource?.id || 1,
+            percentDone: op.percentFinished || 0,
+            draggable: true,
+            resizable: true
+          };
+        });
 
         console.log(`Loading ${schedulerEvents.length} events`);
         
@@ -264,11 +251,9 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
             ]
           },
           
-          // Row configuration with overlap handling
-          rowHeight: 80,
-          barMargin: 5,
-          eventLayout: 'stack',  // Stack overlapping events instead of overlapping
-          managedEventSizing: true,  // Auto-size events to prevent overlaps
+          // Row configuration
+          rowHeight: 60,
+          barMargin: 8,
           
           // Resources on the left axis with enhanced columns
           resourceStore: {
