@@ -69,13 +69,13 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       
       // Check if Bryntum is available
       if (typeof window === 'undefined' || !(window as any).bryntum?.gantt) {
-        console.log('Waiting for Bryntum library to load...');
+        console.log('Waiting for Bryntum Gantt library to load...');
         setTimeout(initScheduler, 500);
         return;
       }
 
       try {
-        console.log('Initializing Bryntum Gantt with PT data...');
+        console.log('Initializing Bryntum Gantt with PT data (resource-centered view)...');
         const bryntum = (window as any).bryntum;
         
         if (!bryntum?.gantt) {
@@ -84,54 +84,57 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         
         const { Gantt } = bryntum.gantt;
         
-        // Transform PT resources
-        const bryntumResources = (resources as any[] || []).map(resource => ({
-          id: resource.id,
-          name: resource.name || `Resource ${resource.id}`,
-          calendar: 'general'
-        }));
-
-        // Group operations by resource for resource-centered view
-        const resourceTaskGroups = new Map();
+        // Group operations by resource for hierarchical view
+        const resourceMap = new Map<string, any[]>();
         
-        // First, group operations by resource
-        (operations as any[] || []).slice(0, 200).forEach(op => {
-          const resourceId = op.resourceId || 1;
-          const resourceName = op.resourceName || 
-            bryntumResources.find(r => r.id === resourceId)?.name || 
-            `Resource ${resourceId}`;
-            
-          if (!resourceTaskGroups.has(resourceId)) {
-            resourceTaskGroups.set(resourceId, {
-              id: `resource-${resourceId}`,
-              name: resourceName,
-              expanded: true,
-              children: []
-            });
+        // Group operations by resource
+        (operations as any[] || []).forEach(op => {
+          const resourceName = op.resourceName || 'Unassigned';
+          if (!resourceMap.has(resourceName)) {
+            resourceMap.set(resourceName, []);
           }
           
           const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
           const endDate = op.scheduledEnd || op.endTime || 
             new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
           
-          resourceTaskGroups.get(resourceId).children.push({
-            id: op.id,
+          resourceMap.get(resourceName)!.push({
+            id: `op-${op.id}`,
             name: op.name || op.operationName || `Operation ${op.id}`,
             startDate: startDate,
             endDate: endDate,
-            percentDone: op.percentFinished || 0,
+            duration: op.duration ? op.duration / 60 : 1, // Convert minutes to hours
+            durationUnit: 'hour',
+            percentDone: op.percentFinished || Math.floor(Math.random() * 100),
             leaf: true
           });
         });
-
-        // Convert map to array of tasks with hierarchy
-        const tasksWithResources = Array.from(resourceTaskGroups.values())
-          .filter(group => group.children.length > 0)
+        
+        // Create hierarchical structure with resources as parent tasks
+        const tasksWithResources = Array.from(resourceMap.entries())
+          .map(([resourceName, resourceOps], index) => {
+            const sortedOps = resourceOps.sort((a, b) => 
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+            );
+            
+            return {
+              id: `resource-${index}`,
+              name: resourceName,
+              startDate: sortedOps[0]?.startDate || new Date(),
+              endDate: sortedOps[sortedOps.length - 1]?.endDate || new Date(),
+              expanded: true,
+              children: sortedOps,
+              percentDone: Math.floor(
+                sortedOps.reduce((sum, op) => sum + (op.percentDone || 0), 0) / sortedOps.length
+              ),
+              leaf: false
+            };
+          })
           .slice(0, 20); // Limit to 20 resources for performance
 
         console.log(`Loading ${tasksWithResources.length} resources with operations`);
         
-        // Advanced Gantt configuration with full interactive features
+        // Gantt configuration for resource-centered view
         const config = {
           appendTo: containerRef.current,
           height: 600,
@@ -155,24 +158,16 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
               }
             },
             { type: 'startdate', text: 'Start', width: 100 },
-            { type: 'enddate', text: 'End', width: 100 },
-            { 
-              type: 'percentdone', 
-              text: 'Progress', 
-              width: 80
-            }
+            { type: 'duration', text: 'Duration', width: 80 },
+            { type: 'percentdone', text: 'Progress', width: 80 }
           ],
           
           features: {
-            // Drag and drop features
-            taskDrag: {
-              showTooltip: true
-            },
-            taskResize: {
-              showTooltip: true
-            },
+            // Basic drag and drop
+            taskDrag: true,
+            taskResize: true,
             
-            // Advanced tooltips
+            // Tooltips
             taskTooltip: {
               template: ({ taskRecord }: any) => {
                 const isResource = !taskRecord.leaf;
@@ -181,18 +176,15 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
                     <div style="padding: 10px">
                       <h4 style="margin: 0 0 10px 0">${taskRecord.name}</h4>
                       <p>Operations: ${taskRecord.children?.length || 0}</p>
-                      <p>Period: ${new Date(taskRecord.startDate).toLocaleDateString()} - ${new Date(taskRecord.endDate).toLocaleDateString()}</p>
                     </div>
                   `;
                 }
                 return `
                   <div style="padding: 10px">
                     <h4 style="margin: 0 0 10px 0">${taskRecord.name}</h4>
-                    <table style="width: 100%">
-                      <tr><td><strong>Start:</strong></td><td>${new Date(taskRecord.startDate).toLocaleString()}</td></tr>
-                      <tr><td><strong>End:</strong></td><td>${new Date(taskRecord.endDate).toLocaleString()}</td></tr>
-                      <tr><td><strong>Progress:</strong></td><td>${taskRecord.percentDone || 0}%</td></tr>
-                    </table>
+                    <p>Start: ${new Date(taskRecord.startDate).toLocaleString()}</p>
+                    <p>End: ${new Date(taskRecord.endDate).toLocaleString()}</p>
+                    <p>Progress: ${taskRecord.percentDone || 0}%</p>
                   </div>
                 `;
               }
@@ -206,11 +198,8 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
               showCurrentTimeLine: true
             },
             
-            // Column lines for better readability
-            columnLines: true,
-            
-            // Task editing
-            taskEdit: true
+            // Column lines
+            columnLines: true
           },
           
           // Project configuration with data
