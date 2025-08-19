@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight, Calendar, Plus } from 'lucide-react';
 
 interface BryntumSchedulerWrapperProps {
   height?: string;
@@ -34,6 +35,59 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
   const schedulerRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Toolbar control functions
+  const handleZoomIn = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomIn();
+    }
+  };
+  
+  const handleZoomOut = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomOut();
+    }
+  };
+  
+  const handleZoomToFit = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomToFit();
+    }
+  };
+  
+  const handlePrevious = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.shiftPrevious();
+    }
+  };
+  
+  const handleNext = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.shiftNext();
+    }
+  };
+  
+  const handleToday = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.scrollToDate(new Date(), { block: 'center', animate: true });
+    }
+  };
+  
+  const handleAddEvent = () => {
+    if (schedulerRef.current) {
+      const startDate = new Date();
+      startDate.setHours(startDate.getHours() + 1);
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 2);
+      
+      schedulerRef.current.eventStore.add({
+        name: 'New Task',
+        startDate,
+        endDate,
+        resourceId: schedulerRef.current.resourceStore.first?.id || 1
+      });
+    }
+  };
 
   // Fetch PT operations data
   const { data: operations, isLoading: loadingOperations } = useQuery({
@@ -703,17 +757,106 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
   }
 
   return (
-    <div 
-      ref={containerRef} 
-      className="bryntum-scheduler-container"
-      style={{ 
-        height, 
-        width,
-        position: 'relative',
-        overflow: 'hidden',
-        isolation: 'isolate'
-      }}
-    />
+    <div className="flex flex-col h-full w-full">
+      {/* Toolbar with time controls */}
+      <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          {/* Zoom controls */}
+          <Button
+            onClick={handleZoomIn}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            <ZoomIn className="h-4 w-4" />
+            ZOOM IN
+          </Button>
+          
+          <Button
+            onClick={handleZoomOut}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            <ZoomOut className="h-4 w-4" />
+            ZOOM OUT
+          </Button>
+          
+          <Button
+            onClick={handleZoomToFit}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            <Maximize2 className="h-4 w-4" />
+            ZOOM TO FIT
+          </Button>
+          
+          <div className="w-px h-6 bg-gray-300 mx-2" />
+          
+          {/* Navigation controls */}
+          <Button
+            onClick={handlePrevious}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            PREVIOUS
+          </Button>
+          
+          <Button
+            onClick={handleToday}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            <Calendar className="h-4 w-4" />
+            TODAY
+          </Button>
+          
+          <Button
+            onClick={handleNext}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1"
+            disabled={!isInitialized}
+          >
+            NEXT
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Add Event button */}
+        <Button
+          onClick={handleAddEvent}
+          size="sm"
+          className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+          disabled={!isInitialized}
+        >
+          <Plus className="h-4 w-4" />
+          ADD EVENT
+        </Button>
+      </div>
+      
+      {/* Scheduler container */}
+      <div 
+        ref={containerRef} 
+        className="bryntum-scheduler-container flex-1"
+        style={{ 
+          height: `calc(${height} - 60px)`,
+          width,
+          position: 'relative',
+          overflow: 'hidden',
+          isolation: 'isolate'
+        }}
+      />
+    </div>
   );
 }
 
