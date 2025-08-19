@@ -30,7 +30,7 @@ function getOperationColor(operationType: string): string {
   return '#6B7280'; // Default gray
 }
 
-export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: BryntumSchedulerWrapperProps) {
+export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width = '100%' }: BryntumSchedulerWrapperProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const schedulerRef = useRef<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -256,13 +256,13 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         // SchedulerPro configuration - simplified approach
         const config = {
           appendTo: containerRef.current,
-          height: 800,
+          height: '100%',  // Use full container height
           width: '100%',
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           viewPreset: 'dayAndWeek',
-          rowHeight: 50,
-          barMargin: 5,
+          rowHeight: 35,  // Reduced to fit more rows
+          barMargin: 3,
           
           // Load data directly into stores (no assignments for basic Scheduler)
           resourceStore: {

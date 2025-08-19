@@ -20,7 +20,7 @@ export default function DemoPage() {
   });
 
   return (
-    <div className="flex flex-col h-full p-4 space-y-4">
+    <div className="flex flex-col h-screen p-4 space-y-4">
       {/* Header - styled like the screenshot */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-400 text-white p-4 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-center">Bryntum Scheduler Pro Demo</h1>
@@ -30,9 +30,9 @@ export default function DemoPage() {
       </div>
 
       {/* Bryntum Scheduler Chart */}
-      <Card className="flex-1 overflow-auto">
-        <CardContent className="p-0">
-          <BryntumSchedulerWrapper />
+      <Card className="flex-1 overflow-hidden">
+        <CardContent className="p-0 h-full">
+          <BryntumSchedulerWrapper height="calc(100vh - 180px)" />
         </CardContent>
       </Card>
     </div>
