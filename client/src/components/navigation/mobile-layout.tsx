@@ -385,13 +385,13 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 )}
               </Button>
             )}
-            {/* Max Settings Button */}
+            {/* Settings Button */}
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setMaxOpen(true)}
+              onClick={() => setProfileDialogOpen(true)}
               className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Max Settings"
+              title="Account Settings"
             >
               <Settings className="h-4 w-4" />
             </Button>
