@@ -8679,24 +8679,34 @@ export class DatabaseStorage implements IStorage {
 
   // Smart KPI Definitions
   async getSmartKpiDefinitions(category?: string, businessStrategy?: string, isActive?: boolean): Promise<SmartKpiDefinition[]> {
-    let query = db.select().from(smartKpiDefinitions);
-    const conditions: any[] = [];
+    console.log("[STORAGE] getSmartKpiDefinitions called with:", { category, businessStrategy, isActive });
     
-    if (category) {
-      conditions.push(eq(smartKpiDefinitions.category, category));
+    try {
+      let query = db.select().from(smartKpiDefinitions);
+      const conditions: any[] = [];
+      
+      if (category) {
+        conditions.push(eq(smartKpiDefinitions.category, category));
+      }
+      if (businessStrategy) {
+        conditions.push(eq(smartKpiDefinitions.businessStrategy, businessStrategy));
+      }
+      if (isActive !== undefined) {
+        conditions.push(eq(smartKpiDefinitions.isActive, isActive));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      console.log("[STORAGE] Executing query...");
+      const result = await query.orderBy(smartKpiDefinitions.name);
+      console.log("[STORAGE] Query completed, found:", result.length, "definitions");
+      return result;
+    } catch (error) {
+      console.error("[STORAGE] Error in getSmartKpiDefinitions:", error);
+      throw error;
     }
-    if (businessStrategy) {
-      conditions.push(eq(smartKpiDefinitions.businessStrategy, businessStrategy));
-    }
-    if (isActive !== undefined) {
-      conditions.push(eq(smartKpiDefinitions.isActive, isActive));
-    }
-    
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-    
-    return await query.orderBy(smartKpiDefinitions.name);
   }
 
   async getSmartKpiDefinition(id: number): Promise<SmartKpiDefinition | undefined> {

@@ -2051,7 +2051,7 @@ export const smartKpiDefinitions = pgTable("smart_kpi_definitions", {
   measurementUnit: text("measurement_unit").notNull(), // percentage, hours, dollars, count, etc.
   targetType: text("target_type").notNull(), // higher_better, lower_better, range_target
   isActive: boolean("is_active").default(true),
-  trackingFrequency: text("tracking_frequency").notNull(), // real_time, hourly, daily, weekly, monthly
+  trackingFrequency: text("tracking_frequency_final").notNull(), // real_time, hourly, daily, weekly, monthly
   reportingLevel: text("reporting_level").notNull(), // plant, department, line, resource
   improvementActions: jsonb("improvement_actions").$type<Array<{
     condition: string; // when to trigger this action

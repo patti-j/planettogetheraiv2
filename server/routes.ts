@@ -23896,15 +23896,24 @@ Be careful to preserve data integrity and relationships.`;
   }));
 
   // Smart KPI Definitions
-  app.get("/api/smart-kpi-definitions", requireAuth, createSafeHandler(async (req, res) => {
-    const { category, businessStrategy, isActive } = req.query;
-    const definitions = await storage.getSmartKpiDefinitions(
-      category as string,
-      businessStrategy as string,
-      isActive === 'true' ? true : isActive === 'false' ? false : undefined
-    );
-    res.json(definitions);
-  }));
+  app.get("/api/smart-kpi-definitions", async (req, res) => {
+    try {
+      console.log("[API] GET /api/smart-kpi-definitions - Starting");
+      const { category, businessStrategy, isActive } = req.query;
+      console.log("[API] Query params:", { category, businessStrategy, isActive });
+      
+      const definitions = await storage.getSmartKpiDefinitions(
+        category as string,
+        businessStrategy as string,
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined
+      );
+      console.log("[API] Found KPI definitions:", definitions.length);
+      res.json(definitions);
+    } catch (error) {
+      console.error("[API] Error in smart-kpi-definitions:", error);
+      res.status(500).json({ error: "Failed to fetch KPI definitions" });
+    }
+  });
 
   app.get("/api/smart-kpi-definitions/:id", requireAuth, createSafeHandler(async (req, res) => {
     const id = parseInt(req.params.id);
