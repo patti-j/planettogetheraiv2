@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Beer, Calendar, Factory, Package } from 'lucide-react';
-import { BryntumGanttWrapper } from '@/components/bryntum/BryntumGanttWrapper';
+import { BryntumSchedulerWrapper } from '@/components/bryntum/BryntumSchedulerWrapper';
 import { useQuery } from '@tanstack/react-query';
 
 export default function DemoPage() {
@@ -49,10 +49,10 @@ export default function DemoPage() {
         </CardHeader>
       </Card>
 
-      {/* Bryntum Gantt Chart */}
+      {/* Bryntum Scheduler Chart */}
       <Card className="flex-1">
         <CardContent className="p-0 h-full">
-          <BryntumGanttWrapper height="calc(100vh - 200px)" />
+          <BryntumSchedulerWrapper height="calc(100vh - 200px)" />
         </CardContent>
       </Card>
     </div>
