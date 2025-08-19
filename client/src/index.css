@@ -110,6 +110,98 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Bryntum Scheduler Container Styles */
+.bryntum-scheduler-container {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: white;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+}
+
+/* Fix Bryntum Scheduler display issues */
+.bryntum-scheduler-container .b-scheduler {
+  position: relative !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Ensure proper element stacking */
+.bryntum-scheduler-container .b-grid-header,
+.bryntum-scheduler-container .b-grid-body,
+.bryntum-scheduler-container .b-timeaxis-header {
+  position: relative !important;
+  z-index: auto !important;
+}
+
+/* Fix text visibility */
+.bryntum-scheduler-container .b-grid-cell,
+.bryntum-scheduler-container .b-sch-event {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Ensure events are visible */
+.bryntum-scheduler-container .b-sch-event-wrap {
+  position: absolute !important;
+  pointer-events: auto !important;
+}
+
+/* Hide any raw div text */
+.bryntum-scheduler-container div:empty {
+  display: none !important;
+}
+
+/* Force Bryntum SchedulerPro styles */
+.b-schedulerpro,
+.b-scheduler {
+  font-family: inherit !important;
+  font-size: 14px !important;
+}
+
+/* Fix overlapping issues */
+.b-sch-timeaxis-cell,
+.b-sch-header-row {
+  box-sizing: border-box !important;
+}
+
+/* Ensure proper rendering of scheduler elements */
+.b-widget.b-schedulerpro {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Fix grid cells and headers */
+.b-grid-row,
+.b-grid-cell {
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+/* Ensure events are properly positioned */
+.b-sch-event {
+  position: absolute !important;
+  box-sizing: border-box !important;
+  border-radius: 3px !important;
+  padding: 2px 5px !important;
+  background: #4A90E2 !important;
+  color: white !important;
+  cursor: pointer !important;
+}
+
+/* Fix resource column */
+.b-resourceinfo-column {
+  background: #f5f5f5 !important;
+  border-right: 1px solid #ddd !important;
+}
+
+/* Reset any conflicting Tailwind styles */
+.bryntum-scheduler-container * {
+  letter-spacing: normal !important;
+  line-height: normal !important;
+}
+
 /* iOS Safe Area Support for Mobile Layout */
 @supports (padding: max(0px)) {
   .safe-top {

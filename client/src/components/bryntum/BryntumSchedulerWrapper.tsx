@@ -163,10 +163,17 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
 
         console.log(`Loading ${schedulerEvents.length} events`);
         
+        // Clear container before creating scheduler
+        if (containerRef.current) {
+          containerRef.current.innerHTML = '';
+        }
+
         // Advanced Scheduler Pro configuration with all available features
         const config = {
           appendTo: containerRef.current,
           height: 600,
+          width: '100%',
+          autoHeight: false,
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           
@@ -699,7 +706,13 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
     <div 
       ref={containerRef} 
       className="bryntum-scheduler-container"
-      style={{ height, width }}
+      style={{ 
+        height, 
+        width,
+        position: 'relative',
+        overflow: 'hidden',
+        isolation: 'isolate'
+      }}
     />
   );
 }
