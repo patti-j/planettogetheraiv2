@@ -44,6 +44,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -103,6 +106,16 @@ export function MobileAlerts() {
   const [rootCause, setRootCause] = useState('');
   const [showAcknowledgeDialog, setShowAcknowledgeDialog] = useState(false);
   const [acknowledgeComment, setAcknowledgeComment] = useState('');
+  
+  // AI Settings state
+  const [aiSettings, setAiSettings] = useState({
+    globalAiEnabled: true,
+    confidenceThreshold: 75,
+    autoCreateAlerts: true,
+    emailNotifications: true,
+    smartFiltering: true,
+    learningMode: true
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -166,6 +179,20 @@ export function MobileAlerts() {
       setShowResolutionDialog(false);
       setResolution('');
       setRootCause('');
+    }
+  });
+
+  // AI Settings mutation
+  const updateAiSettingsMutation = useMutation({
+    mutationFn: async (settings: any) => {
+      const response = await apiRequest('PUT', '/api/alerts/ai-settings', settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "AI Settings Updated",
+        description: "Your AI alert preferences have been saved successfully."
+      });
     }
   });
 
@@ -245,11 +272,15 @@ export function MobileAlerts() {
   };
 
   // Filter alerts based on selected filters
-  const filteredAlerts = alerts.filter((alert: Alert) => {
-    if (severityFilter !== 'all' && alert.severity !== severityFilter) return false;
-    if (statusFilter !== 'all' && alert.status !== statusFilter) return false;
-    return true;
-  });
+  const getFilteredAlerts = (tabStatus: string) => {
+    return alerts.filter((alert: Alert) => {
+      if (severityFilter !== 'all' && alert.severity !== severityFilter) return false;
+      if (tabStatus !== 'all' && alert.status !== tabStatus) return false;
+      return true;
+    });
+  };
+  
+  const filteredAlerts = getFilteredAlerts('active');
 
   // Group alerts by severity for quick overview
   const criticalAlerts = filteredAlerts.filter((a: Alert) => a.severity === 'critical' && a.status === 'active');
@@ -257,8 +288,21 @@ export function MobileAlerts() {
 
   return (
     <div className="space-y-4 p-3 sm:p-4">
-      {/* Quick Stats */}
-      {stats && (
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="active" className="text-xs">Active</TabsTrigger>
+          <TabsTrigger value="acknowledged" className="text-xs">Ack'd</TabsTrigger>
+          <TabsTrigger value="resolved" className="text-xs">Resolved</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+          <TabsTrigger value="ai-settings" className="flex items-center gap-1 text-xs">
+            <Brain className="h-3 w-3" />
+            AI
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="space-y-4 mt-4">
+          {/* Quick Stats */}
+          {stats && (
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           <Card className="bg-red-50 dark:bg-red-900/20">
             <CardContent className="p-3">
@@ -499,6 +543,294 @@ export function MobileAlerts() {
           )}
         </div>
       </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="acknowledged" className="space-y-4 mt-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-400px)]">
+            <div className="space-y-2">
+              {getFilteredAlerts('acknowledged').length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No acknowledged alerts found
+                </div>
+              ) : (
+                getFilteredAlerts('acknowledged').map((alert: Alert) => (
+                  <Card key={alert.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getSeverityIcon(alert.severity)}
+                          <div>
+                            <h3 className="font-medium text-sm">{alert.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(alert.createdAt), 'MMM d, h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                        {getStatusBadge(alert.status)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="resolved" className="space-y-4 mt-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-400px)]">
+            <div className="space-y-2">
+              {getFilteredAlerts('resolved').length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No resolved alerts found
+                </div>
+              ) : (
+                getFilteredAlerts('resolved').map((alert: Alert) => (
+                  <Card key={alert.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getSeverityIcon(alert.severity)}
+                          <div>
+                            <h3 className="font-medium text-sm">{alert.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(alert.createdAt), 'MMM d, h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                        {getStatusBadge(alert.status)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="all" className="space-y-4 mt-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-full sm:w-[120px]">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-[calc(100vh-400px)]">
+            <div className="space-y-2">
+              {getFilteredAlerts('all').length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No alerts found
+                </div>
+              ) : (
+                getFilteredAlerts('all').map((alert: Alert) => (
+                  <Card key={alert.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getSeverityIcon(alert.severity)}
+                          <div>
+                            <h3 className="font-medium text-sm">{alert.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(alert.createdAt), 'MMM d, h:mm a')}
+                            </p>
+                          </div>
+                        </div>
+                        {getStatusBadge(alert.status)}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="ai-settings" className="space-y-4 mt-4">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Brain className="h-4 w-4 text-purple-500" />
+                  AI Alert Generation
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Control how AI analyzes your data and creates alerts automatically
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="global-ai" className="text-sm">Enable AI Alert Generation</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Allow AI to analyze production data and create alerts automatically
+                    </p>
+                  </div>
+                  <Switch
+                    id="global-ai"
+                    checked={aiSettings.globalAiEnabled}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, globalAiEnabled: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="confidence-threshold" className="text-sm">AI Confidence: {aiSettings.confidenceThreshold}%</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {aiSettings.confidenceThreshold >= 90 ? 'Very Conservative' :
+                       aiSettings.confidenceThreshold >= 75 ? 'Conservative' :
+                       aiSettings.confidenceThreshold >= 50 ? 'Balanced' : 'Aggressive'}
+                    </span>
+                  </div>
+                  <div className="px-2">
+                    <Slider
+                      value={[aiSettings.confidenceThreshold]}
+                      onValueChange={(value) => 
+                        setAiSettings(prev => ({ ...prev, confidenceThreshold: value[0] }))
+                      }
+                      max={100}
+                      min={25}
+                      step={5}
+                      className="w-full"
+                      disabled={!aiSettings.globalAiEnabled}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>More Alerts</span>
+                      <span>Fewer Alerts</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="auto-create" className="text-sm">Auto-Create Alerts</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Automatically create alerts when AI detects issues
+                    </p>
+                  </div>
+                  <Switch
+                    id="auto-create"
+                    checked={aiSettings.autoCreateAlerts}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, autoCreateAlerts: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Bell className="h-4 w-4 text-blue-500" />
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Choose how you want to be notified about AI-generated alerts
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="email-notifications" className="text-sm">Email Notifications</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Receive email notifications for AI-generated alerts
+                    </p>
+                  </div>
+                  <Switch
+                    id="email-notifications"
+                    checked={aiSettings.emailNotifications}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, emailNotifications: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="smart-filtering" className="text-sm">Smart Filtering</Label>
+                    <p className="text-xs text-muted-foreground">
+                      AI filters duplicate or similar alerts to reduce noise
+                    </p>
+                  </div>
+                  <Switch
+                    id="smart-filtering"
+                    checked={aiSettings.smartFiltering}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, smartFiltering: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="learning-mode" className="text-sm">Learning Mode</Label>
+                    <p className="text-xs text-muted-foreground">
+                      AI learns from your feedback to improve alert quality
+                    </p>
+                  </div>
+                  <Switch
+                    id="learning-mode"
+                    checked={aiSettings.learningMode}
+                    onCheckedChange={(checked) => 
+                      setAiSettings(prev => ({ ...prev, learningMode: checked }))
+                    }
+                    disabled={!aiSettings.globalAiEnabled}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Acknowledge Dialog */}
       <Dialog open={showAcknowledgeDialog} onOpenChange={setShowAcknowledgeDialog}>
