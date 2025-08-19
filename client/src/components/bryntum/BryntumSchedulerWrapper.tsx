@@ -257,32 +257,22 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
           containerRef.current.innerHTML = '';
         }
 
-        // FIX: Force all resources to display by using data stores
+        // Use simple direct configuration
         const config = {
           appendTo: containerRef.current,
-          height: 900,  // Increased height to show more resources
+          height: 900,
           width: '100%',
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
           viewPreset: 'dayAndWeek',
-          rowHeight: 40,  // Make rows more visible
+          rowHeight: 40,
           barMargin: 2,
           autoHeight: false,
           fillTicks: true,
-          maintainSelectionOnDatasetChange: false,
           
-          // Critical: Use stores to ensure all resources display
-          resourceStore: {
-            data: schedulerResources,
-            tree: false,
-            autoLoad: false,
-            // Force all resources to show even without events
-            filterEmptyResources: false
-          },
-          eventStore: {
-            data: schedulerEvents,
-            autoLoad: false
-          },
+          // Direct data assignment
+          resources: schedulerResources,
+          events: schedulerEvents,
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
@@ -358,27 +348,43 @@ export function BryntumSchedulerWrapper({ height = 'calc(100vh - 200px)', width 
             resourceName: schedulerRef.current.resourceStore.getById(e.resourceId)?.name
           })));
           
-          // Force all resources to be visible by re-adding them
+          // CRITICAL FIX: Force all resources to display by manipulating the store
           setTimeout(() => {
-            if (schedulerRef.current) {
-              // Clear any existing filters
-              schedulerRef.current.resourceStore.clearFilters();
+            if (schedulerRef.current && schedulerRef.current.resourceStore) {
+              console.log('Fixing resource display issue...');
               
-              // Re-add all resources to force display
-              const allResources = schedulerResources;
-              schedulerRef.current.resourceStore.data = allResources;
+              // Get the resource store
+              const resourceStore = schedulerRef.current.resourceStore;
+              const eventStore = schedulerRef.current.eventStore;
               
-              console.log('Re-added resources:', schedulerRef.current.resourceStore.count);
-              console.log('Visible after re-add:', schedulerRef.current.visibleRowCount);
+              // Clear everything first
+              resourceStore.removeAll();
+              eventStore.removeAll();
               
-              // Force complete refresh
+              // Add ALL resources explicitly
+              console.log('Adding all 23 resources explicitly...');
+              resourceStore.add(schedulerResources);
+              
+              // Then add events
+              console.log('Adding all events...');
+              eventStore.add(schedulerEvents);
+              
+              console.log('Final resource count:', resourceStore.count);
+              console.log('Final event count:', eventStore.count);
+              console.log('Visible rows:', schedulerRef.current.visibleRowCount);
+              
+              // Force refresh everything
               schedulerRef.current.refresh();
-              schedulerRef.current.refreshRows();
               
-              // Scroll to show current time
+              // Try to expand view if needed
+              if (schedulerRef.current.expandAll) {
+                schedulerRef.current.expandAll();
+              }
+              
+              // Scroll to today
               schedulerRef.current.scrollToNow();
             }
-          }, 100);
+          }, 500);
           
           // Add event listeners for interaction
           schedulerRef.current.on({
