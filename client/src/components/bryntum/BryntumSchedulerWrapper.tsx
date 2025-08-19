@@ -263,36 +263,29 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           containerRef.current.innerHTML = '';
         }
 
-        // Simple Scheduler Pro configuration focused on resource display
+        // Try the simplest possible Scheduler Pro configuration
         const config = {
           appendTo: containerRef.current,
-          height: 800, // Standard height with scrolling
+          height: 800,
           width: '100%',
-          autoHeight: false,
           startDate: new Date('2025-08-19'),
           endDate: new Date('2025-09-02'),
-          
-          // View configuration - simple day view
           viewPreset: 'dayAndWeek',
-          
-          // Row configuration for better visibility
-          rowHeight: 50, // Standard row height
+          rowHeight: 50,
           barMargin: 5,
           
-          // Enable vertical scrolling for resources
-          scrollable: true,
+          // Use inline data configuration - the simplest approach
+          resourceStore: {
+            data: schedulerResources
+          },
           
-          // Resources on the left axis
-          resources: schedulerResources,
+          eventStore: {
+            data: schedulerEvents
+          },
           
-          // Events (operations) on the timeline - without resourceId
-          events: schedulerEvents,
-          
-          // Assignments to link events to resources - THIS IS CRITICAL FOR SCHEDULER PRO
-          assignments: schedulerAssignments,
-          
-          // Show all resources, even those without events
-          hideUnscheduledResources: false,
+          assignmentStore: {
+            data: schedulerAssignments
+          },
           
           // Enhanced resource columns - use simple text instead of HTML
           columns: [
@@ -335,17 +328,20 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           console.log('✅ Scheduler Pro created successfully with PT data!');
           console.log(`Scheduler initialized with ${schedulerRef.current.resourceStore.count} resources`);
           console.log(`Scheduler initialized with ${schedulerRef.current.eventStore.count} events`);
+          console.log(`Scheduler initialized with ${schedulerRef.current.assignmentStore.count} assignments`);
           
           // Debug: Check what resources are actually in the store
           const loadedResources = schedulerRef.current.resourceStore.records;
           console.log('Actually loaded resources:', loadedResources.map(r => ({ id: r.id, name: r.name })));
           
-          // Debug: Check what events are loaded and their resource assignments
-          const loadedEvents = schedulerRef.current.eventStore.records.slice(0, 5);
-          console.log('First 5 loaded events:', loadedEvents.map(e => ({ 
-            name: e.name, 
-            resourceId: e.resourceId,
-            resource: e.resource?.name 
+          // Debug: Check assignments - this is how Scheduler Pro links events to resources
+          const loadedAssignments = schedulerRef.current.assignmentStore.records.slice(0, 5);
+          console.log('First 5 loaded assignments:', loadedAssignments.map(a => ({ 
+            assignmentId: a.id,
+            eventId: a.eventId,
+            resourceId: a.resourceId,
+            eventName: a.event?.name,
+            resourceName: a.resource?.name
           })));
           
           // Force refresh to ensure all resources are rendered
