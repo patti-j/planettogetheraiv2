@@ -180,42 +180,76 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         
         const { SchedulerPro } = bryntum.schedulerpro;
         
-        // Create resources for Scheduler Pro (resource-centered view)
-        const uniqueResources = new Map<string, any>();
-        (operations as any[] || []).forEach(op => {
-          const resourceName = op.resourceName || 'Unassigned';
-          if (!uniqueResources.has(resourceName)) {
-            uniqueResources.set(resourceName, {
-              id: uniqueResources.size + 1,
-              name: resourceName
-            });
-          }
-        });
-        
-        const schedulerResources = Array.from(uniqueResources.values()).slice(0, 20);
-        console.log(`Loading ${schedulerResources.length} resources`);
-
-        // Create events (operations) for Scheduler Pro
-        const schedulerEvents = (operations as any[] || []).slice(0, 200).map((op, index) => {
-          const resourceName = op.resourceName || 'Unassigned';
-          const resource = schedulerResources.find(r => r.name === resourceName);
-          const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
-          const endDate = op.scheduledEnd || op.endTime || 
-            new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+        // Use actual PT resources and handle duplicates by making names unique
+        const resourceNameCount = new Map<string, number>();
+        const schedulerResources = (resources as any[] || []).map((resource, index) => {
+          const baseName = resource.name || `Resource ${index + 1}`;
+          const count = resourceNameCount.get(baseName) || 0;
+          resourceNameCount.set(baseName, count + 1);
+          
+          // Add a suffix if this is a duplicate name
+          const uniqueName = count > 0 ? `${baseName} (${count + 1})` : baseName;
           
           return {
-            id: op.id || index + 1,
-            name: op.name || op.operationName || `Operation ${op.id}`,
-            startDate: startDate,
-            endDate: endDate,
-            resourceId: resource?.id || 1,
-            percentDone: op.percentFinished || 0,
-            draggable: true,
-            resizable: true
+            id: resource.id || index + 1,
+            name: uniqueName,
+            originalName: baseName, // Keep original for matching
+            type: resource.type || 'Equipment'
           };
         });
+        
+        console.log(`Loading ${schedulerResources.length} PT resources`);
+        console.log('First 5 resources:', schedulerResources.slice(0, 5));
+
+        // Create events (operations) for Scheduler Pro - map using originalName
+        const resourceMapping = new Map<string, number>();
+        schedulerResources.forEach(r => {
+          // Use originalName for mapping to handle duplicates
+          if (!resourceMapping.has(r.originalName)) {
+            resourceMapping.set(r.originalName, r.id);
+          }
+        });
+        console.log('Resource mapping:', Object.fromEntries(resourceMapping));
+        
+        const schedulerEvents = (operations as any[] || [])
+          .slice(0, 200)
+          .filter(op => op.resourceName) // Only include operations with assigned resources
+          .map((op, index) => {
+            const resourceName = op.resourceName;
+            const resourceId = resourceMapping.get(resourceName);
+            
+            if (!resourceId) {
+              console.log(`Warning: Resource "${resourceName}" not found for operation ${op.name}`);
+              return null;
+            }
+            
+            const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
+            const endDate = op.scheduledEnd || op.endTime || 
+              new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
+            
+            return {
+              id: op.id || index + 1,
+              name: op.name || op.operationName || `Operation ${op.id}`,
+              startDate: startDate,
+              endDate: endDate,
+              resourceId: resourceId,
+              percentDone: op.percentFinished || 0,
+              draggable: true,
+              resizable: true
+            };
+          })
+          .filter(event => event !== null); // Remove null events
 
         console.log(`Loading ${schedulerEvents.length} events`);
+        
+        // Debug: Check resource distribution
+        const resourceDistribution = new Map<number, number>();
+        schedulerEvents.forEach(event => {
+          const count = resourceDistribution.get(event.resourceId) || 0;
+          resourceDistribution.set(event.resourceId, count + 1);
+        });
+        console.log('Resource distribution:', Object.fromEntries(resourceDistribution));
+        console.log('Unique resources used:', resourceDistribution.size);
         
         // Clear container before creating scheduler
         if (containerRef.current) {
@@ -255,15 +289,18 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
           rowHeight: 60,
           barMargin: 8,
           
-          // Resources on the left axis with enhanced columns
+          // Resources on the left axis - initialize empty, load after creation
           resourceStore: {
-            data: schedulerResources,
-            fields: ['id', 'name', 'type']
+            fields: ['id', 'name', 'type', 'originalName'],
+            // Ensure all resources are shown
+            tree: false
           },
           
-          // Events (operations) on the timeline with enhanced data
+          // Show all resources, even those without events
+          hideUnscheduledResources: false,
+          
+          // Events (operations) on the timeline - initialize empty, load after creation
           eventStore: {
-            data: schedulerEvents,
             fields: ['id', 'name', 'startDate', 'endDate', 'resourceId', 'percentDone', 'draggable', 'resizable']
           },
           
@@ -600,6 +637,38 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
         try {
           schedulerRef.current = new SchedulerPro(config);
           console.log('✅ Scheduler Pro created successfully with PT data!');
+          
+          // Load resources and events after scheduler creation
+          // This ensures proper rendering of all resources
+          schedulerRef.current.resourceStore.data = schedulerResources;
+          console.log(`Loaded ${schedulerRef.current.resourceStore.count} resources into scheduler`);
+          
+          // Small delay before loading events to ensure resources are rendered
+          setTimeout(() => {
+            // Add placeholder events for resources without any operations
+            // This ensures all resources are visible in the scheduler
+            const usedResourceIds = new Set(schedulerEvents.map(e => e.resourceId));
+            const placeholderEvents = schedulerResources
+              .filter(r => !usedResourceIds.has(r.id))
+              .map((r, index) => ({
+                id: 1000 + index, // Use high IDs to avoid conflicts
+                name: 'Available',
+                startDate: new Date('2025-08-19T00:00:00'),
+                endDate: new Date('2025-08-19T00:01:00'),
+                resourceId: r.id,
+                percentDone: 0,
+                draggable: false,
+                resizable: false,
+                cls: 'placeholder-event' // CSS class for styling
+              }));
+            
+            const allEvents = [...schedulerEvents, ...placeholderEvents];
+            schedulerRef.current.eventStore.data = allEvents;
+            console.log(`Loaded ${schedulerRef.current.eventStore.count} events into scheduler (${placeholderEvents.length} placeholders)`);
+            
+            // Force a refresh to ensure all resources are visible
+            schedulerRef.current.refresh();
+          }, 100);
           
           // Add event listeners for interaction
           schedulerRef.current.on({

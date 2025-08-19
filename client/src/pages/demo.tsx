@@ -32,7 +32,12 @@ export default function DemoPage() {
       {/* Bryntum Scheduler Chart */}
       <Card className="flex-1">
         <CardContent className="p-0 h-full">
-          <BryntumSchedulerWrapper height="calc(100vh - 200px)" />
+          <BryntumSchedulerWrapper 
+            height="calc(100vh - 200px)" 
+            operations={operations}
+            resources={resources}
+            productionOrders={productionOrders}
+          />
         </CardContent>
       </Card>
     </div>

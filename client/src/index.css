@@ -651,6 +651,18 @@ body.force-mobile-view .force-mobile-view [class*="fixed"] {
   overflow: hidden;
 }
 
+/* Bryntum Scheduler Pro - Placeholder event styling */
+.b-sch-event.placeholder-event {
+  opacity: 0.05;
+  background: #e5e7eb !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+.b-sch-event.placeholder-event .b-sch-event-content {
+  display: none;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);
