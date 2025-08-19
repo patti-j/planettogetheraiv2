@@ -68,155 +68,138 @@ export function BryntumSchedulerWrapper({ height = '600px', width = '100%' }: Br
       }
       
       // Check if Bryntum is available
-      if (typeof window === 'undefined' || !(window as any).bryntum?.gantt) {
-        console.log('Waiting for Bryntum Gantt library to load...');
+      const bryntumAvailable = (window as any).bryntum;
+      console.log('Bryntum object available:', !!bryntumAvailable);
+      if (bryntumAvailable) {
+        console.log('Bryntum modules:', Object.keys(bryntumAvailable));
+      }
+      
+      if (typeof window === 'undefined' || !bryntumAvailable?.schedulerpro) {
+        console.log('Waiting for Bryntum Scheduler Pro library to load...');
         setTimeout(initScheduler, 500);
         return;
       }
 
       try {
-        console.log('Initializing Bryntum Gantt with PT data (resource-centered view)...');
+        console.log('Initializing Bryntum Scheduler Pro with PT data (resource-centered view)...');
         const bryntum = (window as any).bryntum;
         
-        if (!bryntum?.gantt) {
-          throw new Error('Bryntum Gantt not found');
+        if (!bryntum?.schedulerpro) {
+          throw new Error('Bryntum Scheduler Pro not found');
         }
         
-        const { Gantt } = bryntum.gantt;
+        const { SchedulerPro } = bryntum.schedulerpro;
         
-        // Group operations by resource for hierarchical view
-        const resourceMap = new Map<string, any[]>();
-        
-        // Group operations by resource
+        // Create resources for Scheduler Pro (resource-centered view)
+        const uniqueResources = new Map<string, any>();
         (operations as any[] || []).forEach(op => {
           const resourceName = op.resourceName || 'Unassigned';
-          if (!resourceMap.has(resourceName)) {
-            resourceMap.set(resourceName, []);
+          if (!uniqueResources.has(resourceName)) {
+            uniqueResources.set(resourceName, {
+              id: uniqueResources.size + 1,
+              name: resourceName
+            });
           }
-          
+        });
+        
+        const schedulerResources = Array.from(uniqueResources.values()).slice(0, 20);
+        console.log(`Loading ${schedulerResources.length} resources`);
+
+        // Create events (operations) for Scheduler Pro
+        const schedulerEvents = (operations as any[] || []).slice(0, 200).map((op, index) => {
+          const resourceName = op.resourceName || 'Unassigned';
+          const resource = schedulerResources.find(r => r.name === resourceName);
           const startDate = op.scheduledStart || op.startTime || new Date().toISOString();
           const endDate = op.scheduledEnd || op.endTime || 
             new Date(new Date(startDate).getTime() + (op.duration || 60) * 60000).toISOString();
           
-          resourceMap.get(resourceName)!.push({
-            id: `op-${op.id}`,
+          return {
+            id: op.id || index + 1,
             name: op.name || op.operationName || `Operation ${op.id}`,
             startDate: startDate,
             endDate: endDate,
-            duration: op.duration ? op.duration / 60 : 1, // Convert minutes to hours
-            durationUnit: 'hour',
-            percentDone: op.percentFinished || Math.floor(Math.random() * 100),
-            leaf: true
-          });
+            resourceId: resource?.id || 1,
+            percentDone: op.percentFinished || 0,
+            draggable: true,
+            resizable: true
+          };
         });
-        
-        // Create hierarchical structure with resources as parent tasks
-        const tasksWithResources = Array.from(resourceMap.entries())
-          .map(([resourceName, resourceOps], index) => {
-            const sortedOps = resourceOps.sort((a, b) => 
-              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-            );
-            
-            return {
-              id: `resource-${index}`,
-              name: resourceName,
-              startDate: sortedOps[0]?.startDate || new Date(),
-              endDate: sortedOps[sortedOps.length - 1]?.endDate || new Date(),
-              expanded: true,
-              children: sortedOps,
-              percentDone: Math.floor(
-                sortedOps.reduce((sum, op) => sum + (op.percentDone || 0), 0) / sortedOps.length
-              ),
-              leaf: false
-            };
-          })
-          .slice(0, 20); // Limit to 20 resources for performance
 
-        console.log(`Loading ${tasksWithResources.length} resources with operations`);
+        console.log(`Loading ${schedulerEvents.length} events`);
         
-        // Gantt configuration for resource-centered view
+        // Scheduler Pro configuration for resource-centered view (simplified)
         const config = {
           appendTo: containerRef.current,
           height: 600,
-          startDate: '2025-08-19',
-          endDate: '2025-09-02',
-          viewPreset: 'weekAndDayLetter',
-          rowHeight: 45,
-          barMargin: 5,
+          startDate: new Date('2025-08-19'),
+          endDate: new Date('2025-09-02'),
           
+          // Resources on the left axis
+          resourceStore: {
+            data: schedulerResources
+          },
+          
+          // Events (operations) on the timeline
+          eventStore: {
+            data: schedulerEvents
+          },
+          
+          // Resource columns
           columns: [
             { 
-              type: 'name', 
-              text: 'Resource / Operation', 
-              width: 300,
-              renderer: ({ record, value }: any) => {
-                // Bold resource names, normal for operations
-                if (!record.leaf) {
-                  return `<strong style="color: #1f2937">${value}</strong>`;
-                }
-                return value;
-              }
-            },
-            { type: 'startdate', text: 'Start', width: 100 },
-            { type: 'duration', text: 'Duration', width: 80 },
-            { type: 'percentdone', text: 'Progress', width: 80 }
+              text: 'Resources', 
+              field: 'name', 
+              width: 250
+            }
           ],
           
+          // Working features for Scheduler Pro
           features: {
-            // Basic drag and drop
-            taskDrag: true,
-            taskResize: true,
-            
-            // Tooltips
-            taskTooltip: {
-              template: ({ taskRecord }: any) => {
-                const isResource = !taskRecord.leaf;
-                if (isResource) {
-                  return `
-                    <div style="padding: 10px">
-                      <h4 style="margin: 0 0 10px 0">${taskRecord.name}</h4>
-                      <p>Operations: ${taskRecord.children?.length || 0}</p>
-                    </div>
-                  `;
-                }
+            eventDrag: {
+              showTooltip: true
+            },
+            eventResize: {
+              showTooltip: true
+            },
+            eventTooltip: {
+              template: ({ eventRecord }: any) => {
+                const resource = schedulerResources.find(r => r.id === eventRecord.resourceId);
                 return `
-                  <div style="padding: 10px">
-                    <h4 style="margin: 0 0 10px 0">${taskRecord.name}</h4>
-                    <p>Start: ${new Date(taskRecord.startDate).toLocaleString()}</p>
-                    <p>End: ${new Date(taskRecord.endDate).toLocaleString()}</p>
-                    <p>Progress: ${taskRecord.percentDone || 0}%</p>
+                  <div style="padding: 12px; min-width: 250px;">
+                    <h4 style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">
+                      ${eventRecord.name}
+                    </h4>
+                    <div style="display: grid; gap: 4px; font-size: 13px;">
+                      <div><strong>Resource:</strong> ${resource?.name || 'Unassigned'}</div>
+                      <div><strong>Start:</strong> ${new Date(eventRecord.startDate).toLocaleString()}</div>
+                      <div><strong>End:</strong> ${new Date(eventRecord.endDate).toLocaleString()}</div>
+                      <div><strong>Progress:</strong> ${eventRecord.percentDone || 0}%</div>
+                    </div>
                   </div>
                 `;
               }
             },
-            
-            // Progress line
-            progressLine: true,
-            
-            // Time ranges
+            columnLines: true,
             timeRanges: {
-              showCurrentTimeLine: true
+              showCurrentTimeLine: true,
+              showHeaderElements: true
             },
-            
-            // Column lines
-            columnLines: true
-          },
-          
-          // Project configuration with data
-          project: {
-            tasks: tasksWithResources
+            // Removed eventContextMenu and eventEdit as they're not available
+            dependencies: false
           }
         };
         
-        console.log('Creating Gantt with config:', config);
-        console.log('Tasks data:', tasksWithResources);
+        console.log('Creating Scheduler Pro with config:', config);
+        console.log('Resources:', schedulerResources);
+        console.log('Events:', schedulerEvents);
         
         try {
-          schedulerRef.current = new Gantt(config);
-          console.log('✅ Gantt created successfully with PT data!');
-        } catch (ganttError) {
-          console.error('Gantt creation error details:', ganttError);
-          throw ganttError;
+          schedulerRef.current = new SchedulerPro(config);
+          console.log('✅ Scheduler Pro created successfully with PT data!');
+        } catch (schedulerError: any) {
+          console.error('Scheduler Pro creation error:', schedulerError.message || schedulerError);
+          console.error('Stack trace:', schedulerError.stack);
+          throw schedulerError;
         }
 
         console.log('Scheduler initialized successfully');
