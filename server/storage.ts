@@ -2754,34 +2754,34 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    console.log("getProductionOrders: Redirecting to PT Publish Jobs table");
+    console.log("getProductionOrders: Redirecting to PT Manufacturing Orders table");
     
-    // Get jobs from PT Publish tables and map to ProductionOrder format
+    // Get manufacturing orders from PT Publish tables and map to ProductionOrder format
     const ptJobsList = await db
       .select()
-      .from(ptJobs)
-      .orderBy(asc(ptJobs.needDateTime));
+      .from(ptManufacturingOrders)
+      .orderBy(asc(ptManufacturingOrders.needDate));
     
-    // Map PT Publish Jobs to ProductionOrder format for backward compatibility
-    return ptJobsList.map(job => ({
-      id: Number(job.jobId),
-      name: job.name || `Job ${job.jobId}`,
-      description: job.description,
-      product: job.product || job.name || 'Product',
-      quantity: job.makeQty || 1000,
-      status: job.scheduledStatus?.toLowerCase() || 'planned',
-      priority: job.priority || 3,
-      startDate: job.earliestStartDate || new Date(),
-      dueDate: job.needDateTime || new Date(),
-      createdAt: job.publishDate || new Date(),
-      updatedAt: job.publishDate || new Date(),
-      customerId: job.customerId || null,
-      salesOrderId: job.salesOrderId || null,
-      batchNumber: job.externalId || null,
-      actualStartDate: job.actualStart || null,
-      actualEndDate: job.actualEnd || null,
-      completedQuantity: job.completedQty || null,
-      notes: job.notes || null
+    // Map PT Manufacturing Orders to ProductionOrder format for backward compatibility
+    return ptJobsList.map(order => ({
+      id: Number(order.manufacturingOrderId),
+      name: order.name || `Order ${order.manufacturingOrderId}`,
+      description: order.description,
+      product: order.productName || order.name || 'Product',
+      quantity: order.requiredQty || 1000,
+      status: order.released ? 'in-progress' : 'planned',
+      priority: 3,
+      startDate: order.scheduledStart || new Date(),
+      dueDate: order.needDate || new Date(),
+      createdAt: order.publishDate || new Date(),
+      updatedAt: order.publishDate || new Date(),
+      customerId: null,
+      salesOrderId: null,
+      batchNumber: order.externalId || null,
+      actualStartDate: order.scheduledStart || null,
+      actualEndDate: order.scheduledEnd || null,
+      completedQuantity: order.expectedFinishQty || null,
+      notes: order.notes || null
     } as ProductionOrder));
   }
 
@@ -2813,12 +2813,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   // PT Publish Methods - Reading from PT Publish tables
-  async getPtJobs(): Promise<PtJob[]> {
-    // Return all PT jobs ordered by need date
-    return await db
+  async getPtJobs(): Promise<any[]> {
+    // Using PT Manufacturing Orders since ptJobs table doesn't exist
+    const orders = await db
       .select()
-      .from(ptJobs)
-      .orderBy(asc(ptJobs.needDateTime));
+      .from(ptManufacturingOrders)
+      .orderBy(asc(ptManufacturingOrders.needDate));
+    
+    // Map manufacturing orders to job format
+    return orders.map(order => ({
+      jobId: order.jobId,
+      name: order.name,
+      product: order.productName,
+      description: order.description,
+      quantity: order.requiredQty,
+      needDateTime: order.needDate,
+      scheduledStart: order.scheduledStart,
+      scheduledEnd: order.scheduledEnd,
+      externalId: order.externalId,
+      manufacturingOrderId: order.manufacturingOrderId
+    }));
   }
 
   async getPtManufacturingOrders(): Promise<PtManufacturingOrder[]> {
