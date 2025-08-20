@@ -11,21 +11,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertDiscreteOperationSchema } from "@shared/schema";
-import type { DiscreteOperation, ProductionOrder, Capability, Resource } from "@shared/schema";
+import { insertPtPublishJobOperationsSchema, ptPublishJobOperations } from "@shared/pt-publish-schema";
+import type { PtPublishJobOperation } from "@shared/pt-publish-schema";
+import type { ProductionOrder, Capability, Resource } from "@shared/schema";
 
-const operationFormSchema = insertDiscreteOperationSchema.extend({
+const operationFormSchema = z.object({
+  jobId: z.number(),
+  operationId: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  cycleHrs: z.string().optional(),
+  sequenceNumber: z.number().optional(),
+  scheduledStart: z.date().optional(),
+  scheduledEnd: z.date().optional(),
+  defaultResourceId: z.number().optional(),
+  priority: z.number().optional(),
+  percentFinished: z.number().optional(),
+  notes: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
-}).omit({
-  createdAt: true,
-  updatedAt: true,
 });
 
 type OperationFormData = z.infer<typeof operationFormSchema>;
 
 interface OperationFormProps {
-  operation?: DiscreteOperation;
+  operation?: PtPublishJobOperation;
   jobs: ProductionOrder[];
   capabilities: Capability[];
   resources: Resource[];
@@ -46,19 +56,19 @@ export default function OperationForm({
   const form = useForm<OperationFormData>({
     resolver: zodResolver(operationFormSchema),
     defaultValues: {
-      routingId: operation?.routingId || 1,
-      operationName: operation?.operationName || "",
+      jobId: operation?.jobId || 1,
+      operationId: operation?.operationId || `OP-${Date.now()}`,
+      name: operation?.name || "",
       description: operation?.description || "",
-      status: operation?.status || "planned",
-      standardDuration: operation?.standardDuration || 8,
+      cycleHrs: operation?.cycleHrs || "8",
       sequenceNumber: operation?.sequenceNumber || 1,
-      workCenterId: operation?.workCenterId || undefined,
+      defaultResourceId: operation?.defaultResourceId || undefined,
       priority: operation?.priority || 5,
-      completionPercentage: operation?.completionPercentage || 0,
-      qualityCheckRequired: operation?.qualityCheckRequired || false,
-      qualityStatus: operation?.qualityStatus || "pending",
-      startTime: operation?.startTime ? new Date(operation.startTime).toISOString().slice(0, 16) : "",
-      endTime: operation?.endTime ? new Date(operation.endTime).toISOString().slice(0, 16) : "",
+      percentFinished: operation?.percentFinished || 0,
+      scheduledStart: operation?.scheduledStart || undefined,
+      scheduledEnd: operation?.scheduledEnd || undefined,
+      startTime: operation?.scheduledStart ? new Date(operation.scheduledStart).toISOString().slice(0, 16) : "",
+      endTime: operation?.scheduledEnd ? new Date(operation.scheduledEnd).toISOString().slice(0, 16) : "",
       notes: operation?.notes || "",
     },
   });
@@ -115,7 +125,8 @@ export default function OperationForm({
     }
   };
 
-  const selectedCapabilities = form.watch("requiredCapabilities") || [];
+  // Remove capabilities watch since PT schema doesn't have this field
+  // const selectedCapabilities = form.watch("requiredCapabilities") || [];
 
   return (
     <Form {...form}>
@@ -161,14 +172,31 @@ export default function OperationForm({
 
         <FormField
           control={form.control}
-          name="duration"
+          name="cycleHrs"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Duration (hours)</FormLabel>
+              <FormLabel>Cycle Time (hours)</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="8" 
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sequenceNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sequence Number</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 
-                  placeholder="8" 
+                  placeholder="1" 
                   {...field}
                   onChange={(e) => field.onChange(parseInt(e.target.value))}
                 />
@@ -180,33 +208,10 @@ export default function OperationForm({
 
         <FormField
           control={form.control}
-          name="status"
+          name="defaultResourceId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="planned">Planned</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="assignedResourceId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Assigned Resource</FormLabel>
+              <FormLabel>Default Resource</FormLabel>
               <Select onValueChange={(value) => field.onChange(value === "unassigned" ? undefined : parseInt(value))} value={field.value?.toString() || "unassigned"}>
                 <FormControl>
                   <SelectTrigger>
@@ -229,31 +234,41 @@ export default function OperationForm({
 
         <FormField
           control={form.control}
-          name="requiredCapabilities"
-          render={() => (
+          name="priority"
+          render={({ field }) => (
             <FormItem>
-              <FormLabel>Required Capabilities</FormLabel>
-              <div className="space-y-2">
-                {capabilities.map((capability) => (
-                  <div key={capability.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`capability-${capability.id}`}
-                      checked={selectedCapabilities.includes(capability.id)}
-                      onCheckedChange={(checked) => {
-                        const currentValue = form.getValues("requiredCapabilities") || [];
-                        if (checked) {
-                          form.setValue("requiredCapabilities", [...currentValue, capability.id]);
-                        } else {
-                          form.setValue("requiredCapabilities", currentValue.filter(id => id !== capability.id));
-                        }
-                      }}
-                    />
-                    <label htmlFor={`capability-${capability.id}`} className="text-sm">
-                      {capability.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <FormLabel>Priority (1-10)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="10" 
+                  placeholder="5" 
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="percentFinished"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Percent Complete (%)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  max="100" 
+                  placeholder="0" 
+                  {...field}
+                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

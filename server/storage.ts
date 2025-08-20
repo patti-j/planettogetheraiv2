@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  ptJobs, ptResources, ptJobOperations, ptJobActivities, ptManufacturingOrders, ptCapabilities, ptMetrics, ptPlants,
+  productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
   recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
@@ -12,6 +12,7 @@ import {
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type ProductionOrder, type InsertProductionOrder,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
@@ -110,7 +111,7 @@ import {
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
-  type PtJob, type PtResource, type PtJobOperation, type PtJobActivity, type PtManufacturingOrder, type PtCapability, type PtMetric,
+  type PtJob, type PtResource, type PtJobOperation, type PtManufacturingOrder, type PtCapability, type PtMetric,
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
   type InsertShiftTemplate, type InsertResourceShiftAssignment, type InsertHoliday, type InsertResourceAbsence, type InsertShiftScenario, type InsertUnplannedDowntime, type InsertOvertimeShift, type InsertDowntimeAction, type InsertShiftChangeRequest,
@@ -174,12 +175,7 @@ import {
   type InsertExternalCompany, type InsertExternalUser, type InsertPortalSession, type InsertPortalPermission, type InsertAiOnboardingProgress, type InsertPortalActivityLog
 } from "../portal/shared/schema";
 
-// Import PT Publish tables from pt-publish-schema
-import {
-  ptJobs, ptManufacturingOrders, ptJobOperations, ptResources, ptJobActivities,
-  type PtJob, type PtManufacturingOrder, type PtJobOperation, type PtResource, type PtJobActivity,
-  type InsertPtJob, type InsertPtManufacturingOrder, type InsertPtJobOperation, type InsertPtResource, type InsertPtJobActivity
-} from "@shared/pt-publish-schema";
+// PT Publish types are already imported from @shared/schema above
 
 // Import schedule-related types from schedule-schema
 import {
@@ -255,6 +251,67 @@ export interface InsertOperation {
   order?: number; // maps to sequenceNumber
   assignedResourceId?: number;
 }
+
+// Legacy DiscreteOperation type for backward compatibility with routes
+// These map to PT Job Operations in the PT Publish tables
+export type DiscreteOperation = {
+  id: number;
+  routingId?: number | null;
+  productionOrderId?: number | null;
+  operationName: string;
+  description?: string | null;
+  status?: string | null;
+  standardDuration?: number | null;
+  actualDuration?: number | null;
+  startTime?: Date | null;
+  endTime?: Date | null;
+  sequenceNumber?: number | null;
+  workCenterId?: number | null;
+  priority?: number | null;
+  completionPercentage?: number | null;
+  qualityCheckRequired?: boolean | null;
+  qualityStatus?: string | null;
+  notes?: string | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+};
+
+export type InsertDiscreteOperation = Omit<DiscreteOperation, 'id' | 'createdAt' | 'updatedAt'>;
+
+// Legacy ProcessOperation type for backward compatibility with routes
+// These also map to PT Job Operations in the PT Publish tables
+export type ProcessOperation = {
+  id: number;
+  recipeId?: number | null;
+  productionOrderId?: number | null;
+  operationName: string;
+  description?: string | null;
+  status?: string | null;
+  phaseType?: string | null;
+  standardDuration?: number | null;
+  actualDuration?: number | null;
+  targetTemperature?: number | null;
+  actualTemperature?: number | null;
+  targetPressure?: number | null;
+  actualPressure?: number | null;
+  targetPh?: number | null;
+  actualPh?: number | null;
+  agitationSpeed?: number | null;
+  flowRate?: number | null;
+  equipmentId?: number | null;
+  startTime?: Date | null;
+  endTime?: Date | null;
+  sequenceNumber?: number | null;
+  qualityCheckRequired?: boolean | null;
+  qualityStatus?: string | null;
+  batchSize?: number | null;
+  actualYield?: number | null;
+  notes?: string | null;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
+};
+
+export type InsertProcessOperation = Omit<ProcessOperation, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface IStorage {
   // Plants
@@ -345,12 +402,7 @@ export interface IStorage {
   deleteOperation(id: number): Promise<boolean>;
   rescheduleOperation(id: number, params: { resourceId: string; startDate: Date; endDate?: Date }): Promise<any>;
 
-  // Discrete Operations
-  getDiscreteOperations(): Promise<DiscreteOperation[]>;
-  getDiscreteOperation(id: number): Promise<DiscreteOperation | undefined>;
-  createDiscreteOperation(operation: InsertDiscreteOperation): Promise<DiscreteOperation>;
-  updateDiscreteOperation(id: number, operation: Partial<InsertDiscreteOperation>): Promise<DiscreteOperation | undefined>;
-  deleteDiscreteOperation(id: number): Promise<boolean>;
+  // Discrete Operations (removed - using PT Publish tables)
   // Optimization flags
   updateOperationOptimizationFlags(id: number, flags: {
     isBottleneck?: boolean;
@@ -1747,15 +1799,7 @@ export interface IStorage {
   getProductionVersionPhaseFormulationDetailsByRecipePhase(recipePhaseId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
   getProductionVersionPhaseFormulationDetailsByFormulationDetail(formulationDetailId: number): Promise<ProductionVersionPhaseFormulationDetail[]>;
 
-  // Production Version Phase Material Requirements junction table methods
-  getProductionVersionPhaseMaterialRequirements(productionVersionId?: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
-  getProductionVersionPhaseMaterialRequirement(id: number): Promise<ProductionVersionPhaseMaterialRequirement | undefined>;
-  createProductionVersionPhaseMaterialRequirement(assignment: InsertProductionVersionPhaseMaterialRequirement): Promise<ProductionVersionPhaseMaterialRequirement>;
-  updateProductionVersionPhaseMaterialRequirement(id: number, updates: Partial<InsertProductionVersionPhaseMaterialRequirement>): Promise<ProductionVersionPhaseMaterialRequirement | undefined>;
-  deleteProductionVersionPhaseMaterialRequirement(id: number): Promise<boolean>;
-  getProductionVersionPhaseMaterialRequirementsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
-  getProductionVersionPhaseMaterialRequirementsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
-  getProductionVersionPhaseMaterialRequirementsByMaterial(materialRequirementId: number): Promise<ProductionVersionPhaseMaterialRequirement[]>;
+  // Production Version Phase Material Requirements (removed - using PT Publish tables)
 
   // Material Requirements - dual relationship with formulations and BOMs
   getMaterialRequirements(): Promise<MaterialRequirement[]>;
@@ -1767,15 +1811,7 @@ export interface IStorage {
   getMaterialRequirementsByBom(bomId: number): Promise<MaterialRequirement[]>;
   getMaterialRequirementsByItem(itemId: number): Promise<MaterialRequirement[]>;
 
-  // Production Version Phase BOM Product Output Junction Table
-  getProductionVersionPhaseBomProductOutputs(): Promise<ProductionVersionPhaseBomProductOutput[]>;
-  getProductionVersionPhaseBomProductOutput(id: number): Promise<ProductionVersionPhaseBomProductOutput | undefined>;
-  createProductionVersionPhaseBomProductOutput(assignment: InsertProductionVersionPhaseBomProductOutput): Promise<ProductionVersionPhaseBomProductOutput>;
-  updateProductionVersionPhaseBomProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseBomProductOutput>): Promise<ProductionVersionPhaseBomProductOutput | undefined>;
-  deleteProductionVersionPhaseBomProductOutput(id: number): Promise<boolean>;
-  getProductionVersionPhaseBomProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
-  getProductionVersionPhaseBomProductOutputsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
-  getProductionVersionPhaseBomProductOutputsByBomOutput(bomProductOutputId: number): Promise<ProductionVersionPhaseBomProductOutput[]>;
+  // Production Version Phase BOM Product Output (removed - using PT Publish tables)
 
   // Production Version Phase Recipe Product Output Junction Table
   getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]>;
@@ -1837,22 +1873,8 @@ export interface IStorage {
   deleteUserSecret(id: number): Promise<boolean>;
   updateSecretLastUsed(id: number): Promise<void>;
 
-  // Discrete Operation Phases
-  getDiscreteOperationPhases(): Promise<DiscreteOperationPhase[]>;
-  getDiscreteOperationPhasesByOperationId(discreteOperationId: number): Promise<DiscreteOperationPhase[]>;
-  getDiscreteOperationPhase(id: number): Promise<DiscreteOperationPhase | undefined>;
-  createDiscreteOperationPhase(phase: InsertDiscreteOperationPhase): Promise<DiscreteOperationPhase>;
-  updateDiscreteOperationPhase(id: number, phase: Partial<InsertDiscreteOperationPhase>): Promise<DiscreteOperationPhase | undefined>;
-  deleteDiscreteOperationPhase(id: number): Promise<boolean>;
-
-  // Discrete Operation Phase Resource Requirements junction table
-  getDiscreteOperationPhaseResourceRequirements(): Promise<DiscreteOperationPhaseResourceRequirement[]>;
-  getDiscreteOperationPhaseResourceRequirementsByPhaseId(phaseId: number): Promise<DiscreteOperationPhaseResourceRequirement[]>;
-  getDiscreteOperationPhaseResourceRequirementsByResourceRequirementId(resourceRequirementId: number): Promise<DiscreteOperationPhaseResourceRequirement[]>;
-  getDiscreteOperationPhaseResourceRequirement(id: number): Promise<DiscreteOperationPhaseResourceRequirement | undefined>;
-  createDiscreteOperationPhaseResourceRequirement(link: InsertDiscreteOperationPhaseResourceRequirement): Promise<DiscreteOperationPhaseResourceRequirement>;
-  updateDiscreteOperationPhaseResourceRequirement(id: number, link: Partial<InsertDiscreteOperationPhaseResourceRequirement>): Promise<DiscreteOperationPhaseResourceRequirement | undefined>;
-  deleteDiscreteOperationPhaseResourceRequirement(id: number): Promise<boolean>;
+  // Discrete Operation Phases (removed - using PT Publish tables)
+  // Discrete Operation Phase Resource Requirements (removed - using PT Publish tables)
 
   // Algorithm Feedback Management
   getAlgorithmFeedback(filters?: { algorithmName?: string; status?: string; severity?: string; category?: string; submittedBy?: number; plantId?: number }): Promise<AlgorithmFeedback[]>;
@@ -2032,7 +2054,8 @@ export class MemStorage implements Partial<IStorage> {
   private capabilities: Map<number, Capability> = new Map();
   private resources: Map<number, Resource> = new Map();
   private jobs: Map<number, ProductionOrder> = new Map();
-  private operations: Map<number, DiscreteOperation> = new Map();
+  // Note: DiscreteOperation type no longer exists - using PT tables instead
+  // private operations: Map<number, DiscreteOperation> = new Map();
   private dependencies: Map<number, Dependency> = new Map();
   private resourceViews: Map<number, ResourceView> = new Map();
   
@@ -2722,8 +2745,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteJob(id: number): Promise<boolean> {
-    // First delete associated operations
-    await db.delete(operations).where(eq(operations.jobId, id));
+    // Note: PT Job Operations are managed separately in PT tables
+    // We only delete the production order here
     
     const result = await db.delete(productionOrders).where(eq(productionOrders.id, id));
     return (result.rowCount || 0) > 0;
@@ -3514,86 +3537,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDiscreteOperation(id: number): Promise<boolean> {
-    const result = await db.delete(discreteOperations).where(eq(discreteOperations.id, id));
+    // Removed - discrete operations now managed via PT Publish tables
+    const result = await db.delete(ptJobOperations).where(eq(ptJobOperations.id, id));
     return (result.rowCount || 0) > 0;
   }
 
-  // Discrete Operation Phases methods
-  async getDiscreteOperationPhases(): Promise<DiscreteOperationPhase[]> {
-    return await db.select().from(discreteOperationPhases);
-  }
-
-  async getDiscreteOperationPhasesByOperationId(discreteOperationId: number): Promise<DiscreteOperationPhase[]> {
-    return await db.select().from(discreteOperationPhases)
-      .where(eq(discreteOperationPhases.discreteOperationId, discreteOperationId))
-      .orderBy(discreteOperationPhases.sequenceNumber);
-  }
-
-  async getDiscreteOperationPhase(id: number): Promise<DiscreteOperationPhase | undefined> {
-    const [phase] = await db.select().from(discreteOperationPhases).where(eq(discreteOperationPhases.id, id));
-    return phase || undefined;
-  }
-
-  async createDiscreteOperationPhase(phase: InsertDiscreteOperationPhase): Promise<DiscreteOperationPhase> {
-    const [newPhase] = await db.insert(discreteOperationPhases).values(phase).returning();
-    return newPhase;
-  }
-
-  async updateDiscreteOperationPhase(id: number, phase: Partial<InsertDiscreteOperationPhase>): Promise<DiscreteOperationPhase | undefined> {
-    const [updated] = await db.update(discreteOperationPhases)
-      .set(phase)
-      .where(eq(discreteOperationPhases.id, id))
-      .returning();
-    return updated || undefined;
-  }
-
-  async deleteDiscreteOperationPhase(id: number): Promise<boolean> {
-    const result = await db.delete(discreteOperationPhases).where(eq(discreteOperationPhases.id, id));
-    return (result.rowCount || 0) > 0;
-  }
-
-  // Discrete Operation Phase Resource Requirements junction table methods
-  async getDiscreteOperationPhaseResourceRequirements(): Promise<DiscreteOperationPhaseResourceRequirement[]> {
-    return await db.select().from(discreteOperationPhaseResourceRequirements);
-  }
-
-  async getDiscreteOperationPhaseResourceRequirementsByPhaseId(phaseId: number): Promise<DiscreteOperationPhaseResourceRequirement[]> {
-    return await db.select().from(discreteOperationPhaseResourceRequirements)
-      .where(eq(discreteOperationPhaseResourceRequirements.discreteOperationPhaseId, phaseId));
-  }
-
-  async getDiscreteOperationPhaseResourceRequirementsByResourceRequirementId(resourceRequirementId: number): Promise<DiscreteOperationPhaseResourceRequirement[]> {
-    return await db.select().from(discreteOperationPhaseResourceRequirements)
-      .where(eq(discreteOperationPhaseResourceRequirements.resourceRequirementId, resourceRequirementId));
-  }
-
-  async getDiscreteOperationPhaseResourceRequirement(id: number): Promise<DiscreteOperationPhaseResourceRequirement | undefined> {
-    const [link] = await db.select().from(discreteOperationPhaseResourceRequirements)
-      .where(eq(discreteOperationPhaseResourceRequirements.id, id));
-    return link || undefined;
-  }
-
-  async createDiscreteOperationPhaseResourceRequirement(link: InsertDiscreteOperationPhaseResourceRequirement): Promise<DiscreteOperationPhaseResourceRequirement> {
-    const [newLink] = await db.insert(discreteOperationPhaseResourceRequirements).values(link).returning();
-    return newLink;
-  }
-
-  async updateDiscreteOperationPhaseResourceRequirement(id: number, link: Partial<InsertDiscreteOperationPhaseResourceRequirement>): Promise<DiscreteOperationPhaseResourceRequirement | undefined> {
-    const [updated] = await db.update(discreteOperationPhaseResourceRequirements)
-      .set({
-        ...link,
-        updatedAt: new Date(),
-      })
-      .where(eq(discreteOperationPhaseResourceRequirements.id, id))
-      .returning();
-    return updated || undefined;
-  }
-
-  async deleteDiscreteOperationPhaseResourceRequirement(id: number): Promise<boolean> {
-    const result = await db.delete(discreteOperationPhaseResourceRequirements)
-      .where(eq(discreteOperationPhaseResourceRequirements.id, id));
-    return (result.rowCount || 0) > 0;
-  }
+  // Discrete Operation Phases and Resource Requirements methods - REMOVED (using PT Publish tables)
 
   // New process operations methods - REDIRECTED TO PT PUBLISH TABLES
   async getProcessOperations(): Promise<ProcessOperation[]> {
@@ -4177,7 +4126,7 @@ export class DatabaseStorage implements IStorage {
     const query = db.select().from(operationStatusReports);
     
     if (operationId) {
-      query.where(eq(operationStatusReports.discreteOperationId, operationId));
+      query.where(eq(operationStatusReports.ptJobOperationId, operationId));
     }
 
     return await query;
@@ -5028,16 +4977,16 @@ export class DatabaseStorage implements IStorage {
             });
           });
 
-          // Find operations that use this resource
+          // Find PT Job Operations that use this resource
           const resourceOperations = await db
             .select()
-            .from(operations)
-            .where(eq(operations.resourceId, objectId));
+            .from(ptJobOperations)
+            .where(eq(ptJobOperations.setupResourceId, objectId));
           
           resourceOperations.forEach(operation => {
             relationships.push({
               from: { ...resourceData[0], type: 'resources' },
-              to: { ...operation, type: 'operations' },
+              to: { ...operation, type: 'ptJobOperations' },
               relationshipType: 'performs',
               description: 'Resource performs operation'
             });
@@ -5045,28 +4994,32 @@ export class DatabaseStorage implements IStorage {
           break;
 
         case 'productionOrders':
-          // Find operations for this production order
-          const orderOperations = await db
-            .select()
-            .from(operations)
-            .where(eq(operations.productionOrderId, objectId));
-          
-          orderOperations.forEach(operation => {
-            relationships.push({
-              from: { id: objectId, type: 'productionOrders' },
-              to: { ...operation, type: 'operations' },
-              relationshipType: 'includes',
-              description: 'Production order includes operation'
-            });
-          });
-
-          // Find the plant for this production order
+          // Find PT Job Operations for this production order
+          // Note: PT Job Operations are linked through ptJobs table
           const orderData = await db
             .select()
             .from(productionOrders)
             .where(eq(productionOrders.id, objectId))
             .limit(1);
           
+          if (orderData[0]) {
+            // Get PT Job Operations via the job mapping
+            const ptJobOps = await db
+              .select()
+              .from(ptJobOperations)
+              .where(eq(ptJobOperations.jobId, String(objectId)));
+            
+            ptJobOps.forEach(operation => {
+              relationships.push({
+                from: { id: objectId, type: 'productionOrders' },
+                to: { ...operation, type: 'ptJobOperations' },
+                relationshipType: 'includes',
+                description: 'Production order includes operation'
+              });
+            });
+          }
+
+          // Find the plant for this production order (reuse orderData from above)
           if (orderData[0]?.plantId) {
             const plant = await db
               .select()
@@ -5085,24 +5038,25 @@ export class DatabaseStorage implements IStorage {
           }
           break;
 
-        case 'operations':
-          // Find the production order this operation belongs to
+        case 'ptJobOperations':
+          // Find the production order this PT Job Operation belongs to
           const operationData = await db
             .select()
-            .from(operations)
-            .where(eq(operations.id, objectId))
+            .from(ptJobOperations)
+            .where(eq(ptJobOperations.id, objectId))
             .limit(1);
           
-          if (operationData[0]?.productionOrderId) {
+          if (operationData[0]?.jobId) {
+            // PT Job Operations are linked to jobs via jobId
             const order = await db
               .select()
               .from(productionOrders)
-              .where(eq(productionOrders.id, operationData[0].productionOrderId))
+              .where(eq(productionOrders.id, Number(operationData[0].jobId)))
               .limit(1);
             
             if (order[0]) {
               relationships.push({
-                from: { ...operationData[0], type: 'operations' },
+                from: { ...operationData[0], type: 'ptJobOperations' },
                 to: { ...order[0], type: 'productionOrders' },
                 relationshipType: 'part_of',
                 description: 'Operation is part of production order'
@@ -5111,11 +5065,11 @@ export class DatabaseStorage implements IStorage {
           }
 
           // Find the resource that performs this operation
-          if (operationData[0]?.resourceId) {
+          if (operationData[0]?.setupResourceId) {
             const resource = await db
               .select()
               .from(resources)
-              .where(eq(resources.id, operationData[0].resourceId))
+              .where(eq(resources.id, operationData[0].setupResourceId))
               .limit(1);
             
             if (resource[0]) {
@@ -13616,56 +13570,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(productionVersionPhaseFormulationDetails.id);
   }
 
-  // Production Version Phase Material Requirements junction table methods
-  async getProductionVersionPhaseMaterialRequirements(productionVersionId?: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
-    const query = db.select().from(productionVersionPhaseMaterialRequirements);
-    if (productionVersionId) {
-      return await query.where(eq(productionVersionPhaseMaterialRequirements.productionVersionId, productionVersionId));
-    }
-    return await query;
-  }
-
-  async getProductionVersionPhaseMaterialRequirement(id: number): Promise<ProductionVersionPhaseMaterialRequirement | undefined> {
-    const results = await db.select().from(productionVersionPhaseMaterialRequirements)
-      .where(eq(productionVersionPhaseMaterialRequirements.id, id));
-    return results[0] || undefined;
-  }
-
-  async createProductionVersionPhaseMaterialRequirement(assignment: InsertProductionVersionPhaseMaterialRequirement): Promise<ProductionVersionPhaseMaterialRequirement> {
-    const results = await db.insert(productionVersionPhaseMaterialRequirements)
-      .values(assignment)
-      .returning();
-    return results[0];
-  }
-
-  async updateProductionVersionPhaseMaterialRequirement(id: number, updates: Partial<InsertProductionVersionPhaseMaterialRequirement>): Promise<ProductionVersionPhaseMaterialRequirement | undefined> {
-    const results = await db.update(productionVersionPhaseMaterialRequirements)
-      .set(updates)
-      .where(eq(productionVersionPhaseMaterialRequirements.id, id))
-      .returning();
-    return results[0] || undefined;
-  }
-
-  async deleteProductionVersionPhaseMaterialRequirement(id: number): Promise<boolean> {
-    const result = await db.delete(productionVersionPhaseMaterialRequirements)
-      .where(eq(productionVersionPhaseMaterialRequirements.id, id));
-    return result.rowCount > 0;
-  }
-
-  async getProductionVersionPhaseMaterialRequirementsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
-    return await db.select().from(productionVersionPhaseMaterialRequirements)
-      .where(eq(productionVersionPhaseMaterialRequirements.productionVersionId, productionVersionId));
-  }
-
-  async getProductionVersionPhaseMaterialRequirementsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
-    return await db.select().from(productionVersionPhaseMaterialRequirements)
-      .where(eq(productionVersionPhaseMaterialRequirements.discreteOperationPhaseId, discreteOperationPhaseId));
-  }
-
-  async getProductionVersionPhaseMaterialRequirementsByMaterial(materialRequirementId: number): Promise<ProductionVersionPhaseMaterialRequirement[]> {
-    return await db.select().from(productionVersionPhaseMaterialRequirements)
-      .where(eq(productionVersionPhaseMaterialRequirements.materialRequirementId, materialRequirementId));
-  }
+  // Production Version Phase Material Requirements - REMOVED (tables deleted, using PT Publish tables)
 
   // Material Requirements - dual relationship with formulations and BOMs
   async getMaterialRequirements(): Promise<MaterialRequirement[]> {
@@ -13719,50 +13624,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(materialRequirements.requirementName);
   }
 
-  // Production Version Phase BOM Product Output Junction Table
-  async getProductionVersionPhaseBomProductOutputs(): Promise<ProductionVersionPhaseBomProductOutput[]> {
-    return await db.select().from(productionVersionPhaseBomProductOutputs);
-  }
-
-  async getProductionVersionPhaseBomProductOutput(id: number): Promise<ProductionVersionPhaseBomProductOutput | undefined> {
-    const [result] = await db.select().from(productionVersionPhaseBomProductOutputs)
-      .where(eq(productionVersionPhaseBomProductOutputs.id, id));
-    return result || undefined;
-  }
-
-  async createProductionVersionPhaseBomProductOutput(assignment: InsertProductionVersionPhaseBomProductOutput): Promise<ProductionVersionPhaseBomProductOutput> {
-    const [newAssignment] = await db.insert(productionVersionPhaseBomProductOutputs).values(assignment).returning();
-    return newAssignment;
-  }
-
-  async updateProductionVersionPhaseBomProductOutput(id: number, assignment: Partial<InsertProductionVersionPhaseBomProductOutput>): Promise<ProductionVersionPhaseBomProductOutput | undefined> {
-    const [updated] = await db.update(productionVersionPhaseBomProductOutputs)
-      .set({ ...assignment, updatedAt: new Date() })
-      .where(eq(productionVersionPhaseBomProductOutputs.id, id))
-      .returning();
-    return updated || undefined;
-  }
-
-  async deleteProductionVersionPhaseBomProductOutput(id: number): Promise<boolean> {
-    const result = await db.delete(productionVersionPhaseBomProductOutputs)
-      .where(eq(productionVersionPhaseBomProductOutputs.id, id));
-    return result.rowCount > 0;
-  }
-
-  async getProductionVersionPhaseBomProductOutputsByProductionVersion(productionVersionId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
-    return await db.select().from(productionVersionPhaseBomProductOutputs)
-      .where(eq(productionVersionPhaseBomProductOutputs.productionVersionId, productionVersionId));
-  }
-
-  async getProductionVersionPhaseBomProductOutputsByPhase(discreteOperationPhaseId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
-    return await db.select().from(productionVersionPhaseBomProductOutputs)
-      .where(eq(productionVersionPhaseBomProductOutputs.discreteOperationPhaseId, discreteOperationPhaseId));
-  }
-
-  async getProductionVersionPhaseBomProductOutputsByBomOutput(bomProductOutputId: number): Promise<ProductionVersionPhaseBomProductOutput[]> {
-    return await db.select().from(productionVersionPhaseBomProductOutputs)
-      .where(eq(productionVersionPhaseBomProductOutputs.bomProductOutputId, bomProductOutputId));
-  }
+  // Production Version Phase BOM Product Output - REMOVED (tables deleted, using PT Publish tables)
 
   // Production Version Phase Recipe Product Output Junction Table  
   async getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]> {

@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
   insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
-  insertDiscreteOperationSchema, insertDiscreteOperationPhaseSchema, insertDiscreteOperationPhaseResourceRequirementSchema, insertProcessOperationSchema, insertDependencySchema, insertResourceViewSchema,
+  insertDependencySchema, insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,
@@ -50,7 +50,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertRecipeSchema, insertRecipePhaseSchema, insertRecipeFormulaSchema, insertRecipeProductOutputSchema, insertProductionVersionSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertProductionVersionPhaseMaterialRequirementSchema, insertMaterialRequirementSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertMaterialRequirementSchema,
   insertProductionVersionPhaseBomProductOutputSchema, insertProductionVersionPhaseRecipeProductOutputSchema, insertBomProductOutputSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
