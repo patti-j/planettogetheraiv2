@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail, ArrowLeft, Home, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail, ArrowLeft, Home, BarChart3, Building2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/logo";
@@ -18,6 +19,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
+  
+  // Portal login state
+  const [portalEmail, setPortalEmail] = useState("");
+  const [portalPassword, setPortalPassword] = useState("");
+  const [portalError, setPortalError] = useState("");
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [showPortalPassword, setShowPortalPassword] = useState(false);
 
   // Trial signup state
   const [trialEmail, setTrialEmail] = useState("");
@@ -66,6 +74,44 @@ export default function Login() {
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePortalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPortalError("");
+    setPortalLoading(true);
+
+    try {
+      // Call portal login API
+      const response = await apiRequest('POST', '/api/portal/login', {
+        email: portalEmail,
+        password: portalPassword
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Store portal token
+        localStorage.setItem('portal_token', result.token);
+        localStorage.setItem('portal_user', JSON.stringify(result.user));
+        
+        // Redirect to portal based on user type
+        const portalRoute = result.user.company?.type === 'supplier' 
+          ? '/portal/supplier' 
+          : result.user.company?.type === 'customer'
+          ? '/portal/customer'
+          : '/portal';
+          
+        window.location.href = portalRoute;
+      } else {
+        setPortalError(result.message || "Invalid email or password");
+      }
+    } catch (error: any) {
+      console.error("Portal login error:", error);
+      setPortalError("Failed to log in. Please check your credentials.");
+    } finally {
+      setPortalLoading(false);
     }
   };
 
@@ -188,12 +234,26 @@ export default function Login() {
           <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">AI Powered Factory Optimization</p>
         </div>
 
-        {/* Login Form */}
+        {/* Login Form with Tabs */}
         <Card>
+          <Tabs defaultValue="manufacturing" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manufacturing" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Manufacturing System
+              </TabsTrigger>
+              <TabsTrigger value="portal" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Partner Portal
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Manufacturing System Login */}
+            <TabsContent value="manufacturing">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Sign In</CardTitle>
+                <CardTitle>Sign In - Manufacturing System</CardTitle>
                 <CardDescription>
                   Enter your credentials to access the production scheduling system
                 </CardDescription>
@@ -306,6 +366,89 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
+            </TabsContent>
+            
+            {/* Portal Login */}
+            <TabsContent value="portal">
+              <CardHeader>
+                <div>
+                  <CardTitle>Sign In - Partner Portal</CardTitle>
+                  <CardDescription>
+                    Access the external partners portal for suppliers and customers
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 sm:pt-6">
+                <form onSubmit={handlePortalSubmit} className="space-y-3 sm:space-y-4">
+                  {portalError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{portalError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <div>
+                    <label htmlFor="portal-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Email Address
+                    </label>
+                    <Input
+                      id="portal-email"
+                      type="email"
+                      value={portalEmail}
+                      onChange={(e) => setPortalEmail(e.target.value)}
+                      placeholder="supplier@acme.com"
+                      required
+                      disabled={portalLoading}
+                      autoComplete="email"
+                      className="mobile-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="portal-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        id="portal-password"
+                        type={showPortalPassword ? "text" : "password"}
+                        value={portalPassword}
+                        onChange={(e) => setPortalPassword(e.target.value)}
+                        placeholder="Enter password"
+                        required
+                        disabled={portalLoading}
+                        className="pr-10 mobile-input"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPortalPassword(!showPortalPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                      >
+                        {showPortalPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={portalLoading}
+                  >
+                    {portalLoading ? "Signing In..." : "Sign In to Portal"}
+                  </Button>
+                  
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                    <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-300">
+                      <strong>Test Accounts:</strong><br/>
+                      <span className="font-mono">supplier@acme.com</span> - Supplier Portal<br/>
+                      <span className="font-mono">customer@beta.com</span> - Customer Portal<br/>
+                      Password: <span className="font-mono">Test123!</span>
+                    </p>
+                  </div>
+                </form>
+              </CardContent>
+            </TabsContent>
+          </Tabs>
         </Card>
 
         {/* Free Trial Signup */}
