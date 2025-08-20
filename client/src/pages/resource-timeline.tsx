@@ -160,7 +160,7 @@ export default function ResourceTimeline() {
             <div className="flex-1 overflow-x-auto">
               <div className="relative" style={{ width: `${totalWidth}px` }}>
                 {/* Time header */}
-                <div className="h-[60px] border-b bg-gray-50 relative">
+                <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
                   {timeHeaders.map((header, index) => (
                     <div
                       key={index}
@@ -174,18 +174,19 @@ export default function ResourceTimeline() {
                   ))}
                 </div>
 
-                {/* Resource rows with operations */}
-                {resources.map((resource, index) => {
-                  // Match operations by external_id instead of numeric id
-                  const resourceOps = operationsByResource.get(resource.external_id) || 
-                                     operationsByResource.get(resource.id) || [];
-                  return (
-                    <div
-                      key={resource.id}
-                      className={`h-[50px] border-b relative ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                    >
+                {/* Resource rows container */}
+                <div className="relative">
+                  {resources.map((resource, resourceIndex) => {
+                    // Match operations by external_id
+                    const resourceOps = operationsByResource.get(resource.external_id) || [];
+                    
+                    return (
+                      <div
+                        key={resource.id}
+                        className={`h-[50px] border-b relative ${
+                          resourceIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        }`}
+                      >
                       {/* Grid lines */}
                       {timeHeaders.map((_, i) => (
                         <div
@@ -236,6 +237,7 @@ export default function ResourceTimeline() {
                     </div>
                   );
                 })}
+                </div>
               </div>
             </div>
           </div>
