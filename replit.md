@@ -53,6 +53,13 @@ Note on concurrent work:
 
 ### Recent Updates (January 2025)
 - **Bryntum Scheduler Pro Full Integration**: Complete optimization engine with all algorithms working (ASAP, ALAP, Critical Path, Resource Leveling)
+- **Bryntum Chart.js Integration Demo**: Advanced scheduler demo with embedded utilization charts
+  - Row expander feature showing real-time resource utilization
+  - Advanced drag-and-drop with validation (capacity constraints, working hours)
+  - Custom drag tooltips showing resource, time, and duration
+  - Event resizing with duration display
+  - Automatic chart updates on event movement
+  - Page accessible at /bryntum-chart-demo
 - **Intelligent Contextual Hint Bubbles**: Context-aware help system with user interaction tracking
   - Database tables: hint_configurations, user_hint_interactions, hint_sequences
   - React component: HintSystem integrated into main app layout

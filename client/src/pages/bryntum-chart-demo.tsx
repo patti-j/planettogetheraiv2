@@ -133,14 +133,67 @@ export default function BryntumChartDemoPage() {
     resources : dataState.resources,
     events    : dataState.events,
 
-    // Using React wrapper feature syntax (featureName + "Feature")
+    // Enhanced drag-and-drop with validation and custom tooltips
     eventDragFeature : { 
       showTooltip : true,
-      validatorFn: () => true // Allow all drags
+      tooltipTemplate: ({ eventRecord, startDate, endDate, resourceRecord }: any) => {
+        const duration = Math.round((endDate - startDate) / (1000 * 60 * 60));
+        return `
+          <div style="padding: 8px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="font-weight: bold; margin-bottom: 4px;">${eventRecord.name}</div>
+            <div style="font-size: 12px; color: #666;">
+              <div>📍 ${resourceRecord.name}</div>
+              <div>🕐 ${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div>⏱️ ${duration}h duration</div>
+            </div>
+          </div>
+        `;
+      },
+      validatorFn: ({ resourceRecord, startDate, endDate, eventRecord }: any) => {
+        // Check capacity constraints
+        const resource = dataState.resources.find((r: any) => r.id === resourceRecord.id);
+        if (!resource) return { valid: false, message: 'Invalid resource' };
+        
+        // Count overlapping events for this resource
+        const overlappingEvents = dataState.events.filter((e: any) => {
+          if (e.id === eventRecord.id || e.resourceId !== resourceRecord.id) return false;
+          const eStart = new Date(e.startDate);
+          const eEnd = new Date(e.endDate);
+          return (startDate < eEnd && endDate > eStart);
+        });
+        
+        if (overlappingEvents.length >= resource.capacity) {
+          return { 
+            valid: false, 
+            message: `⚠️ Resource at capacity (max ${resource.capacity} concurrent tasks)` 
+          };
+        }
+        
+        // Prevent dragging outside working hours
+        const startHour = startDate.getHours();
+        const endHour = endDate.getHours();
+        if (startHour < 8 || endHour > 18) {
+          return { 
+            valid: false, 
+            message: '⏰ Operations must be within 8 AM - 6 PM' 
+          };
+        }
+        
+        return { valid: true };
+      }
     },
     eventEditFeature : true,
+    eventResizeFeature: {
+      showTooltip: true,
+      tooltipTemplate: ({ startDate, endDate }: any) => {
+        const duration = Math.round((endDate - startDate) / (1000 * 60));
+        return `⏱️ Duration: ${duration} minutes`;
+      }
+    },
     timeRangesFeature : {
-      showCurrentTimeLine: true
+      showCurrentTimeLine: true,
+      showHeaderElements: true,
+      enableResizing: false
     },
     rowExpanderFeature : {
       widgetClass : UtilizationChartWidget,
@@ -153,6 +206,9 @@ export default function BryntumChartDemoPage() {
           <div class="text-sm opacity-75">
             ${new Date(data.eventRecord.startDate).toLocaleTimeString()} - 
             ${new Date(data.eventRecord.endDate).toLocaleTimeString()}
+          </div>
+          <div class="text-xs mt-1 opacity-60">
+            💡 Drag to reschedule • Double-click to edit • Resize handles to adjust duration
           </div>
         </div>
       `
@@ -243,10 +299,12 @@ export default function BryntumChartDemoPage() {
             </p>
             <ul className="list-disc list-inside space-y-1 text-orange-600 dark:text-orange-500">
               <li>Click the expander icon (▶) on any row to view its utilization chart</li>
-              <li>Drag and drop events between resources and time slots</li>
+              <li>Drag events with custom tooltips showing resource, time, and duration</li>
+              <li>Validation prevents scheduling outside 8 AM - 6 PM working hours</li>
+              <li>Resource capacity limits are enforced (see capacity column)</li>
+              <li>Resize events by dragging their edges to adjust duration</li>
               <li>Charts update automatically when events are moved</li>
               <li>Hover over chart points to see detailed load information</li>
-              <li>Multiple rows can be expanded simultaneously</li>
             </ul>
             <div className="flex items-center gap-2 pt-2">
               <Button 
