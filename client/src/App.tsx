@@ -125,6 +125,7 @@ import TestScheduler from "@/pages/test-scheduler";
 import ResourceTimeline from "@/pages/resource-timeline";
 import ResourceGanttDemo from "@/pages/resource-gantt-demo";
 import SchedulerProSimpleDemo from "@/pages/scheduler-pro-simple-demo";
+import SchedulerDemo from "@/pages/scheduler-demo";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import PortalLogin from "@/pages/portal-login";
@@ -315,6 +316,7 @@ function Router() {
       <Switch>
         <Route path="/demo" component={DemoPage} />
         <Route path="/test-scheduler" component={TestScheduler} />
+        <Route path="/scheduler-demo" component={SchedulerDemo} />
         <Route path="/marketing" component={MarketingLandingPage} />
         <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/onboarding" component={Onboarding} />
