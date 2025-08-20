@@ -409,33 +409,33 @@ export default function ResourceTimeline() {
               variant: "destructive",
             });
           },
-          // Drag and drop event listeners
-          beforeEventDrag: ({ context }) => {
-            console.log('Drag started:', context.draggedRecords);
-            setDraggedOperation(context.draggedRecords[0]?.data);
-            return true; // Allow drag
+          // Bryntum SchedulerPro drag and drop event listeners
+          beforeEventDropFinalize: ({ context }) => {
+            console.log('Before drop finalize:', context);
+            return true; // Allow the drop
           },
-          afterEventDrag: ({ context, valid }) => {
-            console.log('Drag completed:', valid);
-            if (valid) {
-              // Update operation in database
-              const record = context.draggedRecords[0];
-              updateOperationMutation.mutate({
-                operationId: record.id,
-                resourceId: record.resourceId,
-                startDate: record.startDate
+          eventDrop: async ({ eventRecords, targetResourceRecord, isCopy, source }) => {
+            console.log('Event dropped:', {
+              events: eventRecords,
+              targetResource: targetResourceRecord,
+              isCopy: isCopy
+            });
+            
+            if (eventRecords && eventRecords.length > 0) {
+              const eventRecord = eventRecords[0];
+              console.log('Dropped event details:', {
+                id: eventRecord.id,
+                resourceId: eventRecord.resourceId,
+                startDate: eventRecord.startDate,
+                endDate: eventRecord.endDate
               });
-            }
-            setDraggedOperation(null);
-          },
-          beforeEventResize: ({ eventRecord }) => {
-            console.log('Resize started:', eventRecord);
-            return true; // Allow resize
-          },
-          afterEventResize: ({ eventRecord, valid }) => {
-            console.log('Resize completed:', valid);
-            if (valid) {
-              // Update operation duration in database
+              
+              // Commit changes to the project model
+              if (source?.project) {
+                await source.project.commitAsync();
+              }
+              
+              // Update operation in database with new position
               updateOperationMutation.mutate({
                 operationId: eventRecord.id,
                 resourceId: eventRecord.resourceId,
@@ -443,11 +443,21 @@ export default function ResourceTimeline() {
               });
             }
           },
-          beforeEventDragCreate: ({ resource, startDate, endDate }) => {
-            console.log('Creating new event:', resource, startDate, endDate);
-            return true; // Allow creation
+          eventResizeEnd: ({ eventRecord, startDate, endDate }) => {
+            console.log('Resize completed:', {
+              id: eventRecord.id,
+              startDate,
+              endDate
+            });
+            
+            // Update operation duration in database
+            updateOperationMutation.mutate({
+              operationId: eventRecord.id,
+              resourceId: eventRecord.resourceId,
+              startDate: startDate
+            });
           },
-          afterEventDragCreate: ({ eventRecord }) => {
+          dragCreateEnd: ({ eventRecord }) => {
             console.log('Event created:', eventRecord);
             // Create new operation in database
             toast({
