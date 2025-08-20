@@ -496,6 +496,12 @@ export default function ResourceTimelineFixed() {
         showHeaderElements: true
       },
       
+      // Row expander with utilization charts
+      rowExpander: {
+        widgetClass: UtilizationChartWidget,
+        singleExpand: false // Allow multiple rows to be expanded
+      },
+      
       // Other features
       tree: true,
       filter: true,
@@ -591,10 +597,11 @@ export default function ResourceTimelineFixed() {
       {/* Bryntum Scheduler Pro Component */}
       <div className="flex-1 relative">
         <BryntumSchedulerPro 
-          ref={schedulerRef}
-          onReady={({ widget }: any) => { 
-            schedulerRef.current = widget;
-            console.log('Scheduler ready with drag-drop enabled');
+          ref={(ref: any) => { 
+            if (ref?.instance) {
+              schedulerRef.current = ref.instance;
+              console.log('Scheduler ready with drag-drop enabled, instance:', ref.instance);
+            }
           }}
           {...schedulerConfig}
           listeners={schedulerListeners}
