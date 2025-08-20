@@ -440,35 +440,34 @@ export default function ResourceTimeline() {
               variant: "destructive",
             });
           },
-          // Bryntum SchedulerPro drag and drop event listeners (lowercase event names)
-          // Based on screenshot from Bryntum demo showing exact event structure
-          beforeeventdropfinalize: (event) => {
-            console.log('beforeeventdropfinalize:', event);
+          // Bryntum SchedulerPro drag and drop event listeners
+          // Based on official docs: use beforeEventDropFinalize for validation and eventDrop for post-processing
+          beforeEventDropFinalize: ({ context }) => {
+            console.log('beforeEventDropFinalize - context:', context);
+            
+            // Validate the drop - return false to cancel, true to allow
+            // You can also set context.async = true for async validation
             return true; // Allow the drop
           },
-          aftereventdrop: function(event) {
-            console.log('aftereventdrop fired - full event:', event);
+          eventDrop: ({ source, context }) => {
+            console.log('eventDrop fired - context:', context);
             
-            // Based on the demo screenshot, event contains single eventRecord (not array)
-            const { eventRecord, valid, targetResourceRecord } = event;
+            // Extract event and resource info from context
+            const eventRecord = context.eventRecords?.[0] || context.eventRecord;
+            const targetResource = context.resourceRecord || context.targetResourceRecord;
             
-            if (!valid) {
-              console.log('Drop was invalid');
-              return;
-            }
-            
-            if (eventRecord && targetResourceRecord) {
-              const newResourceId = targetResourceRecord.id;
-              const newStartDate = eventRecord.startDate;
+            if (eventRecord && targetResource) {
+              const newResourceId = targetResource.id;
+              const newStartDate = context.startDate || eventRecord.startDate;
               
               console.log('Event dropped successfully:', {
                 eventId: eventRecord.id,
                 eventName: eventRecord.name,
                 oldResourceId: eventRecord.resourceId,
                 newResourceId: newResourceId,
-                newResourceName: targetResourceRecord.name,
+                newResourceName: targetResource.name,
                 newStartDate: newStartDate,
-                newEndDate: eventRecord.endDate
+                newEndDate: context.endDate || eventRecord.endDate
               });
               
               // Update operation in backend
@@ -479,8 +478,8 @@ export default function ResourceTimeline() {
               });
             }
           },
-          eventresizeend: ({ eventRecord, startDate, endDate }) => {
-            console.log('Resize completed:', {
+          eventResizeEnd: ({ eventRecord, startDate, endDate }) => {
+            console.log('Event resize completed:', {
               id: eventRecord.id,
               startDate,
               endDate
@@ -493,8 +492,8 @@ export default function ResourceTimeline() {
               startDate: startDate
             });
           },
-          dragcreateend: ({ eventRecord }) => {
-            console.log('Event created:', eventRecord);
+          dragCreateEnd: ({ eventRecord }) => {
+            console.log('Drag create completed:', eventRecord);
             // Create new operation in database
             toast({
               title: "Operation Created",

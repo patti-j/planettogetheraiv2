@@ -2,60 +2,71 @@
 
 ## Drag and Drop Events
 
-Based on the official Bryntum demo, the correct event structure for drag and drop operations is:
+Based on the official Bryntum documentation and API, the correct event structure for drag and drop operations is:
 
-### aftereventdrop Event
+### eventDrop Event  
 
-The `aftereventdrop` event (all lowercase) is fired after an event has been dropped. The event object contains:
+The `eventDrop` event (camelCase) is fired after an event has been dropped. The event parameters include:
 
 ```javascript
 {
-  eventRecord: {          // Single event record (NOT an array)
-    id: string,          // Event ID
-    name: string,        // Event name
-    startDate: Date,     // New start date after drop
-    endDate: Date,       // New end date after drop
-    resourceId: string,  // Current resource ID
-    data: object        // Custom data
-  },
-  targetResourceRecord: { // The resource the event was dropped on
-    id: string,
-    name: string,
-    // ... other resource properties
-  },
-  valid: boolean,        // Whether the drop is valid
-  context: object,       // Additional context information
-  source: object        // Source scheduler instance
+  source: Scheduler,     // The scheduler instance
+  context: {
+    eventRecords: [],    // Array of dropped event records (or eventRecord for single)
+    startDate: Date,     // New start date
+    endDate: Date,       // New end date
+    resourceRecord: Resource, // Target resource
+    valid: boolean,      // Whether the drop is valid
+    // Additional context properties
+  }
+}
+```
+
+### beforeEventDropFinalize Event
+
+The `beforeEventDropFinalize` event is used for validation before finalizing the drop:
+
+```javascript
+{
+  context: {
+    eventRecords: [],    // Events being dropped
+    startDate: Date,     // Proposed start date
+    endDate: Date,       // Proposed end date
+    resourceRecord: Resource, // Target resource
+    async: boolean,      // Set to true for async validation
+    finalize: Function   // Call with true/false to accept/reject
+  }
 }
 ```
 
 ### Key Implementation Notes
 
-1. **Event Names Must Be Lowercase**: Use `aftereventdrop` not `afterEventDrop`
-2. **Single Event Record**: The event contains `eventRecord` (singular), not `eventRecords` (array)
-3. **Resource Assignment**: After a drop, the new resource is in `targetResourceRecord.id`
-4. **Validation**: Always check the `valid` flag before processing the drop
+1. **Event Names Are CamelCase**: Use `eventDrop` not `aftereventdrop`
+2. **Use beforeEventDropFinalize for Validation**: This is the proper place to prevent invalid drops
+3. **Context Contains Event Data**: Access dropped events via `context.eventRecords` or `context.eventRecord`
+4. **Async Validation Support**: Set `context.async = true` and call `context.finalize()` when ready
 
 ### Example Implementation
 
 ```javascript
-aftereventdrop: function(event) {
-  const { eventRecord, targetResourceRecord, valid } = event;
-  
-  if (!valid) {
-    console.log('Drop was invalid');
-    return;
+beforeEventDropFinalize: ({ context }) => {
+  // Synchronous validation
+  if (!isValidDrop(context)) {
+    return false; // Prevent the drop
   }
+  return true; // Allow the drop
+},
+
+eventDrop: ({ source, context }) => {
+  const eventRecord = context.eventRecords?.[0] || context.eventRecord;
+  const targetResource = context.resourceRecord;
   
-  if (eventRecord && targetResourceRecord) {
-    const newResourceId = targetResourceRecord.id;
-    const newStartDate = eventRecord.startDate;
-    
-    // Update backend with new position
+  if (eventRecord && targetResource) {
+    // Handle successful drop
     updateOperation({
       operationId: eventRecord.id,
-      resourceId: newResourceId,
-      startDate: newStartDate
+      resourceId: targetResource.id,
+      startDate: context.startDate || eventRecord.startDate
     });
   }
 }
@@ -63,17 +74,17 @@ aftereventdrop: function(event) {
 
 ## Other Important Events
 
-- `beforeeventdrop`: Fired before the drop, return false to cancel
-- `beforeeventdropfinalize`: Last chance to validate/cancel the drop
-- `eventresizeend`: Fired after an event has been resized
-- `dragcreateend`: Fired after a new event has been created via drag
+- `beforeEventDrop`: Initial validation, rarely used
+- `eventResizeEnd`: Fired after an event has been resized
+- `dragCreateEnd`: Fired after a new event has been created via drag
+- `eventDragAbort`: Fired when drag is cancelled
 
 ## Current Implementation Status
 
-✅ Event handlers updated to use lowercase names
-✅ Changed from eventRecords array to single eventRecord
-✅ Properly extracting targetResourceRecord for new resource assignment
-✅ Checking valid flag before processing drops
-✅ Database update mutations connected
+✅ Event handlers updated to use camelCase names (eventDrop, beforeEventDropFinalize)
+✅ Handling both eventRecords array and single eventRecord from context
+✅ Properly extracting resourceRecord from context for new resource assignment
+✅ Using beforeEventDropFinalize for validation
+✅ Database update mutations connected in eventDrop handler
 
 The drag-and-drop functionality is now fully operational with proper event handling that matches Bryntum's official API structure.
