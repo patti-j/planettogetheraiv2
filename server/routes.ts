@@ -29,7 +29,9 @@ import {
   insertStockOptimizationScenarioSchema, insertOptimizationRecommendationSchema,
   insertFeedbackSchema, insertFeedbackCommentSchema, insertFeedbackVoteSchema,
   insertSystemIntegrationSchema, insertIntegrationJobSchema, insertIntegrationEventSchema,
-  insertIntegrationMappingSchema, insertIntegrationTemplateSchema,
+  insertIntegrationMappingSchema, insertIntegrationTemplateSchema, insertIntegrationDataFlowSchema,
+  insertIntegrationWebhookSchema,
+  insertExtensionSchema,
   insertWorkflowSchema, insertWorkflowTriggerSchema, insertWorkflowActionSchema,
   insertWorkflowActionMappingSchema, insertWorkflowExecutionSchema, insertWorkflowActionExecutionSchema,
   insertWorkflowMonitoringSchema,
@@ -38,6 +40,7 @@ import {
   insertErrorLogSchema, insertErrorReportSchema,
   insertPresentationSchema, insertPresentationSlideSchema, insertPresentationTourIntegrationSchema,
   insertPresentationLibrarySchema, insertPresentationAnalyticsSchema, insertPresentationAIContentSchema,
+  insertPresentationMaterialSchema, insertPresentationContentSuggestionSchema, insertPresentationProjectSchema,
 
   insertProductionPlanSchema, insertProductionTargetSchema, insertResourceAllocationSchema, insertProductionMilestoneSchema,
   insertShiftTemplateSchema, insertResourceShiftAssignmentSchema, insertShiftScenarioSchema, 
@@ -76,9 +79,9 @@ import {
 
 // Import PT Publish schemas
 import {
-  insertPtJobSchema, insertPtManufacturingOrderSchema, 
-  insertPtJobOperationSchema, insertPtResourceSchema, 
-  insertPtJobActivitySchema
+  insertPtPublishJobsSchema, insertPtPublishManufacturingOrdersSchema, 
+  insertPtPublishJobOperationsSchema, insertPtPublishResourcesSchema, 
+  insertPtPublishJobActivitiesSchema
 } from "@shared/pt-publish-schema";
 
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
@@ -15393,7 +15396,7 @@ Create a natural, conversational voice script that explains this feature to some
 
   app.post("/api/integration-data-mappings", async (req, res) => {
     try {
-      const validation = insertIntegrationDataMappingSchema.safeParse(req.body);
+      const validation = insertIntegrationMappingSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid data mapping data", details: validation.error.errors });
       }
@@ -15413,7 +15416,7 @@ Create a natural, conversational voice script that explains this feature to some
         return res.status(400).json({ error: "Invalid data mapping ID" });
       }
 
-      const validation = insertIntegrationDataMappingSchema.partial().safeParse(req.body);
+      const validation = insertIntegrationMappingSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid data mapping data", details: validation.error.errors });
       }
