@@ -112,8 +112,30 @@ export default function ResourceTimeline() {
         title: "Operation Updated",
         description: "The operation has been successfully rescheduled.",
       });
+      
+      // Invalidate and refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/pt-operations'] });
       refetchOperations();
+      
+      // Update Bryntum scheduler if it exists
+      if (schedulerRef.current) {
+        // Reload the scheduler with new data after a short delay
+        setTimeout(() => {
+          if (schedulerRef.current && operations) {
+            const events = operations.map(op => ({
+              id: op.id,
+              name: op.name,
+              resourceId: op.resourceId,
+              startDate: new Date(op.startDate),
+              endDate: new Date(op.endDate),
+              percentDone: op.percentDone,
+              draggable: true,
+              resizable: true
+            }));
+            schedulerRef.current.eventStore.data = events;
+          }
+        }, 500);
+      }
     },
     onError: (error) => {
       toast({
@@ -478,6 +500,31 @@ export default function ResourceTimeline() {
       }
     };
   }, [loadingResources, loadingOperations, operations.length, resources.length]); // Re-initialize when data changes
+
+  // Update Bryntum scheduler when operations change
+  useEffect(() => {
+    if (schedulerRef.current && operations.length > 0) {
+      console.log('Updating Bryntum scheduler with new operations data');
+      const events = operations.map(op => ({
+        id: op.id,
+        name: op.name,
+        resourceId: op.resourceId,
+        startDate: new Date(op.startDate),
+        endDate: new Date(op.endDate),
+        percentDone: op.percentDone,
+        draggable: true,
+        resizable: true
+      }));
+      
+      // Update the event store with new data
+      schedulerRef.current.eventStore.data = events;
+      
+      // Refresh the scheduler view
+      if (schedulerRef.current.refresh) {
+        schedulerRef.current.refresh();
+      }
+    }
+  }, [operations]); // Update when operations data changes
 
   // Flag to prevent scroll event loops
   const [isScrolling, setIsScrolling] = useState(false);
