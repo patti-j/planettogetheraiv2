@@ -221,12 +221,13 @@ export function useAuth() {
       localStorage.removeItem('userPreferences');
       localStorage.removeItem('lastVisitedPage');
       
-      // Use client-side navigation instead of full page reload to prevent white screen
-      console.log("Redirecting to login page...");
-      // Give a small delay to ensure auth state is fully cleared
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
+      // Clear React Query cache completely before navigation
+      queryClient.invalidateQueries();
+      
+      // Use immediate client-side navigation instead of setTimeout to prevent white screen
+      console.log("Redirecting to login page immediately...");
+      window.history.replaceState(null, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     },
     onError: (error) => {
       console.error("Logout error:", error);
@@ -237,10 +238,9 @@ export function useAuth() {
       localStorage.removeItem('lastVisitedPage');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
-      // Use client-side navigation instead of full page reload
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 100);
+      // Use immediate client-side navigation instead of setTimeout to prevent white screen
+      window.history.replaceState(null, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     },
   });
 
