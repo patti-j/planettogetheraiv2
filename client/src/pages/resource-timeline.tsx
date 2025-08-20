@@ -100,7 +100,8 @@ export default function ResourceTimeline() {
       
       const endDate = addHours(startDate, draggedOperation?.duration ? draggedOperation.duration / 60 : 2);
       
-      return await apiRequest(`/api/operations/${operationId}`, {
+      return await apiRequest({
+        url: `/api/operations/${operationId}`,
         method: 'PATCH',
         body: JSON.stringify({
           assignedResourceId: resource.id,
@@ -741,7 +742,15 @@ export default function ResourceTimeline() {
                       onDrop={(e) => {
                         e.preventDefault();
                         
-                        if (!draggedOperation) return;
+                        // Get the operation ID from the drag data
+                        const operationId = e.dataTransfer.getData('text/plain');
+                        const operation = operations.find(op => op.id.toString() === operationId);
+                        
+                        if (!operation || !draggedOperation) {
+                          setDraggedOperation(null);
+                          setDropTargetResource(null);
+                          return;
+                        }
                         
                         // Calculate the new start time based on drop position
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -750,9 +759,11 @@ export default function ResourceTimeline() {
                         const hoursFromStart = x / hourWidth;
                         const newStartDate = addHours(startDate, hoursFromStart);
                         
+                        console.log('Dropping operation:', operation.name, 'on resource:', resource.name, 'at time:', newStartDate);
+                        
                         // Update the operation
                         updateOperationMutation.mutate({
-                          operationId: draggedOperation.id,
+                          operationId: operation.id,
                           resourceId: resource.external_id,
                           startDate: newStartDate
                         });
@@ -772,109 +783,109 @@ export default function ResourceTimeline() {
                     </div>
                   ))}
                   
-                  {/* Operations overlay - positioned absolutely with clipping */}
-                  <div className="absolute inset-0 overflow-hidden" style={{ width: `${totalWidth}px` }}>
-                    {resources.map((resource, resourceIndex) => {
+                  {/* Operations positioned within each resource row */}
+                  {resources.map((resource, resourceIndex) => {
                     const resourceOps = operationsByResource.get(resource.external_id) || [];
-                    const rowTop = resourceIndex * 50; // Each row is 50px tall
                     const conflicts = showConflicts ? detectConflicts(resourceOps) : new Set();
                     
-                    // Debug log for first resource
-                    if (resourceIndex === 0) {
-                      console.log(`Resource ${resource.name} (${resource.external_id}): ${resourceOps.length} operations`);
-                    }
-                    
-                    return resourceOps.map(op => {
-                      const { left, width } = getOperationPosition(op);
-                      const isHovered = hoveredOperation?.id === op.id;
-                      const isSelected = selectedOperation?.id === op.id;
-                      const hasConflict = conflicts.has(op.id);
-                      
-                      // Debug first operation of first resource
-                      if (resourceIndex === 0 && resourceOps.indexOf(op) === 0) {
-                        console.log(`Rendering operation ${op.name} at position: top=${rowTop + 8}px, left=${left}px, width=${width}px`);
-                      }
-                      
-                      return (
-                        <div
-                          key={op.id}
-                          className={`group absolute h-[34px] rounded transition-all ${
-                            hasConflict
-                              ? 'bg-red-500 shadow-lg ring-2 ring-red-300 animate-pulse'
-                              : isSelected 
-                                ? 'bg-blue-600 shadow-lg z-20 ring-2 ring-blue-300' 
-                                : isHovered 
-                                  ? 'bg-blue-500 shadow-md z-10' 
-                                  : op.percentDone === 100
-                                    ? 'bg-green-500 shadow-sm'
-                                    : 'bg-blue-400 shadow-sm'
-                          } ${draggedOperation?.id === op.id ? 'opacity-50' : ''}`}
-                          style={{
-                            top: `${rowTop + 8}px`, // Position within the correct row
-                            left: `${left}px`,
-                            width: `${width}px`,
-                            minWidth: '40px'
-                          }}
-                          onMouseEnter={() => setHoveredOperation(op)}
-                          onMouseLeave={() => setHoveredOperation(null)}
-                          onClick={() => setSelectedOperation(op)}
-                          title={`${op.name}\nResource: ${op.resourceName}\nStart: ${op.startDate ? format(new Date(op.startDate), 'MMM d, h:mm a') : 'N/A'}\nEnd: ${op.endDate ? format(new Date(op.endDate), 'MMM d, h:mm a') : 'N/A'}\nDuration: ${op.duration} minutes\nProgress: ${op.percentDone}%`}
-                        >
-                          {/* Left resize handle */}
-                          <div 
-                            className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              setResizingOperation({ operation: op, edge: 'start' });
-                            }}
-                          />
+                    return (
+                      <div 
+                        key={resource.id}
+                        className="absolute h-[50px] pointer-events-none"
+                        style={{
+                          top: `${resourceIndex * 50}px`,
+                          left: 0,
+                          right: 0,
+                          width: `${totalWidth}px`
+                        }}
+                      >
+                        {resourceOps.map(op => {
+                          const { left, width } = getOperationPosition(op);
+                          const isHovered = hoveredOperation?.id === op.id;
+                          const isSelected = selectedOperation?.id === op.id;
+                          const hasConflict = conflicts.has(op.id);
                           
-                          {/* Right resize handle */}
-                          <div 
-                            className="absolute right-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              setResizingOperation({ operation: op, edge: 'end' });
-                            }}
-                          />
-                          
-                          {/* Main content area - draggable */}
-                          <div
-                            className="px-2 py-1 text-white text-xs truncate flex items-center justify-between cursor-move h-full"
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.effectAllowed = 'move';
-                              e.dataTransfer.setData('operation', JSON.stringify(op));
-                              setDraggedOperation(op);
-                            }}
-                            onDragEnd={(e) => {
-                              setDraggedOperation(null);
-                              setDropTargetResource(null);
-                            }}
-                          >
-                            <span>{op.name.split(':')[1]?.trim() || op.name}</span>
-                            {op.percentDone === 100 && (
-                              <span className="ml-1">✓</span>
-                            )}
-                          </div>
-                          
-                          {/* Progress indicator */}
-                          {op.percentDone > 0 && op.percentDone < 100 && (
-                            <div 
-                              className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b pointer-events-none"
-                              style={{ width: `${op.percentDone}%` }}
-                            />
-                          )}
-                          
-                          {/* Visual indicator when resizing */}
-                          {resizingOperation?.operation.id === op.id && (
-                            <div className="absolute inset-0 border-2 border-blue-400 rounded pointer-events-none" />
-                          )}
-                        </div>
-                      );
-                    });
+                          return (
+                            <div
+                              key={op.id}
+                              className={`group absolute h-[34px] rounded transition-all pointer-events-auto ${
+                                hasConflict
+                                  ? 'bg-red-500 shadow-lg ring-2 ring-red-300 animate-pulse'
+                                  : isSelected 
+                                    ? 'bg-blue-600 shadow-lg z-20 ring-2 ring-blue-300' 
+                                    : isHovered 
+                                      ? 'bg-blue-500 shadow-md z-10' 
+                                      : op.percentDone === 100
+                                        ? 'bg-green-500 shadow-sm'
+                                        : 'bg-blue-400 shadow-sm'
+                              } ${draggedOperation?.id === op.id ? 'opacity-50 pointer-events-none' : ''}`}
+                              style={{
+                                top: '8px',
+                                left: `${left}px`,
+                                width: `${width}px`,
+                                minWidth: '40px'
+                              }}
+                              onMouseEnter={() => setHoveredOperation(op)}
+                              onMouseLeave={() => setHoveredOperation(null)}
+                              onClick={() => setSelectedOperation(op)}
+                              title={`${op.name}\nResource: ${op.resourceName}\nStart: ${op.startDate ? format(new Date(op.startDate), 'MMM d, h:mm a') : 'N/A'}\nEnd: ${op.endDate ? format(new Date(op.endDate), 'MMM d, h:mm a') : 'N/A'}\nDuration: ${op.duration} minutes\nProgress: ${op.percentDone}%`}
+                            >
+                              {/* Left resize handle */}
+                              <div 
+                                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  setResizingOperation({ operation: op, edge: 'start' });
+                                }}
+                              />
+                              
+                              {/* Right resize handle */}
+                              <div 
+                                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  setResizingOperation({ operation: op, edge: 'end' });
+                                }}
+                              />
+                              
+                              {/* Main content area - draggable */}
+                              <div
+                                className="px-2 py-1 text-white text-xs truncate flex items-center justify-between cursor-move h-full"
+                                draggable={!draggedOperation}
+                                onDragStart={(e) => {
+                                  e.dataTransfer.effectAllowed = 'move';
+                                  e.dataTransfer.setData('text/plain', op.id.toString());
+                                  setDraggedOperation(op);
+                                }}
+                                onDragEnd={(e) => {
+                                  setDraggedOperation(null);
+                                  setDropTargetResource(null);
+                                }}
+                              >
+                                <span>{op.name.split(':')[1]?.trim() || op.name}</span>
+                                {op.percentDone === 100 && (
+                                  <span className="ml-1">✓</span>
+                                )}
+                              </div>
+                              
+                              {/* Progress indicator */}
+                              {op.percentDone > 0 && op.percentDone < 100 && (
+                                <div 
+                                  className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b pointer-events-none"
+                                  style={{ width: `${op.percentDone}%` }}
+                                />
+                              )}
+                              
+                              {/* Visual indicator when resizing */}
+                              {resizingOperation?.operation.id === op.id && (
+                                <div className="absolute inset-0 border-2 border-blue-400 rounded pointer-events-none" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
                   })}
-                  </div>
                 </div>
               </div>
             </div>
