@@ -124,6 +124,7 @@ import ResourceTimeline from "@/pages/resource-timeline";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import PortalLogin from "@/pages/portal-login";
+import PortalDashboard from "@/pages/portal-dashboard";
 import Help from "@/pages/help";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
@@ -285,6 +286,7 @@ function Router() {
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/home" component={MarketingHome} />
           <Route path="/portal/login" component={PortalLogin} />
+          <Route path="/portal/dashboard" component={PortalDashboard} />
           <Route path="/portal" component={PortalLogin} />
           <Route path="/login" component={Login} />
           <Route path="/" component={MarketingHome} />
