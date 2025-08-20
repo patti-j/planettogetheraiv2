@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function PortalLogin() {
   const [, setLocation] = useLocation();
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,18 +21,26 @@ export default function PortalLogin() {
     setLoading(true);
 
     try {
-      // Use the main application login for now
-      // In production, this would use a separate portal authentication
-      const result = await login(email, password);
+      console.log('Attempting portal login for:', email);
+      const result = await apiRequest('/api/portal/login', {
+        email: email,
+        password: password
+      });
       
-      if (result.success) {
-        // Redirect to the main dashboard after login
-        // In production, this would redirect to /portal/supplier or similar
-        setLocation('/dashboard');
+      console.log('Portal login response:', result);
+      
+      if (result.token && result.user) {
+        // Store the portal token and user info
+        localStorage.setItem('portal_token', result.token);
+        localStorage.setItem('portal_user', JSON.stringify(result.user));
+        
+        // Redirect to portal dashboard
+        setLocation('/portal/dashboard');
       } else {
         setError('Invalid email or password');
       }
     } catch (err: any) {
+      console.log('Portal login error:', err);
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -98,8 +105,9 @@ export default function PortalLogin() {
           <div className="mt-6 pt-6 border-t text-center text-sm text-gray-600">
             <p className="mb-2">For testing, you can use:</p>
             <div className="space-y-1 text-xs">
-              <p><strong>Username:</strong> admin | <strong>Password:</strong> admin123</p>
-              <p><strong>Email:</strong> jim.cerra@planettogether.com | <strong>Password:</strong> admin123</p>
+              <p><strong>Email:</strong> jim.cerra@planettogether.com</p>
+              <p><strong>Email:</strong> supplier@acme.com</p>
+              <p><strong>Password:</strong> Test123!</p>
             </div>
           </div>
 
