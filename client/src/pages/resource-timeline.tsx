@@ -100,14 +100,10 @@ export default function ResourceTimeline() {
       
       const endDate = addHours(startDate, draggedOperation?.duration ? draggedOperation.duration / 60 : 2);
       
-      return await apiRequest({
-        url: `/api/operations/${operationId}`,
-        method: 'PATCH',
-        body: JSON.stringify({
-          assignedResourceId: resource.id,
-          startTime: startDate.toISOString(),
-          endTime: endDate.toISOString()
-        })
+      return await apiRequest('PATCH', `/api/operations/${operationId}`, {
+        assignedResourceId: resource.id,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString()
       });
     },
     onSuccess: () => {
