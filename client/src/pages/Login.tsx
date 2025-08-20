@@ -218,7 +218,7 @@ export default function Login() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setLocation("/marketing-home")}
+            onClick={() => setLocation("/home")}
             className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 text-xs sm:text-sm"
           >
             <Home className="h-3 w-3 sm:h-4 sm:w-4" />
