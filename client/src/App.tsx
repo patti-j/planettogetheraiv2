@@ -120,6 +120,7 @@ import TasksPage from "@/pages/tasks";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
+import BryntumChartDemo from "@/pages/bryntum-chart-demo";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
 import ResourceTimeline from "@/pages/resource-timeline-fixed";
@@ -443,6 +444,10 @@ function Router() {
           
           <Route path="/bryntum-demo">
             <BryntumDemoPage />
+          </Route>
+          
+          <Route path="/bryntum-chart-demo">
+            <BryntumChartDemo />
           </Route>
           
           <Route path="/planning-overview">
