@@ -79,17 +79,30 @@ export default function ResourceTimeline() {
     }
   }, [operations]);
 
+  // Flag to prevent scroll event loops
+  const [isScrolling, setIsScrolling] = useState(false);
+
   // Synchronize vertical scrolling between resources and timeline
   const handleTimelineScroll = () => {
-    if (timelineScrollRef.current && resourceScrollRef.current) {
-      resourceScrollRef.current.scrollTop = timelineScrollRef.current.scrollTop;
-    }
+    if (isScrolling || !timelineScrollRef.current || !resourceScrollRef.current) return;
+    
+    setIsScrolling(true);
+    resourceScrollRef.current.scrollTop = timelineScrollRef.current.scrollTop;
+    
+    requestAnimationFrame(() => {
+      setIsScrolling(false);
+    });
   };
 
   const handleResourceScroll = () => {
-    if (timelineScrollRef.current && resourceScrollRef.current) {
-      timelineScrollRef.current.scrollTop = resourceScrollRef.current.scrollTop;
-    }
+    if (isScrolling || !timelineScrollRef.current || !resourceScrollRef.current) return;
+    
+    setIsScrolling(true);
+    timelineScrollRef.current.scrollTop = resourceScrollRef.current.scrollTop;
+    
+    requestAnimationFrame(() => {
+      setIsScrolling(false);
+    });
   };
 
   if (loadingResources || loadingOperations) {

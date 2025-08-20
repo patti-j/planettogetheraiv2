@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -114,8 +114,16 @@ export default function ImplementationProjects() {
 
   const onSubmit = (data: CreateProjectData) => {
     console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
     createProjectMutation.mutate(data);
   };
+
+  // Log form errors when they occur
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log("Form validation errors:", form.formState.errors);
+    }
+  }, [form.formState.errors]);
 
   // Filter projects by status
   const activeProjects = projects.filter((p: any) => 
