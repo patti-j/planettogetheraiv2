@@ -32,7 +32,11 @@ Note on concurrent work:
 - **State Management**: TanStack Query (React Query) for server state.
 - **Routing**: Wouter.
 - **Drag & Drop**: react-dnd with HTML5 backend.
-- **Gantt Chart**: Bryntum Gantt/Scheduler Pro for production scheduling visualization.
+- **Gantt Chart**: Bryntum Scheduler Pro (Full Licensed Version) for production scheduling visualization.
+  - License: patti.jorgensen@planettogether.com
+  - Features: Complete optimization engine with ASAP, ALAP, Critical Path, and Resource Leveling algorithms
+  - Capabilities: Drag-and-drop rescheduling, resource allocation, constraint management, conflict detection
+  - Integration: Real-time synchronization with PlanetTogether database tables
 - **Build Tool**: Vite.
 - **Widget System**: Reusable components for consistent UI patterns (System and User widgets).
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls.
@@ -45,8 +49,19 @@ Note on concurrent work:
 - **Authentication System**: Unified role-based permissions system.
 - **Data Seeding**: Automatic database seeding with sample manufacturing data.
 - **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
+- **Hint System Service**: Intelligent contextual hints with user interaction tracking, prerequisites, and sequence management.
 
-### Core System Design & Features
+### Recent Updates (January 2025)
+- **Bryntum Scheduler Pro Full Integration**: Complete optimization engine with all algorithms working (ASAP, ALAP, Critical Path, Resource Leveling)
+- **Intelligent Contextual Hint Bubbles**: Context-aware help system with user interaction tracking
+  - Database tables: hint_configurations, user_hint_interactions, hint_sequences
+  - React component: HintSystem integrated into main app layout
+  - API endpoints: /api/hints for fetching and tracking hint interactions
+  - Initial hints seeded for dashboard, schedule, resource timeline, optimization, and alerts
+- **Resource Timeline Fixes**: Resolved hoisting issue with initializeSchedulerEngine function
+- **External Partners Portal**: Multi-tenant architecture for suppliers, customers, and OEM partners
+
+## Core System Design & Features
 - **Navigation Architecture**: Unified layout system with consistent header/navigation for desktop and footer bar for mobile. Client-side navigation uses wouter.
 - **Data Model**: Comprehensive database schema for manufacturing, emphasizing normalized relationships, including SAP-compliant production version architecture.
 - **Inventory Management**: Stock-centric system tracking specific records.
