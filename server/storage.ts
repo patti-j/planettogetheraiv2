@@ -3252,41 +3252,127 @@ export class DatabaseStorage implements IStorage {
   async rescheduleOperation(id: number, params: { resourceId: string; startDate: Date; endDate?: Date }): Promise<any> {
     console.log('Reschedule operation called:', { id, params });
     
-    // Try to update the operation using the existing updateOperation method
-    const operation = await this.getOperation(id);
-    if (operation) {
-      console.log('Found operation to reschedule:', operation.name);
+    try {
+      // First, check if this is a PT Job Operation
+      const [ptOperation] = await db
+        .select()
+        .from(ptJobOperations)
+        .where(eq(ptJobOperations.id, id));
       
-      // Calculate end time if not provided and we have duration
-      let endTime = params.endDate;
-      if (!endTime && operation.duration) {
-        endTime = new Date(params.startDate.getTime() + operation.duration * 60 * 1000);
-      }
-      
-      const updated = await this.updateOperation(id, {
-        startTime: params.startDate,
-        endTime,
-        assignedResourceId: params.resourceId
-      });
-      
-      if (updated) {
-        console.log('Successfully rescheduled operation');
+      if (ptOperation) {
+        console.log('Found PT operation to reschedule:', ptOperation.name);
+        
+        // Calculate end time if not provided and we have duration
+        let endTime = params.endDate;
+        if (!endTime && ptOperation.cycleHrs) {
+          const durationMs = parseFloat(ptOperation.cycleHrs) * 60 * 60 * 1000; // Convert hours to milliseconds
+          endTime = new Date(params.startDate.getTime() + durationMs);
+        }
+        
+        // Find the resource by external_id to get the resource ID
+        const [resource] = await db
+          .select()
+          .from(ptResources)
+          .where(eq(ptResources.externalId, params.resourceId));
+        
+        if (!resource) {
+          console.error('Resource not found for external_id:', params.resourceId);
+          return {
+            id,
+            success: false,
+            error: 'Resource not found'
+          };
+        }
+        
+        // Update the PT job operation
+        const [updatedPtOp] = await db
+          .update(ptJobOperations)
+          .set({
+            scheduledStart: params.startDate,
+            scheduledEnd: endTime,
+            defaultResourceId: resource.id
+          })
+          .where(eq(ptJobOperations.id, id))
+          .returning();
+        
+        // Also update the related job activities if they exist
+        const jobActivities = await db
+          .select()
+          .from(ptJobActivities)
+          .where(eq(ptJobActivities.operationId, id));
+        
+        for (const activity of jobActivities) {
+          await db
+            .update(ptJobActivities)
+            .set({
+              scheduledStartDate: params.startDate,
+              scheduledEndDate: endTime
+            })
+            .where(eq(ptJobActivities.jobActivityId, activity.jobActivityId));
+        }
+        
+        // Update job resources assignment
+        await db
+          .update(ptJobResources)
+          .set({
+            defaultResourceId: resource.id
+          })
+          .where(eq(ptJobResources.operationId, id));
+        
+        console.log('Successfully rescheduled PT operation');
         return {
           id,
           startTime: params.startDate,
           endTime,
           resourceId: params.resourceId,
-          success: true
+          success: true,
+          operation: updatedPtOp
         };
       }
+      
+      // Fallback: Try to update legacy operation tables
+      const operation = await this.getOperation(id);
+      if (operation) {
+        console.log('Found legacy operation to reschedule:', operation.name);
+        
+        // Calculate end time if not provided and we have duration
+        let endTime = params.endDate;
+        if (!endTime && operation.duration) {
+          endTime = new Date(params.startDate.getTime() + operation.duration * 60 * 1000);
+        }
+        
+        const updated = await this.updateOperation(id, {
+          startTime: params.startDate,
+          endTime,
+          assignedResourceId: params.resourceId
+        });
+        
+        if (updated) {
+          console.log('Successfully rescheduled legacy operation');
+          return {
+            id,
+            startTime: params.startDate,
+            endTime,
+            resourceId: params.resourceId,
+            success: true
+          };
+        }
+      }
+      
+      console.log('Failed to reschedule operation - not found in any table');
+      return {
+        id,
+        success: false,
+        error: 'Operation not found'
+      };
+    } catch (error) {
+      console.error('Error in rescheduleOperation:', error);
+      return {
+        id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
-    
-    console.log('Failed to reschedule operation - not found');
-    return {
-      id,
-      success: false,
-      error: 'Operation not found'
-    };
   }
 
   // New discrete operations methods - REDIRECTED TO PT PUBLISH TABLES

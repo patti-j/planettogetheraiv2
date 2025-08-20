@@ -3029,29 +3029,46 @@ Rules:
           startDate: updateData.startDate
         });
         
-        // This should call the reschedule logic
-        const rescheduled = await storage.rescheduleOperation(operationId, {
-          resourceId: updateData.resourceId,
-          startDate: new Date(updateData.startDate),
-          endDate: updateData.endDate ? new Date(updateData.endDate) : undefined
-        });
-        
-        if (!rescheduled) {
-          return res.status(404).json({ message: "Operation not found" });
+        try {
+          // This should call the reschedule logic
+          const rescheduled = await storage.rescheduleOperation(operationId, {
+            resourceId: updateData.resourceId,
+            startDate: new Date(updateData.startDate),
+            endDate: updateData.endDate ? new Date(updateData.endDate) : undefined
+          });
+          
+          if (!rescheduled || !rescheduled.success) {
+            console.error('Reschedule failed:', rescheduled);
+            return res.status(404).json({ message: "Operation not found or reschedule failed" });
+          }
+          
+          return res.json({ success: true, operation: rescheduled });
+        } catch (rescheduleError) {
+          console.error('Reschedule operation error:', rescheduleError);
+          return res.status(500).json({ 
+            message: "Failed to reschedule operation", 
+            error: rescheduleError instanceof Error ? rescheduleError.message : 'Unknown reschedule error' 
+          });
         }
-        
-        return res.json({ success: true, operation: rescheduled });
       }
       
       // Handle other operation updates
-      const updated = await storage.updateOperation(operationId, updateData);
-      if (!updated) {
-        return res.status(404).json({ message: "Operation not found" });
+      try {
+        const updated = await storage.updateOperation(operationId, updateData);
+        if (!updated) {
+          return res.status(404).json({ message: "Operation not found" });
+        }
+        
+        res.json(updated);
+      } catch (updateError) {
+        console.error('Update operation error:', updateError);
+        return res.status(500).json({ 
+          message: "Failed to update operation", 
+          error: updateError instanceof Error ? updateError.message : 'Unknown update error' 
+        });
       }
-      
-      res.json(updated);
     } catch (error) {
-      console.error('Error updating operation:', error);
+      console.error('Error updating operation (outer catch):', error);
       res.status(500).json({ message: "Failed to update operation", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
