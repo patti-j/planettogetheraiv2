@@ -440,17 +440,22 @@ export default function ResourceTimeline() {
               variant: "destructive",
             });
           },
-          // Bryntum SchedulerPro drag and drop event listeners
-          beforeEventDropFinalize: ({ context }) => {
+          // Bryntum SchedulerPro drag and drop event listeners (lowercase event names)
+          beforeeventdropfinalize: ({ context }) => {
             console.log('Before drop finalize:', context);
             return true; // Allow the drop
           },
-          afterEventDrop: async ({ eventRecords, valid, targetResourceRecord, context, source }) => {
-            console.log('After event drop:', {
-              events: eventRecords,
-              valid: valid,
+          aftereventdrop: async (event) => {
+            console.log('After event drop - full event object:', event);
+            
+            // Destructure the event object based on Bryntum's actual structure
+            const { eventRecords, valid, targetResourceRecord, context } = event;
+            
+            console.log('After event drop - parsed:', {
+              eventRecords,
+              valid,
               targetResource: targetResourceRecord,
-              context: context
+              context
             });
             
             if (valid && eventRecords && eventRecords.length > 0) {
@@ -462,7 +467,8 @@ export default function ResourceTimeline() {
                 oldResourceId: eventRecord.originalData?.resourceId,
                 newResourceId: newResourceId,
                 startDate: eventRecord.startDate,
-                endDate: eventRecord.endDate
+                endDate: eventRecord.endDate,
+                data: eventRecord.data
               });
               
               // Ensure the scheduler project commits the changes
@@ -471,7 +477,6 @@ export default function ResourceTimeline() {
               }
               
               // Update operation in database with new position
-              // Use the new resource ID and dates from the event record
               updateOperationMutation.mutate({
                 operationId: eventRecord.id,
                 resourceId: newResourceId,
@@ -479,7 +484,7 @@ export default function ResourceTimeline() {
               });
             }
           },
-          eventResizeEnd: ({ eventRecord, startDate, endDate }) => {
+          eventresizeend: ({ eventRecord, startDate, endDate }) => {
             console.log('Resize completed:', {
               id: eventRecord.id,
               startDate,
@@ -493,7 +498,7 @@ export default function ResourceTimeline() {
               startDate: startDate
             });
           },
-          dragCreateEnd: ({ eventRecord }) => {
+          dragcreateend: ({ eventRecord }) => {
             console.log('Event created:', eventRecord);
             // Create new operation in database
             toast({
