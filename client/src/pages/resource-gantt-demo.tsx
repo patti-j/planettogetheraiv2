@@ -58,22 +58,15 @@ export default function ResourceGanttDemo() {
     endDate: new Date(2025, 0, 27),
     viewPreset: 'hourAndDay',
     rowHeight: 60,
-    barMargin: 5,
+    barMargin: 8,
     
-    // Configure stores properly for resource view
-    resourceStore: {
-      data: dataState.resources
-    },
-    
-    eventStore: {
-      data: dataState.events
-    },
-    
-    // Ensure resource view mode
-    mode: 'horizontal' as const,
+    // Use direct resources and events like the original demo
+    resources: dataState.resources,
+    events: dataState.events,
     
     features: {
       eventDrag: {
+        showTooltip: true,
         constrainDragToResource: false,
         constrainDragToTimeSlot: false,
         validatorFn: ({ startDate: dragStartDate }: any) => {
@@ -90,45 +83,49 @@ export default function ResourceGanttDemo() {
       },
       eventEdit: true,
       eventResize: true,
-      timeRanges: true,
-      resourceTimeRanges: false,
-      nonWorkingTime: false
+      timeRanges: true
     },
 
     columns: [
-      { 
-        type: 'resourceInfo', 
-        text: 'Resource', 
-        width: 220,
-        showEventCount: false,
-        showImage: false
-      },
-      { 
-        text: 'Capacity', 
-        width: 120, 
-        field: 'capacity', 
-        align: 'center',
-        renderer: ({ value }: any) => value ? `${value} units/hr` : ''
-      }
+      { type: 'resourceInfo', text: 'Resource', width: 220, field: 'name' },
+      { text: 'Capacity', width: 120, field: 'capacity', align: 'center' }
     ],
 
     listeners: {
-      eventDrop: ({ context }: any) => {
-        if (context.valid) {
-          toast({
-            title: "Event rescheduled",
-            description: `${context.eventRecords[0].name} has been moved successfully.`
-          });
-        }
+      // Keep React state synced after drops (like the original demo)
+      eventDrop: () => {
+        const instance = schedulerRef.current;
+        if (!instance) return;
+        const nextEvents = instance.eventStore.records.map((r: any) => ({
+          id: r.id,
+          resourceId: r.resourceId,
+          name: r.name,
+          startDate: r.startDate,
+          endDate: r.endDate
+        }));
+        setDataState(prev => ({ ...prev, events: nextEvents }));
+        
+        toast({
+          title: "Event rescheduled",
+          description: "The schedule has been updated."
+        });
       },
       
-      eventResizeEnd: (event: any) => {
-        const eventRecord = event?.eventRecord || event?.eventRecords?.[0];
-        const eventName = eventRecord?.name || "Event";
+      eventResizeEnd: () => {
+        const instance = schedulerRef.current;
+        if (!instance) return;
+        const nextEvents = instance.eventStore.records.map((r: any) => ({
+          id: r.id,
+          resourceId: r.resourceId,
+          name: r.name,
+          startDate: r.startDate,
+          endDate: r.endDate
+        }));
+        setDataState(prev => ({ ...prev, events: nextEvents }));
         
         toast({
           title: "Duration updated",
-          description: `${eventName} duration has been adjusted.`
+          description: "Event duration has been adjusted."
         });
       }
     }
