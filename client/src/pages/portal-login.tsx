@@ -22,10 +22,10 @@ export default function PortalLogin() {
 
     try {
       console.log('Attempting portal login for:', email);
-      const result = await apiRequest('/api/portal/login', {
+      const result = await apiRequest('/api/portal/login', 'POST', {
         email: email,
         password: password
-      });
+      }) as { token: string; user: any };
       
       console.log('Portal login response:', result);
       
