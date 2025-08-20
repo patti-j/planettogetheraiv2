@@ -143,11 +143,28 @@ export default function ResourceTimeline() {
 
   // Initialize Bryntum Scheduler Pro with optimization engine
   const initializeSchedulerEngine = () => {
+    // Prevent multiple instances (React StrictMode protection)
+    if (schedulerRef.current) {
+      console.log('Scheduler already initialized, skipping');
+      return true;
+    }
+    
+    // Check if we have required data
+    if (!containerRef.current || !operations || operations.length === 0 || !resources || resources.length === 0) {
+      console.log('Waiting for data or container...', { 
+        container: !!containerRef.current, 
+        operations: operations?.length || 0, 
+        resources: resources?.length || 0 
+      });
+      return false;
+    }
+    
     if (typeof window !== 'undefined' && (window as any).bryntum?.schedulerpro?.SchedulerPro) {
       const { SchedulerPro } = (window as any).bryntum.schedulerpro;
       
       // Log available features for debugging
       console.log('Available Bryntum features:', Object.keys((window as any).bryntum.schedulerpro));
+      console.log('Initializing with', operations.length, 'operations and', resources.length, 'resources');
       
       // Check if CriticalPaths is available
       const CriticalPaths = (window as any).bryntum?.schedulerpro?.CriticalPaths || null;
@@ -157,6 +174,24 @@ export default function ResourceTimeline() {
       const today = new Date();
       const startDate = startOfDay(today); // Start of today
       const endDate = addDays(startDate, 14); // Show 2 weeks from today
+      
+      // Transform our data to Bryntum format
+      const events = operations.map(op => ({
+        id: op.id,
+        name: op.name,
+        resourceId: op.resourceId,
+        startDate: new Date(op.startDate),
+        endDate: new Date(op.endDate),
+        percentDone: op.percentDone,
+        draggable: true,
+        resizable: true
+      }));
+      
+      const resourcesData = resources.map(res => ({
+        id: res.external_id,
+        name: res.name,
+        description: res.description
+      }));
       
       // Create scheduler instance with optimization engine
       schedulerRef.current = new SchedulerPro({
@@ -169,6 +204,10 @@ export default function ResourceTimeline() {
         // Timeline date range - centered on today
         startDate: startDate,
         endDate: endDate,
+        
+        // Data stores
+        resources: resourcesData,
+        events: events,
         
         // View preset for initial zoom level
         viewPreset: {
@@ -400,8 +439,13 @@ export default function ResourceTimeline() {
     return false;
   };
 
-  // Initialize Bryntum Scheduler Pro engine on mount
+  // Initialize Bryntum Scheduler Pro engine when data is ready
   useEffect(() => {
+    // Don't initialize until we have data
+    if (loadingResources || loadingOperations || operations.length === 0 || resources.length === 0) {
+      return;
+    }
+    
     const initEngine = async () => {
       // Wait for Bryntum to be available
       let attempts = 0;
@@ -424,12 +468,14 @@ export default function ResourceTimeline() {
     initEngine();
     
     return () => {
-      // Cleanup scheduler instance on unmount
+      // Cleanup scheduler instance on unmount (React StrictMode compatible)
       if (schedulerRef.current) {
+        console.log('Cleaning up Bryntum Scheduler instance');
         schedulerRef.current.destroy();
+        schedulerRef.current = null; // Clear reference to prevent memory leaks
       }
     };
-  }, []);
+  }, [loadingResources, loadingOperations, operations.length, resources.length]); // Re-initialize when data changes
 
   // Flag to prevent scroll event loops
   const [isScrolling, setIsScrolling] = useState(false);
