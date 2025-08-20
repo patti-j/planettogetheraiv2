@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { db, checkDbHealth, getDbMetrics } from "./db";
 import * as schema from "@shared/schema";
@@ -138,6 +139,17 @@ function requireAuth(req: any, res: any, next: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Session middleware is configured in index.ts
+  
+  // Serve Bryntum static files from client/public
+  app.get('/schedulerpro.umd.js', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/schedulerpro.umd.js'));
+  });
+  app.get('/schedulerpro.classic-light.css', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/schedulerpro.classic-light.css'));
+  });
+  app.get('/gantt.umd.js', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/gantt.umd.js'));
+  });
   
   // Debug: Log all API requests to ensure they hit the right routes
   app.all('/api/*', (req, res, next) => {
