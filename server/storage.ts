@@ -2347,44 +2347,10 @@ export class MemStorage implements Partial<IStorage> {
 
 
 
-  async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
-    return await db.select().from(discreteOperations)
-      .where(eq(discreteOperations.routingId, productionOrderId))
-      .orderBy(discreteOperations.sequenceNumber);
-  }
-
-  async getOperation(id: number): Promise<Operation | undefined> {
-    const [operation] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
-    return operation || undefined;
-  }
-
-  async createOperation(operation: InsertOperation): Promise<Operation> {
-    const [newOperation] = await db.insert(discreteOperations).values({
-      ...operation,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).returning();
-    return newOperation;
-  }
-
-  async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
-    const [updated] = await db.update(discreteOperations)
-      .set({ ...operation, updatedAt: new Date() })
-      .where(eq(discreteOperations.id, id))
-      .returning();
-    return updated;
-  }
-
   async deleteOperation(id: number): Promise<boolean> {
-    // Delete associated dependencies first
-    await db.delete(dependencies)
-      .where(or(
-        eq(dependencies.fromDiscreteOperationId, id),
-        eq(dependencies.toDiscreteOperationId, id)
-      ));
-    
-    const result = await db.delete(discreteOperations)
-      .where(eq(discreteOperations.id, id));
+    // Delete operation from PT table
+    const result = await db.delete(ptJobOperations)
+      .where(eq(ptJobOperations.id, id));
     return result.rowCount > 0;
   }
 
@@ -3115,134 +3081,177 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOperationsByProductionOrderId(productionOrderId: number): Promise<Operation[]> {
-    // For discrete operations, we need to find them through production version -> routing relationship
-    // For now, return process operations only since discrete operations no longer have direct production order link
-    const processOps = await db.select().from(processOperations).where(eq(processOperations.productionOrderId, productionOrderId));
+    // Get operations from PT Publish tables  
+    const ptOps = await db.select().from(ptJobOperations).where(eq(ptJobOperations.jobId, productionOrderId));
     
     // Convert to the legacy Operation interface for backwards compatibility
-    const combinedOps: Operation[] = [
-      ...processOps.map(op => ({
-        ...op,
-        name: op.operationName,
-        duration: op.standardDuration,
-        jobId: op.productionOrderId, // For backward compatibility
-        order: op.sequenceNumber
-      } as Operation))
-    ];
+    const combinedOps: Operation[] = ptOps.map(op => ({
+      id: op.id,
+      name: op.name || `Operation ${op.operationId}`,
+      description: op.description,
+      duration: parseFloat(op.cycleHrs || '60'), // Convert hours to minutes
+      jobId: Number(op.jobId),
+      productionOrderId: Number(op.jobId),
+      order: Number(op.sequenceNumber || 0),
+      status: op.percentFinished === 100 ? 'completed' : 
+              op.percentFinished > 0 ? 'in_progress' : 'planned',
+      assignedResourceId: op.defaultResourceId,
+      startTime: op.scheduledStart,
+      endTime: op.scheduledEnd,
+      routingId: op.routingId,
+      operationName: op.name,
+      standardDuration: parseFloat(op.cycleHrs || '60'),
+      actualDuration: parseFloat(op.actualCycleHrs || '0') || null,
+      workCenterId: op.defaultResourceId,
+      priority: op.priority || 3,
+      completionPercentage: op.percentFinished || 0,
+      qualityCheckRequired: op.qualityCheckRequired || false,
+      qualityStatus: op.qualityCheckStatus,
+      notes: op.notes,
+      createdAt: op.publishDate || new Date(),
+      updatedAt: op.publishDate || new Date()
+    } as Operation));
     
     return combinedOps;
   }
 
   async getOperation(id: number): Promise<Operation | undefined> {
-    // Try to find in discrete operations first
-    const [discreteOp] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
-    if (discreteOp) {
+    // Get operation from PT Publish table
+    const [ptOp] = await db.select().from(ptJobOperations).where(eq(ptJobOperations.id, id));
+    if (ptOp) {
       return {
-        ...discreteOp,
-        name: discreteOp.operationName,
-        duration: discreteOp.standardDuration,
-        jobId: null, // No direct production order link for discrete operations
-        order: discreteOp.sequenceNumber
-      } as Operation;
-    }
-    
-    // Try to find in process operations
-    const [processOp] = await db.select().from(processOperations).where(eq(processOperations.id, id));
-    if (processOp) {
-      return {
-        ...processOp,
-        name: processOp.operationName,
-        duration: processOp.standardDuration,
-        jobId: processOp.productionOrderId,
-        order: processOp.sequenceNumber
+        id: ptOp.id,
+        name: ptOp.name || `Operation ${ptOp.operationId}`,
+        description: ptOp.description,
+        duration: parseFloat(ptOp.cycleHrs || '60'), // Convert hours to minutes
+        jobId: Number(ptOp.jobId),
+        productionOrderId: Number(ptOp.jobId),
+        order: Number(ptOp.sequenceNumber || 0),
+        status: ptOp.percentFinished === 100 ? 'completed' : 
+                ptOp.percentFinished > 0 ? 'in_progress' : 'planned',
+        assignedResourceId: ptOp.defaultResourceId,
+        startTime: ptOp.scheduledStart,
+        endTime: ptOp.scheduledEnd,
+        routingId: ptOp.routingId,
+        operationName: ptOp.name,
+        standardDuration: parseFloat(ptOp.cycleHrs || '60'),
+        actualDuration: parseFloat(ptOp.actualCycleHrs || '0') || null,
+        workCenterId: ptOp.defaultResourceId,
+        priority: ptOp.priority || 3,
+        completionPercentage: ptOp.percentFinished || 0,
+        qualityCheckRequired: ptOp.qualityCheckRequired || false,
+        qualityStatus: ptOp.qualityCheckStatus,
+        notes: ptOp.notes,
+        createdAt: ptOp.publishDate || new Date(),
+        updatedAt: ptOp.publishDate || new Date()
       } as Operation;
     }
     
     return undefined;
   }
 
-  // Backwards compatible create operation - defaults to discrete
+  // Create operation - using PT Publish tables
   async createOperation(operation: InsertOperation): Promise<Operation> {
-    const discreteOp = {
-      routingId: operation.routingId, // Now links to routing instead of production order
-      operationName: operation.name,
+    // Map to PT Job Operations structure
+    const ptOp = {
+      jobId: operation.jobId || operation.productionOrderId || 1,
+      operationId: `OP-${Date.now()}`,
+      name: operation.name,
       description: operation.description,
-      standardDuration: operation.duration,
+      cycleHrs: String(operation.duration || 60),
       sequenceNumber: operation.order || 1,
-      status: operation.status,
-      startTime: operation.startTime,
-      endTime: operation.endTime
+      percentFinished: operation.status === 'completed' ? 100 : 0,
+      scheduledStart: operation.startTime,
+      scheduledEnd: operation.endTime,
+      defaultResourceId: operation.assignedResourceId,
+      routingId: operation.routingId,
+      priority: operation.priority || 3,
+      notes: operation.notes,
+      publishDate: new Date()
     };
     
-    const [newOp] = await db.insert(discreteOperations).values(discreteOp).returning();
+    const [newOp] = await db.insert(ptJobOperations).values(ptOp).returning();
     return {
-      ...newOp,
-      name: newOp.operationName,
-      duration: newOp.standardDuration,
-      jobId: null, // No direct production order link
-      order: newOp.sequenceNumber
+      id: newOp.id,
+      name: newOp.name || `Operation ${newOp.operationId}`,
+      description: newOp.description,
+      duration: parseFloat(newOp.cycleHrs || '60'),
+      jobId: Number(newOp.jobId),
+      productionOrderId: Number(newOp.jobId),
+      order: Number(newOp.sequenceNumber || 0),
+      status: newOp.percentFinished === 100 ? 'completed' : 
+              newOp.percentFinished > 0 ? 'in_progress' : 'planned',
+      assignedResourceId: newOp.defaultResourceId,
+      startTime: newOp.scheduledStart,
+      endTime: newOp.scheduledEnd,
+      routingId: newOp.routingId,
+      operationName: newOp.name,
+      standardDuration: parseFloat(newOp.cycleHrs || '60'),
+      actualDuration: parseFloat(newOp.actualCycleHrs || '0') || null,
+      workCenterId: newOp.defaultResourceId,
+      priority: newOp.priority || 3,
+      completionPercentage: newOp.percentFinished || 0,
+      qualityCheckRequired: newOp.qualityCheckRequired || false,
+      qualityStatus: newOp.qualityCheckStatus,
+      notes: newOp.notes,
+      createdAt: newOp.publishDate || new Date(),
+      updatedAt: newOp.publishDate || new Date()
     } as Operation;
   }
 
-  // Backwards compatible update operation - tries discrete first, then process
+  // Update operation - using PT Publish tables
   async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
-    // Try to update in discrete operations first
-    const [discreteOp] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
-    if (discreteOp) {
-      const updateData = {
-        operationName: operation.name,
-        description: operation.description,
-        standardDuration: operation.duration,
-        sequenceNumber: operation.order,
-        status: operation.status,
-        routingId: operation.routingId,
-        startTime: operation.startTime,
-        endTime: operation.endTime,
-        scheduledStartDate: operation.scheduledStartDate,
-        scheduledEndDate: operation.scheduledEndDate
-      };
-      
-      const [updated] = await db.update(discreteOperations)
-        .set(updateData)
-        .where(eq(discreteOperations.id, id))
-        .returning();
-      
-      return {
-        ...updated,
-        name: updated.operationName,
-        duration: updated.standardDuration,
-        jobId: null, // No direct production order link
-        order: updated.sequenceNumber
-      } as Operation;
-    }
+    // Update in PT Job Operations table
+    const updateData: any = {};
     
-    // Try to update in process operations
-    const [processOp] = await db.select().from(processOperations).where(eq(processOperations.id, id));
-    if (processOp) {
-      const updateData = {
-        operationName: operation.name,
-        description: operation.description,
-        standardDuration: operation.duration,
-        sequenceNumber: operation.order,
-        status: operation.status,
-        assignedResourceId: operation.assignedResourceId,
-        startTime: operation.startTime,
-        endTime: operation.endTime,
-        scheduledStartDate: operation.scheduledStartDate,
-        scheduledEndDate: operation.scheduledEndDate
-      };
-      
-      const [updated] = await db.update(processOperations)
-        .set(updateData)
-        .where(eq(processOperations.id, id))
-        .returning();
-      
+    if (operation.name !== undefined) updateData.name = operation.name;
+    if (operation.description !== undefined) updateData.description = operation.description;
+    if (operation.duration !== undefined) updateData.cycleHrs = String(operation.duration);
+    if (operation.order !== undefined) updateData.sequenceNumber = operation.order;
+    if (operation.status !== undefined) {
+      updateData.percentFinished = operation.status === 'completed' ? 100 : 
+                                   operation.status === 'in_progress' ? 50 : 0;
+    }
+    if (operation.startTime !== undefined) updateData.scheduledStart = operation.startTime;
+    if (operation.endTime !== undefined) updateData.scheduledEnd = operation.endTime;
+    if (operation.assignedResourceId !== undefined) updateData.defaultResourceId = operation.assignedResourceId;
+    if (operation.routingId !== undefined) updateData.routingId = operation.routingId;
+    if (operation.priority !== undefined) updateData.priority = operation.priority;
+    if (operation.notes !== undefined) updateData.notes = operation.notes;
+    
+    updateData.publishDate = new Date();
+    
+    const [updated] = await db.update(ptJobOperations)
+      .set(updateData)
+      .where(eq(ptJobOperations.id, id))
+      .returning();
+    
+    if (updated) {
       return {
-        ...updated,
-        name: updated.operationName,
-        duration: updated.standardDuration,
-        jobId: updated.productionOrderId,
-        order: updated.sequenceNumber
+        id: updated.id,
+        name: updated.name || `Operation ${updated.operationId}`,
+        description: updated.description,
+        duration: parseFloat(updated.cycleHrs || '60'),
+        jobId: Number(updated.jobId),
+        productionOrderId: Number(updated.jobId),
+        order: Number(updated.sequenceNumber || 0),
+        status: updated.percentFinished === 100 ? 'completed' : 
+                updated.percentFinished > 0 ? 'in_progress' : 'planned',
+        assignedResourceId: updated.defaultResourceId,
+        startTime: updated.scheduledStart,
+        endTime: updated.scheduledEnd,
+        routingId: updated.routingId,
+        operationName: updated.name,
+        standardDuration: parseFloat(updated.cycleHrs || '60'),
+        actualDuration: parseFloat(updated.actualCycleHrs || '0') || null,
+        workCenterId: updated.defaultResourceId,
+        priority: updated.priority || 3,
+        completionPercentage: updated.percentFinished || 0,
+        qualityCheckRequired: updated.qualityCheckRequired || false,
+        qualityStatus: updated.qualityCheckStatus,
+        notes: updated.notes,
+        createdAt: updated.publishDate || new Date(),
+        updatedAt: updated.publishDate || new Date()
       } as Operation;
     }
     
@@ -3411,32 +3420,88 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDiscreteOperation(id: number): Promise<DiscreteOperation | undefined> {
-    const [operation] = await db.select().from(discreteOperations).where(eq(discreteOperations.id, id));
-    return operation || undefined;
+    // Get from PT Publish table
+    const [ptOp] = await db.select().from(ptJobOperations).where(eq(ptJobOperations.id, id));
+    if (!ptOp) return undefined;
+    
+    return {
+      id: ptOp.id,
+      routingId: ptOp.routingId || null,
+      productionOrderId: Number(ptOp.jobId),
+      operationName: ptOp.name || `Operation ${ptOp.operationId}`,
+      description: ptOp.description,
+      status: ptOp.percentFinished === 100 ? 'completed' : 
+              ptOp.percentFinished > 0 ? 'in_progress' : 'planned',
+      standardDuration: Number(ptOp.cycleHrs || 1),
+      actualDuration: Number(ptOp.actualCycleHrs || null),
+      startTime: ptOp.scheduledStart ? new Date(ptOp.scheduledStart) : null,
+      endTime: ptOp.scheduledEnd ? new Date(ptOp.scheduledEnd) : null,
+      sequenceNumber: Number(ptOp.sequenceNumber || 0),
+      workCenterId: ptOp.defaultResourceId || null,
+      priority: ptOp.priority || 3,
+      completionPercentage: Number(ptOp.percentFinished || 0),
+      qualityCheckRequired: ptOp.qualityCheckRequired || false,
+      qualityStatus: ptOp.qualityCheckStatus || null,
+      notes: ptOp.notes || null,
+      createdAt: ptOp.publishDate || new Date(),
+      updatedAt: ptOp.publishDate || new Date()
+    } as DiscreteOperation;
   }
 
   async createDiscreteOperation(operation: InsertDiscreteOperation): Promise<DiscreteOperation> {
-    const [newOperation] = await db.insert(discreteOperations).values(operation).returning();
-    return newOperation;
+    // Create in PT Publish table
+    const ptOp = {
+      jobId: operation.productionOrderId || 1,
+      operationId: `OP-${Date.now()}`,
+      name: operation.operationName,
+      description: operation.description,
+      cycleHrs: String(operation.standardDuration || 1),
+      sequenceNumber: operation.sequenceNumber || 1,
+      percentFinished: operation.status === 'completed' ? 100 : 
+                      operation.status === 'in_progress' ? 50 : 0,
+      scheduledStart: operation.startTime,
+      scheduledEnd: operation.endTime,
+      defaultResourceId: operation.workCenterId,
+      routingId: operation.routingId,
+      priority: operation.priority || 3,
+      notes: operation.notes,
+      qualityCheckRequired: operation.qualityCheckRequired,
+      qualityCheckStatus: operation.qualityStatus,
+      publishDate: new Date()
+    };
+    
+    const [newOp] = await db.insert(ptJobOperations).values(ptOp).returning();
+    return this.getDiscreteOperation(newOp.id);
   }
 
   async updateDiscreteOperation(id: number, operation: Partial<InsertDiscreteOperation>): Promise<DiscreteOperation | undefined> {
     console.log(`Storage: Updating discrete operation ${id} with:`, operation);
     
-    // First verify the operation exists
-    const existing = await this.getDiscreteOperation(id);
-    if (!existing) {
-      console.log(`Storage: Operation ${id} not found`);
-      return undefined;
-    }
-    console.log(`Storage: Found existing operation:`, existing);
+    // Update in PT Publish table
+    const updateData: any = {};
     
-    const [updated] = await db.update(discreteOperations)
-      .set({
-        ...operation,
-        updatedAt: new Date()
-      })
-      .where(eq(discreteOperations.id, id))
+    if (operation.operationName !== undefined) updateData.name = operation.operationName;
+    if (operation.description !== undefined) updateData.description = operation.description;
+    if (operation.standardDuration !== undefined) updateData.cycleHrs = String(operation.standardDuration);
+    if (operation.sequenceNumber !== undefined) updateData.sequenceNumber = operation.sequenceNumber;
+    if (operation.status !== undefined) {
+      updateData.percentFinished = operation.status === 'completed' ? 100 : 
+                                   operation.status === 'in_progress' ? 50 : 0;
+    }
+    if (operation.startTime !== undefined) updateData.scheduledStart = operation.startTime;
+    if (operation.endTime !== undefined) updateData.scheduledEnd = operation.endTime;
+    if (operation.workCenterId !== undefined) updateData.defaultResourceId = operation.workCenterId;
+    if (operation.routingId !== undefined) updateData.routingId = operation.routingId;
+    if (operation.priority !== undefined) updateData.priority = operation.priority;
+    if (operation.notes !== undefined) updateData.notes = operation.notes;
+    if (operation.qualityCheckRequired !== undefined) updateData.qualityCheckRequired = operation.qualityCheckRequired;
+    if (operation.qualityStatus !== undefined) updateData.qualityCheckStatus = operation.qualityStatus;
+    
+    updateData.publishDate = new Date();
+    
+    const [updated] = await db.update(ptJobOperations)
+      .set(updateData)
+      .where(eq(ptJobOperations.id, id))
       .returning();
     
     console.log(`Storage: Updated operation result:`, updated);
@@ -3568,38 +3633,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProcessOperation(id: number): Promise<ProcessOperation | undefined> {
-    const [operation] = await db.select().from(processOperations).where(eq(processOperations.id, id));
-    return operation || undefined;
+    // Get from PT Publish table
+    const [ptOp] = await db.select().from(ptJobOperations).where(eq(ptJobOperations.id, id));
+    if (!ptOp) return undefined;
+    
+    return {
+      id: ptOp.id,
+      productionOrderId: Number(ptOp.jobId),
+      operationName: ptOp.name || `Operation ${ptOp.operationId}`,
+      description: ptOp.description,
+      status: ptOp.percentFinished === 100 ? 'completed' : 
+              ptOp.percentFinished > 0 ? 'in_progress' : 'planned',
+      standardDuration: Number(ptOp.cycleHrs || 1),
+      actualDuration: Number(ptOp.actualCycleHrs || null),
+      startTime: ptOp.scheduledStart ? new Date(ptOp.scheduledStart) : null,
+      endTime: ptOp.scheduledEnd ? new Date(ptOp.scheduledEnd) : null,
+      sequenceNumber: Number(ptOp.sequenceNumber || 0),
+      assignedResourceId: ptOp.defaultResourceId || null,
+      priority: ptOp.priority || 3,
+      completionPercentage: Number(ptOp.percentFinished || 0),
+      recipeRequired: false,
+      recipeId: null,
+      recipePhaseId: null,
+      notes: ptOp.notes || null,
+      createdAt: ptOp.publishDate || new Date(),
+      updatedAt: ptOp.publishDate || new Date()
+    } as ProcessOperation;
   }
 
   async createProcessOperation(operation: InsertProcessOperation): Promise<ProcessOperation> {
-    const [newOperation] = await db.insert(processOperations).values(operation).returning();
-    return newOperation;
+    // Create in PT Publish table
+    const ptOp = {
+      jobId: operation.productionOrderId || 1,
+      operationId: `OP-${Date.now()}`,
+      name: operation.operationName,
+      description: operation.description,
+      cycleHrs: String(operation.standardDuration || 1),
+      sequenceNumber: operation.sequenceNumber || 1,
+      percentFinished: operation.status === 'completed' ? 100 : 
+                      operation.status === 'in_progress' ? 50 : 0,
+      scheduledStart: operation.startTime,
+      scheduledEnd: operation.endTime,
+      defaultResourceId: operation.assignedResourceId,
+      priority: operation.priority || 3,
+      notes: operation.notes,
+      publishDate: new Date()
+    };
+    
+    const [newOp] = await db.insert(ptJobOperations).values(ptOp).returning();
+    return this.getProcessOperation(newOp.id);
   }
 
   async updateProcessOperation(id: number, operation: Partial<InsertProcessOperation>): Promise<ProcessOperation | undefined> {
-    const [updated] = await db.update(processOperations)
-      .set(operation)
-      .where(eq(processOperations.id, id))
+    // Update in PT Publish table
+    const updateData: any = {};
+    
+    if (operation.operationName !== undefined) updateData.name = operation.operationName;
+    if (operation.description !== undefined) updateData.description = operation.description;
+    if (operation.standardDuration !== undefined) updateData.cycleHrs = String(operation.standardDuration);
+    if (operation.sequenceNumber !== undefined) updateData.sequenceNumber = operation.sequenceNumber;
+    if (operation.status !== undefined) {
+      updateData.percentFinished = operation.status === 'completed' ? 100 : 
+                                   operation.status === 'in_progress' ? 50 : 0;
+    }
+    if (operation.startTime !== undefined) updateData.scheduledStart = operation.startTime;
+    if (operation.endTime !== undefined) updateData.scheduledEnd = operation.endTime;
+    if (operation.assignedResourceId !== undefined) updateData.defaultResourceId = operation.assignedResourceId;
+    if (operation.priority !== undefined) updateData.priority = operation.priority;
+    if (operation.notes !== undefined) updateData.notes = operation.notes;
+    
+    updateData.publishDate = new Date();
+    
+    const [updated] = await db.update(ptJobOperations)
+      .set(updateData)
+      .where(eq(ptJobOperations.id, id))
       .returning();
-    return updated || undefined;
+    
+    return updated ? this.getProcessOperation(id) : undefined;
   }
 
   async deleteProcessOperation(id: number): Promise<boolean> {
-    const result = await db.delete(processOperations).where(eq(processOperations.id, id));
+    const result = await db.delete(ptJobOperations).where(eq(ptJobOperations.id, id));
     return (result.rowCount || 0) > 0;
   }
 
-  // Backwards compatible delete operation
-  async deleteOperation(id: number): Promise<boolean> {
-    // Try to delete from discrete operations first
-    const discreteResult = await db.delete(discreteOperations).where(eq(discreteOperations.id, id));
-    if ((discreteResult.rowCount || 0) > 0) return true;
-    
-    // Try to delete from process operations
-    const processResult = await db.delete(processOperations).where(eq(processOperations.id, id));
-    return (processResult.rowCount || 0) > 0;
-  }
+
 
   async updateOperationOptimizationFlags(id: number, flags: {
     isBottleneck?: boolean;
@@ -3609,21 +3727,28 @@ export class DatabaseStorage implements IStorage {
     criticality?: string;
     optimizationNotes?: string;
   }): Promise<Operation | undefined> {
-    const [updatedOperation] = await db
-      .update(operations)
-      .set(flags)
-      .where(eq(operations.id, id))
-      .returning();
-    return updatedOperation || undefined;
-  }
-
-  async deleteOperation(id: number): Promise<boolean> {
-    // First delete associated dependencies
-    await db.delete(dependencies).where(eq(dependencies.fromOperationId, id));
-    await db.delete(dependencies).where(eq(dependencies.toOperationId, id));
+    // Update optimization flags in PT Job Operations table
+    const updateData: any = {};
     
-    const result = await db.delete(operations).where(eq(operations.id, id));
-    return (result.rowCount || 0) > 0;
+    if (flags.isBottleneck !== undefined) updateData.isBottleneck = flags.isBottleneck;
+    if (flags.isEarly !== undefined) updateData.isEarly = flags.isEarly;
+    if (flags.isLate !== undefined) updateData.isLate = flags.isLate;
+    if (flags.timeVarianceHours !== undefined) updateData.timeVarianceHours = String(flags.timeVarianceHours);
+    if (flags.criticality !== undefined) updateData.criticality = flags.criticality;
+    if (flags.optimizationNotes !== undefined) updateData.notes = flags.optimizationNotes;
+    
+    updateData.publishDate = new Date();
+    
+    const [updated] = await db
+      .update(ptJobOperations)
+      .set(updateData)
+      .where(eq(ptJobOperations.id, id))
+      .returning();
+      
+    if (updated) {
+      return this.getOperation(id);
+    }
+    return undefined;
   }
 
   async getDependencies(): Promise<Dependency[]> {
