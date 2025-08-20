@@ -251,7 +251,7 @@ export default function BryntumChartDemoPage() {
       }
     ],
 
-    eventStyle: 'colored',
+    eventStyle: 'colored' as const,
     eventColor: 'orange',
 
     listeners : {

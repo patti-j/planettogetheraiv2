@@ -123,7 +123,7 @@ import BryntumDemoPage from "@/pages/bryntum-demo";
 import BryntumChartDemo from "@/pages/bryntum-chart-demo";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
-import ResourceTimeline from "@/pages/resource-timeline-fixed";
+import ResourceTimeline from "@/pages/resource-timeline";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import PortalLogin from "@/pages/portal-login";
@@ -677,6 +677,9 @@ function Router() {
           <Route path="/bryntum-chart-demo">
             <BryntumChartDemo />
           </Route>
+          <Route path="/resource-timeline">
+            <ResourceTimeline />
+          </Route>
           {/* Legacy routes redirect to Design Studio */}
           <Route path="/dashboards">
             <Redirect to="/design-studio" />
@@ -736,9 +739,9 @@ function Router() {
   }
   
   // Check if we're on the resource-timeline page - it should render without any layout
-  if (location === '/resource-timeline') {
-    return <ResourceTimeline />;
-  }
+  // if (location === '/resource-timeline') {
+  //   return <ResourceTimeline />;
+  // }
   
   // Force mobile layout for mobile-specific routes regardless of screen width
   const forceMobileRoutes = ['/mobile', '/mobile-home', '/dashboards/'];
