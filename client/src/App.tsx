@@ -205,8 +205,17 @@ function DashboardWithAutoTour() {
 // Hook for handling session persistence - FIXED to prevent infinite redirect
 function useSessionPersistence() {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const { lastVisitedRoute } = useNavigation();
   const [location, setLocation] = useLocation();
+  
+  // Try to get navigation context, but handle gracefully if not available
+  let lastVisitedRoute = null;
+  try {
+    const navigationContext = useNavigation();
+    lastVisitedRoute = navigationContext.lastVisitedRoute;
+  } catch (error) {
+    // Navigation context not available, continue without it
+    console.warn('Navigation context not available in useSessionPersistence');
+  }
 
   // Disabled automatic redirection to prevent forced navigation to stored routes
   useEffect(() => {
