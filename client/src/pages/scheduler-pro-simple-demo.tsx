@@ -35,6 +35,7 @@ export default function SchedulerProSimpleDemo() {
     viewPreset : 'hourAndDay',
     rowHeight  : 60,
     barMargin  : 8,
+    height     : 600,
 
     resources : dataState.resources,
     events    : dataState.events,
@@ -57,8 +58,8 @@ export default function SchedulerProSimpleDemo() {
     },
 
     columns : [
-      { type : 'resourceInfo', text : 'Lab', width : 220, field : 'name' },
-      { text : 'Capacity', width : 120, field : 'capacity', align : 'center' }
+      { type : 'resourceInfo' as const, text : 'Lab', width : 220, field : 'name' },
+      { text : 'Capacity', width : 120, field : 'capacity', align : 'center' as const }
     ],
 
     listeners : {
@@ -79,22 +80,20 @@ export default function SchedulerProSimpleDemo() {
   }), [dataState]);
 
   return (
-    <div className="min-h-screen w-full bg-gray-50">
-      <div className="max-w-screen-2xl mx-auto p-4">
-        <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Drag & Drop Example</h1>
-        <p className="mb-4 opacity-80">
-          Drag events to reschedule in time or drop onto another resource to reassign.
-          A simple validator prevents drops before 07:00.
-        </p>
-        <BryntumSchedulerPro
-          ref={(ref: any) => { 
-            if (ref?.instance) {
-              schedulerRef.current = ref.instance;
-            }
-          }}
-          {...schedulerProps}
-        />
-      </div>
+    <div style={{ padding: '20px', height: '100vh', boxSizing: 'border-box' }}>
+      <h1 style={{ marginBottom: '10px', fontSize: '24px', fontWeight: 'bold' }}>Scheduler Pro – Drag & Drop Example</h1>
+      <p style={{ marginBottom: '20px', opacity: 0.8 }}>
+        Drag events to reschedule in time or drop onto another resource to reassign.
+        A simple validator prevents drops before 07:00.
+      </p>
+      <BryntumSchedulerPro
+        ref={(ref: any) => { 
+          if (ref?.instance) {
+            schedulerRef.current = ref.instance;
+          }
+        }}
+        {...schedulerProps}
+      />
     </div>
   );
 }

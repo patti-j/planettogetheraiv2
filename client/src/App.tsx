@@ -739,6 +739,11 @@ function Router() {
     return <TestScheduler />;
   }
   
+  // Check if we're on the scheduler-pro-simple-demo page - it should render without any layout
+  if (location === '/scheduler-pro-simple-demo') {
+    return <SchedulerProSimpleDemo />;
+  }
+  
   // Check if we're on the resource-timeline page - it should render without any layout
   // if (location === '/resource-timeline') {
   //   return <ResourceTimeline />;
