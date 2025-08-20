@@ -66,6 +66,7 @@ export default function ImplementationProjects() {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: async (data: CreateProjectData) => {
+      console.log("Sending data to API:", data);
       const response = await fetch("/api/implementation/projects", {
         method: "POST",
         headers: {
@@ -74,10 +75,18 @@ export default function ImplementationProjects() {
         },
         body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error("Failed to create project");
-      return response.json();
+      console.log("Response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API Error:", errorText);
+        throw new Error(`Failed to create project: ${errorText}`);
+      }
+      const result = await response.json();
+      console.log("API Response:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Project created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/implementation/projects"] });
       setCreateDialogOpen(false);
       toast({
@@ -87,9 +96,10 @@ export default function ImplementationProjects() {
       form.reset();
     },
     onError: (error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: `Failed to create project: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -103,6 +113,7 @@ export default function ImplementationProjects() {
   });
 
   const onSubmit = (data: CreateProjectData) => {
+    console.log("Form submitted with data:", data);
     createProjectMutation.mutate(data);
   };
 
