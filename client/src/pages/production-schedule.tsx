@@ -22,6 +22,7 @@ import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
 
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
+import ResourceGantt from '@/components/scheduler-pro/ResourceGantt';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -671,7 +672,7 @@ export default function ProductionSchedulePage() {
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
                   <div style={{ minHeight: '700px', height: 'auto' }}>
-                    <BryntumSchedulerProComponent 
+                    <ResourceGantt 
                       height={isMobile ? '500px' : '900px'}
                       startDate={new Date('2025-08-07')}
                       endDate={new Date('2025-08-31')}
