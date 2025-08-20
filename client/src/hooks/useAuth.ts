@@ -221,9 +221,12 @@ export function useAuth() {
       localStorage.removeItem('userPreferences');
       localStorage.removeItem('lastVisitedPage');
       
-      // Force complete page reload to login to ensure clean state
+      // Use client-side navigation instead of full page reload to prevent white screen
       console.log("Redirecting to login page...");
-      window.location.replace('/login');
+      // Give a small delay to ensure auth state is fully cleared
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 100);
     },
     onError: (error) => {
       console.error("Logout error:", error);
@@ -234,7 +237,10 @@ export function useAuth() {
       localStorage.removeItem('lastVisitedPage');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
-      window.location.replace('/login');
+      // Use client-side navigation instead of full page reload
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 100);
     },
   });
 
