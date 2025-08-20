@@ -85,9 +85,9 @@ export default function SchedulerDemo() {
         </p>
 
         <BryntumSchedulerPro
-          project={project}
+          project={project as any}
           onReady={({ widget }: any) => { schedulerRef.current = widget; }}
-          {...schedulerProps}
+          {...(schedulerProps as any)}
         />
       </div>
     </div>
