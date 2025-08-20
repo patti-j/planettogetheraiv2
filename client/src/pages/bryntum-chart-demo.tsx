@@ -133,30 +133,29 @@ export default function BryntumChartDemoPage() {
     resources : dataState.resources,
     events    : dataState.events,
 
-    features : {
-      eventDrag : { 
-        showTooltip : true,
-        validatorFn: () => true // Allow all drags
-      },
-      eventEdit : true,
-      timeRanges : {
-        showCurrentTimeLine: true
-      },
-      rowExpander : {
-        widgetClass : UtilizationChartWidget,
-        singleExpand : false // Allow multiple rows to be expanded
-      },
-      eventTooltip: {
-        template: (data: any) => `
-          <div class="p-2">
-            <div class="font-semibold">${data.eventRecord.name}</div>
-            <div class="text-sm opacity-75">
-              ${new Date(data.eventRecord.startDate).toLocaleTimeString()} - 
-              ${new Date(data.eventRecord.endDate).toLocaleTimeString()}
-            </div>
+    // Using React wrapper feature syntax (featureName + "Feature")
+    eventDragFeature : { 
+      showTooltip : true,
+      validatorFn: () => true // Allow all drags
+    },
+    eventEditFeature : true,
+    timeRangesFeature : {
+      showCurrentTimeLine: true
+    },
+    rowExpanderFeature : {
+      widgetClass : UtilizationChartWidget,
+      singleExpand : false // Allow multiple rows to be expanded
+    },
+    eventTooltipFeature: {
+      template: (data: any) => `
+        <div class="p-2">
+          <div class="font-semibold">${data.eventRecord.name}</div>
+          <div class="text-sm opacity-75">
+            ${new Date(data.eventRecord.startDate).toLocaleTimeString()} - 
+            ${new Date(data.eventRecord.endDate).toLocaleTimeString()}
           </div>
-        `
-      }
+        </div>
+      `
     },
 
     columns : [

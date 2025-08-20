@@ -239,10 +239,8 @@ export default function ResourceTimelineFixed() {
     );
   }
 
-  // Bryntum Scheduler Pro configuration
+  // Bryntum Scheduler Pro configuration - SEPARATED into config and listeners
   const schedulerConfig = {
-    ref: schedulerRef,
-    
     // Data
     resources,
     events,
@@ -278,11 +276,10 @@ export default function ResourceTimelineFixed() {
     
     // Features
     features: {
-      // Enable drag and drop
+      // Enable drag and drop - SIMPLIFIED configuration like the working demo
       eventDrag: {
-        constrainDragToResource: false,
-        showExactDropPosition: true,
-        showTooltip: true
+        showTooltip: true,
+        validatorFn: () => true // Allow all drags
       },
       
       // Enable resize
@@ -297,9 +294,7 @@ export default function ResourceTimelineFixed() {
       },
       
       // Enable event editing
-      eventEdit: {
-        triggerEvent: 'eventdblclick'
-      },
+      eventEdit: true,
       
       // Enable dependencies
       dependencies: true,
@@ -311,25 +306,19 @@ export default function ResourceTimelineFixed() {
       columnLines: true,
       scheduleTooltip: true,
       eventMenu: true,
-      timeRanges: true
-    },
-    
-    // Project configuration for optimization
-    projectConfig: {
-      autoCalculate: true,
-      schedulingDirection: optimizationMode === 'alap' ? 'backward' : 'forward',
-      calculateCriticalPath: optimizationMode === 'critical-path',
-      levelResources: optimizationMode === 'resource-level'
-    },
-    
-    // Event listeners
-    listeners: {
-      beforeEventDropFinalize: handleBeforeEventDropFinalize,
-      eventDrop: handleEventDrop,
-      eventResizeEnd: handleEventResizeEnd,
-      beforeCalculate: () => setEngineStatus('calculating'),
-      calculate: () => setEngineStatus('idle')
+      timeRanges: {
+        showCurrentTimeLine: true
+      }
     }
+  };
+  
+  // Separate listeners object - MUST be passed as separate prop
+  const schedulerListeners = {
+    beforeEventDropFinalize: handleBeforeEventDropFinalize,
+    eventDrop: handleEventDrop,
+    eventResizeEnd: handleEventResizeEnd,
+    beforeCalculate: () => setEngineStatus('calculating'),
+    calculate: () => setEngineStatus('idle')
   };
 
   return (
@@ -408,7 +397,15 @@ export default function ResourceTimelineFixed() {
       
       {/* Bryntum Scheduler Pro Component */}
       <div className="flex-1 relative">
-        <BryntumSchedulerPro {...schedulerConfig} />
+        <BryntumSchedulerPro 
+          ref={schedulerRef}
+          onReady={({ widget }: any) => { 
+            schedulerRef.current = widget;
+            console.log('Scheduler ready with drag-drop enabled');
+          }}
+          {...schedulerConfig}
+          listeners={schedulerListeners}
+        />
       </div>
     </div>
   );
