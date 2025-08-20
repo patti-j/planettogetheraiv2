@@ -4,8 +4,12 @@ import { format, differenceInHours, addDays, startOfDay } from 'date-fns';
 
 interface Resource {
   id: number;
+  external_id: string;
   name: string;
   type: string;
+  description?: string;
+  plant_id?: string;
+  plant_name?: string;
 }
 
 interface Operation {
@@ -176,17 +180,14 @@ export default function ResourceTimeline() {
 
                 {/* Resource rows container */}
                 <div className="relative">
-                  {resources.map((resource, resourceIndex) => {
-                    // Match operations by external_id
-                    const resourceOps = operationsByResource.get(resource.external_id) || [];
-                    
-                    return (
-                      <div
-                        key={resource.id}
-                        className={`h-[50px] border-b relative ${
-                          resourceIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                        }`}
-                      >
+                  {/* Resource backgrounds and grid lines */}
+                  {resources.map((resource, resourceIndex) => (
+                    <div
+                      key={resource.id}
+                      className={`h-[50px] border-b relative ${
+                        resourceIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      }`}
+                    >
                       {/* Grid lines */}
                       {timeHeaders.map((_, i) => (
                         <div
@@ -195,48 +196,53 @@ export default function ResourceTimeline() {
                           style={{ left: `${i * 24 * hourWidth}px` }}
                         />
                       ))}
-                      
-                      {/* Operations */}
-                      {resourceOps.map(op => {
-                        const { left, width } = getOperationPosition(op);
-                        const isHovered = hoveredOperation?.id === op.id;
-                        const isSelected = selectedOperation?.id === op.id;
-                        
-                        return (
-                          <div
-                            key={op.id}
-                            className={`absolute top-2 h-[34px] rounded cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'bg-blue-600 shadow-lg z-20' 
-                                : isHovered 
-                                  ? 'bg-blue-500 shadow-md z-10' 
-                                  : 'bg-blue-400 shadow-sm'
-                            }`}
-                            style={{
-                              left: `${left}px`,
-                              width: `${width}px`,
-                              minWidth: '40px'
-                            }}
-                            onMouseEnter={() => setHoveredOperation(op)}
-                            onMouseLeave={() => setHoveredOperation(null)}
-                            onClick={() => setSelectedOperation(op)}
-                            title={`${op.name}\n${op.startDate ? format(new Date(op.startDate), 'MMM d HH:mm') : 'N/A'} - ${op.endDate ? format(new Date(op.endDate), 'MMM d HH:mm') : 'N/A'}`}
-                          >
-                            <div className="px-2 py-1 text-white text-xs truncate">
-                              {op.name.split(':')[1]?.trim() || op.name}
-                            </div>
-                            {op.percentDone > 0 && (
-                              <div 
-                                className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b"
-                                style={{ width: `${op.percentDone}%` }}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
                     </div>
-                  );
-                })}
+                  ))}
+                  
+                  {/* Operations overlay - positioned absolutely */}
+                  {resources.map((resource, resourceIndex) => {
+                    const resourceOps = operationsByResource.get(resource.external_id) || [];
+                    const rowTop = resourceIndex * 50; // Each row is 50px tall
+                    
+                    return resourceOps.map(op => {
+                      const { left, width } = getOperationPosition(op);
+                      const isHovered = hoveredOperation?.id === op.id;
+                      const isSelected = selectedOperation?.id === op.id;
+                      
+                      return (
+                        <div
+                          key={op.id}
+                          className={`absolute h-[34px] rounded cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'bg-blue-600 shadow-lg z-20' 
+                              : isHovered 
+                                ? 'bg-blue-500 shadow-md z-10' 
+                                : 'bg-blue-400 shadow-sm'
+                          }`}
+                          style={{
+                            top: `${rowTop + 8}px`, // Position within the correct row
+                            left: `${left}px`,
+                            width: `${width}px`,
+                            minWidth: '40px'
+                          }}
+                          onMouseEnter={() => setHoveredOperation(op)}
+                          onMouseLeave={() => setHoveredOperation(null)}
+                          onClick={() => setSelectedOperation(op)}
+                          title={`${op.name}\n${op.startDate ? format(new Date(op.startDate), 'MMM d HH:mm') : 'N/A'} - ${op.endDate ? format(new Date(op.endDate), 'MMM d HH:mm') : 'N/A'}`}
+                        >
+                          <div className="px-2 py-1 text-white text-xs truncate">
+                            {op.name.split(':')[1]?.trim() || op.name}
+                          </div>
+                          {op.percentDone > 0 && (
+                            <div 
+                              className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b"
+                              style={{ width: `${op.percentDone}%` }}
+                            />
+                          )}
+                        </div>
+                      );
+                    });
+                  })}
                 </div>
               </div>
             </div>
