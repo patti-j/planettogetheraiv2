@@ -118,7 +118,7 @@ export default function ResourceTimeline() {
         endDate: endDate.toISOString()
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       toast({
         title: "Operation Updated",
         description: "The operation has been successfully rescheduled.",
@@ -126,31 +126,41 @@ export default function ResourceTimeline() {
       
       // Invalidate and refetch data
       await queryClient.invalidateQueries({ queryKey: ['/api/pt-operations'] });
-      await refetchOperations();
+      const result = await refetchOperations();
       
-      // Force a complete re-render of the scheduler with fresh data
-      if (schedulerRef.current) {
-        // Get the updated operations data after refetch
-        setTimeout(() => {
-          const { data: freshOperations } = queryClient.getQueryData(['/api/pt-operations']) || { data: [] };
-          if (schedulerRef.current && freshOperations) {
-            console.log('Refreshing scheduler with', freshOperations.length, 'operations');
-            const events = freshOperations.map((op: any) => ({
-              id: op.id,
-              name: op.name,
-              resourceId: op.resourceId,
-              startDate: new Date(op.startDate),
-              endDate: new Date(op.endDate),
-              percentDone: op.percentDone,
-              draggable: true,
-              resizable: true
-            }));
-            
-            // Clear and reload event store
-            schedulerRef.current.eventStore.removeAll();
-            schedulerRef.current.eventStore.add(events);
-          }
-        }, 1000);
+      // Update the scheduler immediately with the refetched data
+      if (schedulerRef.current && result.data) {
+        console.log('Refreshing scheduler with', result.data.length, 'operations after successful update');
+        
+        // Transform the fresh data
+        const events = result.data.map((op: any) => ({
+          id: op.id,
+          name: op.name,
+          resourceId: op.resourceId,
+          startDate: new Date(op.startDate),
+          endDate: new Date(op.endDate),
+          percentDone: op.percentDone,
+          draggable: true,
+          resizable: true
+        }));
+        
+        // Suspend events to prevent flickering
+        schedulerRef.current.eventStore.suspendEvents();
+        
+        // Update the event store with fresh data
+        schedulerRef.current.eventStore.data = events;
+        
+        // Resume events and refresh
+        schedulerRef.current.eventStore.resumeEvents();
+        
+        // Optional: Scroll to the updated event
+        const updatedEvent = schedulerRef.current.eventStore.getById(variables.operationId);
+        if (updatedEvent) {
+          schedulerRef.current.scrollEventIntoView(updatedEvent, {
+            animate: true,
+            highlight: true
+          });
+        }
       }
     },
     onError: (error) => {
@@ -435,7 +445,7 @@ export default function ResourceTimeline() {
             console.log('Before drop finalize:', context);
             return true; // Allow the drop
           },
-          afterEventDrop: ({ eventRecords, valid, targetResourceRecord, context }) => {
+          afterEventDrop: async ({ eventRecords, valid, targetResourceRecord, context, source }) => {
             console.log('After event drop:', {
               events: eventRecords,
               valid: valid,
@@ -445,19 +455,26 @@ export default function ResourceTimeline() {
             
             if (valid && eventRecords && eventRecords.length > 0) {
               const eventRecord = eventRecords[0];
+              const newResourceId = eventRecord.resourceId || (targetResourceRecord && targetResourceRecord.id);
+              
               console.log('Dropped event details:', {
                 id: eventRecord.id,
-                resourceId: eventRecord.resourceId,
+                oldResourceId: eventRecord.originalData?.resourceId,
+                newResourceId: newResourceId,
                 startDate: eventRecord.startDate,
-                endDate: eventRecord.endDate,
-                data: eventRecord.data
+                endDate: eventRecord.endDate
               });
               
+              // Ensure the scheduler project commits the changes
+              if (schedulerRef.current?.project) {
+                await schedulerRef.current.project.commitAsync();
+              }
+              
               // Update operation in database with new position
-              // The eventRecord has the updated resourceId and dates
+              // Use the new resource ID and dates from the event record
               updateOperationMutation.mutate({
                 operationId: eventRecord.id,
-                resourceId: eventRecord.resourceId,
+                resourceId: newResourceId,
                 startDate: eventRecord.startDate
               });
             }
@@ -532,7 +549,7 @@ export default function ResourceTimeline() {
 
   // Update Bryntum scheduler when operations change
   useEffect(() => {
-    if (schedulerRef.current && operations.length > 0) {
+    if (schedulerRef.current && operations.length > 0 && !updateOperationMutation.isPending) {
       console.log('Updating Bryntum scheduler with new operations data');
       const events = operations.map(op => ({
         id: op.id,
@@ -545,15 +562,16 @@ export default function ResourceTimeline() {
         resizable: true
       }));
       
+      // Suspend events to prevent multiple redraws
+      schedulerRef.current.eventStore.suspendEvents();
+      
       // Update the event store with new data
       schedulerRef.current.eventStore.data = events;
       
-      // Refresh the scheduler view
-      if (schedulerRef.current.refresh) {
-        schedulerRef.current.refresh();
-      }
+      // Resume events and trigger a single refresh
+      schedulerRef.current.eventStore.resumeEvents();
     }
-  }, [operations]); // Update when operations data changes
+  }, [operations, updateOperationMutation.isPending]); // Update when operations data changes but not during mutation
 
   // Flag to prevent scroll event loops
   const [isScrolling, setIsScrolling] = useState(false);
