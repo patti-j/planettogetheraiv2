@@ -98,7 +98,18 @@ export default function ResourceTimeline() {
         throw new Error('Resource not found');
       }
       
-      const endDate = addHours(startDate, draggedOperation?.duration ? draggedOperation.duration / 60 : 2);
+      // Find the operation to get its duration
+      const operation = operations.find(op => op.id === operationId);
+      const durationHours = operation ? operation.duration / 60 : 2;
+      const endDate = addHours(startDate, durationHours);
+      
+      console.log('Updating operation:', {
+        operationId,
+        resourceId,
+        resourceDbId: resource.id,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
       
       // Use the PT operations update endpoint with correct field names
       return await apiRequest('PUT', `/api/pt-operations/${operationId}`, {
@@ -107,22 +118,24 @@ export default function ResourceTimeline() {
         endDate: endDate.toISOString()
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Operation Updated",
         description: "The operation has been successfully rescheduled.",
       });
       
       // Invalidate and refetch data
-      queryClient.invalidateQueries({ queryKey: ['/api/pt-operations'] });
-      refetchOperations();
+      await queryClient.invalidateQueries({ queryKey: ['/api/pt-operations'] });
+      await refetchOperations();
       
-      // Update Bryntum scheduler if it exists
+      // Force a complete re-render of the scheduler with fresh data
       if (schedulerRef.current) {
-        // Reload the scheduler with new data after a short delay
+        // Get the updated operations data after refetch
         setTimeout(() => {
-          if (schedulerRef.current && operations) {
-            const events = operations.map(op => ({
+          const { data: freshOperations } = queryClient.getQueryData(['/api/pt-operations']) || { data: [] };
+          if (schedulerRef.current && freshOperations) {
+            console.log('Refreshing scheduler with', freshOperations.length, 'operations');
+            const events = freshOperations.map((op: any) => ({
               id: op.id,
               name: op.name,
               resourceId: op.resourceId,
@@ -132,9 +145,12 @@ export default function ResourceTimeline() {
               draggable: true,
               resizable: true
             }));
-            schedulerRef.current.eventStore.data = events;
+            
+            // Clear and reload event store
+            schedulerRef.current.eventStore.removeAll();
+            schedulerRef.current.eventStore.add(events);
           }
-        }, 500);
+        }, 1000);
       }
     },
     onError: (error) => {
@@ -144,6 +160,11 @@ export default function ResourceTimeline() {
         variant: "destructive",
       });
       console.error('Failed to update operation:', error);
+      
+      // Reload the scheduler to revert the visual change
+      if (schedulerRef.current) {
+        refetchOperations();
+      }
     }
   });
 
@@ -414,28 +435,26 @@ export default function ResourceTimeline() {
             console.log('Before drop finalize:', context);
             return true; // Allow the drop
           },
-          eventDrop: async ({ eventRecords, targetResourceRecord, isCopy, source }) => {
-            console.log('Event dropped:', {
+          afterEventDrop: ({ eventRecords, valid, targetResourceRecord, context }) => {
+            console.log('After event drop:', {
               events: eventRecords,
+              valid: valid,
               targetResource: targetResourceRecord,
-              isCopy: isCopy
+              context: context
             });
             
-            if (eventRecords && eventRecords.length > 0) {
+            if (valid && eventRecords && eventRecords.length > 0) {
               const eventRecord = eventRecords[0];
               console.log('Dropped event details:', {
                 id: eventRecord.id,
                 resourceId: eventRecord.resourceId,
                 startDate: eventRecord.startDate,
-                endDate: eventRecord.endDate
+                endDate: eventRecord.endDate,
+                data: eventRecord.data
               });
               
-              // Commit changes to the project model
-              if (source?.project) {
-                await source.project.commitAsync();
-              }
-              
               // Update operation in database with new position
+              // The eventRecord has the updated resourceId and dates
               updateOperationMutation.mutate({
                 operationId: eventRecord.id,
                 resourceId: eventRecord.resourceId,
