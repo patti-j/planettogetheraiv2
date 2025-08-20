@@ -82,13 +82,23 @@ export default function ResourceTimeline() {
   const headerHeight = 60;
 
   // Group operations by resource
-  const operationsByResource = new Map<number, Operation[]>();
+  const operationsByResource = new Map<string, Operation[]>();
   operations.forEach(op => {
-    if (!operationsByResource.has(op.resourceId)) {
-      operationsByResource.set(op.resourceId, []);
+    // Use the resourceId (which is the external_id string) as the key
+    const resourceKey = String(op.resourceId);
+    if (resourceKey && resourceKey !== 'null') {
+      if (!operationsByResource.has(resourceKey)) {
+        operationsByResource.set(resourceKey, []);
+      }
+      operationsByResource.get(resourceKey)!.push(op);
     }
-    operationsByResource.get(op.resourceId)!.push(op);
   });
+  
+  // Debug logging
+  console.log('Operations by resource Map size:', operationsByResource.size);
+  console.log('Operations by resource keys:', Array.from(operationsByResource.keys()));
+  console.log('Resource external_ids:', resources.map(r => r.external_id));
+  console.log('Sample mapping:', operationsByResource.get('RES-PLANT-AMS-01-001'));
 
   // Calculate position for an operation
   const getOperationPosition = (op: Operation) => {
@@ -166,7 +176,9 @@ export default function ResourceTimeline() {
 
                 {/* Resource rows with operations */}
                 {resources.map((resource, index) => {
-                  const resourceOps = operationsByResource.get(resource.id) || [];
+                  // Match operations by external_id instead of numeric id
+                  const resourceOps = operationsByResource.get(resource.external_id) || 
+                                     operationsByResource.get(resource.id) || [];
                   return (
                     <div
                       key={resource.id}
