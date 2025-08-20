@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, differenceInHours, addDays, startOfDay } from 'date-fns';
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Activity, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 interface Resource {
   id: number;
@@ -29,6 +34,12 @@ export default function ResourceTimeline() {
   const resourceScrollRef = useRef<HTMLDivElement>(null);
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [hoveredOperation, setHoveredOperation] = useState<Operation | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(50); // pixels per hour
+  const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
+  const [resizingOperation, setResizingOperation] = useState<{ operation: Operation, edge: 'start' | 'end' } | null>(null);
+  const [showCapacity, setShowCapacity] = useState(false);
+  const [showDependencies, setShowDependencies] = useState(false);
+  const [showConflicts, setShowConflicts] = useState(true);
 
   // Fetch resources from PT tables
   const { data: resources = [], isLoading: loadingResources } = useQuery<Resource[]>({
@@ -117,7 +128,7 @@ export default function ResourceTimeline() {
   const startDate = new Date('2025-08-19');
   const endDate = new Date('2025-08-31');
   const totalDays = differenceInHours(endDate, startDate) / 24;
-  const hourWidth = 50; // pixels per hour - increased for better visibility
+  const hourWidth = zoomLevel; // Dynamic zoom level
   const totalWidth = totalDays * 24 * hourWidth;
   const rowHeight = 50;
   const headerHeight = 60;
@@ -152,6 +163,52 @@ export default function ResourceTimeline() {
     return { left, width };
   };
 
+  // Calculate resource utilization
+  const calculateResourceUtilization = (resourceId: string) => {
+    const resourceOps = operationsByResource.get(resourceId) || [];
+    if (resourceOps.length === 0) return 0;
+    
+    const totalAvailableHours = totalDays * 24; // Assuming 24/7 availability
+    const totalUsedHours = resourceOps.reduce((sum, op) => sum + (op.duration / 60), 0);
+    return Math.min(100, (totalUsedHours / totalAvailableHours) * 100);
+  };
+
+  // Handle zoom changes
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(200, prev + 10));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(10, prev - 10));
+  const handleZoomReset = () => setZoomLevel(50);
+
+  // Detect conflicts between operations on the same resource
+  const detectConflicts = (resourceOps: Operation[]) => {
+    const conflicts = new Set<number>();
+    
+    for (let i = 0; i < resourceOps.length; i++) {
+      for (let j = i + 1; j < resourceOps.length; j++) {
+        const op1 = resourceOps[i];
+        const op2 = resourceOps[j];
+        
+        const start1 = new Date(op1.startDate).getTime();
+        const end1 = new Date(op1.endDate).getTime();
+        const start2 = new Date(op2.startDate).getTime();
+        const end2 = new Date(op2.endDate).getTime();
+        
+        // Check if operations overlap
+        if ((start1 < end2 && end1 > start2) || (start2 < end1 && end2 > start1)) {
+          conflicts.add(op1.id);
+          conflicts.add(op2.id);
+        }
+      }
+    }
+    
+    return conflicts;
+  };
+
+  // Check if a date falls on weekend
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6; // Sunday or Saturday
+  };
+
   // Generate time headers
   const timeHeaders = [];
   for (let i = 0; i < totalDays; i++) {
@@ -173,6 +230,95 @@ export default function ResourceTimeline() {
         </p>
       </div>
 
+      {/* Zoom and View Controls */}
+      <div className="bg-white border-b px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= 10}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2 w-48">
+              <Slider
+                value={[zoomLevel]}
+                onValueChange={([value]) => setZoomLevel(value)}
+                min={10}
+                max={200}
+                step={5}
+                className="flex-1"
+              />
+              <span className="text-sm text-gray-500 w-12">{Math.round((zoomLevel / 50) * 100)}%</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= 200}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleZoomReset}
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="h-6 w-px bg-gray-200" />
+          
+          <Button
+            variant={showCapacity ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowCapacity(!showCapacity)}
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            {showCapacity ? 'Hide' : 'Show'} Utilization
+          </Button>
+          
+          <Button
+            variant={showConflicts ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowConflicts(!showConflicts)}
+          >
+            <AlertCircle className="h-4 w-4 mr-2" />
+            {showConflicts ? 'Hide' : 'Show'} Conflicts
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Auto-fit to show all operations
+              const firstOp = operations[0];
+              const lastOp = operations[operations.length - 1];
+              if (firstOp && lastOp) {
+                const range = differenceInHours(new Date(lastOp.endDate), new Date(firstOp.startDate));
+                const newZoom = Math.max(10, Math.min(200, (window.innerWidth - 300) / range));
+                setZoomLevel(newZoom);
+              }
+            }}
+          >
+            <Maximize2 className="h-4 w-4 mr-2" />
+            Auto-Fit
+          </Button>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Badge variant="outline">
+            {resources.length} Resources
+          </Badge>
+          <Badge variant="outline">
+            {operations.length} Operations
+          </Badge>
+        </div>
+      </div>
+
       {/* Main content */}
       <div className="flex-1 p-4 overflow-hidden">
         <div className="bg-white rounded-lg shadow-sm border h-full flex flex-col">
@@ -189,19 +335,45 @@ export default function ResourceTimeline() {
                 className="flex-1 overflow-y-auto overflow-x-hidden"
                 onScroll={handleResourceScroll}
               >
-                {resources.map((resource, index) => (
-                  <div
-                    key={resource.id}
-                    className={`h-[50px] border-b px-4 flex items-center ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="truncate">
-                      <div className="font-medium text-sm">{resource.name}</div>
-                      <div className="text-xs text-gray-500">{resource.type}</div>
+                {resources.map((resource, index) => {
+                  const utilization = showCapacity ? calculateResourceUtilization(resource.external_id) : 0;
+                  const isHighUtilization = utilization > 80;
+                  const isMediumUtilization = utilization > 50;
+                  
+                  return (
+                    <div
+                      key={resource.id}
+                      className={`h-[50px] border-b px-4 flex items-center justify-between ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      }`}
+                    >
+                      <div className="truncate flex-1">
+                        <div className="font-medium text-sm">{resource.name}</div>
+                        <div className="text-xs text-gray-500">{resource.type}</div>
+                      </div>
+                      {showCapacity && (
+                        <div className="ml-2 flex items-center gap-2">
+                          <div className="w-24">
+                            <Progress 
+                              value={utilization} 
+                              className="h-2"
+                            />
+                          </div>
+                          <span className={`text-xs font-medium ${
+                            isHighUtilization ? 'text-red-600' : 
+                            isMediumUtilization ? 'text-yellow-600' : 
+                            'text-green-600'
+                          }`}>
+                            {Math.round(utilization)}%
+                          </span>
+                          {isHighUtilization && (
+                            <AlertCircle className="h-3 w-3 text-red-500" />
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -214,17 +386,23 @@ export default function ResourceTimeline() {
               <div className="relative" style={{ width: `${totalWidth}px` }}>
                 {/* Time header */}
                 <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
-                  {timeHeaders.map((header, index) => (
-                    <div
-                      key={index}
-                      className="absolute top-0 h-full border-l border-gray-300"
-                      style={{ left: `${header.position}px` }}
-                    >
-                      <div className="px-2 py-1 text-xs font-medium">
-                        {header.label}
+                  {timeHeaders.map((header, index) => {
+                    const weekend = isWeekend(header.date);
+                    return (
+                      <div
+                        key={index}
+                        className={`absolute top-0 h-full border-l ${weekend ? 'border-gray-400' : 'border-gray-300'}`}
+                        style={{ left: `${header.position}px`, width: `${24 * hourWidth}px` }}
+                      >
+                        <div className={`h-full ${weekend ? 'bg-gray-100' : ''}`}>
+                          <div className={`px-2 py-1 text-xs font-medium ${weekend ? 'text-gray-500' : ''}`}>
+                            {header.label}
+                            {weekend && <span className="ml-1 text-[10px]">(Weekend)</span>}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Resource rows container */}
@@ -252,6 +430,7 @@ export default function ResourceTimeline() {
                   {resources.map((resource, resourceIndex) => {
                     const resourceOps = operationsByResource.get(resource.external_id) || [];
                     const rowTop = resourceIndex * 50; // Each row is 50px tall
+                    const conflicts = showConflicts ? detectConflicts(resourceOps) : new Set();
                     
                     // Debug log for first resource
                     if (resourceIndex === 0) {
@@ -262,6 +441,7 @@ export default function ResourceTimeline() {
                       const { left, width } = getOperationPosition(op);
                       const isHovered = hoveredOperation?.id === op.id;
                       const isSelected = selectedOperation?.id === op.id;
+                      const hasConflict = conflicts.has(op.id);
                       
                       // Debug first operation of first resource
                       if (resourceIndex === 0 && resourceOps.indexOf(op) === 0) {
@@ -271,15 +451,17 @@ export default function ResourceTimeline() {
                       return (
                         <div
                           key={op.id}
-                          className={`absolute h-[34px] rounded cursor-move transition-all ${
-                            isSelected 
-                              ? 'bg-blue-600 shadow-lg z-20 ring-2 ring-blue-300' 
-                              : isHovered 
-                                ? 'bg-blue-500 shadow-md z-10' 
-                                : op.percentDone === 100
-                                  ? 'bg-green-500 shadow-sm'
-                                  : 'bg-blue-400 shadow-sm'
-                          }`}
+                          className={`group absolute h-[34px] rounded transition-all ${
+                            hasConflict
+                              ? 'bg-red-500 shadow-lg ring-2 ring-red-300 animate-pulse'
+                              : isSelected 
+                                ? 'bg-blue-600 shadow-lg z-20 ring-2 ring-blue-300' 
+                                : isHovered 
+                                  ? 'bg-blue-500 shadow-md z-10' 
+                                  : op.percentDone === 100
+                                    ? 'bg-green-500 shadow-sm'
+                                    : 'bg-blue-400 shadow-sm'
+                          } ${draggedOperation?.id === op.id ? 'opacity-50' : ''}`}
                           style={{
                             top: `${rowTop + 8}px`, // Position within the correct row
                             left: `${left}px`,
@@ -290,27 +472,55 @@ export default function ResourceTimeline() {
                           onMouseLeave={() => setHoveredOperation(null)}
                           onClick={() => setSelectedOperation(op)}
                           title={`${op.name}\nResource: ${op.resourceName}\nStart: ${op.startDate ? format(new Date(op.startDate), 'MMM d, h:mm a') : 'N/A'}\nEnd: ${op.endDate ? format(new Date(op.endDate), 'MMM d, h:mm a') : 'N/A'}\nDuration: ${op.duration} minutes\nProgress: ${op.percentDone}%`}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('operation', JSON.stringify(op));
-                            (e.target as HTMLElement).style.opacity = '0.5';
-                          }}
-                          onDragEnd={(e) => {
-                            (e.target as HTMLElement).style.opacity = '';
-                          }}
                         >
-                          <div className="px-2 py-1 text-white text-xs truncate flex items-center justify-between">
+                          {/* Left resize handle */}
+                          <div 
+                            className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setResizingOperation({ operation: op, edge: 'start' });
+                            }}
+                          />
+                          
+                          {/* Right resize handle */}
+                          <div 
+                            className="absolute right-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 hover:bg-blue-300 transition-opacity"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setResizingOperation({ operation: op, edge: 'end' });
+                            }}
+                          />
+                          
+                          {/* Main content area - draggable */}
+                          <div
+                            className="px-2 py-1 text-white text-xs truncate flex items-center justify-between cursor-move h-full"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = 'move';
+                              e.dataTransfer.setData('operation', JSON.stringify(op));
+                              setDraggedOperation(op);
+                            }}
+                            onDragEnd={(e) => {
+                              setDraggedOperation(null);
+                            }}
+                          >
                             <span>{op.name.split(':')[1]?.trim() || op.name}</span>
                             {op.percentDone === 100 && (
                               <span className="ml-1">✓</span>
                             )}
                           </div>
+                          
+                          {/* Progress indicator */}
                           {op.percentDone > 0 && op.percentDone < 100 && (
                             <div 
-                              className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b"
+                              className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b pointer-events-none"
                               style={{ width: `${op.percentDone}%` }}
                             />
+                          )}
+                          
+                          {/* Visual indicator when resizing */}
+                          {resizingOperation?.operation.id === op.id && (
+                            <div className="absolute inset-0 border-2 border-blue-400 rounded pointer-events-none" />
                           )}
                         </div>
                       );
