@@ -124,6 +124,7 @@ import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
 import ResourceTimeline from "@/pages/resource-timeline";
 import ResourceGanttDemo from "@/pages/resource-gantt-demo";
+import SchedulerProSimpleDemo from "@/pages/scheduler-pro-simple-demo";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import PortalLogin from "@/pages/portal-login";
@@ -673,6 +674,9 @@ function Router() {
           </Route>
           <Route path="/bryntum-chart-demo">
             <BryntumChartDemo />
+          </Route>
+          <Route path="/scheduler-pro-simple-demo">
+            <SchedulerProSimpleDemo />
           </Route>
           <Route path="/resource-timeline">
             <ResourceTimeline />
