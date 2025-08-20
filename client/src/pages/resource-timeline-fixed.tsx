@@ -1,10 +1,10 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useMemo } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 import { Chart } from 'chart.js/auto';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { addHours } from 'date-fns';
-import { ZoomIn, ZoomOut, RotateCcw, Activity, AlertCircle, Zap, Settings2, BarChart3 } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Activity, AlertCircle, Zap, Settings2, BarChart3, ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
