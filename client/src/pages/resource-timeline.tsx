@@ -441,46 +441,41 @@ export default function ResourceTimeline() {
             });
           },
           // Bryntum SchedulerPro drag and drop event listeners (lowercase event names)
-          beforeeventdropfinalize: ({ context }) => {
-            console.log('Before drop finalize:', context);
+          // Based on screenshot from Bryntum demo showing exact event structure
+          beforeeventdropfinalize: (event) => {
+            console.log('beforeeventdropfinalize:', event);
             return true; // Allow the drop
           },
-          aftereventdrop: async (event) => {
-            console.log('After event drop - full event object:', event);
+          aftereventdrop: function(event) {
+            console.log('aftereventdrop fired - full event:', event);
             
-            // Destructure the event object based on Bryntum's actual structure
-            const { eventRecords, valid, targetResourceRecord, context } = event;
+            // Based on the demo screenshot, event contains single eventRecord (not array)
+            const { eventRecord, valid, targetResourceRecord } = event;
             
-            console.log('After event drop - parsed:', {
-              eventRecords,
-              valid,
-              targetResource: targetResourceRecord,
-              context
-            });
+            if (!valid) {
+              console.log('Drop was invalid');
+              return;
+            }
             
-            if (valid && eventRecords && eventRecords.length > 0) {
-              const eventRecord = eventRecords[0];
-              const newResourceId = eventRecord.resourceId || (targetResourceRecord && targetResourceRecord.id);
+            if (eventRecord && targetResourceRecord) {
+              const newResourceId = targetResourceRecord.id;
+              const newStartDate = eventRecord.startDate;
               
-              console.log('Dropped event details:', {
-                id: eventRecord.id,
-                oldResourceId: eventRecord.originalData?.resourceId,
+              console.log('Event dropped successfully:', {
+                eventId: eventRecord.id,
+                eventName: eventRecord.name,
+                oldResourceId: eventRecord.resourceId,
                 newResourceId: newResourceId,
-                startDate: eventRecord.startDate,
-                endDate: eventRecord.endDate,
-                data: eventRecord.data
+                newResourceName: targetResourceRecord.name,
+                newStartDate: newStartDate,
+                newEndDate: eventRecord.endDate
               });
               
-              // Ensure the scheduler project commits the changes
-              if (schedulerRef.current?.project) {
-                await schedulerRef.current.project.commitAsync();
-              }
-              
-              // Update operation in database with new position
+              // Update operation in backend
               updateOperationMutation.mutate({
                 operationId: eventRecord.id,
                 resourceId: newResourceId,
-                startDate: eventRecord.startDate
+                startDate: newStartDate
               });
             }
           },
