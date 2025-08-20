@@ -25,6 +25,7 @@ interface Operation {
 
 export default function ResourceTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [hoveredOperation, setHoveredOperation] = useState<Operation | null>(null);
 
@@ -38,6 +39,17 @@ export default function ResourceTimeline() {
     console.log('Resources loaded:', resources);
     console.log('Resources count:', resources.length);
   }, [resources]);
+
+  // Auto-scroll to show first operations (6 AM)
+  useEffect(() => {
+    if (timelineScrollRef.current && operations.length > 0) {
+      // Scroll to 6 AM (6 hours from start)
+      const scrollPosition = 6 * 50; // 6 hours * 50px per hour
+      timelineScrollRef.current.scrollLeft = scrollPosition;
+    }
+  }, [operations]);
+
+
 
   // Fetch operations
   const { data: operations = [], isLoading: loadingOperations } = useQuery<Operation[]>({
@@ -80,7 +92,7 @@ export default function ResourceTimeline() {
   const startDate = new Date('2025-08-19');
   const endDate = new Date('2025-08-31');
   const totalDays = differenceInHours(endDate, startDate) / 24;
-  const hourWidth = 3; // pixels per hour
+  const hourWidth = 50; // pixels per hour - increased for better visibility
   const totalWidth = totalDays * 24 * hourWidth;
   const rowHeight = 50;
   const headerHeight = 60;
@@ -109,7 +121,9 @@ export default function ResourceTimeline() {
     const opStart = new Date(op.startDate);
     const hoursFromStart = differenceInHours(opStart, startDate);
     const left = hoursFromStart * hourWidth;
-    const width = (op.duration / 60) * hourWidth; // duration is in minutes
+    // Duration is already in minutes, convert to hours for pixel calculation
+    const durationInHours = op.duration / 60;
+    const width = Math.max(durationInHours * hourWidth, 20); // Minimum width of 20px for visibility
     return { left, width };
   };
 
@@ -161,7 +175,7 @@ export default function ResourceTimeline() {
             </div>
 
             {/* Timeline */}
-            <div className="flex-1 overflow-auto">
+            <div ref={timelineScrollRef} className="flex-1 overflow-auto">
               <div className="relative" style={{ width: `${totalWidth}px` }}>
                 {/* Time header */}
                 <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
