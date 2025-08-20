@@ -1519,17 +1519,26 @@ export const externalCompanies = pgTable('external_companies', {
   id: varchar('id', { length: 255 }).primaryKey().default(sql`gen_random_uuid()::text`),
   name: varchar('name', { length: 255 }).notNull(),
   type: varchar('type', { length: 50 }).notNull(), // 'supplier', 'customer', 'oem'
+  erpLinkId: varchar('erp_link_id', { length: 255 }),
   industry: varchar('industry', { length: 100 }),
   size: varchar('size', { length: 50 }),
   country: varchar('country', { length: 100 }),
   city: varchar('city', { length: 100 }),
   address: text('address'),
+  taxId: varchar('tax_id', { length: 100 }),
   website: varchar('website', { length: 255 }),
-  status: varchar('status', { length: 50 }).default('pending'), // 'pending', 'active', 'inactive'
   aiOnboardingComplete: boolean('ai_onboarding_complete').default(false),
   aiProfile: jsonb('ai_profile'), // AI-generated company profile
+  aiPreferences: jsonb('ai_preferences'),
+  aiUsageLevel: varchar('ai_usage_level', { length: 50 }),
+  enabledFeatures: jsonb('enabled_features'),
+  customSettings: jsonb('custom_settings'),
+  status: varchar('status', { length: 50 }).default('pending'), // 'pending', 'active', 'inactive'
+  verificationStatus: varchar('verification_status', { length: 50 }).default('pending'),
   createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  updatedAt: timestamp('updated_at').defaultNow(),
+  activatedAt: timestamp('activated_at'),
+  lastActivityAt: timestamp('last_activity_at')
 });
 
 export const externalUsers = pgTable('external_users', {
