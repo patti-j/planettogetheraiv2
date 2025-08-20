@@ -18,15 +18,18 @@ const rolePermissionsMap: Record<string, string[]> = {
   ],
   'IT Administrator': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
-    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
+    'implementation-projects-view'
   ],
   'Systems Manager': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
-    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
+    'implementation-projects-view'
   ],
   'Administrator': [
     'role-management-view', 'systems-management-view', 'user-role-assignments-view',
-    'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
+    'implementation-projects-view'
   ],
   'Shop Floor Operations': [
     'shop-floor-view', 'operator-dashboard-view', 'reports-view',
@@ -43,7 +46,8 @@ const rolePermissionsMap: Record<string, string[]> = {
     'capacity-planning-view', 'scheduling-optimizer-view', 'shop-floor-view', 
     'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
     'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
-    'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit'
+    'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit',
+    'implementation-projects-view'
   ],
   'Maintenance Technician': [
     'maintenance-planning-view', 'reports-view',

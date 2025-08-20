@@ -6,7 +6,7 @@ import {
   Package, Brain, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
-  Workflow, Users, ArrowUpDown
+  Workflow, Users, ArrowUpDown, FolderKanban
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -129,6 +129,7 @@ export const navigationGroups: NavigationGroup[] = [
     bgColor: "bg-gray-50 dark:bg-gray-800",
     borderColor: "border-gray-200 dark:border-gray-600",
     features: [
+      { icon: FolderKanban, label: "Implementation Projects", href: "/implementation-projects", feature: "implementation-projects", action: "view", color: "bg-blue-600" },
       { icon: Server, label: "Systems Management", href: "/systems-management-dashboard", feature: "systems-management", action: "view", color: "bg-gray-600" },
       { icon: Shield, label: "User & Access Management", href: "/user-access-management", feature: "user-management", action: "view", color: "bg-amber-600" },
       { icon: Code, label: "Extension Studio", href: "/extension-studio", feature: "systems-management", action: "view", color: "bg-violet-500" },
