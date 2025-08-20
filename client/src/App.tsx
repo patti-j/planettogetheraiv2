@@ -122,7 +122,7 @@ import TestBryntumPage from "@/pages/test-bryntum";
 import BryntumDemoPage from "@/pages/bryntum-demo";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
-import ResourceTimeline from "@/pages/resource-timeline";
+import ResourceTimeline from "@/pages/resource-timeline-fixed";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
 import PortalLogin from "@/pages/portal-login";
