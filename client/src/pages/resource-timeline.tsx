@@ -225,9 +225,40 @@ export default function ResourceTimeline() {
     );
   }
 
-  // Timeline configuration
-  const startDate = new Date('2025-08-19');
-  const endDate = new Date('2025-08-31');
+  // Timeline configuration - calculate actual date range from operations
+  const getDateRange = () => {
+    if (operations.length === 0) {
+      // Default range if no operations
+      return {
+        start: new Date('2025-08-19'),
+        end: new Date('2025-09-30')
+      };
+    }
+    
+    // Find earliest start and latest end dates
+    let minDate = new Date(operations[0].startDate);
+    let maxDate = new Date(operations[0].endDate);
+    
+    operations.forEach(op => {
+      const start = new Date(op.startDate);
+      const end = new Date(op.endDate);
+      if (start < minDate) minDate = start;
+      if (end > maxDate) maxDate = end;
+    });
+    
+    // Add some padding - start at beginning of day, end at end of day
+    minDate.setHours(0, 0, 0, 0);
+    maxDate.setHours(23, 59, 59, 999);
+    
+    // Add a couple days buffer on each side for better visibility
+    const bufferDays = 2;
+    minDate = addDays(minDate, -bufferDays);
+    maxDate = addDays(maxDate, bufferDays);
+    
+    return { start: minDate, end: maxDate };
+  };
+  
+  const { start: startDate, end: endDate } = getDateRange();
   const totalDays = differenceInHours(endDate, startDate) / 24;
   const hourWidth = zoomLevel; // Dynamic zoom level
   const totalWidth = totalDays * 24 * hourWidth;
