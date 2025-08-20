@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FlaskConical, Calendar, RefreshCw } from 'lucide-react';
+import { ArrowLeft, FlaskConical, Calendar, RefreshCw, BarChart3 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
 
@@ -64,6 +64,15 @@ export default function BryntumDemoPage() {
               >
                 <RefreshCw className="w-3 h-3 mr-1" />
                 Refresh Demo
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="border-orange-400 text-orange-600 hover:bg-orange-100"
+                onClick={() => setLocation('/bryntum-chart-demo')}
+              >
+                <BarChart3 className="w-3 h-3 mr-1" />
+                View Chart Demo
               </Button>
             </div>
           </div>

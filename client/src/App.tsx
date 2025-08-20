@@ -671,6 +671,12 @@ function Router() {
           <Route path="/test-bryntum">
             <TestBryntumPage />
           </Route>
+          <Route path="/bryntum-demo">
+            <BryntumDemoPage />
+          </Route>
+          <Route path="/bryntum-chart-demo">
+            <BryntumChartDemo />
+          </Route>
           {/* Legacy routes redirect to Design Studio */}
           <Route path="/dashboards">
             <Redirect to="/design-studio" />
