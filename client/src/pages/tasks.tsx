@@ -119,6 +119,12 @@ export default function TasksPage() {
     queryFn: () => Promise.resolve(mockTasks)
   });
 
+  // Fetch users for the assigned to dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    enabled: showNewTaskDialog
+  });
+
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: typeof newTask) => {
@@ -446,12 +452,19 @@ export default function TasksPage() {
 
             <div className="grid gap-2">
               <Label htmlFor="task-assigned-to">Assigned To</Label>
-              <Input
-                id="task-assigned-to"
-                placeholder="Enter assignee name..."
-                value={newTask.assignedTo}
-                onChange={(e) => setNewTask({...newTask, assignedTo: e.target.value})}
-              />
+              <Select value={newTask.assignedTo} onValueChange={(value) => setNewTask({...newTask, assignedTo: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select assignee..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u: any) => (
+                    <SelectItem key={u.id} value={u.username}>
+                      {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username}
+                      {u.jobTitle && ` - ${u.jobTitle}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
