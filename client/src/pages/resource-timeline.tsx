@@ -278,7 +278,11 @@ export default function ResourceTimeline() {
           dependencyEdit: true,
           
           // Critical path highlighting
-          criticalPaths: true,
+          criticalPaths: {
+            disabled: false,
+            highlightCriticalPath: true,
+            showTooltip: true
+          },
           
           // Resource non-working time
           resourceNonWorkingTime: true,
@@ -599,6 +603,14 @@ export default function ResourceTimeline() {
       // Enable additional optimization features
       if (schedulerRef.current.features.criticalPaths) {
         schedulerRef.current.features.criticalPaths.disabled = false;
+        schedulerRef.current.features.criticalPaths.highlightCriticalPath = true;
+        
+        // Highlight critical path when in critical-path mode
+        if (optimizationMode === 'critical-path') {
+          schedulerRef.current.project.calculateCriticalPath = true;
+          // Trigger critical path calculation
+          schedulerRef.current.project.getCriticalPaths();
+        }
       }
       if (schedulerRef.current.features.dependencies) {
         schedulerRef.current.features.dependencies.disabled = false;
@@ -634,9 +646,14 @@ export default function ResourceTimeline() {
           });
           break;
         case 'critical-path':
+          // Get critical path info if available
+          const criticalPaths = schedulerRef.current.project.getCriticalPaths ? 
+            schedulerRef.current.project.getCriticalPaths() : null;
+          const pathCount = criticalPaths ? criticalPaths.length : 0;
+          
           toast({
             title: "Critical Path Identified",
-            description: "Schedule optimized to minimize total duration along critical path",
+            description: `Schedule optimized to minimize total duration. ${pathCount > 0 ? `Found ${pathCount} critical path(s).` : 'Critical operations are highlighted in red.'}`,
           });
           break;
         case 'resource-level':
