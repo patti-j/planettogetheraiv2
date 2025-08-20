@@ -49,6 +49,10 @@ export default function ResourceGanttDemo() {
   const schedulerRef = useRef<any>(null);
   const [dataState, setDataState] = useState({ resources, events });
   
+  // Debug logging
+  console.log('Resources being passed to Bryntum:', dataState.resources);
+  console.log('Events being passed to Bryntum:', dataState.events);
+  
   const schedulerProps = useMemo(() => ({
     startDate: new Date(2025, 0, 20),
     endDate: new Date(2025, 0, 27),
@@ -56,6 +60,7 @@ export default function ResourceGanttDemo() {
     rowHeight: 60,
     barMargin: 5,
     
+    // Use resources and events directly
     resources: dataState.resources,
     events: dataState.events,
     
@@ -77,30 +82,19 @@ export default function ResourceGanttDemo() {
       },
       eventEdit: true,
       eventResize: true,
-      timeRanges: true
+      timeRanges: true,
+      resourceTimeRanges: false,
+      nonWorkingTime: false
     },
 
     columns: [
-      { type: 'resourceInfo' as const, text: 'Resource', width: 220, field: 'name' },
-      { text: 'Capacity', width: 120, field: 'capacity', align: 'center' as const }
+      { type: 'resourceInfo', text: 'Resource', width: 220, field: 'name' },
+      { text: 'Capacity', width: 120, field: 'capacity', align: 'center' }
     ],
 
     listeners: {
       eventDrop: ({ context }: any) => {
         if (context.valid) {
-          const instance = schedulerRef.current;
-          if (!instance || !instance.eventStore || !instance.eventStore.records) return;
-          
-          const nextEvents = instance.eventStore.records.map((r: any) => ({
-            id: r.id,
-            resourceId: r.resourceId,
-            name: r.name,
-            startDate: r.startDate,
-            endDate: r.endDate
-          }));
-          
-          setDataState(prev => ({ ...prev, events: nextEvents }));
-          
           toast({
             title: "Event rescheduled",
             description: `${context.eventRecords[0].name} has been moved successfully.`
@@ -109,31 +103,13 @@ export default function ResourceGanttDemo() {
       },
       
       eventResizeEnd: (event: any) => {
-        // Check if event has context property and it's valid, or just show success
-        const isValid = event?.context?.valid !== false;
-        if (isValid) {
-          const eventRecord = event?.eventRecord || event?.eventRecords?.[0];
-          const eventName = eventRecord?.name || "Event";
-          
-          toast({
-            title: "Duration updated",
-            description: `${eventName} duration has been adjusted.`
-          });
-          
-          // Update state with new event times if we have the scheduler instance
-          const instance = schedulerRef.current;
-          if (instance && instance.eventStore && instance.eventStore.records) {
-            const nextEvents = instance.eventStore.records.map((r: any) => ({
-              id: r.id,
-              resourceId: r.resourceId,
-              name: r.name,
-              startDate: r.startDate,
-              endDate: r.endDate
-            }));
-            
-            setDataState(prev => ({ ...prev, events: nextEvents }));
-          }
-        }
+        const eventRecord = event?.eventRecord || event?.eventRecords?.[0];
+        const eventName = eventRecord?.name || "Event";
+        
+        toast({
+          title: "Duration updated",
+          description: `${eventName} duration has been adjusted.`
+        });
       }
     }
   }), [dataState, toast]);
