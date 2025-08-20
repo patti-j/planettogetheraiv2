@@ -60,6 +60,12 @@ Note on concurrent work:
   - Event resizing with duration display
   - Automatic chart updates on event movement
   - Page accessible at /bryntum-chart-demo
+- **Resource Gantt Demo**: Standalone demo page at /resource-gantt-demo
+  - Displays 4 sample resources as separate horizontal rows
+  - Full drag-and-drop between resources and times
+  - Event resizing with notifications
+  - Working hours validation (no operations before 7:00 AM)
+  - Uses resourceStore/eventStore configuration for proper resource view
 - **Intelligent Contextual Hint Bubbles**: Context-aware help system with user interaction tracking
   - Database tables: hint_configurations, user_hint_interactions, hint_sequences
   - React component: HintSystem integrated into main app layout
