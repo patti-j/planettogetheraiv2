@@ -144,7 +144,10 @@ export default function ResourceTimeline() {
   // Initialize Bryntum Scheduler Pro with optimization engine
   const initializeSchedulerEngine = () => {
     if (typeof window !== 'undefined' && (window as any).bryntum?.schedulerpro?.SchedulerPro) {
-      const { SchedulerPro } = (window as any).bryntum.schedulerpro;
+      const { SchedulerPro, CriticalPaths } = (window as any).bryntum.schedulerpro;
+      
+      // Log available features for debugging
+      console.log('Available Bryntum features:', Object.keys((window as any).bryntum.schedulerpro));
       
       // Set timeline to center on today
       const today = new Date();
@@ -276,6 +279,9 @@ export default function ResourceTimeline() {
           // Dependencies between events
           dependencies: true,
           dependencyEdit: true,
+          
+          // Critical path highlighting - using imported feature
+          ...(CriticalPaths ? { criticalPaths: true } : {}),
           
           // Resource non-working time
           resourceNonWorkingTime: true,
