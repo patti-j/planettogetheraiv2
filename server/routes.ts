@@ -87,6 +87,7 @@ import registerScheduleRoutes from "./routes/schedule-routes";
 import alertsRouter from "./routes/alerts";
 import chatRouter from "./routes/chat-simple";
 import commentsRouter from "./routes/comments";
+import implementationRouter from "./routes/implementation";
 import { setupWidgetRoutes } from "./widget-routes";
 import multer from "multer";
 import session from "express-session";
@@ -24533,6 +24534,9 @@ Be careful to preserve data integrity and relationships.`;
   
   // Register comments routes
   app.use(commentsRouter);
+  
+  // Register implementation routes
+  app.use("/api/implementation", implementationRouter);
 
   // Register widget routes
   setupWidgetRoutes(app, storage);

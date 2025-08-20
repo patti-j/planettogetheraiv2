@@ -73,6 +73,7 @@ import PresentationSystemPage from "@/pages/presentation-system";
 import ProductionPlanningPage from "@/pages/production-planning";
 import OptimizationStudioPage from "@/pages/optimization-studio";
 import MarketingLandingPage from "@/pages/marketing-landing";
+import ImplementationProjects from "@/pages/implementation-projects";
 import MarketingHome from "@/pages/marketing-home";
 import ShiftManagement from "@/pages/shift-management";
 import DemandManagement from "@/pages/demand-management";
@@ -468,6 +469,11 @@ function Router() {
           <Route path="/business-goals">
             <ProtectedRoute feature="business-goals" action="view">
               <BusinessGoals />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/implementation-projects">
+            <ProtectedRoute feature="business-goals" action="view">
+              <ImplementationProjects />
             </ProtectedRoute>
           </Route>
           <Route path="/user-access-management">

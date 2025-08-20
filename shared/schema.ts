@@ -4908,6 +4908,446 @@ export const onboardingProgress = pgTable("onboarding_progress", {
   userStepIdx: unique().on(table.userId, table.step),
 }));
 
+// ===== IMPLEMENTATION TRACKING SYSTEM =====
+
+// Main implementation project tracking
+export const implementationProjects = pgTable("implementation_projects", {
+  id: serial("id").primaryKey(),
+  companyOnboardingId: integer("company_onboarding_id").references(() => companyOnboarding.id),
+  projectName: text("project_name").notNull(),
+  projectCode: text("project_code").notNull().unique(), // e.g., "IMPL-2025-001"
+  clientCompany: text("client_company").notNull(),
+  implementationPartner: text("implementation_partner"),
+  projectManager: integer("project_manager").references(() => users.id),
+  technicalLead: integer("technical_lead").references(() => users.id),
+  
+  // Project details
+  projectType: text("project_type").notNull(), // full_implementation, migration, upgrade, pilot
+  scope: text("scope").notNull(), // basic, standard, enterprise, custom
+  estimatedDuration: integer("estimated_duration"), // in days
+  actualDuration: integer("actual_duration"), // in days
+  kickoffDate: timestamp("kickoff_date"),
+  targetGoLiveDate: timestamp("target_go_live_date"),
+  actualGoLiveDate: timestamp("actual_go_live_date"),
+  
+  // Status tracking
+  status: text("status").notNull().default("planning"), // planning, in_progress, testing, training, go_live, completed, on_hold
+  healthStatus: text("health_status").default("green"), // green, yellow, red
+  riskLevel: text("risk_level").default("low"), // low, medium, high, critical
+  completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
+  
+  // Financial tracking
+  budgetAmount: numeric("budget_amount", { precision: 15, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 15, scale: 2 }).default("0"),
+  
+  // Modules/Features configuration
+  selectedModules: jsonb("selected_modules").$type<string[]>().default([]),
+  customizations: jsonb("customizations").$type<Record<string, any>>().default({}),
+  integrations: jsonb("integrations").$type<string[]>().default([]),
+  
+  // AI tracking
+  aiInsights: jsonb("ai_insights").$type<Record<string, any>>().default({}),
+  lastAiAnalysis: timestamp("last_ai_analysis"),
+  aiRecommendations: jsonb("ai_recommendations").$type<string[]>().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Implementation phases (milestones)
+export const implementationPhases = pgTable("implementation_phases", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  phaseName: text("phase_name").notNull(),
+  phaseNumber: integer("phase_number").notNull(),
+  description: text("description"),
+  
+  // Timing
+  plannedStartDate: timestamp("planned_start_date"),
+  plannedEndDate: timestamp("planned_end_date"),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  
+  // Status
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, skipped
+  completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
+  
+  // Deliverables
+  deliverables: jsonb("deliverables").$type<string[]>().default([]),
+  acceptanceCriteria: jsonb("acceptance_criteria").$type<string[]>().default([]),
+  
+  // Dependencies
+  dependsOnPhaseId: integer("depends_on_phase_id"),
+  blockedBy: jsonb("blocked_by").$type<string[]>().default([]),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  projectPhaseIdx: unique().on(table.projectId, table.phaseNumber),
+}));
+
+// SOPs (Standard Operating Procedures) library
+export const implementationSops = pgTable("implementation_sops", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  category: text("category").notNull(), // setup, configuration, training, migration, testing, go_live
+  version: text("version").notNull().default("1.0"),
+  
+  // Content
+  description: text("description"),
+  content: text("content"), // Rich text or markdown
+  steps: jsonb("steps").$type<Array<{
+    stepNumber: number;
+    title: string;
+    description: string;
+    expectedDuration: number;
+    requiredRole: string;
+  }>>().default([]),
+  
+  // Metadata
+  applicableModules: jsonb("applicable_modules").$type<string[]>().default([]),
+  requiredSkills: jsonb("required_skills").$type<string[]>().default([]),
+  estimatedDuration: integer("estimated_duration"), // in minutes
+  
+  // Tracking
+  isActive: boolean("is_active").default(true),
+  isTemplate: boolean("is_template").default(true),
+  usageCount: integer("usage_count").default(0),
+  lastUsedAt: timestamp("last_used_at"),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Document management for implementation
+export const implementationDocuments = pgTable("implementation_documents", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id),
+  phaseId: integer("phase_id").references(() => implementationPhases.id),
+  sopId: integer("sop_id").references(() => implementationSops.id),
+  
+  // Document details
+  documentName: text("document_name").notNull(),
+  documentType: text("document_type").notNull(), // contract, sop, training, configuration, report, signoff
+  category: text("category"), // legal, technical, training, testing, project_management
+  
+  // Storage
+  storageUrl: text("storage_url"), // URL to cloud storage
+  fileSize: integer("file_size"), // in bytes
+  mimeType: text("mime_type"),
+  checksum: text("checksum"), // for integrity verification
+  
+  // Version control
+  version: text("version").default("1.0"),
+  isLatest: boolean("is_latest").default(true),
+  previousVersionId: integer("previous_version_id"),
+  
+  // Metadata
+  description: text("description"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  
+  // Access control
+  accessLevel: text("access_level").default("project"), // public, project, restricted
+  sharedWith: jsonb("shared_with").$type<number[]>().default([]), // user ids
+  
+  uploadedBy: integer("uploaded_by").references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Phase signoffs
+export const implementationSignoffs = pgTable("implementation_signoffs", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  phaseId: integer("phase_id").references(() => implementationPhases.id),
+  
+  // Signoff details
+  signoffType: text("signoff_type").notNull(), // phase_completion, go_live, training_completion, data_validation
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Requirements
+  requiredSignoffs: jsonb("required_signoffs").$type<Array<{
+    role: string;
+    name: string;
+    email: string;
+    required: boolean;
+  }>>().default([]),
+  
+  // Actual signoffs
+  signoffs: jsonb("signoffs").$type<Array<{
+    userId: number;
+    name: string;
+    role: string;
+    signedAt: string;
+    comments: string;
+    signature: string; // base64 or URL
+  }>>().default([]),
+  
+  // Status
+  status: text("status").notNull().default("pending"), // pending, partial, completed, rejected
+  isComplete: boolean("is_complete").default(false),
+  completedAt: timestamp("completed_at"),
+  
+  // Attachments
+  attachedDocuments: jsonb("attached_documents").$type<number[]>().default([]), // document ids
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Implementation activities log
+export const implementationActivities = pgTable("implementation_activities", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  phaseId: integer("phase_id").references(() => implementationPhases.id),
+  
+  // Activity details
+  activityType: text("activity_type").notNull(), // task_completed, document_uploaded, signoff_received, meeting, training, issue_reported
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Related entities
+  relatedTaskId: integer("related_task_id"),
+  relatedDocumentId: integer("related_document_id"),
+  relatedSignoffId: integer("related_signoff_id"),
+  
+  // Participants
+  performedBy: integer("performed_by").references(() => users.id),
+  participants: jsonb("participants").$type<number[]>().default([]), // user ids
+  
+  // Metadata
+  duration: integer("duration"), // in minutes
+  location: text("location"), // onsite, remote, hybrid
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  
+  activityDate: timestamp("activity_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Implementation tasks
+export const implementationTasks = pgTable("implementation_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  phaseId: integer("phase_id").references(() => implementationPhases.id),
+  sopId: integer("sop_id").references(() => implementationSops.id),
+  
+  // Task details
+  taskName: text("task_name").notNull(),
+  description: text("description"),
+  taskType: text("task_type").notNull(), // configuration, training, testing, documentation, migration
+  priority: text("priority").default("medium"), // low, medium, high, critical
+  
+  // Assignment
+  assignedTo: integer("assigned_to").references(() => users.id),
+  assignedBy: integer("assigned_by").references(() => users.id),
+  team: jsonb("team").$type<number[]>().default([]), // additional team members
+  
+  // Timing
+  estimatedHours: numeric("estimated_hours", { precision: 5, scale: 2 }),
+  actualHours: numeric("actual_hours", { precision: 5, scale: 2 }),
+  dueDate: timestamp("due_date"),
+  completedDate: timestamp("completed_date"),
+  
+  // Status
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled, blocked
+  completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
+  blockedReason: text("blocked_reason"),
+  
+  // Dependencies
+  dependsOn: jsonb("depends_on").$type<number[]>().default([]), // task ids
+  
+  // Deliverables
+  deliverables: jsonb("deliverables").$type<string[]>().default([]),
+  attachments: jsonb("attachments").$type<number[]>().default([]), // document ids
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Implementation comments/collaboration
+export const implementationComments = pgTable("implementation_comments", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  
+  // Related to
+  entityType: text("entity_type").notNull(), // project, phase, task, document, signoff
+  entityId: integer("entity_id").notNull(),
+  
+  // Comment details
+  comment: text("comment").notNull(),
+  commentType: text("comment_type").default("general"), // general, issue, resolution, question, update
+  
+  // Threading
+  parentCommentId: integer("parent_comment_id"),
+  
+  // Mentions
+  mentions: jsonb("mentions").$type<number[]>().default([]), // user ids
+  
+  // Attachments
+  attachments: jsonb("attachments").$type<number[]>().default([]), // document ids
+  
+  // Metadata
+  isInternal: boolean("is_internal").default(false), // internal vs client-visible
+  isResolved: boolean("is_resolved").default(false),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI-generated status reports
+export const implementationStatusReports = pgTable("implementation_status_reports", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => implementationProjects.id).notNull(),
+  
+  // Report details
+  reportType: text("report_type").notNull(), // daily, weekly, monthly, executive, milestone
+  reportDate: timestamp("report_date").notNull(),
+  period: text("period"), // e.g., "Week 12", "March 2025"
+  
+  // AI-generated content
+  executiveSummary: text("executive_summary"),
+  progressSummary: text("progress_summary"),
+  keyAccomplishments: jsonb("key_accomplishments").$type<string[]>().default([]),
+  upcomingMilestones: jsonb("upcoming_milestones").$type<string[]>().default([]),
+  
+  // Metrics
+  overallProgress: numeric("overall_progress", { precision: 5, scale: 2 }),
+  scheduleVariance: numeric("schedule_variance", { precision: 5, scale: 2 }), // percentage ahead/behind
+  budgetVariance: numeric("budget_variance", { precision: 5, scale: 2 }), // percentage over/under
+  
+  // Issues and risks
+  activeIssues: jsonb("active_issues").$type<Array<{
+    title: string;
+    severity: string;
+    owner: string;
+    dueDate: string;
+  }>>().default([]),
+  risks: jsonb("risks").$type<Array<{
+    title: string;
+    probability: string;
+    impact: string;
+    mitigation: string;
+  }>>().default([]),
+  
+  // Recommendations
+  aiRecommendations: jsonb("ai_recommendations").$type<Array<{
+    category: string;
+    recommendation: string;
+    priority: string;
+    expectedImpact: string;
+  }>>().default([]),
+  
+  // Distribution
+  distributedTo: jsonb("distributed_to").$type<number[]>().default([]), // user ids
+  isPublished: boolean("is_published").default(false),
+  publishedAt: timestamp("published_at"),
+  
+  // AI metadata
+  aiModel: text("ai_model").default("gpt-4o"),
+  aiConfidence: numeric("ai_confidence", { precision: 5, scale: 2 }),
+  generationTime: integer("generation_time"), // in milliseconds
+  
+  generatedBy: integer("generated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ===== TYPE EXPORTS FOR IMPLEMENTATION TRACKING =====
+
+// Implementation Projects
+export const insertImplementationProjectSchema = createInsertSchema(implementationProjects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationProject = z.infer<typeof insertImplementationProjectSchema>;
+export type ImplementationProject = typeof implementationProjects.$inferSelect;
+
+// Implementation Phases
+export const insertImplementationPhaseSchema = createInsertSchema(implementationPhases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationPhase = z.infer<typeof insertImplementationPhaseSchema>;
+export type ImplementationPhase = typeof implementationPhases.$inferSelect;
+
+// Implementation SOPs
+export const insertImplementationSopSchema = createInsertSchema(implementationSops).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationSop = z.infer<typeof insertImplementationSopSchema>;
+export type ImplementationSop = typeof implementationSops.$inferSelect;
+
+// Implementation Documents
+export const insertImplementationDocumentSchema = createInsertSchema(implementationDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  uploadedAt: true,
+});
+export type InsertImplementationDocument = z.infer<typeof insertImplementationDocumentSchema>;
+export type ImplementationDocument = typeof implementationDocuments.$inferSelect;
+
+// Implementation Signoffs
+export const insertImplementationSignoffSchema = createInsertSchema(implementationSignoffs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationSignoff = z.infer<typeof insertImplementationSignoffSchema>;
+export type ImplementationSignoff = typeof implementationSignoffs.$inferSelect;
+
+// Implementation Activities
+export const insertImplementationActivitySchema = createInsertSchema(implementationActivities).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertImplementationActivity = z.infer<typeof insertImplementationActivitySchema>;
+export type ImplementationActivity = typeof implementationActivities.$inferSelect;
+
+// Implementation Tasks
+export const insertImplementationTaskSchema = createInsertSchema(implementationTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationTask = z.infer<typeof insertImplementationTaskSchema>;
+export type ImplementationTask = typeof implementationTasks.$inferSelect;
+
+// Implementation Comments
+export const insertImplementationCommentSchema = createInsertSchema(implementationComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationComment = z.infer<typeof insertImplementationCommentSchema>;
+export type ImplementationComment = typeof implementationComments.$inferSelect;
+
+// Implementation Status Reports
+export const insertImplementationStatusReportSchema = createInsertSchema(implementationStatusReports).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertImplementationStatusReport = z.infer<typeof insertImplementationStatusReportSchema>;
+export type ImplementationStatusReport = typeof implementationStatusReports.$inferSelect;
+
 // Onboarding relations
 export const companyOnboardingRelations = relations(companyOnboarding, ({ many, one }) => ({
   createdByUser: one(users, {
