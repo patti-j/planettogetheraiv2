@@ -5229,6 +5229,104 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
+  // Implementation Projects API
+  app.get("/api/implementation/projects", requireAuth, async (req, res) => {
+    try {
+      const projects = await storage.getImplementationProjects();
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching implementation projects:", error);
+      res.status(500).json({ error: "Failed to fetch implementation projects" });
+    }
+  });
+
+  app.post("/api/implementation/projects", requireAuth, async (req, res) => {
+    try {
+      console.log("Creating implementation project with data:", req.body);
+      
+      // Transform the data to match the schema
+      const projectData = {
+        projectName: req.body.projectName,
+        projectType: req.body.projectType,
+        clientCompany: "Internal", // Default for now
+        targetGoLiveDate: req.body.targetGoLiveDate || null,
+        actualGoLiveDate: null,
+        projectStatus: "active" as const,
+        completionPercentage: "0",
+        budgetStatus: "on_track" as const,
+        riskLevel: "low" as const,
+        aiGeneratedInsights: null,
+        createdBy: (req as any).user?.id || 1,
+        updatedBy: (req as any).user?.id || 1
+      };
+      
+      const newProject = await storage.createImplementationProject(projectData);
+      res.status(201).json(newProject);
+    } catch (error) {
+      console.error("Error creating implementation project:", error);
+      res.status(400).json({ error: "Failed to create implementation project", details: error });
+    }
+  });
+
+  app.get("/api/implementation/projects/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+      
+      const project = await storage.getImplementationProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(project);
+    } catch (error) {
+      console.error("Error fetching implementation project:", error);
+      res.status(500).json({ error: "Failed to fetch implementation project" });
+    }
+  });
+
+  app.put("/api/implementation/projects/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+      
+      const updateData = {
+        ...req.body,
+        updatedBy: (req as any).user?.id || 1
+      };
+      
+      const updatedProject = await storage.updateImplementationProject(id, updateData);
+      if (!updatedProject) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Error updating implementation project:", error);
+      res.status(500).json({ error: "Failed to update implementation project" });
+    }
+  });
+
+  app.delete("/api/implementation/projects/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid project ID" });
+      }
+      
+      const deleted = await storage.deleteImplementationProject(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      res.json({ success: true, message: "Project deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting implementation project:", error);
+      res.status(500).json({ error: "Failed to delete implementation project" });
+    }
+  });
+
   // Report Configurations
   app.get("/api/report-configs", async (req, res) => {
     try {

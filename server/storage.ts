@@ -166,6 +166,9 @@ import {
   algorithmUsageLogs,
   type AlgorithmUsageLog,
   type InsertAlgorithmUsageLog,
+  implementationProjects,
+  type ImplementationProject,
+  type InsertImplementationProject,
 } from "@shared/schema";
 
 // Import portal schemas
@@ -2048,6 +2051,13 @@ export interface IStorage {
     avgResolutionTime: number;
     trendsLastWeek: Array<{ date: string; count: number }>;
   }>;
+
+  // Implementation Projects
+  getImplementationProjects(): Promise<ImplementationProject[]>;
+  getImplementationProject(id: number): Promise<ImplementationProject | undefined>;
+  createImplementationProject(project: any): Promise<ImplementationProject>;
+  updateImplementationProject(id: number, project: any): Promise<ImplementationProject | undefined>;
+  deleteImplementationProject(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements Partial<IStorage> {
@@ -16757,6 +16767,46 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query;
+  }
+
+  // Implementation Projects
+  async getImplementationProjects(): Promise<ImplementationProject[]> {
+    return await this.db
+      .select()
+      .from(implementationProjects)
+      .orderBy(desc(implementationProjects.createdAt));
+  }
+
+  async getImplementationProject(id: number): Promise<ImplementationProject | undefined> {
+    const [project] = await this.db
+      .select()
+      .from(implementationProjects)
+      .where(eq(implementationProjects.id, id));
+    return project;
+  }
+
+  async createImplementationProject(project: InsertImplementationProject): Promise<ImplementationProject> {
+    const [newProject] = await this.db
+      .insert(implementationProjects)
+      .values(project)
+      .returning();
+    return newProject;
+  }
+
+  async updateImplementationProject(id: number, updates: Partial<InsertImplementationProject>): Promise<ImplementationProject | undefined> {
+    const [updated] = await this.db
+      .update(implementationProjects)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(implementationProjects.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteImplementationProject(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(implementationProjects)
+      .where(eq(implementationProjects.id, id));
+    return result.rowCount > 0;
   }
 }
 

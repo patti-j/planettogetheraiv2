@@ -33,14 +33,11 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 
-const createProjectSchema = insertImplementationProjectSchema.extend({
+const createProjectSchema = z.object({
   projectName: z.string().min(1, "Project name is required"),
   projectType: z.enum(["full_implementation", "migration", "pilot", "upgrade", "training"]),
-  plannedGoLiveDate: z.string().optional()
-}).transform(data => ({
-  ...data,
-  targetGoLiveDate: data.plannedGoLiveDate ? new Date(data.plannedGoLiveDate) : undefined
-}));
+  targetGoLiveDate: z.string().optional()
+});
 
 type CreateProjectData = z.infer<typeof createProjectSchema>;
 
@@ -424,10 +421,10 @@ export default function ImplementationProjects() {
 
               <FormField
                 control={form.control}
-                name="plannedGoLiveDate"
+                name="targetGoLiveDate"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Planned Go-Live Date</FormLabel>
+                    <FormLabel>Target Go-Live Date</FormLabel>
                     <FormControl>
                       <Input 
                         type="date" 
