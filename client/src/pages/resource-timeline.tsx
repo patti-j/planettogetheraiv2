@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { format, differenceInHours, addDays, startOfDay } from 'date-fns';
+import { format, differenceInHours, addDays, startOfDay, addHours } from 'date-fns';
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Activity, AlertCircle, Zap, Settings2, GitBranch, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ export default function ResourceTimeline() {
   const [hoveredOperation, setHoveredOperation] = useState<Operation | null>(null);
   const [zoomLevel, setZoomLevel] = useState(50); // pixels per hour
   const [draggedOperation, setDraggedOperation] = useState<Operation | null>(null);
+  const [dropTargetResource, setDropTargetResource] = useState<string | null>(null);
   const [resizingOperation, setResizingOperation] = useState<{ operation: Operation, edge: 'start' | 'end' } | null>(null);
   const [showCapacity, setShowCapacity] = useState(false);
   const [showDependencies, setShowDependencies] = useState(false);
@@ -59,7 +61,7 @@ export default function ResourceTimeline() {
   });
 
   // Fetch operations
-  const { data: operations = [], isLoading: loadingOperations } = useQuery<Operation[]>({
+  const { data: operations = [], isLoading: loadingOperations, refetch: refetchOperations } = useQuery<Operation[]>({
     queryKey: ['/api/pt-operations'],
     select: (data: any[]) => {
       const ops = data
@@ -84,6 +86,44 @@ export default function ResourceTimeline() {
       console.log('Operations mapped:', ops.length, 'operations');
       console.log('Sample operation:', ops[0]);
       return ops;
+    }
+  });
+
+  // Mutation for updating operation schedule
+  const updateOperationMutation = useMutation({
+    mutationFn: async ({ operationId, resourceId, startDate }: { operationId: number, resourceId: string, startDate: Date }) => {
+      // Find the resource by external_id to get its database id
+      const resource = resources.find(r => r.external_id === resourceId);
+      if (!resource) {
+        throw new Error('Resource not found');
+      }
+      
+      const endDate = addHours(startDate, draggedOperation?.duration ? draggedOperation.duration / 60 : 2);
+      
+      return await apiRequest(`/api/operations/${operationId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          assignedResourceId: resource.id,
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString()
+        })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Operation Updated",
+        description: "The operation has been successfully rescheduled.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/pt-operations'] });
+      refetchOperations();
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update the operation. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Failed to update operation:', error);
     }
   });
 
@@ -678,13 +718,48 @@ export default function ResourceTimeline() {
 
                 {/* Resource rows container */}
                 <div className="relative" style={{ width: `${totalWidth}px` }}>
-                  {/* Resource backgrounds and grid lines */}
+                  {/* Resource backgrounds and grid lines - Drop zones */}
                   {resources.map((resource, resourceIndex) => (
                     <div
                       key={resource.id}
-                      className={`h-[50px] border-b relative ${
+                      className={`h-[50px] border-b relative transition-colors ${
                         resourceIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      } ${
+                        dropTargetResource === resource.external_id ? 'bg-blue-100 ring-2 ring-blue-400' : ''
                       }`}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        setDropTargetResource(resource.external_id);
+                      }}
+                      onDragLeave={(e) => {
+                        // Only clear if we're leaving the actual drop zone
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setDropTargetResource(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        
+                        if (!draggedOperation) return;
+                        
+                        // Calculate the new start time based on drop position
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const scrollLeft = timelineScrollRef.current?.scrollLeft || 0;
+                        const x = e.clientX - rect.left + scrollLeft;
+                        const hoursFromStart = x / hourWidth;
+                        const newStartDate = addHours(startDate, hoursFromStart);
+                        
+                        // Update the operation
+                        updateOperationMutation.mutate({
+                          operationId: draggedOperation.id,
+                          resourceId: resource.external_id,
+                          startDate: newStartDate
+                        });
+                        
+                        setDraggedOperation(null);
+                        setDropTargetResource(null);
+                      }}
                     >
                       {/* Grid lines */}
                       {timeHeaders.map((_, i) => (
@@ -774,6 +849,7 @@ export default function ResourceTimeline() {
                             }}
                             onDragEnd={(e) => {
                               setDraggedOperation(null);
+                              setDropTargetResource(null);
                             }}
                           >
                             <span>{op.name.split(':')[1]?.trim() || op.name}</span>
