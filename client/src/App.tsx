@@ -473,7 +473,7 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/implementation-projects">
-            <ProtectedRoute feature="business-goals" action="view">
+            <ProtectedRoute feature="implementation-projects" action="view">
               <ImplementationProjects />
             </ProtectedRoute>
           </Route>
