@@ -123,6 +123,7 @@ import TestScheduler from "@/pages/test-scheduler";
 import ResourceTimeline from "@/pages/resource-timeline";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
+import PortalLogin from "@/pages/portal-login";
 import Help from "@/pages/help";
 import { ResumeTourButton } from "@/components/resume-tour-button";
 
@@ -283,6 +284,8 @@ function Router() {
           <Route path="/presentation" component={PresentationPage} />
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/home" component={MarketingHome} />
+          <Route path="/portal/login" component={PortalLogin} />
+          <Route path="/portal" component={PortalLogin} />
           <Route path="/login" component={Login} />
           <Route path="/" component={MarketingHome} />
           <Route component={Login} />

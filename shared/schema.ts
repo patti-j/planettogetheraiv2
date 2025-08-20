@@ -1514,6 +1514,65 @@ export const disruptions = pgTable("disruptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// External Portal Tables
+export const externalCompanies = pgTable('external_companies', {
+  id: varchar('id', { length: 255 }).primaryKey().default(sql`gen_random_uuid()::text`),
+  name: varchar('name', { length: 255 }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'supplier', 'customer', 'oem'
+  industry: varchar('industry', { length: 100 }),
+  size: varchar('size', { length: 50 }),
+  country: varchar('country', { length: 100 }),
+  city: varchar('city', { length: 100 }),
+  address: text('address'),
+  website: varchar('website', { length: 255 }),
+  status: varchar('status', { length: 50 }).default('pending'), // 'pending', 'active', 'inactive'
+  aiOnboardingComplete: boolean('ai_onboarding_complete').default(false),
+  aiProfile: jsonb('ai_profile'), // AI-generated company profile
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const externalUsers = pgTable('external_users', {
+  id: varchar('id', { length: 255 }).primaryKey().default(sql`gen_random_uuid()::text`),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  companyId: varchar('company_id', { length: 255 }).references(() => externalCompanies.id),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
+  phone: varchar('phone', { length: 50 }),
+  jobTitle: varchar('job_title', { length: 100 }),
+  department: varchar('department', { length: 100 }),
+  avatar: varchar('avatar', { length: 500 }),
+  role: varchar('role', { length: 50 }).default('user'), // 'admin', 'manager', 'user'
+  permissions: jsonb('permissions'),
+  accessLevel: varchar('access_level', { length: 50 }),
+  aiConversationHistory: jsonb('ai_conversation_history'),
+  aiPersonalization: jsonb('ai_personalization'),
+  preferredLanguage: varchar('preferred_language', { length: 10 }).default('en'),
+  aiAssistanceLevel: varchar('ai_assistance_level', { length: 20 }).default('standard'),
+  emailVerified: boolean('email_verified').default(false),
+  twoFactorEnabled: boolean('two_factor_enabled').default(false),
+  twoFactorSecret: varchar('two_factor_secret', { length: 255 }),
+  resetToken: varchar('reset_token', { length: 255 }),
+  resetTokenExpiry: timestamp('reset_token_expiry'),
+  isActive: boolean('is_active').default(true),
+  lastLogin: timestamp('last_login'),
+  loginAttempts: integer('login_attempts').default(0),
+  lockedUntil: timestamp('locked_until'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const externalSessions = pgTable('external_sessions', {
+  id: varchar('id', { length: 255 }).primaryKey().default(sql`gen_random_uuid()::text`),
+  userId: varchar('user_id', { length: 255 }).references(() => externalUsers.id),
+  token: varchar('token', { length: 500 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  ipAddress: varchar('ip_address', { length: 50 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow()
+});
+
 export const disruptionActions = pgTable("disruption_actions", {
   id: serial("id").primaryKey(),
   disruptionId: integer("disruption_id").references(() => disruptions.id).notNull(),
