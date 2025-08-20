@@ -26,6 +26,7 @@ interface Operation {
 export default function ResourceTimeline() {
   const containerRef = useRef<HTMLDivElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
+  const resourceScrollRef = useRef<HTMLDivElement>(null);
   const [selectedOperation, setSelectedOperation] = useState<Operation | null>(null);
   const [hoveredOperation, setHoveredOperation] = useState<Operation | null>(null);
 
@@ -77,6 +78,19 @@ export default function ResourceTimeline() {
       timelineScrollRef.current.scrollLeft = scrollPosition;
     }
   }, [operations]);
+
+  // Synchronize vertical scrolling between resources and timeline
+  const handleTimelineScroll = () => {
+    if (timelineScrollRef.current && resourceScrollRef.current) {
+      resourceScrollRef.current.scrollTop = timelineScrollRef.current.scrollTop;
+    }
+  };
+
+  const handleResourceScroll = () => {
+    if (timelineScrollRef.current && resourceScrollRef.current) {
+      timelineScrollRef.current.scrollTop = resourceScrollRef.current.scrollTop;
+    }
+  };
 
   if (loadingResources || loadingOperations) {
     return (
@@ -151,29 +165,39 @@ export default function ResourceTimeline() {
         <div className="bg-white rounded-lg shadow-sm border h-full flex flex-col">
           <div className="flex flex-1 overflow-hidden">
             {/* Resource column */}
-            <div className="flex-shrink-0 w-48 border-r">
+            <div className="flex-shrink-0 w-48 border-r flex flex-col">
               {/* Header */}
-              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold">
+              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold flex-shrink-0">
                 Resources
               </div>
-              {/* Resource rows */}
-              {resources.map((resource, index) => (
-                <div
-                  key={resource.id}
-                  className={`h-[50px] border-b px-4 flex items-center ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="truncate">
-                    <div className="font-medium text-sm">{resource.name}</div>
-                    <div className="text-xs text-gray-500">{resource.type}</div>
+              {/* Resource rows - scrollable */}
+              <div 
+                ref={resourceScrollRef}
+                className="flex-1 overflow-y-auto overflow-x-hidden"
+                onScroll={handleResourceScroll}
+              >
+                {resources.map((resource, index) => (
+                  <div
+                    key={resource.id}
+                    className={`h-[50px] border-b px-4 flex items-center ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="truncate">
+                      <div className="font-medium text-sm">{resource.name}</div>
+                      <div className="text-xs text-gray-500">{resource.type}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Timeline */}
-            <div ref={timelineScrollRef} className="flex-1 overflow-auto">
+            <div 
+              ref={timelineScrollRef}
+              className="flex-1 overflow-auto"
+              onScroll={handleTimelineScroll}
+            >
               <div className="relative" style={{ width: `${totalWidth}px` }}>
                 {/* Time header */}
                 <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
