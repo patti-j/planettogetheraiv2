@@ -60,9 +60,17 @@ export default function ResourceGanttDemo() {
     rowHeight: 60,
     barMargin: 5,
     
-    // Use resources and events directly
-    resources: dataState.resources,
-    events: dataState.events,
+    // Configure stores properly for resource view
+    resourceStore: {
+      data: dataState.resources
+    },
+    
+    eventStore: {
+      data: dataState.events
+    },
+    
+    // Ensure resource view mode
+    mode: 'horizontal' as const,
     
     features: {
       eventDrag: {
@@ -88,8 +96,20 @@ export default function ResourceGanttDemo() {
     },
 
     columns: [
-      { type: 'resourceInfo', text: 'Resource', width: 220, field: 'name' },
-      { text: 'Capacity', width: 120, field: 'capacity', align: 'center' }
+      { 
+        type: 'resourceInfo', 
+        text: 'Resource', 
+        width: 220,
+        showEventCount: false,
+        showImage: false
+      },
+      { 
+        text: 'Capacity', 
+        width: 120, 
+        field: 'capacity', 
+        align: 'center',
+        renderer: ({ value }: any) => value ? `${value} units/hr` : ''
+      }
     ],
 
     listeners: {
