@@ -29,20 +29,38 @@ export default function ResourceTimeline() {
     queryKey: ['/api/pt-resources-clean']
   });
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Resources loaded:', resources);
+    console.log('Resources count:', resources.length);
+  }, [resources]);
+
   // Fetch operations
   const { data: operations = [], isLoading: loadingOperations } = useQuery<Operation[]>({
     queryKey: ['/api/pt-operations'],
     select: (data: any[]) => {
-      return data.map(op => ({
-        id: op.id,
-        name: op.name,
-        resourceId: op.resource_id || op.resourceId,
-        resourceName: op.resource_name || op.resourceName,
-        startDate: op.start_time || op.startDate,
-        endDate: op.end_time || op.endDate,
-        duration: op.duration,
-        percentDone: op.percent_done || op.percentDone || 0
-      }));
+      const ops = data
+        .filter(op => {
+          // Check for valid dates using correct field names
+          const hasValidDates = (op.startTime || op.start_time) && (op.endTime || op.end_time);
+          if (!hasValidDates) {
+            console.log('Skipping operation with invalid dates:', op.name);
+          }
+          return hasValidDates;
+        })
+        .map(op => ({
+          id: op.id,
+          name: op.name,
+          resourceId: op.assignedResourceId || op.resourceId || op.resource_id,
+          resourceName: op.assignedResourceName || op.resourceName || op.resource_name,
+          startDate: op.startTime || op.start_time || op.startDate,
+          endDate: op.endTime || op.end_time || op.endDate,
+          duration: op.duration,
+          percentDone: op.completionPercentage || op.percentFinished || op.percent_done || op.percentDone || 0
+        }));
+      console.log('Operations mapped:', ops.length, 'operations');
+      console.log('Sample operation:', ops[0]);
+      return ops;
     }
   });
 
@@ -189,7 +207,7 @@ export default function ResourceTimeline() {
                             onMouseEnter={() => setHoveredOperation(op)}
                             onMouseLeave={() => setHoveredOperation(null)}
                             onClick={() => setSelectedOperation(op)}
-                            title={`${op.name}\n${format(new Date(op.startDate), 'MMM d HH:mm')} - ${format(new Date(op.endDate), 'MMM d HH:mm')}`}
+                            title={`${op.name}\n${op.startDate ? format(new Date(op.startDate), 'MMM d HH:mm') : 'N/A'} - ${op.endDate ? format(new Date(op.endDate), 'MMM d HH:mm') : 'N/A'}`}
                           >
                             <div className="px-2 py-1 text-white text-xs truncate">
                               {op.name.split(':')[1]?.trim() || op.name}

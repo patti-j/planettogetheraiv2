@@ -2733,6 +2733,41 @@ Rules:
     }
   });
 
+  // PT Resources endpoint for cleaned AMS plant resources
+  app.get("/api/pt-resources-clean", async (req, res) => {
+    try {
+      const resourcesQuery = `
+        SELECT DISTINCT
+          r.id,
+          r.external_id,
+          r.name,
+          r.description,
+          r.plant_id,
+          p.name as plant_name
+        FROM ptresources r
+        LEFT JOIN ptplants p ON r.plant_id = p.id
+        WHERE p.external_id = 'PLANT-AMS-01'
+        ORDER BY r.name
+      `;
+      
+      const result = await db.execute(resourcesQuery);
+      const resources = result.rows.map(row => ({
+        id: row.id,
+        external_id: row.external_id,
+        name: row.name,
+        description: row.description,
+        type: 'machine', // Default type since it's not in the table
+        plant_id: row.plant_id,
+        plant_name: row.plant_name
+      }));
+      
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching PT resources:", error);
+      res.status(500).json({ message: "Failed to fetch PT resources" });
+    }
+  });
+
   app.get("/api/operations", async (req, res) => {
     try {
       console.log("Fetching operations for Gantt chart...");
