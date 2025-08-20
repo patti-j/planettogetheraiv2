@@ -102,6 +102,64 @@ export default function ResourceTimeline() {
     }
   }, [operations]);
 
+  // Initialize Bryntum Scheduler Pro with optimization engine
+  const initializeSchedulerEngine = () => {
+    if (typeof window !== 'undefined' && (window as any).bryntum?.schedulerpro?.SchedulerPro) {
+      const { SchedulerPro } = (window as any).bryntum.schedulerpro;
+      
+      // Create scheduler instance with optimization engine
+      schedulerRef.current = new SchedulerPro({
+        // License configuration
+        licenseKey: 'patti.jorgensen@planettogether.com',
+        
+        // Engine configuration
+        project: {
+          autoCalculate: true,
+          recalculateAfterLoad: true,
+          
+          // Constraint handling
+          constraintsMode: 'honor', // 'honor' | 'ignore' | 'conflict'
+          
+          // Scheduling direction
+          schedulingDirection: optimizationMode === 'alap' ? 'backward' : 'forward',
+          
+          // Critical path calculation
+          calculateCriticalPath: true,
+          
+          // Resource leveling
+          levelResources: optimizationMode === 'resource-level',
+          
+          // Dependency lag/lead time
+          allowDependencyLag: true,
+        },
+        
+        // Event listeners for optimization feedback
+        listeners: {
+          beforeCalculate: () => {
+            setEngineStatus('calculating');
+          },
+          calculate: () => {
+            setEngineStatus('idle');
+            toast({
+              title: "Schedule Optimized",
+              description: "The production schedule has been optimized using " + optimizationMode.toUpperCase() + " algorithm",
+            });
+          },
+          conflict: (event: any) => {
+            toast({
+              title: "Scheduling Conflict",
+              description: `Conflict detected: ${event.conflict.description}`,
+              variant: "destructive",
+            });
+          },
+        },
+      });
+      
+      return true;
+    }
+    return false;
+  };
+
   // Initialize Bryntum Scheduler Pro engine on mount
   useEffect(() => {
     const initEngine = async () => {
@@ -250,64 +308,6 @@ export default function ResourceTimeline() {
   const isWeekend = (date: Date) => {
     const day = date.getDay();
     return day === 0 || day === 6; // Sunday or Saturday
-  };
-
-  // Initialize Bryntum Scheduler Pro with optimization engine
-  const initializeSchedulerEngine = () => {
-    if (typeof window !== 'undefined' && (window as any).bryntum?.schedulerpro?.SchedulerPro) {
-      const { SchedulerPro } = (window as any).bryntum.schedulerpro;
-      
-      // Create scheduler instance with optimization engine
-      schedulerRef.current = new SchedulerPro({
-        // License configuration
-        licenseKey: 'patti.jorgensen@planettogether.com',
-        
-        // Engine configuration
-        project: {
-          autoCalculate: true,
-          recalculateAfterLoad: true,
-          
-          // Constraint handling
-          constraintsMode: 'honor', // 'honor' | 'ignore' | 'conflict'
-          
-          // Scheduling direction
-          schedulingDirection: optimizationMode === 'alap' ? 'backward' : 'forward',
-          
-          // Critical path calculation
-          calculateCriticalPath: true,
-          
-          // Resource leveling
-          levelResources: optimizationMode === 'resource-level',
-          
-          // Dependency lag/lead time
-          allowDependencyLag: true,
-        },
-        
-        // Event listeners for optimization feedback
-        listeners: {
-          beforeCalculate: () => {
-            setEngineStatus('calculating');
-          },
-          calculate: () => {
-            setEngineStatus('idle');
-            toast({
-              title: "Schedule Optimized",
-              description: "The production schedule has been optimized using " + optimizationMode.toUpperCase() + " algorithm",
-            });
-          },
-          conflict: (event: any) => {
-            toast({
-              title: "Scheduling Conflict",
-              description: `Conflict detected: ${event.conflict.description}`,
-              variant: "destructive",
-            });
-          },
-        },
-      });
-      
-      return true;
-    }
-    return false;
   };
 
   // Run optimization based on selected mode
