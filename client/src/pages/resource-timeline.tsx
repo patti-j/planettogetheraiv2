@@ -130,11 +130,13 @@ export default function ResourceTimeline() {
     console.log('Resources count:', resources.length);
   }, [resources]);
 
-  // Auto-scroll to show first operations (6 AM)
+  // Auto-scroll to show current time of day
   useEffect(() => {
     if (timelineScrollRef.current && operations.length > 0) {
-      // Scroll to 6 AM (6 hours from start)
-      const scrollPosition = 6 * 50; // 6 hours * 50px per hour
+      // Scroll to current hour of the day
+      const now = new Date();
+      const currentHour = now.getHours();
+      const scrollPosition = currentHour * 50; // current hour * 50px per hour
       timelineScrollRef.current.scrollLeft = scrollPosition;
     }
   }, [operations]);
@@ -144,6 +146,11 @@ export default function ResourceTimeline() {
     if (typeof window !== 'undefined' && (window as any).bryntum?.schedulerpro?.SchedulerPro) {
       const { SchedulerPro } = (window as any).bryntum.schedulerpro;
       
+      // Set timeline to center on today
+      const today = new Date();
+      const startDate = startOfDay(today); // Start of today
+      const endDate = addDays(startDate, 14); // Show 2 weeks from today
+      
       // Create scheduler instance with optimization engine
       schedulerRef.current = new SchedulerPro({
         // License configuration
@@ -151,6 +158,26 @@ export default function ResourceTimeline() {
         
         // Container element
         appendTo: containerRef.current,
+        
+        // Timeline date range - centered on today
+        startDate: startDate,
+        endDate: endDate,
+        
+        // View preset for initial zoom level
+        viewPreset: {
+          base: 'hourAndDay',
+          tickWidth: 50, // 50 pixels per hour
+          headers: [
+            {
+              unit: 'day',
+              dateFormat: 'ddd MM/DD'
+            },
+            {
+              unit: 'hour',
+              dateFormat: 'HH'
+            }
+          ]
+        },
         
         // Enable all drag and drop features
         features: {
