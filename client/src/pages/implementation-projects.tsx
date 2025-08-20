@@ -36,8 +36,11 @@ import { Link } from "wouter";
 const createProjectSchema = insertImplementationProjectSchema.extend({
   projectName: z.string().min(1, "Project name is required"),
   projectType: z.enum(["full_implementation", "migration", "pilot", "upgrade", "training"]),
-  plannedGoLiveDate: z.string().transform(str => new Date(str))
-});
+  plannedGoLiveDate: z.string().optional()
+}).transform(data => ({
+  ...data,
+  targetGoLiveDate: data.plannedGoLiveDate ? new Date(data.plannedGoLiveDate) : undefined
+}));
 
 type CreateProjectData = z.infer<typeof createProjectSchema>;
 
@@ -409,8 +412,8 @@ export default function ImplementationProjects() {
                     <FormControl>
                       <Input 
                         type="date" 
-                        value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} 
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                        value={field.value || ''} 
+                        onChange={field.onChange}
                       />
                     </FormControl>
                     <FormMessage />
