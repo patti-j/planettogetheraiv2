@@ -9,6 +9,7 @@ import {
   implementationTasks,
   implementationComments,
   implementationStatusReports,
+  companyOnboarding,
   type InsertImplementationProject,
   type InsertImplementationPhase,
   type InsertImplementationSop,
@@ -40,29 +41,42 @@ export class ImplementationService {
   // ===== PROJECT MANAGEMENT =====
   
   async createProject(data: InsertImplementationProject): Promise<ImplementationProject> {
+    // Get the company name from onboarding data
+    const [onboardingData] = await db.select()
+      .from(companyOnboarding)
+      .orderBy(desc(companyOnboarding.createdAt))
+      .limit(1);
+    
+    // Create the project data with company info from onboarding
+    const projectData = {
+      ...data,
+      clientCompany: onboardingData?.companyName || data.clientCompany,
+      companyOnboardingId: onboardingData?.id || data.companyOnboardingId
+    };
+    
     // Generate project code if not provided
-    if (!data.projectCode) {
+    if (!projectData.projectCode) {
       const year = new Date().getFullYear();
       const count = await db.select({ count: sql<number>`count(*)` })
         .from(implementationProjects)
         .where(sql`project_code LIKE ${`IMPL-${year}-%`}`);
-      data.projectCode = `IMPL-${year}-${String((count[0]?.count || 0) + 1).padStart(3, '0')}`;
+      projectData.projectCode = `IMPL-${year}-${String((count[0]?.count || 0) + 1).padStart(3, '0')}`;
     }
     
     const [project] = await db.insert(implementationProjects)
-      .values(data)
+      .values(projectData)
       .returning();
       
     // Create default phases if it's a new project
     if (project.id) {
-      await this.createDefaultPhases(project.id, data.projectType || 'full_implementation');
+      await this.createDefaultPhases(project.id, projectData.projectType || 'full_implementation');
       await this.logActivity({
         projectId: project.id,
         activityType: 'project_created',
         title: 'Project Created',
         description: `Implementation project ${project.projectCode} has been created`,
         activityDate: new Date(),
-        performedBy: data.projectManager || undefined
+        performedBy: projectData.projectManager || undefined
       });
     }
     

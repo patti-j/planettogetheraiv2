@@ -35,7 +35,6 @@ import { Link } from "wouter";
 
 const createProjectSchema = insertImplementationProjectSchema.extend({
   projectName: z.string().min(1, "Project name is required"),
-  clientCompany: z.string().min(1, "Client company is required"),
   projectType: z.enum(["full_implementation", "migration", "pilot", "upgrade", "training"]),
   plannedGoLiveDate: z.string().transform(str => new Date(str))
 });
@@ -96,8 +95,7 @@ export default function ImplementationProjects() {
   const form = useForm<CreateProjectData>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
-      projectType: "full_implementation",
-      status: "planning"
+      projectType: "full_implementation"
     }
   });
 
@@ -355,7 +353,7 @@ export default function ImplementationProjects() {
           <DialogHeader>
             <DialogTitle>Create Implementation Project</DialogTitle>
             <DialogDescription>
-              Start a new implementation project for a client
+              Start a new implementation project for your company
             </DialogDescription>
           </DialogHeader>
 
@@ -369,29 +367,13 @@ export default function ImplementationProjects() {
                     <FormItem>
                       <FormLabel>Project Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Acme Corp ERP Implementation" {...field} />
+                        <Input placeholder="e.g., ERP Implementation Phase 1" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="clientCompany"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client Company</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Acme Corporation" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="projectType"
@@ -416,49 +398,19 @@ export default function ImplementationProjects() {
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="plannedGoLiveDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Planned Go-Live Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
                 control={form.control}
-                name="clientContact"
+                name="plannedGoLiveDate"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client Contact</FormLabel>
+                  <FormItem className="col-span-2">
+                    <FormLabel>Planned Go-Live Date</FormLabel>
                     <FormControl>
-                      <Input placeholder="Name and email of primary contact" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Primary point of contact at the client organization
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Description</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Brief description of the project scope and objectives"
-                        {...field}
+                      <Input 
+                        type="date" 
+                        value={field.value ? format(field.value, 'yyyy-MM-dd') : ''} 
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
                       />
                     </FormControl>
                     <FormMessage />
