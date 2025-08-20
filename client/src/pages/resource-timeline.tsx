@@ -620,10 +620,10 @@ export default function ResourceTimeline() {
             {/* Timeline */}
             <div 
               ref={timelineScrollRef}
-              className="flex-1 overflow-auto"
+              className="flex-1 overflow-x-auto overflow-y-auto"
               onScroll={handleTimelineScroll}
             >
-              <div className="relative" style={{ width: `${totalWidth}px` }}>
+              <div className="relative" style={{ width: `${totalWidth}px`, minHeight: '100%' }}>
                 {/* Time header */}
                 <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
                   {timeHeaders.map((header, index) => {
@@ -646,7 +646,7 @@ export default function ResourceTimeline() {
                 </div>
 
                 {/* Resource rows container */}
-                <div className="relative">
+                <div className="relative" style={{ width: `${totalWidth}px` }}>
                   {/* Resource backgrounds and grid lines */}
                   {resources.map((resource, resourceIndex) => (
                     <div
@@ -666,8 +666,9 @@ export default function ResourceTimeline() {
                     </div>
                   ))}
                   
-                  {/* Operations overlay - positioned absolutely */}
-                  {resources.map((resource, resourceIndex) => {
+                  {/* Operations overlay - positioned absolutely with clipping */}
+                  <div className="absolute inset-0 overflow-hidden" style={{ width: `${totalWidth}px` }}>
+                    {resources.map((resource, resourceIndex) => {
                     const resourceOps = operationsByResource.get(resource.external_id) || [];
                     const rowTop = resourceIndex * 50; // Each row is 50px tall
                     const conflicts = showConflicts ? detectConflicts(resourceOps) : new Set();
@@ -766,6 +767,7 @@ export default function ResourceTimeline() {
                       );
                     });
                   })}
+                  </div>
                 </div>
               </div>
             </div>
