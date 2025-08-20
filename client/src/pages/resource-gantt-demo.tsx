@@ -108,12 +108,31 @@ export default function ResourceGanttDemo() {
         }
       },
       
-      eventResizeEnd: ({ context }: any) => {
-        if (context.valid) {
+      eventResizeEnd: (event: any) => {
+        // Check if event has context property and it's valid, or just show success
+        const isValid = event?.context?.valid !== false;
+        if (isValid) {
+          const eventRecord = event?.eventRecord || event?.eventRecords?.[0];
+          const eventName = eventRecord?.name || "Event";
+          
           toast({
             title: "Duration updated",
-            description: "The event duration has been adjusted."
+            description: `${eventName} duration has been adjusted.`
           });
+          
+          // Update state with new event times if we have the scheduler instance
+          const instance = schedulerRef.current;
+          if (instance && instance.eventStore && instance.eventStore.records) {
+            const nextEvents = instance.eventStore.records.map((r: any) => ({
+              id: r.id,
+              resourceId: r.resourceId,
+              name: r.name,
+              startDate: r.startDate,
+              endDate: r.endDate
+            }));
+            
+            setDataState(prev => ({ ...prev, events: nextEvents }));
+          }
         }
       }
     }
