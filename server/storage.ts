@@ -3236,11 +3236,62 @@ export class DatabaseStorage implements IStorage {
     } as Operation;
   }
 
+  // Simple Bryntum operation update - just update the scheduled times
+  async updateBryntumOperation(id: number, updates: {
+    assignedResourceId?: number;
+    startTime?: string;
+    endTime?: string;
+  }): Promise<void> {
+    try {
+      // Update operation schedule in ptjoboperations table
+      const updateData: any = {};
+      
+      if (updates.startTime) {
+        updateData.scheduled_start = updates.startTime;
+      }
+      if (updates.endTime) {
+        updateData.scheduled_end = updates.endTime;
+      }
+      
+      if (Object.keys(updateData).length > 0) {
+        await db.update(ptJobOperations)
+          .set(updateData)
+          .where(eq(ptJobOperations.id, id));
+      }
+      
+      // If resource is being reassigned, update in ptjobresources
+      if (updates.assignedResourceId) {
+        // The ptjobresources table has default_resource_id field
+        await db.execute(sql`
+          UPDATE ptjobresources 
+          SET default_resource_id = ${updates.assignedResourceId}
+          WHERE operation_id = ${id}
+        `);
+      }
+    } catch (error) {
+      console.error('Error updating Bryntum operation:', error);
+      throw error;
+    }
+  }
+
   // Update operation - using PT Publish tables
-  async updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined> {
+  async updateOperation(id: number, operation: Partial<InsertOperation> | any): Promise<Operation | undefined> {
     // Update in PT Job Operations table
     const updateData: any = {};
     
+    // Handle both formats - old Operation format and new Bryntum format
+    if (operation.assignedResourceId !== undefined) {
+      // This is coming from Bryntum drag-drop - need to update in ptjobresources table
+      // We'll handle resource assignment separately
+    }
+    if (operation.startTime !== undefined) {
+      updateData.scheduled_start = operation.startTime;
+    }
+    if (operation.endTime !== undefined) {
+      updateData.scheduled_end = operation.endTime;
+    }
+    
+    // Handle standard operation fields
     if (operation.name !== undefined) updateData.name = operation.name;
     if (operation.description !== undefined) updateData.description = operation.description;
     if (operation.duration !== undefined) updateData.cycleHrs = String(operation.duration);
@@ -3249,9 +3300,6 @@ export class DatabaseStorage implements IStorage {
       updateData.percentFinished = operation.status === 'completed' ? 100 : 
                                    operation.status === 'in_progress' ? 50 : 0;
     }
-    if (operation.startTime !== undefined) updateData.scheduledStart = operation.startTime;
-    if (operation.endTime !== undefined) updateData.scheduledEnd = operation.endTime;
-    if (operation.assignedResourceId !== undefined) updateData.defaultResourceId = operation.assignedResourceId;
     if (operation.routingId !== undefined) updateData.routingId = operation.routingId;
     if (operation.priority !== undefined) updateData.priority = operation.priority;
     if (operation.notes !== undefined) updateData.notes = operation.notes;

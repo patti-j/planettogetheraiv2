@@ -100,10 +100,11 @@ export default function ResourceTimeline() {
       
       const endDate = addHours(startDate, draggedOperation?.duration ? draggedOperation.duration / 60 : 2);
       
-      return await apiRequest('PATCH', `/api/operations/${operationId}`, {
-        assignedResourceId: resource.id,
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString()
+      // Use the PT operations update endpoint with correct field names
+      return await apiRequest('PUT', `/api/pt-operations/${operationId}`, {
+        resourceId: resource.id,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       });
     },
     onSuccess: () => {
@@ -130,13 +131,14 @@ export default function ResourceTimeline() {
     console.log('Resources count:', resources.length);
   }, [resources]);
 
-  // Auto-scroll to show current time of day
+  // Auto-scroll to show current time (today)
   useEffect(() => {
     if (timelineScrollRef.current && operations.length > 0) {
-      // Scroll to current hour of the day
+      // Calculate scroll position to show current time
       const now = new Date();
-      const currentHour = now.getHours();
-      const scrollPosition = currentHour * 50; // current hour * 50px per hour
+      const { start: startDate } = getDateRange();
+      const hoursFromStart = differenceInHours(now, startDate);
+      const scrollPosition = Math.max(0, hoursFromStart * zoomLevel - 200); // Center with some offset
       timelineScrollRef.current.scrollLeft = scrollPosition;
     }
   }, [operations]);
@@ -511,17 +513,23 @@ export default function ResourceTimeline() {
     );
   }
 
-  // Timeline configuration - calculate actual date range from operations
+  // Timeline configuration - center around today with a 2-week window
   const getDateRange = () => {
+    const today = new Date();
+    const startOfToday = startOfDay(today);
+    
+    // Default to a 2-week window centered on today
+    const defaultStart = addDays(startOfToday, -7); // 1 week before today
+    const defaultEnd = addDays(startOfToday, 7); // 1 week after today
+    
     if (operations.length === 0) {
-      // Default range if no operations
       return {
-        start: new Date('2025-08-19'),
-        end: new Date('2025-09-30')
+        start: defaultStart,
+        end: defaultEnd
       };
     }
     
-    // Find earliest start and latest end dates
+    // Find earliest start and latest end dates from operations
     let minDate = new Date(operations[0].startDate);
     let maxDate = new Date(operations[0].endDate);
     
@@ -532,14 +540,13 @@ export default function ResourceTimeline() {
       if (end > maxDate) maxDate = end;
     });
     
-    // Add some padding - start at beginning of day, end at end of day
+    // Ensure the range includes today
+    if (minDate > defaultStart) minDate = defaultStart;
+    if (maxDate < defaultEnd) maxDate = defaultEnd;
+    
+    // Add some padding for better visibility
     minDate.setHours(0, 0, 0, 0);
     maxDate.setHours(23, 59, 59, 999);
-    
-    // Add a couple days buffer on each side for better visibility
-    const bufferDays = 2;
-    minDate = addDays(minDate, -bufferDays);
-    maxDate = addDays(maxDate, bufferDays);
     
     return { start: minDate, end: maxDate };
   };

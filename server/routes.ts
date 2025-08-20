@@ -2749,6 +2749,82 @@ Rules:
     }
   });
 
+  // PT Operations update endpoint for drag-and-drop rescheduling
+  app.put("/api/pt-operations/:id", async (req, res) => {
+    try {
+      console.log("[API] PUT /api/pt-operations/:id - Body:", req.body);
+      const operationId = parseInt(req.params.id);
+      const { resourceId, startDate, endDate } = req.body;
+      
+      if (isNaN(operationId)) {
+        return res.status(400).json({ error: "Invalid operation ID" });
+      }
+      
+      if (!resourceId || !startDate || !endDate) {
+        return res.status(400).json({ error: "Resource ID, start date, and end date are required" });
+      }
+      
+      // Update the operation in ptjoboperations table using sql template string
+      const updateQuery = sql`
+        UPDATE ptjoboperations
+        SET 
+          scheduled_start = ${new Date(startDate).toISOString()},
+          scheduled_end = ${new Date(endDate).toISOString()}
+        WHERE id = ${operationId}
+        RETURNING *
+      `;
+      
+      const updateResult = await db.execute(updateQuery);
+      
+      if (updateResult.rows.length === 0) {
+        return res.status(404).json({ error: "Operation not found" });
+      }
+      
+      // If resource changed, update the resource assignment in ptjobresources
+      if (resourceId) {
+        const resourceUpdateQuery = sql`
+          UPDATE ptjobresources
+          SET 
+            default_resource_id = ${resourceId}
+          WHERE operation_id = ${operationId} AND is_primary = true
+        `;
+        
+        await db.execute(resourceUpdateQuery);
+      }
+      
+      // Also update any related job activities
+      const activityUpdateQuery = sql`
+        UPDATE ptjobactivities
+        SET 
+          scheduled_start_date = ${new Date(startDate).toISOString()},
+          scheduled_end_date = ${new Date(endDate).toISOString()}
+        WHERE operation_id = ${operationId}
+      `;
+      
+      await db.execute(activityUpdateQuery);
+      
+      console.log(`Successfully updated PT operation ${operationId}`);
+      
+      // Return the updated operation
+      res.json({
+        success: true,
+        operation: {
+          id: operationId,
+          scheduled_start: startDate,
+          scheduled_end: endDate,
+          resource_id: resourceId
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error updating PT operation:", error);
+      res.status(500).json({ 
+        error: "Failed to update operation",
+        details: error.message 
+      });
+    }
+  });
+
   // PT Resources endpoint for cleaned AMS plant resources
   app.get("/api/pt-resources-clean", async (req, res) => {
     try {
@@ -3067,20 +3143,34 @@ Rules:
         }
       }
       
-      // Handle other operation updates
-      try {
-        const updated = await storage.updateOperation(operationId, updateData);
-        if (!updated) {
-          return res.status(404).json({ message: "Operation not found" });
+      // Handle Bryntum drag-drop updates
+      if (updateData.assignedResourceId || updateData.startTime || updateData.endTime) {
+        try {
+          await storage.updateBryntumOperation(operationId, updateData);
+          res.json({ success: true });
+        } catch (updateError) {
+          console.error('Update Bryntum operation error:', updateError);
+          return res.status(500).json({ 
+            message: "Failed to update operation", 
+            error: updateError instanceof Error ? updateError.message : 'Unknown update error' 
+          });
         }
-        
-        res.json(updated);
-      } catch (updateError) {
-        console.error('Update operation error:', updateError);
-        return res.status(500).json({ 
-          message: "Failed to update operation", 
-          error: updateError instanceof Error ? updateError.message : 'Unknown update error' 
-        });
+      } else {
+        // Handle other operation updates
+        try {
+          const updated = await storage.updateOperation(operationId, updateData);
+          if (!updated) {
+            return res.status(404).json({ message: "Operation not found" });
+          }
+          
+          res.json(updated);
+        } catch (updateError) {
+          console.error('Update operation error:', updateError);
+          return res.status(500).json({ 
+            message: "Failed to update operation", 
+            error: updateError instanceof Error ? updateError.message : 'Unknown update error' 
+          });
+        }
       }
     } catch (error) {
       console.error('Error updating operation (outer catch):', error);
