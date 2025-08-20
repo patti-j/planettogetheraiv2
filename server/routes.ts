@@ -25060,6 +25060,60 @@ Be careful to preserve data integrity and relationships.`;
     res.json(dashboards);
   }));
 
+  // Hint System Routes
+  const hintsModule = await import('./hints-service');
+  const hintsService = hintsModule.hintsService;
+  
+  // Get hints for current page
+  app.get('/api/hints', requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user?.id || 1;
+    const page = req.query.page as string || '';
+    
+    const hints = await hintsService.getPageHints(userId, page);
+    res.json(hints);
+  }));
+
+  // Mark hint as seen
+  app.post('/api/hints/:hintId/seen', requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user?.id || 1;
+    const hintId = parseInt(req.params.hintId, 10);
+    
+    await hintsService.markHintSeen(userId, hintId);
+    res.json({ success: true });
+  }));
+
+  // Dismiss hint
+  app.post('/api/hints/:hintId/dismiss', requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user?.id || 1;
+    const hintId = parseInt(req.params.hintId, 10);
+    
+    await hintsService.dismissHint(userId, hintId);
+    res.json({ success: true });
+  }));
+
+  // Complete hint (for tutorials)
+  app.post('/api/hints/:hintId/complete', requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user?.id || 1;
+    const hintId = parseInt(req.params.hintId, 10);
+    
+    await hintsService.completeHint(userId, hintId);
+    res.json({ success: true });
+  }));
+
+  // Reset all hints for user
+  app.post('/api/hints/reset', requireAuth, createSafeHandler(async (req, res) => {
+    const userId = req.user?.id || 1;
+    
+    await hintsService.resetUserHints(userId);
+    res.json({ success: true });
+  }));
+
+  // Seed hints (admin only)
+  app.post('/api/hints/seed', requireAuth, createSafeHandler(async (req, res) => {
+    await hintsService.seedHints();
+    res.json({ success: true, message: 'Hints seeded successfully' });
+  }));
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   // TODO: Fix errorMiddleware import issue

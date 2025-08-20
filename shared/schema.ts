@@ -12237,5 +12237,81 @@ export type RoutingOperation = typeof routingOperations.$inferSelect;
 // Export schedule schemas
 export * from './schedule-schema';
 
+// ==================== Intelligent Contextual Hint Bubbles ====================
+
+// Hint configurations table
+export const hintConfigurations = pgTable('hint_configurations', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  title: varchar('title', { length: 200 }).notNull(),
+  content: text('content').notNull(),
+  type: varchar('type', { length: 20 }).notNull().default('info'), // info, tip, warning, tutorial
+  target: varchar('target', { length: 200 }), // CSS selector for target element
+  page: varchar('page', { length: 100 }), // Page URL pattern
+  position: varchar('position', { length: 20 }).default('auto'), // top, bottom, left, right, auto, center
+  trigger: varchar('trigger', { length: 20 }).default('auto'), // hover, click, auto, manual
+  delay: integer('delay').default(0), // Delay in milliseconds before showing
+  sequence: integer('sequence'), // Order in a tutorial sequence
+  sequenceGroup: varchar('sequence_group', { length: 50 }), // Group for tutorial sequences
+  prerequisites: text('prerequisites'), // JSON array of prerequisite hint keys
+  conditions: text('conditions'), // JSON conditions for showing hint
+  priority: integer('priority').default(0), // Higher priority hints show first
+  isActive: boolean('is_active').default(true),
+  isDismissible: boolean('is_dismissible').default(true),
+  showOnce: boolean('show_once').default(false),
+  expiresAt: timestamp('expires_at'),
+  metadata: text('metadata'), // JSON for additional configuration
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// User hint interactions table
+export const userHintInteractions = pgTable('user_hint_interactions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  hintId: integer('hint_id').notNull().references(() => hintConfigurations.id),
+  status: varchar('status', { length: 20 }).notNull().default('unseen'), // unseen, seen, dismissed, completed
+  seenAt: timestamp('seen_at'),
+  dismissedAt: timestamp('dismissed_at'),
+  completedAt: timestamp('completed_at'),
+  interactionCount: integer('interaction_count').default(0),
+  lastInteractionAt: timestamp('last_interaction_at'),
+  metadata: text('metadata'), // JSON for tracking additional interaction data
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => {
+  return {
+    userHintIdx: index('user_hint_idx').on(table.userId, table.hintId),
+    statusIdx: index('hint_status_idx').on(table.status)
+  };
+});
+
+// Hint sequences table for managing tutorial flows
+export const hintSequences = pgTable('hint_sequences', {
+  id: serial('id').primaryKey(),
+  groupName: varchar('group_name', { length: 50 }).notNull().unique(),
+  title: varchar('title', { length: 200 }).notNull(),
+  description: text('description'),
+  hintIds: text('hint_ids').notNull(), // JSON array of hint IDs in order
+  totalSteps: integer('total_steps').notNull(),
+  requiredCompletion: boolean('required_completion').default(false),
+  metadata: text('metadata'), // JSON for additional sequence configuration
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Insert schemas for hints
+export const insertHintConfigurationSchema = createInsertSchema(hintConfigurations);
+export const insertUserHintInteractionSchema = createInsertSchema(userHintInteractions);
+export const insertHintSequenceSchema = createInsertSchema(hintSequences);
+
+// Types for hints
+export type HintConfiguration = typeof hintConfigurations.$inferSelect;
+export type InsertHintConfiguration = z.infer<typeof insertHintConfigurationSchema>;
+export type UserHintInteraction = typeof userHintInteractions.$inferSelect;
+export type InsertUserHintInteraction = z.infer<typeof insertUserHintInteractionSchema>;
+export type HintSequence = typeof hintSequences.$inferSelect;
+export type InsertHintSequence = z.infer<typeof insertHintSequenceSchema>;
+
 
 

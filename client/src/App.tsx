@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitPaneLayout } from "@/components/split-pane-layout";
 import { MaxSidebar } from "@/components/max-sidebar";
+import { HintSystem } from "@/components/HintBubble";
 
 import WorkspaceLayout from "@/components/workspace-layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -761,6 +762,7 @@ function App() {
                             <Router />
                             <OnboardingWizard />
                             <ResumeTourButton />
+                            <HintSystem />
                             <Toaster />
                           </>
                         </LayoutDensityProvider>
