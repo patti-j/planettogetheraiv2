@@ -277,9 +277,6 @@ export default function ResourceTimeline() {
           dependencies: true,
           dependencyEdit: true,
           
-          // Critical path highlighting - simplified configuration
-          criticalPaths: true,
-          
           // Resource non-working time
           resourceNonWorkingTime: true,
           
@@ -313,8 +310,8 @@ export default function ResourceTimeline() {
           // Scheduling direction
           schedulingDirection: optimizationMode === 'alap' ? 'backward' : 'forward',
           
-          // Critical path calculation
-          calculateCriticalPath: true,
+          // Critical path calculation (project level)
+          calculateCriticalPath: optimizationMode === 'critical-path',
           
           // Resource leveling
           levelResources: optimizationMode === 'resource-level',
