@@ -36,6 +36,124 @@ interface Event {
   percentDone?: number;
 }
 
+// ---- Utilization Chart Widget for Row Expander ----------------------------------------------------
+class UtilizationChartWidget {
+  owner: any;
+  chart: Chart | null = null;
+  events: Event[] = [];
+  resources: Resource[] = [];
+  
+  constructor(config: any) {
+    this.owner = config.owner;
+    // Get events and resources from the scheduler instance
+    if (config.owner && config.owner.instance) {
+      this.events = config.owner.instance.eventStore.records.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        resourceId: r.resourceId,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        percentDone: r.percentDone
+      }));
+      this.resources = config.owner.instance.resourceStore.records.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        description: r.description,
+        plant_name: r.plant_name
+      }));
+    }
+  }
+  
+  render({ record, rowElement }: any) {
+    let canvas = rowElement.querySelector('canvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.style.height = '120px';
+      canvas.style.width = '100%';
+      canvas.style.padding = '10px';
+      rowElement.appendChild(canvas);
+    }
+    
+    // Calculate utilization for this resource
+    const data = this.computeUtilization(record.id);
+    if (this.chart) this.chart.destroy();
+    
+    this.chart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Utilization',
+          data: data.values,
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => `Load: ${context.parsed.y} operation(s)`
+            }
+          }
+        },
+        scales: { 
+          x: { 
+            display: true,
+            grid: { display: false },
+            ticks: { 
+              maxTicksLimit: 12,
+              font: { size: 10 }
+            }
+          }, 
+          y: { 
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { 
+              stepSize: 1,
+              font: { size: 10 }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  computeUtilization(resourceId: string, sliceCount = 24) {
+    // Get the scheduler's time range
+    const scheduler = this.owner?.instance;
+    const startDate = scheduler?.startDate || new Date(2025, 7, 19);
+    const endDate = scheduler?.endDate || new Date(2025, 8, 2);
+    
+    const millis = endDate.getTime() - startDate.getTime();
+    const slice = millis / sliceCount;
+    const buckets = new Array(sliceCount).fill(0);
+    const labels = [];
+    
+    // Count operations in each time slice
+    this.events.filter(e => e.resourceId === resourceId).forEach(e => {
+      const eventStart = new Date(e.startDate);
+      const eventEnd = new Date(e.endDate);
+      const s = Math.max(0, Math.floor((eventStart.getTime() - startDate.getTime()) / slice));
+      const t = Math.min(sliceCount, Math.ceil((eventEnd.getTime() - startDate.getTime()) / slice));
+      for (let i = s; i < t; i++) buckets[i] += 1;
+    });
+    
+    // Generate labels for each bucket
+    for (let i = 0; i < sliceCount; i++) {
+      const time = new Date(startDate.getTime() + (i * slice));
+      labels.push(time.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    
+    return { labels, values: buckets };
+  }
+}
+
 export default function ResourceTimelineFixed() {
   const schedulerRef = useRef<any>(null);
   const [optimizationMode, setOptimizationMode] = useState<'asap' | 'alap' | 'critical-path' | 'resource-level'>('asap');
