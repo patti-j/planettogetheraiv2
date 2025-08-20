@@ -343,6 +343,7 @@ export interface IStorage {
   createOperation(operation: InsertOperation): Promise<Operation>;
   updateOperation(id: number, operation: Partial<InsertOperation>): Promise<Operation | undefined>;
   deleteOperation(id: number): Promise<boolean>;
+  rescheduleOperation(id: number, params: { resourceId: string; startDate: Date; endDate?: Date }): Promise<any>;
 
   // Discrete Operations
   getDiscreteOperations(): Promise<DiscreteOperation[]>;
@@ -3246,6 +3247,46 @@ export class DatabaseStorage implements IStorage {
     }
     
     return undefined;
+  }
+
+  async rescheduleOperation(id: number, params: { resourceId: string; startDate: Date; endDate?: Date }): Promise<any> {
+    console.log('Reschedule operation called:', { id, params });
+    
+    // Try to update the operation using the existing updateOperation method
+    const operation = await this.getOperation(id);
+    if (operation) {
+      console.log('Found operation to reschedule:', operation.name);
+      
+      // Calculate end time if not provided and we have duration
+      let endTime = params.endDate;
+      if (!endTime && operation.duration) {
+        endTime = new Date(params.startDate.getTime() + operation.duration * 60 * 1000);
+      }
+      
+      const updated = await this.updateOperation(id, {
+        startTime: params.startDate,
+        endTime,
+        assignedResourceId: params.resourceId
+      });
+      
+      if (updated) {
+        console.log('Successfully rescheduled operation');
+        return {
+          id,
+          startTime: params.startDate,
+          endTime,
+          resourceId: params.resourceId,
+          success: true
+        };
+      }
+    }
+    
+    console.log('Failed to reschedule operation - not found');
+    return {
+      id,
+      success: false,
+      error: 'Operation not found'
+    };
   }
 
   // New discrete operations methods - REDIRECTED TO PT PUBLISH TABLES

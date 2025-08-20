@@ -3009,6 +3009,53 @@ Rules:
     }
   });
 
+  // PATCH endpoint for updating operations (drag-and-drop)
+  app.patch("/api/operations/:id", async (req, res) => {
+    try {
+      console.log(`PATCH /api/operations/${req.params.id} called with:`, req.body);
+      
+      const operationId = parseInt(req.params.id);
+      if (isNaN(operationId)) {
+        return res.status(400).json({ message: "Invalid operation ID" });
+      }
+
+      const updateData = req.body;
+      
+      // Handle drag-and-drop updates with resourceId and startDate
+      if (updateData.resourceId && updateData.startDate) {
+        console.log('Processing drag-and-drop update:', {
+          operationId,
+          resourceId: updateData.resourceId,
+          startDate: updateData.startDate
+        });
+        
+        // This should call the reschedule logic
+        const rescheduled = await storage.rescheduleOperation(operationId, {
+          resourceId: updateData.resourceId,
+          startDate: new Date(updateData.startDate),
+          endDate: updateData.endDate ? new Date(updateData.endDate) : undefined
+        });
+        
+        if (!rescheduled) {
+          return res.status(404).json({ message: "Operation not found" });
+        }
+        
+        return res.json({ success: true, operation: rescheduled });
+      }
+      
+      // Handle other operation updates
+      const updated = await storage.updateOperation(operationId, updateData);
+      if (!updated) {
+        return res.status(404).json({ message: "Operation not found" });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating operation:', error);
+      res.status(500).json({ message: "Failed to update operation", error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
   // Optimization flags for operations
   app.patch("/api/operations/:id/optimization-flags", async (req, res) => {
     try {
