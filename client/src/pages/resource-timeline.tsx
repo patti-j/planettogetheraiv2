@@ -34,23 +34,6 @@ export default function ResourceTimeline() {
     queryKey: ['/api/pt-resources-clean']
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Resources loaded:', resources);
-    console.log('Resources count:', resources.length);
-  }, [resources]);
-
-  // Auto-scroll to show first operations (6 AM)
-  useEffect(() => {
-    if (timelineScrollRef.current && operations.length > 0) {
-      // Scroll to 6 AM (6 hours from start)
-      const scrollPosition = 6 * 50; // 6 hours * 50px per hour
-      timelineScrollRef.current.scrollLeft = scrollPosition;
-    }
-  }, [operations]);
-
-
-
   // Fetch operations
   const { data: operations = [], isLoading: loadingOperations } = useQuery<Operation[]>({
     queryKey: ['/api/pt-operations'],
@@ -79,6 +62,21 @@ export default function ResourceTimeline() {
       return ops;
     }
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Resources loaded:', resources);
+    console.log('Resources count:', resources.length);
+  }, [resources]);
+
+  // Auto-scroll to show first operations (6 AM)
+  useEffect(() => {
+    if (timelineScrollRef.current && operations.length > 0) {
+      // Scroll to 6 AM (6 hours from start)
+      const scrollPosition = 6 * 50; // 6 hours * 50px per hour
+      timelineScrollRef.current.scrollLeft = scrollPosition;
+    }
+  }, [operations]);
 
   if (loadingResources || loadingOperations) {
     return (
@@ -153,9 +151,9 @@ export default function ResourceTimeline() {
         <div className="bg-white rounded-lg shadow-sm border h-full flex flex-col">
           <div className="flex flex-1 overflow-hidden">
             {/* Resource column */}
-            <div className="flex-shrink-0 w-48 border-r overflow-y-auto">
+            <div className="flex-shrink-0 w-48 border-r">
               {/* Header */}
-              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold sticky top-0">
+              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold">
                 Resources
               </div>
               {/* Resource rows */}
@@ -236,12 +234,14 @@ export default function ResourceTimeline() {
                       return (
                         <div
                           key={op.id}
-                          className={`absolute h-[34px] rounded cursor-pointer transition-all ${
+                          className={`absolute h-[34px] rounded cursor-move transition-all ${
                             isSelected 
-                              ? 'bg-blue-600 shadow-lg z-20' 
+                              ? 'bg-blue-600 shadow-lg z-20 ring-2 ring-blue-300' 
                               : isHovered 
                                 ? 'bg-blue-500 shadow-md z-10' 
-                                : 'bg-blue-400 shadow-sm'
+                                : op.percentDone === 100
+                                  ? 'bg-green-500 shadow-sm'
+                                  : 'bg-blue-400 shadow-sm'
                           }`}
                           style={{
                             top: `${rowTop + 8}px`, // Position within the correct row
@@ -252,12 +252,24 @@ export default function ResourceTimeline() {
                           onMouseEnter={() => setHoveredOperation(op)}
                           onMouseLeave={() => setHoveredOperation(null)}
                           onClick={() => setSelectedOperation(op)}
-                          title={`${op.name}\n${op.startDate ? format(new Date(op.startDate), 'MMM d HH:mm') : 'N/A'} - ${op.endDate ? format(new Date(op.endDate), 'MMM d HH:mm') : 'N/A'}`}
+                          title={`${op.name}\nResource: ${op.resourceName}\nStart: ${op.startDate ? format(new Date(op.startDate), 'MMM d, h:mm a') : 'N/A'}\nEnd: ${op.endDate ? format(new Date(op.endDate), 'MMM d, h:mm a') : 'N/A'}\nDuration: ${op.duration} minutes\nProgress: ${op.percentDone}%`}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('operation', JSON.stringify(op));
+                            (e.target as HTMLElement).style.opacity = '0.5';
+                          }}
+                          onDragEnd={(e) => {
+                            (e.target as HTMLElement).style.opacity = '';
+                          }}
                         >
-                          <div className="px-2 py-1 text-white text-xs truncate">
-                            {op.name.split(':')[1]?.trim() || op.name}
+                          <div className="px-2 py-1 text-white text-xs truncate flex items-center justify-between">
+                            <span>{op.name.split(':')[1]?.trim() || op.name}</span>
+                            {op.percentDone === 100 && (
+                              <span className="ml-1">✓</span>
+                            )}
                           </div>
-                          {op.percentDone > 0 && (
+                          {op.percentDone > 0 && op.percentDone < 100 && (
                             <div 
                               className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-b"
                               style={{ width: `${op.percentDone}%` }}
@@ -274,27 +286,54 @@ export default function ResourceTimeline() {
         </div>
       </div>
 
-      {/* Selected operation details */}
+      {/* Selected operation details panel */}
       {selectedOperation && (
-        <div className="bg-white border-t px-6 py-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold">{selectedOperation.name}</h3>
-              <p className="text-sm text-gray-600">
-                Resource: {selectedOperation.resourceName} | 
-                Duration: {selectedOperation.duration} minutes | 
-                Progress: {selectedOperation.percentDone}%
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {format(new Date(selectedOperation.startDate), 'MMM d, yyyy HH:mm')} - 
-                {format(new Date(selectedOperation.endDate), 'MMM d, yyyy HH:mm')}
-              </p>
-            </div>
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl border p-4 max-w-md z-40">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-lg">{selectedOperation.name}</h3>
             <button
               onClick={() => setSelectedOperation(null)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 text-xl leading-none"
             >
               ✕
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-gray-600">Resource:</span>
+              <p className="font-medium">{selectedOperation.resourceName}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Duration:</span>
+              <p className="font-medium">{selectedOperation.duration} minutes</p>
+            </div>
+            <div>
+              <span className="text-gray-600">Start:</span>
+              <p>{format(new Date(selectedOperation.startDate), 'MMM d, h:mm a')}</p>
+            </div>
+            <div>
+              <span className="text-gray-600">End:</span>
+              <p>{format(new Date(selectedOperation.endDate), 'MMM d, h:mm a')}</p>
+            </div>
+            <div className="col-span-2">
+              <span className="text-gray-600">Progress:</span>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${selectedOperation.percentDone === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                    style={{ width: `${selectedOperation.percentDone}%` }}
+                  />
+                </div>
+                <span className="font-medium">{selectedOperation.percentDone}%</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t flex gap-2">
+            <button className="flex-1 px-3 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors">
+              Edit Details
+            </button>
+            <button className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 transition-colors">
+              View Job
             </button>
           </div>
         </div>
