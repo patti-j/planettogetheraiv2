@@ -119,7 +119,6 @@ import NotFound from "@/pages/not-found";
 import TasksPage from "@/pages/tasks";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import TestBryntumPage from "@/pages/test-bryntum";
-import BryntumDemoPage from "@/pages/bryntum-demo";
 import BryntumChartDemo from "@/pages/bryntum-chart-demo";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
@@ -442,10 +441,6 @@ function Router() {
             </ProtectedRoute>
           </Route>
           
-          <Route path="/bryntum-demo">
-            <BryntumDemoPage />
-          </Route>
-          
           <Route path="/bryntum-chart-demo">
             <BryntumChartDemo />
           </Route>
@@ -670,9 +665,6 @@ function Router() {
           </Route>
           <Route path="/test-bryntum">
             <TestBryntumPage />
-          </Route>
-          <Route path="/bryntum-demo">
-            <BryntumDemoPage />
           </Route>
           <Route path="/bryntum-chart-demo">
             <BryntumChartDemo />

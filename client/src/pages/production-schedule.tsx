@@ -477,18 +477,7 @@ export default function ProductionSchedulePage() {
 
       {/* Main Content */}
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
-        {/* Bryntum Demo Button - Always visible */}
-        <div className="mb-4">
-          <Button
-            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3"
-            onClick={() => {
-              window.location.href = '/bryntum-demo';
-            }}
-          >
-            <FlaskConical className="w-5 h-5 mr-2" />
-            Open Bryntum Test Demo (5 Resources with Sample Data)
-          </Button>
-        </div>
+
         
         {/* Custom tab buttons for mobile to ensure visibility */}
         {isMobile ? (
@@ -726,25 +715,7 @@ export default function ProductionSchedulePage() {
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
             <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
-              {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                <BryntumGanttWrapper
-                  operations={ptOperations as any || []}
-                  resources={resources as any || []}
-                  onOperationMove={async (operationId, newResourceId, newStartTime, newEndTime) => {
-                    console.log('Moving operation:', operationId, 'to resource:', newResourceId);
-                    // Handle operation move if needed
-                  }}
-                />
-              ) : (
-                <Card className="h-full">
-                  <CardContent className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading Gantt chart...</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <BryntumGanttWrapper />
             </div>
           </TabsContent>
 
