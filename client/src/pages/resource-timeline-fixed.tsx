@@ -393,23 +393,94 @@ export default function ResourceTimelineFixed() {
       }
     ],
     
-    // Features
+    // Features - Enhanced drag-and-drop from working demo
     features: {
-      // Enable drag and drop - SIMPLIFIED configuration like the working demo
+      // Advanced drag and drop with validation and custom tooltips
       eventDrag: {
         showTooltip: true,
-        validatorFn: () => true // Allow all drags
+        tooltipTemplate: ({ eventRecord, startDate, endDate, resourceRecord }: any) => {
+          const duration = Math.round((endDate - startDate) / (1000 * 60 * 60));
+          return `
+            <div style="padding: 8px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <div style="font-weight: bold; margin-bottom: 4px;">${eventRecord.name}</div>
+              <div style="font-size: 12px; color: #666;">
+                <div>📍 ${resourceRecord.name}</div>
+                <div>🕐 ${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div>⏱️ ${duration}h duration</div>
+              </div>
+            </div>
+          `;
+        },
+        validatorFn: ({ resourceRecord, startDate, endDate, eventRecord }: any) => {
+          // Count overlapping events for this resource
+          const overlappingEvents = events.filter((e: any) => {
+            if (e.id === eventRecord.id || e.resourceId !== resourceRecord.id) return false;
+            const eStart = new Date(e.startDate);
+            const eEnd = new Date(e.endDate);
+            return (startDate < eEnd && endDate > eStart);
+          });
+          
+          // Check for conflicts (allow some overlap but warn if too many)
+          if (overlappingEvents.length >= 3) {
+            return { 
+              valid: false, 
+              message: `⚠️ Resource overloaded (${overlappingEvents.length} overlapping operations)` 
+            };
+          }
+          
+          // Validate working hours (warn but allow)
+          const startHour = startDate.getHours();
+          const endHour = endDate.getHours();
+          if (startHour < 6 || endHour > 22) {
+            return { 
+              valid: true, // Allow but warn
+              message: '⏰ Outside standard hours (6 AM - 10 PM)' 
+            };
+          }
+          
+          return { valid: true };
+        }
       },
       
-      // Enable resize
+      // Enable resize with custom tooltip
       eventResize: {
         showExactResizePosition: true,
-        showTooltip: true
+        showTooltip: true,
+        tooltipTemplate: ({ startDate, endDate }: any) => {
+          const duration = Math.round((endDate - startDate) / (1000 * 60));
+          const hours = Math.floor(duration / 60);
+          const minutes = duration % 60;
+          return `⏱️ Duration: ${hours}h ${minutes}m`;
+        }
       },
       
       // Enable creating events by dragging
       eventDragCreate: {
         showTooltip: true
+      },
+      
+      // Enhanced event tooltip on hover
+      eventTooltip: {
+        template: (data: any) => `
+          <div class="p-2">
+            <div class="font-semibold">${data.eventRecord.name}</div>
+            <div class="text-sm opacity-75">
+              ${new Date(data.eventRecord.startDate).toLocaleString()} - 
+              ${new Date(data.eventRecord.endDate).toLocaleString()}
+            </div>
+            <div class="text-xs mt-1 opacity-60">
+              💡 Drag to reschedule • Double-click to edit • Resize to adjust duration
+            </div>
+            ${data.eventRecord.percentDone ? `
+              <div class="mt-2">
+                <div class="text-xs opacity-60">Progress</div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-blue-600 h-2 rounded-full" style="width: ${data.eventRecord.percentDone}%"></div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `
       },
       
       // Enable event editing
@@ -419,15 +490,18 @@ export default function ResourceTimelineFixed() {
       dependencies: true,
       dependencyEdit: true,
       
+      // Enable time ranges (for showing non-working hours)
+      timeRanges: {
+        showCurrentTimeLine: true,
+        showHeaderElements: true
+      },
+      
       // Other features
       tree: true,
       filter: true,
       columnLines: true,
       scheduleTooltip: true,
-      eventMenu: true,
-      timeRanges: {
-        showCurrentTimeLine: true
-      }
+      eventMenu: true
     }
   };
   

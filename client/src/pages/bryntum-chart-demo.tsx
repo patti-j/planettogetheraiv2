@@ -133,85 +133,97 @@ export default function BryntumChartDemoPage() {
     resources : dataState.resources,
     events    : dataState.events,
 
-    // Enhanced drag-and-drop with validation and custom tooltips
-    eventDragFeature : { 
-      showTooltip : true,
-      tooltipTemplate: ({ eventRecord, startDate, endDate, resourceRecord }: any) => {
-        const duration = Math.round((endDate - startDate) / (1000 * 60 * 60));
-        return `
-          <div style="padding: 8px; background: white; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="font-weight: bold; margin-bottom: 4px;">${eventRecord.name}</div>
-            <div style="font-size: 12px; color: #666;">
-              <div>📍 ${resourceRecord.name}</div>
-              <div>🕐 ${startDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
-              <div>⏱️ ${duration}h duration</div>
+    features : {
+      eventDrag : { 
+        showTooltip : true,
+        validatorFn: () => true // Simple validation for now
+      },
+      eventEdit : true,
+      timeRanges : {
+        showCurrentTimeLine: true
+      },
+      rowExpander : {
+        widget : {
+          type : 'widget',
+          cls : 'chart-container',
+          renderData : ({ record }: any) => {
+            // Create chart container
+            const container = document.createElement('div');
+            container.style.height = '100px';
+            container.style.padding = '10px';
+            
+            const canvas = document.createElement('canvas');
+            container.appendChild(canvas);
+            
+            // Calculate utilization
+            const data = computeUtilization(record.id, dataState.events);
+            
+            // Create chart
+            new Chart(canvas, {
+              type: 'line',
+              data: {
+                labels: data.map((_, i) => {
+                  const time = new Date(startDate.getTime() + (i * (endDate.getTime() - startDate.getTime()) / 24));
+                  return time.getHours() + ':' + String(time.getMinutes()).padStart(2, '0');
+                }),
+                datasets: [{
+                  label: 'Utilization',
+                  data,
+                  fill: true,
+                  backgroundColor: 'rgba(251, 146, 60, 0.2)',
+                  borderColor: 'rgb(251, 146, 60)',
+                  tension: 0.3,
+                  pointRadius: 2,
+                  pointHoverRadius: 5
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => `Load: ${context.parsed.y} task(s)`
+                    }
+                  }
+                },
+                scales: { 
+                  x: { 
+                    display: true,
+                    grid: { display: false },
+                    ticks: { 
+                      maxTicksLimit: 8,
+                      font: { size: 10 }
+                    }
+                  }, 
+                  y: { 
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { 
+                      stepSize: 1,
+                      font: { size: 10 }
+                    }
+                  }
+                }
+              }
+            });
+            
+            return container;
+          }
+        }
+      },
+      eventTooltip: {
+        template: (data: any) => `
+          <div class="p-2">
+            <div class="font-semibold">${data.eventRecord.name}</div>
+            <div class="text-sm opacity-75">
+              ${new Date(data.eventRecord.startDate).toLocaleTimeString()} - 
+              ${new Date(data.eventRecord.endDate).toLocaleTimeString()}
             </div>
           </div>
-        `;
-      },
-      validatorFn: ({ resourceRecord, startDate, endDate, eventRecord }: any) => {
-        // Check capacity constraints
-        const resource = dataState.resources.find((r: any) => r.id === resourceRecord.id);
-        if (!resource) return { valid: false, message: 'Invalid resource' };
-        
-        // Count overlapping events for this resource
-        const overlappingEvents = dataState.events.filter((e: any) => {
-          if (e.id === eventRecord.id || e.resourceId !== resourceRecord.id) return false;
-          const eStart = new Date(e.startDate);
-          const eEnd = new Date(e.endDate);
-          return (startDate < eEnd && endDate > eStart);
-        });
-        
-        if (overlappingEvents.length >= resource.capacity) {
-          return { 
-            valid: false, 
-            message: `⚠️ Resource at capacity (max ${resource.capacity} concurrent tasks)` 
-          };
-        }
-        
-        // Prevent dragging outside working hours
-        const startHour = startDate.getHours();
-        const endHour = endDate.getHours();
-        if (startHour < 8 || endHour > 18) {
-          return { 
-            valid: false, 
-            message: '⏰ Operations must be within 8 AM - 6 PM' 
-          };
-        }
-        
-        return { valid: true };
+        `
       }
-    },
-    eventEditFeature : true,
-    eventResizeFeature: {
-      showTooltip: true,
-      tooltipTemplate: ({ startDate, endDate }: any) => {
-        const duration = Math.round((endDate - startDate) / (1000 * 60));
-        return `⏱️ Duration: ${duration} minutes`;
-      }
-    },
-    timeRangesFeature : {
-      showCurrentTimeLine: true,
-      showHeaderElements: true,
-      enableResizing: false
-    },
-    rowExpanderFeature : {
-      widgetClass : UtilizationChartWidget,
-      singleExpand : false // Allow multiple rows to be expanded
-    },
-    eventTooltipFeature: {
-      template: (data: any) => `
-        <div class="p-2">
-          <div class="font-semibold">${data.eventRecord.name}</div>
-          <div class="text-sm opacity-75">
-            ${new Date(data.eventRecord.startDate).toLocaleTimeString()} - 
-            ${new Date(data.eventRecord.endDate).toLocaleTimeString()}
-          </div>
-          <div class="text-xs mt-1 opacity-60">
-            💡 Drag to reschedule • Double-click to edit • Resize handles to adjust duration
-          </div>
-        </div>
-      `
     },
 
     columns : [
