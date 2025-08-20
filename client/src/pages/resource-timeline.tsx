@@ -277,12 +277,8 @@ export default function ResourceTimeline() {
           dependencies: true,
           dependencyEdit: true,
           
-          // Critical path highlighting
-          criticalPaths: {
-            disabled: false,
-            highlightCriticalPath: true,
-            showTooltip: true
-          },
+          // Critical path highlighting - simplified configuration
+          criticalPaths: true,
           
           // Resource non-working time
           resourceNonWorkingTime: true,
@@ -601,16 +597,10 @@ export default function ResourceTimeline() {
       schedulerRef.current.project.levelResources = optimizationMode === 'resource-level';
       
       // Enable additional optimization features
-      if (schedulerRef.current.features.criticalPaths) {
-        schedulerRef.current.features.criticalPaths.disabled = false;
-        schedulerRef.current.features.criticalPaths.highlightCriticalPath = true;
-        
-        // Highlight critical path when in critical-path mode
-        if (optimizationMode === 'critical-path') {
-          schedulerRef.current.project.calculateCriticalPath = true;
-          // Trigger critical path calculation
-          schedulerRef.current.project.getCriticalPaths();
-        }
+      // Note: criticalPaths feature may not be available in all Bryntum versions
+      // We'll use the project-level critical path calculation instead
+      if (optimizationMode === 'critical-path' && schedulerRef.current.project) {
+        schedulerRef.current.project.calculateCriticalPath = true;
       }
       if (schedulerRef.current.features.dependencies) {
         schedulerRef.current.features.dependencies.disabled = false;
@@ -646,14 +636,9 @@ export default function ResourceTimeline() {
           });
           break;
         case 'critical-path':
-          // Get critical path info if available
-          const criticalPaths = schedulerRef.current.project.getCriticalPaths ? 
-            schedulerRef.current.project.getCriticalPaths() : null;
-          const pathCount = criticalPaths ? criticalPaths.length : 0;
-          
           toast({
             title: "Critical Path Identified",
-            description: `Schedule optimized to minimize total duration. ${pathCount > 0 ? `Found ${pathCount} critical path(s).` : 'Critical operations are highlighted in red.'}`,
+            description: "Schedule optimized to minimize total duration. Critical operations that directly impact project completion are highlighted.",
           });
           break;
         case 'resource-level':
