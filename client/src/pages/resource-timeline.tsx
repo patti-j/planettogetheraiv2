@@ -15,7 +15,7 @@ interface Resource {
 interface Operation {
   id: number;
   name: string;
-  resourceId: number;
+  resourceId: string; // This is the external_id of the resource
   resourceName: string;
   startDate: string;
   endDate: string;
@@ -135,13 +135,13 @@ export default function ResourceTimeline() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="flex">
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border h-full flex flex-col">
+          <div className="flex flex-1 overflow-hidden">
             {/* Resource column */}
-            <div className="flex-shrink-0 w-48 border-r">
+            <div className="flex-shrink-0 w-48 border-r overflow-y-auto">
               {/* Header */}
-              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold">
+              <div className="h-[60px] border-b bg-gray-50 px-4 flex items-center font-semibold sticky top-0">
                 Resources
               </div>
               {/* Resource rows */}
@@ -161,7 +161,7 @@ export default function ResourceTimeline() {
             </div>
 
             {/* Timeline */}
-            <div className="flex-1 overflow-x-auto">
+            <div className="flex-1 overflow-auto">
               <div className="relative" style={{ width: `${totalWidth}px` }}>
                 {/* Time header */}
                 <div className="h-[60px] border-b bg-gray-50 sticky top-0 z-30">
@@ -204,10 +204,20 @@ export default function ResourceTimeline() {
                     const resourceOps = operationsByResource.get(resource.external_id) || [];
                     const rowTop = resourceIndex * 50; // Each row is 50px tall
                     
+                    // Debug log for first resource
+                    if (resourceIndex === 0) {
+                      console.log(`Resource ${resource.name} (${resource.external_id}): ${resourceOps.length} operations`);
+                    }
+                    
                     return resourceOps.map(op => {
                       const { left, width } = getOperationPosition(op);
                       const isHovered = hoveredOperation?.id === op.id;
                       const isSelected = selectedOperation?.id === op.id;
+                      
+                      // Debug first operation of first resource
+                      if (resourceIndex === 0 && resourceOps.indexOf(op) === 0) {
+                        console.log(`Rendering operation ${op.name} at position: top=${rowTop + 8}px, left=${left}px, width=${width}px`);
+                      }
                       
                       return (
                         <div
