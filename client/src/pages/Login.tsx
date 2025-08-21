@@ -77,8 +77,26 @@ export default function Login() {
 
     try {
       const result = await login({ username, password });
-      // Redirect to dashboard instead of home to ensure authenticated app loads
-      window.location.href = "/dashboard";
+      
+      // Ensure token is stored before redirect
+      if (result && result.token) {
+        localStorage.setItem('authToken', result.token);
+      }
+      
+      // Small delay to ensure token is properly stored
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Check if user is on mobile device and redirect appropriately
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // Redirect mobile users to mobile-home
+        console.log('Mobile login successful, redirecting to /mobile-home');
+        window.location.href = "/mobile-home";
+      } else {
+        // Redirect desktop users to dashboard
+        console.log('Desktop login successful, redirecting to /dashboard');
+        window.location.href = "/dashboard";
+      }
     } catch (error: any) {
       // Extract error message from the API response
       let errorMessage = "Invalid username or password";

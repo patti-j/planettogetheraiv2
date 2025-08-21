@@ -17,11 +17,15 @@ export function SmartHomeWrapper() {
   // For authenticated users, handle routing properly
   // Remove the authentication check that was causing blank page
   
-  // On mobile devices, always redirect to mobile-home for any non-mobile route
+  // On mobile devices, redirect to mobile-home for authenticated users
   if (deviceType === "mobile" && window.innerWidth < 768) {
-    // Always redirect mobile users to mobile-home if not already there
-    if (!location.includes('/mobile')) {
-      console.log('Redirecting mobile user to mobile-home from:', location);
+    // Don't redirect if we're on login, portal, or other public routes
+    const publicRoutes = ['/login', '/portal', '/home', '/marketing', '/pricing'];
+    const isPublicRoute = publicRoutes.some(route => location.includes(route));
+    
+    // Only redirect authenticated users who aren't on mobile or public routes
+    if (!location.includes('/mobile') && !isPublicRoute && isAuthenticated) {
+      console.log('Redirecting authenticated mobile user to mobile-home from:', location);
       return <Redirect to="/mobile-home" />;
     }
     // If already on a mobile route, render the page wrapped in MobileLayout
