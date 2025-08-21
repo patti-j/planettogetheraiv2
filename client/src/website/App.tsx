@@ -16,6 +16,7 @@ import WhatsComing from "@/pages/whats-coming-v13";
 import SolutionsComparison from "@/pages/solutions-comparison";
 import DemoTour from "@/pages/demo-tour";
 import PresentationPage from "@/pages/presentation";
+import ClearStorage from "@/pages/clear-storage";
 
 // Layout wrapper for website pages
 const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
@@ -40,6 +41,13 @@ export default function WebsiteApp() {
     <ThemeProvider>
       <TooltipProvider>
         <Switch>
+          {/* Clear storage page - special layout */}
+          <Route path="/clear-storage">
+            <SpecialLayout>
+              <ClearStorage />
+            </SpecialLayout>
+          </Route>
+          
           {/* Login page - with website header/footer */}
           <Route path="/login">
             <WebsiteLayout>
