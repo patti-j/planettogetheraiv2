@@ -26,6 +26,17 @@ function useAuthStatus() {
     const checkAuth = async () => {
       console.log("=== CHECKING AUTH STATUS ===");
       
+      // Skip auth check for public pages to improve performance
+      const publicPaths = ['/login', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
+      const currentPath = window.location.pathname;
+      
+      if (publicPaths.includes(currentPath)) {
+        console.log("Public page detected, skipping auth check for performance");
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+      
       // Check if we're in the middle of logout
       if ((window as any).__LOGOUT_IN_PROGRESS__) {
         console.log("Logout in progress, forcing unauthenticated state");
@@ -67,10 +78,8 @@ function useAuthStatus() {
       console.log("Auth status set:", isAuthenticated, "Loading:", false);
     };
 
-    // Initial check with slight delay to ensure localStorage is accessible
-    setTimeout(() => {
-      checkAuth();
-    }, 10);
+    // Immediate check for public pages, no delay needed
+    checkAuth();
 
     // Listen for storage changes (including logout from other tabs)
     const handleStorageChange = (e: StorageEvent) => {
@@ -102,8 +111,12 @@ export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
-  // Show loading screen
-  if (isLoading) {
+  // Skip loading screen for public pages to improve perceived performance
+  const publicPaths = ['/login', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
+  const isPublicPage = publicPaths.includes(currentPath);
+
+  // Show loading screen only for authenticated routes
+  if (isLoading && !isPublicPage) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

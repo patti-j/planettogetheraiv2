@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, lazy, Suspense } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,13 @@ import { Info, Eye, EyeOff, PlayCircle, DollarSign, Zap, Mail, ArrowLeft, Home, 
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/logo";
+
+// Lazy load demo accounts component to improve initial load time
+const DemoAccountsCard = lazy(() => 
+  import("@/components/login/DemoAccountsCard").then(module => ({ 
+    default: module.DemoAccountsCard 
+  }))
+);
 
 export default function Login() {
   const [, setLocation] = useLocation();
