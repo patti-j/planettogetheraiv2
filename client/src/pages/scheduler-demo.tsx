@@ -1,12 +1,12 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
-// ---- Sample data -----------------------------------------------------------
-const startDate = new Date(2025, 3, 1, 8);
-const endDate   = new Date(2025, 3, 1, 18);
+const startDate = new Date(2025, 3, 1, 8);  // 08:00
+const endDate   = new Date(2025, 3, 1, 18); // 18:00
 
-const resources = [
+// 1) Resources (rows)
+const resourcesData = [
   { id: 1, name: 'Lab #11',  capacity: 8 },
   { id: 2, name: 'Lab #12',  capacity: 10 },
   { id: 3, name: 'Lab #13',  capacity: 6 },
@@ -14,68 +14,52 @@ const resources = [
   { id: 5, name: 'Biosafety L3', capacity: 5 }
 ];
 
-const events = [
-  { id: 1, resourceId: 1, name: 'RNA Sequencing',       startDate,                       endDate: new Date(2025, 3, 1, 11) },
-  { id: 2, resourceId: 1, name: 'Glycan analysis',      startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
-  { id: 3, resourceId: 2, name: 'Electron microscopy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
-  { id: 4, resourceId: 2, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
-  { id: 5, resourceId: 3, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
-  { id: 6, resourceId: 4, name: 'Disinfectant efficacy', startDate: new Date(2025, 3, 1, 9), endDate: new Date(2025, 3, 1, 11) },
-  { id: 7, resourceId: 5, name: 'DNA Sequencing',       startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
+// 2) Events (NO resourceId in Pro – assignments decide rows)
+const eventsData = [
+  { id: 1, name: 'RNA Sequencing',         startDate: '2025-04-01T08:00:00', endDate: '2025-04-01T11:00:00' },
+  { id: 2, name: 'Glycan analysis',        startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00' },
+  { id: 3, name: 'Electron microscopy',    startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T12:00:00' },
+  { id: 4, name: 'Covid variant analysis', startDate: '2025-04-01T13:00:00', endDate: '2025-04-01T17:00:00' },
+  { id: 5, name: 'Bacterial identification', startDate: '2025-04-01T10:00:00', endDate: '2025-04-01T14:00:00' },
+  { id: 6, name: 'Disinfectant efficacy',  startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T11:00:00' },
+  { id: 7, name: 'DNA Sequencing',         startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00' }
 ];
 
-// ---- Main component --------------------------------------------------------
+// 3) Assignments (event -> resource). NOTE: keys are `event` and `resource` NOT eventId/resourceId
+const assignmentsData = [
+  { id: 1, event: 1, resource: 1 },  // RNA Sequencing -> Lab #11
+  { id: 2, event: 2, resource: 1 },  // Glycan analysis -> Lab #11
+  { id: 3, event: 3, resource: 2 },  // Electron microscopy -> Lab #12
+  { id: 4, event: 4, resource: 2 },  // Covid variant analysis -> Lab #12
+  { id: 5, event: 5, resource: 3 },  // Bacterial identification -> Lab #13
+  { id: 6, event: 6, resource: 4 },  // Disinfectant efficacy -> X-Ray lab
+  { id: 7, event: 7, resource: 5 }   // DNA Sequencing -> Biosafety L3
+];
+
 export default function SchedulerDemo() {
   const schedulerRef = useRef<any>(null);
-  const [dataState, setDataState] = useState({ resources, events });
 
-  const schedulerProps = useMemo(() => ({
-    startDate,
-    endDate,
-    viewPreset : 'hourAndDay',
-    rowHeight  : 60,
-    barMargin  : 8,
+  // Single source of truth for Pro stores - ONLY use project prop
+  const project = useMemo(() => ({ 
+    resourcesData, 
+    eventsData, 
+    assignmentsData 
+  }), []);
 
-    resources : dataState.resources,
-    events    : dataState.events,
-
-    // Explicit drag-and-drop configuration
-    features : {
-      eventDrag : {
-        showTooltip : true,
-        constrainDragToResource : false,
-        constrainDragToTimeSlot : false,
-        validatorFn({ startDate }: any) {
-          // Prevent scheduling before 7 AM
-          return startDate.getHours() >= 7;
-        }
-      },
-      eventEdit : true,
-      timeRanges : true
-    },
-
-    // 15-minute time snapping
-    timeResolution: {
-      unit: 'minute',
-      increment: 15
-    },
-
-    columns : [
-      { type : 'resourceInfo', text : 'Lab', width : 200, field : 'name' },
-      { text : 'Capacity', width : 140, field : 'capacity', align : 'center' }
-    ],
-
-    listeners : {
-      eventDrop : () => {
-        const instance = schedulerRef.current;
-        if (!instance) return;
-        const nextEvents = instance.eventStore.records.map((r: any) => ({
-          id: r.id, resourceId: r.resourceId, name: r.name, startDate: r.startDate, endDate: r.endDate
-        }));
-        setDataState(prev => ({ ...prev, events: nextEvents }));
+  const features = useMemo(() => ({
+    eventDrag: {
+      showTooltip: true,
+      constrainDragToResource: false,
+      constrainDragToTimeSlot: false,
+      validatorFn({ startDate, endDate }: any) {
+        const h1 = startDate.getHours();
+        const h2 = endDate.getHours();
+        return h1 >= 8 && h1 < 18 && h2 <= 18;
       }
-    }
-  }), [dataState]);
+    },
+    eventEdit: true,
+    timeRanges: true
+  }), []);
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
@@ -85,16 +69,41 @@ export default function SchedulerDemo() {
           <p className="mb-4 opacity-80">
             Events distributed across 5 lab resources. Drag to reschedule (15-min snap) or drop onto another resource.
           </p>
+
           <div style={{ height: '70vh', minHeight: '500px' }}>
             <BryntumSchedulerPro
-              onReady={({ widget }) => { 
+              project={project}  // ONLY use project prop, not resources/events separately
+              startDate={startDate}
+              endDate={endDate}
+              viewPreset="hourAndDay"
+              rowHeight={60}
+              barMargin={8}
+              timeResolution={{ unit: 'minute', increment: 15 }}
+              features={features}
+              columns={[
+                { type: 'resourceInfo', text: 'Lab', width: 220, field: 'name' },
+                { text: 'Capacity', width: 120, field: 'capacity', align: 'center' }
+              ]}
+              onReady={({ widget }) => {
                 schedulerRef.current = widget;
-                console.log('Scheduler loaded:', {
-                  resources: widget.resourceStore.count,
-                  events: widget.eventStore.count
-                });
+                // Should print: resources=5, events=7, assignments=7
+                console.log('✅ Scheduler loaded with:');
+                console.log('  resources:', widget.resourceStore.count);
+                console.log('  events:', widget.eventStore.count);
+                console.log('  assignments:', widget.assignmentStore.count);
+                
+                // Debug: Show what's in each store
+                console.log('Resource IDs:', widget.resourceStore.records.map((r: any) => r.id));
+                console.log('Event IDs:', widget.eventStore.records.map((e: any) => e.id));
+                console.log('Assignments:', widget.assignmentStore.records.map((a: any) => 
+                  ({ event: a.eventId, resource: a.resourceId })
+                ));
               }}
-              {...schedulerProps}
+              listeners={{
+                eventDrop: ({ eventRecords, targetResourceRecord }: any) => {
+                  console.log('Dropped', eventRecords[0]?.name, '->', targetResourceRecord?.name);
+                }
+              }}
             />
           </div>
         </div>
