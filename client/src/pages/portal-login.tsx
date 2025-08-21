@@ -78,7 +78,8 @@ export default function PortalLogin() {
         setError(errorData.error || `Login failed (${response.status})`);
       }
     } catch (err) {
-      setError('Please check your credentials and try again.');
+      console.log('=== LOGIN CATCH ERROR ===', err);
+      setError('Network error - please try again.');
     } finally {
       setLoading(false);
     }
