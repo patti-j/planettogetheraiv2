@@ -30,6 +30,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
