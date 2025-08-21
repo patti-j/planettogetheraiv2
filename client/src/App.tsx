@@ -331,6 +331,7 @@ function Router() {
         <Route path="/test-scheduler" component={TestScheduler} />
         <Route path="/scheduler-demo" component={SchedulerDemo} />
         <Route path="/marketing" component={MarketingLandingPage} />
+        <Route path="/whats-coming" component={WhatsComing} />
         <Route path="/solutions-comparison" component={SolutionsComparison} />
         <Route path="/onboarding" component={Onboarding} />
 
