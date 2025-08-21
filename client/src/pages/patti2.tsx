@@ -50,9 +50,9 @@ export default function SchedulerDemo() {
 
   // Single source of truth for Pro stores - ONLY use project prop
   const project = useMemo(() => ({
-    resourcesData,
-    eventsData,
-    assignmentsData
+    resources: resourcesData,
+    events: eventsData,
+    assignments: assignmentsData
   }), []);
 
   const features = useMemo(() => ({

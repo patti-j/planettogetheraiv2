@@ -1726,6 +1726,26 @@ export default function GanttChart({
     );
   };
 
+  // Component for unscheduled operations
+  const DraggableUnscheduledOperation = ({ operation }: { operation: Operation }) => {
+    const { drag, isDragging } = useOperationDrag(operation);
+    const job = jobs.find(j => j.id === operation.productionOrderId);
+    
+    return (
+      <div
+        ref={drag}
+        data-operation-block={operation.id}
+        className={`px-3 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded cursor-move hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
+          isDragging ? 'opacity-50' : ''
+        }`}
+        style={{ minWidth: '120px' }}
+      >
+        <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.name}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{job?.name || 'Unknown Job'}</div>
+      </div>
+    );
+  };
+
   const renderCustomersView = () => {
     // Group jobs by customer
     const customerGroups = useMemo(() => {
