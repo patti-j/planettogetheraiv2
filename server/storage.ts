@@ -2502,20 +2502,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCapabilities(): Promise<Capability[]> {
-    // Query from PT Publish table instead of local capabilities table
-    const result = await db.raw(`
-      SELECT DISTINCT ON (capability_id)
-        capability_id as id,
-        name,
-        description
-      FROM pt_publish_capabilities
-      WHERE publish_date = (
-        SELECT MAX(publish_date) FROM pt_publish_capabilities
-      )
-      ORDER BY capability_id
-    `);
-    
-    return result.rows || [];
+    // For now, return from local capabilities table
+    // TODO: Integrate with PT Publish capabilities when table is available
+    const result = await db.select().from(capabilities).orderBy(asc(capabilities.name));
+    return result || [];
   }
 
   async createCapability(capability: InsertCapability): Promise<Capability> {
@@ -2771,28 +2761,14 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    console.log("getProductionOrders: Redirecting to PT Manufacturing Orders table");
+    console.log("getProductionOrders: Fetching from production_orders table");
     
     try {
-      // Get production orders from PT Manufacturing Orders table
-      const ptOrders = await db.raw(`
-        SELECT 
-          manufacturing_order_id as id,
-          external_id as order_number,
-          name,
-          description,
-          product_name,
-          required_qty as quantity,
-          need_date as due_date,
-          scheduled_start as actual_start_date,
-          scheduled_end as actual_end_date,
-          job_id,
-          plant_id,
-          publish_date as created_at
-        FROM ptManufacturingOrders
-        WHERE instance_id = 'BREW-SIM-001'
-        ORDER BY need_date ASC
-      `);
+      // Get production orders from the local production_orders table
+      const orders = await db
+        .select()
+        .from(productionOrders)
+        .orderBy(asc(productionOrders.dueDate));
       
       // Map PT orders to ProductionOrder format
       const mappedOrders: ProductionOrder[] = ptOrders.rows.map((order: any) => ({
