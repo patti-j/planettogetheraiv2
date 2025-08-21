@@ -73,14 +73,20 @@ function useAuthStatus() {
           localStorage.removeItem('isDemo');
           setIsAuthenticated(false);
         } else if (response.ok) {
+          const userData = await response.json();
+          localStorage.setItem('user', JSON.stringify(userData));
           setIsAuthenticated(true);
         } else {
-          localStorage.removeItem('authToken');
+          // Only clear token for actual auth failures, not network issues
+          if (response.status >= 400 && response.status < 500) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+          }
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        localStorage.removeItem('authToken');
+        // Don't clear token on network errors
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -131,8 +137,20 @@ export default function App() {
     return null;
   }
   
+  // For dashboard and mobile-home, wait for auth check to complete
+  if ((currentPath === '/dashboard' || currentPath === '/mobile-home') && isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
   // Determine if we should show website or app
-  const shouldShowWebsite = (isPublicPath && currentPath !== '/') || !hasToken;
+  const shouldShowWebsite = (isPublicPath && currentPath !== '/') || (!hasToken && !isLoading);
 
   // Show loading screen only when actually verifying a token
   if (isLoading && !isPublicPath) {
