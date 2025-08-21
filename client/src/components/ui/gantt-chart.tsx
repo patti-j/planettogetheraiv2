@@ -1510,7 +1510,12 @@ export default function GanttChart({
 
   // Draggable resource row component for reordering
   const DraggableResourceRow = ({ resource, index }: { resource: Resource; index: number }) => {
-    const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
+    // Match operations by resourceId (from PT data) or assignedResourceId
+    const resourceOperations = operations.filter(op => 
+      op.resourceId === resource.id || 
+      op.assignedResourceId === resource.id || 
+      op.workCenterId === resource.id
+    );
     const { drop, isOver, canDrop } = useOperationDrop(resource, timelineWidth, timeScale.periods, timeUnit, timelineScrollLeft);
     
     console.log("🔧 DraggableResourceRow setup:", {
