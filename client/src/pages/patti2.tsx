@@ -39,6 +39,14 @@ const assignmentsData = [
 
 export default function SchedulerDemo() {
   const schedulerRef = useRef<any>(null);
+  
+  // Immediate console log to verify component is rendering
+  console.log('🚀 PATTI2 PAGE LOADED - ChatGPT Implementation');
+  console.log('Data being passed:', {
+    resources: resourcesData.length,
+    events: eventsData.length,
+    assignments: assignmentsData.length
+  });
 
   // Single source of truth for Pro stores - ONLY use project prop
   const project = useMemo(() => ({
@@ -66,9 +74,9 @@ export default function SchedulerDemo() {
     <div className="min-h-screen w-full bg-gray-50">
       <div className="w-full px-4">
         <div className="max-w-[1600px] mx-auto">
-          <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Lab Resource Scheduling</h1>
+          <h1 className="text-2xl font-semibold mb-3">PATTI2 - ChatGPT Implementation (Direct Copy)</h1>
           <p className="mb-4 opacity-80">
-            Events distributed across 5 lab resources. Drag to reschedule (15-min snap) or drop onto another resource.
+            This is the EXACT code from ChatGPT. Events should be distributed across 5 lab resources. Check browser console for logs.
           </p>
 
           <div style={{ height: '70vh', minHeight: '500px' }}>
