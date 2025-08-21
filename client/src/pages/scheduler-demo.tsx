@@ -1,23 +1,11 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
-/**
- * Scheduler Pro demo with Bryntum imports
- * ---------------------------------------------------------------------------
- * Using Bryntum Scheduler Pro with direct resourceId assignment
- * 
- * ✅ Events distributed across resources using resourceId
- * ✅ Drag horizontally to reschedule (with 15 min snapping)
- * ✅ Drag vertically to reassign to another resource
- * ✅ Full Bryntum Pro features enabled
- */
+const startDate = new Date(2025, 3, 1, 8);  // 08:00
+const endDate   = new Date(2025, 3, 1, 18); // 18:00
 
-// ---- Sample data (Assignment-driven) ---------------------------------------
-const startDate = new Date(2025, 3, 1, 8); // 08:00 local
-const endDate   = new Date(2025, 3, 1, 18); // 18:00 local
-
-// Resource rows
+// 1) Resources (rows)
 const resourcesData = [
   { id: 1, name: 'Lab #11',  capacity: 8 },
   { id: 2, name: 'Lab #12',  capacity: 10 },
@@ -26,140 +14,47 @@ const resourcesData = [
   { id: 5, name: 'Biosafety L3', capacity: 5 }
 ];
 
-// Events WITH resourceId - direct placement (matching working example)
-const eventsDataInitial = [
-  { id: 1, resourceId: 1, name: 'RNA Sequencing',         startDate: new Date(2025, 3, 1, 8),  endDate: new Date(2025, 3, 1, 11) },
-  { id: 2, resourceId: 1, name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
-  { id: 3, resourceId: 2, name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
-  { id: 4, resourceId: 2, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
-  { id: 5, resourceId: 3, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
-  { id: 6, resourceId: 4, name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
-  { id: 7, resourceId: 5, name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
+// 2) Events (NO resourceId in Pro – assignments decide rows)
+const eventsData = [
+  { id: 1, name: 'RNA Sequencing',         startDate: '2025-04-01T08:00:00', endDate: '2025-04-01T11:00:00' },
+  { id: 2, name: 'Glycan analysis',        startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00' },
+  { id: 3, name: 'Electron microscopy',    startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T12:00:00' },
+  { id: 4, name: 'Covid variant analysis', startDate: '2025-04-01T13:00:00', endDate: '2025-04-01T17:00:00' },
+  { id: 5, name: 'Bacterial identification', startDate: '2025-04-01T10:00:00', endDate: '2025-04-01T14:00:00' },
+  { id: 6, name: 'Disinfectant efficacy',  startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T11:00:00' },
+  { id: 7, name: 'DNA Sequencing',         startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00' }
 ];
 
-// Log data at initialization to verify it's correct
-console.log('Initial data setup:', {
-  resources: resourcesData,
-  events: eventsDataInitial
-});
+// 3) Assignments (event -> resource). NOTE: keys are `event` and `resource`
+const assignmentsData = [
+  { id: 1, event: 1, resource: 1 },
+  { id: 2, event: 2, resource: 1 },
+  { id: 3, event: 3, resource: 2 },
+  { id: 4, event: 4, resource: 2 },
+  { id: 5, event: 5, resource: 3 },
+  { id: 6, event: 6, resource: 4 },
+  { id: 7, event: 7, resource: 5 }
+];
 
 export default function SchedulerDemo() {
   const schedulerRef = useRef<any>(null);
-  
-  // Debug: log when scheduler is ready
-  React.useEffect(() => {
-    const checkScheduler = () => {
-      if (schedulerRef.current?.schedulerInstance) {
-        const scheduler = schedulerRef.current.schedulerInstance;
-        console.log('Scheduler instance ready:', {
-          resourceStore: scheduler.resourceStore.count,
-          eventStore: scheduler.eventStore.count,
-          assignmentStore: scheduler.assignmentStore?.count,
-          resources: scheduler.resourceStore.records.map((r: any) => ({ 
-            id: r.id, 
-            name: r.name 
-          })),
-          events: scheduler.eventStore.records.map((e: any) => ({ 
-            id: e.id, 
-            name: e.name,
-            resourceId: e.resourceId,
-            assignments: e.assignments?.map((a: any) => a.resourceId)
-          })),
-          assignments: scheduler.assignmentStore?.records.map((a: any) => ({
-            id: a.id,
-            eventId: a.eventId,
-            resourceId: a.resourceId
-          }))
-        });
+
+  // Single source of truth for Pro stores
+  const project = useMemo(() => ({ resourcesData, eventsData, assignmentsData }), []);
+
+  const features = useMemo(() => ({
+    eventDrag: {
+      showTooltip: true,
+      constrainDragToResource: false,
+      constrainDragToTimeSlot: false,
+      validatorFn({ startDate, endDate }: any) {
+        const h1 = startDate.getHours();
+        const h2 = endDate.getHours();
+        return h1 >= 8 && h1 < 18 && h2 <= 18;
       }
-    };
-    
-    // Check immediately and after a short delay
-    checkScheduler();
-    const timer = setTimeout(checkScheduler, 500);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Configure the scheduler
-  const schedulerProps = useMemo(() => ({
-    startDate: '2025-04-01',
-    endDate: '2025-04-02',
-    viewPreset: 'hourAndDay',
-    rowHeight: 60,
-    barMargin: 8,
-    height: 600,
-    
-    // Use project model with assignment store mode
-    project: {
-      resourcesData: resourcesData,
-      eventsData: eventsDataInitial,
-      assignmentsData: assignmentsData,
-      // Force assignment store mode
-      assignmentStore: true
     },
-    
-    // Enable multi-assignment mode
-    useInitialAnimation: false,
-    
-    // Configure drag and drop
-    features: {
-      eventDrag: {
-        showTooltip: true,
-        constrainDragToResource: false,
-        constrainDragToTimeSlot: false,
-        // 15-minute snapping
-        dragHelperConfig: {
-          snapToIncrement: true,
-          increment: 15,
-          incrementUnit: 'minute'
-        },
-        validatorFn({ startDate, endDate }: any) {
-          // Prevent scheduling before 8 AM or after 6 PM
-          const hours = startDate.getHours();
-          const endHours = endDate.getHours();
-          return hours >= 8 && hours < 18 && endHours <= 18;
-        }
-      },
-      eventEdit: true,
-      timeRanges: true
-    } as any,
-
-    // Snap configuration for 15-minute intervals
-    snap: true,
-    snapRelativeToEventStartDate: false,
-    timeResolution: {
-      unit: 'minute',
-      increment: 15
-    },
-
-    columns: [
-      { type: 'resourceInfo' as const, text: 'Lab', width: 220, field: 'name' },
-      { text: 'Capacity', width: 120, field: 'capacity', align: 'center' as const }
-    ],
-
-    listeners: {
-      // Handle drag and drop updates
-      eventDrop: ({ eventRecords, targetResourceRecord }: any) => {
-        const instance = schedulerRef.current;
-        if (!instance) return;
-        
-        console.log('Event dropped:', {
-          event: eventRecords[0]?.name,
-          targetResource: targetResourceRecord?.name,
-          newAssignments: eventRecords[0]?.assignments
-        });
-      },
-      
-      // Log data loading for debugging
-      dataChange: () => {
-        const instance = schedulerRef.current;
-        if (instance) {
-          console.log('Data changed - Resources:', instance.resourceStore.count, 
-                      'Events:', instance.eventStore.count,
-                      'Assignments:', instance.assignmentStore?.count || 0);
-        }
-      }
-    }
+    eventEdit: true,
+    timeRanges: true
   }), []);
 
   return (
@@ -167,23 +62,36 @@ export default function SchedulerDemo() {
       <div className="max-w-screen-2xl mx-auto p-4">
         <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Lab Resource Scheduling</h1>
         <p className="mb-4 opacity-80">
-          Events are distributed across 5 lab resources. Drag events to reschedule (15-min snap) or drop onto another resource to reassign.
+          Events are distributed across 5 lab resources. Drag to reschedule (15-min snap) or drop onto another resource to reassign.
         </p>
 
-        <div style={{ height: '600px', width: '100%' }}>
-          <BryntumSchedulerPro
-            {...schedulerProps}
-            ref={schedulerRef}
-          />
-        </div>
-        
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">Assignment Store Pattern</h3>
-          <p className="text-sm text-blue-800">
-            This demo uses Bryntum's Assignment Store, which separates event definitions from their resource assignments.
-            This allows events to be assigned to multiple resources or easily reassigned via drag & drop.
-          </p>
-        </div>
+        <BryntumSchedulerPro
+          project={project}
+          startDate={startDate}
+          endDate={endDate}
+          viewPreset="hourAndDay"
+          rowHeight={60}
+          barMargin={8}
+          timeResolution={{ unit: 'minute', increment: 15 }}
+          features={features}
+          columns={[
+            { type: 'resourceInfo', text: 'Lab', width: 220, field: 'name' },
+            { text: 'Capacity', width: 120, field: 'capacity', align: 'center' }
+          ]}
+          style={{ height: 600 }}
+          onReady={({ widget }) => {
+            schedulerRef.current = widget;
+            // Sanity checks – should print: 5 resources, 7 events, 7 assignments
+            console.log('resources:', widget.resourceStore.count);
+            console.log('events:', widget.eventStore.count);
+            console.log('assignments:', widget.assignmentStore.count);
+          }}
+          listeners={{
+            eventDrop: ({ eventRecords, targetResourceRecord }: any) => {
+              console.log('Dropped', eventRecords[0]?.name, '->', targetResourceRecord?.name);
+            }
+          }}
+        />
       </div>
     </div>
   );
