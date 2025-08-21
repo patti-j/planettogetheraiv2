@@ -2771,35 +2771,15 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    console.log("getProductionOrders: Redirecting to PT Jobs table");
+    console.log("getProductionOrders: Fetching from production_orders table");
     
-    // Get manufacturing orders from PT Publish tables and map to ProductionOrder format
-    const ptJobsList = await db
+    // Get production orders directly from the production_orders table
+    const orders = await db
       .select()
-      .from(ptJobs)
-      .orderBy(asc(ptJobs.needDateTime));
+      .from(productionOrders)
+      .orderBy(asc(productionOrders.dueDate));
     
-    // Map PT Jobs to ProductionOrder format for backward compatibility
-    return ptJobsList.map(job => ({
-      id: Number(job.jobId),
-      name: job.name || `Job ${job.jobId}`,
-      description: job.description,
-      product: job.product || job.name || 'Product',
-      quantity: job.quantity || 1000,
-      status: job.finished ? 'completed' : job.started ? 'in-progress' : 'planned',
-      priority: job.priority || 3,
-      startDate: job.scheduledStartDateTime || new Date(),
-      dueDate: job.needDateTime || new Date(),
-      createdAt: job.publishDate || new Date(),
-      updatedAt: job.publishDate || new Date(),
-      customerId: null,
-      salesOrderId: null,
-      batchNumber: job.externalId || null,
-      actualStartDate: job.scheduledStartDateTime || null,
-      actualEndDate: job.scheduledEndDateTime || null,
-      completedQuantity: null,
-      notes: job.notes || null
-    } as ProductionOrder));
+    return orders;
   }
 
   async getProductionOrder(id: number): Promise<ProductionOrder | undefined> {
