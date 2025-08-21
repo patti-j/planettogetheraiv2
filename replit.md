@@ -53,6 +53,7 @@ Note on concurrent work:
 
 ### Recent Updates (January 2025)
 - **Authentication Flow**: When starting the preview, unauthenticated users are automatically redirected to the login page instead of seeing the website homepage
+- **Global Control Tower Route**: Renamed enterprise-map route to /control-tower to align with "Global Control Tower" naming
 - **Mobile UI Improvements**: Fixed mobile header settings icon to open Max AI Settings
   - Settings icon in mobile header now opens Max AI Settings panel instead of profile menu
   - Max AI Settings includes AI theme, voice settings, and response configurations
