@@ -18,6 +18,7 @@ import PortalLogin from "@/pages/portal-login";
 import PortalDashboard from "@/pages/portal-dashboard";
 import Patti from "@/pages/Patti";
 import BasicScheduler from "@/pages/basic-scheduler";
+import SchedulerDemo from "@/pages/scheduler-demo";
 
 // Check authentication status
 function useAuthStatus() {
@@ -125,7 +126,7 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/patti', '/basic-scheduler'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/patti', '/basic-scheduler', '/scheduler-demo'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if user has a token
@@ -178,6 +179,8 @@ export default function App() {
                       <Patti />
                     ) : currentPath === '/basic-scheduler' ? (
                       <BasicScheduler />
+                    ) : currentPath === '/scheduler-demo' ? (
+                      <SchedulerDemo />
                     ) : /* Portal Routes - Always accessible */
                     currentPath.startsWith('/portal/') ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">
