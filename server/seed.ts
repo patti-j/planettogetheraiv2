@@ -3700,6 +3700,10 @@ async function seedMarketingData() {
     console.log("CTP optimization algorithms seeded successfully");
   }
 
+  // Seed workspace dashboards
+  const { seedWorkspaceDashboards } = await import("./seeds/workspace-dashboards");
+  await seedWorkspaceDashboards();
+
   console.log("Database seeded successfully");
 }
 
