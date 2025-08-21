@@ -290,11 +290,7 @@ export default function ProductionSchedulePage() {
           </CardHeader>
           <CardContent className="p-0 h-[calc(100%-5rem)]">
             {!isLoading ? (
-              <BryntumSchedulerProComponent 
-                height="100%"
-                startDate={new Date()}
-                endDate={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
-              />
+              <BryntumSchedulerProComponent />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">

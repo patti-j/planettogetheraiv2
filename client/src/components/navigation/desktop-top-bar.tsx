@@ -123,7 +123,7 @@ export function DesktopTopBar() {
   ];
 
   const commandItems = [
-    { label: 'Production Schedule', action: () => setLocation('/production-schedule') },
+    { label: 'Production Schedule', action: () => setLocation('/production-schedule-simple') },
     { label: 'Inventory Management', action: () => setLocation('/inventory') },
     { label: 'Quality Control', action: () => setLocation('/quality') },
     { label: 'Master Data', action: () => setLocation('/master-data') },
