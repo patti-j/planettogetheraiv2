@@ -1403,7 +1403,18 @@ export default function GanttChart({
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
         {getOrderedResources().map((resource) => {
-          const resourceOperations = operations.filter(op => op.workCenterId === resource.id);
+          // Match operations to resources by resource ID or name
+          const resourceOperations = operations.filter(op => {
+            // Check if operation has a resourceId that matches
+            if (op.assignedResourceId === resource.id) return true;
+            // Check if operation's resourceName matches
+            if (op.assignedResourceName === resource.name) return true;
+            // Check if workCenterId matches resource ID (for numeric IDs)
+            if (op.workCenterId === resource.id) return true;
+            // Check if workCenterName matches resource name
+            if (op.workCenterName === resource.name) return true;
+            return false;
+          });
           
           return (
             <div key={resource.id}>
