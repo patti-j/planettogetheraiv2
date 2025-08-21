@@ -60,10 +60,13 @@ export default function SchedulerDemo() {
     barMargin: 8,
     height: 600,
     
-    // Direct inline data configuration
-    resourcesData: resourcesData,
-    eventsData: eventsDataInitial,
-    assignmentsData: assignmentsDataInitial,
+    // Configure stores with inline data
+    resources: resourcesData,
+    events: eventsDataInitial,
+    assignments: assignmentsDataInitial,
+    
+    // Enable assignment store mode
+    useInitialAnimation: false,
     
     // Configure drag and drop
     features: {
