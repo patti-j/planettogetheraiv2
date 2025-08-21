@@ -60,7 +60,7 @@ export default function SchedulerDemo() {
     barMargin: 8,
     height: 600,
     
-    // Directly provide the data to the project model
+    // Direct inline data configuration
     resourcesData: resourcesData,
     eventsData: eventsDataInitial,
     assignmentsData: assignmentsDataInitial,
@@ -140,34 +140,7 @@ export default function SchedulerDemo() {
         <div style={{ height: '600px', width: '100%' }}>
           <BryntumSchedulerPro
             {...schedulerProps}
-            listeners={{
-              ...schedulerProps.listeners,
-              paint: ({ source }: any) => {
-                schedulerRef.current = source;
-                
-                // Debug output to verify data loading  
-                console.log('=== SCHEDULER PRO WITH ASSIGNMENTS ===');
-                console.log('Resource count:', source.resourceStore.count);
-                console.log('Event count:', source.eventStore.count);
-                console.log('Assignment store:', source.assignmentStore);
-                console.log('Assignment count:', source.assignmentStore?.count || 0);
-                
-                // Check the assignment store records
-                if (source.assignmentStore && source.assignmentStore.count > 0) {
-                  console.log('Assignments are loaded!');
-                  source.assignmentStore.records.forEach((assignment: any) => {
-                    console.log(`Assignment: Event ${assignment.eventId} -> Resource ${assignment.resourceId}`);
-                  });
-                } else {
-                  console.log('No assignments found - events may fall back to resourceId');
-                }
-                
-                // Check events for their resource assignments
-                source.eventStore.records.forEach((event: any) => {
-                  console.log(`Event "${event.name}" (id:${event.id}) resources:`, event.resources?.map((r: any) => r.name));
-                });
-              }
-            }}
+            ref={schedulerRef}
           />
         </div>
         
