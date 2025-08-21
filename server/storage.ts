@@ -119,6 +119,17 @@ import {
   companyOnboarding, onboardingProgress,
   type CompanyOnboarding, type OnboardingProgress,
   type InsertCompanyOnboarding, type InsertOnboardingProgress,
+  
+  // Labor Planning
+  employeeSkills, shiftAssignments, laborCapacityRequirements,
+  employeeAvailability, employeePreferences, employeeMachineCertifications,
+  shiftCapacityGaps, laborOptimizations,
+  type EmployeeSkill, type ShiftAssignment, type LaborCapacityRequirement,
+  type EmployeeAvailability, type EmployeePreference, type EmployeeMachineCertification,
+  type ShiftCapacityGap, type LaborOptimization,
+  type InsertEmployeeSkill, type InsertShiftAssignment, type InsertLaborCapacityRequirement,
+  type InsertEmployeeAvailability, type InsertEmployeePreference, type InsertEmployeeMachineCertification,
+  type InsertShiftCapacityGap, type InsertLaborOptimization,
   apiIntegrations, apiMappings, apiTests, apiAuditLogs, apiCredentials,
   type ApiIntegration, type ApiMapping, type ApiTest, type ApiAuditLog, type ApiCredential,
   type InsertApiIntegration, type InsertApiMapping, type InsertApiTest, type InsertApiAuditLog, type InsertApiCredential,

@@ -11992,5 +11992,356 @@ export type InsertUserHintInteraction = z.infer<typeof insertUserHintInteraction
 export type HintSequence = typeof hintSequences.$inferSelect;
 export type InsertHintSequence = z.infer<typeof insertHintSequenceSchema>;
 
+// ==================== Labor Planning & Workforce Optimization ====================
+
+// Employee Skills - Track what skills each employee has
+export const employeeSkills = pgTable('employee_skills', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  skillName: varchar('skill_name', { length: 100 }).notNull(),
+  skillCategory: varchar('skill_category', { length: 50 }).notNull(), // machining, assembly, quality, maintenance, material_handling
+  proficiencyLevel: varchar('proficiency_level', { length: 20 }).notNull().default('basic'), // basic, intermediate, advanced, expert
+  certificationDate: timestamp('certification_date'),
+  expirationDate: timestamp('expiration_date'),
+  isCurrent: boolean('is_current').default(true),
+  trainingHours: integer('training_hours').default(0),
+  lastAssessmentDate: timestamp('last_assessment_date'),
+  assessmentScore: numeric('assessment_score', { precision: 5, scale: 2 }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  userSkillIdx: index('employee_skills_user_idx').on(table.userId),
+  skillCategoryIdx: index('employee_skills_category_idx').on(table.skillCategory),
+  currentSkillsIdx: index('employee_skills_current_idx').on(table.isCurrent)
+}));
+
+// Labor Shift Templates - Define standard shift patterns for labor planning
+export const laborShiftTemplates = pgTable('labor_shift_templates', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  code: varchar('code', { length: 20 }).notNull().unique(), // SHIFT-1, SHIFT-2, SHIFT-3
+  plantId: integer('plant_id').references(() => plants.id),
+  startTime: varchar('start_time', { length: 5 }).notNull(), // HH:MM format (e.g., "07:00")
+  endTime: varchar('end_time', { length: 5 }).notNull(), // HH:MM format (e.g., "15:00")
+  durationHours: numeric('duration_hours', { precision: 4, scale: 2 }).notNull(),
+  breakMinutes: integer('break_minutes').default(0),
+  lunchMinutes: integer('lunch_minutes').default(0),
+  netWorkHours: numeric('net_work_hours', { precision: 4, scale: 2 }).notNull(),
+  daysOfWeek: jsonb('days_of_week').$type<boolean[]>().notNull(), // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  shiftType: varchar('shift_type', { length: 20 }).notNull().default('regular'), // regular, overtime, weekend, holiday
+  minimumStaff: integer('minimum_staff').notNull().default(1),
+  maximumStaff: integer('maximum_staff'),
+  requiredSkills: jsonb('required_skills').$type<{
+    skillCategory: string;
+    minimumLevel: string;
+    requiredCount: number;
+  }[]>().default([]),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  plantShiftIdx: index('shift_templates_plant_idx').on(table.plantId),
+  activeShiftsIdx: index('shift_templates_active_idx').on(table.isActive)
+}));
+
+// Shift Assignments - Assign employees to specific shifts
+export const shiftAssignments = pgTable('shift_assignments', {
+  id: serial('id').primaryKey(),
+  shiftTemplateId: integer('shift_template_id').references(() => laborShiftTemplates.id),
+  userId: integer('user_id').notNull().references(() => users.id),
+  assignedDate: timestamp('assigned_date').notNull(),
+  startDateTime: timestamp('start_date_time').notNull(),
+  endDateTime: timestamp('end_date_time').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('scheduled'), // scheduled, confirmed, in_progress, completed, absent, cancelled
+  actualStartTime: timestamp('actual_start_time'),
+  actualEndTime: timestamp('actual_end_time'),
+  overtimeHours: numeric('overtime_hours', { precision: 4, scale: 2 }).default('0'),
+  assignedResourceId: integer('assigned_resource_id').references(() => resources.id),
+  assignedWorkCenter: varchar('assigned_work_center', { length: 100 }),
+  productionAreaId: integer('production_area_id'),
+  role: varchar('role', { length: 50 }), // operator, supervisor, quality_inspector, material_handler
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id),
+  modifiedBy: integer('modified_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  userDateIdx: index('shift_assignments_user_date_idx').on(table.userId, table.assignedDate),
+  statusIdx: index('shift_assignments_status_idx').on(table.status),
+  dateIdx: index('shift_assignments_date_idx').on(table.assignedDate),
+  resourceIdx: index('shift_assignments_resource_idx').on(table.assignedResourceId)
+}));
+
+// Labor Capacity Requirements - Track how much labor capacity is needed
+export const laborCapacityRequirements = pgTable('labor_capacity_requirements', {
+  id: serial('id').primaryKey(),
+  plantId: integer('plant_id').references(() => plants.id),
+  productionOrderId: integer('production_order_id').references(() => productionOrders.id),
+  resourceId: integer('resource_id').references(() => resources.id),
+  workCenter: varchar('work_center', { length: 100 }),
+  requiredDate: timestamp('required_date').notNull(),
+  shiftTemplateId: integer('shift_template_id').references(() => laborShiftTemplates.id),
+  requiredHeadcount: integer('required_headcount').notNull(),
+  requiredHours: numeric('required_hours', { precision: 8, scale: 2 }).notNull(),
+  requiredSkills: jsonb('required_skills').$type<{
+    skillName: string;
+    skillCategory: string;
+    minimumLevel: string;
+    requiredCount: number;
+  }[]>().notNull(),
+  priority: varchar('priority', { length: 20 }).notNull().default('normal'), // low, normal, high, critical
+  capacityType: varchar('capacity_type', { length: 20 }).notNull().default('production'), // production, setup, maintenance, quality
+  assignedHeadcount: integer('assigned_headcount').default(0),
+  assignedHours: numeric('assigned_hours', { precision: 8, scale: 2 }).default('0'),
+  gapHeadcount: integer('gap_headcount').default(0),
+  gapHours: numeric('gap_hours', { precision: 8, scale: 2 }).default('0'),
+  fulfillmentStatus: varchar('fulfillment_status', { length: 20 }).notNull().default('unfulfilled'), // unfulfilled, partial, fulfilled, overstaffed
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  dateIdx: index('labor_capacity_date_idx').on(table.requiredDate),
+  plantIdx: index('labor_capacity_plant_idx').on(table.plantId),
+  orderIdx: index('labor_capacity_order_idx').on(table.productionOrderId),
+  statusIdx: index('labor_capacity_status_idx').on(table.fulfillmentStatus)
+}));
+
+// Employee Availability - Track when employees are available
+export const employeeAvailability = pgTable('employee_availability', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  availableDate: timestamp('available_date').notNull(),
+  shiftTemplateId: integer('shift_template_id').references(() => laborShiftTemplates.id),
+  availabilityType: varchar('availability_type', { length: 20 }).notNull().default('available'), // available, unavailable, partial, on_leave, training
+  startTime: varchar('start_time', { length: 5 }), // HH:MM format, null means all day
+  endTime: varchar('end_time', { length: 5 }), // HH:MM format
+  maxHours: numeric('max_hours', { precision: 4, scale: 2 }),
+  preferredHours: numeric('preferred_hours', { precision: 4, scale: 2 }),
+  reason: varchar('reason', { length: 100 }), // vacation, sick, training, personal, etc.
+  isRecurring: boolean('is_recurring').default(false),
+  recurringPattern: jsonb('recurring_pattern').$type<{
+    frequency: 'daily' | 'weekly' | 'monthly';
+    interval: number;
+    daysOfWeek?: boolean[];
+    endDate?: string;
+  }>(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  userDateIdx: index('employee_availability_user_date_idx').on(table.userId, table.availableDate),
+  dateIdx: index('employee_availability_date_idx').on(table.availableDate),
+  typeIdx: index('employee_availability_type_idx').on(table.availabilityType)
+}));
+
+// Employee Preferences - Store employee scheduling preferences
+export const employeePreferences = pgTable('employee_preferences', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id).unique(),
+  preferredShifts: jsonb('preferred_shifts').$type<number[]>().default([]), // Array of shiftTemplateIds
+  maxHoursPerWeek: numeric('max_hours_per_week', { precision: 4, scale: 2 }),
+  minHoursPerWeek: numeric('min_hours_per_week', { precision: 4, scale: 2 }),
+  preferredDaysOff: jsonb('preferred_days_off').$type<boolean[]>().default([]), // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  availableForOvertime: boolean('available_for_overtime').default(true),
+  maxOvertimeHoursPerWeek: numeric('max_overtime_hours_per_week', { precision: 4, scale: 2 }),
+  preferredWorkAreas: jsonb('preferred_work_areas').$type<string[]>().default([]),
+  restrictedWorkAreas: jsonb('restricted_work_areas').$type<string[]>().default([]),
+  preferredTeammates: jsonb('preferred_teammates').$type<number[]>().default([]), // Array of userIds
+  notificationPreferences: jsonb('notification_preferences').$type<{
+    scheduleChanges: boolean;
+    shiftReminders: boolean;
+    overtimeRequests: boolean;
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+  }>().default({
+    scheduleChanges: true,
+    shiftReminders: true,
+    overtimeRequests: true,
+    emailNotifications: true,
+    smsNotifications: false
+  }),
+  flexibilityScore: integer('flexibility_score').default(5), // 1-10 scale
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  userIdx: index('employee_preferences_user_idx').on(table.userId)
+}));
+
+// Employee Machine Certifications - Track which machines employees can operate
+export const employeeMachineCertifications = pgTable('employee_machine_certifications', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id),
+  resourceId: integer('resource_id').notNull().references(() => resources.id),
+  certificationLevel: varchar('certification_level', { length: 20 }).notNull().default('operator'), // trainee, operator, advanced, trainer
+  certificationDate: timestamp('certification_date').notNull(),
+  expirationDate: timestamp('expiration_date'),
+  hoursOperated: numeric('hours_operated', { precision: 8, scale: 2 }).default('0'),
+  lastOperatedDate: timestamp('last_operated_date'),
+  qualityScore: numeric('quality_score', { precision: 5, scale: 2 }), // 0-100 scale
+  safetyScore: numeric('safety_score', { precision: 5, scale: 2 }), // 0-100 scale
+  productivityScore: numeric('productivity_score', { precision: 5, scale: 2 }), // 0-100 scale
+  canTrain: boolean('can_train').default(false),
+  restrictions: text('restrictions'),
+  notes: text('notes'),
+  certifiedBy: integer('certified_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  userResourceIdx: unique().on(table.userId, table.resourceId),
+  userIdx: index('machine_certifications_user_idx').on(table.userId),
+  resourceIdx: index('machine_certifications_resource_idx').on(table.resourceId),
+  levelIdx: index('machine_certifications_level_idx').on(table.certificationLevel)
+}));
+
+// Shift Capacity Gaps - Track gaps between required and available capacity
+export const shiftCapacityGaps = pgTable('shift_capacity_gaps', {
+  id: serial('id').primaryKey(),
+  plantId: integer('plant_id').references(() => plants.id),
+  shiftTemplateId: integer('shift_template_id').references(() => shiftTemplates.id),
+  gapDate: timestamp('gap_date').notNull(),
+  workCenter: varchar('work_center', { length: 100 }),
+  skillCategory: varchar('skill_category', { length: 50 }),
+  requiredHeadcount: integer('required_headcount').notNull(),
+  availableHeadcount: integer('available_headcount').notNull(),
+  gapHeadcount: integer('gap_headcount').notNull(),
+  requiredHours: numeric('required_hours', { precision: 8, scale: 2 }).notNull(),
+  availableHours: numeric('available_hours', { precision: 8, scale: 2 }).notNull(),
+  gapHours: numeric('gap_hours', { precision: 8, scale: 2 }).notNull(),
+  gapPercentage: numeric('gap_percentage', { precision: 5, scale: 2 }).notNull(),
+  severity: varchar('severity', { length: 20 }).notNull().default('low'), // low, medium, high, critical
+  mitigationActions: jsonb('mitigation_actions').$type<{
+    action: string;
+    status: string;
+    assignedTo?: number;
+    dueDate?: string;
+  }[]>().default([]),
+  resolutionStatus: varchar('resolution_status', { length: 20 }).notNull().default('unresolved'), // unresolved, in_progress, resolved, accepted
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  dateIdx: index('shift_capacity_gaps_date_idx').on(table.gapDate),
+  plantIdx: index('shift_capacity_gaps_plant_idx').on(table.plantId),
+  severityIdx: index('shift_capacity_gaps_severity_idx').on(table.severity),
+  statusIdx: index('shift_capacity_gaps_status_idx').on(table.resolutionStatus)
+}));
+
+// Labor Planning Optimization Runs - Track optimization algorithm executions
+export const laborPlanningOptimizations = pgTable('labor_planning_optimizations', {
+  id: serial('id').primaryKey(),
+  plantId: integer('plant_id').references(() => plants.id),
+  optimizationName: varchar('optimization_name', { length: 100 }).notNull(),
+  startDate: timestamp('start_date').notNull(),
+  endDate: timestamp('end_date').notNull(),
+  algorithm: varchar('algorithm', { length: 50 }).notNull(), // genetic, linear_programming, constraint_satisfaction, heuristic
+  objectiveFunction: varchar('objective_function', { length: 100 }).notNull(), // minimize_cost, maximize_utilization, balance_workload, minimize_gaps
+  constraints: jsonb('constraints').$type<{
+    maxOvertimePercent?: number;
+    minRestHours?: number;
+    maxConsecutiveDays?: number;
+    skillRequirements?: boolean;
+    employeePreferences?: boolean;
+    laborRegulations?: boolean;
+  }>().notNull(),
+  parameters: jsonb('parameters').$type<Record<string, any>>().notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, running, completed, failed, cancelled
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  executionTimeSeconds: integer('execution_time_seconds'),
+  results: jsonb('results').$type<{
+    totalAssignments?: number;
+    fulfillmentRate?: number;
+    overtimeHours?: number;
+    totalCost?: number;
+    gapsRemaining?: number;
+    utilizationRate?: number;
+    employeeSatisfactionScore?: number;
+  }>(),
+  appliedToSchedule: boolean('applied_to_schedule').default(false),
+  appliedAt: timestamp('applied_at'),
+  appliedBy: integer('applied_by').references(() => users.id),
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow()
+}, (table) => ({
+  plantIdx: index('labor_optimizations_plant_idx').on(table.plantId),
+  statusIdx: index('labor_optimizations_status_idx').on(table.status),
+  dateRangeIdx: index('labor_optimizations_date_range_idx').on(table.startDate, table.endDate)
+}));
+
+// Insert schemas for Labor Planning
+export const insertEmployeeSkillSchema = createInsertSchema(employeeSkills).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertEmployeeSkill = z.infer<typeof insertEmployeeSkillSchema>;
+export type EmployeeSkill = typeof employeeSkills.$inferSelect;
+
+export const insertLaborShiftTemplateSchema = createInsertSchema(shiftTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertLaborShiftTemplate = z.infer<typeof insertLaborShiftTemplateSchema>;
+export type LaborShiftTemplate = typeof shiftTemplates.$inferSelect;
+
+export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertShiftAssignment = z.infer<typeof insertShiftAssignmentSchema>;
+export type ShiftAssignment = typeof shiftAssignments.$inferSelect;
+
+export const insertLaborCapacityRequirementSchema = createInsertSchema(laborCapacityRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertLaborCapacityRequirement = z.infer<typeof insertLaborCapacityRequirementSchema>;
+export type LaborCapacityRequirement = typeof laborCapacityRequirements.$inferSelect;
+
+export const insertEmployeeAvailabilitySchema = createInsertSchema(employeeAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertEmployeeAvailability = z.infer<typeof insertEmployeeAvailabilitySchema>;
+export type EmployeeAvailability = typeof employeeAvailability.$inferSelect;
+
+export const insertEmployeePreferenceSchema = createInsertSchema(employeePreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertEmployeePreference = z.infer<typeof insertEmployeePreferenceSchema>;
+export type EmployeePreference = typeof employeePreferences.$inferSelect;
+
+export const insertEmployeeMachineCertificationSchema = createInsertSchema(employeeMachineCertifications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertEmployeeMachineCertification = z.infer<typeof insertEmployeeMachineCertificationSchema>;
+export type EmployeeMachineCertification = typeof employeeMachineCertifications.$inferSelect;
+
+export const insertShiftCapacityGapSchema = createInsertSchema(shiftCapacityGaps).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertShiftCapacityGap = z.infer<typeof insertShiftCapacityGapSchema>;
+export type ShiftCapacityGap = typeof shiftCapacityGaps.$inferSelect;
+
+export const insertLaborPlanningOptimizationSchema = createInsertSchema(laborPlanningOptimizations).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertLaborPlanningOptimization = z.infer<typeof insertLaborPlanningOptimizationSchema>;
+export type LaborPlanningOptimization = typeof laborPlanningOptimizations.$inferSelect;
+
 
 
