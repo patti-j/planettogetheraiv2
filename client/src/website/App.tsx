@@ -100,6 +100,7 @@ export default function WebsiteApp() {
           </Route>
           
           <Route path="/">
+            {/* Redirect to login if not authenticated */}
             <WebsiteLayout>
               <MarketingHome />
             </WebsiteLayout>

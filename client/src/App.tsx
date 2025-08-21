@@ -117,12 +117,20 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // If user has a token and is on a public path (like /), still show website but with logout option
+  // Check if user has a token
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
-  const shouldShowWebsite = isPublicPath || !hasToken;
+  
+  // If on root path and not authenticated, redirect to login
+  if (currentPath === '/' && !hasToken && !isLoading) {
+    window.location.href = '/login';
+    return null;
+  }
+  
+  // Determine if we should show website or app
+  const shouldShowWebsite = (isPublicPath && currentPath !== '/') || !hasToken;
 
   // Show loading screen only when actually verifying a token
   if (isLoading && !isPublicPath) {
