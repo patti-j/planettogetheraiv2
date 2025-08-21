@@ -14,7 +14,7 @@ import Pricing from "@/pages/pricing";
 import Login from "@/pages/Login";
 import WhatsComing from "@/pages/whats-coming-v13";
 import SolutionsComparison from "@/pages/solutions-comparison";
-// // import DemoTour from "@/pages/demo-tour"; // Commented out - file doesn't exist // Component doesn't exist yet
+// // // import DemoTour from "@/pages/demo-tour"; // Removed - file doesn't exist // Commented out - file doesn't exist // Component doesn't exist yet
 import PresentationPage from "@/pages/presentation";
 import ClearStorage from "@/pages/clear-storage";
 
@@ -81,12 +81,7 @@ export default function WebsiteApp() {
             </WebsiteLayout>
           </Route>
           
-          {/* Demo Tour route commented out until component is created
-          <Route path="/demo-tour">
-            <WebsiteLayout>
-              <DemoTour />
-            </WebsiteLayout>
-          </Route> */}
+          {/* Demo tour route removed - component doesn't exist yet */}
           
           <Route path="/marketing">
             <WebsiteLayout>

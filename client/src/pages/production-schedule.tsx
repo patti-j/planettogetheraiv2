@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
+import GanttChart from '@/components/ui/gantt-chart';
 
 // Import PT Gantt styles
 import '../styles/pt-gantt.css';
@@ -110,6 +111,11 @@ export default function ProductionSchedulePage() {
 
   const { data: resources, isLoading: resourcesLoading } = useQuery({
     queryKey: ['/api/resources'],
+    enabled: canViewSchedule
+  });
+
+  const { data: capabilities, isLoading: capabilitiesLoading } = useQuery({
+    queryKey: ['/api/capabilities'],
     enabled: canViewSchedule
   });
 
@@ -664,17 +670,20 @@ export default function ProductionSchedulePage() {
                   </div>
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <div className="flex items-center justify-center p-8" style={{ minHeight: '700px', height: 'auto' }}>
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold mb-4">Resource Gantt View</h3>
-                      <p className="text-gray-600 mb-4">
-                        Visit the new scheduler demo for a working implementation
-                      </p>
-                      <a href="/basic-scheduler" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        View Basic Scheduler Demo →
-                      </a>
-                    </div>
-                  </div>
+                  <GanttChart
+                    jobs={productionOrders}
+                    operations={ptOperations}
+                    resources={resources}
+                    capabilities={capabilities}
+                    view={layoutConfig.view === 'compact' ? 'operations' : 'resources'}
+                    selectedResourceViewId={null}
+                    onResourceViewChange={() => {}}
+                    rowHeight={60}
+                    onRowHeightChange={() => {}}
+                    onExportReady={(handler) => {
+                      exportHandlerRef.current = handler;
+                    }}
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-96">
                     <div className="text-center">
