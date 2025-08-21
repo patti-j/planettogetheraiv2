@@ -2263,30 +2263,12 @@ export default function GanttChart({
           </div>
           <div className="flex-1 p-2 overflow-x-auto" style={{ minHeight: `${rowHeight}px` }}>
             <div className="flex space-x-2">
-              {unscheduledOperations.map((operation) => {
-                const [{ isDragging }, drag] = useDrag({
-                  type: "operation",
-                  item: { operation },
-                  collect: (monitor) => ({
-                    isDragging: monitor.isDragging(),
-                  }),
-                });
-                
-                return (
-                  <div 
-                    key={operation.id} 
-                    ref={drag}
-                    className={`flex-shrink-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 shadow-sm cursor-move transition-opacity ${
-                      isDragging ? 'opacity-50' : ''
-                    }`}
-                  >
-                    <div className="text-xs font-medium text-gray-800 dark:text-gray-200">{operation.operationName || operation.description}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Duration: {operation.standardDuration || 0}min
-                    </div>
-                  </div>
-                );
-              })}
+              {unscheduledOperations.map((operation) => (
+                <DraggableUnscheduledOperation 
+                  key={operation.id} 
+                  operation={operation} 
+                />
+              ))}
             </div>
           </div>
         </div>
