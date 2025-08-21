@@ -247,11 +247,8 @@ export function useAuth() {
       
       // Force hard reload to login page to ensure clean state
       console.log("✓ Hard reload to login page...");
-      window.location.href = '/login';
-      // Force reload after navigation to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Use replace to prevent back button issues
+      window.location.replace('/login');
     },
     onError: (error) => {
       console.error("=== LOGOUT ERROR HANDLER ===", error);

@@ -23,13 +23,48 @@ function useAuthStatus() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       console.log("=== CHECKING AUTH STATUS ===");
+      
+      // Check if we're in the middle of logout
+      if ((window as any).__LOGOUT_IN_PROGRESS__) {
+        console.log("Logout in progress, forcing unauthenticated state");
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+      
       const token = localStorage.getItem('authToken');
       console.log("Token found:", !!token, token);
-      setIsAuthenticated(!!token);
+      
+      // If we have a token, verify it's not blacklisted
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.status === 401) {
+            console.log("Token is blacklisted, clearing it");
+            localStorage.removeItem('authToken');
+            setIsAuthenticated(false);
+          } else if (response.ok) {
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          console.error("Auth check error:", error);
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      
       setIsLoading(false);
-      console.log("Auth status set:", !!token, "Loading:", false);
+      console.log("Auth status set:", isAuthenticated, "Loading:", false);
     };
 
     // Initial check with slight delay to ensure localStorage is accessible
