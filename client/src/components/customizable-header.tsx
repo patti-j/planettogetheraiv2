@@ -35,6 +35,7 @@ import { WorkspaceSwitcher } from './workspace-switcher';
 // Widget components
 import { WidgetFlyout } from './widget-flyout';
 import { WidgetModal } from './widget-modal';
+import { MaxAIHeaderPrompt } from './max-ai-header-prompt';
 
 import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
@@ -401,6 +402,11 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           showIcon={true}
         />
       );
+    }
+
+    // Special handling for Max AI - render prompt text box
+    if (item.action === 'max-ai') {
+      return <MaxAIHeaderPrompt key={item.id} showText={showHeaderText} />;
     }
 
     return (
