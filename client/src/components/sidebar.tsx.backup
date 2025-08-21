@@ -107,7 +107,6 @@ export default function Sidebar() {
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
-    { icon: Users, label: "Labor Planning", href: "/labor-planning", active: location === "/labor-planning", feature: "labor-planning", action: "view" },
     { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", active: location === "/optimization-studio", feature: "optimization-studio", action: "view" },
     
     // AI and Analytics

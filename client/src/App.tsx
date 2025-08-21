@@ -52,6 +52,7 @@ import ApiIntegrationsPage from "@/pages/api-integrations";
 
 import SystemsManagement from "@/pages/systems-management";
 import CapacityPlanning from "@/pages/capacity-planning";
+import LaborPlanning from "@/pages/labor-planning";
 import VisualFactory from "@/pages/visual-factory";
 import BusinessGoals from "@/pages/business-goals";
 import RoleManagement from "@/pages/role-management";
@@ -491,6 +492,12 @@ function Router() {
           <Route path="/capacity-planning">
             <ProtectedRoute feature="capacity-planning" action="view">
               <CapacityPlanning />
+            </ProtectedRoute>
+          </Route>
+          
+          <Route path="/labor-planning">
+            <ProtectedRoute feature="labor-planning" action="view">
+              <LaborPlanning />
             </ProtectedRoute>
           </Route>
           <Route path="/visual-factory">
