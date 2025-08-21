@@ -189,50 +189,45 @@ export function useAuth() {
     mutationFn: async () => {
       console.log("=== LOGOUT MUTATION STARTING ===");
       
-      // Clear localStorage token IMMEDIATELY before doing anything else
+      // Get current token BEFORE clearing it
+      const currentToken = localStorage.getItem('authToken');
+      console.log("✓ Current token for logout:", currentToken);
+      
+      // IMMEDIATELY clear authentication state to prevent any re-auth
+      queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.setQueryData(["/api/auth/me"], undefined);
+      
+      // Clear localStorage token IMMEDIATELY  
       localStorage.removeItem('authToken');
-      console.log("✓ Cleared authToken from localStorage");
+      localStorage.clear(); // Nuclear option - clear everything
+      console.log("✓ Nuclear clear of localStorage completed");
       
       // Close any active tour before logout
       const savedTourState = localStorage.getItem("activeDemoTour");
       if (savedTourState) {
         localStorage.removeItem("activeDemoTour");
-        // Dispatch a custom event to notify tour components to close
         window.dispatchEvent(new CustomEvent('tourClose'));
       }
       
-      // Clear authentication state immediately to trigger re-render
-      queryClient.setQueryData(["/api/auth/me"], null);
-      console.log("✓ Cleared auth query data");
-      
-      // Clear ALL localStorage items related to authentication
-      localStorage.removeItem('userPreferences');
-      localStorage.removeItem('lastVisitedPage');
-      localStorage.removeItem('portal_token');
-      localStorage.removeItem('portal_user');
-      console.log("✓ Cleared all auth-related localStorage items");
-      
       try {
-        // Get current token before clearing localStorage
-        const currentToken = localStorage.getItem('authToken');
-        const headers: HeadersInit = { "Content-Type": "application/json" };
-        
-        // Include token in logout request so server can blacklist it
         if (currentToken) {
-          headers.Authorization = `Bearer ${currentToken}`;
-        }
-        
-        // Make logout request to clear server-side session and blacklist token
-        const response = await fetch("/api/auth/logout", {
-          method: "POST",
-          headers,
-          credentials: "include", // Include session cookies
-        });
-        console.log("✓ Server logout request completed:", response.status);
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log("✓ Server logout response:", result);
+          // Make logout request to blacklist token on server
+          const response = await fetch("/api/auth/logout", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${currentToken}`
+            },
+            credentials: "include", // Include session cookies
+          });
+          console.log("✓ Server logout request completed:", response.status);
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log("✓ Server logout response:", result);
+          } else {
+            console.error("Server logout failed with status:", response.status);
+          }
         }
       } catch (error) {
         console.error("Server logout failed:", error);
@@ -244,46 +239,36 @@ export function useAuth() {
     onSuccess: () => {
       console.log("=== LOGOUT SUCCESS HANDLER ===");
       
-      // Double-check all auth data is cleared
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userPreferences');
-      localStorage.removeItem('lastVisitedPage');
-      localStorage.removeItem('portal_token');
-      localStorage.removeItem('portal_user');
-      console.log("✓ Final cleanup of localStorage completed");
+      // Nuclear option: clear localStorage completely
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log("✓ Nuclear clear of all storage completed");
       
       // Clear ALL cached queries completely
       queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.setQueryData(["/api/auth/me"], undefined);
       queryClient.clear();
       queryClient.invalidateQueries();
+      queryClient.removeQueries();
       console.log("✓ React Query cache completely cleared");
       
-      // Dispatch custom logout event to trigger app re-render
-      window.dispatchEvent(new CustomEvent('logout'));
-      console.log("✓ Logout event dispatched");
-      
-      // Navigate to login page and force reload for clean state
-      console.log("✓ Navigating to login page...");
-      window.location.href = '/login';
+      // Force immediate redirect to login page (no events, just go)
+      console.log("✓ Immediate redirect to login...");
+      window.location.replace('/login');
     },
     onError: (error) => {
       console.error("=== LOGOUT ERROR HANDLER ===", error);
-      // Even if logout fails, clear local auth data
-      console.log("Clearing local auth data despite error...");
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userPreferences');
-      localStorage.removeItem('lastVisitedPage');
-      localStorage.removeItem('portal_token');
-      localStorage.removeItem('portal_user');
+      // Even if logout fails, clear local auth data completely
+      console.log("Nuclear clear despite error...");
+      localStorage.clear();
+      sessionStorage.clear();
       queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.setQueryData(["/api/auth/me"], undefined);
       queryClient.clear();
       
-      // Dispatch custom logout event to trigger app re-render
-      window.dispatchEvent(new CustomEvent('logout'));
-      
-      // Navigate to login page and force reload for clean state
-      console.log("✓ Error: Navigating to login page...");
-      window.location.href = '/login';
+      // Force immediate redirect to login page
+      console.log("✓ Error: Immediate redirect to login...");
+      window.location.replace('/login');
     },
   });
 
