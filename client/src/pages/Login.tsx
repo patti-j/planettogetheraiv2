@@ -34,8 +34,25 @@ export default function Login() {
   const [pageLoaded, setPageLoaded] = useState(false);
   const { login } = useAuth();
 
-  // Ensure page is properly loaded
+  // Ensure page is properly loaded immediately
   React.useEffect(() => {
+    // Clear any lingering blacklisted tokens
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // Quick check if token is blacklisted
+      fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).then(response => {
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('isDemo');
+        }
+      }).catch(() => {
+        // Ignore errors, just clear token on failure
+        localStorage.removeItem('authToken');
+      });
+    }
     setPageLoaded(true);
   }, []);
   

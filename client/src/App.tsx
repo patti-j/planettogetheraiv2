@@ -19,12 +19,23 @@ import PortalDashboard from "@/pages/portal-dashboard";
 
 // Check authentication status
 function useAuthStatus() {
-  // Optimized initial state based on token presence
-  const tokenExists = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
+  const isPublicPath = publicPaths.includes(currentPath);
+  
+  // For public paths, don't check auth at all
+  const tokenExists = typeof window !== 'undefined' && !!localStorage.getItem('authToken') && !isPublicPath;
   const [isAuthenticated, setIsAuthenticated] = useState(tokenExists);
   const [isLoading, setIsLoading] = useState(tokenExists); // Only load if we need to verify token
 
   useEffect(() => {
+    // Skip auth check entirely for public pages
+    if (isPublicPath) {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+    
     const checkAuth = async () => {
       // Check if we're in the middle of logout
       if ((window as any).__LOGOUT_IN_PROGRESS__) {
@@ -71,7 +82,7 @@ function useAuthStatus() {
       }
     };
 
-    // Immediate check for public pages, no delay needed
+    // Only check auth for non-public pages
     checkAuth();
 
     // Listen for storage changes (including logout from other tabs)
@@ -95,7 +106,7 @@ function useAuthStatus() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('logout', handleLogout);
     };
-  }, []);
+  }, [isPublicPath]);
 
   return { isAuthenticated, isLoading };
 }
