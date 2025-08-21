@@ -179,6 +179,16 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
+              {/* Redirect /home to dashboard for authenticated users */}
+              <Route path="/home">
+                {() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.replace('/dashboard');
+                  }
+                  return null;
+                }}
+              </Route>
+              
               {/* Default Route */}
               <Route path="/" component={SmartHomeWrapper} />
               <Route component={SmartHomeWrapper} />
