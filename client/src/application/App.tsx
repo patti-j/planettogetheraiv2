@@ -31,6 +31,10 @@ import LaborPlanning from "@/pages/labor-planning";
 import EnterpriseMap from "@/pages/enterprise-map";
 import DemoPage from "@/pages/demo";
 import Onboarding from "@/pages/onboarding";
+import OptimizationStudio from "@/pages/optimization-studio";
+import OptimizationStudio from "@/pages/optimization-studio";
+import CapacityPlanning from "@/pages/capacity-planning";
+import BusinessGoals from "@/pages/business-goals";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";
@@ -93,6 +97,11 @@ export default function ApplicationApp() {
                   <Reports />
                 </ProtectedRoute>
               </Route>
+              <Route path="/business-goals">
+                <ProtectedRoute feature="business_goals" action="view">
+                  <BusinessGoals />
+                </ProtectedRoute>
+              </Route>
 
               {/* Operations */}
               <Route path="/boards">
@@ -108,6 +117,11 @@ export default function ApplicationApp() {
               <Route path="/labor-planning">
                 <ProtectedRoute feature="labor-planning" action="view">
                   <LaborPlanning />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/optimization-studio">
+                <ProtectedRoute feature="scheduling" action="view">
+                  <OptimizationStudio />
                 </ProtectedRoute>
               </Route>
 
