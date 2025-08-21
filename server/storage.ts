@@ -123,13 +123,13 @@ import {
   // Labor Planning
   employeeSkills, shiftAssignments, laborCapacityRequirements,
   employeeAvailability, employeePreferences, employeeMachineCertifications,
-  shiftCapacityGaps, laborOptimizations,
+  shiftCapacityGaps,
   type EmployeeSkill, type ShiftAssignment, type LaborCapacityRequirement,
   type EmployeeAvailability, type EmployeePreference, type EmployeeMachineCertification,
-  type ShiftCapacityGap, type LaborOptimization,
+  type ShiftCapacityGap,
   type InsertEmployeeSkill, type InsertShiftAssignment, type InsertLaborCapacityRequirement,
   type InsertEmployeeAvailability, type InsertEmployeePreference, type InsertEmployeeMachineCertification,
-  type InsertShiftCapacityGap, type InsertLaborOptimization,
+  type InsertShiftCapacityGap,
   apiIntegrations, apiMappings, apiTests, apiAuditLogs, apiCredentials,
   type ApiIntegration, type ApiMapping, type ApiTest, type ApiAuditLog, type ApiCredential,
   type InsertApiIntegration, type InsertApiMapping, type InsertApiTest, type InsertApiAuditLog, type InsertApiCredential,
@@ -394,11 +394,7 @@ export interface IStorage {
   updatePtResource(resourceId: number, resource: Partial<PtResource>): Promise<PtResource | undefined>;
   deletePtResource(resourceId: number): Promise<boolean>;
   
-  getPtJobActivities(): Promise<PtJobActivity[]>;
-  getPtJobActivity(activityId: number): Promise<PtJobActivity | undefined>;
-  createPtJobActivity(activity: Partial<PtJobActivity>): Promise<PtJobActivity>;
-  updatePtJobActivity(activityId: number, activity: Partial<PtJobActivity>): Promise<PtJobActivity | undefined>;
-  deletePtJobActivity(activityId: number): Promise<boolean>;
+  // PT Job Activities removed - not defined in schema
   
   // Planned Orders
   getPlannedOrders(): Promise<PlannedOrder[]>;
@@ -2830,6 +2826,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductionOrder(id: number): Promise<boolean> {
     const result = await db.delete(productionOrders).where(eq(productionOrders.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  // Planned Orders CRUD Operations
+  async getPlannedOrders(): Promise<any[]> {
+    return await db.select().from(plannedOrders).orderBy(desc(plannedOrders.createdAt));
+  }
+
+  async getPlannedOrder(id: number): Promise<any | undefined> {
+    const [order] = await db
+      .select()
+      .from(plannedOrders)
+      .where(eq(plannedOrders.id, id));
+    return order || undefined;
+  }
+
+  async createPlannedOrder(order: any): Promise<any> {
+    const [newOrder] = await db
+      .insert(plannedOrders)
+      .values(order)
+      .returning();
+    return newOrder;
+  }
+
+  async updatePlannedOrder(id: number, order: any): Promise<any | undefined> {
+    const [updatedOrder] = await db
+      .update(plannedOrders)
+      .set(order)
+      .where(eq(plannedOrders.id, id))
+      .returning();
+    return updatedOrder || undefined;
+  }
+
+  async deletePlannedOrder(id: number): Promise<boolean> {
+    const result = await db.delete(plannedOrders).where(eq(plannedOrders.id, id));
     return (result.rowCount || 0) > 0;
   }
 

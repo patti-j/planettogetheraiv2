@@ -1224,15 +1224,15 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
                   const randomJob = existingJobs[Math.floor(Math.random() * existingJobs.length)];
                   
                   if (randomJob) {
-                    // Default to discrete operations for imports
-                    const insertOperation = insertDiscreteOperationSchema.parse({
-                      productionOrderId: randomJob.id,
-                      operationName: item.name || item.operationName || 'Unknown Operation',
+                    // Use PT Job Operations for imports  
+                    const insertOperation = {
+                      jobId: randomJob.id,
+                      name: item.name || item.operationName || 'Unknown Operation',
                       description: item.description || '',
-                      standardDuration: typeof item.duration === 'string' ? parseFloat(item.duration) || 8 : item.duration || 8,
-                      sequenceNumber: 1
-                    });
-                    const operation = await storage.createDiscreteOperation(insertOperation);
+                      duration: typeof item.duration === 'string' ? parseFloat(item.duration) || 8 : item.duration || 8,
+                      order: 1
+                    };
+                    const operation = await storage.createPtJobOperation(insertOperation);
                     results.push(operation);
                   }
                 }
@@ -1258,7 +1258,7 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
                   const insertJob = insertProductionOrderSchema.parse({
                     orderNumber: item.orderNumber || item.orderId || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                     name: item.name || item.orderName || item.product || 'Unknown Order',
-                    customer: item.customer || '',
+                    customerId: item.customerId || null,
                     priority: item.priority || 'medium',
                     status: 'released',
                     dueDate: item.dueDate ? new Date(item.dueDate) : null,
@@ -3679,22 +3679,50 @@ Rules:
   // Metrics endpoint
   app.get("/api/metrics", async (req, res) => {
     try {
-      const jobs = await storage.getJobs();
-      const operations = await storage.getOperations();
-      const resources = await storage.getResources();
+      console.log("Calculating metrics...");
+      
+      // Get data with fallback handling
+      let productionOrders = [];
+      let operations = [];
+      let resources = [];
+      
+      try {
+        productionOrders = await storage.getProductionOrders() || [];
+        console.log("Retrieved production orders:", productionOrders.length);
+      } catch (error) {
+        console.warn("Failed to fetch production orders:", error.message);
+      }
+      
+      try {
+        operations = await storage.getOperations() || [];
+        console.log("Retrieved operations:", operations.length);
+      } catch (error) {
+        console.warn("Failed to fetch operations:", error.message);
+      }
+      
+      try {
+        resources = await storage.getResources() || [];
+        console.log("Retrieved resources:", resources.length);
+      } catch (error) {
+        console.warn("Failed to fetch resources:", error.message);
+      }
 
-      const activeJobs = jobs.filter(job => job.status === "active").length;
+      // Calculate metrics with safe fallbacks
+      const activeJobs = productionOrders.filter(order => 
+        order && order.status === "in_progress"
+      ).length;
+      
       const overdueOperations = operations.filter(op => 
-        op.endTime && new Date(op.endTime) < new Date() && op.status !== "completed"
+        op && op.endTime && new Date(op.endTime) < new Date() && op.status !== "completed"
       ).length;
 
       // Calculate resource utilization
-      const assignedOperations = operations.filter(op => op.assignedResourceId).length;
+      const assignedOperations = operations.filter(op => op && op.assignedResourceId).length;
       const totalOperations = operations.length;
       const utilization = totalOperations > 0 ? Math.round((assignedOperations / totalOperations) * 100) : 0;
 
       // Calculate average lead time
-      const completedOperations = operations.filter(op => op.status === "completed");
+      const completedOperations = operations.filter(op => op && op.status === "completed");
       const avgLeadTime = completedOperations.length > 0 
         ? completedOperations.reduce((sum, op) => sum + (op.duration || 0), 0) / completedOperations.length / 24
         : 0;
@@ -3706,9 +3734,15 @@ Rules:
         avgLeadTime: parseFloat(avgLeadTime.toFixed(1))
       };
 
+      console.log("Metrics calculated successfully:", metrics);
       res.json(metrics);
     } catch (error) {
-      res.status(500).json({ message: "Failed to calculate metrics" });
+      console.error("Metrics calculation error:", error);
+      console.error("Error stack:", error.stack);
+      res.status(500).json({ 
+        message: "Failed to calculate metrics",
+        error: error.message 
+      });
     }
   });
 
