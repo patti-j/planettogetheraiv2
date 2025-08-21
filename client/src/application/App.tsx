@@ -29,7 +29,7 @@ import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
 import LaborPlanning from "@/pages/labor-planning";
 import EnterpriseMap from "@/pages/enterprise-map";
-import DemoPage from "@/pages/demo";
+// import DemoPage from "@/pages/demo"; // Commented out - file doesn't exist
 import Onboarding from "@/pages/onboarding";
 import OptimizationStudio from "@/pages/optimization-studio";
 import CapacityPlanning from "@/pages/capacity-planning";
@@ -75,7 +75,7 @@ export default function ApplicationApp() {
           <OnboardingGate>
             <Switch>
               {/* Demo and Test Pages */}
-              <Route path="/demo" component={DemoPage} />
+              {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
 
               {/* Main Dashboard */}
