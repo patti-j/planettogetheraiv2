@@ -1,87 +1,18 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic.css';
 
 const BryntumSchedulerProComponent: React.FC = () => {
   const schedulerProRef = useRef<any>(null);
 
-  // Configuration object with all the data
-  const schedulerConfig = useMemo(() => ({
-    // The project includes all stores (resources, events, assignments, dependencies)
-    project: {
-      // Resources (workers, machines, etc.)
-      resourcesData: [
-        { id: 1, name: 'Mike', type: 'Worker' },
-        { id: 2, name: 'Dan', type: 'Worker' },
-        { id: 3, name: 'Sarah', type: 'Worker' },
-        { id: 4, name: 'Production Line 1', type: 'Machine' },
-        { id: 5, name: 'Production Line 2', type: 'Machine' }
-      ],
-
-      // Events (tasks, operations)
-      eventsData: [
-        { 
-          id: 1, 
-          name: 'Brewing Batch #101', 
-          startDate: '2025-01-22T08:00:00',
-          duration: 4,
-          durationUnit: 'h',
-          eventColor: 'blue'
-        },
-        { 
-          id: 2, 
-          name: 'Fermentation Process', 
-          startDate: '2025-01-22T13:00:00',
-          duration: 6,
-          durationUnit: 'h',
-          eventColor: 'green'
-        },
-        { 
-          id: 3, 
-          name: 'Quality Testing', 
-          startDate: '2025-01-23T09:00:00',
-          duration: 2,
-          durationUnit: 'h',
-          eventColor: 'orange'
-        },
-        { 
-          id: 4, 
-          name: 'Packaging Run #45', 
-          startDate: '2025-01-23T14:00:00',
-          duration: 5,
-          durationUnit: 'h',
-          eventColor: 'purple'
-        },
-        { 
-          id: 5, 
-          name: 'Equipment Maintenance', 
-          startDate: '2025-01-24T10:00:00',
-          duration: 3,
-          durationUnit: 'h',
-          eventColor: 'red'
-        }
-      ],
-
-      // Assignments - This is the KEY for making events show on different rows!
-      assignmentsData: [
-        { id: 1, event: 1, resource: 1 }, // Brewing Batch -> Mike
-        { id: 2, event: 2, resource: 4 }, // Fermentation -> Production Line 1
-        { id: 3, event: 3, resource: 2 }, // Quality Testing -> Dan
-        { id: 4, event: 4, resource: 5 }, // Packaging -> Production Line 2
-        { id: 5, event: 5, resource: 3 }  // Maintenance -> Sarah
-      ],
-
-      // Dependencies between tasks (optional)
-      dependenciesData: [
-        { id: 1, from: 1, to: 2, type: 2 }, // Brewing must finish before Fermentation
-        { id: 2, from: 2, to: 3, type: 2 }, // Fermentation must finish before Testing
-        { id: 3, from: 3, to: 4, type: 2 }  // Testing must finish before Packaging
-      ]
-    },
-
+  // Define the configuration with proper store configuration
+  const schedulerConfig = {
+    // Set height explicitly
+    height: 600,
+    
     // View configuration
-    startDate: '2025-01-21',
-    endDate: '2025-01-28',
+    startDate: new Date(2025, 0, 21),
+    endDate: new Date(2025, 0, 28),
     viewPreset: 'hourAndDay',
     
     // Columns for the left grid
@@ -106,22 +37,93 @@ const BryntumSchedulerProComponent: React.FC = () => {
     // Event styling
     eventStyle: 'colored',
     
-    // Make it responsive
-    autoHeight: false
-  }), []);
+    // Configure stores with inline data
+    resourceStore: {
+      data: [
+        { id: 'r1', name: 'Mike', type: 'Worker' },
+        { id: 'r2', name: 'Dan', type: 'Worker' },
+        { id: 'r3', name: 'Sarah', type: 'Worker' },
+        { id: 'r4', name: 'Production Line 1', type: 'Machine' },
+        { id: 'r5', name: 'Production Line 2', type: 'Machine' }
+      ]
+    },
+
+    eventStore: {
+      data: [
+        { 
+          id: 'e1', 
+          resourceId: 'r1',
+          name: 'Brewing Batch #101', 
+          startDate: new Date(2025, 0, 22, 8, 0),
+          duration: 4,
+          durationUnit: 'h',
+          eventColor: 'blue'
+        },
+        { 
+          id: 'e2', 
+          resourceId: 'r4',
+          name: 'Fermentation Process', 
+          startDate: new Date(2025, 0, 22, 13, 0),
+          duration: 6,
+          durationUnit: 'h',
+          eventColor: 'green'
+        },
+        { 
+          id: 'e3', 
+          resourceId: 'r2',
+          name: 'Quality Testing', 
+          startDate: new Date(2025, 0, 23, 9, 0),
+          duration: 2,
+          durationUnit: 'h',
+          eventColor: 'orange'
+        },
+        { 
+          id: 'e4', 
+          resourceId: 'r5',
+          name: 'Packaging Run #45', 
+          startDate: new Date(2025, 0, 23, 14, 0),
+          duration: 5,
+          durationUnit: 'h',
+          eventColor: 'purple'
+        },
+        { 
+          id: 'e5', 
+          resourceId: 'r3',
+          name: 'Equipment Maintenance', 
+          startDate: new Date(2025, 0, 24, 10, 0),
+          duration: 3,
+          durationUnit: 'h',
+          eventColor: 'red'
+        }
+      ]
+    },
+
+    dependencyStore: {
+      data: [
+        { id: 'd1', from: 'e1', to: 'e2', type: 2 }, // Brewing must finish before Fermentation
+        { id: 'd2', from: 'e2', to: 'e3', type: 2 }, // Fermentation must finish before Testing
+        { id: 'd3', from: 'e3', to: 'e4', type: 2 }  // Testing must finish before Packaging
+      ]
+    }
+  };
 
   useEffect(() => {
-    // You can access the scheduler instance here if needed
+    // Log scheduler instance details for debugging
     if (schedulerProRef.current?.instance) {
-      console.log('Scheduler Pro instance loaded:', schedulerProRef.current.instance);
+      const instance = schedulerProRef.current.instance;
+      console.log('Scheduler Pro loaded with:', {
+        resources: instance.resourceStore?.count,
+        events: instance.eventStore?.count
+      });
     }
   }, []);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full" style={{ minHeight: '600px' }}>
       <BryntumSchedulerPro
         ref={schedulerProRef}
         {...schedulerConfig}
+        style={{ height: '100%' }}
       />
     </div>
   );
