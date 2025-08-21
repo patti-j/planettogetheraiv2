@@ -53,21 +53,6 @@ export default function Patti() {
     }
   }), []);
 
-  const features = useMemo(() => ({
-    eventDrag : {
-      showTooltip : true,
-      // allow reassign + reschedule
-      constrainDragToResource : false,
-      constrainDragToTimeSlot : false,
-      // disallow start before 07:00
-      validatorFn({ startDate }: any) {
-        return startDate.getHours() >= 7;
-      }
-    },
-    eventEdit : true,
-    timeRanges : true
-  }), []);
-
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <div className="max-w-screen-2xl mx-auto p-4">
@@ -77,41 +62,42 @@ export default function Patti() {
           A simple validator prevents drops before 07:00.
         </p>
 
-        <BryntumSchedulerPro
-          project={project as any}
-          startDate={startDate}
-          endDate={endDate}
-          viewPreset="hourAndDay"
-          rowHeight={60}
-          barMargin={8}
-          features={features}
-          columns={[
-            { type: 'resourceInfo' as const, text: 'Lab', width: 220, field: 'name' },
-            { text: 'Capacity', width: 120, field: 'capacity', align: 'center' as const }
-          ]}
-          style={{ height: 520 }}
-          onReady={({ widget }: any) => {
-            schedulerRef.current = widget;
-            // Debug output to verify data loading
-            console.log('=== SCHEDULER PRO DATA CHECK ===');
-            console.log('Resource count:', widget.resourceStore.count);
-            console.log('Event count:', widget.eventStore.count);
-            console.log('Assignment count:', widget.assignmentStore.count);
-            
-            // Log actual resources to verify they loaded
-            console.log('Resources:', widget.resourceStore.records.map((r: any) => ({
-              id: r.id,
-              name: r.name
-            })));
-            
-            // Log assignments to verify mapping
-            console.log('Assignments:', widget.assignmentStore.records.map((a: any) => ({
-              id: a.id,
-              eventId: a.eventId,
-              resourceId: a.resourceId
-            })));
-          }}
-        />
+        <div style={{ height: '600px', width: '100%' }}>
+          <BryntumSchedulerPro
+            project={project as any}
+            startDate={startDate}
+            endDate={endDate}
+            viewPreset="hourAndDay"
+            rowHeight={60}
+            barMargin={8}
+            height={600}
+            columns={[
+              { type: 'resourceInfo' as const, text: 'Lab', width: 220, field: 'name' },
+              { text: 'Capacity', width: 120, field: 'capacity', align: 'center' as const }
+            ] as any}
+            onReady={({ widget }: any) => {
+              schedulerRef.current = widget;
+              // Debug output to verify data loading
+              console.log('=== SCHEDULER PRO DATA CHECK ===');
+              console.log('Resource count:', widget.resourceStore.count);
+              console.log('Event count:', widget.eventStore.count);
+              console.log('Assignment count:', widget.assignmentStore.count);
+              
+              // Log actual resources to verify they loaded
+              console.log('Resources:', widget.resourceStore.records.map((r: any) => ({
+                id: r.id,
+                name: r.name
+              })));
+              
+              // Log assignments to verify mapping
+              console.log('Assignments:', widget.assignmentStore.records.map((a: any) => ({
+                id: a.id,
+                eventId: a.eventId,
+                resourceId: a.resourceId
+              })));
+            }}
+          />
+        </div>
       </div>
     </div>
   );
