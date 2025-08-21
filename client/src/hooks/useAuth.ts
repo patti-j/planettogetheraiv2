@@ -227,6 +227,8 @@ export function useAuth() {
       
       // Clear only authentication-related items from localStorage
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       localStorage.removeItem('activeDemoTour');
@@ -242,6 +244,8 @@ export function useAuth() {
       
       // Ensure auth data is cleared (but preserve other app data)
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       
@@ -257,6 +261,8 @@ export function useAuth() {
       // Even if logout fails, clear auth data
       console.log("Clearing auth data despite error...");
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       queryClient.setQueryData(["/api/auth/me"], null);

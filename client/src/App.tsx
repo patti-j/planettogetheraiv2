@@ -51,15 +51,20 @@ function useAuthStatus() {
         });
         
         if (response.status === 401) {
+          // Token is blacklisted or invalid, clear it completely
           localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('isDemo');
           setIsAuthenticated(false);
         } else if (response.ok) {
           setIsAuthenticated(true);
         } else {
+          localStorage.removeItem('authToken');
           setIsAuthenticated(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
+        localStorage.removeItem('authToken');
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
