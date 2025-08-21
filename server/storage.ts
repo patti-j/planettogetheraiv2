@@ -2559,8 +2559,7 @@ export class DatabaseStorage implements IStorage {
           run_hrs,
           post_processing_hours,
           notes,
-          publish_date,
-          work_center_id
+          publish_date
         FROM "ptjoboperations"
         ORDER BY id ASC
       `);
@@ -2589,7 +2588,7 @@ export class DatabaseStorage implements IStorage {
         operationName: op.name || `Operation ${op.operation_id}`,
         standardDuration: Number(op.setup_hours || 1) * 60,
         actualDuration: null,
-        workCenterId: op.work_center_id ? Number(op.work_center_id) : null,
+        workCenterId: null, // PT operations don't directly have work_center_id - uses Resource Requirements
         priority: 3,
         completionPercentage: 0,
         qualityCheckRequired: false,
