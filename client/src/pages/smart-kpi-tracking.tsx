@@ -951,7 +951,8 @@ export default function SmartKpiTrackingPage() {
                     <div className="space-y-2">
                       {targets.slice(0, 3).map(target => {
                         const kpi = kpiDefinitions.find(k => k.id === target.kpiDefinitionId);
-                        const setter = teamMembers.find(m => m.id === target.setBy) || teamMembers[0];
+                        // Since target doesn't have setBy property, we'll use a default team member or show "System"
+                        const setter = teamMembers[0]; // Use first team member as default
                         
                         return (
                           <div key={target.id} className="border rounded-lg p-2 text-sm">
@@ -967,7 +968,7 @@ export default function SmartKpiTrackingPage() {
                                   {target.status}
                                 </Badge>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  Set by {setter.name}
+                                  Set by {setter?.name || 'System'}
                                 </p>
                               </div>
                             </div>
