@@ -34,7 +34,7 @@ const WebsiteHeader: React.FC = () => {
   );
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -85,8 +85,8 @@ const WebsiteHeader: React.FC = () => {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <div className="flex flex-col space-y-4 mt-6">
+            <SheetContent side="right" className="w-80 pt-safe">
+              <div className="flex flex-col space-y-4 mt-12">
                 <NavigationLinks onItemClick={() => setIsOpen(false)} />
                 <div className="border-t pt-4 space-y-2">
                   <Button

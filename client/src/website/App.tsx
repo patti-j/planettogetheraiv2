@@ -19,7 +19,7 @@ import PresentationPage from "@/pages/presentation";
 
 // Layout wrapper for website pages
 const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="min-h-screen bg-gray-50 flex flex-col">
+  <div className="min-h-screen bg-gray-50 flex flex-col pt-safe">
     <WebsiteHeader />
     <main className="flex-1">
       {children}
