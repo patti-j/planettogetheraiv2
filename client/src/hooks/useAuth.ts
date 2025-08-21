@@ -213,13 +213,27 @@ export function useAuth() {
       console.log("✓ Cleared all auth-related localStorage items");
       
       try {
-        // Make logout request to clear server-side session
+        // Get current token before clearing localStorage
+        const currentToken = localStorage.getItem('authToken');
+        const headers: HeadersInit = { "Content-Type": "application/json" };
+        
+        // Include token in logout request so server can blacklist it
+        if (currentToken) {
+          headers.Authorization = `Bearer ${currentToken}`;
+        }
+        
+        // Make logout request to clear server-side session and blacklist token
         const response = await fetch("/api/auth/logout", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           credentials: "include", // Include session cookies
         });
         console.log("✓ Server logout request completed:", response.status);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("✓ Server logout response:", result);
+        }
       } catch (error) {
         console.error("Server logout failed:", error);
         // Continue with local cleanup even if server fails

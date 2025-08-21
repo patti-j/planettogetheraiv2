@@ -1682,8 +1682,19 @@ Rules:
     }
   });
 
+  // Simple in-memory token blacklist (in production, use Redis or database)
+  const blacklistedTokens = new Set();
+
   app.post("/api/auth/logout", (req, res) => {
     try {
+      // Get token from Authorization header
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        // Add token to blacklist
+        blacklistedTokens.add(token);
+        console.log("=== TOKEN BLACKLISTED ===", token);
+      }
+      
       // Clear the session if it exists
       if (req.session) {
         req.session.destroy((err) => {
@@ -1704,7 +1715,7 @@ Rules:
         'Expires': '0'
       });
       
-      console.log("=== LOGOUT SUCCESS - Session and cookies cleared ===");
+      console.log("=== LOGOUT SUCCESS - Session, cookies, and token cleared ===");
       res.json({ message: "Logged out successfully", success: true });
     } catch (error) {
       console.error("Logout error:", error);
@@ -1727,6 +1738,12 @@ Rules:
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
         console.log("Checking token:", token);
+        
+        // Check if token is blacklisted
+        if (blacklistedTokens.has(token)) {
+          console.log("=== TOKEN IS BLACKLISTED ===", token);
+          return res.status(401).json({ message: "Token has been invalidated" });
+        }
         
         // Handle demo tokens
         if (token.startsWith('demo_')) {
