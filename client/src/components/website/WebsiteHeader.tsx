@@ -34,7 +34,7 @@ const WebsiteHeader: React.FC = () => {
   );
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -43,10 +43,11 @@ const WebsiteHeader: React.FC = () => {
               onClick={() => setLocation("/")}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-sm">PT</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">PlanetTogether</span>
+              <span className="text-lg sm:text-xl font-bold text-gray-900 hidden sm:block">PlanetTogether</span>
+              <span className="text-lg font-bold text-gray-900 sm:hidden">PT</span>
             </button>
           </div>
 
@@ -72,11 +73,16 @@ const WebsiteHeader: React.FC = () => {
             </Button>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - Always visible on mobile */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="md:hidden">
-                <Menu className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="md:hidden inline-flex items-center justify-center"
+                aria-label="Open menu"
+              >
+                <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80">
