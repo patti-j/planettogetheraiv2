@@ -5,9 +5,9 @@ import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 /**
  * Scheduler Pro demo with Bryntum imports
  * ---------------------------------------------------------------------------
- * Now using actual Bryntum Scheduler Pro with AssignmentStore pattern
+ * Using Bryntum Scheduler Pro with direct resourceId assignment
  * 
- * ✅ Uses Assignment Store (events placed on rows via assignments)
+ * ✅ Events distributed across resources using resourceId
  * ✅ Drag horizontally to reschedule (with 15 min snapping)
  * ✅ Drag vertically to reassign to another resource
  * ✅ Full Bryntum Pro features enabled
@@ -26,26 +26,15 @@ const resourcesData = [
   { id: 5, name: 'Biosafety L3', capacity: 5 }
 ];
 
-// Events (no resourceId — assignments drive placement)
+// Events with direct resourceId assignment (simpler approach)
 const eventsDataInitial = [
-  { id: 1, name: 'RNA Sequencing',         startDate,                        endDate: new Date(2025, 3, 1, 11) },
-  { id: 2, name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
-  { id: 3, name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
-  { id: 4, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
-  { id: 5, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
-  { id: 6, name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
-  { id: 7, name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
-];
-
-// Each event assigned to a resource - using Bryntum's expected format
-const assignmentsDataInitial = [
-  { id: 1, eventId: 1, resourceId: 1 },
-  { id: 2, eventId: 2, resourceId: 1 },
-  { id: 3, eventId: 3, resourceId: 2 },
-  { id: 4, eventId: 4, resourceId: 2 },
-  { id: 5, eventId: 5, resourceId: 3 },
-  { id: 6, eventId: 6, resourceId: 4 },
-  { id: 7, eventId: 7, resourceId: 5 }
+  { id: 1, name: 'RNA Sequencing',         startDate: '2025-04-01T08:00:00', endDate: '2025-04-01T11:00:00', resourceId: 1 },
+  { id: 2, name: 'Glycan analysis',        startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00', resourceId: 1 },
+  { id: 3, name: 'Electron microscopy',    startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T12:00:00', resourceId: 2 },
+  { id: 4, name: 'Covid variant analysis', startDate: '2025-04-01T13:00:00', endDate: '2025-04-01T17:00:00', resourceId: 2 },
+  { id: 5, name: 'Bacterial identification', startDate: '2025-04-01T10:00:00', endDate: '2025-04-01T14:00:00', resourceId: 3 },
+  { id: 6, name: 'Disinfectant efficacy',  startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T11:00:00', resourceId: 4 },
+  { id: 7, name: 'DNA Sequencing',         startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00', resourceId: 5 }
 ];
 
 export default function SchedulerDemo() {
@@ -60,13 +49,9 @@ export default function SchedulerDemo() {
     barMargin: 8,
     height: 600,
     
-    // Configure stores with inline data
+    // Direct data assignment (simpler than assignment store)
     resources: resourcesData,
     events: eventsDataInitial,
-    assignments: assignmentsDataInitial,
-    
-    // Enable assignment store mode
-    useInitialAnimation: false,
     
     // Configure drag and drop
     features: {
@@ -88,17 +73,15 @@ export default function SchedulerDemo() {
         }
       },
       eventEdit: true,
-      timeRanges: true,
-      // Enable snap to increment for time axis
-      snap: {
-        enabled: true
-      }
+      timeRanges: true
     } as any,
 
-    // Configure time axis with 15-minute increments
-    timeAxis: {
-      increment: 15,
-      unit: 'minute'
+    // Snap configuration for 15-minute intervals
+    snap: true,
+    snapRelativeToEventStartDate: false,
+    timeResolution: {
+      unit: 'minute',
+      increment: 15
     },
 
     columns: [
@@ -134,10 +117,9 @@ export default function SchedulerDemo() {
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <div className="max-w-screen-2xl mx-auto p-4">
-        <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Assignment Store Demo</h1>
+        <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Lab Resource Scheduling</h1>
         <p className="mb-4 opacity-80">
-          Drag events to reschedule (15-min snap) or drop onto another resource to reassign.
-          Uses Bryntum's Assignment Store pattern for flexible resource allocation.
+          Events are distributed across 5 lab resources. Drag events to reschedule (15-min snap) or drop onto another resource to reassign.
         </p>
 
         <div style={{ height: '600px', width: '100%' }}>
