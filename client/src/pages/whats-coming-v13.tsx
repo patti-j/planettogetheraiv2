@@ -134,6 +134,13 @@ export default function WhatsComing() {
         icon: <Network className="h-6 w-6" />,
         status: "Enhanced",
         benefits: ["Global visibility", "Standardized processes", "Resource sharing"]
+      },
+      {
+        title: "Integrated Onboarding Project Management",
+        description: "Comprehensive project management for system implementations",
+        icon: <Target className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Implementation tracking", "Milestone management", "Team coordination"]
       }
     ],
     integration: [
