@@ -228,10 +228,18 @@ export function useAuth() {
       // Clear React Query cache completely before navigation
       queryClient.invalidateQueries();
       
-      // Use immediate client-side navigation instead of setTimeout to prevent white screen
-      console.log("Redirecting to login page immediately...");
-      window.history.replaceState(null, '', '/login');
+      // Dispatch custom logout event to trigger app re-render
+      window.dispatchEvent(new CustomEvent('logout'));
+      
+      // Use immediate client-side navigation to root which will show website
+      console.log("Redirecting to home page immediately...");
+      window.history.replaceState(null, '', '/');
       window.dispatchEvent(new PopStateEvent('popstate'));
+      
+      // Force a page reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     },
     onError: (error) => {
       console.error("Logout error:", error);
@@ -242,9 +250,18 @@ export function useAuth() {
       localStorage.removeItem('lastVisitedPage');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
-      // Use immediate client-side navigation instead of setTimeout to prevent white screen
-      window.history.replaceState(null, '', '/login');
+      
+      // Dispatch custom logout event to trigger app re-render
+      window.dispatchEvent(new CustomEvent('logout'));
+      
+      // Use immediate client-side navigation to root which will show website
+      window.history.replaceState(null, '', '/');
       window.dispatchEvent(new PopStateEvent('popstate'));
+      
+      // Force a page reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     },
   });
 

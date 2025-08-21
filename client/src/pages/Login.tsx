@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,13 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
   const { login } = useAuth();
+
+  // Ensure page is properly loaded
+  React.useEffect(() => {
+    setPageLoaded(true);
+  }, []);
   
   // Portal login state
   const [portalEmail, setPortalEmail] = useState("");
@@ -46,8 +52,9 @@ export default function Login() {
       console.log("🚀 Calling login function...");
       const result = await login({ username, password });
       console.log("🚀 Login function returned:", result);
-      console.log("🚀 About to redirect to home...");
-      setLocation("/");
+      console.log("🚀 About to redirect to dashboard...");
+      // Redirect to dashboard instead of home to ensure authenticated app loads
+      window.location.href = "/dashboard";
       console.log("🚀 Redirect completed successfully");
     } catch (error: any) {
       console.error("🚀 Login form error:", error);

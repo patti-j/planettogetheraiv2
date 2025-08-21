@@ -23,9 +23,34 @@ function useAuthStatus() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    setIsAuthenticated(!!token);
-    setIsLoading(false);
+    const checkAuth = () => {
+      const token = localStorage.getItem('authToken');
+      setIsAuthenticated(!!token);
+      setIsLoading(false);
+    };
+
+    // Initial check
+    checkAuth();
+
+    // Listen for storage changes (including logout from other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken') {
+        checkAuth();
+      }
+    };
+
+    // Listen for custom logout events
+    const handleLogout = () => {
+      checkAuth();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('logout', handleLogout);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('logout', handleLogout);
+    };
   }, []);
 
   return { isAuthenticated, isLoading };
