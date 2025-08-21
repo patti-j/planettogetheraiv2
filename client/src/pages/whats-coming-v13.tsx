@@ -323,10 +323,10 @@ export default function WhatsComing() {
             
             <div className="space-y-12">
               {[
-                { quarter: "Q2 2025", title: "AI Assistant Beta", description: "Max AI voice interface and intelligent recommendations" },
-                { quarter: "Q3 2025", title: "Analytics Platform", description: "Advanced KPI tracking and visual factory displays" },
-                { quarter: "Q4 2025", title: "Collaboration Suite", description: "Integrated chat, partner portal, and mobile apps" },
-                { quarter: "Q1 2026", title: "Integration Hub", description: "Enhanced ERP connectors and API management" }
+                { quarter: "Q4 2025", title: "AI Assistant Beta", description: "Max AI voice interface and intelligent recommendations" },
+                { quarter: "Q1 2026", title: "Analytics Platform", description: "Advanced KPI tracking and visual factory displays" },
+                { quarter: "Q2 2026", title: "Collaboration Suite", description: "Integrated chat, partner portal, and mobile apps" },
+                { quarter: "Q3 2026", title: "Integration Hub", description: "Enhanced ERP connectors and API management" }
               ].map((milestone, index) => (
                 <div key={index} className={`flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'}`}>
                   <div className={`flex-1 ${index % 2 === 0 ? 'text-right pr-8' : 'text-left pl-8'}`}>
