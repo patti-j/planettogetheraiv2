@@ -116,6 +116,13 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
+              {/* Enterprise Map - Global Control Tower */}
+              <Route path="/enterprise-map">
+                <ProtectedRoute feature="dashboard" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              
               {/* Customer & Sales */}
               <Route path="/sales">
                 <ProtectedRoute feature="sales" action="view">
@@ -189,9 +196,18 @@ export default function ApplicationApp() {
                 }}
               </Route>
               
-              {/* Default Route */}
+              {/* Default Route - Home page */}
               <Route path="/" component={SmartHomeWrapper} />
-              <Route component={SmartHomeWrapper} />
+              
+              {/* Catch all route - redirect to dashboard */}
+              <Route>
+                {() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.replace('/dashboard');
+                  }
+                  return null;
+                }}
+              </Route>
             </Switch>
           </OnboardingGate>
         </Layout>

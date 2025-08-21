@@ -33,12 +33,14 @@ export function SmartHomeWrapper() {
     );
   }
   
-  // On desktop, show the new HomePage for root route
+  // On desktop, show the new HomePage only for root route
   if (location === "/" || location === "/home") {
     console.log('Loading HomePage for desktop root');
     return <HomePage />;
   }
   
-  // For other routes on desktop, let the main router handle it
+  // For other routes on desktop, render nothing and let the parent router handle it
+  // This component should only handle the home route redirection
+  console.log('SmartHomeWrapper - Not handling route:', location);
   return null;
 }
