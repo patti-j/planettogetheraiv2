@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers various deployment options for the PlanetTogether Manufacturing ERP system.
+This guide covers various deployment options for the PlanetTogether Manufacturing SCM + APS system.
 
 ## 🚀 Quick Deploy Options
 

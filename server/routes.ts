@@ -23624,9 +23624,9 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
       });
 
       // Build system prompt based on target type and action
-      const systemPrompt = `You are an expert AI design assistant for a manufacturing ERP system called PlanetTogether. Your role is to help users ${action} ${targetType}s based on their requirements.
+      const systemPrompt = `You are an expert AI design assistant for a manufacturing SCM + APS system called PlanetTogether. Your role is to help users ${action} ${targetType}s based on their requirements.
 
-Manufacturing ERP Context:
+Manufacturing SCM + APS Context:
 - Production scheduling and resource management
 - Inventory tracking and material management  
 - Quality control and compliance monitoring

@@ -261,7 +261,7 @@ export class MaxAIService {
 
   // Build role and context-specific system prompt
   private buildSystemPrompt(context: MaxContext): string {
-    const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether ERP system. 
+    const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether SCM + APS system. 
     You have deep knowledge of production scheduling, resource optimization, quality management, and supply chain operations.
     You provide actionable insights and can help optimize manufacturing processes.
 

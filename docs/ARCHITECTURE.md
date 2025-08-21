@@ -1,6 +1,6 @@
 # System Architecture
 
-This document describes the technical architecture of the PlanetTogether Manufacturing ERP system.
+This document describes the technical architecture of the PlanetTogether Manufacturing SCM + APS system.
 
 ## 🏗️ High-Level Architecture
 

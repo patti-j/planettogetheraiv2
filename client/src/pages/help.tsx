@@ -123,7 +123,7 @@ const helpSections = [
     items: [
       {
         question: "How do I import data from other systems?",
-        answer: "Use the Data Import features to connect with ERP systems, Excel files, and databases. Support for PlanetTogether Publish/Import formats is included."
+        answer: "Use the Data Import features to connect with external systems, Excel files, and databases. Support for PlanetTogether Publish/Import formats is included."
       },
       {
         question: "What is the Data Schema visualization?",

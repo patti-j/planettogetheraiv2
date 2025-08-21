@@ -1,4 +1,4 @@
-# PlanetTogether - AI-First Manufacturing ERP System
+# PlanetTogether - AI-First Manufacturing SCM + APS System
 
 <div align="center">
   <img src="attached_assets/Copy of logo-icon_250px_1754109283906.PNG" alt="PlanetTogether Logo" width="150">

@@ -1,13 +1,13 @@
-# PlanetTogether ERP - Project Implementation Guide
+# PlanetTogether SCM + APS - Project Implementation Guide
 
 ## Project Overview
-PlanetTogether is an AI-first manufacturing ERP system with an external partners portal for suppliers, customers, and OEMs. This guide covers the complete implementation strategy for production deployment.
+PlanetTogether is an AI-first manufacturing SCM + APS system with an external partners portal for suppliers, customers, and OEMs. This guide covers the complete implementation strategy for production deployment.
 
 ## 1. Project Structure
 
 ### Current Architecture
 ```
-planettogether-erp/
+planettogether-scm-aps/
 ├── client/                 # Main React frontend
 │   ├── src/
 │   │   ├── pages/         # Application pages
@@ -473,7 +473,7 @@ pm2 reload ecosystem.config.js
 
 ## Conclusion
 
-This implementation guide provides a comprehensive framework for deploying PlanetTogether ERP as a production-ready project. Follow these guidelines to ensure a robust, scalable, and maintainable deployment.
+This implementation guide provides a comprehensive framework for deploying PlanetTogether SCM + APS as a production-ready project. Follow these guidelines to ensure a robust, scalable, and maintainable deployment.
 
 For specific deployment to Replit, use the built-in deployment features:
 1. Click the "Deploy" button in your Replit workspace

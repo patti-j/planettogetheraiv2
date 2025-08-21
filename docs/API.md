@@ -1,6 +1,6 @@
 # API Documentation
 
-This document describes the REST API endpoints available in the PlanetTogether Manufacturing ERP system.
+This document describes the REST API endpoints available in the PlanetTogether Manufacturing SCM + APS system.
 
 ## Base URL
 ```

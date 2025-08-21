@@ -55,7 +55,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  log("🚀 Starting PlanetTogether Manufacturing ERP...");
+  log("🚀 Starting PlanetTogether SCM + APS...");
   
   // Register API routes
   const server = registerSimpleRoutes(app);

@@ -1,7 +1,7 @@
-# PlanetTogether - Manufacturing ERP System
+# PlanetTogether - Manufacturing SCM + APS System
 
 ## Overview
-PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing ERP system. It specializes in production scheduling, managing production orders, operations, resources, and capabilities with a visual Gantt chart interface. The vision is to transform traditional ERP into an AI-first approach, leveraging AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing.
+PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. It specializes in production scheduling, managing production orders, operations, resources, and capabilities with a visual Gantt chart interface. The vision is to provide an AI-first approach to supply chain management and advanced planning & scheduling, leveraging AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system supports complete supply chain visibility from procurement through production to sales, with full traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

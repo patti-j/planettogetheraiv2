@@ -1,4 +1,4 @@
-# Contributing to PlanetTogether Manufacturing ERP
+# Contributing to PlanetTogether Manufacturing SCM + APS
 
 Thank you for your interest in contributing to PlanetTogether! This document provides guidelines and information for contributors.
 
@@ -215,4 +215,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 
 ---
 
-Thank you for contributing to PlanetTogether Manufacturing ERP! 🏭
+Thank you for contributing to PlanetTogether Manufacturing SCM + APS! 🏭

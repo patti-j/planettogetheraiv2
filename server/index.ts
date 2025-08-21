@@ -55,7 +55,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  log("🚀 Starting PlanetTogether Manufacturing ERP...");
+  log("🚀 Starting PlanetTogether SCM + APS...");
   
   // Log OpenAI API key status on startup
   const hasApiKey = !!process.env.OPENAI_API_KEY;
