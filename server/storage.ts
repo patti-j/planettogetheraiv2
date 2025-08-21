@@ -1,6 +1,6 @@
 import { 
   plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
-  productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
+  productionOrders, ptJobs, ptResources, ptJobOperations, ptCapabilities, ptMetrics,
   recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
@@ -2775,34 +2775,34 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    console.log("getProductionOrders: Redirecting to PT Manufacturing Orders table");
+    console.log("getProductionOrders: Redirecting to PT Jobs table");
     
     // Get manufacturing orders from PT Publish tables and map to ProductionOrder format
     const ptJobsList = await db
       .select()
-      .from(ptManufacturingOrders)
-      .orderBy(asc(ptManufacturingOrders.needDate));
+      .from(ptJobs)
+      .orderBy(asc(ptJobs.needDateTime));
     
-    // Map PT Manufacturing Orders to ProductionOrder format for backward compatibility
-    return ptJobsList.map(order => ({
-      id: Number(order.manufacturingOrderId),
-      name: order.name || `Order ${order.manufacturingOrderId}`,
-      description: order.description,
-      product: order.productName || order.name || 'Product',
-      quantity: order.requiredQty || 1000,
-      status: order.released ? 'in-progress' : 'planned',
-      priority: 3,
-      startDate: order.scheduledStart || new Date(),
-      dueDate: order.needDate || new Date(),
-      createdAt: order.publishDate || new Date(),
-      updatedAt: order.publishDate || new Date(),
+    // Map PT Jobs to ProductionOrder format for backward compatibility
+    return ptJobsList.map(job => ({
+      id: Number(job.jobId),
+      name: job.name || `Job ${job.jobId}`,
+      description: job.description,
+      product: job.product || job.name || 'Product',
+      quantity: job.quantity || 1000,
+      status: job.finished ? 'completed' : job.started ? 'in-progress' : 'planned',
+      priority: job.priority || 3,
+      startDate: job.scheduledStartDateTime || new Date(),
+      dueDate: job.needDateTime || new Date(),
+      createdAt: job.publishDate || new Date(),
+      updatedAt: job.publishDate || new Date(),
       customerId: null,
       salesOrderId: null,
-      batchNumber: order.externalId || null,
-      actualStartDate: order.scheduledStart || null,
-      actualEndDate: order.scheduledEnd || null,
-      completedQuantity: order.expectedFinishQty || null,
-      notes: order.notes || null
+      batchNumber: job.externalId || null,
+      actualStartDate: job.scheduledStartDateTime || null,
+      actualEndDate: job.scheduledEndDateTime || null,
+      completedQuantity: null,
+      notes: job.notes || null
     } as ProductionOrder));
   }
 

@@ -1432,35 +1432,35 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities).omit({ id: true });
+export const insertCapabilitySchema = createInsertSchema(capabilities, {}).omit({ id: true });
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
-export const insertResourceSchema = createInsertSchema(resources).omit({ id: true });
+export const insertResourceSchema = createInsertSchema(resources, {}).omit({ id: true });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
-export const insertPlantResourceSchema = createInsertSchema(plantResources).omit({ id: true, createdAt: true });
+export const insertPlantResourceSchema = createInsertSchema(plantResources, {}).omit({ id: true, createdAt: true });
 export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({ id: true, createdAt: true });
+export const insertProductionOrderSchema = createInsertSchema(productionOrders, {}).omit({ id: true, createdAt: true });
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
-export const insertPlannedOrderSchema = createInsertSchema(plannedOrders).omit({ id: true, createdAt: true });
+export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
 // Junction table insert schema for many-to-many relationship
-export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders).omit({ id: true, convertedAt: true });
+export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {}).omit({ id: true, convertedAt: true });
 
 // Insert schemas for both operation types
 
-export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
+export const insertDependencySchema = createInsertSchema(dependencies, {}).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {}).omit({ id: true });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {}).omit({ id: true });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({ id: true });
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {}).omit({ id: true });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({ id: true });
+export const insertReportConfigSchema = createInsertSchema(reportConfigs, {}).omit({ id: true });
 
 export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
   id: true,
@@ -4018,8 +4018,7 @@ export const operationStatusReports = pgTable("operation_status_reports", {
   reportedAt: timestamp("reported_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  discreteOperationIdx: index("operation_status_reports_discrete_idx").on(table.discreteOperationId),
-  processOperationIdx: index("operation_status_reports_process_idx").on(table.processOperationId),
+  ptJobOperationIdx: index("operation_status_reports_pt_job_operation_idx").on(table.ptJobOperationId),
   reportedByIdx: index("operation_status_reports_user_idx").on(table.reportedBy),
   resourceIdx: index("operation_status_reports_resource_idx").on(table.resourceId),
   reportedAtIdx: index("operation_status_reports_reported_at_idx").on(table.reportedAt),
@@ -12342,6 +12341,11 @@ export const insertLaborPlanningOptimizationSchema = createInsertSchema(laborPla
 });
 export type InsertLaborPlanningOptimization = z.infer<typeof insertLaborPlanningOptimizationSchema>;
 export type LaborPlanningOptimization = typeof laborPlanningOptimizations.$inferSelect;
+
+// Alias for backward compatibility 
+export const laborOptimizations = laborPlanningOptimizations;
+export type LaborOptimization = LaborPlanningOptimization;
+export type InsertLaborOptimization = InsertLaborPlanningOptimization;
 
 
 
