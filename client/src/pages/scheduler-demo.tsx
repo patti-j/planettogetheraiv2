@@ -25,15 +25,15 @@ const eventsData = [
   { id: 7, name: 'DNA Sequencing',         startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00' }
 ];
 
-// 3) Assignments (event -> resource). NOTE: keys are `event` and `resource` NOT eventId/resourceId
+// 3) Assignments (event -> resource). MUST use eventId/resourceId in Pro
 const assignmentsData = [
-  { id: 1, event: 1, resource: 1 },  // RNA Sequencing -> Lab #11
-  { id: 2, event: 2, resource: 1 },  // Glycan analysis -> Lab #11
-  { id: 3, event: 3, resource: 2 },  // Electron microscopy -> Lab #12
-  { id: 4, event: 4, resource: 2 },  // Covid variant analysis -> Lab #12
-  { id: 5, event: 5, resource: 3 },  // Bacterial identification -> Lab #13
-  { id: 6, event: 6, resource: 4 },  // Disinfectant efficacy -> X-Ray lab
-  { id: 7, event: 7, resource: 5 }   // DNA Sequencing -> Biosafety L3
+  { id: 1, eventId: 1, resourceId: 1 },  // RNA Sequencing -> Lab #11
+  { id: 2, eventId: 2, resourceId: 1 },  // Glycan analysis -> Lab #11
+  { id: 3, eventId: 3, resourceId: 2 },  // Electron microscopy -> Lab #12
+  { id: 4, eventId: 4, resourceId: 2 },  // Covid variant analysis -> Lab #12
+  { id: 5, eventId: 5, resourceId: 3 },  // Bacterial identification -> Lab #13
+  { id: 6, eventId: 6, resourceId: 4 },  // Disinfectant efficacy -> X-Ray lab
+  { id: 7, eventId: 7, resourceId: 5 }   // DNA Sequencing -> Biosafety L3
 ];
 
 export default function SchedulerDemo() {
@@ -92,12 +92,10 @@ export default function SchedulerDemo() {
                 console.log('  events:', widget.eventStore.count);
                 console.log('  assignments:', widget.assignmentStore.count);
                 
-                // Debug: Show what's in each store
-                console.log('Resource IDs:', widget.resourceStore.records.map((r: any) => r.id));
-                console.log('Event IDs:', widget.eventStore.records.map((e: any) => e.id));
-                console.log('Assignments:', widget.assignmentStore.records.map((a: any) => 
-                  ({ event: a.eventId, resource: a.resourceId })
-                ));
+                // Debug: exact assignment links
+                console.table(widget.assignmentStore.records.map((a: any) => ({
+                  id: a.id, eventId: a.eventId, resourceId: a.resourceId
+                })));
               }}
               listeners={{
                 eventDrop: ({ eventRecords, targetResourceRecord }: any) => {
