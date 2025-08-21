@@ -23,8 +23,12 @@ export default function Login() {
 
   // Ensure page is properly loaded
   React.useEffect(() => {
+    console.log("=== LOGIN PAGE MOUNTED ===");
     setPageLoaded(true);
   }, []);
+
+  // Add debugging to see if component renders
+  console.log("=== LOGIN COMPONENT RENDERING ===", { pageLoaded, loading });
   
   // Portal login state
   const [portalEmail, setPortalEmail] = useState("");

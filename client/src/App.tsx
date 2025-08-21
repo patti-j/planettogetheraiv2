@@ -24,16 +24,22 @@ function useAuthStatus() {
 
   useEffect(() => {
     const checkAuth = () => {
+      console.log("=== CHECKING AUTH STATUS ===");
       const token = localStorage.getItem('authToken');
+      console.log("Token found:", !!token, token);
       setIsAuthenticated(!!token);
       setIsLoading(false);
+      console.log("Auth status set:", !!token, "Loading:", false);
     };
 
-    // Initial check
-    checkAuth();
+    // Initial check with slight delay to ensure localStorage is accessible
+    setTimeout(() => {
+      checkAuth();
+    }, 10);
 
     // Listen for storage changes (including logout from other tabs)
     const handleStorageChange = (e: StorageEvent) => {
+      console.log("Storage change detected:", e.key);
       if (e.key === 'authToken') {
         checkAuth();
       }
@@ -41,6 +47,7 @@ function useAuthStatus() {
 
     // Listen for custom logout events
     const handleLogout = () => {
+      console.log("Logout event detected");
       checkAuth();
     };
 
