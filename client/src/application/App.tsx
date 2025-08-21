@@ -118,7 +118,7 @@ export default function ApplicationApp() {
 
               {/* Enterprise Map - Global Control Tower */}
               <Route path="/enterprise-map">
-                <ProtectedRoute feature="dashboard" action="view">
+                <ProtectedRoute feature="analytics" action="view">
                   <Dashboard />
                 </ProtectedRoute>
               </Route>
