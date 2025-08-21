@@ -16,6 +16,7 @@ import WebsiteApp from "./website/App";
 import ApplicationApp from "./application/App";
 import PortalLogin from "@/pages/portal-login";
 import PortalDashboard from "@/pages/portal-dashboard";
+import SchedulerDemo from "@/pages/SchedulerDemo";
 
 // Check authentication status
 function useAuthStatus() {
@@ -117,7 +118,7 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/scheduler-demo'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if user has a token
@@ -153,8 +154,11 @@ export default function App() {
               <FullScreenProvider>
                 <LayoutDensityProvider>
                   <ViewModeProvider>
-                    {/* Portal Routes - Always accessible */}
-                    {currentPath.startsWith('/portal/') ? (
+                    {/* Standalone SchedulerDemo Route */}
+                    {currentPath === '/scheduler-demo' ? (
+                      <SchedulerDemo />
+                    ) : /* Portal Routes - Always accessible */
+                    currentPath.startsWith('/portal/') ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">
                         <Switch>
                           <Route path="/portal/login" component={PortalLogin} />
