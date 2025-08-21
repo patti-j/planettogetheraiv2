@@ -2546,22 +2546,28 @@ export class DatabaseStorage implements IStorage {
     
     try {
       // Get operations from PT Publish tables using raw SQL to avoid column mapping issues
+      // Join with departments to get work_center_id based on external_id
       const result = await db.execute(sql`
         SELECT 
-          id,
-          job_id,
-          operation_id,
-          name,
-          description,
-          scheduled_start,
-          scheduled_end,
-          setup_hours,
-          run_hrs,
-          post_processing_hours,
-          notes,
-          publish_date
-        FROM "ptjoboperations"
-        ORDER BY id ASC
+          jo.id,
+          jo.job_id,
+          jo.operation_id,
+          jo.name,
+          jo.description,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          jo.setup_hours,
+          jo.run_hrs,
+          jo.post_processing_hours,
+          jo.notes,
+          jo.publish_date,
+          jo.scheduled_primary_work_center_external_id,
+          d.department_id as work_center_id,
+          d.name as department_name
+        FROM "ptjoboperations" jo
+        LEFT JOIN "ptdepartments" d 
+          ON jo.scheduled_primary_work_center_external_id = d.external_id
+        ORDER BY jo.id ASC
       `);
       
       const ptOperations = result.rows || [];
@@ -2588,7 +2594,7 @@ export class DatabaseStorage implements IStorage {
         operationName: op.name || `Operation ${op.operation_id}`,
         standardDuration: Number(op.setup_hours || 1) * 60,
         actualDuration: null,
-        workCenterId: null, // PT operations don't directly have work_center_id - uses Resource Requirements
+        workCenterId: op.work_center_id ? Number(op.work_center_id) : null, // Now using department_id from joined ptdepartments table
         priority: 3,
         completionPercentage: 0,
         qualityCheckRequired: false,
