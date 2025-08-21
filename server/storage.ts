@@ -2559,7 +2559,8 @@ export class DatabaseStorage implements IStorage {
           run_hrs,
           post_processing_hours,
           notes,
-          publish_date
+          publish_date,
+          work_center_id
         FROM "ptjoboperations"
         ORDER BY id ASC
       `);
