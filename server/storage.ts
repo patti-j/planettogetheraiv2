@@ -2771,15 +2771,105 @@ export class DatabaseStorage implements IStorage {
 
   // Production Orders - REDIRECTED TO PT PUBLISH TABLES
   async getProductionOrders(): Promise<ProductionOrder[]> {
-    console.log("getProductionOrders: Fetching from production_orders table");
+    console.log("getProductionOrders: Redirecting to PT Manufacturing Orders table");
     
-    // Get production orders directly from the production_orders table
-    const orders = await db
-      .select()
-      .from(productionOrders)
-      .orderBy(asc(productionOrders.dueDate));
-    
-    return orders;
+    try {
+      // Get production orders from PT Manufacturing Orders table
+      const ptOrders = await db.raw(`
+        SELECT 
+          manufacturing_order_id as id,
+          external_id as order_number,
+          name,
+          description,
+          product_name,
+          required_qty as quantity,
+          need_date as due_date,
+          scheduled_start as actual_start_date,
+          scheduled_end as actual_end_date,
+          job_id,
+          plant_id,
+          publish_date as created_at
+        FROM ptManufacturingOrders
+        WHERE instance_id = 'BREW-SIM-001'
+        ORDER BY need_date ASC
+      `);
+      
+      // Map PT orders to ProductionOrder format
+      const mappedOrders: ProductionOrder[] = ptOrders.rows.map((order: any) => ({
+        id: order.id,
+        orderNumber: order.order_number || `PO-${order.id}`,
+        name: order.name || order.product_name || 'Unknown Order',
+        description: order.description || '',
+        customerId: null,
+        parentOrderId: null,
+        orderCategory: 'normal',
+        priority: 'medium',
+        status: order.scheduled_start && new Date(order.scheduled_start) < new Date() ? 'in_progress' : 'released',
+        quantity: order.quantity || '1',
+        dueDate: order.due_date ? new Date(order.due_date) : null,
+        actualStartDate: order.actual_start_date ? new Date(order.actual_start_date) : null,
+        actualEndDate: order.actual_end_date ? new Date(order.actual_end_date) : null,
+        itemNumber: order.product_name,
+        salesOrderId: null,
+        productionVersionId: null,
+        plantId: order.plant_id || 1,
+        wipValue: '0',
+        actualLaborHours: '0',
+        actualMaterialCost: '0',
+        actualOverheadCost: '0',
+        standardCost: '0',
+        costVariance: '0',
+        laborRateVariance: '0',
+        materialPriceVariance: '0',
+        yieldQuantity: '0',
+        scrapQuantity: '0',
+        reworkQuantity: '0',
+        goodQuantity: order.quantity || '0',
+        yieldPercentage: '100',
+        scrapPercentage: '0',
+        reworkPercentage: '0',
+        qualityGrade: 'A',
+        setupTimePlanned: '0',
+        setupTimeActual: '0',
+        runTimePlanned: '0',
+        runTimeActual: '0',
+        cleanupTimePlanned: '0',
+        cleanupTimeActual: '0',
+        totalTimePlanned: '0',
+        totalTimeActual: '0',
+        batchNumber: null,
+        lotNumber: null,
+        campaignNumber: null,
+        productionLine: null,
+        shiftNumber: null,
+        operatorId: null,
+        supervisorId: null,
+        equipmentUsed: [],
+        completionPercentage: '0',
+        lastOperationCompletedId: null,
+        nextOperationDueId: null,
+        bottleneckResourceId: null,
+        downtimeMinutes: '0',
+        efficiencyPercentage: '100',
+        oeePercentage: '0',
+        firstPassYield: '0',
+        inspectionStatus: 'pending',
+        certificateOfAnalysis: {},
+        deviationReports: null,
+        correctiveActions: null,
+        batchRecordComplete: false,
+        releaseApproved: false,
+        releaseApprovedBy: null,
+        releaseDate: null,
+        createdAt: order.created_at || new Date()
+      }));
+      
+      console.log("Successfully fetched PT Manufacturing Orders, total:", mappedOrders.length);
+      return mappedOrders;
+    } catch (error) {
+      console.error("Failed to fetch production orders:", error.message);
+      return [];
+    }
   }
 
   async getProductionOrder(id: number): Promise<ProductionOrder | undefined> {
