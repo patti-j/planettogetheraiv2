@@ -1728,8 +1728,15 @@ export default function GanttChart({
 
   // Component for unscheduled operations
   const DraggableUnscheduledOperation = ({ operation }: { operation: Operation }) => {
-    const { drag, isDragging } = useOperationDrag(operation);
     const job = jobs.find(j => j.id === operation.productionOrderId);
+    
+    const [{ isDragging }, drag] = useDrag({
+      type: 'operation',
+      item: { operation },
+      collect: (monitor) => ({
+        isDragging: monitor.isDragging()
+      })
+    });
     
     return (
       <div
