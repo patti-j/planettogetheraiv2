@@ -50,12 +50,8 @@ const assignmentsDataInitial = [
 
 export default function SchedulerDemo() {
   const schedulerRef = useRef<any>(null);
-  const [dataState, setDataState] = useState({ 
-    resources: resourcesData, 
-    events: eventsDataInitial,
-    assignments: assignmentsDataInitial 
-  });
-
+  
+  // Configure the scheduler with assignment-based scheduling
   const schedulerProps = useMemo(() => ({
     startDate,
     endDate,
@@ -63,16 +59,11 @@ export default function SchedulerDemo() {
     rowHeight: 60,
     barMargin: 8,
     height: 600,
-
-    // Configure the stores for Assignment-based scheduling
-    resources: dataState.resources,
-    events: dataState.events,
-    assignments: dataState.assignments,
-
-    // Enable Assignment Store mode
-    eventStore: {
-      useRawData: true
-    },
+    
+    // Directly provide the data to the project model
+    resourcesData: resourcesData,
+    eventsData: eventsDataInitial,
+    assignmentsData: assignmentsDataInitial,
     
     // Configure drag and drop
     features: {
@@ -114,31 +105,15 @@ export default function SchedulerDemo() {
 
     listeners: {
       // Handle drag and drop updates
-      eventDrop: ({ context }: any) => {
+      eventDrop: ({ eventRecords, targetResourceRecord }: any) => {
         const instance = schedulerRef.current;
         if (!instance) return;
         
-        // Update state with new event positions and assignments
-        const nextEvents = instance.eventStore.records.map((r: any) => ({
-          id: r.id,
-          name: r.name,
-          startDate: r.startDate,
-          endDate: r.endDate
-        }));
-        
-        const nextAssignments = instance.assignmentStore.records.map((r: any) => ({
-          id: r.id,
-          eventId: r.eventId,
-          resourceId: r.resourceId
-        }));
-        
-        setDataState(prev => ({ 
-          ...prev, 
-          events: nextEvents,
-          assignments: nextAssignments 
-        }));
-        
-        console.log('Event dropped - new assignments:', nextAssignments);
+        console.log('Event dropped:', {
+          event: eventRecords[0]?.name,
+          targetResource: targetResourceRecord?.name,
+          newAssignments: eventRecords[0]?.assignments
+        });
       },
       
       // Log data loading for debugging
@@ -151,7 +126,7 @@ export default function SchedulerDemo() {
         }
       }
     }
-  }), [dataState]);
+  }), []);
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
@@ -164,24 +139,35 @@ export default function SchedulerDemo() {
 
         <div style={{ height: '600px', width: '100%' }}>
           <BryntumSchedulerPro
-            onReady={({ widget }: any) => { 
-              schedulerRef.current = widget;
-              // Debug output to verify data loading
-              console.log('=== SCHEDULER PRO WITH ASSIGNMENTS ===');
-              console.log('Resource count:', widget.resourceStore.count);
-              console.log('Event count:', widget.eventStore.count);
-              console.log('Assignment count:', widget.assignmentStore?.count || 0);
-              
-              // Verify assignments are working
-              if (widget.assignmentStore) {
-                console.log('Assignments loaded:', widget.assignmentStore.records.map((a: any) => ({
-                  id: a.id,
-                  eventId: a.eventId,
-                  resourceId: a.resourceId
-                })));
+            {...schedulerProps}
+            listeners={{
+              ...schedulerProps.listeners,
+              paint: ({ source }: any) => {
+                schedulerRef.current = source;
+                
+                // Debug output to verify data loading  
+                console.log('=== SCHEDULER PRO WITH ASSIGNMENTS ===');
+                console.log('Resource count:', source.resourceStore.count);
+                console.log('Event count:', source.eventStore.count);
+                console.log('Assignment store:', source.assignmentStore);
+                console.log('Assignment count:', source.assignmentStore?.count || 0);
+                
+                // Check the assignment store records
+                if (source.assignmentStore && source.assignmentStore.count > 0) {
+                  console.log('Assignments are loaded!');
+                  source.assignmentStore.records.forEach((assignment: any) => {
+                    console.log(`Assignment: Event ${assignment.eventId} -> Resource ${assignment.resourceId}`);
+                  });
+                } else {
+                  console.log('No assignments found - events may fall back to resourceId');
+                }
+                
+                // Check events for their resource assignments
+                source.eventStore.records.forEach((event: any) => {
+                  console.log(`Event "${event.name}" (id:${event.id}) resources:`, event.resources?.map((r: any) => r.name));
+                });
               }
             }}
-            {...schedulerProps}
           />
         </div>
         
