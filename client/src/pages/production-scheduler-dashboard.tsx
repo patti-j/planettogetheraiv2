@@ -98,7 +98,8 @@ export default function ProductionSchedulerDashboard() {
       {/* Dashboard Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+            <CalendarDays className="w-6 h-6 mr-2" />
             Production Scheduler Dashboard
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">

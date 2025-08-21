@@ -539,7 +539,10 @@ export default function MasterDataPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Master Data Management</h1>
+        <h1 className="text-3xl font-bold flex items-center">
+          <FileText className="w-8 h-8 mr-3" />
+          Master Data Management
+        </h1>
         <Button>
           <Save className="h-4 w-4 mr-2" />
           Save All Changes

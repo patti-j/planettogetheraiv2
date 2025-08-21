@@ -434,7 +434,10 @@ export default function DashboardsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboards</h1>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <BarChart3 className="w-8 h-8 mr-3" />
+            Dashboards
+          </h1>
           <p className="text-gray-600 mt-2">Create, manage, and organize your manufacturing dashboards</p>
         </div>
         
