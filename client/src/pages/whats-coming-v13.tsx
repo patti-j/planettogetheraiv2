@@ -78,6 +78,20 @@ export default function WhatsComing() {
         benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing"]
       },
       {
+        title: "Advanced Labor Planning & Workforce Optimization",
+        description: "Comprehensive workforce planning synchronized with production scheduling and capacity requirements. Automated shift planning using optimization algorithms to match employee skills with machine requirements. Includes employee self-service portal for schedule viewing and preference input.",
+        icon: <Users className="h-6 w-6" />,
+        status: "New",
+        benefits: [
+          "Shift optimization aligned with production capacity needs",
+          "Skills tracking and machine operator certification management",
+          "Capacity gap analysis between required vs available skills",
+          "Employee self-service scheduling preferences and availability",
+          "Automated planning algorithms via Optimization Studio",
+          "Real-time integration with production scheduling"
+        ]
+      },
+      {
         title: "Control Tower",
         description: "Centralized command center for end-to-end visibility",
         icon: <Network className="h-6 w-6" />,
