@@ -14,11 +14,8 @@ export function SmartHomeWrapper() {
   // Debug logging to understand what's happening
   console.log('SmartHomeWrapper - Device Type:', deviceType, 'Window Width:', window.innerWidth, 'Location:', location);
   
-  // Don't handle routing if user is not authenticated - let the main App router handle unauthenticated state
-  if (!isAuthenticated) {
-    console.log('SmartHomeWrapper - User not authenticated, skipping mobile routing');
-    return null;
-  }
+  // For authenticated users, handle routing properly
+  // Remove the authentication check that was causing blank page
   
   // On mobile devices, always redirect to mobile-home for any non-mobile route
   if (deviceType === "mobile" && window.innerWidth < 768) {
