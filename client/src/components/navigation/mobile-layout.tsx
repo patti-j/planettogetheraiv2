@@ -29,6 +29,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [maxResponse, setMaxResponse] = useState<{content: string, suggestions?: string[]} | null>(null);
   const [showMaxResponse, setShowMaxResponse] = useState(false);
   const [showMaxThinking, setShowMaxThinking] = useState(false);
+  const [showMaxSettings, setShowMaxSettings] = useState(false);
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -385,13 +386,13 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 )}
               </Button>
             )}
-            {/* Settings Button */}
+            {/* Settings Button - Opens Max AI Settings */}
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setProfileDialogOpen(true)}
+              onClick={() => setShowMaxSettings(true)}
               className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Account Settings"
+              title="Max AI Settings"
             >
               <Settings className="h-4 w-4" />
             </Button>
@@ -874,6 +875,125 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               >
                 <LogOut className="w-5 h-5 mr-3" />
                 <span className="font-semibold">Sign Out</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Max AI Settings Dialog */}
+      {showMaxSettings && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 lg:hidden" onClick={() => setShowMaxSettings(false)}>
+          <div 
+            className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                Max AI Settings
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMaxSettings(false)}
+                className="p-2"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-6">
+              {/* AI Theme Colors */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">AI Theme</label>
+                <div className="flex gap-2">
+                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-teal-600 border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-600 to-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-500 transition-colors"></button>
+                </div>
+              </div>
+
+              {/* Voice Settings */}
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h3 className="font-medium text-gray-900 dark:text-white">Voice Settings</h3>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Enable Voice</span>
+                  <input 
+                    type="checkbox" 
+                    defaultChecked={isVoiceEnabled}
+                    className="rounded text-purple-600 focus:ring-purple-500" 
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Voice Response</span>
+                  <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option>Alloy (Default)</option>
+                    <option>Echo</option>
+                    <option>Fable</option>
+                    <option>Onyx</option>
+                    <option>Nova</option>
+                    <option>Shimmer</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Voice Speed</span>
+                  <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option>Normal</option>
+                    <option>Slow</option>
+                    <option>Fast</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Response Settings */}
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <h3 className="font-medium text-gray-900 dark:text-white">Response Settings</h3>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Response Style</span>
+                  <select className="text-xs border rounded px-2 py-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option>Balanced</option>
+                    <option>Quick & Concise</option>
+                    <option>Detailed & Thorough</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Show Action Buttons</span>
+                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Auto-create Widgets</span>
+                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Show Suggestions</span>
+                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <Button 
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                onClick={() => {
+                  toast({
+                    title: "Settings Saved",
+                    description: "Your Max AI preferences have been updated.",
+                  });
+                  setShowMaxSettings(false);
+                }}
+              >
+                Save Settings
               </Button>
             </div>
           </div>

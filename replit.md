@@ -52,6 +52,10 @@ Note on concurrent work:
 - **Hint System Service**: Intelligent contextual hints with user interaction tracking, prerequisites, and sequence management.
 
 ### Recent Updates (January 2025)
+- **Mobile UI Improvements**: Fixed mobile header settings icon to open Max AI Settings
+  - Settings icon in mobile header now opens Max AI Settings panel instead of profile menu
+  - Max AI Settings includes AI theme, voice settings, and response configurations
+  - Improved mobile user experience with dedicated AI agent settings access
 - **Bryntum Scheduler Pro Full Integration**: Complete optimization engine with all algorithms working (ASAP, ALAP, Critical Path, Resource Leveling)
 - **Bryntum Chart.js Integration Demo**: Advanced scheduler demo with embedded utilization charts
   - Row expander feature showing real-time resource utilization
