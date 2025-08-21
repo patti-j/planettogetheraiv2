@@ -26,32 +26,80 @@ const resourcesData = [
   { id: 5, name: 'Biosafety L3', capacity: 5 }
 ];
 
-// Events with direct resourceId assignment (simpler approach)
+// Events WITH resourceId - direct placement (matching working example)
 const eventsDataInitial = [
-  { id: 1, name: 'RNA Sequencing',         startDate: '2025-04-01T08:00:00', endDate: '2025-04-01T11:00:00', resourceId: 1 },
-  { id: 2, name: 'Glycan analysis',        startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00', resourceId: 1 },
-  { id: 3, name: 'Electron microscopy',    startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T12:00:00', resourceId: 2 },
-  { id: 4, name: 'Covid variant analysis', startDate: '2025-04-01T13:00:00', endDate: '2025-04-01T17:00:00', resourceId: 2 },
-  { id: 5, name: 'Bacterial identification', startDate: '2025-04-01T10:00:00', endDate: '2025-04-01T14:00:00', resourceId: 3 },
-  { id: 6, name: 'Disinfectant efficacy',  startDate: '2025-04-01T09:00:00', endDate: '2025-04-01T11:00:00', resourceId: 4 },
-  { id: 7, name: 'DNA Sequencing',         startDate: '2025-04-01T12:00:00', endDate: '2025-04-01T16:00:00', resourceId: 5 }
+  { id: 1, resourceId: 1, name: 'RNA Sequencing',         startDate: new Date(2025, 3, 1, 8),  endDate: new Date(2025, 3, 1, 11) },
+  { id: 2, resourceId: 1, name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
+  { id: 3, resourceId: 2, name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
+  { id: 4, resourceId: 2, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
+  { id: 5, resourceId: 3, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
+  { id: 6, resourceId: 4, name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
+  { id: 7, resourceId: 5, name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
 ];
+
+// Log data at initialization to verify it's correct
+console.log('Initial data setup:', {
+  resources: resourcesData,
+  events: eventsDataInitial
+});
 
 export default function SchedulerDemo() {
   const schedulerRef = useRef<any>(null);
   
-  // Configure the scheduler with assignment-based scheduling
+  // Debug: log when scheduler is ready
+  React.useEffect(() => {
+    const checkScheduler = () => {
+      if (schedulerRef.current?.schedulerInstance) {
+        const scheduler = schedulerRef.current.schedulerInstance;
+        console.log('Scheduler instance ready:', {
+          resourceStore: scheduler.resourceStore.count,
+          eventStore: scheduler.eventStore.count,
+          assignmentStore: scheduler.assignmentStore?.count,
+          resources: scheduler.resourceStore.records.map((r: any) => ({ 
+            id: r.id, 
+            name: r.name 
+          })),
+          events: scheduler.eventStore.records.map((e: any) => ({ 
+            id: e.id, 
+            name: e.name,
+            resourceId: e.resourceId,
+            assignments: e.assignments?.map((a: any) => a.resourceId)
+          })),
+          assignments: scheduler.assignmentStore?.records.map((a: any) => ({
+            id: a.id,
+            eventId: a.eventId,
+            resourceId: a.resourceId
+          }))
+        });
+      }
+    };
+    
+    // Check immediately and after a short delay
+    checkScheduler();
+    const timer = setTimeout(checkScheduler, 500);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Configure the scheduler
   const schedulerProps = useMemo(() => ({
-    startDate,
-    endDate,
+    startDate: '2025-04-01',
+    endDate: '2025-04-02',
     viewPreset: 'hourAndDay',
     rowHeight: 60,
     barMargin: 8,
     height: 600,
     
-    // Direct data assignment (simpler than assignment store)
-    resources: resourcesData,
-    events: eventsDataInitial,
+    // Use project model with assignment store mode
+    project: {
+      resourcesData: resourcesData,
+      eventsData: eventsDataInitial,
+      assignmentsData: assignmentsData,
+      // Force assignment store mode
+      assignmentStore: true
+    },
+    
+    // Enable multi-assignment mode
+    useInitialAnimation: false,
     
     // Configure drag and drop
     features: {
