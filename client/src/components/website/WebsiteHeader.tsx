@@ -7,6 +7,9 @@ import { useLocation } from "wouter";
 const WebsiteHeader: React.FC = () => {
   const [, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Check if user is authenticated to show logout option
+  const isAuthenticated = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -58,19 +61,45 @@ const WebsiteHeader: React.FC = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => setLocation("/login")}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              Sign In
-            </Button>
-            <Button
-              onClick={() => setLocation("/pricing")}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Get Started
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/dashboard")}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('isDemo');
+                    window.location.href = '/';
+                  }}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/login")}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={() => setLocation("/pricing")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button - Always visible on mobile */}
@@ -89,25 +118,54 @@ const WebsiteHeader: React.FC = () => {
               <div className="flex flex-col space-y-4 mt-12">
                 <NavigationLinks onItemClick={() => setIsOpen(false)} />
                 <div className="border-t pt-4 space-y-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setLocation("/login");
-                      setIsOpen(false);
-                    }}
-                    className="w-full justify-start"
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setLocation("/pricing");
-                      setIsOpen(false);
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Get Started
-                  </Button>
+                  {isAuthenticated ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setLocation("/dashboard");
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        Dashboard
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          localStorage.removeItem('authToken');
+                          localStorage.removeItem('user');
+                          localStorage.removeItem('isDemo');
+                          window.location.href = '/';
+                        }}
+                        className="w-full"
+                      >
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setLocation("/login");
+                          setIsOpen(false);
+                        }}
+                        className="w-full justify-start"
+                      >
+                        Sign In
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setLocation("/pricing");
+                          setIsOpen(false);
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Get Started
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

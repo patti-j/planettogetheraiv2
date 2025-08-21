@@ -23,10 +23,13 @@ function useAuthStatus() {
   const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // For public paths, don't check auth at all
-  const tokenExists = typeof window !== 'undefined' && !!localStorage.getItem('authToken') && !isPublicPath;
-  const [isAuthenticated, setIsAuthenticated] = useState(tokenExists);
-  const [isLoading, setIsLoading] = useState(tokenExists); // Only load if we need to verify token
+  // Check if token exists
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  
+  // For public paths, always show website regardless of token
+  // For other paths, check authentication
+  const [isAuthenticated, setIsAuthenticated] = useState(isPublicPath ? false : hasToken);
+  const [isLoading, setIsLoading] = useState(isPublicPath ? false : hasToken); // Only load if we need to verify token
 
   useEffect(() => {
     // Skip auth check entirely for public pages
