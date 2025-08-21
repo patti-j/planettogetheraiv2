@@ -40,11 +40,11 @@ export default function WebsiteApp() {
     <ThemeProvider>
       <TooltipProvider>
         <Switch>
-          {/* Login page - special layout without header/footer */}
+          {/* Login page - with website header/footer */}
           <Route path="/login">
-            <SpecialLayout>
+            <WebsiteLayout>
               <Login />
-            </SpecialLayout>
+            </WebsiteLayout>
           </Route>
           
           {/* Presentation page - special layout */}
