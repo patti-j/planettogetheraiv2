@@ -372,15 +372,15 @@ export default function Pricing() {
     }
   ];
 
-  const handleStartTrial = (tierId: string) => {
+  const handleGetStarted = (tierId: string) => {
     setSelectedTier(tierId);
     toast({
-      title: "Starting Free Trial",
-      description: "Redirecting you to set up your 14-day free trial...",
+      title: "Getting Started",
+      description: "Redirecting you to start your subscription...",
     });
-    // In real app, this would redirect to trial signup
+    // In real app, this would redirect to subscription signup
     setTimeout(() => {
-      window.location.href = "/signup?trial=" + tierId;
+      window.location.href = "/signup?plan=" + tierId;
     }, 1500);
   };
 
@@ -641,12 +641,12 @@ export default function Pricing() {
 
                 <div className="space-y-3">
                   <Button
-                    onClick={() => handleStartTrial(tier.id)}
+                    onClick={() => handleGetStarted(tier.id)}
                     variant="outline"
                     className="w-full"
                     disabled={selectedTier === tier.id}
                   >
-                    {selectedTier === tier.id ? "Starting Trial..." : "Start 14-Day Free Trial"}
+                    {selectedTier === tier.id ? "Getting Started..." : "Get Started"}
                   </Button>
                   <Button
                     onClick={() => handleSubscribe(tier.id)}
@@ -1053,8 +1053,8 @@ export default function Pricing() {
               <p className="text-gray-600">No setup fees for any plan. We include onboarding and training to get you started quickly.</p>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">How does the free trial work?</h3>
-              <p className="text-gray-600">14-day free trial with full access to all features. No credit card required to start.</p>
+              <h3 className="font-semibold mb-2">How does billing work?</h3>
+              <p className="text-gray-600">Monthly or yearly subscriptions starting with our Starter Edition. No setup fees. Cancel anytime.</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">What integrations are available?</h3>

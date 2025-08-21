@@ -322,7 +322,7 @@ export default function MarketingLandingPage() {
                   className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 text-lg"
                 >
                   <Calendar className="w-5 h-5 mr-2" />
-                  Schedule Free Consultation
+                  Schedule Consultation
                 </Button>
               </div>
               <div className="flex items-center gap-6 text-blue-100">
@@ -388,12 +388,12 @@ export default function MarketingLandingPage() {
                       className={`w-full ${aiTheme.gradient} hover:opacity-90 text-white`}
                       disabled={leadCaptureMutation.isPending}
                     >
-                      {leadCaptureMutation.isPending ? 'Starting Trial...' : 'Start Free Trial'}
+                      {leadCaptureMutation.isPending ? 'Getting Started...' : 'Get Started'}
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </form>
                   <p className="text-xs text-gray-600 mt-4 text-center">
-                    By starting your trial, you agree to our Terms of Service and Privacy Policy
+                    By getting started, you agree to our Terms of Service and Privacy Policy
                   </p>
                 </CardContent>
               </Card>
@@ -605,7 +605,7 @@ export default function MarketingLandingPage() {
                     variant={index === 1 ? 'default' : 'outline'}
                     onClick={() => setSelectedCompanySize(plan.size)}
                   >
-                    Start Free Trial
+                    Get Started
                   </Button>
                 </CardContent>
               </Card>
@@ -630,7 +630,7 @@ export default function MarketingLandingPage() {
               className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg"
             >
               <Play className="w-5 h-5 mr-2" />
-              Start Free 14-Day Trial
+              Get Started Today
             </Button>
             <Button 
               size="lg" 
@@ -649,7 +649,7 @@ export default function MarketingLandingPage() {
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Free onboarding support</span>
+              <span>Onboarding support included</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />

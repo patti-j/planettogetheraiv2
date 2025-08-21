@@ -158,7 +158,7 @@ const MarketingHome: React.FC = () => {
                 onClick={handleGetStarted}
                 className="px-8 py-6 text-lg font-semibold"
               >
-                Start Free Trial
+                Get Started
                 <Rocket className="ml-2 w-5 h-5" />
               </Button>
               
@@ -345,7 +345,7 @@ const MarketingHome: React.FC = () => {
           <div className="max-w-3xl mx-auto text-white">
             <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Manufacturing?</h2>
             <p className="text-xl mb-8 opacity-90">
-              Join the manufacturing revolution with our AI First Factory Optimization Platform. Start your free trial today and see results in weeks.
+              Join the manufacturing revolution with our AI First Factory Optimization Platform. Get started with the Starter Edition today and see results in weeks.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -355,7 +355,7 @@ const MarketingHome: React.FC = () => {
                 onClick={handleGetStarted}
                 className="px-8 py-6 text-lg font-semibold bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-700 dark:hover:text-blue-300"
               >
-                Start Free Trial
+                Get Started
                 <Rocket className="ml-2 w-5 h-5" />
               </Button>
               

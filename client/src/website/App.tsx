@@ -3,6 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
+// Website Components
+import WebsiteHeader from "@/components/website/WebsiteHeader";
+import WebsiteFooter from "@/components/website/WebsiteFooter";
+
 // Website Pages
 import MarketingHome from "@/pages/marketing-home";
 import MarketingLandingPage from "@/pages/marketing-landing";
@@ -13,27 +17,93 @@ import SolutionsComparison from "@/pages/solutions-comparison";
 import DemoTour from "@/pages/demo-tour";
 import PresentationPage from "@/pages/presentation";
 
+// Layout wrapper for website pages
+const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-gray-50 flex flex-col">
+    <WebsiteHeader />
+    <main className="flex-1">
+      {children}
+    </main>
+    <WebsiteFooter />
+  </div>
+);
+
+// Special pages that don't use the standard layout
+const SpecialLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen bg-gray-50">
+    {children}
+  </div>
+);
+
 export default function WebsiteApp() {
   return (
     <ThemeProvider>
       <TooltipProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Switch>
-            {/* Public Website Pages */}
-            <Route path="/pricing" component={Pricing} />
-            <Route path="/solutions-comparison" component={SolutionsComparison} />
-            <Route path="/whats-coming" component={WhatsComing} />
-            <Route path="/demo-tour" component={DemoTour} />
-            <Route path="/presentation" component={PresentationPage} />
-            <Route path="/marketing" component={MarketingLandingPage} />
-            <Route path="/login" component={Login} />
-            <Route path="/home" component={MarketingHome} />
-            <Route path="/" component={MarketingHome} />
-            
-            {/* Default fallback */}
-            <Route component={MarketingHome} />
-          </Switch>
-        </div>
+        <Switch>
+          {/* Login page - special layout without header/footer */}
+          <Route path="/login">
+            <SpecialLayout>
+              <Login />
+            </SpecialLayout>
+          </Route>
+          
+          {/* Presentation page - special layout */}
+          <Route path="/presentation">
+            <SpecialLayout>
+              <PresentationPage />
+            </SpecialLayout>
+          </Route>
+
+          {/* Standard website pages with header/footer */}
+          <Route path="/pricing">
+            <WebsiteLayout>
+              <Pricing />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/solutions-comparison">
+            <WebsiteLayout>
+              <SolutionsComparison />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/whats-coming">
+            <WebsiteLayout>
+              <WhatsComing />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/demo-tour">
+            <WebsiteLayout>
+              <DemoTour />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/marketing">
+            <WebsiteLayout>
+              <MarketingLandingPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/home">
+            <WebsiteLayout>
+              <MarketingHome />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/">
+            <WebsiteLayout>
+              <MarketingHome />
+            </WebsiteLayout>
+          </Route>
+          
+          {/* Default fallback */}
+          <Route>
+            <WebsiteLayout>
+              <MarketingHome />
+            </WebsiteLayout>
+          </Route>
+        </Switch>
         <Toaster />
       </TooltipProvider>
     </ThemeProvider>
