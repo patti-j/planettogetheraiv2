@@ -2622,7 +2622,12 @@ Rules:
           p.id as plant_id,
           p.external_id as plant_external_id,
           p.name as plant_name,
-          p.description as plant_description
+          p.description as plant_description,
+          
+          -- Department information for work center mapping
+          d.department_id,
+          d.work_center_id,
+          d.name as department_name
           
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
@@ -2631,6 +2636,7 @@ Rules:
         LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
         LEFT JOIN ptresources r ON jr.default_resource_id = r.id
         LEFT JOIN ptplants p ON r.plant_id = p.id
+        LEFT JOIN ptdepartments d ON jo.scheduled_primary_work_center_external_id = d.external_id
         ORDER BY 
           jo.scheduled_start ASC NULLS LAST,
           jo.id ASC
@@ -2722,8 +2728,8 @@ Rules:
           priority: parseInt(row.job_priority) || 5,
           assignedResourceId: row.resource_external_id || row.resource_id,
           assignedResourceName: row.resource_name,
-          workCenterId: row.resource_external_id || row.resource_id,
-          workCenterName: row.resource_name,
+          workCenterId: row.work_center_id ? Number(row.work_center_id) : null,
+          workCenterName: row.department_name || row.resource_name,
           
           // Detailed timing breakdown
           setupTime: setupHours * 60,
