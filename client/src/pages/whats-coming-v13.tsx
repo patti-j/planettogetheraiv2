@@ -42,10 +42,10 @@ export default function WhatsComing() {
       },
       {
         title: "AI-Powered Optimization",
-        description: "Machine learning algorithms for continuous improvement",
+        description: "AI driven continuous improvement and performance optimization",
         icon: <Brain className="h-6 w-6" />,
         status: "New",
-        benefits: ["Autonomous scheduling", "Pattern recognition", "Performance optimization"]
+        benefits: ["Optimization studio", "Autonomous scheduling", "Feedback driven adaptation"]
       },
       {
         title: "Intelligent Alerts",
