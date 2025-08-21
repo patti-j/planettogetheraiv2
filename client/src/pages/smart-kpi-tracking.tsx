@@ -762,12 +762,12 @@ export default function SmartKpiTrackingPage() {
               <CardContent>
                 <div className="space-y-3">
                   {kpiDefinitions.slice(0, 5).map(kpi => {
-                    const owner = teamMembers[kpi.ownerId % teamMembers.length];
+                    const owner = kpi.ownerId ? teamMembers.find(m => m.id === kpi.ownerId) || teamMembers[0] : teamMembers[0];
                     return (
                       <div key={kpi.id} className="flex items-center justify-between text-sm">
                         <div>
                           <p className="font-medium">{kpi.name}</p>
-                          <p className="text-xs text-muted-foreground">{owner.name}</p>
+                          <p className="text-xs text-muted-foreground">{owner?.name || 'Unassigned'}</p>
                         </div>
                         <Badge variant="outline">{kpi.businessStrategy}</Badge>
                       </div>
@@ -789,7 +789,7 @@ export default function SmartKpiTrackingPage() {
             <CardContent>
               <div className="space-y-3">
                 {improvements.map(improvement => {
-                  const assignee = teamMembers[improvement.assignedTo % teamMembers.length];
+                  const assignee = improvement.assignedTo ? teamMembers.find(m => m.id === improvement.assignedTo) || teamMembers[0] : teamMembers[0];
                   const daysUntilDue = Math.ceil((new Date(improvement.targetCompletionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                   
                   return (
@@ -801,7 +801,7 @@ export default function SmartKpiTrackingPage() {
                           <div className="flex items-center gap-4 mt-2">
                             <div className="flex items-center gap-1 text-sm">
                               <UserCheck className="h-3 w-3" />
-                              {assignee.name}
+                              {assignee?.name || 'Unassigned'}
                             </div>
                             <div className="flex items-center gap-1 text-sm">
                               <Clock className="h-3 w-3" />
@@ -866,7 +866,7 @@ export default function SmartKpiTrackingPage() {
                   </div>
                   
                   {kpiDefinitions.map(kpi => {
-                    const owner = teamMembers.find(m => m.id === kpi.ownerId) || teamMembers[0];
+                    const owner = kpi.ownerId ? teamMembers.find(m => m.id === kpi.ownerId) || teamMembers[0] : teamMembers[0];
                     return (
                       <div key={kpi.id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between">
@@ -886,10 +886,10 @@ export default function SmartKpiTrackingPage() {
                             <div className="flex items-center gap-1 text-sm">
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-[10px]">
-                                  {owner.name.split(' ').map(n => n[0]).join('')}
+                                  {owner?.name ? owner.name.split(' ').map(n => n[0]).join('') : 'NA'}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="text-xs font-medium">{owner.name}</span>
+                              <span className="text-xs font-medium">{owner?.name || 'Unassigned'}</span>
                             </div>
                             <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
                               <Edit className="h-3 w-3" />
