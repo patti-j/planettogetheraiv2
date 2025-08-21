@@ -18,7 +18,7 @@ import PortalLogin from "@/pages/portal-login";
 import PortalDashboard from "@/pages/portal-dashboard";
 import Patti from "@/pages/Patti";
 import Patti2 from "@/pages/patti2";
-import Patti3 from "@/pages/patti3";
+import Patti4 from "@/pages/patti4";
 import BasicScheduler from "@/pages/basic-scheduler";
 import SchedulerDemo from "@/pages/scheduler-demo";
 import SchedulerTest from "@/pages/scheduler-test";
@@ -129,7 +129,7 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/patti', '/patti2', '/patti3', '/basic-scheduler', '/scheduler-demo', '/scheduler-test'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/patti', '/patti2', '/patti4', '/basic-scheduler', '/scheduler-demo', '/scheduler-test'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if user has a token
@@ -182,8 +182,8 @@ export default function App() {
                       <Patti />
                     ) : currentPath === '/patti2' ? (
                       <Patti2 />
-                    ) : currentPath === '/patti3' ? (
-                      <Patti3 />
+                    ) : currentPath === '/patti4' ? (
+                      <Patti4 />
                     ) : currentPath === '/basic-scheduler' ? (
                       <BasicScheduler />
                     ) : currentPath === '/scheduler-demo' ? (
