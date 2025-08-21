@@ -1,6 +1,6 @@
 // Basic Scheduler Demo - Based on Bryntum Basic Example
 import React, { useMemo, useRef } from 'react';
-import { BryntumScheduler } from '@bryntum/schedulerpro-react';
+import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
 export default function BasicScheduler() {
@@ -24,11 +24,10 @@ export default function BasicScheduler() {
     { id: 'ellen', name: 'Ellen' }
   ];
 
-  // Events (tasks) with their schedule - matching the screenshot
+  // Events (tasks) WITHOUT resourceId - we'll use assignments instead
   const events = [
     {
       id: 1,
-      resourceId: 'mike',
       name: 'Click me',
       startDate: new Date(2025, 0, 1, 8, 0),
       endDate: new Date(2025, 0, 1, 11, 0),
@@ -36,7 +35,6 @@ export default function BasicScheduler() {
     },
     {
       id: 2,
-      resourceId: 'linda',
       name: 'Drag me',
       startDate: new Date(2025, 0, 1, 10, 0),
       endDate: new Date(2025, 0, 1, 13, 0),
@@ -44,7 +42,6 @@ export default function BasicScheduler() {
     },
     {
       id: 3,
-      resourceId: 'don',
       name: 'Double click me',
       startDate: new Date(2025, 0, 1, 14, 0),
       endDate: new Date(2025, 0, 1, 18, 0),
@@ -52,7 +49,6 @@ export default function BasicScheduler() {
     },
     {
       id: 4,
-      resourceId: 'karen',
       name: 'Right click me',
       startDate: new Date(2025, 0, 1, 8, 0),
       endDate: new Date(2025, 0, 1, 12, 0),
@@ -60,7 +56,6 @@ export default function BasicScheduler() {
     },
     {
       id: 5,
-      resourceId: 'doug',
       name: 'Sports event',
       startDate: new Date(2025, 0, 1, 6, 0),
       endDate: new Date(2025, 0, 1, 10, 0),
@@ -69,13 +64,22 @@ export default function BasicScheduler() {
     },
     {
       id: 6,
-      resourceId: 'peter',
       name: "Dad's birthday",
       startDate: new Date(2025, 0, 1, 12, 0),
       endDate: new Date(2025, 0, 1, 14, 0),
       eventColor: 'teal',
       iconCls: 'b-fa b-fa-birthday-cake'
     }
+  ];
+
+  // Assignments to connect events to resources
+  const assignments = [
+    { id: 1, eventId: 1, resourceId: 'mike' },
+    { id: 2, eventId: 2, resourceId: 'linda' },
+    { id: 3, eventId: 3, resourceId: 'don' },
+    { id: 4, eventId: 4, resourceId: 'karen' },
+    { id: 5, eventId: 5, resourceId: 'doug' },
+    { id: 6, eventId: 6, resourceId: 'peter' }
   ];
 
   // Scheduler configuration
@@ -141,6 +145,10 @@ export default function BasicScheduler() {
       data: events
     },
 
+    assignmentStore: {
+      data: assignments
+    },
+
     // Event renderer to customize appearance
     eventRenderer({ eventRecord }) {
       return {
@@ -189,7 +197,7 @@ export default function BasicScheduler() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           overflow: 'hidden'
         }}>
-          <BryntumScheduler
+          <BryntumSchedulerPro
             ref={schedulerRef}
             {...schedulerConfig}
           />
