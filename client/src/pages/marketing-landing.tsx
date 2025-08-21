@@ -318,11 +318,11 @@ export default function MarketingLandingPage() {
               <div className="flex items-center gap-6 text-blue-100">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>14-day free trial</span>
+                  <span>Affordable Starter Edition</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>No credit card required</span>
+                  <span>Full-featured platform</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400" />
@@ -334,9 +334,9 @@ export default function MarketingLandingPage() {
             <div className="lg:justify-self-end">
               <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-2xl">
                 <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">Start Your Free Trial</CardTitle>
+                  <CardTitle className="text-2xl">Get Started Today</CardTitle>
                   <CardDescription>
-                    Get instant access to all premium features
+                    Choose the Starter Edition for immediate access
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
