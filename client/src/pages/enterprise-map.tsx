@@ -302,7 +302,7 @@ export default function EnterpriseMapPage() {
             </div>
           </div>
 
-          {/* Enhanced KPI Dashboard */}
+          {/* Executive Command Center - Enhanced KPI Dashboard */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800">
               <CardContent className="p-4">
@@ -397,6 +397,430 @@ export default function EnterpriseMapPage() {
                   </div>
                   <Network className="w-5 h-5 text-gray-600" />
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Executive Strategic Command Center */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            {/* Financial Performance Dashboard */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    Financial Performance
+                  </span>
+                  <Badge variant="outline" className="text-green-600">
+                    <ArrowUpRight className="w-3 h-3 mr-1" />
+                    +12.5%
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Revenue (MTD)</span>
+                    <span className="font-bold">$45.2M</span>
+                  </div>
+                  <Progress value={75} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Profit Margin</span>
+                    <span className="font-bold">18.3%</span>
+                  </div>
+                  <Progress value={83} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Operating Costs</span>
+                    <span className="font-bold">$37.1M</span>
+                  </div>
+                  <Progress value={62} className="h-2" />
+                </div>
+                <Button className="w-full" size="sm">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  View Detailed Analytics
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Risk Management Center */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-600" />
+                    Risk Management
+                  </span>
+                  <Badge variant="outline" className="text-orange-600">
+                    3 Active
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Alert className="py-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Supply chain disruption risk in Asia-Pacific region
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Overall Risk Score</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span className="font-bold">Medium</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Compliance Status</span>
+                    <Badge variant="default" className="text-xs">98% Compliant</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Quality Issues</span>
+                    <span className="font-bold text-green-600">2 Minor</span>
+                  </div>
+                </div>
+                <Button className="w-full" size="sm" variant="outline">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configure Risk Thresholds
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* AI-Powered Insights & Predictions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-purple-600" />
+                    AI Insights
+                  </span>
+                  <Badge variant="outline" className="text-purple-600">
+                    Real-time
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-sm">
+                  <p className="font-medium mb-1">🎯 Optimization Opportunity</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Reallocating production from Plant #2 to Plant #4 could increase efficiency by 15% and reduce costs by $2.3M annually.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Demand Forecast Accuracy</span>
+                    <span className="font-bold">94.2%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Predicted Q4 Growth</span>
+                    <span className="font-bold text-green-600">+8.7%</span>
+                  </div>
+                </div>
+                <Button className="w-full" size="sm" variant="outline">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  View All Predictions
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Supply Chain Optimization Controls */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Network className="w-5 h-5" />
+                  Supply Chain Optimization Suite
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Report
+                  </Button>
+                  <Button size="sm">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Optimize Now
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="inventory" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="inventory">Inventory</TabsTrigger>
+                  <TabsTrigger value="production">Production</TabsTrigger>
+                  <TabsTrigger value="logistics">Logistics</TabsTrigger>
+                  <TabsTrigger value="allocation">Allocation</TabsTrigger>
+                  <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="inventory" className="mt-4">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Total Inventory Value</p>
+                      <p className="text-2xl font-bold">$128.4M</p>
+                      <p className="text-xs text-green-600">-5.2% vs last month</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Turnover Rate</p>
+                      <p className="text-2xl font-bold">12.3x</p>
+                      <p className="text-xs text-green-600">+0.8x improvement</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Stock-out Risk</p>
+                      <p className="text-2xl font-bold">3.2%</p>
+                      <p className="text-xs text-yellow-600">2 items at risk</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Days of Supply</p>
+                      <p className="text-2xl font-bold">42 days</p>
+                      <p className="text-xs text-green-600">Optimal range</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button size="sm" variant="outline">Reorder Points Analysis</Button>
+                    <Button size="sm" variant="outline">Safety Stock Optimization</Button>
+                    <Button size="sm" variant="outline">ABC Classification</Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="production" className="mt-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="p-3 border rounded-lg">
+                        <p className="text-sm font-medium mb-2">Production Efficiency</p>
+                        <Progress value={87} className="mb-1" />
+                        <p className="text-xs text-gray-500">87% - Above target</p>
+                      </div>
+                      <div className="p-3 border rounded-lg">
+                        <p className="text-sm font-medium mb-2">Capacity Utilization</p>
+                        <Progress value={78} className="mb-1" />
+                        <p className="text-xs text-gray-500">78% - Room for growth</p>
+                      </div>
+                      <div className="p-3 border rounded-lg">
+                        <p className="text-sm font-medium mb-2">Schedule Adherence</p>
+                        <Progress value={92} className="mb-1" />
+                        <p className="text-xs text-gray-500">92% - Excellent</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm">Balance Production Lines</Button>
+                      <Button size="sm" variant="outline">Shift Optimization</Button>
+                      <Button size="sm" variant="outline">Changeover Reduction</Button>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="logistics" className="mt-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <Truck className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                        <p className="text-sm font-medium">245 Shipments</p>
+                        <p className="text-xs text-gray-500">This week</p>
+                      </div>
+                      <div className="text-center">
+                        <Clock className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                        <p className="text-sm font-medium">98.2% On-time</p>
+                        <p className="text-xs text-gray-500">Delivery rate</p>
+                      </div>
+                      <div className="text-center">
+                        <DollarSign className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                        <p className="text-sm font-medium">$4.2M</p>
+                        <p className="text-xs text-gray-500">Monthly costs</p>
+                      </div>
+                      <div className="text-center">
+                        <Route className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+                        <p className="text-sm font-medium">12 Routes</p>
+                        <p className="text-xs text-gray-500">Optimized daily</p>
+                      </div>
+                    </div>
+                    <Button className="w-full" size="sm">
+                      <Route className="w-4 h-4 mr-2" />
+                      Run Route Optimization Algorithm
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="allocation" className="mt-4">
+                  <div className="space-y-4">
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        Resource allocation optimizer suggests reallocating 15% of Plant #2 capacity to Plant #4 for improved efficiency.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 border rounded-lg">
+                        <p className="text-sm font-medium mb-2">Current Allocation Efficiency</p>
+                        <p className="text-2xl font-bold">82%</p>
+                      </div>
+                      <div className="p-3 border rounded-lg">
+                        <p className="text-sm font-medium mb-2">Optimized Efficiency</p>
+                        <p className="text-2xl font-bold text-green-600">94%</p>
+                      </div>
+                    </div>
+                    <Button className="w-full">Apply Optimized Allocation</Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="scenarios" className="mt-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <Card className="cursor-pointer hover:border-blue-500 transition-colors">
+                        <CardContent className="p-3">
+                          <p className="font-medium text-sm mb-1">Peak Season Scenario</p>
+                          <p className="text-xs text-gray-500">+40% demand surge</p>
+                          <Badge className="mt-2" variant="outline">Ready</Badge>
+                        </CardContent>
+                      </Card>
+                      <Card className="cursor-pointer hover:border-blue-500 transition-colors">
+                        <CardContent className="p-3">
+                          <p className="font-medium text-sm mb-1">Supply Disruption</p>
+                          <p className="text-xs text-gray-500">-30% raw materials</p>
+                          <Badge className="mt-2" variant="outline">Analyzed</Badge>
+                        </CardContent>
+                      </Card>
+                      <Card className="cursor-pointer hover:border-blue-500 transition-colors">
+                        <CardContent className="p-3">
+                          <p className="font-medium text-sm mb-1">New Market Entry</p>
+                          <p className="text-xs text-gray-500">Europe expansion</p>
+                          <Badge className="mt-2" variant="outline">Draft</Badge>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm">Create New Scenario</Button>
+                      <Button size="sm" variant="outline">Run Simulation</Button>
+                      <Button size="sm" variant="outline">Compare Scenarios</Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Executive Decision Support & Automated Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {/* Strategic Decision Support */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Gauge className="w-5 h-5 text-indigo-600" />
+                  Strategic Decision Support
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Factory className="w-5 h-5 text-blue-600" />
+                        <Badge variant="outline" className="text-xs">Urgent</Badge>
+                      </div>
+                      <p className="text-sm font-medium">Capacity Expansion</p>
+                      <p className="text-xs text-gray-500 mt-1">Plant #3 needs 20% more capacity</p>
+                      <Button size="sm" className="w-full mt-2">Analyze Impact</Button>
+                    </CardContent>
+                  </Card>
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <TrendingUp className="w-5 h-5 text-green-600" />
+                        <Badge variant="outline" className="text-xs">High ROI</Badge>
+                      </div>
+                      <p className="text-sm font-medium">Market Opportunity</p>
+                      <p className="text-xs text-gray-500 mt-1">Asia-Pacific demand +35%</p>
+                      <Button size="sm" className="w-full mt-2">View Strategy</Button>
+                    </CardContent>
+                  </Card>
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <DollarSign className="w-5 h-5 text-purple-600" />
+                        <Badge variant="outline" className="text-xs">$4.2M</Badge>
+                      </div>
+                      <p className="text-sm font-medium">Cost Reduction</p>
+                      <p className="text-xs text-gray-500 mt-1">Supply chain optimization</p>
+                      <Button size="sm" className="w-full mt-2">Implement</Button>
+                    </CardContent>
+                  </Card>
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Users className="w-5 h-5 text-orange-600" />
+                        <Badge variant="outline" className="text-xs">Critical</Badge>
+                      </div>
+                      <p className="text-sm font-medium">Workforce Planning</p>
+                      <p className="text-xs text-gray-500 mt-1">Skill gap in Plant #2</p>
+                      <Button size="sm" className="w-full mt-2">Action Plan</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Automated Actions & Controls */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-red-600" />
+                  Automated Actions & Controls
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-2 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium">Auto-Rebalancing</p>
+                        <p className="text-xs text-gray-500">Optimize production distribution</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-2 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-orange-600" />
+                      <div>
+                        <p className="text-sm font-medium">Risk Mitigation</p>
+                        <p className="text-xs text-gray-500">Automatic contingency activation</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-2 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium">Demand Response</p>
+                        <p className="text-xs text-gray-500">Auto-adjust to market changes</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between p-2 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-purple-600" />
+                      <div>
+                        <p className="text-sm font-medium">Cost Optimization</p>
+                        <p className="text-xs text-gray-500">AI-driven resource allocation</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+                <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-xs">
+                    3 automated optimizations executed today, saving $127K
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           </div>

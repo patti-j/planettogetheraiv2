@@ -10248,7 +10248,7 @@ export const bufferDefinitions = pgTable("buffer_definitions", {
   locationEntityType: text("location_entity_type"), // 'resource', 'operation', 'item', 'work_center', 'warehouse'
   locationEntityId: integer("location_entity_id"),
   resourceId: integer("resource_id").references(() => resources.id), // For drum buffers
-  operationId: integer("operation_id").references(() => discreteOperations.id), // For feeding buffers
+  operationId: integer("operation_id"), // For feeding buffers - production operations
   itemId: integer("item_id").references(() => items.id), // For stock buffers
   workCenterId: integer("work_center_id").references(() => workCenters.id),
   
