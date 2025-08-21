@@ -21,9 +21,6 @@ export default function PortalLogin() {
     setLoading(true);
 
     try {
-      console.log('Attempting portal login for:', email);
-      
-      // Use fetch directly to avoid auth token issues
       const response = await fetch('/api/portal/login', {
         method: 'POST',
         headers: {
@@ -36,38 +33,21 @@ export default function PortalLogin() {
         credentials: 'include'
       });
 
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log('Error response:', errorText);
-        let errorMessage = 'Login failed';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          errorMessage = errorText || errorMessage;
+      if (response.ok) {
+        const result = await response.json();
+        if (result && result.token && result.user) {
+          localStorage.setItem('portal_token', result.token);
+          localStorage.setItem('portal_user', JSON.stringify(result.user));
+          setLocation('/portal/dashboard');
+        } else {
+          setError('Invalid credentials');
         }
-        setError(errorMessage);
-        return;
-      }
-
-      const result = await response.json() as { token: string; user: any };
-      console.log('Portal login success:', result);
-      
-      if (result.token && result.user) {
-        // Store the portal token and user info
-        localStorage.setItem('portal_token', result.token);
-        localStorage.setItem('portal_user', JSON.stringify(result.user));
-        
-        // Redirect to portal dashboard
-        setLocation('/portal/dashboard');
       } else {
-        setError('Invalid response from server');
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.error || 'Invalid credentials');
       }
-    } catch (err: any) {
-      console.error('Portal login error:', err);
-      setError('Network error. Please try again.');
+    } catch (err) {
+      setError('Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
