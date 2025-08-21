@@ -295,8 +295,8 @@ export default function MarketingLandingPage() {
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl mb-8 text-blue-100">
-                Join 1,000+ manufacturers achieving 25% efficiency gains through intelligent production scheduling, 
-                real-time optimization, and AI-driven insights.
+                Join other leading global manufacturers achieving 25% efficiency gains through intelligent AI-powered planning and scheduling, 
+                real-time optimization, and  powerful insights.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button 
