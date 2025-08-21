@@ -187,8 +187,11 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log("=== LOGOUT MUTATION STARTING ===");
+      
       // Clear localStorage token IMMEDIATELY before doing anything else
       localStorage.removeItem('authToken');
+      console.log("✓ Cleared authToken from localStorage");
       
       // Close any active tour before logout
       const savedTourState = localStorage.getItem("activeDemoTour");
@@ -200,68 +203,73 @@ export function useAuth() {
       
       // Clear authentication state immediately to trigger re-render
       queryClient.setQueryData(["/api/auth/me"], null);
+      console.log("✓ Cleared auth query data");
+      
+      // Clear ALL localStorage items related to authentication
+      localStorage.removeItem('userPreferences');
+      localStorage.removeItem('lastVisitedPage');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
+      console.log("✓ Cleared all auth-related localStorage items");
       
       try {
-        // Make logout request without token since we cleared it above
+        // Make logout request to clear server-side session
         const response = await fetch("/api/auth/logout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include", // Include session cookies
         });
+        console.log("✓ Server logout request completed:", response.status);
       } catch (error) {
+        console.error("Server logout failed:", error);
         // Continue with local cleanup even if server fails
       }
+      
       return true;
     },
     onSuccess: () => {
-      // Ensure token is cleared (already done in mutationFn but double-check)
+      console.log("=== LOGOUT SUCCESS HANDLER ===");
+      
+      // Double-check all auth data is cleared
       localStorage.removeItem('authToken');
-      
-      // Clear all cached queries
-      queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.clear();
-      
-      // Clear any other auth-related localStorage items
       localStorage.removeItem('userPreferences');
       localStorage.removeItem('lastVisitedPage');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
+      console.log("✓ Final cleanup of localStorage completed");
       
-      // Clear React Query cache completely before navigation
+      // Clear ALL cached queries completely
+      queryClient.setQueryData(["/api/auth/me"], null);
+      queryClient.clear();
       queryClient.invalidateQueries();
+      console.log("✓ React Query cache completely cleared");
       
       // Dispatch custom logout event to trigger app re-render
       window.dispatchEvent(new CustomEvent('logout'));
+      console.log("✓ Logout event dispatched");
       
-      // Use immediate client-side navigation to root which will show website
-      console.log("Redirecting to home page immediately...");
-      window.history.replaceState(null, '', '/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-      
-      // Force a page reload to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Navigate to login page and force reload for clean state
+      console.log("✓ Navigating to login page...");
+      window.location.href = '/login';
     },
     onError: (error) => {
-      console.error("Logout error:", error);
+      console.error("=== LOGOUT ERROR HANDLER ===", error);
       // Even if logout fails, clear local auth data
       console.log("Clearing local auth data despite error...");
       localStorage.removeItem('authToken');
       localStorage.removeItem('userPreferences');
       localStorage.removeItem('lastVisitedPage');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.clear();
       
       // Dispatch custom logout event to trigger app re-render
       window.dispatchEvent(new CustomEvent('logout'));
       
-      // Use immediate client-side navigation to root which will show website
-      window.history.replaceState(null, '', '/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-      
-      // Force a page reload to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Navigate to login page and force reload for clean state
+      console.log("✓ Error: Navigating to login page...");
+      window.location.href = '/login';
     },
   });
 

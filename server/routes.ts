@@ -1683,9 +1683,33 @@ Rules:
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    // With token-based auth, logout is handled client-side by removing the token
-    // Server-side logout is just a confirmation response
-    res.json({ message: "Logged out successfully" });
+    try {
+      // Clear the session if it exists
+      if (req.session) {
+        req.session.destroy((err) => {
+          if (err) {
+            console.error("Session destruction error:", err);
+          }
+        });
+      }
+      
+      // Clear any session cookies
+      res.clearCookie('connect.sid');
+      res.clearCookie('authToken');
+      
+      // Set headers to prevent caching
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
+      console.log("=== LOGOUT SUCCESS - Session and cookies cleared ===");
+      res.json({ message: "Logged out successfully", success: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "Logout error", success: false });
+    }
   });
 
   app.get("/api/auth/me", async (req, res) => {
