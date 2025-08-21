@@ -171,15 +171,7 @@ const MarketingHome: React.FC = () => {
                 Schedule Demo
               </Button>
 
-              <Button 
-                variant="ghost" 
-                size="lg"
-                onClick={handleLogin}
-                className="px-8 py-6 text-lg font-semibold border border-primary/20 hover:bg-primary/5"
-              >
-                Login
-                <ChevronRight className="ml-2 w-5 h-5" />
-              </Button>
+
             </div>
 
             {/* Trust Indicators */}
