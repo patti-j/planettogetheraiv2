@@ -11,10 +11,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/logo";
 
-// Lazy load demo accounts component to improve initial load time
+// Lazy load heavy components to improve initial load time
 const DemoAccountsCard = lazy(() => 
   import("@/components/login/DemoAccountsCard").then(module => ({ 
     default: module.DemoAccountsCard 
+  }))
+);
+
+const StarterEditionCard = lazy(() => 
+  import("@/components/login/StarterEditionCard").then(module => ({ 
+    default: module.StarterEditionCard 
   }))
 );
 
@@ -30,12 +36,8 @@ export default function Login() {
 
   // Ensure page is properly loaded
   React.useEffect(() => {
-    console.log("=== LOGIN PAGE MOUNTED ===");
     setPageLoaded(true);
   }, []);
-
-  // Add debugging to see if component renders
-  console.log("=== LOGIN COMPONENT RENDERING ===", { pageLoaded, loading });
   
   // Portal login state
   const [portalEmail, setPortalEmail] = useState("");
@@ -53,23 +55,14 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("FORM SUBMIT TRIGGERED");
-    console.log("Username:", username);
-    console.log("Password:", password);
     setError("");
     setLoading(true);
 
     try {
-      console.log("🚀 Calling login function...");
       const result = await login({ username, password });
-      console.log("🚀 Login function returned:", result);
-      console.log("🚀 About to redirect to dashboard...");
       // Redirect to dashboard instead of home to ensure authenticated app loads
       window.location.href = "/dashboard";
-      console.log("🚀 Redirect completed successfully");
     } catch (error: any) {
-      console.error("🚀 Login form error:", error);
-      console.error("🚀 Error details:", JSON.stringify(error, null, 2));
       // Extract error message from the API response
       let errorMessage = "Invalid username or password";
       
@@ -421,53 +414,10 @@ export default function Login() {
           </Tabs>
         </Card>
 
-        {/* Starter Edition CTA */}
-        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="flex items-center gap-2 text-purple-700 text-base sm:text-lg">
-              <Zap className="h-4 w-4 sm:h-5 sm:w-5" />
-              Starter Edition Available
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Get immediate access to the full-featured platform at an affordable price
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2 sm:pt-6">
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                Our Starter Edition provides complete access to:
-              </p>
-              <ul className="text-xs sm:text-sm text-gray-600 space-y-1">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>AI-powered planning and scheduling</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Real-time optimization engine</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Complete production management</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Business intelligence dashboard</span>
-                </li>
-              </ul>
-              <Button 
-                className="w-full bg-purple-600 hover:bg-purple-700" 
-                onClick={() => setLocation("/pricing")}
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                View Starter Edition Pricing
-              </Button>
-              <p className="text-xs text-gray-500 text-center">
-                Contact sales for enterprise options
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Starter Edition CTA - Lazy loaded */}
+        <Suspense fallback={<div className="h-32 bg-gray-100 rounded-lg animate-pulse" />}>
+          <StarterEditionCard />
+        </Suspense>
 
         {/* Demo Tour and Pricing */}
         <div className="space-y-2 sm:space-y-3">

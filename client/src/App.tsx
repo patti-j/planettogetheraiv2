@@ -19,63 +19,51 @@ import PortalDashboard from "@/pages/portal-dashboard";
 
 // Check authentication status
 function useAuthStatus() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Optimized initial state based on token presence
+  const tokenExists = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  const [isAuthenticated, setIsAuthenticated] = useState(tokenExists);
+  const [isLoading, setIsLoading] = useState(tokenExists); // Only load if we need to verify token
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log("=== CHECKING AUTH STATUS ===");
-      
-      // Skip auth check for public pages to improve performance
-      const publicPaths = ['/login', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
-      const currentPath = window.location.pathname;
-      
-      if (publicPaths.includes(currentPath)) {
-        console.log("Public page detected, skipping auth check for performance");
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        return;
-      }
-      
       // Check if we're in the middle of logout
       if ((window as any).__LOGOUT_IN_PROGRESS__) {
-        console.log("Logout in progress, forcing unauthenticated state");
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
       
       const token = localStorage.getItem('authToken');
-      console.log("Token found:", !!token, token);
       
-      // If we have a token, verify it's not blacklisted
-      if (token) {
-        try {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.status === 401) {
-            console.log("Token is blacklisted, clearing it");
-            localStorage.removeItem('authToken');
-            setIsAuthenticated(false);
-          } else if (response.ok) {
-            setIsAuthenticated(true);
-          } else {
-            setIsAuthenticated(false);
-          }
-        } catch (error) {
-          console.error("Auth check error:", error);
-          setIsAuthenticated(false);
-        }
-      } else {
+      // No token = not authenticated, no need to check
+      if (!token) {
         setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
       }
       
-      setIsLoading(false);
-      console.log("Auth status set:", isAuthenticated, "Loading:", false);
+      // We have a token, verify it's valid
+      try {
+        const response = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.status === 401) {
+          localStorage.removeItem('authToken');
+          setIsAuthenticated(false);
+        } else if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     // Immediate check for public pages, no delay needed
@@ -111,12 +99,8 @@ export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
-  // Skip loading screen for public pages to improve perceived performance
-  const publicPaths = ['/login', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
-  const isPublicPage = publicPaths.includes(currentPath);
-
-  // Show loading screen only for authenticated routes
-  if (isLoading && !isPublicPage) {
+  // Show loading screen only when actually verifying a token
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
