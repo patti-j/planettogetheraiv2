@@ -1,5 +1,4 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { BryntumSchedulerWrapper } from '@/components/bryntum/BryntumSchedulerWrapper';
 import { useQuery } from '@tanstack/react-query';
 
 export default function DemoPage() {
@@ -29,10 +28,15 @@ export default function DemoPage() {
         </p>
       </div>
 
-      {/* Bryntum Scheduler Chart */}
+      {/* Scheduler placeholder */}
       <Card className="flex-1 overflow-hidden">
-        <CardContent className="p-0 h-full">
-          <BryntumSchedulerWrapper height="calc(100vh - 180px)" />
+        <CardContent className="p-4 h-full flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Scheduler Demo</h2>
+            <p className="text-gray-600">
+              Visit <a href="/basic-scheduler" className="text-blue-600 hover:underline">Basic Scheduler Demo</a> to see the working scheduler
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

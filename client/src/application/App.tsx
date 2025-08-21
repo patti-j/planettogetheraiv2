@@ -11,7 +11,6 @@ import { HintSystem } from "@/components/HintBubble";
 // Application Pages
 import Dashboard from "@/pages/dashboard";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
-import ProductionSchedulerDashboard from "@/pages/production-scheduler-dashboard";
 import Analytics from "@/pages/analytics";
 import KPIPage from "@/pages/kpi";
 import Reports from "@/pages/reports";
@@ -31,8 +30,6 @@ import Settings from "@/pages/settings";
 import LaborPlanning from "@/pages/labor-planning";
 import EnterpriseMap from "@/pages/enterprise-map";
 import DemoPage from "@/pages/demo";
-import TestScheduler from "@/pages/test-scheduler";
-import SchedulerDemo from "@/pages/scheduler-demo";
 import Onboarding from "@/pages/onboarding";
 
 // Import other application-specific components
@@ -75,13 +72,10 @@ export default function ApplicationApp() {
             <Switch>
               {/* Demo and Test Pages */}
               <Route path="/demo" component={DemoPage} />
-              <Route path="/test-scheduler" component={TestScheduler} />
-              <Route path="/scheduler-demo" component={SchedulerDemo} />
               <Route path="/onboarding" component={Onboarding} />
 
               {/* Main Dashboard */}
               <Route path="/dashboard" component={SmartHomeWrapper} />
-              <Route path="/production-scheduler-dashboard" component={ProductionSchedulerDashboard} />
 
               {/* Analytics & Reports */}
               <Route path="/analytics">

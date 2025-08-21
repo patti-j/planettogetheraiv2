@@ -16,8 +16,8 @@ import WebsiteApp from "./website/App";
 import ApplicationApp from "./application/App";
 import PortalLogin from "@/pages/portal-login";
 import PortalDashboard from "@/pages/portal-dashboard";
-import SchedulerDemo from "@/pages/SchedulerDemo";
 import Patti from "@/pages/Patti";
+import BasicScheduler from "@/pages/basic-scheduler";
 
 // Check authentication status
 function useAuthStatus() {
@@ -125,7 +125,7 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/scheduler-demo', '/patti'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming', '/clear-storage', '/patti', '/basic-scheduler'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if user has a token
@@ -174,10 +174,10 @@ export default function App() {
                 <LayoutDensityProvider>
                   <ViewModeProvider>
                     {/* Standalone Routes */}
-                    {currentPath === '/scheduler-demo' ? (
-                      <SchedulerDemo />
-                    ) : currentPath === '/patti' ? (
+                    {currentPath === '/patti' ? (
                       <Patti />
+                    ) : currentPath === '/basic-scheduler' ? (
+                      <BasicScheduler />
                     ) : /* Portal Routes - Always accessible */
                     currentPath.startsWith('/portal/') ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">

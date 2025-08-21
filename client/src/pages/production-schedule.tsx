@@ -16,13 +16,6 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import PageEditMode from '@/components/page-editor/page-edit-mode';
-import { BryntumGanttWrapper } from '@/components/bryntum/BryntumGanttWrapper';
-import { BryntumGanttReact } from '@/components/bryntum/BryntumGanttReact';
-
-
-import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
-import BryntumSchedulerProDemo from '@/components/scheduler-pro/BryntumSchedulerProDemo';
-import ResourceGantt from '@/components/scheduler-pro/ResourceGantt';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -671,12 +664,16 @@ export default function ProductionSchedulePage() {
                   </div>
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <div style={{ minHeight: '700px', height: 'auto' }}>
-                    <ResourceGantt 
-                      height={isMobile ? '500px' : '900px'}
-                      startDate={new Date('2025-08-07')}
-                      endDate={new Date('2025-08-31')}
-                    />
+                  <div className="flex items-center justify-center p-8" style={{ minHeight: '700px', height: 'auto' }}>
+                    <div className="text-center">
+                      <h3 className="text-xl font-semibold mb-4">Resource Gantt View</h3>
+                      <p className="text-gray-600 mb-4">
+                        Visit the new scheduler demo for a working implementation
+                      </p>
+                      <a href="/basic-scheduler" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        View Basic Scheduler Demo →
+                      </a>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-96">
@@ -709,14 +706,32 @@ export default function ProductionSchedulePage() {
                 )}
               </CardHeader>
               <CardContent>
-                <BryntumSchedulerProDemo height={isMobile ? '500px' : '700px'} />
+                <div className="flex items-center justify-center p-8" style={{ minHeight: isMobile ? '500px' : '700px' }}>
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold mb-4">Bryntum Demo</h3>
+                    <p className="text-gray-600 mb-4">
+                      View the working scheduler implementation
+                    </p>
+                    <a href="/basic-scheduler" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                      Open Basic Scheduler Demo →
+                    </a>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="gantt" className={`${isMobile ? 'mt-3' : 'mt-6'}`}>
-            <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'}`}>
-              <BryntumGanttWrapper />
+            <div className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[calc(100vh-200px)]'} flex items-center justify-center`}>
+              <div className="text-center p-8">
+                <h3 className="text-xl font-semibold mb-4">Gantt Chart View</h3>
+                <p className="text-gray-600 mb-4">
+                  View the working scheduler with Gantt capabilities
+                </p>
+                <a href="/basic-scheduler" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                  View Basic Scheduler Demo →
+                </a>
+              </div>
             </div>
           </TabsContent>
 
