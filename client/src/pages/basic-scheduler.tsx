@@ -10,18 +10,18 @@ export default function BasicScheduler() {
   const startDate = new Date(2025, 0, 1, 6, 0); // Jan 1, 2025, 6 AM
   const endDate = new Date(2025, 0, 1, 20, 0);  // Jan 1, 2025, 8 PM
 
-  // Resources (people) - one row per person
+  // Resources (people) - one row per person - using numeric IDs
   const resources = [
-    { id: 'mike', name: 'Mike' },
-    { id: 'linda', name: 'Linda' },
-    { id: 'don', name: 'Don' },
-    { id: 'karen', name: 'Karen' },
-    { id: 'doug', name: 'Doug' },
-    { id: 'peter', name: 'Peter' },
-    { id: 'sam', name: 'Sam' },
-    { id: 'melissa', name: 'Melissa' },
-    { id: 'john', name: 'John' },
-    { id: 'ellen', name: 'Ellen' }
+    { id: 1, name: 'Mike' },
+    { id: 2, name: 'Linda' },
+    { id: 3, name: 'Don' },
+    { id: 4, name: 'Karen' },
+    { id: 5, name: 'Doug' },
+    { id: 6, name: 'Peter' },
+    { id: 7, name: 'Sam' },
+    { id: 8, name: 'Melissa' },
+    { id: 9, name: 'John' },
+    { id: 10, name: 'Ellen' }
   ];
 
   // Events (tasks) WITHOUT resourceId - we'll use assignments instead
@@ -72,17 +72,17 @@ export default function BasicScheduler() {
     }
   ];
 
-  // Assignments to connect events to resources
+  // Assignments to connect events to resources - using 'event' and 'resource' properties
   const assignments = [
-    { id: 1, eventId: 1, resourceId: 'mike' },
-    { id: 2, eventId: 2, resourceId: 'linda' },
-    { id: 3, eventId: 3, resourceId: 'don' },
-    { id: 4, eventId: 4, resourceId: 'karen' },
-    { id: 5, eventId: 5, resourceId: 'doug' },
-    { id: 6, eventId: 6, resourceId: 'peter' }
+    { id: 1, event: 1, resource: 1 },  // Click me -> Mike
+    { id: 2, event: 2, resource: 2 },  // Drag me -> Linda
+    { id: 3, event: 3, resource: 3 },  // Double click me -> Don
+    { id: 4, event: 4, resource: 4 },  // Right click me -> Karen
+    { id: 5, event: 5, resource: 5 },  // Sports event -> Doug
+    { id: 6, event: 6, resource: 6 }   // Dad's birthday -> Peter
   ];
 
-  // Scheduler configuration
+  // Scheduler configuration using direct stores pattern
   const schedulerConfig = useMemo(() => ({
     startDate,
     endDate,
@@ -90,6 +90,19 @@ export default function BasicScheduler() {
     rowHeight: 50,
     barMargin: 5,
     eventStyle: 'rounded' as const,
+    
+    // Direct store configuration like in the CodePen example
+    eventStore: {
+      data: events
+    },
+    
+    resourceStore: {
+      data: resources
+    },
+    
+    assignmentStore: {
+      data: assignments
+    },
     
     columns: [
       { 
@@ -135,18 +148,6 @@ export default function BasicScheduler() {
           </div>
         `
       }
-    },
-
-    resourceStore: {
-      data: resources
-    },
-
-    eventStore: {
-      data: events
-    },
-
-    assignmentStore: {
-      data: assignments
     },
 
     // Event renderer to customize appearance
