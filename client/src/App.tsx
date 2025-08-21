@@ -117,9 +117,15 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/demo-tour', '/solutions-comparison', '/whats-coming'];
+  const isPublicPath = publicPaths.includes(currentPath);
+  
+  // If user has a token and is on a public path (like /), still show website but with logout option
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  const shouldShowWebsite = isPublicPath || !hasToken;
 
   // Show loading screen only when actually verifying a token
-  if (isLoading) {
+  if (isLoading && !isPublicPath) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -148,12 +154,12 @@ export default function App() {
                           <Route path="/portal" component={PortalLogin} />
                         </Switch>
                       </div>
-                    ) : isAuthenticated ? (
-                      // Authenticated users see the Application
-                      <ApplicationApp />
-                    ) : (
-                      // Unauthenticated users see the Website
+                    ) : shouldShowWebsite ? (
+                      // Show website for public paths or when not authenticated
                       <WebsiteApp />
+                    ) : (
+                      // Authenticated users on non-public paths see the Application
+                      <ApplicationApp />
                     )}
                   </ViewModeProvider>
                 </LayoutDensityProvider>
