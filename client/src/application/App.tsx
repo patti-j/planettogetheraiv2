@@ -79,7 +79,7 @@ export default function ApplicationApp() {
               <Route path="/onboarding" component={Onboarding} />
 
               {/* Main Dashboard */}
-              <Route path="/dashboard" component={SmartHomeWrapper} />
+              <Route path="/dashboard" component={Dashboard} />
 
               {/* Analytics & Reports */}
               <Route path="/analytics">
