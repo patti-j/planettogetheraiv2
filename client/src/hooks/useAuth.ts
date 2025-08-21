@@ -196,19 +196,10 @@ export function useAuth() {
       // IMMEDIATELY clear authentication state to prevent any re-auth
       queryClient.setQueryData(["/api/auth/me"], null);
       queryClient.setQueryData(["/api/auth/me"], undefined);
+      queryClient.cancelQueries();
+      queryClient.clear();
       
-      // Clear localStorage token IMMEDIATELY  
-      localStorage.removeItem('authToken');
-      localStorage.clear(); // Nuclear option - clear everything
-      console.log("✓ Nuclear clear of localStorage completed");
-      
-      // Close any active tour before logout
-      const savedTourState = localStorage.getItem("activeDemoTour");
-      if (savedTourState) {
-        localStorage.removeItem("activeDemoTour");
-        window.dispatchEvent(new CustomEvent('tourClose'));
-      }
-      
+      // Send logout request FIRST before clearing localStorage
       try {
         if (currentToken) {
           // Make logout request to blacklist token on server
@@ -234,27 +225,33 @@ export function useAuth() {
         // Continue with local cleanup even if server fails
       }
       
+      // NOW clear localStorage after server logout
+      localStorage.clear(); // Nuclear option - clear everything
+      sessionStorage.clear();
+      console.log("✓ Nuclear clear of all storage completed");
+      
+      // Set a flag to prevent any re-authentication attempts
+      (window as any).__LOGOUT_IN_PROGRESS__ = true;
+      
       return true;
     },
     onSuccess: () => {
       console.log("=== LOGOUT SUCCESS HANDLER ===");
       
-      // Nuclear option: clear localStorage completely
+      // Ensure storage is completely clear
       localStorage.clear();
       sessionStorage.clear();
-      console.log("✓ Nuclear clear of all storage completed");
       
-      // Clear ALL cached queries completely
-      queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.setQueryData(["/api/auth/me"], undefined);
-      queryClient.clear();
-      queryClient.invalidateQueries();
-      queryClient.removeQueries();
-      console.log("✓ React Query cache completely cleared");
+      // Clear the flag  
+      delete (window as any).__LOGOUT_IN_PROGRESS__;
       
-      // Force immediate redirect to login page (no events, just go)
-      console.log("✓ Immediate redirect to login...");
-      window.location.replace('/login');
+      // Force hard reload to login page to ensure clean state
+      console.log("✓ Hard reload to login page...");
+      window.location.href = '/login';
+      // Force reload after navigation to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     },
     onError: (error) => {
       console.error("=== LOGOUT ERROR HANDLER ===", error);
