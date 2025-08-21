@@ -22,13 +22,38 @@ export default function PortalLogin() {
 
     try {
       console.log('Attempting portal login for:', email);
-      const response = await apiRequest('POST', '/api/portal/login', {
-        email: email,
-        password: password
-      });
-      const result = await response.json() as { token: string; user: any };
       
-      console.log('Portal login response:', result);
+      // Use fetch directly to avoid auth token issues
+      const response = await fetch('/api/portal/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password
+        }),
+        credentials: 'include'
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        setError(errorMessage);
+        return;
+      }
+
+      const result = await response.json() as { token: string; user: any };
+      console.log('Portal login success:', result);
       
       if (result.token && result.user) {
         // Store the portal token and user info
@@ -38,11 +63,11 @@ export default function PortalLogin() {
         // Redirect to portal dashboard
         setLocation('/portal/dashboard');
       } else {
-        setError('Invalid email or password');
+        setError('Invalid response from server');
       }
     } catch (err: any) {
-      console.log('Portal login error:', err);
-      setError(err.message || 'Login failed. Please try again.');
+      console.error('Portal login error:', err);
+      setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
