@@ -225,10 +225,12 @@ export function useAuth() {
         // Continue with local cleanup even if server fails
       }
       
-      // NOW clear localStorage after server logout
-      localStorage.clear(); // Nuclear option - clear everything
-      sessionStorage.clear();
-      console.log("✓ Nuclear clear of all storage completed");
+      // Clear only authentication-related items from localStorage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
+      localStorage.removeItem('activeDemoTour');
+      console.log("✓ Cleared authentication data from storage");
       
       // Set a flag to prevent any re-authentication attempts
       (window as any).__LOGOUT_IN_PROGRESS__ = true;
@@ -238,30 +240,30 @@ export function useAuth() {
     onSuccess: () => {
       console.log("=== LOGOUT SUCCESS HANDLER ===");
       
-      // Ensure storage is completely clear
-      localStorage.clear();
-      sessionStorage.clear();
+      // Ensure auth data is cleared (but preserve other app data)
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
       
       // Clear the flag  
       delete (window as any).__LOGOUT_IN_PROGRESS__;
       
-      // Force hard reload to login page to ensure clean state
-      console.log("✓ Hard reload to login page...");
-      // Use replace to prevent back button issues
+      // Navigate to login page
+      console.log("✓ Redirecting to login page...");
       window.location.replace('/login');
     },
     onError: (error) => {
       console.error("=== LOGOUT ERROR HANDLER ===", error);
-      // Even if logout fails, clear local auth data completely
-      console.log("Nuclear clear despite error...");
-      localStorage.clear();
-      sessionStorage.clear();
+      // Even if logout fails, clear auth data
+      console.log("Clearing auth data despite error...");
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('portal_token');
+      localStorage.removeItem('portal_user');
       queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.setQueryData(["/api/auth/me"], undefined);
-      queryClient.clear();
+      queryClient.invalidateQueries();
       
-      // Force immediate redirect to login page
-      console.log("✓ Error: Immediate redirect to login...");
+      // Redirect to login page
+      console.log("✓ Error: Redirecting to login...");
       window.location.replace('/login');
     },
   });
