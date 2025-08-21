@@ -16,13 +16,13 @@ const resources = [
 ];
 
 const events = [
-  { id: 1, resourceId: 1, name: 'RNA Sequencing',         startDate,                        endDate: new Date(2025, 3, 1, 11) },
-  { id: 2, resourceId: 1, name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
-  { id: 3, resourceId: 2, name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
+  { id: 1, resourceId: 1, name: 'RNA Sequencing',       startDate,                       endDate: new Date(2025, 3, 1, 11) },
+  { id: 2, resourceId: 1, name: 'Glycan analysis',      startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
+  { id: 3, resourceId: 2, name: 'Electron microscopy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
   { id: 4, resourceId: 2, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
   { id: 5, resourceId: 3, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
-  { id: 6, resourceId: 4, name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
-  { id: 7, resourceId: 5, name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
+  { id: 6, resourceId: 4, name: 'Disinfectant efficacy', startDate: new Date(2025, 3, 1, 9), endDate: new Date(2025, 3, 1, 11) },
+  { id: 7, resourceId: 5, name: 'DNA Sequencing',       startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
 ];
 
 // ---- Main component --------------------------------------------------------
@@ -40,21 +40,21 @@ export default function Patti() {
     resources : dataState.resources,
     events    : dataState.events,
 
-    // Drag & drop is enabled by default via EventDrag.
-    // Here we configure it explicitly and add a simple validator.
+    // DRAG & DROP is powered by EventDrag (enabled by default).
+    // Here we explicitly configure it for clarity and add a simple validator.
     features : {
       eventDrag : {
         showTooltip : true,
-        // Allow moving in time and to other resources:
+        // Allow moving across resources and time:
         constrainDragToResource : false,
         constrainDragToTimeSlot : false,
-        // Example validator: disallow drops that start before 07:00
+        // Simple example validator: disallow starting before 07:00
         validatorFn({ startDate }: any) {
           return startDate.getHours() >= 7;
         }
       },
-      eventEdit : true,   // double-click to edit
-      timeRanges : true   // optional, just to show background ranges if you add them later
+      eventEdit : true,
+      timeRanges : true
     },
 
     columns : [
@@ -63,7 +63,7 @@ export default function Patti() {
     ],
 
     listeners : {
-      // Keep React state synced with internal store after drops
+      // Keep local state in sync after drag & drop (so React re-renders)
       eventDrop : () => {
         const instance = schedulerRef.current;
         if (!instance) return;
@@ -75,6 +75,10 @@ export default function Patti() {
           endDate: r.endDate
         }));
         setDataState(prev => ({ ...prev, events: nextEvents }));
+      },
+      // Capture the widget reference when ready
+      ready: ({ source }: any) => {
+        schedulerRef.current = source;
       }
     }
   }), [dataState]);
@@ -84,11 +88,9 @@ export default function Patti() {
       <div className="max-w-screen-2xl mx-auto p-4">
         <h1 className="text-2xl font-semibold mb-3">Scheduler Pro – Drag & Drop Example</h1>
         <p className="mb-4 opacity-80">
-          Drag events to reschedule in time or drop onto another resource to reassign.
-          A simple validator prevents drops before 07:00.
+          Drag events to reschedule in time or drop onto another resource to reassign. A simple validator prevents drops before 07:00.
         </p>
         <BryntumSchedulerPro
-          onReady={({ widget }: any) => { schedulerRef.current = widget; }}
           {...schedulerProps}
         />
       </div>
