@@ -2770,8 +2770,8 @@ export class DatabaseStorage implements IStorage {
         .from(productionOrders)
         .orderBy(asc(productionOrders.dueDate));
       
-      // Map PT orders to ProductionOrder format
-      const mappedOrders: ProductionOrder[] = ptOrders.rows.map((order: any) => ({
+      // Map orders to ProductionOrder format
+      const mappedOrders: ProductionOrder[] = orders.map((order: any) => ({
         id: order.id,
         orderNumber: order.order_number || `PO-${order.id}`,
         name: order.name || order.product_name || 'Unknown Order',
