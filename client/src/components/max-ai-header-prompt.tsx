@@ -128,11 +128,10 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + K to focus the input
+      // Cmd/Ctrl + K to focus the input (without opening chat)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         inputRef.current?.focus();
-        setShowChat(true);
       }
       // Escape to close chat
       if (e.key === 'Escape' && showChat) {
@@ -156,7 +155,6 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
               placeholder="Ask Max AI... (⌘K)"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              onFocus={() => setShowChat(true)}
               className={cn(
                 "h-8 transition-all duration-200",
                 showText ? "w-48 lg:w-64" : "w-32 lg:w-48",
