@@ -64,6 +64,20 @@ export default function WhatsComing() {
         benefits: ["Custom dashboards", "Trend analysis", "Benchmark comparisons"]
       },
       {
+        title: "ML Demand Planning",
+        description: "Machine learning powered demand forecasting and planning",
+        icon: <Target className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing"]
+      },
+      {
+        title: "Control Tower",
+        description: "Centralized command center for end-to-end visibility",
+        icon: <Network className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Supply chain visibility", "Exception management", "Cross-functional coordination"]
+      },
+      {
         title: "Advanced Reporting",
         description: "Interactive reports with drill-down capabilities",
         icon: <BarChart3 className="h-6 w-6" />,
@@ -87,6 +101,20 @@ export default function WhatsComing() {
         benefits: ["Production-aware messaging", "File sharing", "Task coordination"]
       },
       {
+        title: "Master Production Scheduling",
+        description: "Advanced MPS with constraint-based planning",
+        icon: <Workflow className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Capacity balancing", "Demand alignment", "Production optimization"]
+      },
+      {
+        title: "Operation Dispatcher",
+        description: "Real-time work order dispatching and coordination",
+        icon: <Zap className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Dynamic work assignment", "Priority management", "Resource coordination"]
+      },
+      {
         title: "Partner Portal",
         description: "External stakeholder access with role-based permissions",
         icon: <Users className="h-6 w-6" />,
@@ -103,6 +131,20 @@ export default function WhatsComing() {
     ],
     integration: [
       {
+        title: "DDMRP Implementation",
+        description: "Demand Driven Material Requirements Planning",
+        icon: <Target className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Buffer management", "Flow optimization", "Demand sensing"]
+      },
+      {
+        title: "Maintenance Planning",
+        description: "Integrated maintenance scheduling and management",
+        icon: <Settings className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Preventive scheduling", "Resource coordination", "Downtime optimization"]
+      },
+      {
         title: "ERP Connectors",
         description: "Seamless integration with major ERP systems",
         icon: <Database className="h-6 w-6" />,
@@ -112,7 +154,7 @@ export default function WhatsComing() {
       {
         title: "API Management",
         description: "RESTful APIs for custom integrations",
-        icon: <Settings className="h-6 w-6" />,
+        icon: <Globe className="h-6 w-6" />,
         status: "New",
         benefits: ["Developer tools", "Webhook support", "Authentication"]
       },
