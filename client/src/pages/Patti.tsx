@@ -58,8 +58,8 @@ export default function Patti() {
     },
 
     columns : [
-      { type : 'resourceInfo', text : 'Lab', width : 220, field : 'name' },
-      { text : 'Capacity', width : 120, field : 'capacity', align : 'center' }
+      { type : 'resourceInfo' as const, text : 'Lab', width : 220, field : 'name' },
+      { text : 'Capacity', width : 120, field : 'capacity', align : 'center' as const }
     ],
 
     listeners : {
