@@ -25,10 +25,8 @@
         document.documentElement.style.setProperty('--ai-gradient-from', theme.from);
         document.documentElement.style.setProperty('--ai-gradient-to', theme.to);
 
-        // Set development auth token for demo purposes
-        if (!localStorage.getItem('authToken')) {
-          localStorage.setItem('authToken', 'user_1_1754610381150');
-        }
+        // Remove automatic auth token setting - let user login manually
+        // Auth tokens should only be set via proper login flow
       })();
     </script>
     <!-- Bryntum Scheduler Pro CSS -->

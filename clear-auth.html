@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Auth</title>
+</head>
+<body>
+    <h1>Clear Authentication</h1>
+    <script>
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('isDemo');
+        document.write('<p>Authentication cleared. <a href="/">Go to homepage</a></p>');
+    </script>
+</body>
+</html>

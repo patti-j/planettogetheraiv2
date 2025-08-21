@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Website Header</title>
+    <script>
+        // Check if localStorage has auth token
+        console.log('Auth token:', localStorage.getItem('authToken'));
+    </script>
+</head>
+<body>
+    <h1>Testing Website Header</h1>
+    <p>Check console for auth token</p>
+    <button onclick="localStorage.setItem('authToken', 'test123')">Set Token</button>
+    <button onclick="localStorage.removeItem('authToken')">Remove Token</button>
+    <button onclick="location.reload()">Reload</button>
+</body>
+</html>
