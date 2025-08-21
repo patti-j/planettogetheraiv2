@@ -55,18 +55,27 @@ export default function PortalLogin() {
         credentials: 'include'
       });
 
+      console.log('=== LOGIN RESPONSE ===', response.status, response.ok);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('=== LOGIN RESULT ===', result);
+        
         if (result && result.token && result.user) {
+          console.log('=== LOGIN SUCCESS - STORING TOKENS ===');
           localStorage.setItem('portal_token', result.token);
           localStorage.setItem('portal_user', JSON.stringify(result.user));
+          console.log('=== REDIRECTING TO DASHBOARD ===');
           setLocation('/portal/dashboard');
         } else {
-          setError('Invalid credentials');
+          console.log('=== LOGIN FAILED - MISSING DATA ===', result);
+          setError('Invalid login response - missing token or user data');
         }
       } else {
+        console.log('=== LOGIN FAILED - BAD RESPONSE ===', response.status);
         const errorData = await response.json().catch(() => ({}));
-        setError(errorData.error || 'Invalid credentials');
+        console.log('=== ERROR DATA ===', errorData);
+        setError(errorData.error || `Login failed (${response.status})`);
       }
     } catch (err) {
       setError('Please check your credentials and try again.');
