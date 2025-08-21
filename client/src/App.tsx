@@ -73,6 +73,7 @@ import PresentationPage from "@/pages/presentation";
 import PresentationSystemPage from "@/pages/presentation-system";
 import ProductionPlanningPage from "@/pages/production-planning";
 import OptimizationStudioPage from "@/pages/optimization-studio";
+import WhatsComing from "@/pages/whats-coming-v13";
 import MarketingLandingPage from "@/pages/marketing-landing";
 import ImplementationProjects from "@/pages/implementation-projects";
 import MarketingHome from "@/pages/marketing-home";
@@ -309,6 +310,7 @@ function Router() {
         <Switch>
           <Route path="/pricing" component={Pricing} />
           <Route path="/solutions-comparison" component={SolutionsComparison} />
+          <Route path="/whats-coming" component={WhatsComing} />
           <Route path="/demo-tour" component={DemoTour} />
           <Route path="/presentation" component={PresentationPage} />
           <Route path="/marketing" component={MarketingLandingPage} />
