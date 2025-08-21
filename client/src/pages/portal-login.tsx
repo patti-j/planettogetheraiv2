@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, ArrowLeft } from 'lucide-react';
+import { Building2, ArrowLeft, LogOut } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 export default function PortalLogin() {
@@ -14,6 +14,28 @@ export default function PortalLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Clear any existing main system authentication when accessing portal
+  useEffect(() => {
+    console.log('=== PORTAL LOGIN LOADED ===');
+    const mainAuthToken = localStorage.getItem('authToken');
+    if (mainAuthToken) {
+      console.log('Found main auth token, clearing for portal access:', mainAuthToken);
+      // Clear main system tokens to prevent conflicts
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+    }
+  }, []);
+
+  const clearMainAuth = () => {
+    console.log('=== CLEARING MAIN AUTH FOR PORTAL ===');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    // Also clear any API cache
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    setError('');
+    window.location.reload();
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +139,16 @@ export default function PortalLogin() {
             </div>
           </div>
 
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center space-y-2">
+            <Button
+              variant="outline"
+              className="text-sm w-full"
+              onClick={clearMainAuth}
+              type="button"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Clear Main System Login
+            </Button>
             <Button
               variant="ghost"
               className="text-sm"
