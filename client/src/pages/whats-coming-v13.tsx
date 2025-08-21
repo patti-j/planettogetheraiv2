@@ -53,6 +53,13 @@ export default function WhatsComing() {
         icon: <Zap className="h-6 w-6" />,
         status: "Enhanced",
         benefits: ["Smart prioritization", "Root cause analysis", "Automated resolution"]
+      },
+      {
+        title: "UI Design Studio",
+        description: "Visual interface designer for custom dashboards and layouts",
+        icon: <Settings className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Drag-and-drop designer", "Custom widgets", "Real-time preview"]
       }
     ],
     analytics: [
