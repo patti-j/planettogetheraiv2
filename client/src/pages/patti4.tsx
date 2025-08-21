@@ -404,125 +404,116 @@ const ProductionScheduler = () => {
             <div className="flex gap-3">
               <button
                 onClick={handleAddOperation}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
               >
-                <span>➕</span>
-                <span>Add Operation</span>
+                + Add Operation
               </button>
-              
               <button
                 onClick={handleExport}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 shadow-lg flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
               >
-                <span>📄</span>
-                <span>Export PDF</span>
+                Export PDF
               </button>
             </div>
           </div>
           
-          {/* Toolbar */}
-          <div className="mt-4 flex items-center justify-between">
+          {/* Controls */}
+          <div className="flex justify-between items-center mt-6">
+            <div className="flex gap-2">
+              {viewPresets.map(preset => (
+                <button
+                  key={preset.value}
+                  onClick={() => handleViewChange(preset.value)}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-all duration-200 ${
+                    currentView === preset.value 
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            
             <div className="flex gap-2">
               <button
                 onClick={handleZoomIn}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 title="Zoom In"
               >
-                <span>🔍+</span>
+                🔍+
               </button>
               <button
                 onClick={handleZoomOut}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 title="Zoom Out"
               >
-                <span>🔍-</span>
+                🔍-
               </button>
               <button
                 onClick={handleZoomToFit}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 title="Fit to View"
               >
-                <span>⬜</span>
+                ⊡
               </button>
-              
-              <div className="ml-4 flex gap-1">
-                {viewPresets.map((preset) => (
-                  <button
-                    key={preset.value}
-                    onClick={() => handleViewChange(preset.value)}
-                    className={`px-3 py-1.5 rounded-lg transition-all duration-200 ${
-                      currentView === preset.value
-                        ? 'bg-indigo-500 text-white shadow-md'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Statistics */}
-            <div className="flex gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-gray-600">On Track</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-gray-600">At Risk</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <span className="text-gray-600">Delayed</span>
-              </div>
             </div>
           </div>
         </div>
         
         {/* Scheduler Container */}
-        <div className="bg-white rounded-b-2xl shadow-2xl overflow-hidden">
-          <div ref={containerRef} className="min-h-[600px] p-4">
-            {/* This is where Bryntum Scheduler would render */}
-            <div className="bg-gray-50 rounded-lg p-8 text-center">
-              <div className="mb-4">
-                <span className="text-6xl">📅</span>
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-                Bryntum Scheduler Pro Preview
-              </h2>
-              <p className="text-gray-500 mb-4">
-                The production scheduler will be rendered here once Bryntum Scheduler Pro is installed
-              </p>
-              <div className="bg-blue-50 rounded-lg p-4 text-left max-w-2xl mx-auto">
-                <p className="text-sm text-blue-800 font-mono mb-2">
-                  npm install @bryntum/schedulerpro @bryntum/schedulerpro-react
+        <div className="bg-white rounded-b-2xl shadow-2xl overflow-hidden" style={{ height: '600px' }}>
+          <div ref={containerRef} className="h-full relative">
+            {/* Demo Notice - Remove when Bryntum is installed */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="max-w-2xl p-8 bg-white rounded-xl shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  Bryntum Scheduler Pro Integration
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  This component is ready to integrate with Bryntum Scheduler Pro. 
+                  To complete the setup:
                 </p>
-                <p className="text-xs text-blue-600">
-                  Note: This is a commercial library that requires a license
-                </p>
-              </div>
-              
-              {/* Sample Data Display */}
-              <div className="mt-8 text-left max-w-4xl mx-auto">
-                <h3 className="text-lg font-semibold text-gray-700 mb-3">Sample Data Loaded:</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <h4 className="font-medium text-gray-700 mb-2">📊 Resources</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 2 Production Lines with 5 machines</li>
-                      <li>• 2 Assembly Stations</li>
-                      <li>• 2 Quality Control Stations</li>
-                      <li>• 2 Packaging Lines</li>
+                
+                <div className="bg-gray-100 rounded-lg p-6 mb-6">
+                  <h3 className="font-semibold text-gray-800 mb-3">Installation Steps:</h3>
+                  <ol className="space-y-2 text-gray-700">
+                    <li className="flex items-start">
+                      <span className="mr-2">1.</span>
+                      <span>Install packages: <code className="bg-white px-2 py-1 rounded">npm install @bryntum/schedulerpro @bryntum/schedulerpro-react</code></span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">2.</span>
+                      <span>Import Bryntum styles in your app</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">3.</span>
+                      <span>Uncomment the import statements in this component</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">4.</span>
+                      <span>Initialize the SchedulerPro instance in useEffect</span>
+                    </li>
+                  </ol>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="p-4 bg-indigo-50 rounded-lg">
+                    <h4 className="font-semibold text-indigo-700 mb-2">Current Features:</h4>
+                    <ul className="space-y-1 text-gray-600">
+                      <li>✓ Hierarchical resources</li>
+                      <li>✓ Drag & drop operations</li>
+                      <li>✓ Dependencies</li>
+                      <li>✓ Progress tracking</li>
                     </ul>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-gray-200">
-                    <h4 className="font-medium text-gray-700 mb-2">📦 Operations</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 7 Scheduled Operations</li>
-                      <li>• 4 Dependencies Configured</li>
-                      <li>• 3 Customer Orders</li>
-                      <li>• Mixed Priority Levels</li>
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-semibold text-green-700 mb-2">Production Ready:</h4>
+                    <ul className="space-y-1 text-gray-600">
+                      <li>✓ Resource utilization</li>
+                      <li>✓ Priority levels</li>
+                      <li>✓ Status tracking</li>
+                      <li>✓ PDF export</li>
                     </ul>
                   </div>
                 </div>
@@ -531,150 +522,114 @@ const ProductionScheduler = () => {
           </div>
         </div>
         
-        {/* Info Panel */}
-        <div className="mt-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-3">Production Overview</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">🏭</span>
-                <span className="text-2xl font-bold text-indigo-600">4</span>
+        {/* Statistics Footer */}
+        <div className="mt-6 grid grid-cols-4 gap-4">
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Total Operations</p>
+                <p className="text-2xl font-bold text-gray-800">{events.length}</p>
               </div>
-              <p className="text-sm text-gray-600">Active Lines</p>
-              <p className="text-xs text-gray-500 mt-1">85% avg utilization</p>
+              <span className="text-3xl">📊</span>
             </div>
-            
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">📦</span>
-                <span className="text-2xl font-bold text-green-600">7</span>
+          </div>
+          
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Resources</p>
+                <p className="text-2xl font-bold text-gray-800">11</p>
               </div>
-              <p className="text-sm text-gray-600">Operations</p>
-              <p className="text-xs text-gray-500 mt-1">1 in progress</p>
+              <span className="text-3xl">⚙️</span>
             </div>
-            
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">⏱️</span>
-                <span className="text-2xl font-bold text-orange-600">92%</span>
+          </div>
+          
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">Avg Utilization</p>
+                <p className="text-2xl font-bold text-green-600">79%</p>
               </div>
-              <p className="text-sm text-gray-600">On-Time Rate</p>
-              <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
+              <span className="text-3xl">📈</span>
             </div>
-            
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl">👥</span>
-                <span className="text-2xl font-bold text-purple-600">3</span>
+          </div>
+          
+          <div className="bg-white/95 backdrop-blur rounded-xl shadow-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">In Progress</p>
+                <p className="text-2xl font-bold text-orange-600">1</p>
               </div>
-              <p className="text-sm text-gray-600">Customers</p>
-              <p className="text-xs text-gray-500 mt-1">Active orders</p>
+              <span className="text-3xl">⏳</span>
             </div>
           </div>
         </div>
       </div>
       
-      {/* Styles */}
-      <style dangerouslySetInnerHTML={{__html: `
+      {/* Inline Styles */}
+      <style>{`
         .utilization-bar {
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-weight: 500;
-          font-size: 12px;
-        }
-        
-        .resource-type-badge {
-          background: #e3f2fd;
-          color: #1976d2;
-          padding: 2px 8px;
-          border-radius: 4px;
+          height: 20px;
+          border-radius: 10px;
           font-size: 11px;
-          font-weight: 500;
+          font-weight: 600;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
         .custom-tooltip {
-          padding: 12px;
+          padding: 16px;
           background: white;
           border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         .custom-tooltip h3 {
           margin: 0 0 12px 0;
-          font-size: 14px;
+          font-size: 16px;
           font-weight: 600;
           color: #333;
         }
         
         .tooltip-row {
           display: flex;
+          justify-content: space-between;
           align-items: center;
           margin-bottom: 8px;
-          font-size: 12px;
-        }
-        
-        .tooltip-row > span:first-child {
-          width: 80px;
-          color: #666;
+          font-size: 14px;
         }
         
         .status-badge {
           padding: 2px 8px;
           border-radius: 4px;
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 500;
         }
         
-        .status-scheduled {
-          background: #e3f2fd;
-          color: #1976d2;
-        }
+        .status-scheduled { background: #e3f2fd; color: #1976d2; }
+        .status-in-progress { background: #fff3e0; color: #f57c00; }
+        .status-completed { background: #e8f5e9; color: #388e3c; }
+        .status-on-hold { background: #fce4ec; color: #c2185b; }
         
-        .status-in-progress {
-          background: #e8f5e9;
-          color: #388e3c;
-        }
-        
-        .status-completed {
-          background: #f3e5f5;
-          color: #7b1fa2;
-        }
-        
-        .status-on-hold {
-          background: #fff3e0;
-          color: #f57c00;
-        }
-        
-        .priority-low {
-          color: #666;
-        }
-        
-        .priority-medium {
-          color: #ff9800;
-        }
-        
-        .priority-high {
-          color: #f44336;
-          font-weight: 600;
-        }
-        
-        .priority-critical {
-          color: #d32f2f;
-          font-weight: 700;
-        }
+        .priority-low { color: #9e9e9e; }
+        .priority-medium { color: #ff9800; }
+        .priority-high { color: #f44336; font-weight: 600; }
+        .priority-critical { color: #d32f2f; font-weight: 700; }
         
         .progress-bar {
           width: 100px;
-          height: 4px;
+          height: 6px;
           background: #e0e0e0;
-          border-radius: 2px;
+          border-radius: 3px;
           overflow: hidden;
-          margin: 0 8px;
         }
         
         .progress-fill {
           height: 100%;
-          background: #4caf50;
+          background: linear-gradient(90deg, #4caf50, #8bc34a);
           transition: width 0.3s ease;
         }
         
@@ -689,25 +644,22 @@ const ProductionScheduler = () => {
         .event-header {
           display: flex;
           align-items: center;
-          justify-content: space-between;
         }
         
         .event-name {
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 500;
-          color: white;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         
         .priority-indicator {
           margin-left: 4px;
         }
         
-        .event-progress {
-          margin-top: 4px;
-        }
-        
         .progress-bar-mini {
-          width: 100%;
+          margin-top: 4px;
           height: 3px;
           background: rgba(255,255,255,0.3);
           border-radius: 2px;
@@ -721,7 +673,8 @@ const ProductionScheduler = () => {
         
         .custom-event {
           border-radius: 6px;
-          border: 1px solid rgba(0,0,0,0.1);
+          color: white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .custom-event.priority-high,
@@ -729,22 +682,14 @@ const ProductionScheduler = () => {
           box-shadow: 0 2px 8px rgba(244,67,54,0.3);
         }
         
-        .custom-event.status-in-progress {
-          animation: pulse 2s infinite;
+        .resource-type-badge {
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 11px;
+          background: #f5f5f5;
+          color: #666;
         }
-        
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(76,175,80,0.4);
-          }
-          70% {
-            box-shadow: 0 0 0 6px rgba(76,175,80,0);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(76,175,80,0);
-          }
-        }
-      `}} />
+      `}</style>
     </div>
   );
 };
