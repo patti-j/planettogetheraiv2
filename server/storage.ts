@@ -2589,7 +2589,7 @@ export class DatabaseStorage implements IStorage {
         operationName: op.name || `Operation ${op.operation_id}`,
         standardDuration: Number(op.setup_hours || 1) * 60,
         actualDuration: null,
-        workCenterId: null,
+        workCenterId: op.work_center_id ? Number(op.work_center_id) : null,
         priority: 3,
         completionPercentage: 0,
         qualityCheckRequired: false,
