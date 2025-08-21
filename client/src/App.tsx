@@ -287,6 +287,20 @@ function Router() {
     );
   }
 
+  // Check for portal routes first - these should always be accessible
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  if (currentPath.startsWith('/portal/')) {
+    return (
+      <div className="fixed inset-0 z-[9999] overflow-auto">
+        <Switch>
+          <Route path="/portal/login" component={PortalLogin} />
+          <Route path="/portal/dashboard" component={PortalDashboard} />
+          <Route path="/portal" component={PortalLogin} />
+        </Switch>
+      </div>
+    );
+  }
+
   // Allow access during demo tour or when authenticated
   // For unauthenticated users, render public pages with full-screen layout
   if (!isAuthenticated && !isTourActive) {
@@ -299,9 +313,6 @@ function Router() {
           <Route path="/presentation" component={PresentationPage} />
           <Route path="/marketing" component={MarketingLandingPage} />
           <Route path="/home" component={MarketingHome} />
-          <Route path="/portal/login" component={PortalLogin} />
-          <Route path="/portal/dashboard" component={PortalDashboard} />
-          <Route path="/portal" component={PortalLogin} />
           <Route path="/login" component={Login} />
           <Route path="/" component={MarketingHome} />
           <Route component={Login} />
@@ -720,6 +731,10 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/clear-nav" component={ClearNavigation} />
+          {/* Portal routes - accessible regardless of main authentication status */}
+          <Route path="/portal/login" component={PortalLogin} />
+          <Route path="/portal/dashboard" component={PortalDashboard} />
+          <Route path="/portal" component={PortalLogin} />
           <Route path="/login" component={Login} />
           <Route path="/tasks" component={TasksPage} />
           <Route path="/inbox" component={InboxPage} />
