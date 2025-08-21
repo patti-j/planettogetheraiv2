@@ -8,43 +8,49 @@ const endDate   = new Date(2025, 3, 1, 18);
 
 // One row per resource
 const resourcesData = [
-  { id: 1, name: 'Lab #11',     capacity: 8 },
-  { id: 2, name: 'Lab #12',     capacity: 10 },
-  { id: 3, name: 'Lab #13',     capacity: 6 },
-  { id: 4, name: 'X-Ray lab',   capacity: 4 },
-  { id: 5, name: 'Biosafety L3', capacity: 5 }
+  { id: 'r1', name: 'Lab #11',     capacity: 8 },
+  { id: 'r2', name: 'Lab #12',     capacity: 10 },
+  { id: 'r3', name: 'Lab #13',     capacity: 6 },
+  { id: 'r4', name: 'X-Ray lab',   capacity: 4 },
+  { id: 'r5', name: 'Biosafety L3', capacity: 5 }
 ];
 
 // NOTE: No resourceId here — assignments decide the row
 const eventsData = [
-  { id: 1, name: 'RNA Sequencing',         startDate,                        endDate: new Date(2025, 3, 1, 11) },
-  { id: 2, name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
-  { id: 3, name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
-  { id: 4, name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
-  { id: 5, name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
-  { id: 6, name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
-  { id: 7, name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
+  { id: 'e1', name: 'RNA Sequencing',         startDate,                        endDate: new Date(2025, 3, 1, 11) },
+  { id: 'e2', name: 'Glycan analysis',        startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) },
+  { id: 'e3', name: 'Electron microscopy',    startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 12) },
+  { id: 'e4', name: 'Covid variant analysis', startDate: new Date(2025, 3, 1, 13), endDate: new Date(2025, 3, 1, 17) },
+  { id: 'e5', name: 'Bacterial identification', startDate: new Date(2025, 3, 1, 10), endDate: new Date(2025, 3, 1, 14) },
+  { id: 'e6', name: 'Disinfectant efficacy',  startDate: new Date(2025, 3, 1, 9),  endDate: new Date(2025, 3, 1, 11) },
+  { id: 'e7', name: 'DNA Sequencing',         startDate: new Date(2025, 3, 1, 12), endDate: new Date(2025, 3, 1, 16) }
 ];
 
 // Each event assigned to exactly one resource (can be multiple if you want)
 const assignmentsData = [
-  { id: 1, eventId: 1, resourceId: 1 },
-  { id: 2, eventId: 2, resourceId: 1 },
-  { id: 3, eventId: 3, resourceId: 2 },
-  { id: 4, eventId: 4, resourceId: 2 },
-  { id: 5, eventId: 5, resourceId: 3 },
-  { id: 6, eventId: 6, resourceId: 4 },
-  { id: 7, eventId: 7, resourceId: 5 }
+  { id: 'a1', eventId: 'e1', resourceId: 'r1' },
+  { id: 'a2', eventId: 'e2', resourceId: 'r1' },
+  { id: 'a3', eventId: 'e3', resourceId: 'r2' },
+  { id: 'a4', eventId: 'e4', resourceId: 'r2' },
+  { id: 'a5', eventId: 'e5', resourceId: 'r3' },
+  { id: 'a6', eventId: 'e6', resourceId: 'r4' },
+  { id: 'a7', eventId: 'e7', resourceId: 'r5' }
 ];
 
 export default function Patti() {
   const schedulerRef = useRef<any>(null);
 
-  // Use a Project (recommended for Scheduler Pro)
+  // Use a Project with explicit store configuration
   const project = useMemo(() => ({
-    resourcesData,
-    eventsData,
-    assignmentsData
+    resourceStore: {
+      data: resourcesData
+    },
+    eventStore: {
+      data: eventsData
+    },
+    assignmentStore: {
+      data: assignmentsData
+    }
   }), []);
 
   const features = useMemo(() => ({
@@ -86,10 +92,24 @@ export default function Patti() {
           style={{ height: 520 }}
           onReady={({ widget }: any) => {
             schedulerRef.current = widget;
-            // quick sanity checks:
-            console.log('resource count:', widget.resourceStore.count);
-            console.log('event count:', widget.eventStore.count);
-            console.log('assignment count:', widget.assignmentStore.count);
+            // Debug output to verify data loading
+            console.log('=== SCHEDULER PRO DATA CHECK ===');
+            console.log('Resource count:', widget.resourceStore.count);
+            console.log('Event count:', widget.eventStore.count);
+            console.log('Assignment count:', widget.assignmentStore.count);
+            
+            // Log actual resources to verify they loaded
+            console.log('Resources:', widget.resourceStore.records.map((r: any) => ({
+              id: r.id,
+              name: r.name
+            })));
+            
+            // Log assignments to verify mapping
+            console.log('Assignments:', widget.assignmentStore.records.map((a: any) => ({
+              id: a.id,
+              eventId: a.eventId,
+              resourceId: a.resourceId
+            })));
           }}
         />
       </div>
