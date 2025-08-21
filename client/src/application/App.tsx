@@ -29,6 +29,7 @@ import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
 import LaborPlanning from "@/pages/labor-planning";
+import EnterpriseMap from "@/pages/enterprise-map";
 import DemoPage from "@/pages/demo";
 import TestScheduler from "@/pages/test-scheduler";
 import SchedulerDemo from "@/pages/scheduler-demo";
@@ -119,7 +120,7 @@ export default function ApplicationApp() {
               {/* Enterprise Map - Global Control Tower */}
               <Route path="/enterprise-map">
                 <ProtectedRoute feature="analytics" action="view">
-                  <Dashboard />
+                  <EnterpriseMap />
                 </ProtectedRoute>
               </Route>
               
