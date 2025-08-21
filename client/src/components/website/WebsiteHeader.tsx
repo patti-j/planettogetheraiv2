@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
+import logoSvg from "@/assets/planettogether-logo.svg";
 
 const WebsiteHeader: React.FC = () => {
   const [, setLocation] = useLocation();
@@ -46,11 +47,12 @@ const WebsiteHeader: React.FC = () => {
               onClick={() => setLocation("/")}
               className="flex items-center space-x-2"
             >
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">PT</span>
-              </div>
+              <img 
+                src={logoSvg} 
+                alt="PlanetTogether" 
+                className="h-8 w-auto"
+              />
               <span className="text-lg sm:text-xl font-bold text-gray-900 hidden sm:block">PlanetTogether</span>
-              <span className="text-lg font-bold text-gray-900 sm:hidden">PT</span>
             </button>
           </div>
 
