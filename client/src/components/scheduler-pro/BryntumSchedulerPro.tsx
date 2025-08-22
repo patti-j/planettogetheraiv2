@@ -289,16 +289,6 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           y: true
         }}
         
-        // Enhanced scroll configuration
-        subGridConfigs={{
-          locked: {
-            scrollable: false
-          },
-          normal: {
-            scrollable: true
-          }
-        }}
-        
         columns={[
           { 
             type: 'resourceInfo', 
