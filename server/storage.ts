@@ -16645,10 +16645,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getExternalUserByEmail(email: string): Promise<ExternalUser | undefined> {
+    // Make email comparison case-insensitive
     const [user] = await this.db
       .select()
       .from(externalUsers)
-      .where(eq(externalUsers.email, email));
+      .where(sql`LOWER(${externalUsers.email}) = LOWER(${email})`);
     return user;
   }
 
@@ -16683,6 +16684,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async authenticateExternalUser(email: string, password: string): Promise<ExternalUser | null> {
+    // Email is already normalized to lowercase from the route
     const user = await this.getExternalUserByEmail(email);
     if (!user) return null;
     

@@ -7279,7 +7279,9 @@ User Prompt: "${prompt}"`;
     try {
       const { email, password } = req.body;
       
-      const user = await storage.authenticateExternalUser(email, password);
+      // Make email case-insensitive
+      const normalizedEmail = email ? email.toLowerCase() : '';
+      const user = await storage.authenticateExternalUser(normalizedEmail, password);
       if (!user) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
