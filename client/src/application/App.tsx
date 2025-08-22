@@ -148,6 +148,85 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
+              {/* Planning & Scheduling Routes */}
+              <Route path="/planning-overview">
+                <ProtectedRoute feature="schedule" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/demand-planning">
+                <ProtectedRoute feature="demand-planning" action="view">
+                  <DemandManagement />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/demand-supply-alignment">
+                <ProtectedRoute feature="demand-supply-alignment" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/capacity-planning">
+                <ProtectedRoute feature="capacity-planning" action="view">
+                  <CapacityPlanning />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/inventory-optimization">
+                <ProtectedRoute feature="inventory-optimization" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/mrp">
+                <ProtectedRoute feature="schedule" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/production-planning">
+                <ProtectedRoute feature="production-planning" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/atp-ctp">
+                <ProtectedRoute feature="production-scheduling" action="view">
+                  <AtpCtp />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/schedule-sequences">
+                <ProtectedRoute feature="schedule" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/shift-management">
+                <ProtectedRoute feature="shift-management" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/optimize-orders">
+                <ProtectedRoute feature="scheduling-optimizer" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+
+              {/* Business Management Routes */}
+              <Route path="/plants-management">
+                <ProtectedRoute feature="systems-management" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/business-intelligence">
+                <ProtectedRoute feature="business-intelligence" action="view">
+                  <Analytics />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/financial-management">
+                <ProtectedRoute feature="financial-management" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/smart-kpi-tracking">
+                <ProtectedRoute feature="business-goals" action="view">
+                  <BusinessGoals />
+                </ProtectedRoute>
+              </Route>
+
               {/* Global Control Tower */}
               <Route path="/control-tower">
                 <ProtectedRoute feature="analytics" action="view">
