@@ -2,16 +2,22 @@
 
 ## Resource Assignment Logic
 
-### Key Concepts
+### Key Scheduling Concepts
 1. **Default Resource (Preference)**: Set in `ptjobresources.default_resource_id`
    - Represents the preferred resource for an operation
    - Scheduler prioritizes this resource when available
    - Can be overridden by constraints or availability
 
-2. **Actual Resource Used (Outcome)**: Stored in `ptjoboperations.actual_resources_used`
-   - Records which resource actually performed the operation
+2. **Capabilities**: Stored in jobresourcecapabilities
+   - Specify which capabilities a resource must have to be able to have an activity scheduled on it
+   - Can be overridden by default resource (ie. The default resource does not have to have the specified capabilities to be eligible)
+
+3. **Resources scheduled (Outcome)**: Stored in `ptjobresourceblocks`
+   - Records which resource(s) are scheduled to perform the operation activity
    - Populated after scheduling is complete
-   - May differ from default if constraints require it
+
+
+ 
 
 ### Table Relationships and Behaviors
 
@@ -20,90 +26,77 @@
 - `default_resource_id`: Links to ptresources.resource_id (preferred resource)
 - `is_primary`: Boolean indicating if this is the primary resource requirement
 - `resource_requirement_id`: Unique identifier for this requirement
-- One operation can have multiple resource requirements (primary + secondary)
+- One operation can have multiple resource requirements (primary + secondaries)
 
-## 2. ptjoboperations (Scheduled Operations)
-**Purpose**: Contains the scheduled operations with their actual resource assignments
-- `scheduled_primary_work_center_external_id`: The work center/department assigned
-- `actual_resources_used`: The actual resource ID(s) used (after scheduling)
-- `resources_used`: Additional resource information
-- `primary_resource_requirement_id`: Links to ptjobresources.resource_requirement_id
+## 2. ptresourcecapabilities (Resource Capabilities)
+- are used to link ptjobresources to the eligible available resources that can be used to schedule the requirement
 
-## 3. ptresources (Available Resources)
+## 3. ptjoboperations (Operations)
+**Purpose**: Contains the scheduled operations with their resource assignments
+- provide information such as run rates for use in scheduling the resource requirements
+- related to paths which provide precedence constraints and to manufacturing orders to which the operations belong which are then related to jobs 
+
+## 4. ptjobactivities (Activites)
+- each Operation must have one or more activities to schedule; an operation has one activity unless it is split into multiple activities
+- each activity is scheduled on one or more resources (based on jobResources, and jobResourceCapabilities or default resource)
+
+## 5. ptresources (Available Resources)
 **Purpose**: Master list of all available resources/machines
 - `resource_id`: Unique identifier for the resource
 - `department_name`: Department/work center this resource belongs to
 - `bottleneck`: Boolean indicating if this is a bottleneck resource
 - `active`: Boolean indicating if resource is available for scheduling
+- references capacity intervals and recurring capacity intervals to determine available working capacity over time
 
-## 4. ptdepartments (Work Centers)
-**Purpose**: Defines work centers/departments that contain resources
-- `department_id`: Unique identifier for the department
-- `work_center_id`: Same as department_id (for compatibility)
-- `external_id`: External system identifier (e.g., DEPT-1)
-- Resources are grouped within departments
 
 ## Data Flow and Relationships
 
 ### Scheduling Process:
 1. **Input Phase**:
-   - Operations defined in `ptjoboperations`
+   - Operations defined in `ptjoboperations` 
+   - Activities defined in 'ptJobactivities'
    - Resource requirements defined in `ptjobresources` with `default_resource_id`
-   - Available resources listed in `ptresources`
+   - Required capabilities defined in 'ptjobresourcecapabilities'
+   - Available resources listed in `ptresources` with their capabilities defined in jobresourcecapabilities
 
 2. **Scheduling Phase**:
-   - Scheduler considers `default_resource_id` as preference
+   - Scheduler considers `default_resource_id` as preference if set (it is optional)
    - Checks resource availability and constraints
-   - May assign alternative eligible resource if default is unavailable
+   - May assign alternative eligible resource if default is null or unavailable within timing threshold
 
 3. **Output Phase**:
-   - `actual_resources_used` populated with assigned resource
-   - `scheduled_primary_work_center_external_id` set to department
-   - Schedule times updated
+   - 'ptjobresourceblocks' defines which resources are used at which time intervals; one for each jobresource
+   - 'ptjobresourceblockintervals' defines the various contiguous time segments of the block (setup, run, post processing, etc).
+
 
 ### Key Business Rules:
 
 1. **Resource Eligibility**:
    - Resource must be active (`ptresources.active = true`)
-   - Resource must belong to appropriate department
-   - Resource capabilities must match operation requirements
+   - Resource capabilities must match job operation resource required capabilities (unless using default resource)
 
-2. **Default vs Actual Assignment**:
-   - If default resource is available → actual = default
-   - If default resource is busy → actual = next eligible resource
-   - If no eligible resources → operation remains unscheduled
 
-3. **Department Assignment**:
-   - Operations are assigned to departments (work centers)
-   - Multiple resources can exist within a department
-   - Department assignment constrains resource selection
-
-4. **Resource Tracking**:
-   - `ptjobresources.default_resource_id`: Planning preference
-   - `ptjoboperations.actual_resources_used`: Execution reality
-   - Both fields use resource IDs from `ptresources.resource_id`
 
 ## Data Integrity Requirements
 
 1. **Foreign Key Relationships**:
    - `ptjobresources.default_resource_id` → `ptresources.resource_id`
-   - `ptjoboperations.primary_resource_requirement_id` → `ptjobresources.resource_requirement_id`
-   - `ptjoboperations.scheduled_primary_work_center_external_id` → `ptdepartments.external_id`
+   - `ptjoboperations.primary_resource_requirement_id` → `ptjobresources.resource_requirement_id` (defines which job resource is the primary, which can determine run rate)
 
 2. **Consistency Checks**:
    - Actual resources used should exist in ptresources
-   - Department assignments should match resource departments
    - Primary resource requirements should have is_primary = true
+   - job resource block segments should all be contained within the job resource block from a start to end duration perspective
+
 
 3. **Scheduling Validation**:
-   - Operations with actual_resources_used should have scheduled times
+   - Operations with blocks should have scheduled times
    - Resources assigned should be active
-   - Bottleneck resources require special handling
-
+ 
 ## Gantt Chart Display Logic
 
 - **Row Organization**: Each resource gets its own row
-- **Operation Blocks**: Display on the resource row based on `actual_resources_used`
+- **Operation Blocks**: Display on the resource row based on jobresourceblocks and jobresourceblockintervals
 - **Time Position**: Based on scheduled_start and scheduled_end
 - **Color Coding**: Can indicate if using default vs alternative resource
 - **Drag-Drop**: Moving updates both time and potentially resource assignment
