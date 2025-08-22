@@ -39,6 +39,7 @@ import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
 import AtpCtp from "@/pages/atp-ctp";
+import Patti from "@/pages/Patti";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";
@@ -286,6 +287,9 @@ export default function ApplicationApp() {
                   <AIAnalysisConfig />
                 </ProtectedRoute>
               </Route>
+
+              {/* Test/Demo Pages */}
+              <Route path="/patti" component={Patti} />
 
               {/* Settings */}
               <Route path="/email-settings">
