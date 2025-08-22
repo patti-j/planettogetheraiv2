@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 import GanttChart from '@/components/ui/gantt-chart';
+import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 
 // Import PT Gantt styles
 import '../styles/pt-gantt.css';
@@ -670,6 +671,16 @@ export default function ProductionSchedulePage() {
                   </div>
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
+                  <BryntumSchedulerProComponent
+                    operations={ptOperations}
+                    resources={resources}
+                    onOperationUpdate={(operationId, updates) => {
+                      console.log('Operation update requested:', operationId, updates);
+                      // This will trigger a refetch of operations
+                      refetchOperations();
+                    }}
+                  />
+                ) : (
                   <GanttChart
                     jobs={productionOrders}
                     operations={ptOperations}
