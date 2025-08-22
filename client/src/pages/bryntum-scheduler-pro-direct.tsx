@@ -91,6 +91,32 @@ export default function BryntumSchedulerProDirect() {
     );
   }
 
+  // Adapt API rows → Scheduler Pro stores
+  const events = React.useMemo(() => {
+    return operations.map((op: any) => ({
+      id: op.id,
+      name: op.name ?? op.title ?? `Operation ${op.id}`,
+      startDate: op.startDate || op.startTime, // Handle both field names
+      endDate: op.endDate || op.endTime
+    }));
+  }, [operations]);
+
+  const assignments = React.useMemo(() => {
+    return operations
+      .filter((op: any) => op.resourceId != null)
+      .map((op: any) => ({
+        id: `assignment-${op.id}`, // Unique assignment ID
+        eventId: op.id,
+        resourceId: op.resourceId
+      }));
+  }, [operations]);
+
+  const project = React.useMemo(() => ({
+    resources,   // from your resources query
+    events,      // derived above
+    assignments  // derived above
+  }), [resources, events, assignments]);
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -119,8 +145,7 @@ export default function BryntumSchedulerProDirect() {
             {/* Full Width Bryntum Scheduler Pro */}
             <div className="h-full">
               <BryntumSchedulerProComponent
-                operations={operations}
-                resources={resources}
+                project={project}
                 onOperationUpdate={handleOperationUpdate}
               />
             </div>

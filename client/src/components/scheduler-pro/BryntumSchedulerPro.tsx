@@ -8,6 +8,11 @@ import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 interface BryntumSchedulerProComponentProps {
   operations?: any[];
   resources?: any[];
+  project?: {
+    resources: any[];
+    events: any[];
+    assignments: any[];
+  };
   onOperationUpdate?: (operationId: number, updates: any) => void;
 }
 
@@ -15,6 +20,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const {
     operations = [], 
     resources = [],
+    project,
     onOperationUpdate 
   } = props;
   const schedulerRef = useRef<any>(null);
@@ -35,9 +41,12 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     enabled: resources.length === 0
   });
 
+  // If project prop is provided, use it directly
+  const hasProjectProp = project && project.resources && project.events && project.assignments;
+  
   // Use provided data or fetched data
-  const effectiveOperations = operations.length > 0 ? operations : (ptOperations || []);
-  const effectiveResources = resources.length > 0 ? resources : (ptResources || []);
+  const effectiveOperations = hasProjectProp ? [] : (operations.length > 0 ? operations : (ptOperations || []));
+  const effectiveResources = hasProjectProp ? [] : (resources.length > 0 ? resources : (ptResources || []));
 
   // Transform PT resources to Bryntum format - SHOW ALL RESOURCES (no deduplication)
   const bryntumResources = useMemo(() => {
@@ -239,8 +248,18 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     }
   }
 
-  const project = useMemo(() => {
-    console.log('Creating Bryntum project with:');
+  const effectiveProject = useMemo(() => {
+    // If project prop is provided, use it directly
+    if (hasProjectProp) {
+      console.log('Using provided project prop');
+      console.log('- Resources:', project.resources.length);
+      console.log('- Events:', project.events.length);
+      console.log('- Assignments:', project.assignments.length);
+      return project;
+    }
+    
+    // Otherwise, build project from operations/resources
+    console.log('Creating Bryntum project from operations/resources:');
     console.log('- Resources:', bryntumResources.length);
     console.log('- Events:', bryntumEvents.length);  
     console.log('- Assignments:', bryntumAssignments.length);
@@ -266,7 +285,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       assignments: bryntumAssignments,
       dependencies: bryntumDependencies
     };
-  }, [bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
+  }, [hasProjectProp, project, bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
 
   // Force layout recalculation after mount to fix scroll bar visibility
   // MUST be called before any conditional returns to avoid React hooks error
@@ -279,8 +298,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     return () => clearTimeout(timer);
   }, [bryntumResources, bryntumEvents]);
 
-  // Show loading state while data is being fetched
-  if (operationsLoading || resourcesLoading) {
+  // Show loading state while data is being fetched (only if not using project prop)
+  if (!hasProjectProp && (operationsLoading || resourcesLoading)) {
     return (
       <div className="h-full w-full flex items-center justify-center" style={{ minHeight: '600px' }}>
         <div className="text-center">
@@ -295,11 +314,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     <div className="h-full w-full" style={{ minHeight: '600px', height: '700px', overflow: 'hidden' }}>
       <BryntumSchedulerPro
         ref={schedulerRef}
-        // Use separate store configs instead of inline project to avoid the warning
-        resources={bryntumResources}
-        events={bryntumEvents}
-        assignments={bryntumAssignments}
-        dependencies={bryntumDependencies}
+        // Use project prop if available, otherwise use separate stores
+        project={effectiveProject}
         startDate={new Date(2025, 7, 22)} // August 22, 2025 to match our data
         endDate={new Date(2025, 7, 29)}   // One week view
         viewPreset="hourAndDay"
