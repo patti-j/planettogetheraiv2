@@ -190,6 +190,7 @@ export default function ApplicationApp() {
                   <BryntumSchedulerProDirect />
                 </ProtectedRoute>
               </Route>
+              <Route path="/bryntum-scheduler-pro-direct" component={BryntumSchedulerProDirect} />
 
               {/* Planning & Scheduling Routes */}
               <Route path="/planning-overview" component={PlanningOverview} />
