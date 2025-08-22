@@ -50,6 +50,32 @@ import ProductionPlanning from "@/pages/production-planning";
 import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
 
+// Additional page imports for missing routes
+import AutonomousOptimization from "@/pages/autonomous-optimization";
+import Chat from "@/pages/chat";
+import Constraints from "@/pages/constraints";
+import DataImport from "@/pages/data-import";
+import DataMap from "@/pages/data-map";
+import DataRelationships from "@/pages/data-relationships";
+import DataSchema from "@/pages/data-schema";
+import DataValidation from "@/pages/data-validation";
+import DemandForecasting from "@/pages/demand-forecasting";
+import DesignStudio from "@/pages/design-studio";
+import DisruptionManagement from "@/pages/disruption-management";
+import ErrorLogs from "@/pages/error-logs";
+import ExtensionStudio from "@/pages/extension-studio";
+import ImplementationConsultant from "@/pages/implementation-consultant";
+import ImplementationProjects from "@/pages/implementation-projects";
+import IndustryTemplates from "@/pages/industry-templates";
+import MasterData from "@/pages/master-data";
+import PresentationSystem from "@/pages/presentation-system";
+import SystemsManagementDashboard from "@/pages/systems-management-dashboard";
+import TableFieldViewer from "@/pages/table-field-viewer";
+import TenantAdmin from "@/pages/tenant-admin";
+import Training from "@/pages/training";
+import UserAccessManagement from "@/pages/user-access-management";
+import VisualFactory from "@/pages/visual-factory";
+
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -217,6 +243,42 @@ export default function ApplicationApp() {
                   <Dashboard />
                 </ProtectedRoute>
               </Route>
+              <Route path="/constraints" component={Constraints} />
+              
+              {/* AI & Analytics Routes */}
+              <Route path="/autonomous-optimization" component={AutonomousOptimization} />
+              <Route path="/demand-forecasting" component={DemandForecasting} />
+              <Route path="/implementation-consultant" component={ImplementationConsultant} />
+              <Route path="/design-studio" component={DesignStudio} />
+              
+              {/* Data Management Routes */}
+              <Route path="/data-import" component={DataImport} />
+              <Route path="/master-data" component={MasterData} />
+              <Route path="/data-schema" component={DataSchema} />
+              <Route path="/table-field-viewer" component={TableFieldViewer} />
+              <Route path="/data-relationships" component={DataRelationships} />
+              <Route path="/data-map" component={DataMap} />
+              <Route path="/data-validation" component={DataValidation} />
+              
+              {/* Shop Floor Operations Routes */}
+              <Route path="/disruption-management" component={DisruptionManagement} />
+              
+              {/* Management & Administration Routes */}
+              <Route path="/implementation-projects" component={ImplementationProjects} />
+              <Route path="/systems-management-dashboard" component={SystemsManagementDashboard} />
+              <Route path="/user-access-management" component={UserAccessManagement} />
+              <Route path="/extension-studio" component={ExtensionStudio} />
+              <Route path="/error-logs" component={ErrorLogs} />
+              <Route path="/tenant-admin" component={TenantAdmin} />
+              
+              {/* Training & Support Routes */}
+              <Route path="/training" component={Training} />
+              <Route path="/industry-templates" component={IndustryTemplates} />
+              <Route path="/presentation-system" component={PresentationSystem} />
+              
+              {/* Communication & Collaboration Routes */}
+              <Route path="/chat" component={Chat} />
+              <Route path="/visual-factory" component={VisualFactory} />
 
               {/* Business Management Routes */}
               <Route path="/plants-management" component={PlantsManagement} />
