@@ -1,13 +1,13 @@
 # PT Tables Complete Documentation
 ## Comprehensive Guide to PlanetTogether Table Structure and Relationships
 
-*Consolidated from multiple documentation sources and Jim's corrections*
+*Based on Jim's corrections and current table structure (no underscores)*
 
 ---
 
 ## Table of Contents
 1. [Resource Assignment Logic (Jim's Corrections)](#resource-assignment-logic)
-2. [Table Structure Overview](#table-structure-overview)
+2. [Current Table Structure](#current-table-structure)
 3. [Core Table Relationships](#core-table-relationships)
 4. [Data Flow and Scheduling Process](#data-flow-and-scheduling-process)
 5. [Data Integrity Requirements](#data-integrity-requirements)
@@ -54,15 +54,15 @@
 
 ---
 
-## Table Structure Overview
+## Current Table Structure
 
-### PT Import Tables (59 tables with `pt_` prefix)
-Core manufacturing data model imported from PlanetTogether APS system.
+### PT Tables (Current Structure)
+Core manufacturing data model using tables without underscores:
+- `ptjobs`, `ptresources`, `ptjoboperations`, `ptjobactivities`
+- `ptjobresources`, `ptjobresourceblocks`, `ptjobresourceblockintervals`
+- `ptplants`, `ptdepartments`, `ptcapabilities`, etc.
 
-### PT Publish Tables (61 tables with `pt_publish_` prefix) 
-Published schedule data and results from scheduling runs.
-
-**Note**: *Need clarification on relationship between import vs publish table sets*
+**Note**: Old `pt_` and `pt_publish_` prefixed tables are deprecated and should not be referenced.
 
 ---
 
@@ -70,14 +70,14 @@ Published schedule data and results from scheduling runs.
 
 ### 1. Organizational Hierarchy
 ```
-ptPlants (Manufacturing Plants)
-├── ptDepartments (Plant Departments)
-│   └── ptResources (Manufacturing Resources/Equipment)
-│       ├── ptResourceCapabilities (What resources can do)
-│       ├── ptResourceConnections (How resources connect)
-│       └── ptAllowedHelpers (Resource assistance relationships)
-└── ptPlantWarehouses (Plant-specific warehouses)
-    └── ptWarehouses (Storage locations)
+ptplants (Manufacturing Plants)
+├── ptdepartments (Plant Departments)
+│   └── ptresources (Manufacturing Resources/Equipment)
+│       ├── ptresourcecapabilities (What resources can do)
+│       ├── ptresourceconnections (How resources connect)
+│       └── ptallowedhelpers (Resource assistance relationships)
+└── ptplantwarehouses (Plant-specific warehouses)
+    └── ptwarehouses (Storage locations)
 ```
 
 **Key Relationships:**
@@ -116,53 +116,53 @@ ptPlants (Manufacturing Plants)
 
 ### 3. Manufacturing Orders & Jobs Hierarchy
 ```
-ptManufacturingOrders (Production Orders from ERP)
-├── ptJobs (Scheduled production jobs)
-│   ├── ptJobOperations (Manufacturing operations within jobs)
-│   │   ├── ptJobActivities (Actual scheduled activities)
-│   │   ├── ptJobMaterials (Materials required for operations)
-│   │   ├── ptJobOperationAttributes (Setup attributes for operations)
-│   │   └── ptJobResources (Resources assigned to operations)
-│   ├── ptJobProducts (Products produced by jobs)
-│   ├── ptJobPaths (Routing paths for operations)
-│   │   └── ptJobPathNodes (Nodes in routing paths)
-│   ├── ptJobResourceCapabilities (Required capabilities)
-│   └── ptJobSuccessorManufacturingOrders (Job dependencies)
-└── ptLots (Production lot tracking)
+ptmanufacturingorders (Production Orders from ERP)
+├── ptjobs (Scheduled production jobs)
+│   ├── ptjoboperations (Manufacturing operations within jobs)
+│   │   ├── ptjobactivities (Actual scheduled activities)
+│   │   ├── ptjobmaterials (Materials required for operations)
+│   │   ├── ptjoboperationattributes (Setup attributes for operations)
+│   │   └── ptjobresources (Resources assigned to operations)
+│   ├── ptjobproducts (Products produced by jobs)
+│   ├── ptjobpaths (Routing paths for operations)
+│   │   └── ptjobpathnodes (Nodes in routing paths)
+│   ├── ptjobresourcecapabilities (Required capabilities)
+│   └── ptjobsuccessormanufacturingorders (Job dependencies)
+└── ptlots (Production lot tracking)
 ```
 
 ### 4. Customer & Sales Chain
 ```
-ptCustomers (Customer master data)
-├── ptSalesOrders (Customer sales orders)
-│   └── ptSalesOrderLines (Individual line items)
-│       └── ptSalesOrderLineDistributions (Delivery distributions)
-└── ptCustomerConnections (Customer-plant relationships)
+ptcustomers (Customer master data)
+├── ptsalesorders (Customer sales orders)
+│   └── ptsalesorderlines (Individual line items)
+│       └── ptsalesorderlinedistributions (Delivery distributions)
+└── ptcustomerconnections (Customer-plant relationships)
 ```
 
 ### 5. Product & Inventory Management
 ```
-ptItems (Product master data)
-├── ptInventories (Current stock levels)
-├── ptForecasts (Demand forecasts)
-├── ptForecastShipments (Forecast delivery schedules)
-├── ptPurchasesToStock (Purchase orders)
-├── ptTransferOrders (Stock transfers)
-│   └── ptTransferOrderDistributions (Transfer distributions)
-└── ptProductRules (Product-specific business rules)
+ptitems (Product master data)
+├── ptinventories (Current stock levels)
+├── ptforecasts (Demand forecasts)
+├── ptforecastshipments (Forecast delivery schedules)
+├── ptpurchasestostock (Purchase orders)
+├── pttransferorders (Stock transfers)
+│   └── pttransferorderdistributions (Transfer distributions)
+└── ptproductrules (Product-specific business rules)
 ```
 
 ### 6. Capacity & Scheduling
 ```
-ptResources (Manufacturing resources)
-├── ptResourceCapabilities (Resource skills/capabilities)
-├── ptResourceConnections (Resource-to-resource connections)
-├── ptResourceConnectors (Physical connectors between resources)
-├── ptCapabilities (Master list of manufacturing capabilities)
-├── ptCapacityIntervals (Resource capacity schedules)
-│   └── ptCapacityIntervalResources (Resources with capacity)
-├── ptRecurringCapacityIntervals (Recurring capacity patterns)
-└── ptCells (Manufacturing cells containing resources)
+ptresources (Manufacturing resources)
+├── ptresourcecapabilities (Resource skills/capabilities)
+├── ptresourceconnections (Resource-to-resource connections)
+├── ptresourceconnectors (Physical connectors between resources)
+├── ptcapabilities (Master list of manufacturing capabilities)
+├── ptcapacityintervals (Resource capacity schedules)
+│   └── ptcapacityintervalresources (Resources with capacity)
+├── ptrecurringcapacityintervals (Recurring capacity patterns)
+└── ptcells (Manufacturing cells containing resources)
 ```
 
 ---
@@ -215,16 +215,16 @@ Most relationships use external ID references rather than database foreign keys:
 ### Query Optimization
 ```sql
 -- Business key indexes (most frequently queried)
-CREATE INDEX idx_pt_plants_external_id ON pt_plants(external_id);
-CREATE INDEX idx_pt_departments_external_id ON pt_departments(external_id);  
-CREATE INDEX idx_pt_resources_external_id ON pt_resources(external_id);
-CREATE INDEX idx_pt_jobs_external_id ON pt_jobs(external_id);
-CREATE INDEX idx_pt_job_operations_external_id ON pt_job_operations(external_id);
+CREATE INDEX idx_ptplants_external_id ON ptplants(external_id);
+CREATE INDEX idx_ptdepartments_external_id ON ptdepartments(external_id);  
+CREATE INDEX idx_ptresources_external_id ON ptresources(external_id);
+CREATE INDEX idx_ptjobs_external_id ON ptjobs(external_id);
+CREATE INDEX idx_ptjoboperations_external_id ON ptjoboperations(external_id);
 
 -- Foreign key relationship indexes
-CREATE INDEX idx_pt_departments_plant ON pt_departments(plant_external_id);
-CREATE INDEX idx_pt_resources_plant_dept ON pt_resources(plant_external_id, department_external_id);
-CREATE INDEX idx_pt_job_resources_composite ON pt_job_resources(job_external_id, operation_external_id, resource_external_id);
+CREATE INDEX idx_ptdepartments_plant ON ptdepartments(plant_external_id);
+CREATE INDEX idx_ptresources_plant_dept ON ptresources(plant_external_id, department_external_id);
+CREATE INDEX idx_ptjobresources_composite ON ptjobresources(job_external_id, operation_external_id, resource_external_id);
 ```
 
 ---
@@ -233,7 +233,7 @@ CREATE INDEX idx_pt_job_resources_composite ON pt_job_resources(job_external_id,
 
 ### CRITICAL CONSTRAINT: PT Table Structure Integrity
 
-**PT Publish tables should maintain their original structure as defined in the creation script, with minimal approved variations when absolutely necessary.**
+**PT tables should maintain their original structure as defined in the creation script, with minimal approved variations when absolutely necessary.**
 
 #### ❌ AVOID WITHOUT APPROVAL:
 - Add new columns to PT tables (requires explicit approval)
@@ -260,7 +260,7 @@ CREATE INDEX idx_pt_job_resources_composite ON pt_job_resources(job_external_id,
 SELECT due_date FROM production_orders
 
 -- PT Adapted query:
-SELECT need_date_time as due_date FROM pt_publish_jobs
+SELECT need_date_time as due_date FROM ptjobs
 ```
 
 #### Complex Relationships
@@ -270,10 +270,10 @@ SELECT
   j.name as job_name,
   jo.name as operation_name,
   r.name as resource_name
-FROM pt_publish_job_operations jo
-LEFT JOIN pt_publish_jobs j ON jo.job_id = j.id
-LEFT JOIN pt_publish_job_resources jr ON jr.operation_id = jo.id
-LEFT JOIN pt_publish_resources r ON jr.default_resource_id = r.id
+FROM ptjoboperations jo
+LEFT JOIN ptjobs j ON jo.job_id = j.id
+LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id
+LEFT JOIN ptresources r ON jr.default_resource_id = r.id
 ```
 
 ---
@@ -297,8 +297,8 @@ LEFT JOIN pt_publish_resources r ON jr.default_resource_id = r.id
 4. **Warehouse → Inventory/Lots** (Material Management)
 
 ### Many-to-Many Relationships:
-- Resources ↔ Capabilities (via ptResourceCapabilities)
-- Jobs ↔ Resource Capabilities (via ptJobResourceCapabilities)
+- Resources ↔ Capabilities (via ptresourcecapabilities)
+- Jobs ↔ Resource Capabilities (via ptjobresourcecapabilities)
 - Attribute Tables ↔ Resources (via various resource tables)
 
 ### Cross-Reference Tables:
@@ -311,4 +311,4 @@ This comprehensive relationship structure enables full traceability and optimiza
 
 ---
 
-*Last Updated: Based on Jim's corrections and consolidated documentation*
+*Last Updated: Based on Jim's corrections and current table structure (no underscores)*
