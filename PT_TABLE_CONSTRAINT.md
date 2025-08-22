@@ -1,18 +1,20 @@
 # CRITICAL CONSTRAINT: PT Table Structure Integrity
 
 ## Core Principle
-**PT Publish tables should maintain their original structure as defined in the creation script, with minimal approved variations when absolutely necessary.**
+**PT tables should maintain their original structure as defined in the creation script. ALWAYS ASK PERMISSION before making any changes to PT tables.**
 
 ## What This Means
 
-### ❌ AVOID WITHOUT APPROVAL:
-- Add new columns to PT tables (requires explicit approval)
+### ❌ STRICTLY PROHIBITED WITHOUT EXPLICIT APPROVAL:
+- Add new columns to PT tables
 - Remove existing columns from PT tables
 - Modify column data types
 - Change column constraints
 - Alter foreign key relationships
 - Rename columns or tables
 - Add or remove indexes (except for performance)
+- **NEVER change how resources are assigned or timings decided**
+- **NEVER modify the resource assignment logic in ptjobresourceblocks/ptjobresourceblockintervals**
 
 ### ✅ APPROVED VARIATIONS (Case-by-Case):
 - Adding essential columns for data migration when extension tables are insufficient
@@ -21,12 +23,14 @@
 **All variations must be documented and approved before implementation**
 
 ### ✅ ALWAYS DO:
+- **ASK PERMISSION before any PT table modifications**
 - Adapt application queries to work with existing PT structure
 - Create complex joins and subqueries as needed
 - Handle missing data in application layer
 - Map old column names to PT equivalents in queries
 - Transform data in the application, not the database
 - Use computed columns in SELECT statements rather than adding to tables
+- **PRESERVE existing resource assignment and timing logic**
 
 ## Common Migration Patterns
 

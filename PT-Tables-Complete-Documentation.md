@@ -262,24 +262,28 @@ CREATE INDEX idx_ptjobresources_composite ON ptjobresources(job_external_id, ope
 
 ### CRITICAL CONSTRAINT: PT Table Structure Integrity
 
-**PT tables should maintain their original structure as defined in the creation script, with minimal approved variations when absolutely necessary.**
+**PT tables should maintain their original structure as defined in the creation script. ALWAYS ASK PERMISSION before making any changes to PT tables.**
 
-#### ❌ AVOID WITHOUT APPROVAL:
-- Add new columns to PT tables (requires explicit approval)
-- Remove existing columns from PT tables
+#### ❌ STRICTLY PROHIBITED WITHOUT EXPLICIT APPROVAL:
+- Add new columns to PT tables
+- Remove existing columns from PT tables  
 - Modify column data types
 - Change column constraints
 - Alter foreign key relationships
 - Rename columns or tables
 - Add or remove indexes (except for performance)
+- **NEVER change how resources are assigned or timings decided**
+- **NEVER modify the resource assignment logic in ptjobresourceblocks/ptjobresourceblockintervals**
 
 #### ✅ ALWAYS DO:
+- **ASK PERMISSION before any PT table modifications**
 - Adapt application queries to work with existing PT structure
 - Create complex joins and subqueries as needed
 - Handle missing data in application layer
 - Map old column names to PT equivalents in queries
 - Transform data in the application, not the database
 - Use computed columns in SELECT statements rather than adding to tables
+- **PRESERVE existing resource assignment and timing logic**
 
 ### Common Migration Patterns
 
@@ -338,6 +342,23 @@ LEFT JOIN ptresources r ON jr.default_resource_id = r.id
 - Connection networks between resources
 
 This comprehensive relationship structure enables full traceability and optimization across the entire manufacturing value chain, from customer orders through production planning, resource scheduling, material management, and delivery execution.
+
+## Rationale
+1. **External System Compatibility**: PT tables interface with PlanetTogether system
+2. **Data Integrity**: Structure matches production PlanetTogether installations
+3. **Upgrade Path**: Future PT updates expect original structure
+4. **Audit Compliance**: Structure matches documented specifications
+5. **Resource Assignment Logic**: Timing and resource assignment algorithms are critical business logic
+
+## Developer Notes
+- **ALWAYS ask permission before any PT table changes**
+- When stuck with complex queries, ask for help adapting them
+- Document all query mappings for future reference
+- Test thoroughly when migrating from old to PT tables
+- Performance optimization via indexes is allowed, structure changes are not
+- **NEVER modify resource assignment or timing logic without approval**
+
+**This constraint is non-negotiable and overrides all other considerations.**
 
 ---
 
