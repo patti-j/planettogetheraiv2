@@ -481,64 +481,25 @@ export default function ProductionSchedulePage() {
       <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
 
         
-        {/* Custom tab buttons for mobile to ensure visibility */}
-        {isMobile ? (
-          <div className="mb-4">
-            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
-              <button
-                onClick={() => setActiveTab('scheduler-pro')}
-                className={`p-3 text-xs font-medium rounded transition-colors ${
-                  activeTab === 'scheduler-pro' 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                📊 Resources
-              </button>
-              <button
-                onClick={() => setActiveTab('demo')}
-                className={`p-3 text-xs font-medium rounded transition-colors bg-orange-100 dark:bg-orange-950 ${
-                  activeTab === 'demo' 
-                    ? 'bg-orange-500 text-white shadow-sm' 
-                    : 'text-orange-700 dark:text-orange-300 hover:bg-orange-200'
-                }`}
-              >
-                🧪 Demo
-              </button>
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`p-3 text-xs font-medium rounded transition-colors ${
-                  activeTab === 'overview' 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                📈 Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('gantt')}
-                className={`p-3 text-xs font-medium rounded transition-colors ${
-                  activeTab === 'gantt' 
-                    ? 'bg-background text-foreground shadow-sm' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                📅 Gantt
-              </button>
-            </div>
-          </div>
-        ) : (
-          <Tabs defaultValue="scheduler-pro" value={activeTab} onValueChange={setActiveTab} className="flex-1">
-            <TabsList className="grid w-full grid-cols-4 gap-1 mb-4">
-              <TabsTrigger value="scheduler-pro">Resource Schedule</TabsTrigger>
-              <TabsTrigger value="demo" className="bg-orange-200 dark:bg-orange-900 hover:bg-orange-300">
-                Demo Data
+        {/* Always show tabs - unified approach for mobile and desktop */}
+        <div className="mb-4">
+          <Tabs defaultValue="scheduler-pro" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className={`grid w-full grid-cols-4 gap-1 ${isMobile ? 'h-12' : 'h-10'}`}>
+              <TabsTrigger value="scheduler-pro" className={`${isMobile ? 'text-xs p-2' : ''}`}>
+                {isMobile ? '📊 Resources' : 'Resource Schedule'}
               </TabsTrigger>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="gantt">Simple Gantt</TabsTrigger>
+              <TabsTrigger value="demo" className={`bg-orange-200 dark:bg-orange-900 hover:bg-orange-300 ${isMobile ? 'text-xs p-2' : ''}`}>
+                {isMobile ? '🧪 Demo' : 'Demo Data'}
+              </TabsTrigger>
+              <TabsTrigger value="overview" className={`${isMobile ? 'text-xs p-2' : ''}`}>
+                {isMobile ? '📈 Overview' : 'Overview'}
+              </TabsTrigger>
+              <TabsTrigger value="gantt" className={`${isMobile ? 'text-xs p-2' : ''}`}>
+                {isMobile ? '📅 Gantt' : 'Simple Gantt'}
+              </TabsTrigger>
             </TabsList>
           </Tabs>
-        )}
+        </div>
         
         {/* Tab content wrapper */}
         <Tabs value={activeTab} className="flex-1">
