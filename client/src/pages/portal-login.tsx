@@ -43,6 +43,8 @@ export default function PortalLogin() {
     setLoading(true);
 
     try {
+      console.log('=== STARTING LOGIN ===', { email: email.trim(), passwordLength: password.length });
+      
       const response = await fetch('/api/portal/login', {
         method: 'POST',
         headers: {
@@ -55,34 +57,38 @@ export default function PortalLogin() {
         credentials: 'include'
       });
 
-      console.log('=== LOGIN RESPONSE ===', response.status, response.ok);
+      console.log('=== LOGIN RESPONSE STATUS ===', response.status, response.ok);
+      
+      const result = await response.json();
+      console.log('=== LOGIN RESULT ===', JSON.stringify(result, null, 2));
       
       if (response.ok) {
-        const result = await response.json();
-        console.log('=== LOGIN RESULT ===', JSON.stringify(result, null, 2));
+        console.log('=== RESPONSE OK - CHECKING DATA ===');
+        console.log('Has token:', !!result?.token);
+        console.log('Has user:', !!result?.user);
+        console.log('Has success flag:', !!result?.success);
         
         if (result && result.token && result.user) {
-          console.log('=== LOGIN SUCCESS - STORING TOKENS ===');
+          console.log('=== ALL DATA PRESENT - STORING TOKENS ===');
           localStorage.setItem('portal_token', result.token);
           localStorage.setItem('portal_user', JSON.stringify(result.user));
-          console.log('=== REDIRECTING TO DASHBOARD ===');
-          setLocation('/portal/dashboard');
+          console.log('=== TOKENS STORED - REDIRECTING ===');
+          window.location.href = '/portal/dashboard';
+          return;
         } else {
-          console.log('=== LOGIN FAILED - MISSING DATA ===', result);
-          console.log('Token exists:', !!result?.token);
-          console.log('User exists:', !!result?.user);
-          setError('Invalid login response - missing token or user data');
+          console.log('=== MISSING REQUIRED DATA ===');
+          console.log('Result object keys:', Object.keys(result || {}));
+          setError('Login response missing required data');
         }
       } else {
-        console.log('=== LOGIN FAILED - BAD RESPONSE ===', response.status);
-        const errorData = await response.json().catch(() => ({}));
-        console.log('=== ERROR DATA ===', errorData);
-        setError(errorData.error || `Login failed (${response.status})`);
+        console.log('=== RESPONSE NOT OK ===');
+        setError(result.error || `Login failed with status ${response.status}`);
       }
     } catch (err) {
-      console.log('=== LOGIN CATCH ERROR ===', err);
-      setError('Network error - please try again.');
+      console.log('=== EXCEPTION IN LOGIN ===', err);
+      setError('Network error - please try again');
     } finally {
+      console.log('=== LOGIN COMPLETE ===');
       setLoading(false);
     }
   };
