@@ -113,7 +113,7 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
 
     const responseData = {
       success: true,
-      token,
+      token: token,
       user: {
         id: user.id,
         email: user.email,
@@ -121,6 +121,8 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
         lastName: user.lastName,
         role: user.role,
         companyId: company.id,
+        companyName: company.name,
+        companyType: company.type,
       },
       company: {
         id: company.id,
@@ -129,8 +131,13 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
       },
     };
 
-    console.log('=== PORTAL LOGIN SUCCESS RESPONSE ===', JSON.stringify(responseData, null, 2));
-    res.json(responseData);
+    console.log('=== PORTAL LOGIN SUCCESS RESPONSE ===');
+    console.log('Token:', token ? 'Present' : 'Missing');
+    console.log('User ID:', user.id);
+    console.log('User Email:', user.email);
+    console.log('Company:', company.name, company.type);
+    
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
