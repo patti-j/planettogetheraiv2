@@ -2558,119 +2558,247 @@ Rules:
   });
 
   // Operations
-  // New PT-based operations endpoint for Production Gantt
+  // Updated PT-based operations endpoint following Jim's corrections
   app.get("/api/pt-operations", async (req, res) => {
     try {
-      console.log("Fetching PT Publish operations for production dashboard...");
+      console.log("Fetching PT operations using Jim's corrections: ptjobresourceblocks and ptjobresourceblockintervals...");
       
-      // PT Publish operations query using correct column names
+      // Jim's Corrected Approach: Use ptjobresourceblocks and ptjobresourceblockintervals for actual scheduled assignments
       const ptOperationsQuery = `
-        SELECT 
-          -- Operation core data from ptjoboperations
-          jo.id as operation_id,
-          jo.external_id as operation_external_id,
-          jo.name as operation_name,
-          jo.description as operation_description,
-          jo.operation_id as base_operation_id,
-          jo.required_finish_qty,
-          jo.cycle_hrs,
-          jo.setup_hours,
-          jo.post_processing_hours,
-          jo.scheduled_start,
-          jo.scheduled_end,
-          jo.commit_start_date,
-          jo.commit_end_date,
-          jo.on_hold,
-          jo.hold_reason,
-          jo.notes,
-          jo.output_name,
-          jo.percent_finished,
-          
-          -- Job information from ptjobs
-          j.id as job_id,
-          j.external_id as job_external_id,
-          j.name as job_name,
-          j.description as job_description,
-          j.priority as job_priority,
-          j.need_date_time as job_due_date,
-          j.scheduled_status as job_status,
-          
-          -- Manufacturing Order information
-          mo.id as mo_id,
-          mo.external_id as mo_external_id,
-          mo.name as mo_name,
-          mo.description as mo_description,
-          
-          -- Activity information from ptjobactivities
-          ja.id as activity_id,
-          ja.external_id as activity_external_id,
-          ja.production_status as activity_status,
-          ja.comments as activity_comments,
-          ja.scheduled_start_date as activity_start_date,
-          ja.scheduled_end_date as activity_end_date,
-          
-          -- Resource information from ptjobresources and ptresources
-          jr.id as job_resource_id,
-          jr.default_resource_id as resource_assignment_id,
-          jr.is_primary as is_primary_resource,
-          r.id as resource_id,
-          r.external_id as resource_external_id,
-          r.name as resource_name,
-          r.description as resource_description,
-          
-          -- Plant information from ptplants
-          p.id as plant_id,
-          p.external_id as plant_external_id,
-          p.name as plant_name,
-          p.description as plant_description,
-          
-          -- Department information for work center mapping
-          d.department_id,
-          d.work_center_id,
-          d.name as department_name
-          
-        FROM ptjoboperations jo
-        LEFT JOIN ptjobs j ON jo.job_id = j.id
-        LEFT JOIN ptmanufacturingorders mo ON jo.manufacturing_order_id = mo.id
-        LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
-        LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
-        LEFT JOIN ptresources r ON jr.default_resource_id = r.id
-        LEFT JOIN ptplants p ON r.plant_id = p.id
-        LEFT JOIN ptdepartments d ON jo.scheduled_primary_work_center_external_id = d.external_id
+        WITH scheduled_operations AS (
+          -- Primary approach: Get actual scheduled operations from ptjobresourceblocks and ptjobresourceblockintervals
+          SELECT 
+            -- Operation core data from ptjoboperations
+            jo.id as operation_id,
+            jo.external_id as operation_external_id,
+            jo.name as operation_name,
+            jo.description as operation_description,
+            jo.operation_id as base_operation_id,
+            jo.required_finish_qty,
+            jo.cycle_hrs,
+            jo.setup_hours,
+            jo.post_processing_hours,
+            
+            -- Job information from ptjobs
+            j.id as job_id,
+            j.external_id as job_external_id,
+            j.name as job_name,
+            j.description as job_description,
+            j.priority as job_priority,
+            j.need_date_time as job_due_date,
+            j.scheduled_status as job_status,
+            
+            -- Manufacturing Order information
+            mo.id as mo_id,
+            mo.external_id as mo_external_id,
+            mo.name as mo_name,
+            mo.description as mo_description,
+            
+            -- Activity information from ptjobactivities
+            ja.id as activity_id,
+            ja.external_id as activity_external_id,
+            ja.production_status as activity_status,
+            ja.comments as activity_comments,
+            
+            -- ACTUAL SCHEDULED RESOURCE ASSIGNMENT from ptjobresourceblocks (Jim's correction)
+            rb.id as resource_block_id,
+            rb.resource_id as actual_resource_id,
+            rb.scheduled_start as actual_scheduled_start,
+            rb.scheduled_end as actual_scheduled_end,
+            rb.duration_hrs as actual_duration_hrs,
+            rb.locked as is_locked,
+            rb.sequence as resource_sequence,
+            
+            -- ACTUAL TIME SEGMENTS from ptjobresourceblockintervals (Jim's correction)
+            rbi.id as interval_id,
+            rbi.setup_start,
+            rbi.setup_end,
+            rbi.run_start,
+            rbi.run_end,
+            rbi.post_processing_start,
+            rbi.post_processing_end,
+            rbi.scheduled_start as interval_start,
+            rbi.scheduled_end as interval_end,
+            
+            -- Resource information from ptresources
+            r.id as resource_id,
+            r.external_id as resource_external_id,
+            r.name as resource_name,
+            r.description as resource_description,
+            r.bottleneck as is_bottleneck,
+            r.active as resource_active,
+            
+            -- Plant information from ptplants
+            p.id as plant_id,
+            p.external_id as plant_external_id,
+            p.name as plant_name,
+            p.description as plant_description,
+            
+            -- Department information for work center mapping
+            d.department_id,
+            d.work_center_id,
+            d.name as department_name,
+            
+            'scheduled' as assignment_type
+            
+          FROM ptjoboperations jo
+          LEFT JOIN ptjobs j ON jo.job_id = j.id
+          LEFT JOIN ptmanufacturingorders mo ON jo.manufacturing_order_id = mo.id
+          LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
+          -- Jim's correction: Use ptjobresourceblocks for actual scheduled assignments
+          INNER JOIN ptjobresourceblocks rb ON rb.operation_id = jo.id
+          -- Jim's correction: Use ptjobresourceblockintervals for time segments
+          LEFT JOIN ptjobresourceblockintervals rbi ON rbi.block_id = rb.block_id
+          LEFT JOIN ptresources r ON rb.resource_id = r.resource_id
+          LEFT JOIN ptplants p ON r.plant_id = p.id
+          LEFT JOIN ptdepartments d ON r.department_id = d.department_id
+        ),
+        unscheduled_operations AS (
+          -- Fallback approach: Get unscheduled operations using resource requirements (ptjobresources)
+          SELECT 
+            -- Operation core data from ptjoboperations
+            jo.id as operation_id,
+            jo.external_id as operation_external_id,
+            jo.name as operation_name,
+            jo.description as operation_description,
+            jo.operation_id as base_operation_id,
+            jo.required_finish_qty,
+            jo.cycle_hrs,
+            jo.setup_hours,
+            jo.post_processing_hours,
+            
+            -- Job information from ptjobs
+            j.id as job_id,
+            j.external_id as job_external_id,
+            j.name as job_name,
+            j.description as job_description,
+            j.priority as job_priority,
+            j.need_date_time as job_due_date,
+            j.scheduled_status as job_status,
+            
+            -- Manufacturing Order information
+            mo.id as mo_id,
+            mo.external_id as mo_external_id,
+            mo.name as mo_name,
+            mo.description as mo_description,
+            
+            -- Activity information from ptjobactivities
+            ja.id as activity_id,
+            ja.external_id as activity_external_id,
+            ja.production_status as activity_status,
+            ja.comments as activity_comments,
+            
+            -- No actual scheduling data for unscheduled operations
+            NULL::integer as resource_block_id,
+            jr.default_resource_id as actual_resource_id,
+            jo.scheduled_start as actual_scheduled_start,
+            jo.scheduled_end as actual_scheduled_end,
+            NULL::numeric as actual_duration_hrs,
+            NULL::boolean as is_locked,
+            NULL::bigint as resource_sequence,
+            
+            -- No time segments for unscheduled operations
+            NULL::integer as interval_id,
+            NULL::text as setup_start,
+            NULL::text as setup_end,
+            NULL::text as run_start,
+            NULL::text as run_end,
+            NULL::text as post_processing_start,
+            NULL::text as post_processing_end,
+            jo.scheduled_start as interval_start,
+            jo.scheduled_end as interval_end,
+            
+            -- Resource information from ptresources (default/preferred resource)
+            r.id as resource_id,
+            r.external_id as resource_external_id,
+            r.name as resource_name,
+            r.description as resource_description,
+            r.bottleneck as is_bottleneck,
+            r.active as resource_active,
+            
+            -- Plant information from ptplants
+            p.id as plant_id,
+            p.external_id as plant_external_id,
+            p.name as plant_name,
+            p.description as plant_description,
+            
+            -- Department information for work center mapping
+            d.department_id,
+            d.work_center_id,
+            d.name as department_name,
+            
+            'unscheduled' as assignment_type
+            
+          FROM ptjoboperations jo
+          LEFT JOIN ptjobs j ON jo.job_id = j.id
+          LEFT JOIN ptmanufacturingorders mo ON jo.manufacturing_order_id = mo.id
+          LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
+          LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
+          LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id
+          LEFT JOIN ptplants p ON r.plant_id = p.id
+          LEFT JOIN ptdepartments d ON r.department_id = d.department_id
+          -- Only include operations that are NOT already scheduled (no ptjobresourceblocks)
+          WHERE NOT EXISTS (
+            SELECT 1 FROM ptjobresourceblocks rb WHERE rb.operation_id = jo.id
+          )
+        )
+        -- Combine both scheduled and unscheduled operations
+        SELECT * FROM scheduled_operations
+        UNION ALL
+        SELECT * FROM unscheduled_operations
         ORDER BY 
-          jo.scheduled_start ASC NULLS LAST,
-          jo.id ASC
+          actual_scheduled_start ASC NULLS LAST,
+          operation_id ASC
       `;
       
       const ptOperations = await storage.db.execute(ptOperationsQuery);
       
-      // Transform PT Publish data to Gantt format
+      // Transform PT data to Gantt format following Jim's corrections
       const ganttOperations = ptOperations.rows.map((row: any, index: number) => {
-        // Calculate timing from PT Publish columns
+        // Calculate timing based on Jim's corrections - use different approaches for scheduled vs unscheduled
         const setupHours = parseFloat(row.setup_hours || '0') || 0;
         const cycleHours = parseFloat(row.cycle_hrs || '0') || 0;
         const postProcessHours = parseFloat(row.post_processing_hours || '0') || 0;
         const totalDuration = (setupHours + cycleHours + postProcessHours) * 60; // Convert to minutes
         
-        // Determine start and end times
+        // Determine start and end times based on assignment type (Jim's corrections)
         let startTime: Date;
         let endTime: Date;
+        let resourceId: number | null = null;
+        let resourceName: string | null = null;
+        let isActuallyScheduled = false;
         
-        if (row.scheduled_start) {
-          startTime = new Date(row.scheduled_start);
-          endTime = row.scheduled_end ? new Date(row.scheduled_end) : new Date(startTime.getTime() + totalDuration * 60000);
-        } else if (row.activity_start_date) {
-          startTime = new Date(row.activity_start_date);
-          endTime = row.activity_end_date ? new Date(row.activity_end_date) : new Date(startTime.getTime() + totalDuration * 60000);
-        } else if (row.commit_start_date) {
-          startTime = new Date(row.commit_start_date);
-          endTime = row.commit_end_date ? new Date(row.commit_end_date) : new Date(startTime.getTime() + totalDuration * 60000);
+        if (row.assignment_type === 'scheduled' && row.actual_scheduled_start) {
+          // Scheduled operations: Use actual scheduled times from ptjobresourceblocks (Jim's correction)
+          startTime = new Date(row.actual_scheduled_start);
+          endTime = row.actual_scheduled_end ? new Date(row.actual_scheduled_end) : 
+                    new Date(startTime.getTime() + (row.actual_duration_hrs || 2) * 60 * 60 * 1000);
+          resourceId = row.actual_resource_id;
+          resourceName = row.resource_name;
+          isActuallyScheduled = true;
+          
+          console.log(`Scheduled operation ${row.operation_id}: ${row.operation_name} on ${resourceName} from ${startTime.toISOString()} to ${endTime.toISOString()}`);
+        } else if (row.assignment_type === 'unscheduled' && row.actual_scheduled_start) {
+          // Unscheduled but with operation-level times: Use ptjoboperations scheduled times
+          startTime = new Date(row.actual_scheduled_start);
+          endTime = row.actual_scheduled_end ? new Date(row.actual_scheduled_end) : 
+                    new Date(startTime.getTime() + totalDuration * 60000);
+          resourceId = row.actual_resource_id; // This is from default_resource_id
+          resourceName = row.resource_name;
+          isActuallyScheduled = false;
+          
+          console.log(`Unscheduled operation ${row.operation_id}: ${row.operation_name} on default resource ${resourceName}`);
         } else {
-          // Default scheduling: start operations at intervals
+          // Fallback: Default scheduling for operations with no times
           const baseDate = new Date();
           baseDate.setHours(8, 0, 0, 0); // Start at 8 AM
           startTime = new Date(baseDate.getTime() + index * 4 * 60 * 60 * 1000); // 4 hours apart
           endTime = new Date(startTime.getTime() + (totalDuration || 120) * 60000); // Default 2 hours if no duration
+          resourceId = row.actual_resource_id;
+          resourceName = row.resource_name || 'Unassigned';
+          isActuallyScheduled = false;
+          
+          console.log(`Default scheduled operation ${row.operation_id}: ${row.operation_name} (fallback timing)`);
         }
         
         return {
@@ -2711,13 +2839,30 @@ Rules:
           plantName: row.plant_name || null,
           plantDescription: row.plant_description || null,
           
-          // Resource Data
-          resourceId: row.resource_id,
+          // Resource Data (Jim's corrections - use actual assigned resource)
+          resourceId: resourceId,
           resourceExternalId: row.resource_external_id,
-          resourceName: row.resource_name || null,
+          resourceName: resourceName,
           resourceDescription: row.resource_description || null,
           resourceType: row.resource_type || null,
           isPrimaryResource: row.is_primary_resource || false,
+          isBottleneck: row.is_bottleneck || false,
+          
+          // Jim's corrections: Resource assignment tracking
+          assignmentType: row.assignment_type, // 'scheduled' or 'unscheduled'
+          isActuallyScheduled: isActuallyScheduled,
+          resourceBlockId: row.resource_block_id,
+          intervalId: row.interval_id,
+          isLocked: row.is_locked || false,
+          resourceSequence: row.resource_sequence,
+          
+          // Jim's corrections: Time segment breakdown from ptjobresourceblockintervals
+          setupStart: row.setup_start,
+          setupEnd: row.setup_end,
+          runStart: row.run_start,
+          runEnd: row.run_end,
+          postProcessingStart: row.post_processing_start,
+          postProcessingEnd: row.post_processing_end,
           
           // Gantt-specific fields
           description: row.operation_description || `${row.operation_name} for ${row.job_name || row.job_external_id}`,
@@ -2726,10 +2871,10 @@ Rules:
           endTime: endTime.toISOString(),
           status: row.activity_status || row.job_status || 'scheduled',
           priority: parseInt(row.job_priority) || 5,
-          assignedResourceId: row.resource_external_id || row.resource_id,
-          assignedResourceName: row.resource_name,
-          workCenterId: row.work_center_id ? Number(row.work_center_id) : null,
-          workCenterName: row.department_name || row.resource_name,
+          assignedResourceId: resourceId,
+          assignedResourceName: resourceName,
+          workCenterId: resourceId, // Use actual resource ID as work center ID
+          workCenterName: row.department_name || resourceName,
           
           // Detailed timing breakdown
           setupTime: setupHours * 60,
