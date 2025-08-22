@@ -56,11 +56,13 @@
 
 ## Current Table Structure
 
-### PT Tables (Current Structure)
+### PT Tables (68 Tables Total)
 Core manufacturing data model using tables without underscores:
 - `ptjobs`, `ptresources`, `ptjoboperations`, `ptjobactivities`
 - `ptjobresources`, `ptjobresourceblocks`, `ptjobresourceblockintervals`
-- `ptplants`, `ptdepartments`, `ptcapabilities`, etc.
+- `ptplants`, `ptdepartments`, `ptcapabilities`, `ptwarehouses`
+- `ptmanufacturingorders`, `ptcustomers`, `ptsalesorders`, `ptinventories`
+- And 60 additional tables for comprehensive manufacturing data management
 
 **Note**: Old `pt_` and `pt_publish_` prefixed tables are deprecated and should not be referenced.
 
