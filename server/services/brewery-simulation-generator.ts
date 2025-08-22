@@ -171,6 +171,20 @@ export async function generateBrewerySimulationData() {
       }
     }
 
+    // Build a resource mapping for operations
+    const resourceMapping: { [plantId: number]: { [resourceType: string]: number[] } } = {};
+    let mappingResourceId = 1;
+    for (const plant of plants.slice(0, 2)) {
+      resourceMapping[plant.id] = {};
+      for (const resource of BREWERY_RESOURCES) {
+        if (!resourceMapping[plant.id][resource.type]) {
+          resourceMapping[plant.id][resource.type] = [];
+        }
+        resourceMapping[plant.id][resource.type].push(mappingResourceId);
+        mappingResourceId++;
+      }
+    }
+
     // 3. Generate manufacturing orders and jobs
     const startDate = new Date();
     startDate.setHours(6, 0, 0, 0); // Start at 6 AM today
@@ -342,14 +356,10 @@ export async function generateBrewerySimulationData() {
               )
             `);
 
-            // Assign resource to this operation
-            const resourceOffset = (plantIndex * BREWERY_RESOURCES.length) + 1;
-            const applicableResources = BREWERY_RESOURCES
-              .map((r, idx) => ({ ...r, id: resourceOffset + idx }))
-              .filter(r => r.type === stage.resourceType);
-            
-            if (applicableResources.length > 0) {
-              const selectedResource = applicableResources[Math.floor(Math.random() * applicableResources.length)];
+            // Assign resource to this operation using the resource mapping
+            const availableResources = resourceMapping[plant.id]?.[stage.resourceType];
+            if (availableResources && availableResources.length > 0) {
+              const selectedResourceId = availableResources[Math.floor(Math.random() * availableResources.length)];
               
               await db.execute(sql`
                 INSERT INTO ptjobresources (
@@ -359,7 +369,7 @@ export async function generateBrewerySimulationData() {
                 VALUES (
                   ${jobResourceId},
                   ${operationId},
-                  ${selectedResource.id},
+                  ${selectedResourceId},
                   true,
                   NOW(),
                   'BREW-SIM-001',
@@ -369,6 +379,8 @@ export async function generateBrewerySimulationData() {
                 )
               `);
               jobResourceId++;
+            } else {
+              console.warn(`⚠️ No suitable resource found for operation ${stage.name} (resourceType: ${stage.resourceType}) in plant ${plant.id}`);
             }
 
             // Update start date for next operation
