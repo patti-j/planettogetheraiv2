@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
+import { ProjectModel } from '@bryntum/schedulerpro';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -248,24 +249,29 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     }
   }
 
-  const effectiveProject = useMemo(() => {
-    // If project prop is provided, use it directly
+  const projectModel = useMemo(() => {
+    // If project prop is provided, create ProjectModel from it
     if (hasProjectProp) {
-      console.log('Using provided project prop');
+      console.log('Creating ProjectModel from provided data');
       console.log('- Resources:', project.resources.length);
       console.log('- Events:', project.events.length);
       console.log('- Assignments:', project.assignments.length);
-      return project;
+      
+      return new ProjectModel({
+        resources: project.resources,
+        events: project.events,
+        assignments: project.assignments
+      });
     }
     
-    // Otherwise, build project from operations/resources
-    console.log('Creating Bryntum project from operations/resources:');
+    // Otherwise, build ProjectModel from operations/resources
+    console.log('Creating ProjectModel from operations/resources:');
     console.log('- Resources:', bryntumResources.length);
     console.log('- Events:', bryntumEvents.length);  
     console.log('- Assignments:', bryntumAssignments.length);
     console.log('- Dependencies:', bryntumDependencies.length);
     
-    // Log some sample data
+    // Log some sample data for debugging
     if (bryntumResources.length > 0) {
       console.log('Sample resource:', bryntumResources[0]);
     }
@@ -279,12 +285,13 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       console.log('Sample assignment:', bryntumAssignments[0]);
     }
     
-    return {
+    // Create ProjectModel instance with proper store configuration
+    return new ProjectModel({
       resources: bryntumResources,
       events: bryntumEvents,
       assignments: bryntumAssignments,
       dependencies: bryntumDependencies
-    };
+    });
   }, [hasProjectProp, project, bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
 
   // Force layout recalculation after mount to fix scroll bar visibility
@@ -314,8 +321,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     <div className="h-full w-full" style={{ minHeight: '600px', height: '700px', overflow: 'hidden' }}>
       <BryntumSchedulerPro
         ref={schedulerRef}
-        // Use project prop if available, otherwise use separate stores
-        project={effectiveProject}
+        // Pass ProjectModel instance - no inner store configs to avoid warning
+        project={projectModel}
         startDate={new Date(2025, 7, 22)} // August 22, 2025 to match our data
         endDate={new Date(2025, 7, 29)}   // One week view
         viewPreset="hourAndDay"
@@ -480,6 +487,19 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             allowCreate: false // Prevent creating new dependencies via UI
           }
         }} */
+        
+        // Verify the stores are correctly populated (from attached document checklist)
+        onReady={({ widget }: any) => {
+          console.log('✅ Scheduler ready with ProjectModel:');
+          console.log('- Resources in store:', widget.resourceStore.count);
+          console.log('- Events in store:', widget.eventStore.count);
+          console.log('- Assignments in store:', widget.assignmentStore.count);
+          
+          // Store the widget instance for later use
+          if (schedulerRef.current) {
+            schedulerRef.current.widget = widget;
+          }
+        }}
         
         // Enhanced event handlers following Bryntum documentation patterns
         onEventDrop={({ eventRecord, newResource, oldResource, valid }: any) => {
