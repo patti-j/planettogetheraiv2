@@ -493,7 +493,7 @@ export default function GanttChart({
   // Generate dynamic time scale based on time unit and operations
   const timeScale = useMemo(() => {
     const periods = [];
-    const today = new Date(2025, 7, 7); // August 7, 2025 - today
+    const today = new Date(2025, 7, 22); // August 22, 2025 - today
     
     // Calculate the date range centered on today/this week
     let minDate = today;
@@ -642,7 +642,7 @@ export default function GanttChart({
     console.log('Scroll to today called');
     // Calculate scroll position for today's date
     // Set today to August 7, 2025 at start of day to match the actual date
-    const today = new Date(2025, 7, 7, 0, 0, 0, 0); // Month is 0-indexed, so 7 = August
+    const today = new Date(2025, 7, 22, 0, 0, 0, 0); // Month is 0-indexed, so 7 = August
     const timeDiff = today.getTime() - timeScale.minDate.getTime();
     const scrollLeft = (timeDiff / timeScale.stepMs) * periodWidth;
     console.log('Today scroll calculation:', {
@@ -1373,7 +1373,7 @@ export default function GanttChart({
               >
                 {timeScale.periods.map((period, index) => {
                   // Check if this period represents today (August 7, 2025)
-                  const today = new Date(2025, 7, 7); // August 7, 2025
+                  const today = new Date(2025, 7, 22); // August 7, 2025
                   const periodDate = new Date(period.date);
                   const isToday = periodDate.toDateString() === today.toDateString();
                   
@@ -2027,7 +2027,7 @@ export default function GanttChart({
                 <div className="flex h-full bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   {timeScale.periods.map((period, index) => {
                     // Check if this period represents today (August 7, 2025)
-                    const today = new Date(2025, 7, 7); // August 7, 2025
+                    const today = new Date(2025, 7, 22); // August 7, 2025
                     const periodDate = new Date(period.date);
                     const isToday = periodDate.toDateString() === today.toDateString();
                     
@@ -2258,7 +2258,7 @@ export default function GanttChart({
             >
               {timeScale.periods.map((period, index) => {
                 // Check if this period represents today (August 7, 2025)
-                const today = new Date(2025, 7, 7); // August 7, 2025
+                const today = new Date(2025, 7, 22); // August 7, 2025
                 const periodDate = new Date(period.date);
                 const isToday = periodDate.toDateString() === today.toDateString();
                 
