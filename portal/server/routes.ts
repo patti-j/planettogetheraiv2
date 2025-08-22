@@ -65,7 +65,10 @@ router.post('/api/portal/register/user', rateLimit(5, 3600000), async (req: Requ
 // Login
 router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res: Response) => {
   try {
+    console.log('=== PORTAL LOGIN ATTEMPT ===');
     const { email, password } = req.body;
+    console.log('Email:', email);
+    console.log('Password length:', password?.length);
 
     // Find user by email
     const users = await storage.getExternalUsers();
@@ -76,10 +79,14 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
     }
     
     // Verify password
+    console.log('Comparing password...');
     const validPassword = await bcrypt.compare(password, user.passwordHash);
+    console.log('Password valid:', validPassword);
     if (!validPassword) {
+      console.log('Password comparison failed');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    console.log('Password verification passed');
 
     // Check if account is locked
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
@@ -131,11 +138,16 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
       },
     };
 
-    console.log('=== PORTAL LOGIN SUCCESS RESPONSE ===');
-    console.log('Token:', token ? 'Present' : 'Missing');
-    console.log('User ID:', user.id);
-    console.log('User Email:', user.email);
-    console.log('Company:', company.name, company.type);
+    console.log('=== SENDING SUCCESS RESPONSE ===');
+    console.log('Token exists:', !!token);
+    console.log('User data:', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName
+    }));
+    console.log('Response status: 200');
+    console.log('Full response:', JSON.stringify(responseData));
     
     return res.status(200).json(responseData);
   } catch (error) {
