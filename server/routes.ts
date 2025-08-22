@@ -7155,6 +7155,7 @@ User Prompt: "${prompt}"`;
       });
       
       res.json({
+        success: true,
         token,
         user: {
           id: user.id,
@@ -7165,6 +7166,11 @@ User Prompt: "${prompt}"`;
           companyId: company.id,
           companyName: company.name,
           companyType: company.type
+        },
+        company: {
+          id: company.id,
+          name: company.name,
+          type: company.type
         }
       });
     } catch (error) {
