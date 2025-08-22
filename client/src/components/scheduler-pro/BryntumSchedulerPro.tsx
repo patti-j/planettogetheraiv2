@@ -49,36 +49,43 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const effectiveOperations = hasProjectProp ? [] : (operations.length > 0 ? operations : (ptOperations || []));
   const effectiveResources = hasProjectProp ? [] : (resources.length > 0 ? resources : (ptResources || []));
 
-  // Transform PT resources to Bryntum format - SHOW ALL RESOURCES (no deduplication)
+  // Transform PT resources to Bryntum format - DEDUPLICATE RESOURCES (one row per unique resource)
   const bryntumResources = useMemo(() => {
     if (!Array.isArray(effectiveResources) || !effectiveResources.length) return [];
     
     console.log('Creating Bryntum resources from PT data:', effectiveResources.length);
     
-    // Create all resources - every resource gets its own row
-    const allResources = effectiveResources.map((resource: any, index: number) => {
+    // Deduplicate resources by ID to ensure one row per resource
+    const resourceMap = new Map();
+    
+    effectiveResources.forEach((resource: any) => {
       const resourceId = resource.id || resource.resource_id;
-      // Create unique display names for duplicate resources
-      const displayName = resource.name ? `${resource.name} (ID: ${resourceId})` : `Resource ${resourceId}`;
       
-      return {
-        id: `r_${resourceId}`,
-        name: displayName,
-        type: resource.type || 'machine',
-        capacity: resource.capacity || 100,
-        department: resource.departmentName || resource.department_name || 'Production',
-        active: resource.active !== false,
-        // Jim's corrections: Track if this is a bottleneck resource
-        isBottleneck: resource.bottleneck || false,
-        // Custom styling based on resource status
-        cls: resource.active ? 'resource-active' : 'resource-inactive'
-      };
+      // Only keep the first occurrence of each resource ID
+      if (!resourceMap.has(resourceId)) {
+        const displayName = resource.name || `Resource ${resourceId}`;
+        
+        resourceMap.set(resourceId, {
+          id: `r_${resourceId}`,
+          name: displayName,
+          type: resource.type || 'machine',
+          capacity: resource.capacity || 100,
+          department: resource.departmentName || resource.department_name || 'Production',
+          active: resource.active !== false,
+          // Jim's corrections: Track if this is a bottleneck resource
+          isBottleneck: resource.bottleneck || false,
+          // Custom styling based on resource status
+          cls: resource.active ? 'resource-active' : 'resource-inactive'
+        });
+      }
     });
     
-    console.log('Bryntum resources created:', allResources.length);
-    console.log('Sample Bryntum resource:', allResources[0]);
+    const deduplicatedResources = Array.from(resourceMap.values());
     
-    return allResources;
+    console.log('Bryntum resources created (deduplicated):', deduplicatedResources.length, 'from', effectiveResources.length, 'original');
+    console.log('Sample Bryntum resource:', deduplicatedResources[0]);
+    
+    return deduplicatedResources;
   }, [effectiveResources]);
 
   // Transform PT operations to Bryntum events format following Jim's corrections
@@ -494,18 +501,6 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           }
         }} */
         
-        // Verify the stores are correctly populated (from attached document checklist)
-        onReady={({ widget }: any) => {
-          console.log('✅ Scheduler ready with ProjectModel:');
-          console.log('- Resources in store:', widget.resourceStore.count);
-          console.log('- Events in store:', widget.eventStore.count);
-          console.log('- Assignments in store:', widget.assignmentStore.count);
-          
-          // Store the widget instance for later use
-          if (schedulerRef.current) {
-            schedulerRef.current.widget = widget;
-          }
-        }}
         
         // Enhanced event handlers following Bryntum documentation patterns
         onEventDrop={({ eventRecord, newResource, oldResource, valid }: any) => {
@@ -598,11 +593,13 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         onPaint={() => {
           console.log('💡 Production Scheduler Pro loaded with Jim\'s corrections');
           if (schedulerRef.current?.widget) {
+            const widget = schedulerRef.current.widget;
+            console.log('✅ Scheduler painted with ProjectModel:');
             console.log('Store counts:', {
-              resources: schedulerRef.current.widget.resourceStore.count,
-              events: schedulerRef.current.widget.eventStore.count,
-              assignments: schedulerRef.current.widget.assignmentStore.count,
-              dependencies: schedulerRef.current.widget.dependencyStore.count
+              resources: widget.resourceStore?.count || 0,
+              events: widget.eventStore?.count || 0,
+              assignments: widget.assignmentStore?.count || 0,
+              dependencies: widget.dependencyStore?.count || 0
             });
           }
           console.log('Assignment types:', {

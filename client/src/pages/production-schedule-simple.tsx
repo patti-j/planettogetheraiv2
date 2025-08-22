@@ -125,7 +125,7 @@ export default function ProductionSchedulePage() {
                     <p className="text-sm mb-3">Error loading dashboards</p>
                     <p className="text-xs">{dashboardsError.message || 'Please try again'}</p>
                   </div>
-                ) : dashboards.length > 0 ? (
+                ) : Array.isArray(dashboards) && dashboards.length > 0 ? (
                   dashboards.map((dashboard: any) => (
                     <Button
                       key={dashboard.id}
