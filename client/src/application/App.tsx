@@ -82,6 +82,7 @@ export default function ApplicationApp() {
 
               {/* Main Dashboard */}
               <Route path="/dashboard" component={Dashboard} />
+              <Route path="/mobile-home" component={Dashboard} />
 
               {/* Analytics & Reports */}
               <Route path="/analytics">
