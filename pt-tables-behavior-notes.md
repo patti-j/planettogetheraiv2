@@ -84,19 +84,23 @@
    - `ptjoboperations.primary_resource_requirement_id` → `ptjobresources.resource_requirement_id` (defines which job resource is the primary, which can determine run rate)
 
 2. **Consistency Checks**:
-   - Actual resources used should exist in ptresources
+   - Resources in ptjobresourceblocks should exist in ptresources
    - Primary resource requirements should have is_primary = true
-   - job resource block segments should all be contained within the job resource block from a start to end duration perspective
+   - Job resource block segments in ptjobresourceblockintervals should all be contained within their parent ptjobresourceblock from a start to end duration perspective
+   - Block intervals should be contiguous and non-overlapping within each resource block
 
 
 3. **Scheduling Validation**:
-   - Operations with blocks should have scheduled times
-   - Resources assigned should be active
+   - Operations with ptjobresourceblocks should have scheduled times
+   - Resources in ptjobresourceblocks should be active
+   - Each ptjobresourceblock should have corresponding ptjobresourceblockintervals
+   - Block intervals should cover setup, run, and post-processing phases as appropriate
  
 ## Gantt Chart Display Logic
 
 - **Row Organization**: Each resource gets its own row
-- **Operation Blocks**: Display on the resource row based on jobresourceblocks and jobresourceblockintervals
-- **Time Position**: Based on scheduled_start and scheduled_end
-- **Color Coding**: Can indicate if using default vs alternative resource
-- **Drag-Drop**: Moving updates both time and potentially resource assignment
+- **Operation Blocks**: Display on the resource row based on `ptjobresourceblocks` data
+- **Block Segments**: Individual segments (setup, run, post-processing) displayed based on `ptjobresourceblockintervals`
+- **Time Position**: Based on scheduled_start and scheduled_end from blocks and intervals
+- **Color Coding**: Can indicate block type (setup/run/cleanup) and if using default vs alternative resource
+- **Drag-Drop**: Moving updates both time and potentially resource assignment in both blocks and intervals tables

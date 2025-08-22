@@ -58,10 +58,11 @@
 
 ### PT Tables (68 Tables Total)
 Core manufacturing data model using tables without underscores:
-- `ptjobs`, `ptresources`, `ptjoboperations`, `ptjobactivities`
-- `ptjobresources`, `ptjobresourceblocks`, `ptjobresourceblockintervals`
-- `ptplants`, `ptdepartments`, `ptcapabilities`, `ptwarehouses`
-- `ptmanufacturingorders`, `ptcustomers`, `ptsalesorders`, `ptinventories`
+- **Core Job Tables**: `ptjobs`, `ptjoboperations`, `ptjobactivities`
+- **Resource Management**: `ptresources`, `ptjobresources`
+- **Scheduling Output (Key Tables)**: `ptjobresourceblocks`, `ptjobresourceblockintervals`
+- **Organizational**: `ptplants`, `ptdepartments`, `ptcapabilities`, `ptwarehouses`
+- **Demand/Supply**: `ptmanufacturingorders`, `ptcustomers`, `ptsalesorders`, `ptinventories`
 - And 60 additional tables for comprehensive manufacturing data management
 
 **Note**: Old `pt_` and `pt_publish_` prefixed tables are deprecated and should not be referenced.
@@ -115,6 +116,22 @@ ptplants (Manufacturing Plants)
 - `bottleneck`: Boolean indicating if this is a bottleneck resource
 - `active`: Boolean indicating if resource is available for scheduling
 - References capacity intervals and recurring capacity intervals to determine available working capacity over time
+
+#### ptjobresourceblocks (Scheduled Resource Assignments)
+**Purpose**: Records which resources are scheduled to perform operations
+- `block_id`: Unique identifier for the resource block
+- `resource_id`: Links to ptresources.resource_id (the actual assigned resource)
+- `job_resource_id`: Links to ptjobresources.resource_requirement_id
+- `scheduled_start`, `scheduled_end`: Time bounds for the entire resource block
+- One block per job resource requirement, showing the actual scheduled assignment
+
+#### ptjobresourceblockintervals (Resource Block Segments)
+**Purpose**: Defines the various contiguous time segments within each resource block
+- `interval_id`: Unique identifier for the interval
+- `block_id`: Links to ptjobresourceblocks.block_id
+- `interval_type`: Type of segment (setup, run, post-processing, cleanup, etc.)
+- `start_time`, `end_time`: Specific timing for this segment
+- Multiple intervals per block, covering all phases of the operation
 
 ### 3. Manufacturing Orders & Jobs Hierarchy
 ```
@@ -177,9 +194,16 @@ ptresources (Manufacturing resources)
    - Resource must be active (`ptresources.active = true`)
    - Resource capabilities must match job operation resource required capabilities (unless using default resource)
 
-2. **Scheduling Output**:
-   - `ptjobresourceblocks`: Defines which resources are used at which time intervals; one for each jobresource
-   - `ptjobresourceblockintervals`: Defines the various contiguous time segments of the block (setup, run, post processing, etc)
+2. **Scheduling Output Structure**:
+   - **`ptjobresourceblocks`**: Primary scheduling output - defines which resources are used at which time intervals; one for each jobresource
+   - **`ptjobresourceblockintervals`**: Detailed breakdown - defines the various contiguous time segments of the block (setup, run, post processing, etc)
+   - **Relationship**: Each block has multiple intervals, intervals must be contiguous and non-overlapping
+
+3. **Block and Interval Rules**:
+   - One resource block per job resource requirement
+   - Block start/end times encompass all interval times
+   - Intervals provide granular detail for different operation phases
+   - Each interval specifies its type (setup, run, cleanup, etc.)
 
 ---
 
@@ -190,13 +214,16 @@ ptresources (Manufacturing resources)
 - `ptjoboperations.primary_resource_requirement_id` → `ptjobresources.resource_requirement_id` (defines which job resource is the primary, which can determine run rate)
 
 ### Consistency Checks:
-- Actual resources used should exist in ptresources
+- Resources in ptjobresourceblocks should exist in ptresources
 - Primary resource requirements should have is_primary = true
-- Job resource block segments should all be contained within the job resource block from a start to end duration perspective
+- Job resource block segments in ptjobresourceblockintervals should all be contained within their parent ptjobresourceblock from a start to end duration perspective
+- Block intervals should be contiguous and non-overlapping within each resource block
 
 ### Scheduling Validation:
-- Operations with blocks should have scheduled times
-- Resources assigned should be active
+- Operations with ptjobresourceblocks should have scheduled times
+- Resources in ptjobresourceblocks should be active
+- Each ptjobresourceblock should have corresponding ptjobresourceblockintervals
+- Block intervals should cover setup, run, and post-processing phases as appropriate
 
 ---
 
@@ -283,10 +310,11 @@ LEFT JOIN ptresources r ON jr.default_resource_id = r.id
 ## Gantt Chart Display Logic
 
 - **Row Organization**: Each resource gets its own row
-- **Operation Blocks**: Display on the resource row based on jobresourceblocks and jobresourceblockintervals
-- **Time Position**: Based on scheduled_start and scheduled_end
-- **Color Coding**: Can indicate if using default vs alternative resource
-- **Drag-Drop**: Moving updates both time and potentially resource assignment
+- **Operation Blocks**: Display on the resource row based on `ptjobresourceblocks` data
+- **Block Segments**: Individual segments (setup, run, post-processing) displayed based on `ptjobresourceblockintervals`
+- **Time Position**: Based on scheduled_start and scheduled_end from blocks and intervals
+- **Color Coding**: Can indicate block type (setup/run/cleanup) and if using default vs alternative resource
+- **Drag-Drop**: Moving updates both time and potentially resource assignment in both blocks and intervals tables
 
 ---
 
