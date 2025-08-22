@@ -266,8 +266,18 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     );
   }
 
+  // Force layout recalculation after mount to fix scroll bar visibility
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (schedulerRef.current?.widget) {
+        schedulerRef.current.widget.refresh();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [bryntumResources, bryntumEvents]);
+
   return (
-    <div className="h-full w-full" style={{ minHeight: '600px' }}>
+    <div className="h-full w-full overflow-auto" style={{ minHeight: '600px', maxHeight: 'calc(100vh - 200px)' }}>
       <BryntumSchedulerPro
         ref={schedulerRef}
         // Use separate store configs instead of inline project to avoid the warning
@@ -280,7 +290,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         viewPreset="hourAndDay"
         rowHeight={60}
         barMargin={8}
-        height={600}
+        height="100%"
         autoAdjustTimeAxis={false}
         
         // Enable scrolling for navigation

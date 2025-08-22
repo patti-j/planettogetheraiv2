@@ -71,8 +71,8 @@ export default function BryntumSchedulerProDirect() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-hidden">
-        <Card className="h-full">
+      <div className="flex-1 p-6">
+        <Card className="h-full overflow-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
