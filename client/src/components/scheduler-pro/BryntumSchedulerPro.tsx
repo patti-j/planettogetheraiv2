@@ -130,31 +130,30 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
       return false; // Default to not compatible if no match
     };
     
-    // Only create assignments for ACTUALLY SCHEDULED operations with valid resource compatibility
+    // Create assignments for operations with compatible resource assignments
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Only include operations that are actually scheduled (not default assignments)
-        const isScheduled = op.assignmentType === 'scheduled' && op.isActuallyScheduled;
-        
-        if (!isScheduled) return false;
-        
-        // Check resource compatibility
-        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId;
+        // Check if operation has any resource assignment
+        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
+                          op.scheduledResourceId || op.defaultResourceId;
         if (!resourceId) return false;
         
+        // Find the resource
         const resource = effectiveResources.find((r: any) => 
           (r.id || r.resource_id) === resourceId
         );
         
         if (!resource) return false;
         
+        // Check resource compatibility to prevent nonsensical assignments
         const compatible = isCompatible(op.operationName, resource.name);
         
         if (!compatible) {
-          console.warn(`Incompatible assignment: ${op.operationName} -> ${resource.name}`);
+          console.warn(`🚫 Incompatible assignment blocked: ${op.operationName} -> ${resource.name}`);
           return false;
         }
         
+        console.log(`✅ Valid assignment: ${op.operationName} -> ${resource.name}`);
         return true;
       })
       .map((op: any, index: number) => {
@@ -283,6 +282,28 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
         barMargin={8}
         height={600}
         autoAdjustTimeAxis={false}
+        
+        // Enable scrollbars for navigation
+        scrollable={{
+          x: true,
+          y: true
+        }}
+        
+        // Configure subgrids for proper scrolling
+        subGridConfigs={{
+          locked: {
+            width: 320,
+            scrollable: {
+              y: true
+            }
+          },
+          normal: {
+            scrollable: {
+              x: true,
+              y: true
+            }
+          }
+        }}
         
         columns={[
           { 
