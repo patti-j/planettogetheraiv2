@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ProjectModel } from '@bryntum/schedulerpro';
 
 const fetchJSON = async (url: string) => {
   const r = await fetch(url);
@@ -111,7 +112,7 @@ export default function BryntumSchedulerProDirect() {
       }));
   }, [operations]);
 
-  const project = React.useMemo(() => ({
+  const project = React.useMemo(() => new ProjectModel({
     resources,   // from your resources query
     events,      // derived above
     assignments  // derived above

@@ -42,8 +42,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     enabled: resources.length === 0
   });
 
-  // If project prop is provided, use it directly
-  const hasProjectProp = project && project.resources && project.events && project.assignments;
+  // Check if project prop is a ProjectModel instance
+  const hasProjectProp = project && (project instanceof ProjectModel || (project.resources && project.events && project.assignments));
   
   // Use provided data or fetched data
   const effectiveOperations = hasProjectProp ? [] : (operations.length > 0 ? operations : (ptOperations || []));
@@ -250,17 +250,23 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   }
 
   const projectModel = useMemo(() => {
-    // If project prop is provided, create ProjectModel from it
-    if (hasProjectProp) {
+    // If project prop is already a ProjectModel instance, use it directly
+    if (project instanceof ProjectModel) {
+      console.log('Using provided ProjectModel instance');
+      return project;
+    }
+    
+    // If project prop has data arrays, create ProjectModel from it
+    if (hasProjectProp && project) {
       console.log('Creating ProjectModel from provided data');
-      console.log('- Resources:', project.resources.length);
-      console.log('- Events:', project.events.length);
-      console.log('- Assignments:', project.assignments.length);
+      console.log('- Resources:', project.resources?.length || 0);
+      console.log('- Events:', project.events?.length || 0);
+      console.log('- Assignments:', project.assignments?.length || 0);
       
       return new ProjectModel({
-        resources: project.resources,
-        events: project.events,
-        assignments: project.assignments
+        resources: project.resources || [],
+        events: project.events || [],
+        assignments: project.assignments || []
       });
     }
     
