@@ -184,33 +184,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     return assignments;
   }, [effectiveOperations, effectiveResources]);
 
-  // Create dependencies for sequential operations
+  // Dependencies removed to clean up visual clutter
   const bryntumDependencies = useMemo(() => {
-    if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
-    
-    const dependencies: any[] = [];
-    const operationsByJob = effectiveOperations.reduce((acc: any, op: any) => {
-      const jobId = op.jobId;
-      if (!acc[jobId]) acc[jobId] = [];
-      acc[jobId].push(op);
-      return acc;
-    }, {});
-
-    // Create finish-to-start dependencies between operations in the same job
-    Object.values(operationsByJob).forEach((jobOps: any) => {
-      const sortedOps = jobOps.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      for (let i = 0; i < sortedOps.length - 1; i++) {
-        dependencies.push({
-          id: `d_${sortedOps[i].id}_${sortedOps[i + 1].id}`,
-          from: `e_${sortedOps[i].id}`,
-          to: `e_${sortedOps[i + 1].id}`,
-          type: 2 // Finish-to-Start
-        });
-      }
-    });
-
-    return dependencies;
-  }, [effectiveOperations]);
+    // Return empty array to remove all dependency lines
+    return [];
+  }, []);
 
   // Mutation for updating operations after drag-and-drop
   const updateOperationMutation = useMutation({
@@ -309,6 +287,16 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         scrollable={{
           x: true,
           y: true
+        }}
+        
+        // Enhanced scroll configuration
+        subGridConfigs={{
+          locked: {
+            scrollable: false
+          },
+          normal: {
+            scrollable: true
+          }
         }}
         
         columns={[
