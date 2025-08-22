@@ -10,7 +10,7 @@ const SESSION_TIMEOUT = parseInt(process.env.PORTAL_SESSION_TIMEOUT || '3600');
 export interface PortalRequest extends Request {
   user?: ExternalUser;
   company?: ExternalCompany;
-  session?: PortalSession;
+  portalSession?: PortalSession;
 }
 
 // Create JWT token

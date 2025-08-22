@@ -1,8 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { portalAuth, requireCompanyType, requireRole, rateLimit, createToken, hashPassword, comparePassword, PortalRequest } from './auth';
-import { storage } from '../../server/storage';
+import { DatabaseStorage } from '../../server/storage';
 import { insertExternalUserSchema, insertExternalCompanySchema } from '../shared/schema';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+
+const router = Router();
+const storage = new DatabaseStorage();
 
 // ============= Public Routes (No Auth Required) =============
 
@@ -63,9 +67,17 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
   try {
     const { email, password } = req.body;
 
-    // Authenticate user (this method handles password verification and last login update)
-    const user = await storage.authenticateExternalUser(email, password);
-    if (!user) {
+    // Find user by email
+    const users = await storage.getExternalUsers();
+    const user = users.find(u => u.email === email);
+    
+    if (!user || !user.passwordHash) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
