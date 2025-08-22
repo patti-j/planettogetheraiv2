@@ -2604,7 +2604,8 @@ export class DatabaseStorage implements IStorage {
           jo.notes,
           jo.publish_date,
           jo.scheduled_primary_work_center_external_id,
-          d.department_id as work_center_id,
+          jo.scheduled_resource_id,
+          COALESCE(jo.scheduled_resource_id, d.department_id::integer) as work_center_id,
           d.name as department_name
         FROM "ptjoboperations" jo
         LEFT JOIN "ptdepartments" d 
@@ -2629,7 +2630,7 @@ export class DatabaseStorage implements IStorage {
         productionOrderId: Number(op.job_id), // Map job_id to production_order_id
         order: op.id, // Use id as order since sequence_number doesn't exist
         status: 'planned' as const, // Default status
-        assignedResourceId: null,
+        assignedResourceId: op.scheduled_resource_id ? Number(op.scheduled_resource_id) : null, // Use scheduled_resource_id if available
         startTime: op.scheduled_start ? new Date(op.scheduled_start) : null,
         endTime: op.scheduled_end ? new Date(op.scheduled_end) : null,
         routingId: null,
