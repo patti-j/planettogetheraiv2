@@ -18,8 +18,7 @@
 - **Result**: Cleaner codebase, reduced bundle size
 
 ### 3. File Organization
-- **Archived SQL Files**: Moved 39 migration scripts to old_migration_scripts/
-- **Database Cleanup**: Removed 21 orphaned sequences
+- **Database Cleanup**: Removed orphaned sequences and legacy references
 - **Result**: Better project organization, reduced clutter
 
 ### 4. Bug Fixes
@@ -42,8 +41,7 @@
 ## 📊 Current State
 
 ### Database
-- 62 active PT tables (optimized)
-- 47 archived tables (preserved)
+- 68 active PT tables (optimized, using simplified naming like ptjobs, ptresources)
 - All indexes in place
 - Statistics updated
 
