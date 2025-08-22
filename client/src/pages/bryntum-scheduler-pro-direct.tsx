@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
-import UnscheduledOperationsGrid from '@/components/scheduler-pro/UnscheduledOperationsGrid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function BryntumSchedulerProDirect() {
@@ -81,23 +80,14 @@ export default function BryntumSchedulerProDirect() {
             </CardTitle>
           </CardHeader>
           <CardContent className="h-full">
-            <div className="flex h-full gap-4">
-              {/* Left Panel - Unscheduled Operations */}
-              <div className="w-80 flex-shrink-0">
-                <UnscheduledOperationsGrid
-                  schedulerRef={schedulerRef}
-                />
-              </div>
-
-              {/* Right Panel - Bryntum Scheduler Pro */}
-              <div className="flex-1 min-w-0">
-                <BryntumSchedulerProComponent
-                  ref={schedulerRef}
-                  operations={operations}
-                  resources={resources}
-                  onOperationUpdate={handleOperationUpdate}
-                />
-              </div>
+            {/* Full Width Bryntum Scheduler Pro */}
+            <div className="h-full">
+              <BryntumSchedulerProComponent
+                ref={schedulerRef}
+                operations={operations}
+                resources={resources}
+                onOperationUpdate={handleOperationUpdate}
+              />
             </div>
           </CardContent>
         </Card>

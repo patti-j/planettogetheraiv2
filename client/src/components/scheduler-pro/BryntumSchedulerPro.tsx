@@ -126,13 +126,19 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       return true;
     };
     
-    // TEMPORARILY: Show all operations with resources to get drag-drop working first
+    // Show all operations with valid resource assignments
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Just check if operation has any resource assignment
+        // Check if operation has any resource assignment
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
-        return resourceId;
+        if (!resourceId) return false;
+        
+        // Make sure the resource exists
+        const resource = effectiveResources.find((r: any) => 
+          (r.id || r.resource_id) === resourceId
+        );
+        return !!resource;
       })
       .map((op: any, index: number) => {
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
