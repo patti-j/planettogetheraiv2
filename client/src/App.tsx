@@ -186,7 +186,13 @@ export default function App() {
                           <Route path="/portal/purchase-orders" component={PortalPurchaseOrders} />
                           <Route path="/portal/deliveries" component={PortalDeliveries} />
                           <Route path="/portal/inventory" component={PortalInventory} />
-                          <Route path="/portal" component={PortalLogin} />
+                          <Route path="/portal">
+                            {() => {
+                              // Redirect /portal to /portal/login
+                              window.location.href = '/portal/login';
+                              return null;
+                            }}
+                          </Route>
                         </Switch>
                       </div>
                     ) : shouldShowWebsite ? (
