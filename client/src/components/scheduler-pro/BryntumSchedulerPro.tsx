@@ -39,31 +39,36 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const effectiveOperations = operations.length > 0 ? operations : (ptOperations || []);
   const effectiveResources = resources.length > 0 ? resources : (ptResources || []);
 
-  // Transform PT resources to Bryntum format - ONE ROW PER UNIQUE RESOURCE
+  // Transform PT resources to Bryntum format - SHOW ALL RESOURCES (no deduplication)
   const bryntumResources = useMemo(() => {
     if (!Array.isArray(effectiveResources) || !effectiveResources.length) return [];
     
-    // Create unique resources to ensure one row per resource
-    const uniqueResources = effectiveResources.reduce((acc: any[], resource: any) => {
-      const resourceId = resource.id || resource.resource_id;
-      if (!acc.find(r => r.id === `r_${resourceId}`)) {
-        acc.push({
-          id: `r_${resourceId}`,
-          name: resource.name,
-          type: resource.type || 'Resource',
-          capacity: resource.capacity || 100,
-          department: resource.departmentName,
-          active: resource.active !== false,
-          // Jim's corrections: Track if this is a bottleneck resource
-          isBottleneck: resource.bottleneck || false,
-          // Custom styling based on resource status
-          cls: resource.active ? 'resource-active' : 'resource-inactive'
-        });
-      }
-      return acc;
-    }, []);
+    console.log('Creating Bryntum resources from PT data:', effectiveResources.length);
     
-    return uniqueResources;
+    // Create all resources - every resource gets its own row
+    const allResources = effectiveResources.map((resource: any, index: number) => {
+      const resourceId = resource.id || resource.resource_id;
+      // Create unique display names for duplicate resources
+      const displayName = resource.name ? `${resource.name} (ID: ${resourceId})` : `Resource ${resourceId}`;
+      
+      return {
+        id: `r_${resourceId}`,
+        name: displayName,
+        type: resource.type || 'machine',
+        capacity: resource.capacity || 100,
+        department: resource.departmentName || resource.department_name || 'Production',
+        active: resource.active !== false,
+        // Jim's corrections: Track if this is a bottleneck resource
+        isBottleneck: resource.bottleneck || false,
+        // Custom styling based on resource status
+        cls: resource.active ? 'resource-active' : 'resource-inactive'
+      };
+    });
+    
+    console.log('Bryntum resources created:', allResources.length);
+    console.log('Sample Bryntum resource:', allResources[0]);
+    
+    return allResources;
   }, [effectiveResources]);
 
   // Transform PT operations to Bryntum events format following Jim's corrections
