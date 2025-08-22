@@ -347,7 +347,7 @@ export default function SystemIntegrationsPage() {
                           <SelectValue placeholder="Select a system type or leave blank for AI to determine" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Let AI determine automatically</SelectItem>
+                          <SelectItem value="auto">Let AI determine automatically</SelectItem>
                           {POPULAR_SYSTEMS.map(system => (
                             <SelectItem key={system.name} value={system.name}>
                               {system.name} - {system.description}
