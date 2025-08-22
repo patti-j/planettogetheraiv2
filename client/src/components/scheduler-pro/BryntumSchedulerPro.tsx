@@ -413,10 +413,10 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           eventTooltip: {
             template: ({ eventRecord }: any) => `
               <div class="operation-tooltip">
-                <h4>${eventRecord.name}</h4>
-                <p><strong>Type:</strong> ${eventRecord.assignmentType || 'unscheduled'}</p>
-                <p><strong>Status:</strong> ${eventRecord.status || 'planned'}</p>
-                <p><strong>Priority:</strong> ${eventRecord.priority || 'Medium'}</p>
+                <h4>${eventRecord?.name || 'Unknown Operation'}</h4>
+                <p><strong>Type:</strong> ${eventRecord?.assignmentType || 'unscheduled'}</p>
+                <p><strong>Status:</strong> ${eventRecord?.status || 'planned'}</p>
+                <p><strong>Priority:</strong> ${eventRecord?.priority || 'Medium'}</p>
                 ${eventRecord.setupStart ? `<p><strong>Setup:</strong> ${eventRecord.setupStart} - ${eventRecord.setupEnd}</p>` : ''}
                 ${eventRecord.runStart ? `<p><strong>Run:</strong> ${eventRecord.runStart} - ${eventRecord.runEnd}</p>` : ''}
                 ${eventRecord.isActuallyScheduled ? '<p><span style="color: green;">✓ Actually Scheduled</span></p>' : '<p><span style="color: orange;">⚠ Unscheduled</span></p>'}
@@ -441,10 +441,10 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           }
           
           console.log('Operation moved:', {
-            operation: eventRecord.name,
+            operation: eventRecord?.name || 'Unknown',
             from: oldResource?.name,
             to: newResource?.name,
-            newStart: eventRecord.startDate,
+            newStart: eventRecord?.startDate,
             newEnd: eventRecord.endDate,
             assignmentType: eventRecord.assignmentType
           });
@@ -467,7 +467,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           // Show optimistic update feedback
           toast({
             title: "Operation Moved",
-            description: `${eventRecord.name} moved to ${newResource.name}`,
+            description: `${eventRecord?.name || 'Operation'} moved to ${newResource?.name || 'resource'}`,
           });
           
           // Call the mutation or callback
@@ -479,7 +479,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onEventDragStart={({ eventRecord }: any) => {
-          console.log('Drag started for operation:', eventRecord.name);
+          console.log('Drag started for operation:', eventRecord?.name || 'Unknown');
           
           // Add visual feedback class
           if (schedulerRef.current) {
@@ -488,7 +488,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onEventDragEnd={({ eventRecord }: any) => {
-          console.log('Drag ended for operation:', eventRecord.name);
+          console.log('Drag ended for operation:', eventRecord?.name || 'Unknown');
           
           // Remove visual feedback class
           if (schedulerRef.current) {
@@ -498,10 +498,10 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         
         onEventResizeEnd={({ eventRecord }: any) => {
           console.log('Operation resized:', {
-            operation: eventRecord.name,
-            newStart: eventRecord.startDate,
-            newEnd: eventRecord.endDate,
-            newDuration: eventRecord.endDate - eventRecord.startDate
+            operation: eventRecord?.name || 'Unknown',
+            newStart: eventRecord?.startDate,
+            newEnd: eventRecord?.endDate,
+            newDuration: (eventRecord?.endDate && eventRecord?.startDate) ? eventRecord.endDate - eventRecord.startDate : 0
           });
           
           const operationId = parseInt(eventRecord.id.replace('e_', ''));
