@@ -29,9 +29,9 @@ export function useOperationDrop(
       startTime?: string;
       endTime?: string;
     }) => {
-      const updateData: any = { assignedResourceId: resourceId };
-      if (startTime) updateData.startTime = startTime;
-      if (endTime) updateData.endTime = endTime;
+      const updateData: any = { resourceId: resourceId };
+      if (startTime) updateData.startDate = startTime;
+      if (endTime) updateData.endDate = endTime;
       
       const response = await apiRequest("PUT", `/api/pt-operations/${operationId}`, updateData);
       const result = await response.json();
@@ -126,6 +126,13 @@ export function useOperationDrop(
         }
       }
       
+      // If we couldn't calculate times from drop position, use the operation's existing times or current time as fallback
+      if (!startTime || !endTime) {
+        startTime = item.operation.startTime || new Date().toISOString();
+        const duration = item.operation.duration || 8; // Default 8 hours
+        endTime = item.operation.endTime || new Date(new Date(startTime).getTime() + duration * 60 * 60 * 1000).toISOString();
+      }
+      
       updateOperationMutation.mutate({
         operationId: item.operation.id,
         resourceId: resource.id,
@@ -159,9 +166,9 @@ export function useTimelineDrop(
       startTime?: string;
       endTime?: string;
     }) => {
-      const updateData: any = { assignedResourceId: resourceId };
-      if (startTime) updateData.startTime = startTime;
-      if (endTime) updateData.endTime = endTime;
+      const updateData: any = { resourceId: resourceId };
+      if (startTime) updateData.startDate = startTime;
+      if (endTime) updateData.endDate = endTime;
       
       const response = await apiRequest("PUT", `/api/pt-operations/${operationId}`, updateData);
       const result = await response.json();
@@ -254,6 +261,13 @@ export function useTimelineDrop(
             endTime = endDate.toISOString();
           }
         }
+      }
+      
+      // If we couldn't calculate times from drop position, use the operation's existing times or current time as fallback
+      if (!startTime || !endTime) {
+        startTime = item.operation.startTime || new Date().toISOString();
+        const duration = item.operation.duration || 8; // Default 8 hours
+        endTime = item.operation.endTime || new Date(new Date(startTime).getTime() + duration * 60 * 60 * 1000).toISOString();
       }
       
       updateOperationMutation.mutate({
