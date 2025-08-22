@@ -19,6 +19,7 @@ import PortalDashboard from "@/pages/portal-dashboard";
 import PortalPurchaseOrders from "@/pages/portal-purchase-orders";
 import PortalDeliveries from "@/pages/portal-deliveries";
 import PortalInventory from "@/pages/portal-inventory";
+import IntegrationsPage from "@/pages/integrations";
 
 // Check authentication status
 function useAuthStatus() {

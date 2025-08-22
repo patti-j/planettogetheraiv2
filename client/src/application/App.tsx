@@ -35,6 +35,7 @@ import OptimizationStudio from "@/pages/optimization-studio";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
+import IntegrationsPage from "@/pages/integrations";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";
@@ -197,6 +198,11 @@ export default function ApplicationApp() {
               <Route path="/settings">
                 <ProtectedRoute feature="settings" action="view">
                   <Settings />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/integrations">
+                <ProtectedRoute feature="integrations" action="view">
+                  <IntegrationsPage />
                 </ProtectedRoute>
               </Route>
 

@@ -123,10 +123,15 @@ import {
   // Labor Planning
   employeeSkills, shiftAssignments, laborCapacityRequirements,
   employeeAvailability, employeePreferences, employeeMachineCertifications,
+  
+  // Integration Management
+  integrations, integrationConnections, integrationSyncJobs, integrationFieldMappings, integrationLogs,
   shiftCapacityGaps,
   type EmployeeSkill, type ShiftAssignment, type LaborCapacityRequirement,
   type EmployeeAvailability, type EmployeePreference, type EmployeeMachineCertification,
   type ShiftCapacityGap,
+  type Integration, type IntegrationConnection, type IntegrationSyncJob, type IntegrationFieldMapping, type IntegrationLog,
+  type InsertIntegration, type InsertIntegrationConnection, type InsertIntegrationSyncJob, type InsertIntegrationFieldMapping, type InsertIntegrationLog,
   type InsertEmployeeSkill, type InsertShiftAssignment, type InsertLaborCapacityRequirement,
   type InsertEmployeeAvailability, type InsertEmployeePreference, type InsertEmployeeMachineCertification,
   type InsertShiftCapacityGap,
@@ -1127,6 +1132,38 @@ export interface IStorage {
   getDeliveriesByCompany(companyId: string): Promise<any[]>;
   getInventoryByCompany(companyId: string): Promise<any[]>;
   checkPortalPermission(userId: string, resourceType: string, action: string): Promise<boolean>;
+  
+  // Integration Management
+  getIntegrations(category?: string, status?: string): Promise<Integration[]>;
+  getIntegration(id: number): Promise<Integration | undefined>;
+  createIntegration(integration: InsertIntegration): Promise<Integration>;
+  updateIntegration(id: number, updates: Partial<InsertIntegration>): Promise<Integration | undefined>;
+  deleteIntegration(id: number): Promise<boolean>;
+  
+  // Integration Connections
+  getIntegrationConnections(plantId?: number, integrationId?: number): Promise<IntegrationConnection[]>;
+  getIntegrationConnection(id: number): Promise<IntegrationConnection | undefined>;
+  createIntegrationConnection(connection: InsertIntegrationConnection): Promise<IntegrationConnection>;
+  updateIntegrationConnection(id: number, updates: Partial<InsertIntegrationConnection>): Promise<IntegrationConnection | undefined>;
+  deleteIntegrationConnection(id: number): Promise<boolean>;
+  testIntegrationConnection(id: number): Promise<{ success: boolean; message?: string }>;
+  
+  // Integration Sync Jobs
+  getIntegrationSyncJobs(connectionId?: number, status?: string): Promise<IntegrationSyncJob[]>;
+  getIntegrationSyncJob(id: number): Promise<IntegrationSyncJob | undefined>;
+  createIntegrationSyncJob(job: InsertIntegrationSyncJob): Promise<IntegrationSyncJob>;
+  updateIntegrationSyncJob(id: number, updates: Partial<InsertIntegrationSyncJob>): Promise<IntegrationSyncJob | undefined>;
+  runIntegrationSync(connectionId: number, entityType?: string): Promise<IntegrationSyncJob>;
+  
+  // Integration Field Mappings
+  getIntegrationFieldMappings(connectionId: number, entityType?: string): Promise<IntegrationFieldMapping[]>;
+  createIntegrationFieldMapping(mapping: InsertIntegrationFieldMapping): Promise<IntegrationFieldMapping>;
+  updateIntegrationFieldMapping(id: number, updates: Partial<InsertIntegrationFieldMapping>): Promise<IntegrationFieldMapping | undefined>;
+  deleteIntegrationFieldMapping(id: number): Promise<boolean>;
+  
+  // Integration Logs
+  getIntegrationLogs(connectionId?: number, syncJobId?: number, logLevel?: string): Promise<IntegrationLog[]>;
+  createIntegrationLog(log: InsertIntegrationLog): Promise<IntegrationLog>;
   
   // AI Onboarding Progress
   getAiOnboardingProgress(userId?: string, companyId?: string): Promise<AiOnboardingProgress[]>;

@@ -12347,5 +12347,252 @@ export const laborOptimizations = laborPlanningOptimizations;
 export type LaborOptimization = LaborPlanningOptimization;
 export type InsertLaborOptimization = InsertLaborPlanningOptimization;
 
+// Integration Management System Tables
+
+// Integration configurations - Define available integrations
+export const integrations = pgTable('integrations', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  displayName: varchar('display_name', { length: 100 }).notNull(),
+  category: varchar('category', { length: 50 }).notNull(), // erp, crm, warehouse, transport, bi, communication, cloud, accounting, iot, quality
+  provider: varchar('provider', { length: 100 }).notNull(), // salesforce, sap, oracle, slack, teams, aws, google, etc.
+  icon: text('icon'), // Base64 or URL to icon
+  description: text('description'),
+  authType: varchar('auth_type', { length: 50 }).notNull(), // oauth2, api_key, basic, custom
+  authConfig: jsonb('auth_config').$type<{
+    oauth?: {
+      authUrl?: string;
+      tokenUrl?: string;
+      scopes?: string[];
+      clientId?: string;
+      redirectUri?: string;
+    };
+    apiKey?: {
+      headerName?: string;
+      queryParam?: string;
+      prefix?: string;
+    };
+    basic?: {
+      usernameField?: string;
+      passwordField?: string;
+    };
+  }>().notNull(),
+  baseUrl: text('base_url'),
+  endpoints: jsonb('endpoints').$type<Record<string, {
+    method: string;
+    path: string;
+    description?: string;
+    params?: Record<string, any>;
+  }>>().default({}),
+  capabilities: jsonb('capabilities').$type<string[]>().default([]), // ['read', 'write', 'webhook', 'realtime', 'bulk']
+  webhookSupport: boolean('webhook_support').default(false),
+  rateLimit: jsonb('rate_limit').$type<{
+    requests?: number;
+    period?: string;
+    concurrent?: number;
+  }>(),
+  defaultSyncInterval: integer('default_sync_interval').default(3600), // seconds
+  customFields: jsonb('custom_fields').$type<Record<string, any>>().default({}),
+  status: varchar('status', { length: 20 }).notNull().default('active'), // active, inactive, deprecated
+  version: varchar('version', { length: 20 }),
+  documentation: text('documentation'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  categoryIdx: index('integrations_category_idx').on(table.category),
+  providerIdx: index('integrations_provider_idx').on(table.provider),
+  statusIdx: index('integrations_status_idx').on(table.status)
+}));
+
+// Integration connections - Store actual connections per plant/company
+export const integrationConnections = pgTable('integration_connections', {
+  id: serial('id').primaryKey(),
+  integrationId: integer('integration_id').notNull().references(() => integrations.id),
+  plantId: integer('plant_id').references(() => plants.id),
+  companyId: varchar('company_id', { length: 100 }), // For external companies if needed
+  connectionName: varchar('connection_name', { length: 100 }).notNull(),
+  environment: varchar('environment', { length: 20 }).notNull().default('production'), // production, staging, development
+  credentials: jsonb('credentials').$type<{
+    accessToken?: string;
+    refreshToken?: string;
+    apiKey?: string;
+    username?: string;
+    password?: string;
+    clientSecret?: string;
+    expiresAt?: string;
+    customFields?: Record<string, any>;
+  }>().notNull(), // Encrypted in production
+  connectionUrl: text('connection_url'),
+  webhookUrl: text('webhook_url'),
+  webhookSecret: text('webhook_secret'),
+  status: varchar('status', { length: 20 }).notNull().default('active'), // active, inactive, error, expired
+  lastConnectionTest: timestamp('last_connection_test'),
+  lastConnectionStatus: boolean('last_connection_status'),
+  lastErrorMessage: text('last_error_message'),
+  syncEnabled: boolean('sync_enabled').default(true),
+  syncInterval: integer('sync_interval'), // seconds, overrides default
+  lastSyncAt: timestamp('last_sync_at'),
+  nextSyncAt: timestamp('next_sync_at'),
+  metadata: jsonb('metadata').$type<Record<string, any>>().default({}),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  integrationIdx: index('integration_connections_integration_idx').on(table.integrationId),
+  plantIdx: index('integration_connections_plant_idx').on(table.plantId),
+  statusIdx: index('integration_connections_status_idx').on(table.status),
+  uniqueConnection: unique().on(table.integrationId, table.plantId, table.connectionName)
+}));
+
+// Integration sync jobs - Track data synchronization jobs
+export const integrationSyncJobs = pgTable('integration_sync_jobs', {
+  id: serial('id').primaryKey(),
+  connectionId: integer('connection_id').notNull().references(() => integrationConnections.id),
+  jobType: varchar('job_type', { length: 50 }).notNull(), // full_sync, incremental, webhook, manual, scheduled
+  direction: varchar('direction', { length: 20 }).notNull(), // inbound, outbound, bidirectional
+  entityType: varchar('entity_type', { length: 100 }), // orders, inventory, customers, products, etc.
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // pending, running, completed, failed, cancelled
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  recordsProcessed: integer('records_processed').default(0),
+  recordsCreated: integer('records_created').default(0),
+  recordsUpdated: integer('records_updated').default(0),
+  recordsFailed: integer('records_failed').default(0),
+  errorMessages: jsonb('error_messages').$type<string[]>().default([]),
+  syncConfig: jsonb('sync_config').$type<{
+    filters?: Record<string, any>;
+    mappings?: Record<string, any>;
+    options?: Record<string, any>;
+    batchSize?: number;
+    retryAttempts?: number;
+  }>().default({}),
+  syncData: jsonb('sync_data').$type<{
+    lastSyncToken?: string;
+    checkpoint?: any;
+    metadata?: Record<string, any>;
+  }>(),
+  executionTimeMs: integer('execution_time_ms'),
+  retryCount: integer('retry_count').default(0),
+  nextRetryAt: timestamp('next_retry_at'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow()
+}, (table) => ({
+  connectionIdx: index('sync_jobs_connection_idx').on(table.connectionId),
+  statusIdx: index('sync_jobs_status_idx').on(table.status),
+  entityIdx: index('sync_jobs_entity_idx').on(table.entityType),
+  createdAtIdx: index('sync_jobs_created_at_idx').on(table.createdAt)
+}));
+
+// Integration field mappings - Map fields between systems
+export const integrationFieldMappings = pgTable('integration_field_mappings', {
+  id: serial('id').primaryKey(),
+  connectionId: integer('connection_id').notNull().references(() => integrationConnections.id),
+  entityType: varchar('entity_type', { length: 100 }).notNull(), // orders, products, customers, etc.
+  mappingName: varchar('mapping_name', { length: 100 }).notNull(),
+  direction: varchar('direction', { length: 20 }).notNull(), // inbound, outbound, bidirectional
+  sourceField: varchar('source_field', { length: 200 }).notNull(),
+  targetField: varchar('target_field', { length: 200 }).notNull(),
+  transformation: jsonb('transformation').$type<{
+    type?: string; // direct, function, lookup, constant
+    function?: string;
+    params?: any[];
+    lookupTable?: string;
+    lookupKey?: string;
+    defaultValue?: any;
+  }>(),
+  dataType: varchar('data_type', { length: 50 }), // string, number, date, boolean, json
+  required: boolean('required').default(false),
+  validation: jsonb('validation').$type<{
+    pattern?: string;
+    min?: number;
+    max?: number;
+    enum?: any[];
+    custom?: string;
+  }>(),
+  isActive: boolean('is_active').default(true),
+  notes: text('notes'),
+  createdBy: integer('created_by').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+}, (table) => ({
+  connectionIdx: index('field_mappings_connection_idx').on(table.connectionId),
+  entityIdx: index('field_mappings_entity_idx').on(table.entityType),
+  uniqueMapping: unique().on(table.connectionId, table.entityType, table.sourceField, table.targetField)
+}));
+
+// Integration logs - Store detailed logs of integration activities
+export const integrationLogs = pgTable('integration_logs', {
+  id: serial('id').primaryKey(),
+  connectionId: integer('connection_id').references(() => integrationConnections.id),
+  syncJobId: integer('sync_job_id').references(() => integrationSyncJobs.id),
+  logLevel: varchar('log_level', { length: 20 }).notNull(), // debug, info, warning, error, critical
+  eventType: varchar('event_type', { length: 100 }).notNull(), // auth, sync, webhook, error, etc.
+  message: text('message').notNull(),
+  details: jsonb('details').$type<Record<string, any>>().default({}),
+  request: jsonb('request').$type<{
+    method?: string;
+    url?: string;
+    headers?: Record<string, string>;
+    body?: any;
+  }>(),
+  response: jsonb('response').$type<{
+    status?: number;
+    headers?: Record<string, string>;
+    body?: any;
+    error?: string;
+  }>(),
+  errorCode: varchar('error_code', { length: 100 }),
+  errorStack: text('error_stack'),
+  userId: integer('user_id').references(() => users.id),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow()
+}, (table) => ({
+  connectionIdx: index('integration_logs_connection_idx').on(table.connectionId),
+  syncJobIdx: index('integration_logs_sync_job_idx').on(table.syncJobId),
+  levelIdx: index('integration_logs_level_idx').on(table.logLevel),
+  eventIdx: index('integration_logs_event_idx').on(table.eventType),
+  createdAtIdx: index('integration_logs_created_at_idx').on(table.createdAt)
+}));
+
+// Insert schemas for Integration Management
+export const insertIntegrationSchema = createInsertSchema(integrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type Integration = typeof integrations.$inferSelect;
+
+export const insertIntegrationConnectionSchema = createInsertSchema(integrationConnections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertIntegrationConnection = z.infer<typeof insertIntegrationConnectionSchema>;
+export type IntegrationConnection = typeof integrationConnections.$inferSelect;
+
+export const insertIntegrationSyncJobSchema = createInsertSchema(integrationSyncJobs).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertIntegrationSyncJob = z.infer<typeof insertIntegrationSyncJobSchema>;
+export type IntegrationSyncJob = typeof integrationSyncJobs.$inferSelect;
+
+export const insertIntegrationFieldMappingSchema = createInsertSchema(integrationFieldMappings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertIntegrationFieldMapping = z.infer<typeof insertIntegrationFieldMappingSchema>;
+export type IntegrationFieldMapping = typeof integrationFieldMappings.$inferSelect;
+
+export const insertIntegrationLogSchema = createInsertSchema(integrationLogs).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertIntegrationLog = z.infer<typeof insertIntegrationLogSchema>;
+export type IntegrationLog = typeof integrationLogs.$inferSelect;
+
 
 
