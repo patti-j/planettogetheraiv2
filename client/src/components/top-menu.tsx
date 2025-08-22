@@ -263,8 +263,9 @@ export default function TopMenu() {
       // Open tour selection dialog to let user choose which tour to take
       setTourSelectionOpen(true);
     } else {
-      // For all regular menu items, add them to recent pages
+      // For all regular menu items, add them to recent pages and navigate
       addRecentPage(feature.href, feature.label, feature.icon?.name || 'FileText');
+      setLocation(feature.href);
     }
     setMenuOpen(false);
   };
