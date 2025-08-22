@@ -100,36 +100,79 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
     return events;
   }, [effectiveOperations]);
 
-  // Create assignments based on Jim's corrections - MULTIPLE EVENTS PER RESOURCE ROW
+  // Create assignments based on Jim's corrections - WITH PROPER RESOURCE VALIDATION
   const bryntumAssignments = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    // Include ALL operations that have any resource assignment
+    // Define valid operation-resource combinations
+    const resourceOperationCompatibility = {
+      'Brew Kettle': ['Milling', 'Mashing', 'Boiling'],
+      'Lauter Tun': ['Lautering'],
+      'Fermentation Tank': ['Fermentation'],
+      'Bright Tank': ['Carbonation'],
+      'Packaging Line': ['Packaging'],
+      'Quality Lab': ['Quality Testing'],
+      'Filter System': ['Filtration'],
+      'Heat Exchanger': ['Cooling'],
+      'Whirlpool Tank': ['Whirlpool'],
+      'Maturation Tank': ['Maturation'],
+      'Grain Mill': ['Milling'],
+      'Mash Tun': ['Mashing']
+    };
+    
+    // Function to check if operation is compatible with resource
+    const isCompatible = (operationName: string, resourceName: string): boolean => {
+      for (const [resourceType, validOps] of Object.entries(resourceOperationCompatibility)) {
+        if (resourceName.includes(resourceType)) {
+          return validOps.includes(operationName);
+        }
+      }
+      return false; // Default to not compatible if no match
+    };
+    
+    // Only create assignments for ACTUALLY SCHEDULED operations with valid resource compatibility
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Check multiple possible resource ID fields from PT operations
-        const hasResource = op.assignedResourceId || op.resourceId || op.resource_id || 
-                           op.scheduledResourceId || op.defaultResourceId;
-        return hasResource;
+        // Only include operations that are actually scheduled (not default assignments)
+        const isScheduled = op.assignmentType === 'scheduled' && op.isActuallyScheduled;
+        
+        if (!isScheduled) return false;
+        
+        // Check resource compatibility
+        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId;
+        if (!resourceId) return false;
+        
+        const resource = effectiveResources.find((r: any) => 
+          (r.id || r.resource_id) === resourceId
+        );
+        
+        if (!resource) return false;
+        
+        const compatible = isCompatible(op.operationName, resource.name);
+        
+        if (!compatible) {
+          console.warn(`Incompatible assignment: ${op.operationName} -> ${resource.name}`);
+          return false;
+        }
+        
+        return true;
       })
       .map((op: any, index: number) => {
-        // Get resource ID from any available field
-        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
-                          op.scheduledResourceId || op.defaultResourceId;
+        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId;
         
-        console.log(`Creating assignment for operation ${op.id}: event e_${op.id || op.operationId} -> resource r_${resourceId}`);
+        console.log(`✅ Valid assignment: ${op.operationName} -> resource ${resourceId}`);
         
         return {
           id: `a_${op.id || op.operationId}_${index}`,
           eventId: `e_${op.id || op.operationId}`,
           resourceId: `r_${resourceId}`,
-          units: 100 // Full resource allocation
+          units: 100
         };
       });
     
-    console.log(`Created ${assignments.length} assignments from ${effectiveOperations.length} operations`);
+    console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
     return assignments;
-  }, [effectiveOperations]);
+  }, [effectiveOperations, effectiveResources]);
 
   // Create dependencies for sequential operations
   const bryntumDependencies = useMemo(() => {

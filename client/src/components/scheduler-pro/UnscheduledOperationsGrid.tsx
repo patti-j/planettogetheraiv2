@@ -74,7 +74,7 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
         width: 180,
         htmlEncode: false,
         renderer: ({ record }: any) => 
-          `<i class="${record.iconCls}"></i> ${record.name}`
+          `<div class="flex items-center gap-2"><i class="${record.iconCls}"></i> <span>${record.name}</span></div>`
       },
       {
         text: 'Job',
