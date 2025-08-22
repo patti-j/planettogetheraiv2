@@ -218,8 +218,8 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
             showTooltip: true,
             constrainDragToResource: false, // Allow moving between resources
             constrainDragToTimeSlot: false, // Allow moving to any time
-            // Validate drops to prevent invalid moves
-            validatorFn: ({ dragData, targetResourceRecord }: any) => {
+            // Enhanced validation following Bryntum documentation patterns
+            validatorFn: ({ dragData, targetResourceRecord, startDate, endDate }: any) => {
               const event = dragData.eventRecord;
               
               // Jim's corrections: Don't allow moving locked/scheduled operations
@@ -228,6 +228,38 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
                   valid: false,
                   message: 'Scheduled operations with resource blocks cannot be moved. Use PT scheduler to reschedule.'
                 };
+              }
+              
+              // Resource availability validation
+              if (!targetResourceRecord) {
+                return {
+                  valid: false,
+                  message: 'Must drop on a valid resource'
+                };
+              }
+              
+              // Check if resource is active
+              if (!targetResourceRecord.active) {
+                return {
+                  valid: false,
+                  message: 'Cannot assign to inactive resource'
+                };
+              }
+              
+              // Check for time conflicts (basic overlap detection)
+              if (startDate && endDate) {
+                const hasConflict = schedulerRef.current?.eventStore.query(record => 
+                  record !== event && 
+                  record.resources.includes(targetResourceRecord) &&
+                  !(record.endDate <= startDate || record.startDate >= endDate)
+                ).length > 0;
+                
+                if (hasConflict) {
+                  return {
+                    valid: false,
+                    message: 'Time slot conflicts with existing operation'
+                  };
+                }
               }
               
               // Allow moving unscheduled operations
@@ -279,33 +311,70 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
           }
         }}
         
-        // Event handlers for drag-and-drop
-        onEventDrop={({ eventRecord, newResource, oldResource }: any) => {
+        // Enhanced event handlers following Bryntum documentation patterns
+        onEventDrop={({ eventRecord, newResource, oldResource, valid }: any) => {
+          if (!valid) {
+            toast({
+              title: "Invalid Drop",
+              description: "The operation could not be moved to the selected location.",
+              variant: "destructive",
+            });
+            return;
+          }
+          
           console.log('Operation moved:', {
             operation: eventRecord.name,
             from: oldResource?.name,
             to: newResource?.name,
             newStart: eventRecord.startDate,
-            newEnd: eventRecord.endDate
+            newEnd: eventRecord.endDate,
+            assignmentType: eventRecord.assignmentType
           });
           
           // Extract operation ID from event ID
           const operationId = parseInt(eventRecord.id.replace('e_', ''));
+          const newResourceId = parseInt(newResource.id.replace('r_', ''));
           
           // Prepare update data following Jim's corrections
           const updates = {
-            resourceId: parseInt(newResource.id.replace('r_', '')),
+            resourceId: newResourceId,
             startDate: eventRecord.startDate.toISOString(),
             endDate: eventRecord.endDate.toISOString(),
+            // Update assignment type if moving from unscheduled to scheduled
+            assignmentType: eventRecord.assignmentType === 'unscheduled' ? 'manual' : eventRecord.assignmentType,
             // Note: This will update ptjoboperations.scheduled_start/end for unscheduled operations
             // For scheduled operations with resource blocks, this should be handled differently
           };
+          
+          // Show optimistic update feedback
+          toast({
+            title: "Operation Moved",
+            description: `${eventRecord.name} moved to ${newResource.name}`,
+          });
           
           // Call the mutation or callback
           if (onOperationUpdate) {
             onOperationUpdate(operationId, updates);
           } else {
             updateOperationMutation.mutate({ operationId, updates });
+          }
+        }}
+        
+        onEventDragStart={({ eventRecord }: any) => {
+          console.log('Drag started for operation:', eventRecord.name);
+          
+          // Add visual feedback class
+          if (schedulerRef.current) {
+            schedulerRef.current.element.classList.add('b-dragging-event');
+          }
+        }}
+        
+        onEventDragEnd={({ eventRecord }: any) => {
+          console.log('Drag ended for operation:', eventRecord.name);
+          
+          // Remove visual feedback class
+          if (schedulerRef.current) {
+            schedulerRef.current.element.classList.remove('b-dragging-event');
           }
         }}
         

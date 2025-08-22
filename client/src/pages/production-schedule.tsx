@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
 import GanttChart from '@/components/ui/gantt-chart';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
+import UnscheduledOperationsGrid from '@/components/scheduler-pro/UnscheduledOperationsGrid';
 
 // Import PT Gantt styles
 import '../styles/pt-gantt.css';
@@ -671,15 +672,37 @@ export default function ProductionSchedulePage() {
                   </div>
                 )}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <BryntumSchedulerProComponent
-                    operations={ptOperations}
-                    resources={resources}
-                    onOperationUpdate={(operationId, updates) => {
-                      console.log('Operation update requested:', operationId, updates);
-                      // This will trigger a refetch of operations
-                      refetchOperations();
-                    }}
-                  />
+                  <div className="flex h-full">
+                    {/* Unscheduled Operations Grid - Left Panel */}
+                    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                      <UnscheduledOperationsGrid
+                        onOperationDragStart={(operation) => {
+                          console.log('🎯 Drag started:', operation.name);
+                        }}
+                        onOperationDrag={(operation, targetResource) => {
+                          console.log('🎯 Dragging to:', targetResource?.name);
+                        }}
+                        onOperationDrop={(operation, targetResource, startDate) => {
+                          console.log('🎯 Dropped:', operation.name, 'on', targetResource?.name, 'at', startDate);
+                          // This will trigger a refetch of operations after assignment
+                          refetchOperations();
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Bryntum Scheduler Pro - Main Panel */}
+                    <div className="flex-1">
+                      <BryntumSchedulerProComponent
+                        operations={ptOperations}
+                        resources={resources}
+                        onOperationUpdate={(operationId, updates) => {
+                          console.log('Operation update requested:', operationId, updates);
+                          // This will trigger a refetch of operations
+                          refetchOperations();
+                        }}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <GanttChart
                     jobs={productionOrders}
@@ -695,13 +718,6 @@ export default function ProductionSchedulePage() {
                       exportHandlerRef.current = handler;
                     }}
                   />
-                ) : (
-                  <div className="flex items-center justify-center h-96">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Loading PT operations data (jobs, operations, activities)...</p>
-                    </div>
-                  </div>
                 )}
               </CardContent>
             </Card>
