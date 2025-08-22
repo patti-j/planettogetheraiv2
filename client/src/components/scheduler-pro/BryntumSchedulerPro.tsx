@@ -73,32 +73,44 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     console.log('Creating Bryntum events from operations:', effectiveOperations.length);
     console.log('Sample operation data:', effectiveOperations[0]);
     
-    const events = effectiveOperations.map((op: any) => ({
-      id: `e_${op.id || op.operationId}`,
-      name: `${op.jobName}: ${op.operationName}`,
-      startDate: new Date(op.startTime),
-      endDate: new Date(op.endTime),
-      // Jim's corrections: Include assignment type and scheduling info
-      assignmentType: op.assignmentType || 'unscheduled',
-      isActuallyScheduled: op.isActuallyScheduled || false,
-      resourceBlockId: op.resourceBlockId,
-      // Visual indicators for different assignment types
-      cls: `assignment-${op.assignmentType || 'unscheduled'} ${op.isLocked ? 'locked' : ''}`,
-      eventColor: getOperationColor(op),
-      // Additional operation data
-      jobId: op.jobId,
-      operationId: op.operationId,
-      priority: op.priority,
-      status: op.status,
-      setupStart: op.setupStart,
-      setupEnd: op.setupEnd,
-      runStart: op.runStart,
-      runEnd: op.runEnd,
-      postProcessingStart: op.postProcessingStart,
-      postProcessingEnd: op.postProcessingEnd,
-      // Lock scheduled operations to prevent accidental moves
-      readOnly: op.isLocked || false
-    }));
+    const events = effectiveOperations.map((op: any) => {
+      const startDate = new Date(op.startTime);
+      const duration = op.duration || 3; // Default 3 hours if no duration
+      const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + duration * 60 * 60 * 1000);
+      
+      // Validate dates to prevent runtime errors
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.error('Invalid date for operation:', op.operationName, { startTime: op.startTime, endTime: op.endTime });
+        return null; // Skip invalid events
+      }
+      
+      return {
+        id: `e_${op.id || op.operationId}`,
+        name: `${op.jobName}: ${op.operationName}`,
+        startDate: startDate,
+        endDate: endDate,
+        // Jim's corrections: Include assignment type and scheduling info
+        assignmentType: op.assignmentType || 'unscheduled',
+        isActuallyScheduled: op.isActuallyScheduled || false,
+        resourceBlockId: op.resourceBlockId,
+        // Visual indicators for different assignment types
+        cls: `assignment-${op.assignmentType || 'unscheduled'} ${op.isLocked ? 'locked' : ''}`,
+        eventColor: getOperationColor(op),
+        // Additional operation data
+        jobId: op.jobId,
+        operationId: op.operationId,
+        priority: op.priority,
+        status: op.status,
+        setupStart: op.setupStart,
+        setupEnd: op.setupEnd,
+        runStart: op.runStart,
+        runEnd: op.runEnd,
+        postProcessingStart: op.postProcessingStart,
+        postProcessingEnd: op.postProcessingEnd,
+        // Lock scheduled operations to prevent accidental moves
+        readOnly: op.isLocked || false
+      };
+    }).filter(Boolean); // Remove null entries from invalid dates
     
     console.log('Created events:', events.length);
     return events;
