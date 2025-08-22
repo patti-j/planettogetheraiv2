@@ -59,8 +59,8 @@ export default function ApplicationApp() {
     );
   }
 
-  if (!isAuthenticated) {
-    // Redirect to website login
+  if (!isAuthenticated && !isLoading) {
+    // Only redirect if not loading and definitely not authenticated
     if (typeof window !== 'undefined') {
       window.location.href = '/login';
     }
