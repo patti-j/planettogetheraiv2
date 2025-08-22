@@ -1,4 +1,4 @@
-import { Route, Switch } from "wouter";
+import { Route, Switch, Link } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -51,7 +51,7 @@ import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
 
 // Import other application-specific components
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 
 export default function ApplicationApp() {
@@ -166,11 +166,7 @@ export default function ApplicationApp() {
               </Route>
 
               {/* Planning & Scheduling Routes */}
-              <Route path="/planning-overview">
-                <ProtectedRoute feature="schedule" action="view">
-                  <PlanningOverview />
-                </ProtectedRoute>
-              </Route>
+              <Route path="/planning-overview" component={PlanningOverview} />
               <Route path="/demand-planning">
                 <ProtectedRoute feature="demand-planning" action="view">
                   <DemandManagement />
@@ -223,11 +219,7 @@ export default function ApplicationApp() {
               </Route>
 
               {/* Business Management Routes */}
-              <Route path="/plants-management">
-                <ProtectedRoute feature="systems-management" action="view">
-                  <PlantsManagement />
-                </ProtectedRoute>
-              </Route>
+              <Route path="/plants-management" component={PlantsManagement} />
               <Route path="/business-intelligence">
                 <ProtectedRoute feature="business-intelligence" action="view">
                   <Analytics />
