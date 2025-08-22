@@ -308,10 +308,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         autoAdjustTimeAxis={false}
         
         // Enable scrolling for navigation
-        scrollable={{
-          x: true,
-          y: true
-        }}
+        scrollable={true}
         
         columns={[
           { 
