@@ -654,8 +654,8 @@ export default function ProductionSchedulePage() {
                     {/* Bryntum Scheduler Pro - Main Panel */}
                     <div className="flex-1">
                       <BryntumSchedulerProComponent
-                        operations={ptOperations}
-                        resources={resources}
+                        operations={ptOperations || []}
+                        resources={resources || []}
                         onOperationUpdate={(operationId, updates) => {
                           console.log('Operation update requested:', operationId, updates);
                           // This will trigger a refetch of operations
@@ -666,10 +666,10 @@ export default function ProductionSchedulePage() {
                   </div>
                 ) : (
                   <GanttChart
-                    jobs={productionOrders}
-                    operations={ptOperations}
-                    resources={resources}
-                    capabilities={capabilities}
+                    jobs={productionOrders || []}
+                    operations={ptOperations || []}
+                    resources={resources || []}
+                    capabilities={capabilities || []}
                     view={layoutConfig.view === 'compact' ? 'operations' : 'resources'}
                     selectedResourceViewId={null}
                     onResourceViewChange={() => {}}

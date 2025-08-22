@@ -367,49 +367,63 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           }
         ]}
         
-        // Features configuration commented out due to type incompatibility
-        // TODO: Re-enable when BryntumSchedulerProProps includes features type
+        // Feature configuration for production scheduling with proper constraints
+        // Note: Features are currently commented out due to TypeScript type incompatibility
+        // TODO: Enable when BryntumSchedulerProProps includes features type
         /* features={{
+          // Configure drag-and-drop, editing, and resizing capabilities for interactive scheduling
           eventDrag: {
             showTooltip: true,
-            constrainDragToResource: false, // Allow moving between resources
-            constrainDragToTimeSlot: false, // Allow moving to any time
-            // Enhanced validation with better error handling and debugging
+            constrainDragToResource: true, // Maintain resource assignments for production integrity
+            constrainDragToTimeSlot: false, // Allow time flexibility within resource
+            // Validate resource compatibility and scheduling constraints
             validatorFn: ({ dragData, targetResourceRecord, startDate, endDate }: any) => {
               try {
                 const event = dragData?.eventRecord;
                 
-                console.log('🔍 Validating drag operation:', {
-                  eventName: event?.name,
+                // Log validation for debugging production scheduling constraints
+                console.log('Validating production operation drag:', {
+                  operation: event?.name,
                   targetResource: targetResourceRecord?.name,
-                  isScheduled: event?.isActuallyScheduled,
-                  isReadOnly: event?.readOnly,
-                  targetActive: targetResourceRecord?.active
+                  resourceType: targetResourceRecord?.type,
+                  isLocked: event?.readOnly,
+                  resourceActive: targetResourceRecord?.active
                 });
                 
                 // Basic safety checks
                 if (!event) {
-                  console.warn('❌ Validation failed: No event record');
+                  console.warn('Validation failed: No event record found');
                   return { valid: false, message: 'Invalid operation' };
                 }
                 
                 if (!targetResourceRecord) {
-                  console.warn('❌ Validation failed: No target resource');
+                  console.warn('Validation failed: No target resource selected');
                   return { valid: false, message: 'Must drop on a valid resource' };
                 }
                 
-                // Jim's corrections: Don't allow moving locked/scheduled operations
-                if (event.isActuallyScheduled && event.readOnly) {
-                  console.warn('❌ Validation failed: Trying to move locked operation');
+                // Prevent moving locked operations that are scheduled with resource blocks
+                if (event.readOnly) {
+                  console.warn('Validation failed: Operation is locked');
                   return {
                     valid: false,
-                    message: 'Scheduled operations with resource blocks cannot be moved. Use PT scheduler to reschedule.'
+                    message: 'This operation is locked and cannot be moved'
+                  };
+                }
+                
+                // Validate resource compatibility for production requirements
+                const resourceType = targetResourceRecord?.type;
+                const requiredType = event?.requiredResourceType;
+                if (requiredType && resourceType && resourceType !== requiredType) {
+                  console.warn('Validation failed: Resource type mismatch');
+                  return {
+                    valid: false,
+                    message: `This operation requires a ${requiredType} resource`
                   };
                 }
                 
                 // Check if resource is active
                 if (targetResourceRecord.active === false) {
-                  console.warn('❌ Validation failed: Target resource is inactive');
+                  console.warn('Validation failed: Target resource is inactive');
                   return {
                     valid: false,
                     message: 'Cannot assign to inactive resource'
@@ -428,9 +442,9 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                     });
                     
                     if (conflictingEvents && conflictingEvents.length > 0) {
-                      console.warn('❌ Validation failed: Time conflict detected', {
-                        conflictCount: conflictingEvents.length,
-                        conflictingOperations: conflictingEvents.map((r: any) => r.name)
+                      console.warn('Validation failed: Time conflict detected', {
+                        conflicts: conflictingEvents.length,
+                        operations: conflictingEvents.map((r: any) => r.name)
                       });
                       return {
                         valid: false,
@@ -443,45 +457,44 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                   }
                 }
                 
-                console.log('✅ Validation passed: Move allowed');
+                console.log('Validation passed: Operation can be moved to this resource');
                 return { valid: true };
                 
               } catch (validationError) {
-                console.error('❌ Validation error:', validationError);
-                // If validation throws an error, be safe and block the move
+                console.error('Validation error occurred:', validationError);
+                // Block the move for safety if validation fails
                 return { 
                   valid: false, 
-                  message: 'Validation error occurred - move blocked for safety' 
+                  message: 'Unable to validate move - operation blocked' 
                 };
               }
             }
           },
           eventResize: {
             showTooltip: true,
-            // Don't allow resizing locked operations
-            validatorFn: ({ eventRecord }: any) => {
+            // Validate duration changes for production scheduling
+            validatorFn: ({ eventRecord, startDate, endDate }: any) => {
               if (eventRecord.readOnly) {
                 return {
                   valid: false,
                   message: 'Locked operations cannot be resized'
                 };
               }
+              
+              // Ensure minimum operation duration (1 hour)
+              const duration = (endDate - startDate) / (1000 * 60 * 60);
+              if (duration < 1) {
+                return {
+                  valid: false,
+                  message: 'Operations must be at least 1 hour long'
+                };
+              }
+              
               return { valid: true };
             }
           },
-          eventEdit: {
-            // Custom fields for the edit dialog
-            items: {
-              nameField: { label: 'Operation Name' },
-              startDateField: { label: 'Start Date' },
-              endDateField: { label: 'End Date' },
-              assignmentTypeField: {
-                type: 'displayfield',
-                label: 'Assignment Type',
-                name: 'assignmentType'
-              }
-            }
-          },
+          eventEdit: false, // Disable direct editing to prevent accidental changes
+          eventDragCreate: false, // Disable creation via drag to maintain production integrity
           eventTooltip: {
             template: ({ eventRecord }: any) => `
               <div class="operation-tooltip">
@@ -495,10 +508,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
               </div>
             `
           },
-          dependencies: {
-            showTooltip: true,
-            allowCreate: false // Prevent creating new dependencies via UI
-          }
+          dependencies: false // Clean view without dependency lines for now
         }} */
         
         
