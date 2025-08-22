@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 export default function BryntumSchedulerProDirect() {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const schedulerRef = useRef<any>(null);
 
   // Fetch operations data
   const { data: operations, isLoading: operationsLoading } = useQuery({
@@ -84,20 +85,16 @@ export default function BryntumSchedulerProDirect() {
               {/* Left Panel - Unscheduled Operations */}
               <div className="w-80 flex-shrink-0">
                 <UnscheduledOperationsGrid
-                  operations={operations || []}
-                  resources={resources || []}
-                  onOperationUpdate={handleOperationUpdate}
-                  isLoading={isLoading}
+                  schedulerRef={schedulerRef}
                 />
               </div>
 
               {/* Right Panel - Bryntum Scheduler Pro */}
               <div className="flex-1 min-w-0">
                 <BryntumSchedulerProComponent
-                  operations={operations || []}
-                  resources={resources || []}
+                  operations={operations}
+                  resources={resources}
                   onOperationUpdate={handleOperationUpdate}
-                  isLoading={isLoading}
                 />
               </div>
             </div>
