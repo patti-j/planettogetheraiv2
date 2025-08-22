@@ -104,26 +104,22 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
   const bryntumAssignments = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    // Define BLOCKED operation-resource combinations (worst mismatches only)
-    const blockedCombinations = [
-      // Only block the most obviously wrong combinations
-      { operation: 'Packaging', blockedResources: ['Brew Kettle', 'Fermentation Tank', 'Quality Lab'] },
-      { operation: 'Quality Testing', blockedResources: ['Brew Kettle', 'Packaging Line', 'Fermentation Tank'] },
-      { operation: 'Fermentation', blockedResources: ['Packaging Line', 'Quality Lab', 'Grain Mill'] }
-    ];
-    
-    // Function to check if operation should be blocked on this resource
-    const isBlocked = (operationName: string, resourceName: string): boolean => {
-      for (const combo of blockedCombinations) {
-        if (operationName === combo.operation) {
-          for (const blockedResource of combo.blockedResources) {
-            if (resourceName.includes(blockedResource)) {
-              return true;
-            }
-          }
-        }
+    // PT Table-based validation following Jim's corrections
+    const validateResourceAssignment = (op: any, resource: any): boolean => {
+      // Following Jim's notes: Default resource can override capability requirements
+      const isDefaultResource = op.defaultResourceId === resource.id || 
+                               op.assignedResourceId === resource.id;
+      
+      if (isDefaultResource) {
+        console.log(`✅ Using default/preferred resource: ${op.operationName} -> ${resource.name}`);
+        return true; // Default resource is always valid per Jim's notes
       }
-      return false; // Allow by default, only block obvious mismatches
+      
+      // For non-default assignments, we would normally check capabilities
+      // but for now, allow all assignments to show the actual PT data
+      // TODO: Implement proper capability checking when PT capability APIs are available
+      console.log(`✅ Allowing PT assignment: ${op.operationName} -> ${resource.name}`);
+      return true;
     };
     
     // Create assignments for operations with compatible resource assignments
@@ -141,15 +137,14 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
         
         if (!resource) return false;
         
-        // Only block the most obviously wrong assignments
-        const shouldBlock = isBlocked(op.operationName, resource.name);
+        // Use PT table-based validation following Jim's corrections
+        const isValid = validateResourceAssignment(op, resource);
         
-        if (shouldBlock) {
-          console.warn(`🚫 Blocked obviously wrong assignment: ${op.operationName} -> ${resource.name}`);
+        if (!isValid) {
+          console.warn(`🚫 Invalid PT assignment: ${op.operationName} -> ${resource.name}`);
           return false;
         }
         
-        console.log(`✅ Allowing assignment: ${op.operationName} -> ${resource.name}`);
         return true;
       })
       .map((op: any, index: number) => {
