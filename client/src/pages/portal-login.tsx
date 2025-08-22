@@ -59,7 +59,7 @@ export default function PortalLogin() {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('=== LOGIN RESULT ===', result);
+        console.log('=== LOGIN RESULT ===', JSON.stringify(result, null, 2));
         
         if (result && result.token && result.user) {
           console.log('=== LOGIN SUCCESS - STORING TOKENS ===');
@@ -69,6 +69,8 @@ export default function PortalLogin() {
           setLocation('/portal/dashboard');
         } else {
           console.log('=== LOGIN FAILED - MISSING DATA ===', result);
+          console.log('Token exists:', !!result?.token);
+          console.log('User exists:', !!result?.user);
           setError('Invalid login response - missing token or user data');
         }
       } else {

@@ -108,7 +108,11 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
       expiresAt: new Date(Date.now() + 3600000),
     });
 
-    res.json({
+    // Update last login time
+    // await storage.updateExternalUserLastLogin(user.id); // TODO: implement this method
+
+    const responseData = {
+      success: true,
       token,
       user: {
         id: user.id,
@@ -123,7 +127,10 @@ router.post('/api/portal/login', rateLimit(10, 60000), async (req: Request, res:
         name: company.name,
         type: company.type,
       },
-    });
+    };
+
+    console.log('=== PORTAL LOGIN SUCCESS RESPONSE ===', JSON.stringify(responseData, null, 2));
+    res.json(responseData);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
