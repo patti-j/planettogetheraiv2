@@ -336,52 +336,86 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             showTooltip: true,
             constrainDragToResource: false, // Allow moving between resources
             constrainDragToTimeSlot: false, // Allow moving to any time
-            // Enhanced validation following Bryntum documentation patterns
+            // Enhanced validation with better error handling and debugging
             validatorFn: ({ dragData, targetResourceRecord, startDate, endDate }: any) => {
-              const event = dragData.eventRecord;
-              
-              // Jim's corrections: Don't allow moving locked/scheduled operations
-              if (event.isActuallyScheduled && event.readOnly) {
-                return {
-                  valid: false,
-                  message: 'Scheduled operations with resource blocks cannot be moved. Use PT scheduler to reschedule.'
-                };
-              }
-              
-              // Resource availability validation
-              if (!targetResourceRecord) {
-                return {
-                  valid: false,
-                  message: 'Must drop on a valid resource'
-                };
-              }
-              
-              // Check if resource is active
-              if (!targetResourceRecord.active) {
-                return {
-                  valid: false,
-                  message: 'Cannot assign to inactive resource'
-                };
-              }
-              
-              // Check for time conflicts (basic overlap detection)
-              if (startDate && endDate) {
-                const hasConflict = schedulerRef.current?.eventStore.query(record => 
-                  record !== event && 
-                  record.resources.includes(targetResourceRecord) &&
-                  !(record.endDate <= startDate || record.startDate >= endDate)
-                ).length > 0;
+              try {
+                const event = dragData?.eventRecord;
                 
-                if (hasConflict) {
+                console.log('🔍 Validating drag operation:', {
+                  eventName: event?.name,
+                  targetResource: targetResourceRecord?.name,
+                  isScheduled: event?.isActuallyScheduled,
+                  isReadOnly: event?.readOnly,
+                  targetActive: targetResourceRecord?.active
+                });
+                
+                // Basic safety checks
+                if (!event) {
+                  console.warn('❌ Validation failed: No event record');
+                  return { valid: false, message: 'Invalid operation' };
+                }
+                
+                if (!targetResourceRecord) {
+                  console.warn('❌ Validation failed: No target resource');
+                  return { valid: false, message: 'Must drop on a valid resource' };
+                }
+                
+                // Jim's corrections: Don't allow moving locked/scheduled operations
+                if (event.isActuallyScheduled && event.readOnly) {
+                  console.warn('❌ Validation failed: Trying to move locked operation');
                   return {
                     valid: false,
-                    message: 'Time slot conflicts with existing operation'
+                    message: 'Scheduled operations with resource blocks cannot be moved. Use PT scheduler to reschedule.'
                   };
                 }
+                
+                // Check if resource is active
+                if (targetResourceRecord.active === false) {
+                  console.warn('❌ Validation failed: Target resource is inactive');
+                  return {
+                    valid: false,
+                    message: 'Cannot assign to inactive resource'
+                  };
+                }
+                
+                // Check for time conflicts (basic overlap detection)
+                if (startDate && endDate && schedulerRef.current?.eventStore) {
+                  try {
+                    const conflictingEvents = schedulerRef.current.eventStore.query(record => {
+                      const isSameEvent = record === event || record.id === event.id;
+                      const isOnTargetResource = record.resources?.some((r: any) => r === targetResourceRecord || r.id === targetResourceRecord.id);
+                      const hasTimeOverlap = !(record.endDate <= startDate || record.startDate >= endDate);
+                      
+                      return !isSameEvent && isOnTargetResource && hasTimeOverlap;
+                    });
+                    
+                    if (conflictingEvents && conflictingEvents.length > 0) {
+                      console.warn('❌ Validation failed: Time conflict detected', {
+                        conflictCount: conflictingEvents.length,
+                        conflictingOperations: conflictingEvents.map((r: any) => r.name)
+                      });
+                      return {
+                        valid: false,
+                        message: `Time slot conflicts with ${conflictingEvents.length} existing operation(s)`
+                      };
+                    }
+                  } catch (conflictError) {
+                    console.error('Error checking time conflicts:', conflictError);
+                    // Don't block the move due to conflict checking error, but log it
+                  }
+                }
+                
+                console.log('✅ Validation passed: Move allowed');
+                return { valid: true };
+                
+              } catch (validationError) {
+                console.error('❌ Validation error:', validationError);
+                // If validation throws an error, be safe and block the move
+                return { 
+                  valid: false, 
+                  message: 'Validation error occurred - move blocked for safety' 
+                };
               }
-              
-              // Allow moving unscheduled operations
-              return { valid: true };
             }
           },
           eventResize: {
