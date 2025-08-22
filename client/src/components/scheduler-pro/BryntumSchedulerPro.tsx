@@ -268,6 +268,17 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     };
   }, [bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
 
+  // Force layout recalculation after mount to fix scroll bar visibility
+  // MUST be called before any conditional returns to avoid React hooks error
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (schedulerRef.current?.widget) {
+        schedulerRef.current.widget.refresh();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [bryntumResources, bryntumEvents]);
+
   // Show loading state while data is being fetched
   if (operationsLoading || resourcesLoading) {
     return (
@@ -279,16 +290,6 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       </div>
     );
   }
-
-  // Force layout recalculation after mount to fix scroll bar visibility
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (schedulerRef.current?.widget) {
-        schedulerRef.current.widget.refresh();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [bryntumResources, bryntumEvents]);
 
   return (
     <div className="h-full w-full" style={{ minHeight: '600px', height: '700px', overflow: 'hidden' }}>
