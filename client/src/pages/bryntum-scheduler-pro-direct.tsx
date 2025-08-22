@@ -92,6 +92,7 @@ export default function BryntumSchedulerProDirect() {
               {/* Right Panel - Bryntum Scheduler Pro */}
               <div className="flex-1 min-w-0">
                 <BryntumSchedulerProComponent
+                  ref={schedulerRef}
                   operations={operations}
                   resources={resources}
                   onOperationUpdate={handleOperationUpdate}

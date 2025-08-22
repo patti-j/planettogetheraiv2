@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -11,12 +11,16 @@ interface BryntumSchedulerProComponentProps {
   onOperationUpdate?: (operationId: number, updates: any) => void;
 }
 
-const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> = ({ 
-  operations = [], 
-  resources = [],
-  onOperationUpdate 
-}) => {
+const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProComponentProps, ref: any) => {
+  const {
+    operations = [], 
+    resources = [],
+    onOperationUpdate 
+  } = props;
   const schedulerRef = useRef<any>(null);
+  
+  // Expose the scheduler instance through the ref
+  useImperativeHandle(ref, () => schedulerRef.current, []);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -122,35 +126,19 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
       return true;
     };
     
-    // Create assignments for operations with compatible resource assignments
+    // TEMPORARILY: Show all operations with resources to get drag-drop working first
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Check if operation has any resource assignment
+        // Just check if operation has any resource assignment
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
-        if (!resourceId) return false;
-        
-        // Find the resource
-        const resource = effectiveResources.find((r: any) => 
-          (r.id || r.resource_id) === resourceId
-        );
-        
-        if (!resource) return false;
-        
-        // Use PT table-based validation following Jim's corrections
-        const isValid = validateResourceAssignment(op, resource);
-        
-        if (!isValid) {
-          console.warn(`🚫 Invalid PT assignment: ${op.operationName} -> ${resource.name}`);
-          return false;
-        }
-        
-        return true;
+        return resourceId;
       })
       .map((op: any, index: number) => {
-        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId;
+        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
+                          op.scheduledResourceId || op.defaultResourceId;
         
-        console.log(`✅ Valid assignment: ${op.operationName} -> resource ${resourceId}`);
+        console.log(`✅ Creating assignment: ${op.operationName} -> resource ${resourceId}`);
         
         return {
           id: `a_${op.id || op.operationId}_${index}`,
@@ -265,6 +253,7 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
   return (
     <div className="h-full w-full" style={{ minHeight: '600px' }}>
       <BryntumSchedulerPro
+        ref={schedulerRef}
         project={project}
         startDate={new Date(2025, 7, 22)} // August 22, 2025 to match our data
         endDate={new Date(2025, 7, 29)}   // One week view
@@ -507,6 +496,8 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
       />
     </div>
   );
-};
+});
+
+BryntumSchedulerProComponent.displayName = 'BryntumSchedulerProComponent';
 
 export default BryntumSchedulerProComponent;

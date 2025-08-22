@@ -164,8 +164,16 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
       const grid = gridRef.current;
       const scheduler = schedulerRef.current;
       
+      // Access Bryntum properly - try multiple possible paths
+      const Bryntum = (window as any).bryntum?.schedulerpro || (window as any).SchedulerPro || grid.constructor.getBryntumObject?.();
+      
+      if (!Bryntum?.DragHelper) {
+        console.error('Bryntum DragHelper not found - drag functionality unavailable');
+        return;
+      }
+      
       // Set up drag-from-grid functionality following Bryntum documentation
-      const dragHelper = new (window as any).bryntum.schedulerpro.DragHelper({
+      const dragHelper = new Bryntum.DragHelper({
         cloneTarget: true,
         autoSizeClonedTarget: false,
         dropTargetSelector: '.b-timeline-subgrid',
@@ -213,14 +221,40 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
           const { task, target, resource, valid, element } = context;
           
           if (valid && target && resource) {
-            const coordinate = (window as any).bryntum.schedulerpro.DomHelper.getTranslateX(element);
+            const coordinate = Bryntum.DomHelper.getTranslateX(element);
             const startDate = scheduler.getDateFromCoordinate(coordinate, 'round', false);
             
             if (startDate) {
+              console.log('Creating new event:', {
+                task: task.name,
+                resource: resource.name,
+                startDate: startDate.toISOString()
+              });
+              
+              // Create new event in scheduler
+              const newEvent = {
+                id: `new_${task.id}_${Date.now()}`,
+                name: `${task.jobName}: ${task.name}`,
+                startDate: startDate,
+                endDate: new Date(startDate.getTime() + task.duration * 60 * 60 * 1000),
+                assignmentType: 'user_scheduled',
+                operationId: task.id,
+                jobId: task.jobId,
+                priority: task.priority,
+                duration: task.duration
+              };
+              
+              // Add to scheduler and assign to resource
+              scheduler.eventStore.add(newEvent);
+              const event = scheduler.eventStore.getById(newEvent.id);
+              if (event) {
+                event.assign(resource);
+              }
+              
               // Remove from unscheduled grid
               grid.store.remove(task);
               
-              // Notify parent component to handle the assignment
+              // Notify parent component
               onOperationDrop?.(task, resource, startDate);
             }
           }
