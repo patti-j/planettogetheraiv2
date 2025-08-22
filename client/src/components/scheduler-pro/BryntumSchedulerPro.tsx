@@ -35,22 +35,31 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
   const effectiveOperations = operations.length > 0 ? operations : (ptOperations || []);
   const effectiveResources = resources.length > 0 ? resources : (ptResources || []);
 
-  // Transform PT resources to Bryntum format
+  // Transform PT resources to Bryntum format - ONE ROW PER UNIQUE RESOURCE
   const bryntumResources = useMemo(() => {
     if (!Array.isArray(effectiveResources) || !effectiveResources.length) return [];
     
-    return effectiveResources.map((resource: any) => ({
-      id: `r_${resource.id || resource.resource_id}`,
-      name: resource.name,
-      type: resource.type || 'Resource',
-      capacity: resource.capacity || 100,
-      department: resource.departmentName,
-      active: resource.active !== false,
-      // Jim's corrections: Track if this is a bottleneck resource
-      isBottleneck: resource.bottleneck || false,
-      // Custom styling based on resource status
-      cls: resource.active ? 'resource-active' : 'resource-inactive'
-    }));
+    // Create unique resources to ensure one row per resource
+    const uniqueResources = effectiveResources.reduce((acc: any[], resource: any) => {
+      const resourceId = resource.id || resource.resource_id;
+      if (!acc.find(r => r.id === `r_${resourceId}`)) {
+        acc.push({
+          id: `r_${resourceId}`,
+          name: resource.name,
+          type: resource.type || 'Resource',
+          capacity: resource.capacity || 100,
+          department: resource.departmentName,
+          active: resource.active !== false,
+          // Jim's corrections: Track if this is a bottleneck resource
+          isBottleneck: resource.bottleneck || false,
+          // Custom styling based on resource status
+          cls: resource.active ? 'resource-active' : 'resource-inactive'
+        });
+      }
+      return acc;
+    }, []);
+    
+    return uniqueResources;
   }, [effectiveResources]);
 
   // Transform PT operations to Bryntum events format following Jim's corrections
@@ -85,18 +94,21 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
     }));
   }, [effectiveOperations]);
 
-  // Create assignments based on Jim's corrections
+  // Create assignments based on Jim's corrections - MULTIPLE EVENTS PER RESOURCE ROW
   const bryntumAssignments = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
     return effectiveOperations
       .filter((op: any) => op.assignedResourceId || op.resourceId)
-      .map((op: any, index: number) => ({
-        id: `a_${op.id || op.operationId}_${index}`,
-        eventId: `e_${op.id || op.operationId}`,
-        resourceId: `r_${op.assignedResourceId || op.resourceId}`,
-        units: 100 // Full resource allocation
-      }));
+      .map((op: any, index: number) => {
+        const resourceId = op.assignedResourceId || op.resourceId;
+        return {
+          id: `a_${op.id || op.operationId}_${index}`,
+          eventId: `e_${op.id || op.operationId}`,
+          resourceId: `r_${resourceId}`,
+          units: 100 // Full resource allocation
+        };
+      });
   }, [effectiveOperations]);
 
   // Create dependencies for sequential operations
