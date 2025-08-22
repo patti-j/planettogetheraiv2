@@ -41,6 +41,14 @@ import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
 import AtpCtp from "@/pages/atp-ctp";
 import Patti from "@/pages/Patti";
+import PlanningOverview from "@/pages/planning-overview";
+import PlantsManagement from "@/pages/plants-management";
+import DemandSupplyAlignment from "@/pages/demand-supply-alignment";
+import InventoryOptimization from "@/pages/inventory-optimization";
+import MRP from "@/pages/mrp";
+import ProductionPlanning from "@/pages/production-planning";
+import ScheduleSequences from "@/pages/schedule-sequences";
+import ShiftManagement from "@/pages/shift-management";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";
@@ -160,7 +168,7 @@ export default function ApplicationApp() {
               {/* Planning & Scheduling Routes */}
               <Route path="/planning-overview">
                 <ProtectedRoute feature="schedule" action="view">
-                  <Dashboard />
+                  <PlanningOverview />
                 </ProtectedRoute>
               </Route>
               <Route path="/demand-planning">
@@ -170,7 +178,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/demand-supply-alignment">
                 <ProtectedRoute feature="demand-supply-alignment" action="view">
-                  <Dashboard />
+                  <DemandSupplyAlignment />
                 </ProtectedRoute>
               </Route>
               <Route path="/capacity-planning">
@@ -180,17 +188,17 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/inventory-optimization">
                 <ProtectedRoute feature="inventory-optimization" action="view">
-                  <Dashboard />
+                  <InventoryOptimization />
                 </ProtectedRoute>
               </Route>
               <Route path="/mrp">
                 <ProtectedRoute feature="schedule" action="view">
-                  <Dashboard />
+                  <MRP />
                 </ProtectedRoute>
               </Route>
               <Route path="/production-planning">
                 <ProtectedRoute feature="production-planning" action="view">
-                  <Dashboard />
+                  <ProductionPlanning />
                 </ProtectedRoute>
               </Route>
               <Route path="/atp-ctp">
@@ -200,12 +208,12 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/schedule-sequences">
                 <ProtectedRoute feature="schedule" action="view">
-                  <Dashboard />
+                  <ScheduleSequences />
                 </ProtectedRoute>
               </Route>
               <Route path="/shift-management">
                 <ProtectedRoute feature="shift-management" action="view">
-                  <Dashboard />
+                  <ShiftManagement />
                 </ProtectedRoute>
               </Route>
               <Route path="/optimize-orders">
@@ -217,7 +225,7 @@ export default function ApplicationApp() {
               {/* Business Management Routes */}
               <Route path="/plants-management">
                 <ProtectedRoute feature="systems-management" action="view">
-                  <Dashboard />
+                  <PlantsManagement />
                 </ProtectedRoute>
               </Route>
               <Route path="/business-intelligence">
