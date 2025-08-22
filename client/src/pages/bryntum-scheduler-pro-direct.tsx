@@ -84,8 +84,8 @@ export default function BryntumSchedulerProDirect() {
             <div className="h-full">
               <BryntumSchedulerProComponent
                 ref={schedulerRef}
-                operations={operations}
-                resources={resources}
+                operations={operations || []}
+                resources={resources || []}
                 onOperationUpdate={handleOperationUpdate}
               />
             </div>

@@ -126,25 +126,23 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       return true;
     };
     
-    // Show all operations with valid resource assignments
+    // Create assignments for operations - simplified to ensure we get results
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Check if operation has any resource assignment
+        // Just check if operation has any resource assignment
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
-        if (!resourceId) return false;
-        
-        // Make sure the resource exists
-        const resource = effectiveResources.find((r: any) => 
-          (r.id || r.resource_id) === resourceId
-        );
-        return !!resource;
+        return resourceId; // Allow any operation with a resource ID
       })
       .map((op: any, index: number) => {
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
         
-        console.log(`✅ Creating assignment: ${op.operationName} -> resource ${resourceId}`);
+        console.log(`✅ Creating assignment: ${op.operationName} -> resource ${resourceId}`, {
+          opKeys: Object.keys(op),
+          resourceId,
+          hasResource: Array.isArray(effectiveResources) ? !!effectiveResources.find((r: any) => String(r.id || r.resource_id) === String(resourceId)) : false
+        });
         
         return {
           id: `a_${op.id || op.operationId}_${index}`,
@@ -155,6 +153,15 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       });
     
     console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
+    
+    if (assignments.length === 0 && effectiveOperations.length > 0) {
+      console.log('DEBUG: No assignments created, checking data:');
+      console.log('Sample operation:', effectiveOperations[0]);
+      console.log('Sample resource:', effectiveResources[0]);
+      console.log('Operations with resource IDs:', effectiveOperations.filter(op => 
+        op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId || op.defaultResourceId
+      ).length);
+    }
     return assignments;
   }, [effectiveOperations, effectiveResources]);
 
