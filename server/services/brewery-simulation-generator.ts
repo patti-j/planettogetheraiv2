@@ -125,15 +125,32 @@ export async function generateBrewerySimulationData() {
     let resourceId = 1;
     for (const plant of plants.slice(0, 2)) { // Focus on first 2 plants for detailed scheduling
       for (const resource of BREWERY_RESOURCES) {
-        // Assign department based on resource type
+        // Assign department based on resource type with proper brewery equipment classification
         let departmentOffset = (plant.id - 1) * 4; // Each plant has 4 departments
         let departmentId = departmentOffset + 1; // Default to Brewing Operations
         
-        if (resource.type === 'Packaging Line') {
+        // Brewery Operations (Department 1): Core brewing equipment
+        const brewingEquipment = ['Grain Mill', 'Mash Tun', 'Lauter Tun', 'Brew Kettle', 'Whirlpool', 'Heat Exchanger', 'Fermentation Tank', 'Maturation Tank', 'Filter', 'Bright Tank'];
+        
+        // Packaging (Department 2): Packaging and bottling lines
+        const packagingEquipment = ['Packaging Line'];
+        
+        // Quality Control (Department 3): Testing and lab equipment
+        const qualityEquipment = ['Lab'];
+        
+        // Maintenance (Department 4): Maintenance and support equipment
+        const maintenanceEquipment = ['Maintenance', 'Cleaning', 'CIP'];
+        
+        if (packagingEquipment.includes(resource.type)) {
           departmentId = departmentOffset + 2; // Packaging department
-        } else if (resource.type === 'Lab') {
+        } else if (qualityEquipment.includes(resource.type)) {
           departmentId = departmentOffset + 3; // Quality Control department
+        } else if (maintenanceEquipment.includes(resource.type)) {
+          departmentId = departmentOffset + 4; // Maintenance department
+        } else if (brewingEquipment.includes(resource.type)) {
+          departmentId = departmentOffset + 1; // Brewing Operations (explicit)
         }
+        // All other equipment defaults to Brewing Operations
         
         await db.execute(sql`
           INSERT INTO ptresources (id, external_id, name, description, plant_id, active, publish_date, instance_id, department_id, resource_id)
