@@ -36,6 +36,7 @@ import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
 import IntegrationsPage from "@/pages/integrations";
+import SystemIntegrationsPage from "@/pages/system-integrations";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";
@@ -203,6 +204,11 @@ export default function ApplicationApp() {
               <Route path="/integrations">
                 <ProtectedRoute feature="integrations" action="view">
                   <IntegrationsPage />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/systems-integration">
+                <ProtectedRoute feature="systems-integration" action="view">
+                  <SystemIntegrationsPage />
                 </ProtectedRoute>
               </Route>
 
