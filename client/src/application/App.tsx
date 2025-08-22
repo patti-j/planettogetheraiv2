@@ -127,9 +127,24 @@ export default function ApplicationApp() {
                   <OptimizationStudio />
                 </ProtectedRoute>
               </Route>
+              <Route path="/production-schedule">
+                <ProtectedRoute feature="schedule" action="view">
+                  <ProductionScheduleSimple />
+                </ProtectedRoute>
+              </Route>
               <Route path="/production-schedule-simple">
                 <ProtectedRoute feature="schedule" action="view">
                   <ProductionScheduleSimple />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/master-production-schedule">
+                <ProtectedRoute feature="master-production-schedule" action="view">
+                  <ProductionScheduleSimple />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/production-scheduler-dashboard">
+                <ProtectedRoute feature="scheduling" action="view">
+                  <Dashboard />
                 </ProtectedRoute>
               </Route>
 
