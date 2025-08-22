@@ -51,7 +51,21 @@ Note on concurrent work:
 - **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
 - **Hint System Service**: Intelligent contextual hints with user interaction tracking, prerequisites, and sequence management.
 
-### Recent Updates (January 2025)
+### Bryntum Scheduler Pro Documentation
+
+**Saved Documentation Files:**
+- `docs/bryntum-scheduler-pro-reference.md` - Core API reference, data models, features, and best practices
+- `docs/bryntum-react-integration.md` - React-specific integration patterns, hooks, and TypeScript usage
+- `docs/bryntum-drag-drop-implementation.md` - Complete drag-and-drop implementation guide with validation patterns
+
+**Implementation Status:**
+- ✅ Enhanced drag validation with resource availability checking
+- ✅ Unscheduled operations grid with drag-from-grid functionality
+- ✅ Professional visual feedback and proxy creation
+- ✅ Resource conflict detection and capability matching
+- ✅ Integration with Jim's corrections for PT table relationships
+
+## Recent Updates (January 2025)
 - **Authentication Flow**: When starting the preview, unauthenticated users are automatically redirected to the login page instead of seeing the website homepage
 - **Global Control Tower Route**: Renamed enterprise-map route to /control-tower to align with "Global Control Tower" naming
 - **Mobile UI Improvements**: Fixed mobile header settings icon to open Max AI Settings
