@@ -37,6 +37,8 @@ import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
+import DemandManagement from "@/pages/demand-management";
+import AtpCtp from "@/pages/atp-ctp";
 
 // Import other application-specific components
 import { useAuth } from "@/hooks/useAuth";

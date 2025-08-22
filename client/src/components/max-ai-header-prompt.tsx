@@ -22,12 +22,16 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   // Mutation for sending AI prompt
   const sendPromptMutation = useMutation({
     mutationFn: async (message: string) => {
+      const token = localStorage.getItem('authToken'); // Fixed: correct token key
+      const headers: any = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
       const response = await fetch('/api/max-ai/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
+        headers,
         body: JSON.stringify({
           message,
           userId: user?.id,
