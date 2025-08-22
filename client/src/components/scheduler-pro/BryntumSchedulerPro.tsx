@@ -145,10 +145,10 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       return true;
     };
     
-    // Create assignments for operations - simplified to ensure we get results
+    // Create assignments for operations - FIXED to map PT data correctly
     const assignments = effectiveOperations
       .filter((op: any) => {
-        // Just check if operation has any resource assignment
+        // Check if operation has resource assignment
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
         return resourceId; // Allow any operation with a resource ID
@@ -157,19 +157,28 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
                           op.scheduledResourceId || op.defaultResourceId;
         
-        console.log(`✅ Creating assignment: ${op.operationName} -> resource ${resourceId}`, {
-          opKeys: Object.keys(op),
-          resourceId,
-          hasResource: Array.isArray(effectiveResources) ? !!effectiveResources.find((r: any) => String(r.id || r.resource_id) === String(resourceId)) : false
-        });
+        // Find matching resource by ID from PT resources
+        const matchingResource = Array.isArray(effectiveResources) ? 
+          effectiveResources.find((r: any) => {
+            // PT resources use 'id' field, operations use assignedResourceId
+            return String(r.id || r.resource_id) === String(resourceId);
+          }) : null;
         
-        return {
-          id: `a_${op.id || op.operationId}_${index}`,
-          eventId: `e_${op.id || op.operationId}`,
-          resourceId: `r_${resourceId}`,
-          units: 100
-        };
-      });
+        if (matchingResource) {
+          console.log(`✅ Creating assignment: ${op.operationName} -> ${matchingResource.name} (ID: ${resourceId})`);
+          
+          return {
+            id: `a_${op.id || op.operationId}_${index}`,
+            eventId: `e_${op.id || op.operationId}`,
+            resourceId: `r_${matchingResource.id}`, // Use actual resource ID from PT table
+            units: 100
+          };
+        } else {
+          console.log(`❌ No matching resource found for operation ${op.operationName} (resourceId: ${resourceId})`);
+          return null;
+        }
+      })
+      .filter(Boolean); // Remove null assignments
     
     console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
     
@@ -277,7 +286,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   }, [bryntumResources, bryntumEvents]);
 
   return (
-    <div className="h-full w-full overflow-auto" style={{ minHeight: '600px', maxHeight: 'calc(100vh - 200px)' }}>
+    <div className="h-full w-full" style={{ minHeight: '600px', height: '700px', overflow: 'hidden' }}>
       <BryntumSchedulerPro
         ref={schedulerRef}
         // Use separate store configs instead of inline project to avoid the warning
@@ -290,7 +299,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         viewPreset="hourAndDay"
         rowHeight={60}
         barMargin={8}
-        height="100%"
+        height={700}
         autoAdjustTimeAxis={false}
         
         // Enable scrolling for navigation
