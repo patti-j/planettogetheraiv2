@@ -767,9 +767,8 @@ export default function TopMenu() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                     {getSearchResults().map((item, index) => (
-                      <Link 
+                      <div 
                         key={`search-${index}`}
-                        href={item.feature.href === "#max" ? "#" : item.feature.href}
                         onClick={() => handleFeatureClick(item.feature)}
                       >
                         <div className={`
@@ -798,7 +797,7 @@ export default function TopMenu() {
                             </span>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -881,9 +880,8 @@ export default function TopMenu() {
                             }}>
                             <div className="grid grid-cols-2 gap-2">
                               {group.features.map((feature, featureIndex) => (
-                                <Link 
+                                <div 
                                   key={featureIndex} 
-                                  href={feature.href === "#max" ? "#" : feature.href}
                                   onClick={() => handleFeatureClick(feature)}
                                 >
                                   <div className={`
@@ -898,7 +896,7 @@ export default function TopMenu() {
                                       {feature.label}
                                     </span>
                                   </div>
-                                </Link>
+                                </div>
                               ))}
                             </div>
                           </div>
@@ -936,9 +934,8 @@ export default function TopMenu() {
                       </h3>
                       <div className="grid grid-cols-2 gap-2">
                         {group.features.map((feature, featureIndex) => (
-                          <Link 
+                          <div 
                             key={featureIndex} 
-                            href={feature.href === "#max" ? "#" : feature.href}
                             onClick={() => handleFeatureClick(feature)}
                           >
                             <div className={`
@@ -958,7 +955,7 @@ export default function TopMenu() {
                                 {feature.label}
                               </span>
                             </div>
-                          </Link>
+                          </div>
                         ))}
                       </div>
                     </div>
