@@ -104,30 +104,26 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
   const bryntumAssignments = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    // Define valid operation-resource combinations
-    const resourceOperationCompatibility = {
-      'Brew Kettle': ['Milling', 'Mashing', 'Boiling'],
-      'Lauter Tun': ['Lautering'],
-      'Fermentation Tank': ['Fermentation'],
-      'Bright Tank': ['Carbonation'],
-      'Packaging Line': ['Packaging'],
-      'Quality Lab': ['Quality Testing'],
-      'Filter System': ['Filtration'],
-      'Heat Exchanger': ['Cooling'],
-      'Whirlpool Tank': ['Whirlpool'],
-      'Maturation Tank': ['Maturation'],
-      'Grain Mill': ['Milling'],
-      'Mash Tun': ['Mashing']
-    };
+    // Define BLOCKED operation-resource combinations (worst mismatches only)
+    const blockedCombinations = [
+      // Only block the most obviously wrong combinations
+      { operation: 'Packaging', blockedResources: ['Brew Kettle', 'Fermentation Tank', 'Quality Lab'] },
+      { operation: 'Quality Testing', blockedResources: ['Brew Kettle', 'Packaging Line', 'Fermentation Tank'] },
+      { operation: 'Fermentation', blockedResources: ['Packaging Line', 'Quality Lab', 'Grain Mill'] }
+    ];
     
-    // Function to check if operation is compatible with resource
-    const isCompatible = (operationName: string, resourceName: string): boolean => {
-      for (const [resourceType, validOps] of Object.entries(resourceOperationCompatibility)) {
-        if (resourceName.includes(resourceType)) {
-          return validOps.includes(operationName);
+    // Function to check if operation should be blocked on this resource
+    const isBlocked = (operationName: string, resourceName: string): boolean => {
+      for (const combo of blockedCombinations) {
+        if (operationName === combo.operation) {
+          for (const blockedResource of combo.blockedResources) {
+            if (resourceName.includes(blockedResource)) {
+              return true;
+            }
+          }
         }
       }
-      return false; // Default to not compatible if no match
+      return false; // Allow by default, only block obvious mismatches
     };
     
     // Create assignments for operations with compatible resource assignments
@@ -145,15 +141,15 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
         
         if (!resource) return false;
         
-        // Check resource compatibility to prevent nonsensical assignments
-        const compatible = isCompatible(op.operationName, resource.name);
+        // Only block the most obviously wrong assignments
+        const shouldBlock = isBlocked(op.operationName, resource.name);
         
-        if (!compatible) {
-          console.warn(`🚫 Incompatible assignment blocked: ${op.operationName} -> ${resource.name}`);
+        if (shouldBlock) {
+          console.warn(`🚫 Blocked obviously wrong assignment: ${op.operationName} -> ${resource.name}`);
           return false;
         }
         
-        console.log(`✅ Valid assignment: ${op.operationName} -> ${resource.name}`);
+        console.log(`✅ Allowing assignment: ${op.operationName} -> ${resource.name}`);
         return true;
       })
       .map((op: any, index: number) => {
