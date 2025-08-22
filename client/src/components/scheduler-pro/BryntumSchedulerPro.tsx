@@ -280,24 +280,12 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
         autoAdjustTimeAxis={false}
         
         // Enable scrollbars for navigation
-        scrollable={{
-          x: true,
-          y: true
-        }}
+        scrollable={true}
         
-        // Configure subgrids for proper scrolling
-        subGridConfigs={{
-          locked: {
-            width: 320,
-            scrollable: {
-              y: true
-            }
-          },
-          normal: {
-            scrollable: {
-              x: true,
-              y: true
-            }
+        // Timeline scrolling configuration 
+        timeAxisSubGrid={{
+          scrollable: {
+            x: true
           }
         }}
         
