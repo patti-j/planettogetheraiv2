@@ -108,7 +108,10 @@ export default function PortalDashboard() {
 
         {/* Quick Actions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setLocation('/portal/purchase-orders')}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5 text-blue-600" />
@@ -124,7 +127,10 @@ export default function PortalDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setLocation('/portal/deliveries')}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-green-600" />
@@ -140,32 +146,38 @@ export default function PortalDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setLocation('/portal/inventory')}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-purple-600" />
-                <CardTitle className="text-base">Documents</CardTitle>
+                <Package className="h-5 w-5 text-purple-600" />
+                <CardTitle className="text-base">Inventory</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-3">
-                Quality certificates and reports
+                Monitor stock levels and availability
               </p>
-              <div className="text-2xl font-bold text-gray-900">24</div>
-              <p className="text-xs text-gray-500">Updated today</p>
+              <div className="text-2xl font-bold text-gray-900">248</div>
+              <p className="text-xs text-yellow-600">15 low stock items</p>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card 
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => setLocation('/portal/reports')}
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-orange-600" />
-                <CardTitle className="text-base">Performance</CardTitle>
+                <CardTitle className="text-base">Reports & Analytics</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-3">
-                View your performance metrics
+                Analytics and performance reports
               </p>
               <div className="text-2xl font-bold text-gray-900">98%</div>
               <p className="text-xs text-green-600">On-time delivery</p>

@@ -1121,6 +1121,11 @@ export interface IStorage {
   createPortalPermission(permission: InsertPortalPermission): Promise<PortalPermission>;
   updatePortalPermission(id: string, updates: Partial<InsertPortalPermission>): Promise<PortalPermission | undefined>;
   deletePortalPermission(id: string): Promise<boolean>;
+  
+  // Portal Data Access Methods
+  getPurchaseOrdersByCompany(companyId: string): Promise<any[]>;
+  getDeliveriesByCompany(companyId: string): Promise<any[]>;
+  getInventoryByCompany(companyId: string): Promise<any[]>;
   checkPortalPermission(userId: string, resourceType: string, action: string): Promise<boolean>;
   
   // AI Onboarding Progress
@@ -16739,6 +16744,190 @@ export class DatabaseStorage implements IStorage {
       .delete(portalSessions)
       .where(lt(portalSessions.expiresAt, new Date()));
     return result.rowCount || 0;
+  }
+  
+  // Portal Data Access Methods
+  async getPurchaseOrdersByCompany(companyId: string): Promise<any[]> {
+    // Return sample purchase orders for now
+    // In production, this would query actual purchase order tables
+    return [
+      {
+        id: '1',
+        orderNumber: 'PO-2025-001',
+        supplierName: 'Acme Suppliers Inc',
+        customerName: 'PlanetTogether Manufacturing',
+        status: 'confirmed',
+        orderDate: new Date('2025-01-15').toISOString(),
+        deliveryDate: new Date('2025-01-22').toISOString(),
+        totalAmount: 25000,
+        currency: 'USD',
+        itemCount: 5,
+        priority: 'high',
+        shippingAddress: '123 Manufacturing Ave, Industrial City, IC 12345',
+        paymentTerms: 'Net 30',
+        items: []
+      },
+      {
+        id: '2',
+        orderNumber: 'PO-2025-002',
+        supplierName: 'Acme Suppliers Inc',
+        customerName: 'PlanetTogether Manufacturing',
+        status: 'pending',
+        orderDate: new Date('2025-01-18').toISOString(),
+        deliveryDate: new Date('2025-01-25').toISOString(),
+        totalAmount: 15000,
+        currency: 'USD',
+        itemCount: 3,
+        priority: 'normal',
+        shippingAddress: '123 Manufacturing Ave, Industrial City, IC 12345',
+        paymentTerms: 'Net 30',
+        items: []
+      },
+      {
+        id: '3',
+        orderNumber: 'PO-2025-003',
+        supplierName: 'Acme Suppliers Inc',
+        customerName: 'PlanetTogether Manufacturing',
+        status: 'in_transit',
+        orderDate: new Date('2025-01-10').toISOString(),
+        deliveryDate: new Date('2025-01-20').toISOString(),
+        totalAmount: 45000,
+        currency: 'USD',
+        itemCount: 8,
+        priority: 'urgent',
+        shippingAddress: '123 Manufacturing Ave, Industrial City, IC 12345',
+        paymentTerms: 'Net 15',
+        items: []
+      }
+    ];
+  }
+  
+  async getDeliveriesByCompany(companyId: string): Promise<any[]> {
+    // Return sample deliveries for now
+    return [
+      {
+        id: '1',
+        deliveryNumber: 'DLV-2025-001',
+        orderNumber: 'PO-2025-001',
+        status: 'in_transit',
+        origin: 'Acme Warehouse - Chicago',
+        destination: 'PlanetTogether Facility - Detroit',
+        currentLocation: 'Distribution Center - Toledo',
+        estimatedDelivery: new Date('2025-01-22').toISOString(),
+        carrier: 'Express Logistics Inc',
+        trackingNumber: 'TRK123456789',
+        items: 5,
+        weight: 500,
+        weightUnit: 'kg',
+        progress: 65,
+        events: [
+          {
+            id: '1',
+            timestamp: new Date('2025-01-20T10:00:00').toISOString(),
+            location: 'Distribution Center - Toledo',
+            status: 'In Transit',
+            description: 'Package arrived at distribution center'
+          },
+          {
+            id: '2',
+            timestamp: new Date('2025-01-19T15:00:00').toISOString(),
+            location: 'Acme Warehouse - Chicago',
+            status: 'Dispatched',
+            description: 'Package left origin facility'
+          }
+        ]
+      },
+      {
+        id: '2',
+        deliveryNumber: 'DLV-2025-002',
+        orderNumber: 'PO-2024-098',
+        status: 'delivered',
+        origin: 'Acme Warehouse - Chicago',
+        destination: 'PlanetTogether Facility - Detroit',
+        currentLocation: 'PlanetTogether Facility - Detroit',
+        estimatedDelivery: new Date('2025-01-15').toISOString(),
+        actualDelivery: new Date('2025-01-15').toISOString(),
+        carrier: 'Fast Freight Solutions',
+        trackingNumber: 'TRK987654321',
+        items: 3,
+        weight: 250,
+        weightUnit: 'kg',
+        progress: 100,
+        events: []
+      }
+    ];
+  }
+  
+  async getInventoryByCompany(companyId: string): Promise<any[]> {
+    // Return sample inventory items for now
+    return [
+      {
+        id: '1',
+        itemCode: 'RAW-001',
+        description: 'Steel Sheets - Grade A',
+        category: 'raw_materials',
+        currentStock: 500,
+        availableStock: 400,
+        reservedStock: 100,
+        incomingStock: 200,
+        unit: 'sheets',
+        minLevel: 100,
+        maxLevel: 1000,
+        reorderPoint: 150,
+        lastRestocked: new Date('2025-01-10').toISOString(),
+        warehouse: 'Main Warehouse - Section A',
+        supplier: 'Acme Suppliers Inc',
+        unitCost: 45.50,
+        totalValue: 22750,
+        stockStatus: 'healthy',
+        trend: 'up',
+        trendPercentage: 12
+      },
+      {
+        id: '2',
+        itemCode: 'COMP-015',
+        description: 'Aluminum Brackets - Type B',
+        category: 'components',
+        currentStock: 75,
+        availableStock: 50,
+        reservedStock: 25,
+        incomingStock: 100,
+        unit: 'pcs',
+        minLevel: 50,
+        maxLevel: 500,
+        reorderPoint: 75,
+        lastRestocked: new Date('2025-01-05').toISOString(),
+        warehouse: 'Main Warehouse - Section B',
+        supplier: 'Acme Suppliers Inc',
+        unitCost: 12.75,
+        totalValue: 956.25,
+        stockStatus: 'low',
+        trend: 'down',
+        trendPercentage: -8
+      },
+      {
+        id: '3',
+        itemCode: 'PKG-008',
+        description: 'Cardboard Boxes - Large',
+        category: 'packaging',
+        currentStock: 1200,
+        availableStock: 1000,
+        reservedStock: 200,
+        incomingStock: 0,
+        unit: 'boxes',
+        minLevel: 200,
+        maxLevel: 1500,
+        reorderPoint: 300,
+        lastRestocked: new Date('2025-01-12').toISOString(),
+        warehouse: 'Packaging Storage',
+        supplier: 'Acme Suppliers Inc',
+        unitCost: 2.50,
+        totalValue: 3000,
+        stockStatus: 'healthy',
+        trend: 'stable',
+        trendPercentage: 0
+      }
+    ];
   }
 
   // Portal Permissions Management

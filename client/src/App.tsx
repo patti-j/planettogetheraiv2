@@ -16,6 +16,9 @@ import WebsiteApp from "./website/App";
 import ApplicationApp from "./application/App";
 import PortalLogin from "@/pages/portal-login";
 import PortalDashboard from "@/pages/portal-dashboard";
+import PortalPurchaseOrders from "@/pages/portal-purchase-orders";
+import PortalDeliveries from "@/pages/portal-deliveries";
+import PortalInventory from "@/pages/portal-inventory";
 
 // Check authentication status
 function useAuthStatus() {
@@ -177,6 +180,9 @@ export default function App() {
                         <Switch>
                           <Route path="/portal/login" component={PortalLogin} />
                           <Route path="/portal/dashboard" component={PortalDashboard} />
+                          <Route path="/portal/purchase-orders" component={PortalPurchaseOrders} />
+                          <Route path="/portal/deliveries" component={PortalDeliveries} />
+                          <Route path="/portal/inventory" component={PortalInventory} />
                           <Route path="/portal" component={PortalLogin} />
                         </Switch>
                       </div>

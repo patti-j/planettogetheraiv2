@@ -7128,6 +7128,152 @@ User Prompt: "${prompt}"`;
     }
   });
 
+  // Portal API routes - Purchase Orders
+  app.get('/api/portal/purchase-orders', async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: 'No authorization token' });
+      }
+      
+      const token = authHeader.replace('Bearer ', '');
+      const session = await storage.getPortalSession(token);
+      if (!session) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+      
+      // Get purchase orders for the company
+      const orders = await storage.getPurchaseOrdersByCompany(session.companyId);
+      
+      // Transform to portal format
+      const transformedOrders = orders.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber || `PO-${order.id}`,
+        supplierName: order.supplierName || 'Acme Suppliers Inc',
+        customerName: order.customerName || 'PlanetTogether Manufacturing',
+        status: order.status || 'pending',
+        orderDate: order.orderDate || new Date().toISOString(),
+        deliveryDate: order.deliveryDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        totalAmount: order.totalAmount || Math.random() * 50000,
+        currency: order.currency || 'USD',
+        itemCount: order.itemCount || Math.floor(Math.random() * 20) + 1,
+        priority: order.priority || 'normal',
+        shippingAddress: order.shippingAddress || '123 Manufacturing Ave, Industrial City',
+        paymentTerms: order.paymentTerms || 'Net 30',
+        items: order.items || []
+      }));
+      
+      res.json(transformedOrders);
+    } catch (error) {
+      console.error('Error fetching purchase orders:', error);
+      res.status(500).json({ error: 'Failed to fetch purchase orders' });
+    }
+  });
+  
+  // Portal API routes - Deliveries
+  app.get('/api/portal/deliveries', async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: 'No authorization token' });
+      }
+      
+      const token = authHeader.replace('Bearer ', '');
+      const session = await storage.getPortalSession(token);
+      if (!session) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+      
+      // Get deliveries for the company
+      const deliveries = await storage.getDeliveriesByCompany(session.companyId);
+      
+      // Transform to portal format
+      const transformedDeliveries = deliveries.map(delivery => ({
+        id: delivery.id,
+        deliveryNumber: delivery.deliveryNumber || `DLV-${delivery.id}`,
+        orderNumber: delivery.orderNumber || `PO-${Math.floor(Math.random() * 1000)}`,
+        status: delivery.status || 'in_transit',
+        origin: delivery.origin || 'Acme Warehouse',
+        destination: delivery.destination || 'PlanetTogether Facility',
+        currentLocation: delivery.currentLocation || 'Distribution Center',
+        estimatedDelivery: delivery.estimatedDelivery || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        actualDelivery: delivery.actualDelivery,
+        carrier: delivery.carrier || 'Express Logistics',
+        trackingNumber: delivery.trackingNumber || `TRK${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        items: delivery.items || Math.floor(Math.random() * 10) + 1,
+        weight: delivery.weight || Math.random() * 1000,
+        weightUnit: delivery.weightUnit || 'kg',
+        progress: delivery.progress || Math.floor(Math.random() * 100),
+        events: delivery.events || []
+      }));
+      
+      res.json(transformedDeliveries);
+    } catch (error) {
+      console.error('Error fetching deliveries:', error);
+      res.status(500).json({ error: 'Failed to fetch deliveries' });
+    }
+  });
+  
+  // Portal API routes - Inventory
+  app.get('/api/portal/inventory', async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res.status(401).json({ error: 'No authorization token' });
+      }
+      
+      const token = authHeader.replace('Bearer ', '');
+      const session = await storage.getPortalSession(token);
+      if (!session) {
+        return res.status(401).json({ error: 'Invalid session' });
+      }
+      
+      // Get inventory items for the company
+      const inventory = await storage.getInventoryByCompany(session.companyId);
+      
+      // Transform to portal format
+      const transformedInventory = inventory.map(item => {
+        const currentStock = item.currentStock || Math.floor(Math.random() * 1000);
+        const maxLevel = item.maxLevel || 1000;
+        const minLevel = item.minLevel || 100;
+        const stockPercentage = (currentStock / maxLevel) * 100;
+        
+        let stockStatus = 'healthy';
+        if (currentStock <= minLevel) stockStatus = 'critical';
+        else if (currentStock <= minLevel * 2) stockStatus = 'low';
+        else if (currentStock >= maxLevel * 0.9) stockStatus = 'overstock';
+        
+        return {
+          id: item.id,
+          itemCode: item.itemCode || `ITM-${item.id}`,
+          description: item.description || 'Industrial Component',
+          category: item.category || 'raw_materials',
+          currentStock: currentStock,
+          availableStock: item.availableStock || currentStock * 0.8,
+          reservedStock: item.reservedStock || currentStock * 0.2,
+          incomingStock: item.incomingStock || Math.floor(Math.random() * 200),
+          unit: item.unit || 'pcs',
+          minLevel: minLevel,
+          maxLevel: maxLevel,
+          reorderPoint: item.reorderPoint || minLevel * 1.5,
+          lastRestocked: item.lastRestocked || new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          warehouse: item.warehouse || 'Main Warehouse',
+          supplier: item.supplier || 'Acme Suppliers Inc',
+          unitCost: item.unitCost || Math.random() * 100,
+          totalValue: item.totalValue || currentStock * (item.unitCost || 50),
+          stockStatus: stockStatus,
+          trend: Math.random() > 0.5 ? 'up' : Math.random() > 0.3 ? 'down' : 'stable',
+          trendPercentage: Math.floor(Math.random() * 20) - 10
+        };
+      });
+      
+      res.json(transformedInventory);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+      res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+  });
+
   // Portal API routes
   app.post('/api/portal/login', async (req, res) => {
     try {
