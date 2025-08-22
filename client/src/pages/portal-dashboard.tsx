@@ -20,17 +20,24 @@ export default function PortalDashboard() {
   const [user, setUser] = useState<PortalUser | null>(null);
 
   useEffect(() => {
+    console.log('=== PORTAL DASHBOARD AUTH CHECK ===');
     // Check if user is logged in
     const token = localStorage.getItem('portal_token');
     const userData = localStorage.getItem('portal_user');
     
+    console.log('Token exists:', !!token);
+    console.log('User data exists:', !!userData);
+    console.log('Current path:', window.location.pathname);
+    
     if (!token || !userData) {
+      console.log('No token or user data, redirecting to login');
       setLocation('/portal/login');
       return;
     }
     
     try {
       const parsedUser = JSON.parse(userData);
+      console.log('Parsed user:', parsedUser);
       setUser(parsedUser);
     } catch (error) {
       console.error('Error parsing user data:', error);
