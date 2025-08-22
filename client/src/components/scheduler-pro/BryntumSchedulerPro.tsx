@@ -66,7 +66,10 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
   const bryntumEvents = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    return effectiveOperations.map((op: any) => ({
+    console.log('Creating Bryntum events from operations:', effectiveOperations.length);
+    console.log('Sample operation data:', effectiveOperations[0]);
+    
+    const events = effectiveOperations.map((op: any) => ({
       id: `e_${op.id || op.operationId}`,
       name: `${op.jobName}: ${op.operationName}`,
       startDate: new Date(op.startTime),
@@ -92,16 +95,30 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
       // Lock scheduled operations to prevent accidental moves
       readOnly: op.isLocked || false
     }));
+    
+    console.log('Created events:', events.length);
+    return events;
   }, [effectiveOperations]);
 
   // Create assignments based on Jim's corrections - MULTIPLE EVENTS PER RESOURCE ROW
   const bryntumAssignments = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    return effectiveOperations
-      .filter((op: any) => op.assignedResourceId || op.resourceId)
+    // Include ALL operations that have any resource assignment
+    const assignments = effectiveOperations
+      .filter((op: any) => {
+        // Check multiple possible resource ID fields from PT operations
+        const hasResource = op.assignedResourceId || op.resourceId || op.resource_id || 
+                           op.scheduledResourceId || op.defaultResourceId;
+        return hasResource;
+      })
       .map((op: any, index: number) => {
-        const resourceId = op.assignedResourceId || op.resourceId;
+        // Get resource ID from any available field
+        const resourceId = op.assignedResourceId || op.resourceId || op.resource_id || 
+                          op.scheduledResourceId || op.defaultResourceId;
+        
+        console.log(`Creating assignment for operation ${op.id}: event e_${op.id || op.operationId} -> resource r_${resourceId}`);
+        
         return {
           id: `a_${op.id || op.operationId}_${index}`,
           eventId: `e_${op.id || op.operationId}`,
@@ -109,6 +126,9 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
           units: 100 // Full resource allocation
         };
       });
+    
+    console.log(`Created ${assignments.length} assignments from ${effectiveOperations.length} operations`);
+    return assignments;
   }, [effectiveOperations]);
 
   // Create dependencies for sequential operations
@@ -174,12 +194,28 @@ const BryntumSchedulerProComponent: React.FC<BryntumSchedulerProComponentProps> 
     }
   }
 
-  const project = useMemo(() => ({
-    resources: bryntumResources,
-    events: bryntumEvents,
-    assignments: bryntumAssignments,
-    dependencies: bryntumDependencies
-  }), [bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
+  const project = useMemo(() => {
+    console.log('Creating Bryntum project with:');
+    console.log('- Resources:', bryntumResources.length);
+    console.log('- Events:', bryntumEvents.length);  
+    console.log('- Assignments:', bryntumAssignments.length);
+    console.log('- Dependencies:', bryntumDependencies.length);
+    
+    // Log some sample data
+    if (bryntumResources.length > 0) {
+      console.log('Sample resource:', bryntumResources[0]);
+    }
+    if (bryntumAssignments.length > 0) {
+      console.log('Sample assignment:', bryntumAssignments[0]);
+    }
+    
+    return {
+      resources: bryntumResources,
+      events: bryntumEvents,
+      assignments: bryntumAssignments,
+      dependencies: bryntumDependencies
+    };
+  }, [bryntumResources, bryntumEvents, bryntumAssignments, bryntumDependencies]);
 
   // Show loading state while data is being fetched
   if (operationsLoading || resourcesLoading) {

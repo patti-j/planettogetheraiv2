@@ -72,6 +72,7 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
         text: 'Operation',
         field: 'name',
         width: 180,
+        htmlEncode: false,
         renderer: ({ record }: any) => 
           `<i class="${record.iconCls}"></i> ${record.name}`
       },
@@ -84,6 +85,7 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
         text: 'Duration',
         field: 'duration',
         width: 80,
+        htmlEncode: false,
         renderer: ({ record }: any) => 
           `${record.duration}${record.durationUnit === 'hour' ? 'h' : 'd'}`
       },
