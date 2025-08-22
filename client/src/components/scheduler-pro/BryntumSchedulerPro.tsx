@@ -239,6 +239,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     if (bryntumResources.length > 0) {
       console.log('Sample resource:', bryntumResources[0]);
     }
+    if (bryntumEvents.length > 0) {
+      console.log('Sample event:', bryntumEvents[0]);
+      console.log('Event date range:', bryntumEvents[0]?.startDate, 'to', bryntumEvents[0]?.endDate);
+      console.log('Scheduler view dates:', new Date(2025, 7, 22), 'to', new Date(2025, 7, 29));
+    }
     if (bryntumAssignments.length > 0) {
       console.log('Sample assignment:', bryntumAssignments[0]);
     }
@@ -276,14 +281,10 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         height={600}
         autoAdjustTimeAxis={false}
         
-        // Enable scrollbars for navigation
-        scrollable={true}
-        
-        // Timeline scrolling configuration 
-        timeAxisSubGrid={{
-          scrollable: {
-            x: true
-          }
+        // Enable scrolling for navigation
+        scrollable={{
+          x: true,
+          y: true
         }}
         
         columns={[
