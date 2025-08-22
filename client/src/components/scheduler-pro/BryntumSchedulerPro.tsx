@@ -292,7 +292,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     <div className="h-full w-full" style={{ minHeight: '600px' }}>
       <BryntumSchedulerPro
         ref={schedulerRef}
-        project={project}
+        // Use separate store configs instead of inline project to avoid the warning
+        resources={bryntumResources}
+        events={bryntumEvents}
+        assignments={bryntumAssignments}
+        dependencies={bryntumDependencies}
         startDate={new Date(2025, 7, 22)} // August 22, 2025 to match our data
         endDate={new Date(2025, 7, 29)}   // One week view
         viewPreset="hourAndDay"
