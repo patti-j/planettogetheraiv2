@@ -88,7 +88,7 @@ export default function GanttChart({
   const [isResizing, setIsResizing] = useState(false);
   
   // New states for enhanced Gantt features
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('week');
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('day');
   const [fadeMode, setFadeMode] = useState<FadeMode>('none');
   const [showTooltips, setShowTooltips] = useState(true);
   const [showActivityLinks, setShowActivityLinks] = useState(false);
@@ -495,38 +495,40 @@ export default function GanttChart({
     const periods = [];
     const today = new Date(2025, 7, 22); // August 22, 2025 - today
     
-    // Calculate the date range centered on today/this week
-    let minDate = today;
-    let maxDate = today;
+    // For daily view, start from today and show next 7 days
+    let minDate: Date;
+    let maxDate: Date;
     
-    // Find the earliest and latest operation dates
-    operations.forEach(op => {
-      if (op.startTime) {
-        const startDate = new Date(op.startTime);
-        if (startDate < minDate) minDate = startDate;
-        
-        if (op.endTime) {
-          const endDate = new Date(op.endTime);
-          if (endDate > maxDate) maxDate = endDate;
+    if (timeUnit === 'day') {
+      // Daily view: show today and the next 7 days
+      minDate = new Date(today);
+      minDate.setHours(0, 0, 0, 0); // Start of today
+      maxDate = new Date(today);
+      maxDate.setDate(maxDate.getDate() + 7); // 7 days forward
+      maxDate.setHours(23, 59, 59, 999); // End of the 7th day
+    } else {
+      // For other views, find operation date range
+      minDate = today;
+      maxDate = today;
+      
+      operations.forEach(op => {
+        if (op.startTime) {
+          const startDate = new Date(op.startTime);
+          if (startDate < minDate) minDate = startDate;
+          
+          if (op.endTime) {
+            const endDate = new Date(op.endTime);
+            if (endDate > maxDate) maxDate = endDate;
+          }
         }
-      }
-    });
-    
-    // Always include at least this week - ensure we show current week
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6); // End of week (Saturday)
-    
-    // Expand range to include this week minimum
-    minDate = new Date(Math.min(minDate.getTime(), weekStart.getTime()));
-    maxDate = new Date(Math.max(maxDate.getTime(), weekEnd.getTime()));
-    
-    // Add reasonable padding based on time unit
-    const paddingDays = timeUnit === 'day' ? 7 : timeUnit === 'week' ? 14 : 30;
-    const paddingMs = paddingDays * 24 * 60 * 60 * 1000; 
-    minDate = new Date(minDate.getTime() - paddingMs);
-    maxDate = new Date(maxDate.getTime() + paddingMs);
+      });
+      
+      // Add padding for non-daily views
+      const paddingDays = timeUnit === 'week' ? 14 : 30;
+      const paddingMs = paddingDays * 24 * 60 * 60 * 1000; 
+      minDate = new Date(minDate.getTime() - paddingMs);
+      maxDate = new Date(maxDate.getTime() + paddingMs);
+    }
     
     let stepMs: number;
     let periodCount: number;
