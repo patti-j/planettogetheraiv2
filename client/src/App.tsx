@@ -129,17 +129,20 @@ export default function App() {
   const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // Check if user has a token
+  // Check if this is a portal route - handle separately from main app
+  const isPortalRoute = currentPath.startsWith('/portal');
+  
+  // Check if user has a token for the main app
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
   
   // If on root path and not authenticated, redirect to login
-  if (currentPath === '/' && !hasToken && !isLoading) {
+  if (currentPath === '/' && !hasToken && !isLoading && !isPortalRoute) {
     window.location.href = '/login';
     return null;
   }
   
   // For dashboard and mobile-home, wait for auth check to complete
-  if ((currentPath === '/dashboard' || currentPath === '/mobile-home') && isLoading) {
+  if ((currentPath === '/dashboard' || currentPath === '/mobile-home') && isLoading && !isPortalRoute) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -150,11 +153,11 @@ export default function App() {
     );
   }
   
-  // Determine if we should show website or app
-  const shouldShowWebsite = (isPublicPath && currentPath !== '/') || (!hasToken && !isLoading);
+  // Determine if we should show website or app (but not for portal routes)
+  const shouldShowWebsite = !isPortalRoute && ((isPublicPath && currentPath !== '/') || (!hasToken && !isLoading));
 
-  // Show loading screen only when actually verifying a token
-  if (isLoading && !isPublicPath) {
+  // Show loading screen only when actually verifying a token (but not for portal routes)
+  if (isLoading && !isPublicPath && !isPortalRoute) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -174,8 +177,8 @@ export default function App() {
               <FullScreenProvider>
                 <LayoutDensityProvider>
                   <ViewModeProvider>
-                    {/* Portal Routes - Always accessible */}
-                    {currentPath.startsWith('/portal/') ? (
+                    {/* Portal Routes - Always accessible, independent of main app auth */}
+                    {isPortalRoute ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">
                         <Switch>
                           <Route path="/portal/login" component={PortalLogin} />
