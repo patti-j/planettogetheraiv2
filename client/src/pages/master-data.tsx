@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Save, Trash2, Upload, Download, Search,
-  Filter, ChevronUp, ChevronDown, Edit2, X, Check
+  Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText
 } from 'lucide-react';
 import {
   Table,
