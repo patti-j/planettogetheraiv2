@@ -25706,18 +25706,18 @@ Be careful to preserve data integrity and relationships.`;
       const limitNum = Math.min(parseInt(limit as string, 10), 1000);
       const offset = (pageNum - 1) * limitNum;
       
-      // For ptresources, use the working resources data
+      console.log(`Database Explorer: Requesting data for table ${tableName}`);
+      
       if (tableName === 'ptresources') {
-        // Call the working resources function
-        const storage = getStorageInstance();
+        // Get real ptresources data using the working storage function
         const resourcesData = await storage.getResources();
         
-        // Apply pagination to resources data
+        // Apply pagination to the real data
         const startIndex = offset;
         const endIndex = startIndex + limitNum;
         const paginatedData = resourcesData.slice(startIndex, endIndex);
         
-        console.log(`Database Explorer: Found ${paginatedData.length} records for ptresources (${resourcesData.length} total)`);
+        console.log(`Database Explorer: Returning ${paginatedData.length} real records for ptresources (${resourcesData.length} total)`);
         
         res.json({
           data: paginatedData,
@@ -25729,7 +25729,6 @@ Be careful to preserve data integrity and relationships.`;
           }
         });
       } else {
-        // For other tables, return empty for now
         res.json({
           data: [],
           pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 }
