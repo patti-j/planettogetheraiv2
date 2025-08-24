@@ -537,19 +537,19 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
       {/* Customization dialog */}
       <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Customize Header</DialogTitle>
             <DialogDescription>
               Add, remove, and reorder header items to suit your workflow.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-6 py-4">
+          <div className="grid grid-cols-2 gap-6 py-4 flex-1 min-h-0 overflow-hidden">
             {/* Current header items */}
             <div>
               <Label className="text-base font-semibold mb-3 block">Current Header Items</Label>
-              <ScrollArea className="h-[400px] border rounded-md p-3">
+              <ScrollArea className="h-[300px] border rounded-md p-3">
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="header-items">
                     {(provided) => (
@@ -615,7 +615,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             {/* Available items */}
             <div>
               <Label className="text-base font-semibold mb-3 block">Available Items</Label>
-              <ScrollArea className="h-[400px] border rounded-md p-3">
+              <ScrollArea className="h-[300px] border rounded-md p-3">
                 <div className="space-y-4">
                   {/* Pages Section */}
                   <div>
@@ -716,7 +716,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 mt-4">
             <Button variant="outline" onClick={() => setCustomizeOpen(false)}>
               Cancel
             </Button>
