@@ -2520,7 +2520,31 @@ export class DatabaseStorage implements IStorage {
   }
   // Plants
   async getPlants(): Promise<Plant[]> {
-    return await db.select().from(plants).orderBy(asc(plants.name));
+    const result = await db.select({
+      id: plants.id,
+      name: plants.name,
+      location: sql<string>`CASE 
+        WHEN ${plants.city} IS NOT NULL AND ${plants.state} IS NOT NULL THEN CONCAT(${plants.city}, ', ', ${plants.state})
+        WHEN ${plants.city} IS NOT NULL THEN ${plants.city}
+        WHEN ${plants.country} IS NOT NULL THEN ${plants.country}
+        ELSE 'Location not specified'
+      END`,
+      address: plants.address,
+      city: plants.city,
+      state: plants.state,
+      country: plants.country,
+      postalCode: plants.postalCode,
+      latitude: plants.latitude,
+      longitude: plants.longitude,
+      timezone: plants.timezone,
+      isActive: plants.isActive,
+      plantType: plants.plantType,
+      capacity: plants.capacity,
+      operationalMetrics: plants.operationalMetrics,
+      createdAt: plants.createdAt
+    }).from(plants).orderBy(asc(plants.name));
+    
+    return result;
   }
 
   async getPlant(id: number): Promise<Plant | undefined> {
@@ -8402,7 +8426,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPlants(): Promise<Plant[]> {
-    return await db.select().from(plants).orderBy(asc(plants.name));
+    const result = await db.select({
+      id: plants.id,
+      name: plants.name,
+      location: sql<string>`CASE 
+        WHEN ${plants.city} IS NOT NULL AND ${plants.state} IS NOT NULL THEN CONCAT(${plants.city}, ', ', ${plants.state})
+        WHEN ${plants.city} IS NOT NULL THEN ${plants.city}
+        WHEN ${plants.country} IS NOT NULL THEN ${plants.country}
+        ELSE 'Location not specified'
+      END`,
+      address: plants.address,
+      city: plants.city,
+      state: plants.state,
+      country: plants.country,
+      postalCode: plants.postalCode,
+      latitude: plants.latitude,
+      longitude: plants.longitude,
+      timezone: plants.timezone,
+      isActive: plants.isActive,
+      plantType: plants.plantType,
+      capacity: plants.capacity,
+      operationalMetrics: plants.operationalMetrics,
+      createdAt: plants.createdAt
+    }).from(plants).orderBy(asc(plants.name));
+    
+    return result;
   }
 
   async getPlantById(id: number): Promise<Plant | null> {

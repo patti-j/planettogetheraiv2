@@ -162,23 +162,10 @@ export default function AIScenarioCreator() {
   });
   const [generatedScenarios, setGeneratedScenarios] = useState<any[]>([]);
 
-  // Fetch available plants with fallback data
+  // Fetch available plants from database
   const { data: plants = [], isLoading: plantsLoading, isError: plantsError } = useQuery({
     queryKey: ['/api/plants'],
-    retry: false,
-    onError: (error) => {
-      console.warn('Failed to load plants, using fallback data:', error);
-    }
   });
-
-  // Always show fallback plants if API fails or returns empty
-  const fallbackPlants = (plantsError || plants.length === 0) ? [
-    { id: 1, name: 'Manufacturing Plant A', location: 'Dallas, TX', isActive: true },
-    { id: 2, name: 'Production Facility B', location: 'Chicago, IL', isActive: true },
-    { id: 3, name: 'Distribution Center C', location: 'Phoenix, AZ', isActive: true },
-    { id: 4, name: 'Acme Brewery West', location: 'Los Angeles, CA', isActive: true },
-    { id: 5, name: 'Acme Brewery East', location: 'Boston, MA', isActive: true }
-  ] : plants;
 
   // AI scenario generation mutation
   const generateScenarioMutation = useMutation({
@@ -338,14 +325,16 @@ export default function AIScenarioCreator() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm text-gray-500">Loading plants...</span>
                 </div>
-              ) : fallbackPlants.length === 0 ? (
+              ) : plants.length === 0 ? (
                 <div className="text-center py-8">
                   <Factory className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">No plants available</p>
+                  <p className="text-gray-500">
+                    {plantsError ? "Error loading plants from database" : "No plants available"}
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(fallbackPlants as Plant[]).map((plant) => (
+                  {(plants as Plant[]).map((plant) => (
                     <div
                       key={plant.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
