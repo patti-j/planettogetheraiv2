@@ -64,7 +64,7 @@ import DesignStudio from "@/pages/design-studio";
 import DisruptionManagement from "@/pages/disruption-management";
 import ErrorLogs from "@/pages/error-logs";
 import ExtensionStudio from "@/pages/extension-studio";
-import ImplementationConsultant from "@/pages/implementation-consultant";
+import OnboardingAssistant from "@/pages/onboarding-assistant";
 import ImplementationProjects from "@/pages/implementation-projects";
 import IndustryTemplates from "@/pages/industry-templates";
 import MasterData from "@/pages/master-data";
@@ -251,7 +251,7 @@ export default function ApplicationApp() {
               {/* AI & Analytics Routes */}
               <Route path="/autonomous-optimization" component={AutonomousOptimization} />
               <Route path="/demand-forecasting" component={DemandForecasting} />
-              <Route path="/implementation-consultant" component={ImplementationConsultant} />
+              <Route path="/onboarding-assistant" component={OnboardingAssistant} />
               <Route path="/design-studio" component={DesignStudio} />
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
               

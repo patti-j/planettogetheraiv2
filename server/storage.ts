@@ -2540,8 +2540,7 @@ export class DatabaseStorage implements IStorage {
       isActive: plants.isActive,
       plantType: plants.plantType,
       capacity: plants.capacity,
-      operationalMetrics: plants.operationalMetrics,
-      createdAt: plants.createdAt
+      operationalMetrics: plants.operationalMetrics
     }).from(plants).orderBy(asc(plants.name));
     
     return result;
@@ -8446,8 +8445,7 @@ export class DatabaseStorage implements IStorage {
       isActive: plants.isActive,
       plantType: plants.plantType,
       capacity: plants.capacity,
-      operationalMetrics: plants.operationalMetrics,
-      createdAt: plants.createdAt
+      operationalMetrics: plants.operationalMetrics
     }).from(plants).orderBy(asc(plants.name));
     
     return result;
