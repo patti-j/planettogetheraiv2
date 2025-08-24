@@ -25638,6 +25638,197 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
+  // Database Explorer API endpoints
+  app.get("/api/database/tables", async (req, res) => {
+    try {
+      // Query system tables to get all table names dynamically
+      const result = await db.execute(sql`
+        SELECT table_name, table_schema 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+          AND table_type = 'BASE TABLE'
+        ORDER BY table_name
+      `);
+      
+      const tables = result.map((row: any) => ({
+        name: row.table_name,
+        schema: row.table_schema
+      }));
+      
+      res.json(tables);
+    } catch (error) {
+      console.error('Error fetching table list:', error);
+      res.status(500).json({ error: 'Failed to fetch table list' });
+    }
+  });
+
+  app.get("/api/database/tables/:tableName/schema", async (req, res) => {
+    try {
+      const { tableName } = req.params;
+      
+      // Get table schema (columns, data types, etc.)
+      const result = await db.execute(sql`
+        SELECT 
+          column_name,
+          data_type,
+          is_nullable,
+          column_default,
+          character_maximum_length,
+          numeric_precision,
+          numeric_scale,
+          ordinal_position
+        FROM information_schema.columns 
+        WHERE table_name = ${tableName}
+          AND table_schema = 'public'
+        ORDER BY ordinal_position
+      `);
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching table schema:', error);
+      res.status(500).json({ error: 'Failed to fetch table schema' });
+    }
+  });
+
+  app.get("/api/database/tables/:tableName/data", async (req, res) => {
+    try {
+      const { tableName } = req.params;
+      const { 
+        page = 1, 
+        limit = 100, 
+        search = '', 
+        sortBy = '', 
+        sortOrder = 'asc',
+        filters = '{}' 
+      } = req.query;
+      
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = Math.min(parseInt(limit as string, 10), 1000); // Max 1000 records
+      const offset = (pageNum - 1) * limitNum;
+      
+      let query = `SELECT * FROM "${tableName}"`;
+      let countQuery = `SELECT COUNT(*) as count FROM "${tableName}"`;
+      let queryParams: any[] = [];
+      let whereConditions: string[] = [];
+      
+      // Add search condition if provided
+      if (search) {
+        // Get columns for this table first
+        const columnsResult = await db.execute(sql`
+          SELECT column_name, data_type
+          FROM information_schema.columns 
+          WHERE table_name = ${tableName}
+            AND table_schema = 'public'
+          ORDER BY ordinal_position
+        `);
+        
+        const searchableColumns = columnsResult
+          .filter((col: any) => ['text', 'character varying', 'varchar'].includes(col.data_type))
+          .map((col: any) => `"${col.column_name}"::text ILIKE $${queryParams.length + 1}`);
+          
+        if (searchableColumns.length > 0) {
+          whereConditions.push(`(${searchableColumns.join(' OR ')})`);
+          queryParams.push(`%${search}%`);
+        }
+      }
+      
+      // Add filters
+      try {
+        const filterObj = JSON.parse(filters as string);
+        Object.entries(filterObj).forEach(([column, value]) => {
+          if (value !== null && value !== undefined && value !== '') {
+            whereConditions.push(`"${column}" = $${queryParams.length + 1}`);
+            queryParams.push(value);
+          }
+        });
+      } catch (e) {
+        // Invalid JSON filters, ignore
+      }
+      
+      // Build WHERE clause
+      if (whereConditions.length > 0) {
+        const whereClause = ' WHERE ' + whereConditions.join(' AND ');
+        query += whereClause;
+        countQuery += whereClause;
+      }
+      
+      // Add sorting
+      if (sortBy) {
+        query += ` ORDER BY "${sortBy}" ${sortOrder.toUpperCase()}`;
+      }
+      
+      // Add pagination
+      query += ` LIMIT ${limitNum} OFFSET ${offset}`;
+      
+      // Execute queries using parameterized queries
+      const dataResult = await db.execute(sql.raw(query, queryParams));
+      const countResult = await db.execute(sql.raw(countQuery, queryParams));
+      
+      res.json({
+        data: dataResult,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: countResult[0]?.count || 0,
+          totalPages: Math.ceil((countResult[0]?.count || 0) / limitNum)
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching table data:', error);
+      res.status(500).json({ error: 'Failed to fetch table data' });
+    }
+  });
+
+  app.get("/api/database/tables/:tableName/export", async (req, res) => {
+    try {
+      const { tableName } = req.params;
+      const { format = 'csv' } = req.query;
+      
+      // Get all data from table (limit to reasonable size)
+      const result = await db.execute(sql.raw(`SELECT * FROM "${tableName}" LIMIT 10000`));
+      
+      if (format === 'csv') {
+        // Convert to CSV
+        if (result.length === 0) {
+          return res.json({ data: '', filename: `${tableName}.csv` });
+        }
+        
+        const headers = Object.keys(result[0]);
+        const csvContent = [
+          headers.join(','),
+          ...result.map(row => 
+            headers.map(header => {
+              const value = row[header];
+              // Escape CSV values
+              if (value === null || value === undefined) return '';
+              const stringValue = String(value);
+              if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+              }
+              return stringValue;
+            }).join(',')
+          )
+        ].join('\n');
+        
+        res.json({ 
+          data: csvContent, 
+          filename: `${tableName}.csv`,
+          contentType: 'text/csv'
+        });
+      } else {
+        // Return as JSON
+        res.json({ 
+          data: JSON.stringify(result, null, 2), 
+          filename: `${tableName}.json`,
+          contentType: 'application/json'
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting table data:', error);
+      res.status(500).json({ error: 'Failed to export table data' });
+    }
+  });
+
   // Navigation routes for Max AI to discover all available routes
   app.get('/api/navigation/routes', createSafeHandler(async (req, res) => {
     // Essential routes that Max AI should know about for navigation
@@ -25661,6 +25852,7 @@ Be careful to preserve data integrity and relationships.`;
       { route: '/business-intelligence', label: 'Business Intelligence', description: 'Business intelligence and insights' },
       { route: '/financial-management', label: 'Financial Management', description: 'Financial management and reporting' },
       { route: '/master-data', label: 'Master Data Editor', description: 'Master data management and editing' },
+      { route: '/database-explorer', label: 'Database Explorer', description: 'Browse and analyze all database tables with filtering and export' },
       { route: '/data-schema', label: 'Data Schema View', description: 'Database schema visualization' },
       { route: '/maintenance', label: 'Maintenance', description: 'Equipment maintenance management' },
       { route: '/optimization-studio', label: 'Optimization Studio', description: 'Production optimization tools' },

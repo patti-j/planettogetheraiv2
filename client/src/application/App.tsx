@@ -68,6 +68,7 @@ import ImplementationConsultant from "@/pages/implementation-consultant";
 import ImplementationProjects from "@/pages/implementation-projects";
 import IndustryTemplates from "@/pages/industry-templates";
 import MasterData from "@/pages/master-data";
+import DatabaseExplorer from "@/pages/database-explorer";
 import PresentationSystem from "@/pages/presentation-system";
 import SystemsManagementDashboard from "@/pages/systems-management-dashboard";
 import TableFieldViewer from "@/pages/table-field-viewer";
@@ -255,6 +256,7 @@ export default function ApplicationApp() {
               {/* Data Management Routes */}
               <Route path="/data-import" component={DataImport} />
               <Route path="/master-data" component={MasterData} />
+              <Route path="/database-explorer" component={DatabaseExplorer} />
               <Route path="/data-schema" component={DataSchema} />
               <Route path="/table-field-viewer" component={TableFieldViewer} />
               <Route path="/data-relationships" component={DataRelationships} />

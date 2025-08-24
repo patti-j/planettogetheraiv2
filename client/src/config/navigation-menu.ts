@@ -99,6 +99,7 @@ export const navigationGroups: NavigationGroup[] = [
     features: [
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "data-import", action: "view", color: "bg-green-600" },
       { icon: FileText, label: "Master Data Editor", href: "/master-data", feature: "systems-management", action: "view", color: "bg-emerald-600" },
+      { icon: Search, label: "Database Explorer", href: "/database-explorer", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", feature: "systems-management", action: "view", color: "bg-slate-600" },
       { icon: Database, label: "System Integration", href: "/systems-integration", feature: "systems-integration", action: "view", color: "bg-stone-500" },
