@@ -160,7 +160,7 @@ export default function DatabaseExplorer() {
 
   // Filter tables based on search
   const filteredTables = tables.filter((table: DatabaseTable) =>
-    table.name.toLowerCase().includes(searchTerm.toLowerCase())
+    table && table.name && table.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Get data type badge color
