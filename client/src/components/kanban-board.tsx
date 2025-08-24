@@ -1351,10 +1351,10 @@ function KanbanBoard({
               <div className="flex-1 max-w-xs">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-full justify-between">
+                    <div className="w-full justify-between border border-gray-200 rounded px-3 py-1.5 bg-white hover:bg-gray-50 cursor-pointer flex items-center text-sm">
                       <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
                       <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-                    </Button>
+                    </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-80">
                     {kanbanConfigs.map((config) => (
