@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Save, Trash2, Upload, Download, Search,
-  Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText
+  Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText,
+  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap
 } from 'lucide-react';
 import {
   Table,
@@ -25,6 +26,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 interface EditableCell {
   rowId: number;
@@ -40,6 +51,7 @@ interface DataTableProps {
   onCreate: (data: any) => void;
   onDelete: (id: number) => void;
   isLoading?: boolean;
+  onShowAiAssistant?: () => void;
 }
 
 interface Column {
@@ -59,7 +71,8 @@ function EditableDataTable({
   onUpdate, 
   onCreate, 
   onDelete,
-  isLoading 
+  isLoading,
+  onShowAiAssistant
 }: DataTableProps) {
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [editValue, setEditValue] = useState<any>('');
@@ -239,6 +252,14 @@ function EditableDataTable({
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onShowAiAssistant}
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            AI Help
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm">
@@ -375,6 +396,10 @@ function EditableDataTable({
 export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('items');
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -580,6 +605,68 @@ export default function MasterDataPage() {
     }
   });
 
+  // AI-powered data operations
+  const aiDataMutation = useMutation({
+    mutationFn: async ({ operation, prompt, entityType, selectedData }: { 
+      operation: 'suggest' | 'generate' | 'improve' | 'bulk_edit';
+      prompt: string;
+      entityType: string;
+      selectedData?: any[];
+    }) => {
+      const response = await apiRequest('POST', '/api/master-data/ai-assist', {
+        operation,
+        prompt,
+        entityType,
+        selectedData,
+        currentData: data || []
+      });
+      return await response.json();
+    },
+    onSuccess: (result) => {
+      setAiSuggestions(result.suggestions || []);
+      setAiProcessing(false);
+      toast({
+        title: 'AI Assistant',
+        description: result.message || 'AI suggestions generated successfully'
+      });
+    },
+    onError: (error: any) => {
+      setAiProcessing(false);
+      toast({
+        title: 'AI Error',
+        description: error.message || 'Failed to process AI request',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleAiRequest = async (operation: 'suggest' | 'generate' | 'improve' | 'bulk_edit') => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: 'Input Required',
+        description: 'Please describe what you need help with',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setAiProcessing(true);
+    aiDataMutation.mutate({
+      operation,
+      prompt: aiPrompt,
+      entityType: activeTab
+    });
+  };
+
+  const applyAiSuggestion = (suggestion: any) => {
+    if (suggestion.operation === 'create') {
+      createMutation.mutate(suggestion.data);
+    } else if (suggestion.operation === 'update') {
+      updateMutation.mutate({ id: suggestion.id, data: suggestion.data });
+    }
+    setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -587,10 +674,19 @@ export default function MasterDataPage() {
           <FileText className="w-8 h-8 mr-3" />
           Master Data Management
         </h1>
-        <Button>
-          <Save className="h-4 w-4 mr-2" />
-          Save All Changes
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setShowAiAssistant(true)}
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            AI Assistant
+          </Button>
+          <Button>
+            <Save className="h-4 w-4 mr-2" />
+            Save All Changes
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -620,12 +716,153 @@ export default function MasterDataPage() {
                   onCreate={(data) => createMutation.mutate(data)}
                   onDelete={(id) => deleteMutation.mutate(id)}
                   isLoading={isLoading}
+                  onShowAiAssistant={() => setShowAiAssistant(true)}
                 />
               </TabsContent>
             </div>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* AI Assistant Dialog */}
+      <Dialog open={showAiAssistant} onOpenChange={setShowAiAssistant}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              AI Master Data Assistant
+            </DialogTitle>
+            <DialogDescription>
+              Get AI-powered help with your {activeTab.replace('-', ' ')} data - generate new entries, improve existing data, or get suggestions for better data management.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* AI Prompt Input */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">What would you like help with?</label>
+              <Textarea
+                placeholder={`For example:
+- Generate 10 new ${activeTab} with realistic data
+- Improve the descriptions for all existing ${activeTab}
+- Suggest better names for items with generic names
+- Fill in missing data for incomplete entries`}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                rows={4}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                onClick={() => handleAiRequest('generate')}
+                disabled={aiProcessing}
+                size="sm"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Data
+              </Button>
+              <Button 
+                onClick={() => handleAiRequest('improve')}
+                disabled={aiProcessing}
+                variant="outline"
+                size="sm"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Improve Existing
+              </Button>
+              <Button 
+                onClick={() => handleAiRequest('suggest')}
+                disabled={aiProcessing}
+                variant="outline"
+                size="sm"
+              >
+                <Lightbulb className="h-4 w-4 mr-2" />
+                Get Suggestions
+              </Button>
+              <Button 
+                onClick={() => handleAiRequest('bulk_edit')}
+                disabled={aiProcessing}
+                variant="outline"
+                size="sm"
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Bulk Edit
+              </Button>
+            </div>
+
+            {aiProcessing && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                AI is analyzing your {activeTab} data and generating suggestions...
+              </div>
+            )}
+
+            {/* AI Suggestions */}
+            {aiSuggestions.length > 0 && (
+              <div className="space-y-3 border-t pt-4">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Lightbulb className="h-4 w-4" />
+                  AI Suggestions ({aiSuggestions.length})
+                </h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {aiSuggestions.map((suggestion, idx) => (
+                    <div key={idx} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={suggestion.operation === 'create' ? 'default' : 'secondary'}>
+                              {suggestion.operation}
+                            </Badge>
+                            {suggestion.confidence && (
+                              <Badge variant="outline">
+                                {Math.round(suggestion.confidence * 100)}% confident
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm mt-1">{suggestion.explanation}</p>
+                          {suggestion.data && (
+                            <div className="mt-2 text-xs bg-muted p-2 rounded">
+                              <strong>Suggested changes:</strong>
+                              <pre className="mt-1 text-xs">{JSON.stringify(suggestion.data, null, 2)}</pre>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => applyAiSuggestion(suggestion)}
+                          >
+                            Apply
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setAiSuggestions(prev => prev.filter(s => s !== suggestion))}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowAiAssistant(false);
+              setAiPrompt('');
+              setAiSuggestions([]);
+            }}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
