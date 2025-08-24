@@ -1703,3 +1703,12 @@ div[data-radix-tooltip-content] {
   outline: 2px solid #1976D2 !important;
   outline-offset: 1px !important;
 }
+
+/* Hide scrollbar for tabs overflow */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}

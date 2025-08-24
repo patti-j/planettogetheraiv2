@@ -597,16 +597,16 @@ export default function MasterDataPage() {
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="border-b px-6 pt-6">
-              <TabsList className="grid grid-cols-9 w-full">
-                <TabsTrigger value="items">Items</TabsTrigger>
-                <TabsTrigger value="resources">Resources</TabsTrigger>
-                <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
-                <TabsTrigger value="production-orders">Production Orders</TabsTrigger>
-                <TabsTrigger value="recipes">Recipes</TabsTrigger>
-                <TabsTrigger value="plants">Plants</TabsTrigger>
-                <TabsTrigger value="users">Users</TabsTrigger>
-                <TabsTrigger value="customers">Customers</TabsTrigger>
-                <TabsTrigger value="vendors">Vendors</TabsTrigger>
+              <TabsList className="flex overflow-x-auto no-scrollbar gap-1 w-full bg-muted p-1 rounded-lg">
+                <TabsTrigger value="items" className="whitespace-nowrap flex-shrink-0">Items</TabsTrigger>
+                <TabsTrigger value="resources" className="whitespace-nowrap flex-shrink-0">Resources</TabsTrigger>
+                <TabsTrigger value="capabilities" className="whitespace-nowrap flex-shrink-0">Capabilities</TabsTrigger>
+                <TabsTrigger value="production-orders" className="whitespace-nowrap flex-shrink-0">Production Orders</TabsTrigger>
+                <TabsTrigger value="recipes" className="whitespace-nowrap flex-shrink-0">Recipes</TabsTrigger>
+                <TabsTrigger value="plants" className="whitespace-nowrap flex-shrink-0">Plants</TabsTrigger>
+                <TabsTrigger value="users" className="whitespace-nowrap flex-shrink-0">Users</TabsTrigger>
+                <TabsTrigger value="customers" className="whitespace-nowrap flex-shrink-0">Customers</TabsTrigger>
+                <TabsTrigger value="vendors" className="whitespace-nowrap flex-shrink-0">Vendors</TabsTrigger>
               </TabsList>
             </div>
 
