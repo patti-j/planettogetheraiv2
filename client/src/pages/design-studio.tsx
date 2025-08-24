@@ -2075,7 +2075,12 @@ export default function UIDesignStudio() {
         <DashboardVisualDesigner
           open={showVisualDesigner}
           onOpenChange={setShowVisualDesigner}
-          dashboard={dashboardToEdit}
+          dashboard={dashboardToEdit ? {
+            ...dashboardToEdit,
+            widgets: dashboardToEdit.configuration?.widgets || dashboardToEdit.configuration?.customWidgets || dashboardToEdit.widgets || [],
+            layout: dashboardToEdit.configuration?.layout || dashboardToEdit.layout,
+            gridColumns: dashboardToEdit.configuration?.gridColumns || dashboardToEdit.gridColumns
+          } : null}
           onSave={async (dashboardConfig) => {
             // Save dashboard configuration
             const dashboardData = {

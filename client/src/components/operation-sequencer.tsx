@@ -96,9 +96,9 @@ export function OperationSequencer({
 
   // Initialize operations from API data
   useEffect(() => {
-    if (operationsData.length > 0) {
+    if (operationsData && (operationsData as any[]).length > 0) {
       // Filter operations based on filters
-      let filteredOps = [...operationsData];
+      let filteredOps = [...(operationsData as Operation[])];
       
       if (resourceFilter !== 'all') {
         filteredOps = filteredOps.filter(op => 
@@ -152,7 +152,7 @@ export function OperationSequencer({
 
   // Reset sequence
   const handleResetSequence = () => {
-    const originalOps = [...operationsData]
+    const originalOps = [...(operationsData as Operation[])]
       .filter(op => {
         if (resourceFilter !== 'all' && op.assignedResourceId?.toString() !== resourceFilter) return false;
         if (statusFilter !== 'all' && op.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
