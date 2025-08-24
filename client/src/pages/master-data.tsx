@@ -632,9 +632,8 @@ export default function MasterDataPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: [endpoints[activeTab]],
     queryFn: async () => {
-      const response = await fetch(endpoints[activeTab]);
-      if (!response.ok) throw new Error('Failed to fetch data');
-      return response.json();
+      const response = await apiRequest('GET', endpoints[activeTab]);
+      return await response.json();
     }
   });
 
