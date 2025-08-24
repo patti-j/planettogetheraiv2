@@ -275,8 +275,14 @@ Rules:
     const productionData = await this.getProductionStatus(context);
     const insights = await this.analyzeSchedule(context);
     
-    // Handle data display intent
+    // Handle data display intent with specific data analysis
     if (intent.type === 'show_data' && intent.confidence > 0.7) {
+      const specificDataResponse = await this.getSpecificDataResponse(query, context);
+      if (specificDataResponse) {
+        return specificDataResponse;
+      }
+      
+      // Fallback to general production status
       return {
         content: this.formatProductionStatusResponse(productionData),
         action: {
@@ -437,6 +443,82 @@ Would you like me to analyze any specific area in detail?`;
     };
 
     return `${basePrompt}\n\nUser Role: ${context.userRole}\n${rolePrompts[context.userRole] || ''}\n\nCurrent Context: ${context.currentPage}\n${pageContexts[context.currentPage] || ''}`;
+  }
+
+  // Handle specific data requests with precise answers
+  private async getSpecificDataResponse(query: string, context: MaxContext): Promise<MaxResponse | null> {
+    const lowerQuery = query.toLowerCase();
+    
+    try {
+      // Resource count questions
+      if (lowerQuery.includes('how many resource') || lowerQuery.includes('resource count') || lowerQuery.includes('total resource')) {
+        const resourcesResponse = await fetch(`http://localhost:5000/api/resources`);
+        const resources = await resourcesResponse.json();
+        const resourceCount = resources.length;
+        const activeResources = resources.filter((r: any) => r.active !== false).length;
+        
+        return {
+          content: `**Resource Summary:**\n\n📊 **Total Resources:** ${resourceCount}\n✅ **Active Resources:** ${activeResources}\n\nYour system has ${resourceCount} resources including machines, equipment, and production assets. ${activeResources} are currently active and available for production scheduling.`,
+          action: {
+            type: 'show_data',
+            data: { totalResources: resourceCount, activeResources, resources: resources.slice(0, 5) }
+          }
+        };
+      }
+      
+      // Operation count questions
+      if (lowerQuery.includes('how many operation') || lowerQuery.includes('operation count') || lowerQuery.includes('total operation')) {
+        const operationsResponse = await fetch(`http://localhost:5000/api/operations`);
+        const operations = await operationsResponse.json();
+        const operationCount = operations.length;
+        const scheduledOps = operations.filter((op: any) => op.status === 'scheduled').length;
+        const runningOps = operations.filter((op: any) => op.status === 'running').length;
+        
+        return {
+          content: `**Operation Summary:**\n\n📊 **Total Operations:** ${operationCount}\n🔄 **Running Operations:** ${runningOps}\n📅 **Scheduled Operations:** ${scheduledOps}\n\nYour production schedule contains ${operationCount} operations with ${runningOps} currently running and ${scheduledOps} scheduled for execution.`,
+          action: {
+            type: 'show_data',
+            data: { totalOperations: operationCount, runningOperations: runningOps, scheduledOperations: scheduledOps }
+          }
+        };
+      }
+      
+      // Job count questions
+      if (lowerQuery.includes('how many job') || lowerQuery.includes('job count') || lowerQuery.includes('total job')) {
+        const jobsResponse = await fetch(`http://localhost:5000/api/jobs`);
+        const jobs = await jobsResponse.json();
+        const jobCount = jobs.length;
+        
+        return {
+          content: `**Job Summary:**\n\n📊 **Total Jobs:** ${jobCount}\n\nYour system currently has ${jobCount} production jobs defined. ${jobCount === 0 ? 'Consider creating production jobs to start scheduling operations.' : 'Jobs are ready for production scheduling and resource allocation.'}`,
+          action: {
+            type: 'show_data',
+            data: { totalJobs: jobCount, jobs: jobs.slice(0, 5) }
+          }
+        };
+      }
+      
+      // Alert count questions
+      if (lowerQuery.includes('how many alert') || lowerQuery.includes('alert count') || lowerQuery.includes('total alert')) {
+        const alertsResponse = await fetch(`http://localhost:5000/api/alerts`);
+        const alerts = await alertsResponse.json();
+        const alertCount = alerts.length;
+        const criticalAlerts = alerts.filter((a: any) => a.severity === 'critical').length;
+        
+        return {
+          content: `**Alert Summary:**\n\n🚨 **Total Alerts:** ${alertCount}\n⚠️ **Critical Alerts:** ${criticalAlerts}\n\n${alertCount === 0 ? 'No active alerts - system running smoothly!' : `You have ${alertCount} alerts with ${criticalAlerts} requiring immediate attention.`}`,
+          action: {
+            type: 'show_data',
+            data: { totalAlerts: alertCount, criticalAlerts, alerts: alerts.slice(0, 3) }
+          }
+        };
+      }
+      
+    } catch (error) {
+      console.error('Error fetching specific data:', error);
+    }
+    
+    return null; // No specific handler found
   }
 
   // Enrich user query with production context
