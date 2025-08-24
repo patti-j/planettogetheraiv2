@@ -280,43 +280,48 @@ export default function AIScenarioCreator() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <GitBranch className="h-8 w-8 text-blue-500" />
-          AI Scenario Creator
+    <div className="container mx-auto p-3 sm:p-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+          <GitBranch className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+          <span className="hidden sm:inline">AI Scenario Creator</span>
+          <span className="sm:hidden">Scenario Creator</span>
         </h1>
-        <p className="text-gray-600 mt-2">
-          Create and evaluate manufacturing scenarios quickly using AI-powered analysis
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">
+          Create and evaluate manufacturing scenarios using AI-powered analysis
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={(value: string) => setActiveTab(value as any)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="guided" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
+          <TabsTrigger value="guided" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4">
             <Sparkles className="h-4 w-4" />
-            AI Guided Setup
+            <span className="hidden sm:inline">AI Guided Setup</span>
+            <span className="sm:hidden">AI Guided</span>
           </TabsTrigger>
-          <TabsTrigger value="advanced" className="flex items-center gap-2">
+          <TabsTrigger value="advanced" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4">
             <Settings className="h-4 w-4" />
-            Advanced Configuration
+            <span className="hidden sm:inline">Advanced Configuration</span>
+            <span className="sm:hidden">Advanced</span>
           </TabsTrigger>
-          <TabsTrigger value="results" className="flex items-center gap-2">
+          <TabsTrigger value="results" className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4">
             <Eye className="h-4 w-4" />
-            Generated Scenarios
+            <span className="hidden sm:inline">Generated Scenarios</span>
+            <span className="sm:hidden">Results</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="guided" className="space-y-6">
+        <TabsContent value="guided" className="space-y-4 sm:space-y-6">
           {/* Plant Selection */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Factory className="h-5 w-5" />
-                Select Plants for Analysis
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Factory className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Select Plants for Analysis</span>
+                <span className="sm:hidden">Select Plants</span>
               </CardTitle>
-              <CardDescription>
-                Choose which manufacturing facilities to include in your scenario
+              <CardDescription className="text-sm">
+                Choose manufacturing facilities for your scenario
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -333,11 +338,11 @@ export default function AIScenarioCreator() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {(plants as Plant[]).map((plant) => (
                     <div
                       key={plant.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                      className={`p-3 sm:p-4 border rounded-lg cursor-pointer transition-colors ${
                         scenarioConfig.selectedPlants.includes(plant.id)
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-gray-200 hover:border-gray-300'
@@ -419,22 +424,23 @@ export default function AIScenarioCreator() {
 
           {/* AI Prompt */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GitBranch className="h-5 w-5" />
-                Describe Your Scenario
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <GitBranch className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">Describe Your Scenario</span>
+                <span className="sm:hidden">Describe Scenario</span>
               </CardTitle>
-              <CardDescription>
-                Tell AI what you want to analyze or evaluate (optional if using template)
+              <CardDescription className="text-sm">
+                Tell AI what you want to analyze (optional if using template)
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3 sm:space-y-4">
               <Textarea
-                placeholder="Example: What would happen if we received 50% more orders next month? How would adding 2 new machines affect our delivery times? What if our main supplier had a 1-week delay?"
+                placeholder="Example: What if we received 50% more orders next month? How would 2 new machines affect delivery times?"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                rows={4}
-                className="mb-4"
+                rows={3}
+                className="mb-4 text-sm sm:text-base"
               />
               <Button
                 onClick={handleAIGenerate}
@@ -445,12 +451,14 @@ export default function AIScenarioCreator() {
                 {generateScenarioMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Scenarios...
+                    <span className="hidden sm:inline">Generating Scenarios...</span>
+                    <span className="sm:hidden">Generating...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="h-4 w-4 mr-2" />
-                    Generate AI Scenarios
+                    <span className="hidden sm:inline">Generate AI Scenarios</span>
+                    <span className="sm:hidden">Generate</span>
                   </>
                 )}
               </Button>
