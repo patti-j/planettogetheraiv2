@@ -57,36 +57,44 @@ export default function ScheduleSequencesPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Schedule Sequences</h1>
-          <p className="text-gray-600">Reorder and optimize operation sequences for better resource utilization</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <span className="hidden sm:inline">Schedule Sequences</span>
+            <span className="sm:hidden">Sequences</span>
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">Reorder and optimize operation sequences</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button 
             variant="outline" 
             onClick={handleSaveSequence}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-initial"
+            size="sm"
           >
             <Save className="h-4 w-4" />
-            Save Sequence
+            <span className="hidden sm:inline">Save Sequence</span>
+            <span className="sm:hidden">Save</span>
           </Button>
           <Button 
             onClick={handleOptimizeSequence}
             disabled={isOptimizing}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-initial"
+            size="sm"
           >
             {isOptimizing ? (
               <>
                 <RotateCcw className="h-4 w-4 animate-spin" />
-                Optimizing...
+                <span className="hidden sm:inline">Optimizing...</span>
+                <span className="sm:hidden">Optimizing</span>
               </>
             ) : (
               <>
                 <Workflow className="h-4 w-4" />
-                Auto-Optimize
+                <span className="hidden sm:inline">Auto-Optimize</span>
+                <span className="sm:hidden">Optimize</span>
               </>
             )}
           </Button>
@@ -94,50 +102,50 @@ export default function ScheduleSequencesPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
+              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
               <div>
-                <p className="text-sm font-medium">Total Operations</p>
-                <p className="text-2xl font-bold">{sequenceStats.totalOperations}</p>
+                <p className="text-xs sm:text-sm font-medium">Total Operations</p>
+                <p className="text-lg sm:text-2xl font-bold">{sequenceStats.totalOperations}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium">Optimized</p>
-                <p className="text-2xl font-bold">{sequenceStats.optimizedSequences}</p>
+                <p className="text-xs sm:text-sm font-medium">Optimized</p>
+                <p className="text-lg sm:text-2xl font-bold">{sequenceStats.optimizedSequences}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-5 w-5 text-purple-500" />
+              <ArrowUpDown className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
               <div>
-                <p className="text-sm font-medium">Time Saved</p>
-                <p className="text-2xl font-bold">{sequenceStats.timesSaved}h</p>
+                <p className="text-xs sm:text-sm font-medium">Time Saved</p>
+                <p className="text-lg sm:text-2xl font-bold">{sequenceStats.timesSaved}h</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-orange-500" />
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
               <div>
-                <p className="text-sm font-medium">Efficiency</p>
-                <p className="text-2xl font-bold">{sequenceStats.efficiency}%</p>
+                <p className="text-xs sm:text-sm font-medium">Efficiency</p>
+                <p className="text-lg sm:text-2xl font-bold">{sequenceStats.efficiency}%</p>
               </div>
             </div>
           </CardContent>
@@ -146,19 +154,20 @@ export default function ScheduleSequencesPage() {
 
       {/* Controls */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Sequence Controls
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Sequence Controls</span>
+            <span className="sm:hidden">Controls</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4" />
-              <span className="text-sm font-medium">Resource:</span>
+              <span className="text-sm font-medium whitespace-nowrap">Resource:</span>
               <Select value={selectedResource} onValueChange={setSelectedResource}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="All Resources" />
                 </SelectTrigger>
                 <SelectContent>
@@ -172,10 +181,10 @@ export default function ScheduleSequencesPage() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Status:</span>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium whitespace-nowrap">Status:</span>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -188,10 +197,10 @@ export default function ScheduleSequencesPage() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">View:</span>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium whitespace-nowrap">View:</span>
               <Select value={sequencerView} onValueChange={(value: any) => setSequencerView(value)}>
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -206,20 +215,22 @@ export default function ScheduleSequencesPage() {
       </Card>
 
       {/* Main Sequencer Widget */}
-      <Card className="min-h-[500px] flex flex-col">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ArrowUpDown className="h-5 w-5" />
-              Operation Sequencer
+      <Card className="min-h-[400px] sm:min-h-[500px] flex flex-col">
+        <CardHeader className="pb-3 sm:pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <ArrowUpDown className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">Operation Sequencer</span>
+              <span className="sm:hidden">Sequencer</span>
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="flex items-center gap-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                 <Workflow className="h-3 w-3" />
-                Drag & Drop to Reorder
+                <span className="hidden sm:inline">Drag & Drop to Reorder</span>
+                <span className="sm:hidden">Drag to Reorder</span>
               </Badge>
               {isOptimizing && (
-                <Badge variant="outline" className="flex items-center gap-1">
+                <Badge variant="outline" className="flex items-center gap-1 text-xs">
                   <RotateCcw className="h-3 w-3 animate-spin" />
                   Optimizing...
                 </Badge>
@@ -240,18 +251,21 @@ export default function ScheduleSequencesPage() {
       </Card>
 
       {/* Additional Actions */}
-      <div className="flex justify-center gap-4">
-        <Button variant="outline" className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+        <Button variant="outline" className="flex items-center gap-2" size="sm">
           <Download className="h-4 w-4" />
-          Export Sequence
+          <span className="hidden sm:inline">Export Sequence</span>
+          <span className="sm:hidden">Export</span>
         </Button>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" size="sm">
           <Calendar className="h-4 w-4" />
-          Apply to Schedule
+          <span className="hidden sm:inline">Apply to Schedule</span>
+          <span className="sm:hidden">Apply</span>
         </Button>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" size="sm">
           <RotateCcw className="h-4 w-4" />
-          Reset to Original
+          <span className="hidden sm:inline">Reset to Original</span>
+          <span className="sm:hidden">Reset</span>
         </Button>
       </div>
     </div>
