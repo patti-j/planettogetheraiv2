@@ -411,14 +411,55 @@ export default function MasterDataPage() {
       { key: 'costPerHour', label: 'Cost/Hour', editable: true, type: 'number' },
       { key: 'isDrum', label: 'Is Drum', editable: true, type: 'boolean' }
     ],
+    capabilities: [
+      { key: 'name', label: 'Name', editable: true, required: true },
+      { key: 'description', label: 'Description', editable: true }
+    ],
+    'production-orders': [
+      { key: 'orderNumber', label: 'Order Number', editable: true, required: true },
+      { key: 'name', label: 'Name', editable: true, required: true },
+      { key: 'description', label: 'Description', editable: true },
+      { key: 'status', label: 'Status', editable: true, type: 'select', options: [
+        { value: 'released', label: 'Released' },
+        { value: 'in_progress', label: 'In Progress' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ]},
+      { key: 'priority', label: 'Priority', editable: true, type: 'select', options: [
+        { value: 'low', label: 'Low' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'high', label: 'High' },
+        { value: 'urgent', label: 'Urgent' }
+      ]},
+      { key: 'quantity', label: 'Quantity', editable: true, type: 'number' },
+      { key: 'dueDate', label: 'Due Date', editable: true, type: 'date' }
+    ],
+    recipes: [
+      { key: 'recipeNumber', label: 'Recipe Number', editable: true, required: true },
+      { key: 'recipeName', label: 'Recipe Name', editable: true, required: true },
+      { key: 'productItemNumber', label: 'Product Item', editable: true, required: true },
+      { key: 'recipeVersion', label: 'Version', editable: true },
+      { key: 'status', label: 'Status', editable: true, type: 'select', options: [
+        { value: 'created', label: 'Created' },
+        { value: 'released_for_planning', label: 'Released for Planning' },
+        { value: 'released_for_execution', label: 'Released for Execution' },
+        { value: 'obsolete', label: 'Obsolete' }
+      ]},
+      { key: 'batchSize', label: 'Batch Size', editable: true, type: 'number' },
+      { key: 'batchUnit', label: 'Batch Unit', editable: true }
+    ],
     plants: [
       { key: 'name', label: 'Name', editable: true, required: true },
-      { key: 'code', label: 'Code', editable: true },
       { key: 'location', label: 'Location', editable: true },
-      { key: 'type', label: 'Type', editable: true, type: 'select', options: [
+      { key: 'address', label: 'Address', editable: true },
+      { key: 'city', label: 'City', editable: true },
+      { key: 'state', label: 'State', editable: true },
+      { key: 'country', label: 'Country', editable: true },
+      { key: 'plantType', label: 'Plant Type', editable: true, type: 'select', options: [
         { value: 'manufacturing', label: 'Manufacturing' },
+        { value: 'distribution', label: 'Distribution' },
         { value: 'warehouse', label: 'Warehouse' },
-        { value: 'distribution', label: 'Distribution' }
+        { value: 'office', label: 'Office' }
       ]},
       { key: 'isActive', label: 'Active', editable: true, type: 'boolean' }
     ],
@@ -457,6 +498,9 @@ export default function MasterDataPage() {
   const endpoints: Record<string, string> = {
     items: '/api/stock-items',
     resources: '/api/resources',
+    capabilities: '/api/capabilities',
+    'production-orders': '/api/production-orders',
+    recipes: '/api/recipes',
     plants: '/api/plants',
     users: '/api/users',
     customers: '/api/customers',
@@ -553,9 +597,12 @@ export default function MasterDataPage() {
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="border-b px-6 pt-6">
-              <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+              <TabsList className="grid grid-cols-9 w-full">
                 <TabsTrigger value="items">Items</TabsTrigger>
                 <TabsTrigger value="resources">Resources</TabsTrigger>
+                <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
+                <TabsTrigger value="production-orders">Production Orders</TabsTrigger>
+                <TabsTrigger value="recipes">Recipes</TabsTrigger>
                 <TabsTrigger value="plants">Plants</TabsTrigger>
                 <TabsTrigger value="users">Users</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
