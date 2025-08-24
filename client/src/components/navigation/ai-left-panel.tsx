@@ -166,47 +166,8 @@ export function AILeftPanel() {
       setCurrentRequestController(controller);
       setShowMaxThinking(true);
       
-      // Check for navigation intents in the message
-      const lowerMessage = message.toLowerCase();
-      const navigationPatterns = [
-        { patterns: ['show production schedule', 'show schedule', 'production schedule', 'view schedule', 'open schedule', 'go to schedule'], path: '/production-schedule' },
-        { patterns: ['show analytics', 'view analytics', 'open analytics', 'go to analytics'], path: '/analytics' },
-        { patterns: ['show shop floor', 'view shop floor', 'open shop floor', 'go to shop floor'], path: '/shop-floor' },
-        { patterns: ['show inventory', 'view inventory', 'open inventory', 'go to inventory'], path: '/inventory-optimization' },
-        { patterns: ['show capacity', 'view capacity', 'capacity planning', 'open capacity', 'go to capacity'], path: '/capacity-planning' },
-        { patterns: ['show kpi', 'view kpi', 'show kpis', 'view kpis', 'open kpi', 'go to kpi'], path: '/smart-kpi-tracking' },
-        { patterns: ['show reports', 'view reports', 'open reports', 'go to reports'], path: '/reports' },
-        { patterns: ['show quality', 'view quality', 'quality control', 'open quality', 'go to quality'], path: '/quality-control' },
-        { patterns: ['show dashboard', 'view dashboard', 'go home', 'go to home', 'open dashboard'], path: '/' },
-        { patterns: ['show optimization', 'view optimization', 'optimization studio', 'go to optimization'], path: '/optimization-studio' },
-        { patterns: ['show business goals', 'view goals', 'business goals', 'go to goals'], path: '/business-goals' },
-        { patterns: ['show systems', 'view systems', 'systems management', 'go to systems'], path: '/systems-management-dashboard' },
-        { patterns: ['show users', 'view users', 'user management', 'go to users'], path: '/user-access-management' },
-        { patterns: ['show demand', 'view demand', 'demand planning', 'go to demand'], path: '/demand-planning' },
-      ];
-      
-      // Check if message matches any navigation pattern
-      let shouldNavigate = false;
-      let navigationPath = '';
-      
-      for (const { patterns, path } of navigationPatterns) {
-        if (patterns.some(pattern => lowerMessage.includes(pattern))) {
-          shouldNavigate = true;
-          navigationPath = path;
-          break;
-        }
-      }
-      
-      // Navigate if a navigation intent was detected
-      if (shouldNavigate) {
-        setLocation(navigationPath);
-        // Return a simple response indicating navigation
-        return { 
-          content: `Navigating to ${navigationPath === '/' ? 'dashboard' : navigationPath.slice(1).replace(/-/g, ' ')}...`,
-          navigated: true,
-          path: navigationPath
-        };
-      }
+      // Let Max AI backend handle all navigation logic for better intent understanding
+      // Removed frontend navigation pattern matching that was interfering with Max AI
       
       // Otherwise, send to backend for AI processing
       const response = await fetch('/api/max-ai/chat', {
