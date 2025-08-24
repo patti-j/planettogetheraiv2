@@ -25639,23 +25639,26 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
-  // Database Explorer API endpoints
-  app.get("/api/database/tables", async (req, res) => {
+  // Database Explorer API endpoints  
+  app.get("/api/database/tables", requireAuth, async (req, res) => {
     try {
-      // Query system tables to get all table names dynamically
-      const result = await db.execute(sql`
+      // Use the direct SQL connection from db.ts
+      const { directSql } = await import('./db');
+      
+      const result = await directSql`
         SELECT table_name, table_schema 
         FROM information_schema.tables 
         WHERE table_schema = 'public' 
           AND table_type = 'BASE TABLE'
         ORDER BY table_name
-      `);
+      `;
       
-      const tables = (Array.isArray(result) ? result : [result]).map((row: any) => ({
+      const tables = result.map((row: any) => ({
         name: row.table_name,
         schema: row.table_schema
       }));
       
+      console.log(`Database Explorer: Found ${tables.length} tables`);
       res.json(tables);
     } catch (error) {
       console.error('Error fetching table list:', error);
