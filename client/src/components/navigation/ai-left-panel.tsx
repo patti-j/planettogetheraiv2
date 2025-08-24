@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'wouter';
 import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +48,7 @@ export function AILeftPanel() {
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   // Helper function to get gradient class based on theme
   const getThemeGradient = (theme: string) => {
@@ -141,6 +143,50 @@ export function AILeftPanel() {
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
       setShowMaxThinking(true);
+      
+      // Check for navigation intents in the message
+      const lowerMessage = message.toLowerCase();
+      const navigationPatterns = [
+        { patterns: ['show production schedule', 'show schedule', 'production schedule', 'view schedule', 'open schedule', 'go to schedule'], path: '/production-schedule' },
+        { patterns: ['show analytics', 'view analytics', 'open analytics', 'go to analytics'], path: '/analytics' },
+        { patterns: ['show shop floor', 'view shop floor', 'open shop floor', 'go to shop floor'], path: '/shop-floor' },
+        { patterns: ['show inventory', 'view inventory', 'open inventory', 'go to inventory'], path: '/inventory-optimization' },
+        { patterns: ['show capacity', 'view capacity', 'capacity planning', 'open capacity', 'go to capacity'], path: '/capacity-planning' },
+        { patterns: ['show kpi', 'view kpi', 'show kpis', 'view kpis', 'open kpi', 'go to kpi'], path: '/smart-kpi-tracking' },
+        { patterns: ['show reports', 'view reports', 'open reports', 'go to reports'], path: '/reports' },
+        { patterns: ['show quality', 'view quality', 'quality control', 'open quality', 'go to quality'], path: '/quality-control' },
+        { patterns: ['show dashboard', 'view dashboard', 'go home', 'go to home', 'open dashboard'], path: '/' },
+        { patterns: ['show optimization', 'view optimization', 'optimization studio', 'go to optimization'], path: '/optimization-studio' },
+        { patterns: ['show business goals', 'view goals', 'business goals', 'go to goals'], path: '/business-goals' },
+        { patterns: ['show systems', 'view systems', 'systems management', 'go to systems'], path: '/systems-management-dashboard' },
+        { patterns: ['show users', 'view users', 'user management', 'go to users'], path: '/user-access-management' },
+        { patterns: ['show demand', 'view demand', 'demand planning', 'go to demand'], path: '/demand-planning' },
+      ];
+      
+      // Check if message matches any navigation pattern
+      let shouldNavigate = false;
+      let navigationPath = '';
+      
+      for (const { patterns, path } of navigationPatterns) {
+        if (patterns.some(pattern => lowerMessage.includes(pattern))) {
+          shouldNavigate = true;
+          navigationPath = path;
+          break;
+        }
+      }
+      
+      // Navigate if a navigation intent was detected
+      if (shouldNavigate) {
+        setLocation(navigationPath);
+        // Return a simple response indicating navigation
+        return { 
+          content: `Navigating to ${navigationPath === '/' ? 'dashboard' : navigationPath.slice(1).replace(/-/g, ' ')}...`,
+          navigated: true,
+          path: navigationPath
+        };
+      }
+      
+      // Otherwise, send to backend for AI processing
       const response = await apiRequest("POST", "/api/max-ai/chat", { 
         message,
         context: {
@@ -168,8 +214,8 @@ export function AILeftPanel() {
         setChatMessages(prev => [...prev, aiResponse]);
       }
       
-      // If there are insights, show them
-      if (data?.insights && data.insights.length > 0) {
+      // If there are insights, show them (but not if we just navigated)
+      if (data?.insights && data.insights.length > 0 && !data?.navigated) {
         // Switch to insights tab to show them
         setActiveTab('insights');
       }
