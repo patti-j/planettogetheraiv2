@@ -25666,12 +25666,14 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
-  app.get("/api/database/tables/:tableName/schema", async (req, res) => {
+  app.get("/api/database/tables/:tableName/schema", requireAuth, async (req, res) => {
     try {
       const { tableName } = req.params;
       
-      // Get table schema (columns, data types, etc.)
-      const result = await db.execute(sql`
+      // Use direct SQL connection like the tables endpoint
+      const { directSql } = await import('./db');
+      
+      const result = await directSql`
         SELECT 
           column_name,
           data_type,
@@ -25685,8 +25687,9 @@ Be careful to preserve data integrity and relationships.`;
         WHERE table_name = ${tableName}
           AND table_schema = 'public'
         ORDER BY ordinal_position
-      `);
+      `;
       
+      console.log(`Database Explorer: Found ${result.length} columns for table ${tableName}`);
       res.json(result);
     } catch (error) {
       console.error('Error fetching table schema:', error);
