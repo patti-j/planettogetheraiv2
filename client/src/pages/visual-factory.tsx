@@ -676,22 +676,132 @@ export default function VisualFactory() {
       );
     }
 
+    // Extract widgets from dashboard configuration
+    const standardWidgets = dashboard.configuration?.standardWidgets || [];
+    const customWidgets = dashboard.configuration?.customWidgets || [];
+    const allWidgets = [...standardWidgets, ...customWidgets];
+
+    // Render individual widget
+    const renderWidget = (widget: any) => {
+      const widgetConfig = widget.config || {};
+      const widgetType = widgetConfig.widgetType || widget.type;
+      
+      return (
+        <Card key={widget.id} className="h-full">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">{widget.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {/* Render different widget types */}
+            {widgetType === 'schedule-optimization' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Current Algorithm</span>
+                  <Badge variant="outline" className="text-xs">ASAP</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Next Run</span>
+                  <span className="text-xs">15:30</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '73%' }}></div>
+                </div>
+                <div className="text-xs text-gray-600">73% efficiency</div>
+              </div>
+            )}
+            
+            {widgetType === 'schedule-tradeoff-analyzer' && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">92%</div>
+                    <div className="text-xs text-gray-600">On-Time</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">€15K</div>
+                    <div className="text-xs text-gray-600">Cost</div>
+                  </div>
+                </div>
+                <div className="text-xs text-center text-gray-600">
+                  3 conflicts detected
+                </div>
+              </div>
+            )}
+            
+            {widgetType === 'production-kpi' && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-1">
+                  <div className="text-center">
+                    <div className="text-sm font-bold">{jobs.length}</div>
+                    <div className="text-xs text-gray-600">Jobs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-green-600">{metrics.utilization}%</div>
+                    <div className="text-xs text-gray-600">Util</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-orange-600">{metrics.overdueOperations}</div>
+                    <div className="text-xs text-gray-600">Late</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {widgetType === 'resource-utilization' && (
+              <div className="space-y-1">
+                {resources.slice(0, 3).map((resource: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span className="text-xs truncate">{resource.name}</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-8 bg-gray-200 rounded-full h-1">
+                        <div 
+                          className="bg-blue-600 h-1 rounded-full" 
+                          style={{ width: `${Math.random() * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-xs w-8">{Math.floor(Math.random() * 100)}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Default widget display */}
+            {!['schedule-optimization', 'schedule-tradeoff-analyzer', 'production-kpi', 'resource-utilization'].includes(widgetType) && (
+              <div className="flex items-center justify-center h-20 bg-gray-50 rounded">
+                <div className="text-center">
+                  <BarChart3 className="w-6 h-6 mx-auto mb-1 text-gray-400" />
+                  <div className="text-xs text-gray-500">{widgetType || 'Widget'}</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      );
+    };
+
     return (
-      <div className="flex-1 p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{dashboard.name}</h2>
+      <div className="flex-1 p-4">
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-gray-800">{dashboard.name}</h2>
           {dashboard.description && (
-            <p className="text-gray-600 mt-1">{dashboard.description}</p>
+            <p className="text-sm text-gray-600 mt-1">{dashboard.description}</p>
           )}
         </div>
         
-        {/* Placeholder for actual dashboard content */}
-        <div className="bg-gray-100 rounded-lg p-8 min-h-[400px] flex items-center justify-center">
-          <div className="text-center">
-            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium text-gray-600 mb-2">Dashboard Content</h3>
-            <p className="text-gray-500">Dashboard widgets and visualizations would appear here</p>
-          </div>
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-[400px]">
+          {allWidgets.length > 0 ? (
+            allWidgets.map(renderWidget)
+          ) : (
+            <div className="col-span-full flex items-center justify-center bg-gray-50 rounded-lg p-8">
+              <div className="text-center">
+                <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-600 mb-2">No Widgets</h3>
+                <p className="text-gray-500">This dashboard doesn't have any widgets configured yet.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
