@@ -26,7 +26,7 @@ interface WorkspaceDashboardProps {
   onToggleEditMode?: (editMode: boolean) => void;
   onSave?: (dashboardData: any) => void;
   productionData?: {
-    orders: any[];
+    jobTemplates: any[];
     operations: any[];
     resources: any[];
   };
@@ -60,7 +60,7 @@ export function WorkspaceDashboard({
 
   // Provide safe default production data if not provided
   const safeProductionData = productionData || {
-    orders: [],
+    jobTemplates: [],
     operations: [],
     resources: []
   };

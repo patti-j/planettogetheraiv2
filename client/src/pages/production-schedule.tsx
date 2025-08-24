@@ -99,8 +99,8 @@ export default function ProductionSchedulePage() {
   const canEditSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'edit');
   const canCreateSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'create');
 
-  // Fetch production orders and operations for the widgets
-  const { data: productionOrders, isLoading: ordersLoading } = useQuery({
+  // Fetch job templates and operations for the widgets
+  const { data: jobTemplates, isLoading: jobTemplatesLoading } = useQuery({
     queryKey: ['/api/pt-jobs'],
     enabled: canViewSchedule
   });
@@ -295,7 +295,7 @@ export default function ProductionSchedulePage() {
           onToggleEditMode={setIsDashboardEditMode}
           onSave={(dashboardData) => createDashboardMutation.mutate(dashboardData)}
           productionData={{
-            orders: Array.isArray(productionOrders) ? productionOrders : [],
+            jobTemplates: Array.isArray(jobTemplates) ? jobTemplates : [],
             operations: Array.isArray(ptOperations) ? ptOperations : [],
             resources: Array.isArray(resources) ? resources : []
           }}
