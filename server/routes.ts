@@ -4144,6 +4144,7 @@ Return ONLY a valid JSON object with this exact structure:
         recentActions: context?.recentActions
       });
       
+      console.log('Max AI Response:', JSON.stringify(response, null, 2));
       res.json(response);
     } catch (error) {
       console.error("Max AI chat error:", error);
