@@ -164,74 +164,76 @@ export class MaxAIService {
     return insights;
   }
 
-  // Analyze user intent to determine if they want navigation, data, or conversation
-  private analyzeUserIntent(query: string): { type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number } {
-    const lowerQuery = query.toLowerCase();
-    
-    // Navigation intent patterns
-    const navigationPatterns = [
-      { pattern: /show\s+me\s+(the\s+)?production\s+schedule/, target: '/production-schedule', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.9 },
-      { pattern: /go\s+to\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.9 },
-      { pattern: /open\s+(the\s+)?production\s+schedule/, target: '/production-schedule', confidence: 0.9 },
-      { pattern: /view\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.8 },
-      { pattern: /show\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.8 },
-      
-      { pattern: /show\s+me\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
-      { pattern: /go\s+to\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
-      
-      { pattern: /show\s+me\s+(the\s+)?analytics/, target: '/analytics', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?dashboard/, target: '/analytics', confidence: 0.8 },
-      { pattern: /take\s+me\s+to\s+analytics/, target: '/analytics', confidence: 0.9 },
-      
-      { pattern: /show\s+me\s+(the\s+)?alerts/, target: '/alerts', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+alerts/, target: '/alerts', confidence: 0.9 },
-      { pattern: /view\s+alerts/, target: '/alerts', confidence: 0.8 },
-      
-      { pattern: /show\s+me\s+(the\s+)?resources/, target: '/resources', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?operations/, target: '/operations', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?quality/, target: '/quality-control', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?visual\s+factory/, target: '/visual-factory', confidence: 0.9 },
-      
-      { pattern: /show\s+me\s+(the\s+)?capacity\s+plan(ning)?/, target: '/capacity-planning', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?dashboard/, target: '/', confidence: 0.8 },
-      
-      { pattern: /take\s+me\s+to\s+(the\s+)?capacity/, target: '/capacity-planning', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
-      { pattern: /take\s+me\s+to\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 },
-      
-      { pattern: /go\s+to\s+(the\s+)?capacity/, target: '/capacity-planning', confidence: 0.9 },
-      { pattern: /go\s+to\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
-      { pattern: /go\s+to\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
-      { pattern: /go\s+to\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 }
+  // Get available application routes and features for AI to understand
+  private getApplicationRoutes(): { route: string; keywords: string[]; description: string }[] {
+    return [
+      { route: '/', keywords: ['home', 'dashboard', 'main'], description: 'Main dashboard and homepage' },
+      { route: '/production-schedule', keywords: ['production', 'schedule', 'scheduling', 'gantt', 'timeline'], description: 'Production scheduling and Gantt chart' },
+      { route: '/shop-floor', keywords: ['shop floor', 'production floor', 'manufacturing', 'real-time'], description: 'Shop floor monitoring and real-time production' },
+      { route: '/analytics', keywords: ['analytics', 'reports', 'metrics', 'kpi', 'performance'], description: 'Analytics and performance metrics' },
+      { route: '/alerts', keywords: ['alerts', 'notifications', 'issues', 'problems', 'warnings'], description: 'System alerts and notifications' },
+      { route: '/resources', keywords: ['resources', 'machines', 'equipment', 'assets'], description: 'Resource and equipment management' },
+      { route: '/operations', keywords: ['operations', 'tasks', 'activities', 'work'], description: 'Operations and work management' },
+      { route: '/capacity-planning', keywords: ['capacity', 'planning', 'capacity plan', 'resource planning'], description: 'Capacity and resource planning' },
+      { route: '/inventory-optimization', keywords: ['inventory', 'stock', 'materials', 'supplies'], description: 'Inventory and materials management' },
+      { route: '/reports', keywords: ['reports', 'reporting', 'documents', 'analysis'], description: 'Reports and documentation' },
+      { route: '/smart-kpi-tracking', keywords: ['kpi', 'metrics', 'tracking', 'performance indicators'], description: 'KPI tracking and performance monitoring' },
+      { route: '/quality-control', keywords: ['quality', 'control', 'inspection', 'testing'], description: 'Quality control and inspection' },
+      { route: '/visual-factory', keywords: ['visual factory', 'displays', 'screens', 'visual management'], description: 'Visual factory displays and management' }
     ];
+  }
+
+  // Use AI to intelligently determine user intent and target route
+  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number }> {
+    const routes = this.getApplicationRoutes();
     
-    // Data display intent patterns  
-    const dataPatterns = [
-      { pattern: /what\s+is\s+(the\s+)?production\s+status/, confidence: 0.9 },
-      { pattern: /current\s+production\s+status/, confidence: 0.9 },
-      { pattern: /show\s+production\s+data/, confidence: 0.8 },
-      { pattern: /how\s+many\s+(active\s+)?(jobs|orders|operations)/, confidence: 0.8 },
-      { pattern: /resource\s+utilization/, confidence: 0.8 },
-      { pattern: /show\s+me\s+the\s+data/, confidence: 0.7 }
-    ];
-    
-    // Check navigation patterns first
-    for (const { pattern, target, confidence } of navigationPatterns) {
-      if (pattern.test(lowerQuery)) {
-        return { type: 'navigate', target, confidence };
-      }
+    // Quick check for obvious data requests
+    const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is'];
+    if (dataKeywords.some(keyword => query.toLowerCase().includes(keyword))) {
+      return { type: 'show_data', confidence: 0.8 };
     }
     
-    // Check data patterns
-    for (const { pattern, confidence } of dataPatterns) {
-      if (pattern.test(lowerQuery)) {
-        return { type: 'show_data', confidence };
+    // Check for navigation intent using AI
+    const navigationKeywords = ['show me', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to'];
+    const hasNavigationIntent = navigationKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
+    if (hasNavigationIntent) {
+      // Use AI to find the best matching route
+      const routeDescriptions = routes.map(r => `${r.route}: ${r.description} (keywords: ${r.keywords.join(', ')})`).join('\n');
+      
+      try {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system', 
+              content: `You are a route mapper for a manufacturing application. Given a user request, determine which route they want to navigate to.
+
+Available routes:
+${routeDescriptions}
+
+Rules:
+- If the user wants to navigate somewhere, respond with just the route path (e.g., "/capacity-planning")
+- If uncertain or if it's not a navigation request, respond with "NONE"
+- Be flexible with language - users might say "capacity plan" and mean "/capacity-planning"
+- Consider synonyms and related terms`
+            },
+            {
+              role: 'user',
+              content: query
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 50
+        });
+        
+        const aiResponse = response.choices[0].message.content?.trim();
+        
+        if (aiResponse && aiResponse !== 'NONE' && routes.some(r => r.route === aiResponse)) {
+          return { type: 'navigate', target: aiResponse, confidence: 0.9 };
+        }
+      } catch (error) {
+        console.error('AI route mapping error:', error);
       }
     }
     
@@ -241,8 +243,8 @@ export class MaxAIService {
 
   // Generate contextual AI response based on user query and context
   async generateResponse(query: string, context: MaxContext): Promise<MaxResponse> {
-    // Analyze user intent first
-    const intent = this.analyzeUserIntent(query);
+    // Analyze user intent using AI
+    const intent = await this.analyzeUserIntentWithAI(query);
     
     // Handle navigation intent
     if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
