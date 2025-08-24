@@ -36,7 +36,11 @@ import {
   Target,
   Calendar,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ArrowUpDown,
+  Plus as PlusIcon,
+  Trash2,
+  Edit
 } from 'lucide-react';
 import type { Operation, Resource } from '@shared/schema';
 import { useMaxDock } from '@/contexts/MaxDockContext';
@@ -51,6 +55,25 @@ interface VisualFactoryDisplay {
   isActive: boolean;
   useAiMode: boolean;
   widgets: VisualFactoryWidget[];
+  // New dashboard rotation properties
+  useDashboardRotation: boolean;
+  dashboardSequence: DashboardSequenceItem[];
+  createdAt: Date;
+}
+
+interface DashboardSequenceItem {
+  dashboardId: number;
+  displayDuration: number; // seconds
+  transitionEffect?: 'fade' | 'slide' | 'none';
+}
+
+interface Dashboard {
+  id: number;
+  name: string;
+  description?: string;
+  widgets: any[];
+  layout: any;
+  isActive: boolean;
   createdAt: Date;
 }
 
@@ -115,6 +138,11 @@ export default function VisualFactory() {
   const [location, setLocation] = useState('');
   const [displayType, setDisplayType] = useState('Large Screen Display');
   const [includeRealTime, setIncludeRealTime] = useState(true);
+  
+  // Dashboard rotation states
+  const [dashboardRotationDialogOpen, setDashboardRotationDialogOpen] = useState(false);
+  const [currentDashboardIndex, setCurrentDashboardIndex] = useState(0);
+  const [selectedDashboards, setSelectedDashboards] = useState<DashboardSequenceItem[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const adaptiveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -138,6 +166,11 @@ export default function VisualFactory() {
 
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ['/api/resources'],
+  });
+
+  // Fetch dashboards from UI Designer
+  const { data: availableDashboards = [] } = useQuery<Dashboard[]>({
+    queryKey: ['/api/dashboards'],
   });
 
   // Calculate metrics from available data
@@ -247,28 +280,51 @@ export default function VisualFactory() {
     }
   });
 
-  // Auto-rotation effect with adaptive content
+  // Auto-rotation effect (handles both widgets and dashboards)
   useEffect(() => {
-    if (isPlaying && currentDisplay && currentDisplay.widgets.length > 1) {
-      const interval = currentDisplay.autoRotationInterval * 1000;
-      setTimeRemaining(interval / 1000);
-      
-      intervalRef.current = setInterval(() => {
-        setCurrentWidgetIndex(prev => (prev + 1) % currentDisplay.widgets.length);
+    if (isPlaying && currentDisplay) {
+      // Handle dashboard rotation
+      if (currentDisplay.useDashboardRotation && currentDisplay.dashboardSequence.length > 1) {
+        const currentDashboardItem = currentDisplay.dashboardSequence[currentDashboardIndex];
+        const interval = currentDashboardItem.displayDuration * 1000;
+        setTimeRemaining(currentDashboardItem.displayDuration);
+        
+        intervalRef.current = setInterval(() => {
+          setCurrentDashboardIndex(prev => (prev + 1) % currentDisplay.dashboardSequence.length);
+        }, interval);
+
+        // Countdown timer
+        const countdownInterval = setInterval(() => {
+          setTimeRemaining(prev => Math.max(0, prev - 1));
+        }, 1000);
+
+        return () => {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          clearInterval(countdownInterval);
+        };
+      }
+      // Handle widget rotation (existing behavior)
+      else if (!currentDisplay.useDashboardRotation && currentDisplay.widgets.length > 1) {
+        const interval = currentDisplay.autoRotationInterval * 1000;
         setTimeRemaining(interval / 1000);
-      }, interval);
+        
+        intervalRef.current = setInterval(() => {
+          setCurrentWidgetIndex(prev => (prev + 1) % currentDisplay.widgets.length);
+          setTimeRemaining(interval / 1000);
+        }, interval);
 
-      // Countdown timer
-      const countdownInterval = setInterval(() => {
-        setTimeRemaining(prev => Math.max(0, prev - 1));
-      }, 1000);
+        // Countdown timer
+        const countdownInterval = setInterval(() => {
+          setTimeRemaining(prev => Math.max(0, prev - 1));
+        }, 1000);
 
-      return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        clearInterval(countdownInterval);
-      };
+        return () => {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          clearInterval(countdownInterval);
+        };
+      }
     }
-  }, [isPlaying, currentDisplay, currentWidgetIndex]);
+  }, [isPlaying, currentDisplay, currentWidgetIndex, currentDashboardIndex]);
 
   // Adaptive content refresh effect
   useEffect(() => {
@@ -370,9 +426,13 @@ export default function VisualFactory() {
   };
 
   const resetRotation = () => {
+    setIsPlaying(false);
     setCurrentWidgetIndex(0);
+    setCurrentDashboardIndex(0);
+    setTimeRemaining(0);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   };
 
@@ -532,6 +592,215 @@ export default function VisualFactory() {
   };
 
   const currentWidget = currentDisplay?.widgets[currentWidgetIndex];
+  
+  // Dashboard Rotation Configuration Component
+  const DashboardRotationConfig = ({ 
+    availableDashboards, 
+    selectedDashboards, 
+    onSequenceChange, 
+    onSave 
+  }: {
+    availableDashboards: Dashboard[];
+    selectedDashboards: DashboardSequenceItem[];
+    onSequenceChange: (sequence: DashboardSequenceItem[]) => void;
+    onSave: (sequence: DashboardSequenceItem[]) => void;
+  }) => {
+    const addDashboard = (dashboardId: number) => {
+      const newItem: DashboardSequenceItem = {
+        dashboardId,
+        displayDuration: 30, // Default 30 seconds
+        transitionEffect: 'fade'
+      };
+      onSequenceChange([...selectedDashboards, newItem]);
+    };
+
+    const removeDashboard = (index: number) => {
+      const newSequence = selectedDashboards.filter((_, i) => i !== index);
+      onSequenceChange(newSequence);
+    };
+
+    const updateDashboard = (index: number, updates: Partial<DashboardSequenceItem>) => {
+      const newSequence = selectedDashboards.map((item, i) => 
+        i === index ? { ...item, ...updates } : item
+      );
+      onSequenceChange(newSequence);
+    };
+
+    const moveUp = (index: number) => {
+      if (index === 0) return;
+      const newSequence = [...selectedDashboards];
+      [newSequence[index], newSequence[index - 1]] = [newSequence[index - 1], newSequence[index]];
+      onSequenceChange(newSequence);
+    };
+
+    const moveDown = (index: number) => {
+      if (index === selectedDashboards.length - 1) return;
+      const newSequence = [...selectedDashboards];
+      [newSequence[index], newSequence[index + 1]] = [newSequence[index + 1], newSequence[index]];
+      onSequenceChange(newSequence);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-medium mb-4">Available Dashboards</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {availableDashboards.map((dashboard) => (
+              <Card key={dashboard.id} className="p-3 cursor-pointer hover:shadow-md transition-shadow" 
+                    onClick={() => addDashboard(dashboard.id)}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
+                    {dashboard.description && (
+                      <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
+                    )}
+                  </div>
+                  <PlusIcon className="w-4 h-4 text-gray-400" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-medium mb-4">Rotation Sequence</h3>
+          {selectedDashboards.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <ArrowUpDown className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No dashboards selected for rotation</p>
+              <p className="text-sm">Click on dashboards above to add them to the sequence</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {selectedDashboards.map((item, index) => {
+                const dashboard = availableDashboards.find(d => d.id === item.dashboardId);
+                return (
+                  <Card key={`${item.dashboardId}-${index}`} className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="text-lg font-bold text-gray-400 min-w-[2rem]">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{dashboard?.name}</h4>
+                        <div className="flex items-center gap-4 mt-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm">Duration:</Label>
+                            <Input
+                              type="number"
+                              min="5"
+                              max="300"
+                              value={item.displayDuration}
+                              onChange={(e) => updateDashboard(index, { 
+                                displayDuration: parseInt(e.target.value) || 30 
+                              })}
+                              className="w-20"
+                            />
+                            <span className="text-sm text-gray-500">seconds</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm">Effect:</Label>
+                            <Select 
+                              value={item.transitionEffect} 
+                              onValueChange={(value: 'fade' | 'slide' | 'none') => 
+                                updateDashboard(index, { transitionEffect: value })
+                              }
+                            >
+                              <SelectTrigger className="w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fade">Fade</SelectItem>
+                                <SelectItem value="slide">Slide</SelectItem>
+                                <SelectItem value="none">None</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => moveUp(index)}
+                          disabled={index === 0}
+                        >
+                          ↑
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => moveDown(index)}
+                          disabled={index === selectedDashboards.length - 1}
+                        >
+                          ↓
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeDashboard(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onSequenceChange([])}>
+            Clear All
+          </Button>
+          <Button 
+            onClick={() => onSave(selectedDashboards)}
+            disabled={selectedDashboards.length === 0}
+          >
+            Save Rotation Sequence
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Dashboard Renderer Component
+  const DashboardRenderer = ({ dashboardId }: { dashboardId: number }) => {
+    const dashboard = availableDashboards.find(d => d.id === dashboardId);
+    
+    if (!dashboard) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <Monitor className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-medium mb-2">Dashboard Not Found</h3>
+            <p>The selected dashboard could not be loaded.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">{dashboard.name}</h2>
+          {dashboard.description && (
+            <p className="text-gray-600 mt-1">{dashboard.description}</p>
+          )}
+        </div>
+        
+        {/* Placeholder for actual dashboard content */}
+        <div className="bg-gray-100 rounded-lg p-8 min-h-[400px] flex items-center justify-center">
+          <div className="text-center">
+            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-600 mb-2">Dashboard Content</h3>
+            <p className="text-gray-500">Dashboard widgets and visualizations would appear here</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -549,6 +818,38 @@ export default function VisualFactory() {
                   <p className="text-sm md:text-base text-gray-600">Automated large screen displays for manufacturing facilities</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 lg:flex-shrink-0">
+                  {/* Dashboard Rotation Configuration Button */}
+                  <Dialog open={dashboardRotationDialogOpen} onOpenChange={setDashboardRotationDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-2">
+                        <ArrowUpDown className="w-4 h-4" />
+                        <span className="hidden sm:inline">Dashboard Rotation</span>
+                        <span className="sm:hidden">Rotation</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Dashboard Rotation Configuration</DialogTitle>
+                      </DialogHeader>
+                      <DashboardRotationConfig
+                        availableDashboards={availableDashboards}
+                        selectedDashboards={selectedDashboards}
+                        onSequenceChange={setSelectedDashboards}
+                        onSave={(sequence) => {
+                          // Update current display with dashboard rotation
+                          if (currentDisplay) {
+                            updateDisplayMutation.mutate({
+                              id: currentDisplay.id,
+                              useDashboardRotation: true,
+                              dashboardSequence: sequence
+                            });
+                          }
+                          setDashboardRotationDialogOpen(false);
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+
                   <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
                     <DialogTrigger asChild>
                       <Button className={`${aiTheme.gradient} text-white text-sm`} size="sm">
@@ -651,7 +952,12 @@ export default function VisualFactory() {
                     <p className="text-xs sm:text-sm text-gray-600 mb-2">{display.description}</p>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>{display.location}</span>
-                      <span>{display.widgets.length} widgets</span>
+                      <span>
+                        {display.useDashboardRotation 
+                          ? `${display.dashboardSequence?.length || 0} dashboards`
+                          : `${display.widgets.length} widgets`
+                        }
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -684,7 +990,10 @@ export default function VisualFactory() {
             </div>
             {!isFullscreen && (
               <div className="text-xs sm:text-sm text-gray-600">
-                {currentDisplay.name} • Widget {currentWidgetIndex + 1} of {currentDisplay.widgets.length}
+                {currentDisplay.useDashboardRotation 
+                  ? `${currentDisplay.name} • Dashboard ${currentDashboardIndex + 1} of ${currentDisplay.dashboardSequence.length}`
+                  : `${currentDisplay.name} • Widget ${currentWidgetIndex + 1} of ${currentDisplay.widgets.length}`
+                }
               </div>
             )}
           </div>
@@ -692,9 +1001,45 @@ export default function VisualFactory() {
 
         {/* Main Display Area */}
         <div className={`${isFullscreen ? 'h-screen p-4 sm:p-8' : 'p-3 sm:p-6'} bg-gray-50`}>
-          {currentDisplay && currentWidget ? (
+          {currentDisplay ? (
             <div className={`${isFullscreen ? 'h-full' : 'h-80 sm:h-96'}`}>
-              {renderWidget(currentWidget)}
+              {/* Dashboard Rotation Mode */}
+              {currentDisplay.useDashboardRotation && currentDisplay.dashboardSequence.length > 0 ? (
+                <div className={`h-full ${
+                  currentDisplay.dashboardSequence[currentDashboardIndex]?.transitionEffect === 'fade' 
+                    ? 'transition-opacity duration-500' 
+                    : currentDisplay.dashboardSequence[currentDashboardIndex]?.transitionEffect === 'slide'
+                    ? 'transition-transform duration-500' 
+                    : ''
+                }`}>
+                  <DashboardRenderer 
+                    dashboardId={currentDisplay.dashboardSequence[currentDashboardIndex].dashboardId} 
+                  />
+                  {isPlaying && (
+                    <div className="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                      {Math.ceil(timeRemaining)}s
+                    </div>
+                  )}
+                </div>
+              )
+              /* Widget Rotation Mode */
+              : currentWidget ? (
+                <div className="h-full">
+                  {renderWidget(currentWidget)}
+                </div>
+              )
+              /* No Content Mode */
+              : (
+                <div className="h-full flex items-center justify-center bg-white rounded-lg border-2 border-dashed border-gray-300">
+                  <div className="text-center px-4">
+                    <ArrowUpDown className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Content Configured</h3>
+                    <p className="text-sm sm:text-base text-gray-600">
+                      Configure dashboard rotation or add widgets to this display
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="h-80 sm:h-96 flex items-center justify-center bg-white rounded-lg border-2 border-dashed border-gray-300">
@@ -727,7 +1072,9 @@ function CreateDisplayForm({
     audience: 'general' as const,
     autoRotationInterval: 30,
     isActive: true,
-    useAiMode: false
+    useAiMode: false,
+    useDashboardRotation: false,
+    dashboardSequence: [] as DashboardSequenceItem[]
   });
 
   const handleSubmit = (e: React.FormEvent) => {
