@@ -186,18 +186,20 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                <div className={`grid gap-3 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 xl:grid-cols-3'}`}>
                   {quickLinks.map((link, index) => (
                     <Button
                       key={index}
                       variant="outline"
-                      className="justify-start gap-2"
+                      className="justify-start gap-2 h-auto py-3 px-3 flex-wrap min-h-[3rem]"
                       onClick={() => setLocation(link.href)}
                     >
-                      <div className={`w-8 h-8 rounded-lg ${link.color} flex items-center justify-center`}>
+                      <div className={`w-8 h-8 rounded-lg ${link.color} flex items-center justify-center flex-shrink-0`}>
                         <link.icon className="w-4 h-4 text-white" />
                       </div>
-                      <span className={`${isMobile ? 'text-xs' : 'text-sm'}`}>{link.label}</span>
+                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-left leading-tight`}>
+                        {link.label}
+                      </span>
                     </Button>
                   ))}
                 </div>
