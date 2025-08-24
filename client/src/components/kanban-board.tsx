@@ -56,7 +56,7 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
       case "priority":
         return job.priority;
       case "customer":
-        return job.customer;
+        return job.customerIdId?.toString() || 'unknown';
       default:
         return job.status;
     }
@@ -122,7 +122,7 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
       
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <span className="truncate pr-2">Customer: {job.customer}</span>
+          <span className="truncate pr-2">Customer ID: {job.customerIdId}</span>
           <Badge className={`text-xs ${getPriorityColor(job.priority)} text-white flex-shrink-0`}>
             {job.priority}
           </Badge>
@@ -173,10 +173,10 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
         return operation.status;
       case "priority":
         // Operations inherit priority from their parent job
-        const parentJob = job || jobs.find((j: ProductionOrder) => j.id === operation.productionOrderId);
+        const parentJob = job || jobs.find((j: ProductionOrder) => j.id === operation.order);
         return parentJob?.priority || "medium";
       case "assignedResourceId":
-        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        const resource = resources.find(r => r.id === operation.workCenterId);
         return resource?.name || "Unassigned";
       default:
         return operation.status;
@@ -197,7 +197,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
     },
   });
 
-  const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
+  const assignedResource = resources.find(r => r.id === operation.workCenterId);
   
   const getResourceIcon = (resourceType: string) => {
     switch (resourceType) {
@@ -260,9 +260,9 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
           )}
         </div>
         
-        {operation.requiredCapabilities && operation.requiredCapabilities.length > 0 && (
+        {[] && [].length > 0 && (
           <div className="text-xs text-gray-500">
-            Requires: {operation.requiredCapabilities.join(", ")}
+            Requires: {[].join(", ")}
           </div>
         )}
         
@@ -340,7 +340,7 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Customer:</span>
-                  <span className="font-medium">{job.customer}</span>
+                  <span className="font-medium">{job.customerId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Priority:</span>
@@ -406,8 +406,8 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
             ) : (
               <div className="space-y-2">
                 {jobOperations.map((operation) => {
-                  const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
-                  const requiredCapNames = operation.requiredCapabilities?.map(capId => 
+                  const assignedResource = resources.find(r => r.id === operation.workCenterId);
+                  const requiredCapNames = []?.map(capId => 
                     capabilities.find(c => c.id === capId)?.name || `Capability ${capId}`
                   ) || [];
                   
@@ -520,8 +520,8 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
 }) => {
   if (!operation) return null;
 
-  const assignedResource = resources.find(r => r.id === operation.assignedResourceId);
-  const requiredCapNames = operation.requiredCapabilities?.map(capId => 
+  const assignedResource = resources.find(r => r.id === operation.workCenterId);
+  const requiredCapNames = []?.map(capId => 
     capabilities.find(c => c.id === capId)?.name || `Capability ${capId}`
   ) || [];
 
@@ -560,7 +560,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Parent Job:</span>
-                  <span className="font-medium">{job?.name || `Job #${operation.productionOrderId}`}</span>
+                  <span className="font-medium">{job?.name || `Job #${operation.order}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
@@ -850,14 +850,14 @@ function KanbanBoard({
           return item.priority;
         } else {
           const operation = item as Operation;
-          const parentJob = jobs.find(j => j.id === operation.productionOrderId);
+          const parentJob = jobs.find(j => j.id === operation.order);
           return parentJob?.priority || "medium";
         }
       case "customer":
         return (item as ProductionOrder).customer || "Unknown";
       case "assignedResourceId":
         const operation = item as Operation;
-        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        const resource = resources.find(r => r.id === operation.workCenterId);
         return resource?.name || "Unassigned";
       default:
         return "Unknown";
@@ -874,7 +874,7 @@ function KanbanBoard({
     } else if (field === "priority") {
       return ["low", "medium", "high"];
     } else if (field === "customer") {
-      return Array.from(new Set(jobs.map(job => job.customer).filter(Boolean)));
+      return Array.from(new Set(jobs.map(job => job.customerId).filter(Boolean)));
     } else if (field === "assignedResourceId") {
       return Array.from(new Set(resources.map(r => r.name).filter(Boolean)));
     }
