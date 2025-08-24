@@ -77,39 +77,17 @@ export default function DatabaseExplorer() {
   // Fetch all database tables
   const { data: tables = [], isLoading: tablesLoading, refetch: refetchTables } = useQuery({
     queryKey: ['/api/database/tables'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/database/tables');
-      return await response.json();
-    }
   });
 
   // Fetch table schema when a table is selected
   const { data: tableSchema = [], isLoading: schemaLoading } = useQuery({
     queryKey: ['/api/database/tables', selectedTable, 'schema'],
-    queryFn: async () => {
-      if (!selectedTable) return [];
-      const response = await apiRequest('GET', `/api/database/tables/${selectedTable}/schema`);
-      return await response.json();
-    },
     enabled: !!selectedTable
   });
 
   // Fetch table data when viewing data
   const { data: tableData, isLoading: dataLoading, refetch: refetchData } = useQuery({
     queryKey: ['/api/database/tables', selectedTable, 'data', currentPage, pageSize, searchTerm, sortBy, sortOrder, filters],
-    queryFn: async () => {
-      if (!selectedTable) return null;
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pageSize.toString(),
-        search: searchTerm,
-        sortBy,
-        sortOrder,
-        filters: JSON.stringify(filters)
-      });
-      const response = await apiRequest('GET', `/api/database/tables/${selectedTable}/data?${params}`);
-      return await response.json();
-    },
     enabled: !!selectedTable && viewMode === 'data'
   });
 
