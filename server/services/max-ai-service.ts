@@ -207,11 +207,20 @@ export class MaxAIService {
       return { type: 'show_data', confidence: 0.8 };
     }
     
-    // Check for navigation intent using AI
-    const navigationKeywords = ['show me', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to'];
+    // Check for navigation intent - be more inclusive
+    const navigationKeywords = ['show me', 'show', 'take me to', 'go to', 'open', 'view', 'display', 'navigate to', 'see the', 'see', 'access'];
     const hasNavigationIntent = navigationKeywords.some(keyword => query.toLowerCase().includes(keyword));
     
-    if (hasNavigationIntent) {
+    // Also check for direct page mentions (like "master production schedule")
+    const directPageMentions = query.toLowerCase().includes('production schedule') || 
+                              query.toLowerCase().includes('master production') ||
+                              query.toLowerCase().includes('control tower') ||
+                              query.toLowerCase().includes('shop floor') ||
+                              query.toLowerCase().includes('analytics') ||
+                              query.toLowerCase().includes('capacity planning') ||
+                              query.toLowerCase().includes('inventory optimization');
+    
+    if (hasNavigationIntent || directPageMentions) {
       // Use AI to find the best matching route
       const routeDescriptions = routes.map(r => `${r.route}: ${r.description} (${r.label})`).join('\n');
       
@@ -227,10 +236,18 @@ Available routes:
 ${routeDescriptions}
 
 Rules:
-- If the user wants to navigate somewhere, respond with just the route path (e.g., "/capacity-planning")
-- If uncertain or if it's not a navigation request, respond with "NONE"
-- Be flexible with language - users might say "capacity plan" and mean "/capacity-planning"
-- Consider synonyms and related terms`
+- If the user mentions any page/feature name, respond with the matching route path (e.g., "/capacity-planning")
+- If they say "show me X" or "see X" they want to navigate to X
+- If uncertain, respond with "NONE"
+- Be flexible with language:
+  * "master production schedule" = "/master-production-schedule"
+  * "production schedule" = "/production-schedule" 
+  * "control tower" = "/control-tower"
+  * "shop floor" = "/shop-floor"
+  * "analytics" = "/analytics"
+  * "capacity planning" = "/capacity-planning"
+  * "inventory" = "/inventory-optimization"
+- Always prefer navigation over explanation`
             },
             {
               role: 'user',
