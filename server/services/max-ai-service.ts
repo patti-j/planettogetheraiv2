@@ -192,7 +192,23 @@ export class MaxAIService {
       { pattern: /show\s+me\s+(the\s+)?resources/, target: '/resources', confidence: 0.9 },
       { pattern: /show\s+me\s+(the\s+)?operations/, target: '/operations', confidence: 0.9 },
       { pattern: /show\s+me\s+(the\s+)?quality/, target: '/quality-control', confidence: 0.9 },
-      { pattern: /show\s+me\s+(the\s+)?visual\s+factory/, target: '/visual-factory', confidence: 0.9 }
+      { pattern: /show\s+me\s+(the\s+)?visual\s+factory/, target: '/visual-factory', confidence: 0.9 },
+      
+      { pattern: /show\s+me\s+(the\s+)?capacity\s+plan(ning)?/, target: '/capacity-planning', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?dashboard/, target: '/', confidence: 0.8 },
+      
+      { pattern: /take\s+me\s+to\s+(the\s+)?capacity/, target: '/capacity-planning', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 },
+      
+      { pattern: /go\s+to\s+(the\s+)?capacity/, target: '/capacity-planning', confidence: 0.9 },
+      { pattern: /go\s+to\s+(the\s+)?inventory/, target: '/inventory-optimization', confidence: 0.9 },
+      { pattern: /go\s+to\s+(the\s+)?reports/, target: '/reports', confidence: 0.9 },
+      { pattern: /go\s+to\s+(the\s+)?kpi/, target: '/smart-kpi-tracking', confidence: 0.9 }
     ];
     
     // Data display intent patterns  
@@ -227,11 +243,9 @@ export class MaxAIService {
   async generateResponse(query: string, context: MaxContext): Promise<MaxResponse> {
     // Analyze user intent first
     const intent = this.analyzeUserIntent(query);
-    console.log(`🤖 Max Intent Analysis:`, { query, intent });
     
     // Handle navigation intent
     if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
-      console.log(`🧭 Max Navigation Triggered:`, intent.target);
       return {
         content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
         action: {
