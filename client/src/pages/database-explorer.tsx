@@ -7,6 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 import { apiRequest } from '@/lib/queryClient';
 import { 
   Search, 
@@ -75,21 +80,24 @@ export default function DatabaseExplorer() {
   const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv');
 
   // Fetch all database tables
-  const { data: tables = [], isLoading: tablesLoading, refetch: refetchTables } = useQuery({
+  const { data: tablesRaw = [], isLoading: tablesLoading, refetch: refetchTables } = useQuery({
     queryKey: ['/api/database/tables'],
   });
+  const tables = tablesRaw as DatabaseTable[];
 
   // Fetch table schema when a table is selected
-  const { data: tableSchema = [], isLoading: schemaLoading } = useQuery({
+  const { data: tableSchemaRaw = [], isLoading: schemaLoading } = useQuery({
     queryKey: [`/api/database/tables/${selectedTable}/schema`],
     enabled: !!selectedTable
   });
+  const tableSchema = tableSchemaRaw as TableColumn[];
 
   // Fetch table data when viewing data
-  const { data: tableData, isLoading: dataLoading, refetch: refetchData } = useQuery({
+  const { data: tableDataRaw, isLoading: dataLoading, refetch: refetchData } = useQuery({
     queryKey: [`/api/database/tables/${selectedTable}/data?page=${currentPage}&limit=${pageSize}`, searchTerm, sortBy, sortOrder, filters],
     enabled: !!selectedTable && viewMode === 'data'
   });
+  const tableData = tableDataRaw as TableData;
 
   // Export mutation
   const exportMutation = useMutation({
@@ -192,10 +200,10 @@ export default function DatabaseExplorer() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-200px)] w-full">
         {/* Tables List Sidebar */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-4">
+        <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Table className="h-5 w-5" />
@@ -213,7 +221,7 @@ export default function DatabaseExplorer() {
                 {tables.length} tables found
               </CardDescription>
             </CardHeader>
-            <CardContent className="max-h-[calc(100vh-300px)] overflow-y-auto">
+            <CardContent className="h-[calc(100%-120px)] overflow-y-auto">
               <div className="space-y-2 mb-4">
                 <Input
                   placeholder="Search tables..."
@@ -248,13 +256,15 @@ export default function DatabaseExplorer() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
 
         {/* Main Content */}
-        <div className="lg:col-span-3">
+        <ResizablePanel defaultSize={75} minSize={60}>
           {!selectedTable ? (
-            <Card>
-              <CardContent className="flex items-center justify-center h-96">
+            <Card className="h-full">
+              <CardContent className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <Database className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                   <h3 className="text-lg font-semibold mb-2">Select a Table</h3>
@@ -263,7 +273,7 @@ export default function DatabaseExplorer() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="h-full flex flex-col">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -309,7 +319,7 @@ export default function DatabaseExplorer() {
                 </div>
               </CardHeader>
 
-              <CardContent>
+              <CardContent className="flex-1 overflow-hidden">
                 <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'data') => setViewMode(value)}>
                   <TabsList className="mb-4">
                     <TabsTrigger value="schema" className="flex items-center gap-2">
@@ -508,8 +518,8 @@ export default function DatabaseExplorer() {
               </CardContent>
             </Card>
           )}
-        </div>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
