@@ -168,7 +168,8 @@ export class MaxAIService {
   private getApplicationRoutes(): { route: string; keywords: string[]; description: string }[] {
     return [
       { route: '/', keywords: ['home', 'dashboard', 'main'], description: 'Main dashboard and homepage' },
-      { route: '/production-schedule', keywords: ['production', 'schedule', 'scheduling', 'gantt', 'timeline'], description: 'Production scheduling and Gantt chart' },
+      { route: '/production-schedule', keywords: ['production schedule', 'detailed schedule', 'gantt', 'timeline', 'operations schedule'], description: 'Detailed production scheduling with Gantt chart and operations timeline' },
+      { route: '/master-production-schedule', keywords: ['master production schedule', 'mps', 'master schedule', 'production planning', 'demand planning'], description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
       { route: '/shop-floor', keywords: ['shop floor', 'production floor', 'manufacturing', 'real-time'], description: 'Shop floor monitoring and real-time production' },
       { route: '/analytics', keywords: ['analytics', 'reports', 'metrics', 'kpi', 'performance'], description: 'Analytics and performance metrics' },
       { route: '/alerts', keywords: ['alerts', 'notifications', 'issues', 'problems', 'warnings'], description: 'System alerts and notifications' },
