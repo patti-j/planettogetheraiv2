@@ -139,7 +139,7 @@ export default function VisualFactory() {
   const [currentWidgetIndex, setCurrentWidgetIndex] = useState(0);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [newDisplayDialogOpen, setNewDisplayDialogOpen] = useState(false);
+  const [editingDisplay, setEditingDisplay] = useState<VisualFactoryDisplay | null>(null);
   
   // Dashboard rotation states
   const [dashboardRotationDialogOpen, setDashboardRotationDialogOpen] = useState(false);
@@ -230,6 +230,7 @@ export default function VisualFactory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
       setConfigDialogOpen(false);
+      setEditingDisplay(null);
     }
   });
 
@@ -240,6 +241,8 @@ export default function VisualFactory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
+      setConfigDialogOpen(false);
+      setEditingDisplay(null);
     }
   });
 
@@ -756,12 +759,25 @@ export default function VisualFactory() {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Create New Display Configuration</DialogTitle>
+                        <DialogTitle>
+                          {editingDisplay ? 'Edit Display Configuration' : 'Create New Display Configuration'}
+                        </DialogTitle>
                       </DialogHeader>
                       <CreateDisplayForm
-                        onSubmit={createDisplayMutation.mutate}
+                        onSubmit={(data) => {
+                          if (editingDisplay) {
+                            updateDisplayMutation.mutate({ id: editingDisplay.id, ...data });
+                          } else {
+                            createDisplayMutation.mutate(data);
+                          }
+                        }}
                         availableDashboards={availableDashboards}
-                        isLoading={createDisplayMutation.isPending}
+                        isLoading={createDisplayMutation.isPending || updateDisplayMutation.isPending}
+                        initialData={editingDisplay}
+                        onCancel={() => {
+                          setConfigDialogOpen(false);
+                          setEditingDisplay(null);
+                        }}
                       />
                     </DialogContent>
                   </Dialog>
@@ -790,6 +806,18 @@ export default function VisualFactory() {
                         <Badge variant={display.isActive ? 'default' : 'secondary'} className="text-xs">
                           {display.isActive ? 'Active' : 'Inactive'}
                         </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingDisplay(display);
+                            setConfigDialogOpen(true);
+                          }}
+                          className="h-6 w-6 p-1"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
                   </CardHeader>
@@ -905,32 +933,42 @@ export default function VisualFactory() {
 function CreateDisplayForm({ 
   onSubmit, 
   availableDashboards,
-  isLoading 
+  isLoading,
+  initialData,
+  onCancel
 }: { 
-  onSubmit: (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => void;
-  availableDashboards: Dashboard[];
+  onSubmit: (display: any) => void;
+  availableDashboards: any[];
   isLoading: boolean;
+  initialData?: any;
+  onCancel?: () => void;
 }) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    location: '',
-    audience: 'general' as const,
-    autoRotationInterval: 30,
-    isActive: true,
-    useAiMode: false,
-    useDashboardRotation: false,
-    dashboardSequence: [] as DashboardSequenceItem[],
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    location: initialData?.location || '',
+    audience: initialData?.audience || 'general' as const,
+    autoRotationInterval: initialData?.autoRotationInterval || 30,
+    isActive: initialData?.isActive ?? true,
+    useAiMode: initialData?.useAiMode || false,
+    useDashboardRotation: initialData?.useDashboardRotation || false,
+    dashboardSequence: initialData?.dashboardSequence || [] as DashboardSequenceItem[],
     schedule: {
-      startTime: '07:00',
-      endTime: '17:00',
-      daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
-      isScheduled: false
-    } as DisplaySchedule
+      startTime: initialData?.scheduleStartTime || '07:00',
+      endTime: initialData?.scheduleEndTime || '17:00',
+      daysOfWeek: initialData?.scheduleDaysOfWeek || [1, 2, 3, 4, 5],
+      isScheduled: initialData?.scheduleEnabled || false
+    }
   });
   
-  const [selectedDashboards, setSelectedDashboards] = useState<number[]>([]);
-  const [showScheduling, setShowScheduling] = useState(false);
+  const [selectedDashboards, setSelectedDashboards] = useState<number[]>(
+    initialData?.dashboardSequence?.map((item: any) => item.dashboardId) || []
+  );
+  const [showScheduling, setShowScheduling] = useState(initialData?.scheduleEnabled || false);
+  
+  // Debug logging
+  console.log('CreateDisplayForm - availableDashboards:', availableDashboards);
+  console.log('CreateDisplayForm - availableDashboards.length:', availableDashboards.length);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1165,13 +1203,26 @@ function CreateDisplayForm({
         )}
       </div>
       
-      <Button 
-        type="submit" 
-        disabled={isLoading || !formData.name || !formData.location} 
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        {isLoading ? 'Creating...' : 'Create Display'}
-      </Button>
+      <div className="flex gap-3">
+        {onCancel && (
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={onCancel}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+        )}
+        <Button 
+          type="submit" 
+          disabled={isLoading || !formData.name || !formData.location} 
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          {isLoading ? (initialData ? 'Updating...' : 'Creating...') : (initialData ? 'Update Display' : 'Create Display')}
+        </Button>
+      </div>
     </form>
   );
 }
