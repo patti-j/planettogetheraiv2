@@ -47,10 +47,21 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
       return response.json();
     },
     onSuccess: (data: any) => {
-      toast({
-        title: "Max AI Response",
-        description: data.content || data.response || 'I understand your request. Let me help you with that.',
-      });
+      // Handle navigation actions
+      if (data.action?.type === 'navigate' && data.action.target) {
+        // Navigate to the target page
+        window.location.href = data.action.target;
+        toast({
+          title: "Max AI",
+          description: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
+        });
+      } else {
+        // Show regular response
+        toast({
+          title: "Max AI Response",
+          description: data.content || data.response || 'I understand your request. Let me help you with that.',
+        });
+      }
       setPrompt('');
     },
     onError: (error) => {
