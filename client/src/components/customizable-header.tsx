@@ -430,41 +430,34 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     <>
       <div className={cn(
         "relative flex items-center px-4 py-2 border-b bg-background",
-        "overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent",
         className
       )}>
-        {/* Main header content wrapper with min-width to prevent compression */}
-        <div className="flex items-center gap-2 w-full min-w-max">
-          {/* Left side - Logo and main nav items */}
-          <div className="flex items-center gap-2">
-            {/* Logo/Home */}
-            <Button
-              variant="ghost"
-              onClick={() => setLocation('/')}
-              className="flex items-center gap-2 px-3 py-2 h-9 flex-shrink-0"
-            >
-              <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
-              {showHeaderText && <span className="hidden lg:inline font-semibold">PlanetTogether</span>}
-            </Button>
+        {/* Fixed left section - Logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/')}
+            className="flex items-center gap-2 px-3 py-2 h-9"
+          >
+            <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
+            {showHeaderText && <span className="hidden lg:inline font-semibold">PlanetTogether</span>}
+          </Button>
+          <div className="h-6 w-px bg-border mx-2" />
+        </div>
 
-            {/* Separator */}
-            <div className="h-6 w-px bg-border mx-2 flex-shrink-0" />
-
-            {/* Header items */}
-            <div className="flex items-center gap-1">
-              {headerItems.filter(item => !['theme'].includes(item.id)).map(renderHeaderItem)}
-            </div>
+        {/* Scrollable middle section - Navigation items */}
+        <div className="flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          <div className="flex items-center gap-1 min-w-max pr-4">
+            {headerItems.filter(item => !['theme'].includes(item.id)).map(renderHeaderItem)}
           </div>
+        </div>
 
-          {/* Spacer to push right side items to the end */}
-          <div className="flex-1 min-w-[20px]" />
-
-          {/* Right side - User controls - always visible */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Customize button */}
-            <Button
-              variant="ghost"
-              size="sm"
+        {/* Fixed right section - Critical controls always visible */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {/* Customize button */}
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setTempHeaderItems([...headerItems]);
               setTempShowHeaderText(showHeaderText);
@@ -539,7 +532,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          </div>
         </div>
       </div>
 
