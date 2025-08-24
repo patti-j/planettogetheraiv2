@@ -18,6 +18,19 @@ interface MaxContext {
   conversationHistory?: ConversationMessage[];
 }
 
+interface MaxResponse {
+  content: string;
+  action?: {
+    type: 'navigate' | 'show_data' | 'execute_function';
+    target?: string;
+    data?: any;
+  };
+  insights?: ProductionInsight[];
+  suggestions?: string[];
+  data?: any;
+  error?: boolean;
+}
+
 interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -151,8 +164,81 @@ export class MaxAIService {
     return insights;
   }
 
+  // Analyze user intent to determine if they want navigation, data, or conversation
+  private analyzeUserIntent(query: string): { type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number } {
+    const lowerQuery = query.toLowerCase();
+    
+    // Navigation intent patterns
+    const navigationPatterns = [
+      { pattern: /show\s+me\s+(the\s+)?production\s+schedule/, target: '/production-schedule', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.9 },
+      { pattern: /go\s+to\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.9 },
+      { pattern: /open\s+(the\s+)?production\s+schedule/, target: '/production-schedule', confidence: 0.9 },
+      { pattern: /view\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.8 },
+      { pattern: /show\s+(the\s+)?schedule/, target: '/production-schedule', confidence: 0.8 },
+      
+      { pattern: /show\s+me\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
+      { pattern: /go\s+to\s+(the\s+)?shop\s+floor/, target: '/shop-floor', confidence: 0.9 },
+      
+      { pattern: /show\s+me\s+(the\s+)?analytics/, target: '/analytics', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?dashboard/, target: '/analytics', confidence: 0.8 },
+      { pattern: /take\s+me\s+to\s+analytics/, target: '/analytics', confidence: 0.9 },
+      
+      { pattern: /show\s+me\s+(the\s+)?alerts/, target: '/alerts', confidence: 0.9 },
+      { pattern: /take\s+me\s+to\s+alerts/, target: '/alerts', confidence: 0.9 },
+      { pattern: /view\s+alerts/, target: '/alerts', confidence: 0.8 },
+      
+      { pattern: /show\s+me\s+(the\s+)?resources/, target: '/resources', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?operations/, target: '/operations', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?quality/, target: '/quality-control', confidence: 0.9 },
+      { pattern: /show\s+me\s+(the\s+)?visual\s+factory/, target: '/visual-factory', confidence: 0.9 }
+    ];
+    
+    // Data display intent patterns  
+    const dataPatterns = [
+      { pattern: /what\s+is\s+(the\s+)?production\s+status/, confidence: 0.9 },
+      { pattern: /current\s+production\s+status/, confidence: 0.9 },
+      { pattern: /show\s+production\s+data/, confidence: 0.8 },
+      { pattern: /how\s+many\s+(active\s+)?(jobs|orders|operations)/, confidence: 0.8 },
+      { pattern: /resource\s+utilization/, confidence: 0.8 },
+      { pattern: /show\s+me\s+the\s+data/, confidence: 0.7 }
+    ];
+    
+    // Check navigation patterns first
+    for (const { pattern, target, confidence } of navigationPatterns) {
+      if (pattern.test(lowerQuery)) {
+        return { type: 'navigate', target, confidence };
+      }
+    }
+    
+    // Check data patterns
+    for (const { pattern, confidence } of dataPatterns) {
+      if (pattern.test(lowerQuery)) {
+        return { type: 'show_data', confidence };
+      }
+    }
+    
+    // Default to chat
+    return { type: 'chat', confidence: 0.5 };
+  }
+
   // Generate contextual AI response based on user query and context
-  async generateResponse(query: string, context: MaxContext) {
+  async generateResponse(query: string, context: MaxContext): Promise<MaxResponse> {
+    // Analyze user intent first
+    const intent = this.analyzeUserIntent(query);
+    
+    // Handle navigation intent
+    if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
+      return {
+        content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
+        action: {
+          type: 'navigate',
+          target: intent.target
+        }
+      };
+    }
+    
     // Get conversation history
     const history = this.getConversationHistory(context.userId);
     
@@ -170,8 +256,22 @@ export class MaxAIService {
     const productionData = await this.getProductionStatus(context);
     const insights = await this.analyzeSchedule(context);
     
+    // Handle data display intent
+    if (intent.type === 'show_data' && intent.confidence > 0.7) {
+      return {
+        content: this.formatProductionStatusResponse(productionData),
+        action: {
+          type: 'show_data',
+          data: productionData
+        },
+        insights,
+        suggestions: await this.getContextualSuggestions(context),
+        data: productionData
+      };
+    }
+    
     // Build context-aware prompt with conversation history
-    const systemPrompt = this.buildSystemPrompt(context);
+    const systemPrompt = this.buildSystemPrompt(context, intent);
     const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
 
     try {
@@ -259,20 +359,42 @@ export class MaxAIService {
     }
   }
 
+  // Format production status for direct data display
+  private formatProductionStatusResponse(productionData: any): string {
+    return `**Current Production Status:**
+
+📊 **Active Jobs:** ${productionData.activeOrders}
+⚡ **Running Operations:** ${productionData.runningOperations}  
+📈 **Resource Utilization:** ${productionData.resourceUtilization.average}% average
+🚨 **Critical Alerts:** ${productionData.criticalAlerts.length}
+
+${productionData.summary}
+
+${productionData.criticalAlerts.length > 0 ? `\n**Critical Issues:**\n${productionData.criticalAlerts.map((alert: any) => `• ${alert.title}`).join('\n')}` : ''}
+
+Would you like me to analyze any specific area in detail?`;
+  }
+
   // Build role and context-specific system prompt
-  private buildSystemPrompt(context: MaxContext): string {
+  private buildSystemPrompt(context: MaxContext, intent?: { type: string; target?: string; confidence: number }): string {
     const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether SCM + APS system. 
     You have deep knowledge of production scheduling, resource optimization, quality management, and supply chain operations.
     You provide actionable insights and can help optimize manufacturing processes.
 
     COMMUNICATION RULES:
+    - When users ask to "show me" something specific (like "show me the production schedule"), understand they want to SEE that page/data, not just talk about it
     - Be direct and specific in your questions - avoid compound questions that ask multiple things at once
     - For general status queries, provide a high-level summary first, then offer specific help
     - When mentioning alerts, provide basic count/summary first, then ask if user wants detailed analysis
     - Ask only ONE clear question at a time
     - When user says "Yes" to analyzing alerts, immediately analyze ALL the specific alerts mentioned - don't ask for more clarification
     - If you know there are specific alerts (like 3 active alerts), analyze those exact alerts when requested
-    - For production status: give overview first, then offer "Would you like me to analyze the alerts?"`;
+    - For production status: give overview first, then offer "Would you like me to analyze the alerts?"
+    
+    INTENT UNDERSTANDING:
+    - ${intent?.type === 'navigate' ? `User wants to navigate to ${intent.target}. Help them get there.` : ''}
+    - ${intent?.type === 'show_data' ? 'User wants to see production data. Show them specific metrics and numbers.' : ''}
+    - ${intent?.type === 'chat' ? 'User wants conversational help. Provide insights and ask how you can help.' : ''}`;
 
     const rolePrompts: Record<string, string> = {
       'Production Manager': `Focus on schedule optimization, resource conflicts, and delivery commitments. 

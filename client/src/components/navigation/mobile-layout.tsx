@@ -86,6 +86,27 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       setShowMaxThinking(false);
       console.log("Max AI Full Response:", data);
       
+      // Handle navigation actions from Max AI
+      if (data?.action?.type === 'navigate' && data?.action?.target) {
+        setLocation(data.action.target);
+        
+        // Show navigation confirmation in mobile
+        setMaxResponse({
+          content: data.content || `Taking you to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
+          suggestions: []
+        });
+        setShowMaxResponse(true);
+        
+        // Also add to Max panel
+        addMessage({
+          id: Date.now().toString(),
+          content: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
+          role: 'assistant',
+          timestamp: new Date()
+        });
+        return;
+      }
+      
       // Store response for display
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;

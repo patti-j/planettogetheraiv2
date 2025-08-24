@@ -201,6 +201,21 @@ export function AILeftPanel() {
       setShowMaxThinking(false);
       console.log("Max AI Full Response:", data);
       
+      // Handle navigation actions from Max AI
+      if (data?.action?.type === 'navigate' && data?.action?.target) {
+        setLocation(data.action.target);
+        
+        // Show navigation confirmation
+        const navigationResponse: ChatMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setChatMessages(prev => [...prev, navigationResponse]);
+        return;
+      }
+      
       // Store response for display
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;
