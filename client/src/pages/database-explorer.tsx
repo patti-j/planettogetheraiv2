@@ -87,7 +87,7 @@ export default function DatabaseExplorer() {
 
   // Fetch table data when viewing data
   const { data: tableData, isLoading: dataLoading, refetch: refetchData } = useQuery({
-    queryKey: [`/api/database/tables/${selectedTable}/data`, currentPage, pageSize, searchTerm, sortBy, sortOrder, filters],
+    queryKey: [`/api/database/tables/${selectedTable}/data?page=${currentPage}&limit=${pageSize}`, searchTerm, sortBy, sortOrder, filters],
     enabled: !!selectedTable && viewMode === 'data'
   });
 
