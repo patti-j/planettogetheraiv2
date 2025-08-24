@@ -1017,9 +1017,9 @@ export function DashboardVisualDesigner({
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex overflow-hidden min-h-0">
             {/* Left Sidebar - Widget Library */}
-            <div className="w-80 border-r flex flex-col">
+            <div className="w-80 border-r flex flex-col min-h-0">
               {/* Dashboard Settings */}
               <div className="p-4 border-b">
                 <h3 className="font-medium mb-3">Dashboard Settings</h3>
@@ -1075,8 +1075,8 @@ export function DashboardVisualDesigner({
               </div>
 
               {/* Widget Library */}
-              <div className="flex-1 flex flex-col">
-                <div className="p-4 pb-2">
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="p-4 pb-2 flex-shrink-0">
                   <h3 className="font-medium mb-3">Widget Library ({canvasWidgets?.length || 0} widgets)</h3>
                   <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
                     <ScrollArea className="w-full">
@@ -1096,8 +1096,9 @@ export function DashboardVisualDesigner({
                   </Tabs>
                 </div>
                 
-                <ScrollArea className="flex-1 px-4">
-                  <div className="space-y-2 pb-4">
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <ScrollArea className="h-full px-4">
+                    <div className="space-y-2 pb-4">
                     {filteredWidgets.length > 0 ? (
                       filteredWidgets.map((widget) => (
                         <LibraryWidget key={widget.id} widget={widget} />
@@ -1113,8 +1114,9 @@ export function DashboardVisualDesigner({
                         </p>
                       </div>
                     )}
-                  </div>
-                </ScrollArea>
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
             </div>
 
