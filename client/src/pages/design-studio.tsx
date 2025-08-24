@@ -1595,7 +1595,7 @@ export default function UIDesignStudio() {
                               description: item.description,
                               layout: item.configuration?.layout || "grid",
                               gridColumns: item.configuration?.gridColumns || 12,
-                              widgets: item.configuration?.standardWidgets || item.configuration?.customWidgets || item.configuration?.widgets || [],
+                              widgets: item.configuration?.widgets !== undefined ? item.configuration.widgets : (item.configuration?.customWidgets || item.configuration?.standardWidgets || []),
                               targetPlatform: item.targetPlatform
                             });
                             setShowVisualDesigner(true);
@@ -1686,7 +1686,7 @@ export default function UIDesignStudio() {
                                       description: item.description,
                                       layout: item.configuration?.layout || "grid",
                                       gridColumns: item.configuration?.gridColumns || 12,
-                                      widgets: item.configuration?.standardWidgets || item.configuration?.customWidgets || item.configuration?.widgets || [],
+                                      widgets: item.configuration?.widgets !== undefined ? item.configuration.widgets : (item.configuration?.customWidgets || item.configuration?.standardWidgets || []),
                                       targetPlatform: item.targetPlatform
                                     });
                                     setShowVisualDesigner(true);
@@ -2077,7 +2077,7 @@ export default function UIDesignStudio() {
           onOpenChange={setShowVisualDesigner}
           dashboard={dashboardToEdit ? {
             ...dashboardToEdit,
-            widgets: dashboardToEdit.configuration?.widgets || dashboardToEdit.configuration?.customWidgets || dashboardToEdit.widgets || [],
+            widgets: dashboardToEdit.configuration?.widgets !== undefined ? dashboardToEdit.configuration.widgets : (dashboardToEdit.configuration?.customWidgets || dashboardToEdit.widgets || []),
             layout: dashboardToEdit.configuration?.layout || dashboardToEdit.layout,
             gridColumns: dashboardToEdit.configuration?.gridColumns || dashboardToEdit.gridColumns
           } : null}

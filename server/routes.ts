@@ -25650,7 +25650,7 @@ Be careful to preserve data integrity and relationships.`;
         ORDER BY table_name
       `);
       
-      const tables = result.map((row: any) => ({
+      const tables = (Array.isArray(result) ? result : [result]).map((row: any) => ({
         name: row.table_name,
         schema: row.table_schema
       }));
