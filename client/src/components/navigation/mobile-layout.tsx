@@ -36,7 +36,16 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const recognitionRef = useRef<any>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
-  const { recentPages, clearRecentPages } = useNavigation();
+  // Safe navigation context access with fallback
+  let recentPages = [];
+  let clearRecentPages = () => {};
+  try {
+    const navigation = useNavigation();
+    recentPages = navigation.recentPages || [];
+    clearRecentPages = navigation.clearRecentPages;
+  } catch (error) {
+    console.warn('NavigationContext not available in MobileLayout, using fallback:', error);
+  }
   
   // Fetch user preferences for voice settings
   const { data: userPreferences } = useQuery({

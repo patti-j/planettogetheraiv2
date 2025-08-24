@@ -17,7 +17,18 @@ export function LeftRailNav() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
-  const { recentPages, togglePinPage, clearRecentPages } = useNavigation();
+  // Safe navigation context access with fallback
+  let recentPages = [];
+  let togglePinPage = () => {};
+  let clearRecentPages = () => {};
+  try {
+    const navigation = useNavigation();
+    recentPages = navigation.recentPages || [];
+    togglePinPage = navigation.togglePinPage;
+    clearRecentPages = navigation.clearRecentPages;
+  } catch (error) {
+    console.warn('NavigationContext not available in LeftRailNav, using fallback:', error);
+  }
 
   // Get Lucide icon component from icon name
   const getIconComponent = (iconName: string) => {

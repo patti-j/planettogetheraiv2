@@ -19,7 +19,18 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const [location, setLocation] = useLocation();
   const [searchFilter, setSearchFilter] = useState('');
   const { hasPermission } = usePermissions();
-  const { recentPages, togglePinPage, addRecentPage } = useNavigation();
+  // Safe navigation context access with fallback
+  let recentPages = [];
+  let togglePinPage = () => {};
+  let addRecentPage = () => {};
+  try {
+    const navigation = useNavigation();
+    recentPages = navigation.recentPages || [];
+    togglePinPage = navigation.togglePinPage;
+    addRecentPage = navigation.addRecentPage;
+  } catch (error) {
+    console.warn('NavigationContext not available in SlideOutMenu, using fallback:', error);
+  }
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 

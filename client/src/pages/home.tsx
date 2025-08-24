@@ -20,7 +20,17 @@ import { HomeDashboardCustomizer } from '@/components/home-dashboard-customizer'
 export default function HomePage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { recentPages } = useNavigation();
+  
+  // Safe navigation context access with fallback
+  let recentPages = [];
+  try {
+    const navigation = useNavigation();
+    recentPages = navigation.recentPages || [];
+  } catch (error) {
+    console.warn('NavigationContext not available yet, using fallback:', error);
+    recentPages = [];
+  }
+  
   const isMobile = useDeviceType() === 'mobile';
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isCustomizing, setIsCustomizing] = useState(false);
