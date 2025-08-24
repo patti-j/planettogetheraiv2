@@ -446,8 +446,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       {/* Max AI Response Display - shows below header when there's a response */}
       {showMaxResponse && maxResponse && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: 'calc(100vh - 240px)', overflow: 'hidden' }}>
-          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg h-full overflow-y-auto p-4" style={{ maxHeight: 'calc(100vh - 264px)' }}>
+        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: '200px', overflow: 'hidden' }}>
+          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg h-full overflow-y-auto p-4" style={{ maxHeight: '176px' }}>
             {/* Close button */}
             <button
               onClick={() => setShowMaxResponse(false)}
@@ -558,7 +558,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       )}
       
       {/* Main content area - with padding for fixed header and footer */}
-      <div className={`${showMaxResponse ? 'pt-16' : 'pt-16'} pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0 transition-all duration-300`} style={{ paddingTop: showMaxResponse ? 'calc(100vh - 240px + 64px)' : '64px' }}>
+      <div className={`${showMaxResponse ? 'pt-32' : 'pt-16'} pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0 transition-all duration-300`}>
         {children}
       </div>
       
