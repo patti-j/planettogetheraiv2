@@ -227,9 +227,11 @@ export class MaxAIService {
   async generateResponse(query: string, context: MaxContext): Promise<MaxResponse> {
     // Analyze user intent first
     const intent = this.analyzeUserIntent(query);
+    console.log(`🤖 Max Intent Analysis:`, { query, intent });
     
     // Handle navigation intent
     if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
+      console.log(`🧭 Max Navigation Triggered:`, intent.target);
       return {
         content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
         action: {
