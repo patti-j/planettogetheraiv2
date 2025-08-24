@@ -492,6 +492,67 @@ const masterDataTables = [
       { key: 'status', header: 'Status', type: 'text' as const },
       { key: 'batchSize', header: 'Batch Size', type: 'number' as const },
     ]
+  },
+  {
+    id: 'pt-jobs',
+    name: 'Jobs (Production Orders)',
+    description: 'Production jobs and manufacturing orders',
+    icon: ClipboardList,
+    category: 'Production',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'jobNumber', header: 'Job Number', type: 'text' as const, required: true },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'status', header: 'Status', type: 'select' as const,
+        options: [
+          { value: 'planned', label: 'Planned' },
+          { value: 'released', label: 'Released' },
+          { value: 'in_progress', label: 'In Progress' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'cancelled', label: 'Cancelled' }
+        ]
+      },
+      { key: 'priority', header: 'Priority', type: 'number' as const },
+      { key: 'plannedStartDate', header: 'Planned Start', type: 'date' as const },
+      { key: 'plannedEndDate', header: 'Planned End', type: 'date' as const },
+      { key: 'actualStartDate', header: 'Actual Start', type: 'date' as const },
+      { key: 'actualEndDate', header: 'Actual End', type: 'date' as const },
+      { key: 'quantity', header: 'Quantity', type: 'number' as const },
+      { key: 'unitOfMeasure', header: 'UOM', type: 'text' as const },
+    ]
+  },
+  {
+    id: 'operations',
+    name: 'Operations',
+    description: 'Manufacturing operations and work steps',
+    icon: GitBranch,
+    category: 'Production',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Operation Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'jobId', header: 'Job ID', type: 'number' as const, required: true },
+      { key: 'productionOrderId', header: 'Production Order ID', type: 'number' as const },
+      { key: 'order', header: 'Sequence', type: 'number' as const },
+      { key: 'status', header: 'Status', type: 'select' as const,
+        options: [
+          { value: 'planned', label: 'Planned' },
+          { value: 'ready', label: 'Ready' },
+          { value: 'in_progress', label: 'In Progress' },
+          { value: 'completed', label: 'Completed' },
+          { value: 'delayed', label: 'Delayed' },
+          { value: 'on_hold', label: 'On Hold' }
+        ]
+      },
+      { key: 'assignedResourceId', header: 'Assigned Resource', type: 'number' as const },
+      { key: 'workCenterId', header: 'Work Center ID', type: 'number' as const },
+      { key: 'standardDuration', header: 'Standard Duration (hrs)', type: 'number' as const },
+      { key: 'actualDuration', header: 'Actual Duration (hrs)', type: 'number' as const },
+      { key: 'startTime', header: 'Start Time', type: 'date' as const },
+      { key: 'endTime', header: 'End Time', type: 'date' as const },
+      { key: 'completionPercentage', header: 'Completion %', type: 'number' as const },
+    ]
   }
 ];
 
