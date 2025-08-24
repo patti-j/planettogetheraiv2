@@ -27,29 +27,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // For desktop, use the new enhanced navigation components
   return (
     <div className="h-screen flex flex-col">
-      {/* Fullscreen exit button - only visible in fullscreen mode */}
-      {isFullScreen && (
-        <div className="fixed top-4 right-4 z-50">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleFullScreen}
-                  className="h-10 w-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm border-border/50 hover:bg-accent/50"
-                  aria-label="Exit fullscreen"
-                >
-                  <Minimize className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                <p>Exit fullscreen</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
       
       {/* Customizable desktop header - hidden in full screen */}
       {!isFullScreen && <CustomizableHeader />}
