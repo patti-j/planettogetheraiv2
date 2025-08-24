@@ -172,7 +172,7 @@ export default function VisualFactory() {
 
   // Fetch dashboards from UI Designer
   const { data: availableDashboards = [] } = useQuery<any[]>({
-    queryKey: ['/api/dashboards'],
+    queryKey: ['/api/dashboard-configs'],
   });
 
   // Calculate metrics from available data
