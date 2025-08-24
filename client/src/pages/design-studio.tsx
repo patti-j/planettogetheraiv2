@@ -1221,8 +1221,10 @@ export default function UIDesignStudio() {
               </div>
 
               {/* Tab Content */}
-              <TabsContent value={activeTab} className="p-4">
-                {isLoading ? (
+              <TabsContent value={activeTab} className="h-full m-0 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="p-4">
+                    {isLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
@@ -1717,6 +1719,8 @@ export default function UIDesignStudio() {
                     </div>
                   </>
                 )}
+                  </div>
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           </CardContent>
