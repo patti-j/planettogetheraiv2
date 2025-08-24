@@ -100,7 +100,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/optimize-orders': { label: 'Order Optimization', icon: 'Sparkles' },
   '/control-tower': { label: 'Global Control Tower', icon: 'Globe' },
   '/smart-kpi-tracking': { label: 'Smart KPI Tracking', icon: 'TrendingUp' },
-  '/implementation-consultant': { label: 'Implementation Consultant', icon: 'Users' },
+  '/onboarding-assistant': { label: 'Onboarding Assistant', icon: 'GraduationCap' },
   '/alerts': { label: 'Alerts & Notifications', icon: 'AlertTriangle' },
   '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Brain' },
   '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Bot' },

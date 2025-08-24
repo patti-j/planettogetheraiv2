@@ -10,7 +10,7 @@ import {
   TrendingUp, Users, Package, Calendar, Brain,
   Sparkles, BookOpen, Video, Phone, Mail,
   ChevronRight, Clock, Award, BarChart3,
-  Settings, Database, Workflow, Globe
+  Settings, Database, Workflow, Globe, GraduationCap
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
@@ -128,8 +128,8 @@ export const AIImplementationConsultant: React.FC = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Brain className="h-6 w-6 text-purple-600" />
-              <CardTitle className="text-lg sm:text-xl">Max AI Implementation Consultant</CardTitle>
+              <GraduationCap className="h-6 w-6 text-purple-600" />
+              <CardTitle className="text-lg sm:text-xl">Max AI Onboarding Assistant</CardTitle>
             </div>
             <Button 
               onClick={() => setShowChat(!showChat)}
@@ -246,7 +246,7 @@ const ProactiveConsultantMessage: React.FC<{ phase: string; company: any }> = ({
   const messages = {
     discovery: {
       title: "Welcome to Your Implementation Journey!",
-      content: "I'm Max, your AI implementation consultant. I've analyzed your company profile and prepared a customized implementation plan for Heineken's manufacturing operations. Let's start by understanding your key business goals and pain points.",
+      content: "I'm Max, your AI onboarding assistant. I've analyzed your company profile and prepared a customized implementation plan for Heineken's manufacturing operations. Let's start by understanding your key business goals and pain points.",
       actions: ["Schedule Discovery Call", "Review Implementation Plan", "Set Business Goals"]
     },
     configuration: {
@@ -768,7 +768,7 @@ const AIConsultantChat: React.FC<{ onClose: () => void; context: any }> = ({ onC
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hello! I'm Max, your AI implementation consultant. I see you're in the " + context.phase + 
+      content: "Hello! I'm Max, your AI onboarding assistant. I see you're in the " + context.phase + 
                " phase. How can I help you achieve your implementation goals today?"
     }
   ]);
