@@ -97,9 +97,9 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <div className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
                 <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              </div>
             </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onViewDetails(job)}>
@@ -141,10 +141,8 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
       </div>
       
       {/* View Details button positioned at bottom right */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10" 
+      <div 
+        className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10 flex items-center justify-center rounded cursor-pointer" 
         onClick={(e) => {
           e.stopPropagation();
           onViewDetails(job);
@@ -152,7 +150,7 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
         title="View Details"
       >
         <Eye className="w-4 h-4" />
-      </Button>
+      </div>
     </div>
   );
 };
@@ -220,9 +218,9 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <div className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
                 <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              </div>
             </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onViewDetails(operation)}>
@@ -275,10 +273,8 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
       </div>
       
       {/* View Details button positioned at bottom right */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10" 
+      <div 
+        className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10 flex items-center justify-center rounded cursor-pointer" 
         onClick={(e) => {
           e.stopPropagation();
           onViewDetails(operation);
@@ -286,7 +282,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
         title="View Details"
       >
         <Eye className="w-4 h-4" />
-      </Button>
+      </div>
     </div>
   );
 };
@@ -1270,10 +1266,10 @@ function KanbanBoard({
               {/* Board dropdown first */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-between text-xs">
+                  <div className="w-full justify-between text-xs border border-gray-200 rounded px-3 py-1.5 bg-white hover:bg-gray-50 cursor-pointer flex items-center">
                     <span className="truncate">{selectedConfig?.name || "Select Board"}</span>
                     <ChevronDown className="w-4 h-4 ml-2 flex-shrink-0" />
-                  </Button>
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {kanbanConfigs.map((config) => (
