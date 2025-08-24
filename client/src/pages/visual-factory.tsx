@@ -171,7 +171,7 @@ export default function VisualFactory() {
   });
 
   // Fetch dashboards from UI Designer
-  const { data: availableDashboards = [] } = useQuery<Dashboard[]>({
+  const { data: availableDashboards = [] } = useQuery<any[]>({
     queryKey: ['/api/dashboards'],
   });
 
@@ -542,7 +542,7 @@ export default function VisualFactory() {
                     onClick={() => addDashboard(dashboard.id)}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
+                    <h4 className="font-medium text-sm">{dashboard.title}</h4>
                     {dashboard.description && (
                       <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
                     )}
@@ -573,7 +573,7 @@ export default function VisualFactory() {
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium">{dashboard?.name}</h4>
+                        <h4 className="font-medium">{dashboard?.title}</h4>
                         <div className="flex items-center gap-4 mt-2">
                           <div className="flex items-center gap-2">
                             <Label className="text-sm">Duration:</Label>
@@ -676,7 +676,7 @@ export default function VisualFactory() {
     return (
       <div className="flex-1 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{dashboard.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{dashboard.title}</h2>
           {dashboard.description && (
             <p className="text-gray-600 mt-1">{dashboard.description}</p>
           )}
@@ -1081,7 +1081,7 @@ function CreateDisplayForm({
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
+                    <h4 className="font-medium text-sm">{dashboard.title}</h4>
                     {dashboard.description && (
                       <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
                     )}
