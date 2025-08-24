@@ -94,10 +94,14 @@ const JobCard = ({ job, onEdit, onViewDetails, swimLaneField, index }: { job: Pr
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-gray-900 dark:text-white text-sm flex-1 pr-8">{job.name}</h4>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
+              <div 
+                className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreHorizontal className="w-4 h-4" />
               </div>
             </DropdownMenuTrigger>
@@ -215,10 +219,14 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-gray-900 dark:text-white text-sm flex-1 pr-8">{operation.name}</h4>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer">
+              <div 
+                className="h-6 w-6 p-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreHorizontal className="w-4 h-4" />
               </div>
             </DropdownMenuTrigger>
@@ -275,6 +283,7 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
       {/* View Details button positioned at bottom right */}
       <div 
         className="absolute bottom-2 right-2 h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600 z-10 flex items-center justify-center rounded cursor-pointer" 
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
           onViewDetails(operation);
