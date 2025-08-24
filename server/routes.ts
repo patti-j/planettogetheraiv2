@@ -24118,6 +24118,112 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     sites: schema.sites
   };
 
+  // AI-Assisted Master Data Management endpoint (specific route before generic table routes)
+  app.post('/api/master-data/ai-assist', requireAuth, async (req, res) => {
+    try {
+      const { operation, prompt, entityType, selectedData, currentData } = req.body;
+      
+      console.log(`[AI Master Data] Operation: ${operation}, EntityType: ${entityType}`);
+      
+      // Build context about the entity type and current data
+      const entityContext = {
+        items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
+        resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
+        capabilities: "manufacturing capabilities and processes",
+        'production-orders': "production orders with order numbers, priorities, quantities, and due dates",
+        recipes: "manufacturing recipes with ingredients, steps, and batch information",
+        plants: "manufacturing plants and facilities with locations and operational data",
+        users: "system users with roles, departments, and contact information",
+        customers: "customer records with contact details and business information",
+        vendors: "vendor and supplier information with payment terms and contacts"
+      };
+
+      const contextDescription = entityContext[entityType] || "data records";
+      const currentDataSample = currentData?.slice(0, 3) || [];
+      
+      // Create prompt for OpenAI based on operation type
+      let systemPrompt = "";
+      let userPrompt = "";
+
+      switch (operation) {
+        case 'generate':
+          systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0`;
+          userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate new realistic ${entityType} records that fit the manufacturing context. Ensure data is consistent with existing patterns.`;
+          break;
+          
+        case 'improve':
+          systemPrompt = `You are a data quality expert. Analyze ${contextDescription} and suggest improvements to make the data more complete, accurate, and standardized. Return a JSON object with "suggestions" array containing: operation: "update", id: record_id, data: {improved_data}, explanation: "what was improved", confidence: 0.7-1.0`;
+          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentData, null, 2)}\n\nUser request: ${prompt}\n\nSuggest improvements to enhance data quality, completeness, and consistency.`;
+          break;
+          
+        case 'suggest':
+          systemPrompt = `You are a manufacturing systems consultant. Provide suggestions for better ${contextDescription} management based on best practices. Return a JSON object with "suggestions" array containing helpful recommendations.`;
+          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nProvide strategic suggestions for optimizing this master data.`;
+          break;
+          
+        case 'bulk_edit':
+          systemPrompt = `You are a data transformation expert. Apply bulk changes to ${contextDescription} based on the user's request. Return a JSON object with "suggestions" array containing: operation: "update", id: record_id, data: {updated_fields}, explanation: "changes made", confidence: 0.8-1.0`;
+          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentData, null, 2)}\n\nUser request: ${prompt}\n\nApply the requested changes to multiple records where appropriate.`;
+          break;
+      }
+
+      // Check for OpenAI API key
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({
+          success: false,
+          message: 'AI service not configured',
+          error: 'OpenAI API key is not configured'
+        });
+      }
+
+      // Call OpenAI API
+      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o', // Using GPT-4o as the latest available model
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+          max_tokens: 2000
+        }),
+      });
+
+      if (!openaiResponse.ok) {
+        const errorDetails = await openaiResponse.text();
+        console.log(`[AI Master Data] OpenAI API error details:`, errorDetails);
+        throw new Error(`OpenAI API error: ${openaiResponse.statusText} - ${errorDetails}`);
+      }
+
+      const aiResult = await openaiResponse.json();
+      const suggestions = JSON.parse(aiResult.choices[0].message.content);
+      
+      console.log(`[AI Master Data] Generated ${suggestions.suggestions?.length || 0} suggestions`);
+      
+      res.json({
+        success: true,
+        message: `AI generated ${suggestions.suggestions?.length || 0} suggestions for your ${entityType} data`,
+        suggestions: suggestions.suggestions || [],
+        operation,
+        entityType
+      });
+
+    } catch (error) {
+      console.error('[AI Master Data] Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to process AI request',
+        error: error.message 
+      });
+    }
+  });
+
   // Get all data for a specific master data table
   app.get("/api/master-data/:table", requireAuth, async (req, res) => {
     try {
@@ -26001,100 +26107,7 @@ Be careful to preserve data integrity and relationships.`;
     res.json(routes);
   }));
 
-  // AI-Assisted Master Data Management endpoint
-  app.post('/api/master-data/ai-assist', createSafeHandler('AI Master Data Assistant')(async (req, res) => {
-    try {
-      const { operation, prompt, entityType, selectedData, currentData } = req.body;
-      
-      console.log(`[AI Master Data] Operation: ${operation}, EntityType: ${entityType}`);
-      
-      // Build context about the entity type and current data
-      const entityContext = {
-        items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
-        resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
-        capabilities: "manufacturing capabilities and processes",
-        'production-orders': "production orders with order numbers, priorities, quantities, and due dates",
-        recipes: "manufacturing recipes with ingredients, steps, and batch information",
-        plants: "manufacturing plants and facilities with locations and operational data",
-        users: "system users with roles, departments, and contact information",
-        customers: "customer records with contact details and business information",
-        vendors: "vendor and supplier information with payment terms and contacts"
-      };
-
-      const contextDescription = entityContext[entityType] || "data records";
-      const currentDataSample = currentData?.slice(0, 3) || [];
-      
-      // Create prompt for OpenAI based on operation type
-      let systemPrompt = "";
-      let userPrompt = "";
-
-      switch (operation) {
-        case 'generate':
-          systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0`;
-          userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate new realistic ${entityType} records that fit the manufacturing context. Ensure data is consistent with existing patterns.`;
-          break;
-          
-        case 'improve':
-          systemPrompt = `You are a data quality expert. Analyze ${contextDescription} and suggest improvements to make the data more complete, accurate, and standardized. Return a JSON object with "suggestions" array containing: operation: "update", id: record_id, data: {improved_data}, explanation: "what was improved", confidence: 0.7-1.0`;
-          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentData, null, 2)}\n\nUser request: ${prompt}\n\nSuggest improvements to enhance data quality, completeness, and consistency.`;
-          break;
-          
-        case 'suggest':
-          systemPrompt = `You are a manufacturing systems consultant. Provide suggestions for better ${contextDescription} management based on best practices. Return a JSON object with "suggestions" array containing helpful recommendations.`;
-          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nProvide strategic suggestions for optimizing this master data.`;
-          break;
-          
-        case 'bulk_edit':
-          systemPrompt = `You are a data transformation expert. Apply bulk changes to ${contextDescription} based on the user's request. Return a JSON object with "suggestions" array containing: operation: "update", id: record_id, data: {updated_fields}, explanation: "changes made", confidence: 0.8-1.0`;
-          userPrompt = `Current ${entityType} data: ${JSON.stringify(currentData, null, 2)}\n\nUser request: ${prompt}\n\nApply the requested changes to multiple records where appropriate.`;
-          break;
-      }
-
-      // Call OpenAI API
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-5', // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.7,
-          max_tokens: 2000
-        }),
-      });
-
-      if (!openaiResponse.ok) {
-        throw new Error(`OpenAI API error: ${openaiResponse.statusText}`);
-      }
-
-      const aiResult = await openaiResponse.json();
-      const suggestions = JSON.parse(aiResult.choices[0].message.content);
-      
-      console.log(`[AI Master Data] Generated ${suggestions.suggestions?.length || 0} suggestions`);
-      
-      res.json({
-        success: true,
-        message: `AI generated ${suggestions.suggestions?.length || 0} suggestions for your ${entityType} data`,
-        suggestions: suggestions.suggestions || [],
-        operation,
-        entityType
-      });
-
-    } catch (error) {
-      console.error('[AI Master Data] Error:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to process AI request',
-        error: error.message 
-      });
-    }
-  }));
+  // (AI-Assisted Master Data Management endpoint moved above for proper route matching)
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
