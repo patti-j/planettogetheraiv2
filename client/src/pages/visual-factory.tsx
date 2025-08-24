@@ -38,7 +38,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import type { Job, Operation, Resource } from '@shared/schema';
+import type { Operation, Resource } from '@shared/schema';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface VisualFactoryDisplay {
@@ -107,7 +107,6 @@ export default function VisualFactory() {
   const [currentWidgetIndex, setCurrentWidgetIndex] = useState(0);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [aiConfigDialogOpen, setAiConfigDialogOpen] = useState(false);
-  const [newDisplayDialogOpen, setNewDisplayDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -415,7 +414,7 @@ export default function VisualFactory() {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{operation.name}</div>
                     <div className="text-xs sm:text-sm text-gray-600 truncate">
-                      {jobs.find(j => j.id === operation.jobId)?.name}
+                      {jobs.find(j => j.id === operation.productionOrderId)?.name}
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:flex-col sm:text-right">
@@ -621,24 +620,6 @@ export default function VisualFactory() {
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={newDisplayDialogOpen} onOpenChange={setNewDisplayDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="text-xs sm:text-sm" size="sm">
-                        <Monitor className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">New Display</span>
-                        <span className="sm:hidden">New Display</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Create New Display</DialogTitle>
-                      </DialogHeader>
-                      <CreateDisplayForm 
-                        onSubmit={(display) => createDisplayMutation.mutate(display)}
-                        isLoading={createDisplayMutation.isPending}
-                      />
-                    </DialogContent>
-                  </Dialog>
                 </div>
               </div>
             </div>
