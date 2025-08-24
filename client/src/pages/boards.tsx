@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { apiRequest } from "@/lib/queryClient";
-import { type Job, type Operation, type Resource, type KanbanConfig, type Capability } from "@shared/schema";
+import { type ProductionOrder, type Operation, type Resource, type KanbanConfig, type Capability } from "@shared/schema";
 
 export default function Boards() {
   const isMobile = useIsMobile();
@@ -98,8 +98,8 @@ export default function Boards() {
     };
   }, [toast]);
 
-  const { data: jobs = [] } = useQuery<Job[]>({
-    queryKey: ['/api/jobs'],
+  const { data: jobs = [] } = useQuery<ProductionOrder[]>({
+    queryKey: ['/api/production-orders'],
   });
 
   const { data: operations = [] } = useQuery<Operation[]>({
@@ -184,6 +184,24 @@ export default function Boards() {
               Boards
             </h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Organize jobs, operations, and resources using customizable board views</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowConfigManager(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create New Board
+            </Button>
+            <Button
+              onClick={() => setShowConfigManager(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Manage Boards
+            </Button>
           </div>
         </div>
       </header>

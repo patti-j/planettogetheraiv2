@@ -1520,7 +1520,7 @@ function KanbanBoard({
                         column.items.map((item, index) => (
                           <JobCard
                             key={item.id}
-                            job={item as Job}
+                            job={item as ProductionOrder}
                             onEdit={handleEditJob}
                             onViewDetails={handleViewJobDetails}
                             swimLaneField={swimLaneField}

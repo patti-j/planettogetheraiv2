@@ -10,23 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Edit, Trash2, Settings, Save, X, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Settings, Save, X, Sparkles, Columns3 } from "lucide-react";
 
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Resource, Capability, KanbanConfig } from "@shared/schema";
-
-// Define Job type locally since it's not exported from schema
-interface Job {
-  id: number;
-  orderNumber: string;
-  name: string;
-  customer: string;
-  priority: string;
-  status: string;
-  quantity: number;
-  dueDate: string;
-}
+import type { Resource, Capability, KanbanConfig, ProductionOrder } from "@shared/schema";
 
 // Use the type from shared schema
 // interface KanbanConfig is already imported from @shared/schema
@@ -74,7 +62,7 @@ const SWIM_LANE_FIELDS: SwimLaneFieldOption[] = [
 interface KanbanConfigManagerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  jobs: Job[];
+  jobs: ProductionOrder[];
   resources: Resource[];
   capabilities: Capability[];
 }
@@ -135,7 +123,7 @@ const ColorMapping = ({ swimLaneField, fieldValues, colors, onColorChange }: Col
 
 interface KanbanConfigFormProps {
   config?: KanbanConfig;
-  jobs: Job[];
+  jobs: ProductionOrder[];
   resources: Resource[];
   capabilities: Capability[];
   onSave: (config: Omit<KanbanConfig, 'id' | 'createdAt'>) => void;
@@ -611,7 +599,13 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle>Board Configurations</DialogTitle>
+          <DialogTitle>
+            {showForm ? (
+              editingConfig ? "Edit Board Configuration" : "Create New Board"
+            ) : (
+              "Manage Boards"
+            )}
+          </DialogTitle>
         </DialogHeader>
         
         {!showForm ? (
@@ -629,10 +623,10 @@ export default function KanbanConfigManager({ open, onOpenChange, jobs, resource
                   <span className="hidden sm:inline">AI Create</span>
                   <span className="sm:hidden">AI</span>
                 </Button>
-                <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
+                <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                   <Plus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">New Configuration</span>
-                  <span className="sm:hidden">New</span>
+                  <span className="hidden sm:inline">Create New Board</span>
+                  <span className="sm:hidden">New Board</span>
                 </Button>
               </div>
             </div>
