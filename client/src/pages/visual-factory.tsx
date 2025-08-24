@@ -42,7 +42,7 @@ import {
   Trash2,
   Edit
 } from 'lucide-react';
-import type { Operation, Resource, Job } from '@shared/schema';
+import type { Operation, Resource } from '@shared/schema';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface VisualFactoryDisplay {
@@ -545,7 +545,7 @@ export default function VisualFactory() {
                     onClick={() => addDashboard(dashboard.id)}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-sm">{dashboard.title}</h4>
+                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
                     {dashboard.description && (
                       <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
                     )}
@@ -679,7 +679,7 @@ export default function VisualFactory() {
     return (
       <div className="flex-1 p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{dashboard.title}</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{dashboard.name}</h2>
           {dashboard.description && (
             <p className="text-gray-600 mt-1">{dashboard.description}</p>
           )}
@@ -757,12 +757,15 @@ export default function VisualFactory() {
                         <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {editingDisplay ? 'Edit Display Configuration' : 'Create New Display Configuration'}
-                        </DialogTitle>
-                      </DialogHeader>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+                      <div className="sticky top-0 bg-white p-6 border-b z-10">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {editingDisplay ? 'Edit Display Configuration' : 'Create New Display Configuration'}
+                          </DialogTitle>
+                        </DialogHeader>
+                      </div>
+                      <div className="p-6">
                       <CreateDisplayForm
                         onSubmit={(data) => {
                           if (editingDisplay) {
@@ -779,6 +782,7 @@ export default function VisualFactory() {
                           setEditingDisplay(null);
                         }}
                       />
+                      </div>
                     </DialogContent>
                   </Dialog>
 
@@ -1105,8 +1109,15 @@ function CreateDisplayForm({
       <div className="space-y-3">
         <h3 className="text-lg font-medium">Dashboard Selection</h3>
         <p className="text-sm text-gray-600">Select dashboards to rotate through, or leave empty for widgets</p>
+        <p className="text-xs text-blue-600">Available dashboards: {availableDashboards.length}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-          {availableDashboards.map((dashboard) => (
+          {availableDashboards.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              <p>No dashboards available.</p>
+              <p className="text-xs mt-1">Create dashboards in UI Design Studio first.</p>
+            </div>
+          ) : (
+            availableDashboards.map((dashboard) => (
             <Card 
               key={dashboard.id} 
               className={`cursor-pointer transition-all ${
@@ -1119,7 +1130,7 @@ function CreateDisplayForm({
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-sm">{dashboard.title}</h4>
+                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
                     {dashboard.description && (
                       <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
                     )}
@@ -1130,7 +1141,8 @@ function CreateDisplayForm({
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </div>
       </div>
       
@@ -1152,7 +1164,7 @@ function CreateDisplayForm({
         </div>
         
         {showScheduling && (
-          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4 mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="startTime" className="text-sm">Start Time</Label>
@@ -1202,6 +1214,8 @@ function CreateDisplayForm({
           </div>
         )}
       </div>
+      {/* Mobile bottom spacing */}
+      <div className="h-8 sm:h-4"></div>
       
       <div className="flex gap-3">
         {onCancel && (
