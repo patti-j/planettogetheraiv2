@@ -51,6 +51,13 @@ export function WorkspaceDashboard({
   const [widgets, setWidgets] = useState(workspaceDashboard?.config?.widgets || []);
   const [showKpiStudio, setShowKpiStudio] = useState(false);
 
+  // Sync widgets state with workspaceDashboard prop changes
+  React.useEffect(() => {
+    if (workspaceDashboard?.config?.widgets) {
+      setWidgets(workspaceDashboard.config.widgets);
+    }
+  }, [workspaceDashboard]);
+
   // Provide safe default production data if not provided
   const safeProductionData = productionData || {
     orders: [],
