@@ -26,7 +26,7 @@ import {
   Plus,
   Minus,
   Database,
-  Brain,
+  GitBranch,
   Factory,
   Users
 } from 'lucide-react';
@@ -283,7 +283,7 @@ export default function AIScenarioCreator() {
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Brain className="h-8 w-8 text-blue-500" />
+          <GitBranch className="h-8 w-8 text-blue-500" />
           AI Scenario Creator
         </h1>
         <p className="text-gray-600 mt-2">
@@ -421,7 +421,7 @@ export default function AIScenarioCreator() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
+                <GitBranch className="h-5 w-5" />
                 Describe Your Scenario
               </CardTitle>
               <CardDescription>
@@ -549,7 +549,7 @@ export default function AIScenarioCreator() {
             <Card>
               <CardContent className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <Brain className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                  <GitBranch className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                   <h3 className="text-lg font-semibold mb-2">No Scenarios Generated</h3>
                   <p className="text-gray-500">Use the AI Guided Setup to create scenarios for evaluation</p>
                 </div>
