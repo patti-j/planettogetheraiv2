@@ -7746,6 +7746,115 @@ User Prompt: "${prompt}"`;
     }
   });
 
+  // AI-powered scenario generation endpoint
+  app.post("/api/scenarios/generate", async (req, res) => {
+    try {
+      const { prompt, template, selectedPlants, includeCurrentData } = req.body;
+      
+      if (!prompt && !template) {
+        return res.status(400).json({ error: "Either prompt or template is required" });
+      }
+      
+      if (!selectedPlants || selectedPlants.length === 0) {
+        return res.status(400).json({ error: "At least one plant must be selected" });
+      }
+
+      // Fetch current plant data if requested
+      let plantData = {};
+      if (includeCurrentData) {
+        const plants = await storage.getPlants();
+        const resources = await storage.getResources();
+        const operations = await storage.getPtJobOperations();
+        const jobs = await storage.getPtJobs();
+        
+        plantData = {
+          plants: plants.filter((p: any) => selectedPlants.includes(p.id)),
+          resources: resources.filter((r: any) => selectedPlants.includes(r.plantId)),
+          activeOperations: operations.slice(0, 10), // Sample for context
+          activeJobs: jobs.slice(0, 5) // Sample for context
+        };
+      }
+
+      // Build AI prompt for scenario generation
+      const systemPrompt = `You are an expert manufacturing scenario analyst. Generate realistic production scenarios based on the user's requirements.
+
+Current Plant Context:
+${JSON.stringify(plantData, null, 2)}
+
+Template Used: ${template || 'Custom'}
+User Request: ${prompt}
+
+Generate 1-3 scenario options with the following structure for each:
+{
+  "scenarios": [
+    {
+      "name": "Descriptive scenario name",
+      "description": "Detailed description of the scenario",
+      "scheduling_strategy": "fastest|most_efficient|balanced|custom",
+      "optimization_priorities": ["delivery_time", "resource_utilization", "cost_efficiency", "customer_satisfaction"],
+      "constraints": {
+        "max_overtime_hours": 20,
+        "resource_availability": {},
+        "deadline_priorities": {}
+      },
+      "predicted_metrics": {
+        "efficiency_score": 85,
+        "on_time_delivery_percent": 92,
+        "resource_utilization_percent": 78,
+        "total_duration_hours": 168,
+        "risk_level": "low"
+      },
+      "key_changes": ["Change 1", "Change 2", "Change 3"],
+      "confidence_score": 85,
+      "impact_analysis": "Brief analysis of expected impact"
+    }
+  ]
+}
+
+Focus on realistic, actionable scenarios that help with decision making.`;
+
+      // Make OpenAI API call
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4', // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Generate scenarios for: ${prompt || template}` }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+          max_tokens: 2000
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.statusText}`);
+      }
+
+      const openaiResult = await response.json();
+      const generatedContent = JSON.parse(openaiResult.choices[0].message.content);
+      
+      // Ensure we return an array of scenarios
+      const scenarios = Array.isArray(generatedContent.scenarios) 
+        ? generatedContent.scenarios 
+        : [generatedContent];
+
+      res.json({ scenarios });
+      
+    } catch (error) {
+      console.error("Error generating AI scenarios:", error);
+      res.status(500).json({ 
+        error: "Failed to generate scenarios", 
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Scenario Operations
   app.get("/api/scenarios/:scenarioId/operations", async (req, res) => {
     try {

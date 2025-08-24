@@ -76,6 +76,7 @@ import TenantAdmin from "@/pages/tenant-admin";
 import Training from "@/pages/training";
 import UserAccessManagement from "@/pages/user-access-management";
 import VisualFactory from "@/pages/visual-factory";
+import AIScenarioCreator from "@/pages/ai-scenario-creator";
 
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -252,6 +253,7 @@ export default function ApplicationApp() {
               <Route path="/demand-forecasting" component={DemandForecasting} />
               <Route path="/implementation-consultant" component={ImplementationConsultant} />
               <Route path="/design-studio" component={DesignStudio} />
+              <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
               
               {/* Data Management Routes */}
               <Route path="/data-import" component={DataImport} />

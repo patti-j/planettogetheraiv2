@@ -20,6 +20,7 @@ import PortalPurchaseOrders from "@/pages/portal-purchase-orders";
 import PortalDeliveries from "@/pages/portal-deliveries";
 import PortalInventory from "@/pages/portal-inventory";
 import IntegrationsPage from "@/pages/integrations";
+import AIScenarioCreator from "@/pages/ai-scenario-creator";
 
 // Check authentication status
 function useAuthStatus() {
