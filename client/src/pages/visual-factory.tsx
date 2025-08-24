@@ -42,7 +42,7 @@ import {
   Trash2,
   Edit
 } from 'lucide-react';
-import type { Operation, Resource } from '@shared/schema';
+import type { Operation, Resource, Job } from '@shared/schema';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 
 interface VisualFactoryDisplay {
@@ -55,10 +55,19 @@ interface VisualFactoryDisplay {
   isActive: boolean;
   useAiMode: boolean;
   widgets: VisualFactoryWidget[];
-  // New dashboard rotation properties
+  // Dashboard rotation properties
   useDashboardRotation: boolean;
   dashboardSequence: DashboardSequenceItem[];
+  // Scheduling properties
+  schedule: DisplaySchedule;
   createdAt: Date;
+}
+
+interface DisplaySchedule {
+  startTime: string; // HH:MM format
+  endTime: string;   // HH:MM format
+  daysOfWeek: number[]; // 0=Sunday, 1=Monday, etc.
+  isScheduled: boolean;
 }
 
 interface DashboardSequenceItem {
@@ -129,15 +138,8 @@ export default function VisualFactory() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentWidgetIndex, setCurrentWidgetIndex] = useState(0);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
-  const [aiConfigDialogOpen, setAiConfigDialogOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [adaptiveMode, setAdaptiveMode] = useState(false);
-  const [audience, setAudience] = useState<string>('general');
-  const [location, setLocation] = useState('');
-  const [displayType, setDisplayType] = useState('Large Screen Display');
-  const [includeRealTime, setIncludeRealTime] = useState(true);
+  const [newDisplayDialogOpen, setNewDisplayDialogOpen] = useState(false);
   
   // Dashboard rotation states
   const [dashboardRotationDialogOpen, setDashboardRotationDialogOpen] = useState(false);
@@ -156,7 +158,7 @@ export default function VisualFactory() {
     queryKey: ['/api/visual-factory/displays'],
   });
 
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<any[]>({
     queryKey: ['/api/jobs'],
   });
 
@@ -179,84 +181,45 @@ export default function VisualFactory() {
     onTimeDelivery: operations.filter(op => op.status === 'Completed').length / Math.max(operations.length, 1)
   };
 
-  const { data: liveData } = useQuery({
-    queryKey: ['/api/visual-factory/live-data', { audience, includeRealTime }],
-    refetchInterval: adaptiveMode ? 30000 : 0, // Refresh every 30s in adaptive mode
-    enabled: !!currentDisplay && (includeRealTime || adaptiveMode)
-  });
+  // Check if current display should be active based on schedule
+  const isDisplayActiveBySchedule = (display: VisualFactoryDisplay) => {
+    if (!display.schedule?.isScheduled) return true;
+    
+    const now = new Date();
+    const currentDay = now.getDay();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    const [startHour, startMin] = display.schedule.startTime.split(':').map(Number);
+    const [endHour, endMin] = display.schedule.endTime.split(':').map(Number);
+    const startTime = startHour * 60 + startMin;
+    const endTime = endHour * 60 + endMin;
+    
+    const isDayActive = display.schedule.daysOfWeek.includes(currentDay);
+    const isTimeActive = currentTime >= startTime && currentTime <= endTime;
+    
+    return isDayActive && isTimeActive;
+  };
 
-  // AI Content Generation Mutations
-  const generateAIContentMutation = useMutation({
-    mutationFn: async (params: {
-      prompt: string;
-      audience: string;
-      location: string;
-      displayType: string;
-      includeRealTime: boolean;
-    }) => {
-      const response = await apiRequest('POST', '/api/visual-factory/ai/generate-content', params);
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "AI Content Generated",
-        description: "Your display configuration has been created successfully!"
-      });
-      setAiConfigDialogOpen(false);
-      setAiPrompt('');
+  // Effect to auto-select displays based on schedule
+  useEffect(() => {
+    const checkSchedule = () => {
+      const activeScheduledDisplay = displays.find(display => 
+        display.schedule?.isScheduled && 
+        isDisplayActiveBySchedule(display) && 
+        display.isActive
+      );
       
-      // Apply the generated content to create a new display
-      if (data.displayConfig) {
-        createDisplayMutation.mutate({
-          ...data.displayConfig,
-          location: location || 'Generated Display',
-          useAiMode: true,
-          isActive: true
-        });
+      if (activeScheduledDisplay && currentDisplay?.id !== activeScheduledDisplay.id) {
+        setCurrentDisplay(activeScheduledDisplay);
       }
-    },
-    onError: (error) => {
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate AI content. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const generateAdaptiveContentMutation = useMutation({
-    mutationFn: async (params: {
-      displayId?: number;
-      timeOfDay: string;
-      audience: string;
-    }) => {
-      const response = await apiRequest('POST', '/api/visual-factory/ai/adaptive-content', params);
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      if (currentDisplay && data.adaptiveContent) {
-        // Update current display with adaptive content
-        updateDisplayMutation.mutate({
-          id: currentDisplay.id,
-          widgets: data.adaptiveContent.widgets,
-          autoRotationInterval: data.adaptiveContent.recommendedInterval,
-          useAiMode: true
-        });
-        
-        toast({
-          title: "Adaptive Content Applied",
-          description: data.insights
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Adaptive Content Failed",
-        description: "Failed to generate adaptive content. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
+    };
+    
+    // Check every minute for schedule changes
+    const scheduleInterval = setInterval(checkSchedule, 60000);
+    checkSchedule(); // Check immediately
+    
+    return () => clearInterval(scheduleInterval);
+  }, [displays, currentDisplay]);
 
   // Display Management Mutations
   const createDisplayMutation = useMutation({
@@ -266,7 +229,7 @@ export default function VisualFactory() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/visual-factory/displays'] });
-      setNewDisplayDialogOpen(false);
+      setConfigDialogOpen(false);
     }
   });
 
@@ -326,85 +289,14 @@ export default function VisualFactory() {
     }
   }, [isPlaying, currentDisplay, currentWidgetIndex, currentDashboardIndex]);
 
-  // Adaptive content refresh effect
-  useEffect(() => {
-    if (adaptiveMode && currentDisplay) {
-      const refreshAdaptiveContent = () => {
-        const currentHour = new Date().getHours();
-        let timeOfDay = 'general';
-        
-        if (currentHour >= 6 && currentHour < 12) timeOfDay = 'morning';
-        else if (currentHour >= 12 && currentHour < 18) timeOfDay = 'afternoon';
-        else if (currentHour >= 18 && currentHour < 22) timeOfDay = 'evening';
-        else timeOfDay = 'night';
-
-        generateAdaptiveContentMutation.mutate({
-          displayId: currentDisplay.id,
-          timeOfDay,
-          audience
-        });
-      };
-
-      // Refresh adaptive content every 5 minutes
-      adaptiveIntervalRef.current = setInterval(refreshAdaptiveContent, 5 * 60 * 1000);
-      
-      return () => {
-        if (adaptiveIntervalRef.current) {
-          clearInterval(adaptiveIntervalRef.current);
-        }
-      };
-    }
-  }, [adaptiveMode, currentDisplay, audience]);
-
-  // AI Content Generation Functions
-  const handleGenerateAIContent = () => {
-    if (!aiPrompt.trim()) {
-      toast({
-        title: "Prompt Required",
-        description: "Please enter a description for your display.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGeneratingAI(true);
-    generateAIContentMutation.mutate({
-      prompt: aiPrompt,
-      audience,
-      location,
-      displayType,
-      includeRealTime
-    });
-  };
-
-  const handleToggleAdaptiveMode = () => {
-    setAdaptiveMode(!adaptiveMode);
-    
-    if (!adaptiveMode && currentDisplay) {
-      // Enable adaptive mode - generate initial adaptive content
-      const currentHour = new Date().getHours();
-      let timeOfDay = 'morning';
-      if (currentHour >= 12 && currentHour < 18) timeOfDay = 'afternoon';
-      else if (currentHour >= 18 && currentHour < 22) timeOfDay = 'evening';
-      else if (currentHour >= 22 || currentHour < 6) timeOfDay = 'night';
-
-      generateAdaptiveContentMutation.mutate({
-        displayId: currentDisplay.id,
-        timeOfDay,
-        audience
-      });
-      
-      toast({
-        title: "Adaptive Mode Enabled",
-        description: "Display will now automatically adjust content based on real-time conditions."
-      });
-    } else {
-      toast({
-        title: "Adaptive Mode Disabled",
-        description: "Display content will remain static."
-      });
-    }
-  };
+  // Filter displays by schedule activity
+  const activeDisplays = displays.filter(display => 
+    !display.schedule?.isScheduled || isDisplayActiveBySchedule(display)
+  );
+  
+  const scheduledDisplays = displays.filter(display => 
+    display.schedule?.isScheduled
+  );
 
   const handleFullscreen = () => {
     if (!isFullscreen) {
@@ -474,7 +366,7 @@ export default function VisualFactory() {
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{operation.name}</div>
                     <div className="text-xs sm:text-sm text-gray-600 truncate">
-                      {jobs.find(j => j.id === operation.productionOrderId)?.name}
+                      {operation.description || 'Production Operation'}
                     </div>
                   </div>
                   <div className="flex items-center justify-between sm:flex-col sm:text-right">
@@ -845,79 +737,32 @@ export default function VisualFactory() {
                             });
                           }
                           setDashboardRotationDialogOpen(false);
+                          toast({
+                            title: "Dashboard Rotation Saved",
+                            description: `Configured rotation sequence with ${sequence.length} dashboards.`
+                          });
                         }}
                       />
                     </DialogContent>
                   </Dialog>
 
-                  <Dialog open={aiConfigDialogOpen} onOpenChange={setAiConfigDialogOpen}>
+                  <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className={`${aiTheme.gradient} text-white text-sm`} size="sm">
-                        <Sparkles className="w-4 h-4 mr-1 sm:mr-2" />
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm" size="sm">
+                        <PlusIcon className="w-4 h-4 mr-1 sm:mr-2" />
                         <span className="hidden sm:inline">New Display</span>
                         <span className="sm:hidden">New Display</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>AI Display Configuration</DialogTitle>
+                        <DialogTitle>Create New Display Configuration</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="ai-prompt">Describe your display requirements</Label>
-                          <Textarea
-                            id="ai-prompt"
-                            placeholder="Create a display for the shop floor showing production metrics, current operations, and alerts. Make it engaging and easy to read from a distance."
-                            value={aiPrompt}
-                            onChange={(e) => setAiPrompt(e.target.value)}
-                            rows={4}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="audience">Target Audience</Label>
-                            <Select value={audience} onValueChange={setAudience}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select audience" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="general">General</SelectItem>
-                                <SelectItem value="management">Management</SelectItem>
-                                <SelectItem value="shop-floor">Shop Floor</SelectItem>
-                                <SelectItem value="customer-service">Customer Service</SelectItem>
-                                <SelectItem value="sales">Sales Team</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="location">Location</Label>
-                            <Input
-                              id="location"
-                              placeholder="e.g., Main Production Floor"
-                              value={location}
-                              onChange={(e) => setLocation(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="includeRealTime"
-                            checked={includeRealTime}
-                            onCheckedChange={(checked) => setIncludeRealTime(checked === true)}
-                          />
-                          <Label htmlFor="includeRealTime">Include real-time data</Label>
-                        </div>
-                        
-                        <Button
-                          onClick={handleGenerateAIContent}
-                          disabled={!aiPrompt.trim() || generateAIContentMutation.isPending}
-                          className={`w-full ${aiTheme.gradient} text-white`}
-                        >
-                          {generateAIContentMutation.isPending ? 'Generating...' : 'Generate Display'}
-                        </Button>
-                      </div>
+                      <CreateDisplayForm
+                        onSubmit={createDisplayMutation.mutate}
+                        availableDashboards={availableDashboards}
+                        isLoading={createDisplayMutation.isPending}
+                      />
                     </DialogContent>
                   </Dialog>
 
@@ -1059,12 +904,13 @@ export default function VisualFactory() {
 // Create Display Form Component
 function CreateDisplayForm({ 
   onSubmit, 
+  availableDashboards,
   isLoading 
 }: { 
   onSubmit: (display: Omit<VisualFactoryDisplay, 'id' | 'createdAt'>) => void;
+  availableDashboards: Dashboard[];
   isLoading: boolean;
 }) {
-  const { aiTheme } = useAITheme();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -1074,19 +920,60 @@ function CreateDisplayForm({
     isActive: true,
     useAiMode: false,
     useDashboardRotation: false,
-    dashboardSequence: [] as DashboardSequenceItem[]
+    dashboardSequence: [] as DashboardSequenceItem[],
+    schedule: {
+      startTime: '07:00',
+      endTime: '17:00',
+      daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+      isScheduled: false
+    } as DisplaySchedule
   });
+  
+  const [selectedDashboards, setSelectedDashboards] = useState<number[]>([]);
+  const [showScheduling, setShowScheduling] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Create dashboard sequence from selected dashboards
+    const dashboardSequence = selectedDashboards.map(dashboardId => ({
+      dashboardId,
+      displayDuration: 30,
+      transitionEffect: 'fade' as const
+    }));
+    
     onSubmit({
       ...formData,
-      widgets: defaultWidgets.map((widget, index) => ({
+      useDashboardRotation: selectedDashboards.length > 0,
+      dashboardSequence,
+      widgets: selectedDashboards.length > 0 ? [] : defaultWidgets.map((widget, index) => ({
         ...widget,
         id: `widget-${index}`
       }))
     });
   };
+
+  const toggleDashboard = (dashboardId: number) => {
+    setSelectedDashboards(prev => 
+      prev.includes(dashboardId) 
+        ? prev.filter(id => id !== dashboardId)
+        : [...prev, dashboardId]
+    );
+  };
+
+  const toggleDay = (day: number) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        daysOfWeek: prev.schedule.daysOfWeek.includes(day)
+          ? prev.schedule.daysOfWeek.filter(d => d !== day)
+          : [...prev.schedule.daysOfWeek, day].sort()
+      }
+    }));
+  };
+
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -1144,7 +1031,7 @@ function CreateDisplayForm({
           </Select>
         </div>
         <div>
-          <Label htmlFor="interval" className="text-sm">Auto-rotation (seconds)</Label>
+          <Label htmlFor="interval" className="text-sm">Default Duration (seconds)</Label>
           <Input
             id="interval"
             type="number"
@@ -1176,10 +1063,112 @@ function CreateDisplayForm({
         </div>
       </div>
 
+      {/* Dashboard Selection */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-medium">Dashboard Selection</h3>
+        <p className="text-sm text-gray-600">Select dashboards to rotate through, or leave empty for widgets</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+          {availableDashboards.map((dashboard) => (
+            <Card 
+              key={dashboard.id} 
+              className={`cursor-pointer transition-all ${
+                selectedDashboards.includes(dashboard.id) 
+                  ? 'ring-2 ring-blue-500 bg-blue-50' 
+                  : 'hover:shadow-md'
+              }`}
+              onClick={() => toggleDashboard(dashboard.id)}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">{dashboard.name}</h4>
+                    {dashboard.description && (
+                      <p className="text-xs text-gray-500 mt-1">{dashboard.description}</p>
+                    )}
+                  </div>
+                  {selectedDashboards.includes(dashboard.id) && (
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+      
+      {/* Scheduling Options */}
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="enableScheduling"
+            checked={showScheduling}
+            onCheckedChange={(checked) => {
+              setShowScheduling(checked === true);
+              setFormData(prev => ({
+                ...prev,
+                schedule: { ...prev.schedule, isScheduled: checked === true }
+              }));
+            }}
+          />
+          <Label htmlFor="enableScheduling" className="text-sm font-medium">Enable Time Schedule</Label>
+        </div>
+        
+        {showScheduling && (
+          <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startTime" className="text-sm">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.schedule.startTime}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    schedule: { ...prev.schedule, startTime: e.target.value }
+                  }))}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <Label htmlFor="endTime" className="text-sm">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.schedule.endTime}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    schedule: { ...prev.schedule, endTime: e.target.value }
+                  }))}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-sm">Active Days</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {daysOfWeek.map((day, index) => (
+                  <Button
+                    key={day}
+                    type="button"
+                    variant={formData.schedule.daysOfWeek.includes(index) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleDay(index)}
+                    className="text-xs"
+                  >
+                    {day}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
       <Button 
         type="submit" 
         disabled={isLoading || !formData.name || !formData.location} 
-        className={`w-full ${formData.useAiMode ? `${aiTheme.gradient} hover:opacity-90 text-white` : ''}`}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
       >
         {isLoading ? 'Creating...' : 'Create Display'}
       </Button>

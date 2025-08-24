@@ -3948,6 +3948,13 @@ export const visualFactoryDisplays = pgTable("visual_factory_displays", {
   isActive: boolean("is_active").default(true),
   useAiMode: boolean("use_ai_mode").default(false),
   widgets: jsonb("widgets").default([]),
+  useDashboardRotation: boolean("use_dashboard_rotation").default(false),
+  dashboardSequence: jsonb("dashboard_sequence").default([]),
+  // Scheduling fields
+  scheduleStartTime: varchar("schedule_start_time", { length: 5 }).default("07:00"), // HH:MM format
+  scheduleEndTime: varchar("schedule_end_time", { length: 5 }).default("17:00"),     // HH:MM format
+  scheduleDaysOfWeek: jsonb("schedule_days_of_week").$type<number[]>().default([1,2,3,4,5]), // 0=Sun, 1=Mon, etc.
+  scheduleEnabled: boolean("schedule_enabled").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -5254,7 +5261,7 @@ export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 export const productionVersionPhaseBomProductOutputs = pgTable("production_version_phase_bom_product_outputs", {
   id: serial("id").primaryKey(),
   productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
-  discreteOperationPhaseId: integer("discrete_operation_phase_id").references(() => discreteOperationPhases.id, { onDelete: "cascade" }).notNull(),
+  // discreteOperationPhaseId: integer("discrete_operation_phase_id"), // TODO: Add reference when discreteOperationPhases table is defined
   bomProductOutputId: integer("bom_product_output_id").references(() => bomProductOutputs.id, { onDelete: "cascade" }).notNull(),
   phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
   phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
@@ -5273,9 +5280,9 @@ export const productionVersionPhaseBomProductOutputs = pgTable("production_versi
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniqueProductionVersionPhaseBomOutput: unique().on(table.productionVersionId, table.discreteOperationPhaseId, table.bomProductOutputId),
-}));
+// }, (table) => ({
+//   uniqueProductionVersionPhaseBomOutput: unique().on(table.productionVersionId, table.discreteOperationPhaseId, table.bomProductOutputId),
+});
 
 // Junction table linking production versions, recipe phases, and recipe product outputs
 export const productionVersionPhaseRecipeProductOutputs = pgTable("production_version_phase_recipe_product_outputs", {
