@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface AIInsight {
   id: string;
-  type: 'insight' | 'anomaly' | 'recommendation' | 'simulation';
+  type: 'insight' | 'anomaly' | 'recommendation' | 'simulation' | 'optimization' | 'bottleneck' | 'conflict';
   title: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
@@ -121,6 +121,7 @@ export function AILeftPanel() {
   ]);
   
   const [showMaxThinking, setShowMaxThinking] = useState(false);
+  const [currentRequestController, setCurrentRequestController] = useState<AbortController | null>(null);
   
   // Get current page location
   const [location] = useState(() => window.location.pathname);
@@ -139,9 +140,30 @@ export function AILeftPanel() {
     enabled: activeTab === 'insights' || activeTab === 'anomalies'
   });
   
+  // Cancel current Max request
+  const cancelMaxRequest = () => {
+    if (currentRequestController) {
+      currentRequestController.abort();
+      setCurrentRequestController(null);
+      setShowMaxThinking(false);
+      
+      // Add cancellation message to chat
+      const cancelMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'Request cancelled.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatMessages(prev => [...prev, cancelMessage]);
+    }
+  };
+
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      // Create new AbortController for this request
+      const controller = new AbortController();
+      setCurrentRequestController(controller);
       setShowMaxThinking(true);
       
       // Check for navigation intents in the message
@@ -187,18 +209,31 @@ export function AILeftPanel() {
       }
       
       // Otherwise, send to backend for AI processing
-      const response = await apiRequest("POST", "/api/max-ai/chat", { 
-        message,
-        context: {
-          currentPage: location,
-          selectedData: null,
-          recentActions: []
-        }
+      const response = await fetch('/api/max-ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message,
+          context: {
+            currentPage: location,
+            selectedData: null,
+            recentActions: []
+          }
+        }),
+        signal: controller.signal
       });
-      return response.json();
+      
+      if (!response.ok) {
+        throw new Error('Failed to get response from Max AI');
+      }
+      const data = await response.json();
+      return data;
     },
     onSuccess: (data: any) => {
       setShowMaxThinking(false);
+      setCurrentRequestController(null);
       console.log("Max AI Full Response:", data);
       
       // Handle navigation actions from Max AI
@@ -235,9 +270,16 @@ export function AILeftPanel() {
         setActiveTab('insights');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setShowMaxThinking(false);
+      setCurrentRequestController(null);
       console.error("Max AI Error:", error);
+      
+      // Don't show error message if request was aborted (cancelled)
+      if (error.name === 'AbortError') {
+        return;
+      }
+      
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -419,7 +461,7 @@ export function AILeftPanel() {
   }, [isResizing, panelWidth]);
 
   // Transform Max AI insights to display format
-  const displayInsights: AIInsight[] = maxInsights?.map((insight: any, index: number) => ({
+  const displayInsights: AIInsight[] = (Array.isArray(maxInsights) ? maxInsights : []).map((insight: any, index: number) => ({
     id: insight.id || `insight-${index}`,
     type: insight.type || 'insight',
     title: insight.title,
@@ -429,7 +471,7 @@ export function AILeftPanel() {
     actionable: insight.actionable || false,
     impact: insight.data?.impact,
     recommendation: insight.recommendation
-  })) || [];
+  }));
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -591,13 +633,24 @@ export function AILeftPanel() {
                 {/* Thinking indicator in input area */}
                 {showMaxThinking && (
                   <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        </div>
+                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Max is thinking...</span>
                       </div>
-                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Max is thinking...</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelMaxRequest}
+                        className="h-6 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
                     </div>
                   </div>
                 )}
