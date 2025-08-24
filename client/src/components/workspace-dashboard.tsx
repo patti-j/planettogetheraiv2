@@ -48,13 +48,13 @@ export function WorkspaceDashboard({
   workspaceId,
   compact = false
 }: WorkspaceDashboardProps) {
-  const [widgets, setWidgets] = useState(workspaceDashboard?.config?.widgets || []);
+  const [widgets, setWidgets] = useState(workspaceDashboard?.configuration?.widgets || []);
   const [showKpiStudio, setShowKpiStudio] = useState(false);
 
   // Sync widgets state with workspaceDashboard prop changes
   React.useEffect(() => {
-    if (workspaceDashboard?.config?.widgets) {
-      setWidgets(workspaceDashboard.config.widgets);
+    if (workspaceDashboard?.configuration?.widgets) {
+      setWidgets(workspaceDashboard.configuration.widgets);
     }
   }, [workspaceDashboard]);
 
@@ -128,12 +128,25 @@ export function WorkspaceDashboard({
       name: 'Production Schedule Dashboard',
       pageIdentifier: 'production-schedule',
       plantId: 1,
-      config: {
-        widgets,
-        layout: 'grid',
-        showHeader: true
+      configuration: {
+        layout: {
+          type: 'grid' as const,
+          columns: 4,
+          gap: 4,
+          padding: 6
+        },
+        widgets: widgets.map(w => ({
+          ...w,
+          position: { x: 0, y: 0, w: 1, h: 1 },
+          isVisible: true,
+          configuration: w.config || {}
+        })),
+        refreshInterval: 30,
+        autoRefresh: false,
+        theme: 'default'
       },
-      isActive: true
+      isActive: true,
+      createdBy: 1 // Default user ID for now
     };
     
     onSave(dashboardData);
