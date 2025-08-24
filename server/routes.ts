@@ -25728,7 +25728,38 @@ Be careful to preserve data integrity and relationships.`;
             totalPages: Math.ceil(resourcesData.length / limitNum)
           }
         });
+      } else if (tableName === 'ptjoboperations') {
+        // Get real job operations data 
+        console.log(`Database Explorer: Attempting to fetch ptjoboperations data...`);
+        try {
+          const operationsData = await storage.getOperations();
+          console.log(`Database Explorer: Successfully fetched ${operationsData.length} operations records`);
+          
+          // Apply pagination to the real data
+          const startIndex = offset;
+          const endIndex = startIndex + limitNum;
+          const paginatedData = operationsData.slice(startIndex, endIndex);
+          
+          console.log(`Database Explorer: Returning ${paginatedData.length} real records for ptjoboperations (${operationsData.length} total)`);
+          
+          res.json({
+            data: paginatedData,
+            pagination: {
+              page: pageNum,
+              limit: limitNum,
+              total: operationsData.length,
+              totalPages: Math.ceil(operationsData.length / limitNum)
+            }
+          });
+        } catch (error) {
+          console.error(`Database Explorer: Error fetching ptjoboperations:`, error);
+          res.json({
+            data: [],
+            pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 }
+          });
+        }
       } else {
+        console.log(`Database Explorer: Table ${tableName} not specifically handled, returning empty data`);
         res.json({
           data: [],
           pagination: { page: pageNum, limit: limitNum, total: 0, totalPages: 0 }

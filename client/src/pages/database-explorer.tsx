@@ -81,13 +81,13 @@ export default function DatabaseExplorer() {
 
   // Fetch table schema when a table is selected
   const { data: tableSchema = [], isLoading: schemaLoading } = useQuery({
-    queryKey: ['/api/database/tables', selectedTable, 'schema'],
+    queryKey: [`/api/database/tables/${selectedTable}/schema`],
     enabled: !!selectedTable
   });
 
   // Fetch table data when viewing data
   const { data: tableData, isLoading: dataLoading, refetch: refetchData } = useQuery({
-    queryKey: ['/api/database/tables', selectedTable, 'data', currentPage, pageSize, searchTerm, sortBy, sortOrder, filters],
+    queryKey: [`/api/database/tables/${selectedTable}/data`, currentPage, pageSize, searchTerm, sortBy, sortOrder, filters],
     enabled: !!selectedTable && viewMode === 'data'
   });
 
