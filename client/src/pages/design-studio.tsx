@@ -2077,7 +2077,7 @@ export default function UIDesignStudio() {
           onOpenChange={setShowVisualDesigner}
           dashboard={dashboardToEdit ? {
             ...dashboardToEdit,
-            widgets: dashboardToEdit.configuration?.widgets !== undefined ? dashboardToEdit.configuration.widgets : (dashboardToEdit.configuration?.customWidgets || dashboardToEdit.widgets || []),
+            widgets: dashboardToEdit.configuration?.customWidgets || dashboardToEdit.configuration?.standardWidgets || dashboardToEdit.widgets || [],
             layout: dashboardToEdit.configuration?.layout || dashboardToEdit.layout,
             gridColumns: dashboardToEdit.configuration?.gridColumns || dashboardToEdit.gridColumns
           } : null}
@@ -2090,9 +2090,8 @@ export default function UIDesignStudio() {
               configuration: {
                 layout: dashboardConfig.layout,
                 gridColumns: dashboardConfig.gridColumns,
-                widgets: dashboardConfig.widgets,
                 standardWidgets: [],
-                customWidgets: dashboardConfig.widgets
+                customWidgets: dashboardConfig.widgets || []
               }
             };
             
