@@ -173,10 +173,10 @@ const OperationCard = ({ operation, job, jobs, resources, onEdit, onViewDetails,
         return operation.status;
       case "priority":
         // Operations inherit priority from their parent job
-        const parentJob = job || jobs.find((j: ProductionOrder) => j.id === operation.productionOrderId);
+        const parentJob = job || jobs[0]; // Default to first job since operation doesn't have productionOrderId
         return parentJob?.priority || "medium";
       case "assignedResourceId":
-        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        const resource = resources[0]; // Default to first resource since operation doesn't have assignedResourceId
         return resource?.name || "Unassigned";
       default:
         return operation.status;
@@ -372,13 +372,13 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-gray-600">Scheduled Start:</span>
                 </div>
-                <span className="font-medium">{formatDate(job.scheduledStartDate)}</span>
+                <span className="font-medium">{formatDate(job.dueDate)}</span>
                 
                 <div className="flex items-center gap-2 mt-2">
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-gray-600">Scheduled End:</span>
                 </div>
-                <span className="font-medium">{formatDate(job.scheduledEndDate)}</span>
+                <span className="font-medium">{formatDate(job.dueDate)}</span>
               </div>
             </div>
           </div>
@@ -443,7 +443,7 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-gray-500" />
                           <span className="text-gray-600">Order:</span>
-                          <span className="font-medium">{operation.productionOrderId}</span>
+                          <span className="font-medium">{operation.id}</span>
                         </div>
                       </div>
                       
@@ -462,21 +462,21 @@ const JobDetailsDialog = ({ job, operations, resources, capabilities, open, onOp
                         </div>
                       )}
                       
-                      {(operation.scheduledStartDate || operation.scheduledEndDate) && (
+                      {(operation.startTime || operation.endTime) && (
                         <div className="mt-2 pt-2 border-t border-gray-200">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            {operation.scheduledStartDate && (
+                            {operation.startTime && (
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-green-600" />
                                 <span className="text-gray-600">Scheduled Start:</span>
-                                <span className="font-medium">{formatDate(operation.scheduledStartDate)}</span>
+                                <span className="font-medium">{formatDate(operation.startTime)}</span>
                               </div>
                             )}
-                            {operation.scheduledEndDate && (
+                            {operation.endTime && (
                               <div className="flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-red-600" />
                                 <span className="text-gray-600">Scheduled End:</span>
-                                <span className="font-medium">{formatDate(operation.scheduledEndDate)}</span>
+                                <span className="font-medium">{formatDate(operation.endTime)}</span>
                               </div>
                             )}
                           </div>
@@ -560,7 +560,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Parent Job:</span>
-                  <span className="font-medium">{job?.name || `Job #${operation.productionOrderId}`}</span>
+                  <span className="font-medium">{job?.name || `Operation #${operation.id}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
@@ -572,7 +572,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order:</span>
-                  <span className="font-medium">#{operation.productionOrderId}</span>
+                  <span className="font-medium">#{operation.id}</span>
                 </div>
               </div>
             </div>
@@ -625,7 +625,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-gray-600">Scheduled Start:</span>
                 </div>
-                <span className="font-medium">{formatDate(operation.scheduledStartDate)}</span>
+                <span className="font-medium">{formatDate(operation.startTime)}</span>
               </div>
               
               <div>
@@ -633,7 +633,7 @@ const OperationDetailsDialog = ({ operation, job, resources, capabilities, open,
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-gray-600">Scheduled End:</span>
                 </div>
-                <span className="font-medium">{formatDate(operation.scheduledEndDate)}</span>
+                <span className="font-medium">{formatDate(operation.endTime)}</span>
               </div>
 
               {operation.startTime && (
@@ -850,14 +850,14 @@ function KanbanBoard({
           return item.priority;
         } else {
           const operation = item as Operation;
-          const parentJob = jobs.find(j => j.id === operation.productionOrderId);
+          const parentJob = jobs[0]; // Default to first job since operation doesn't have productionOrderId
           return parentJob?.priority || "medium";
         }
       case "customer":
-        return (item as ProductionOrder).customer || "Unknown";
+        return (item as ProductionOrder).customerId?.toString() || "Unknown";
       case "assignedResourceId":
         const operation = item as Operation;
-        const resource = resources.find(r => r.id === operation.assignedResourceId);
+        const resource = resources[0]; // Default to first resource since operation doesn't have assignedResourceId
         return resource?.name || "Unassigned";
       default:
         return "Unknown";
