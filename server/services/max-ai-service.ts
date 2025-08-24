@@ -870,8 +870,10 @@ Please answer their question with this data.`
       // For now, return a simulation response since PT tables are read-only
       return {
         content: `Operation ${args.operationId} has been flagged for rescheduling to ${args.newStartTime}. ${args.reason || ''} This will be processed by the scheduling system.`,
-        success: true,
-        action: 'reschedule'
+        action: {
+          type: 'execute_function' as const,
+          data: { operationId: args.operationId, newStartTime: args.newStartTime }
+        }
       };
     } catch (error) {
       return {
@@ -884,23 +886,22 @@ Please answer their question with this data.`
   // Create alert implementation
   private async createAlert(args: any, context: MaxContext) {
     try {
-      const [newAlert] = await db.insert(alerts).values({
+      const alertData = {
         title: args.title || 'AI Generated Alert',
         description: args.description,
         severity: args.severity,
         type: args.type || 'production',
-        status: 'active',
-        aiGenerated: true,
-        aiModel: 'gpt-4o',
-        aiConfidence: 0.9,
-        detectedAt: new Date()
-      }).returning();
+        status: 'active' as const
+      };
+      
+      const [newAlert] = await db.insert(alerts).values(alertData).returning();
 
       return {
         content: `Alert created: "${args.title || 'AI Generated Alert'}". It has been added to the alerts dashboard with ${args.severity} priority.`,
-        success: true,
-        action: 'create_alert',
-        data: newAlert
+        action: {
+          type: 'execute_function' as const,
+          data: newAlert
+        }
       };
     } catch (error) {
       console.error('Create alert error:', error);
@@ -922,7 +923,10 @@ Please answer their question with this data.`
     return {
       content: `Schedule optimization analysis complete. Found ${optimizations.length} optimization opportunities for ${args.criteria}.`,
       insights: optimizations,
-      action: 'optimize',
+      action: {
+        type: 'execute_function' as const,
+        data: { criteria: args.criteria, optimizations: optimizations.length }
+      },
       suggestions: [
         'Apply recommended sequence changes',
         'Review resource allocation',
