@@ -237,84 +237,180 @@ function EditableDataTable({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        {/* Search and filters - full width on mobile */}
         <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 text-sm"
             />
           </div>
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
+          <Button variant="outline" size="sm" className="shrink-0">
+            <Filter className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Filter</span>
           </Button>
           <Button 
             variant="outline" 
             size="sm"
             onClick={onShowAiAssistant}
+            className="shrink-0"
           >
-            <Bot className="h-4 w-4 mr-2" />
-            AI Help
+            <Bot className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">AI Help</span>
           </Button>
         </div>
+        
+        {/* Action buttons */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Import
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
+            <Upload className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline ml-1">Import</span>
           </Button>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-initial">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline ml-1">Export</span>
           </Button>
-          <Button onClick={handleAddRow} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Row
+          <Button onClick={handleAddRow} size="sm" className="flex-1 sm:flex-initial">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline ml-1">Add Row</span>
           </Button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table - responsive layout */}
       <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              {columns.map(col => (
-                <TableHead 
-                  key={col.key}
-                  className={`cursor-pointer hover:bg-muted ${col.width || ''}`}
-                  onClick={() => handleSort(col.key)}
-                >
-                  <div className="flex items-center justify-between">
-                    {col.label}
-                    {sortColumn === col.key && (
-                      sortDirection === 'asc' ? 
-                        <ChevronUp className="h-4 w-4" /> : 
-                        <ChevronDown className="h-4 w-4" />
-                    )}
-                  </div>
-                </TableHead>
-              ))}
-              <TableHead className="w-20">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* New row form */}
-            {newRow && (
-              <TableRow className="bg-muted/50">
-                <TableCell>New</TableCell>
+        {/* Desktop table view */}
+        <div className="hidden lg:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">#</TableHead>
                 {columns.map(col => (
-                  <TableCell key={col.key}>
+                  <TableHead 
+                    key={col.key}
+                    className={`cursor-pointer hover:bg-muted ${col.width || ''}`}
+                    onClick={() => handleSort(col.key)}
+                  >
+                    <div className="flex items-center justify-between">
+                      {col.label}
+                      {sortColumn === col.key && (
+                        sortDirection === 'asc' ? 
+                          <ChevronUp className="h-4 w-4" /> : 
+                          <ChevronDown className="h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
+                <TableHead className="w-20">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {/* New row form */}
+              {newRow && (
+                <TableRow className="bg-muted/50">
+                  <TableCell>New</TableCell>
+                  {columns.map(col => (
+                    <TableCell key={col.key}>
+                      {col.type === 'select' && col.options ? (
+                        <Select
+                          value={newRow[col.key]}
+                          onValueChange={(val) => setNewRow({ ...newRow, [col.key]: val })}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {col.options.map(opt => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : col.type === 'boolean' ? (
+                        <input
+                          type="checkbox"
+                          checked={!!newRow[col.key]}
+                          onChange={(e) => setNewRow({ ...newRow, [col.key]: e.target.checked })}
+                        />
+                      ) : (
+                        <Input
+                          type={col.type === 'number' ? 'number' : 'text'}
+                          value={newRow[col.key]}
+                          onChange={(e) => setNewRow({ ...newRow, [col.key]: e.target.value })}
+                          placeholder={col.label}
+                          className="h-8"
+                        />
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={handleSaveNewRow}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelNewRow}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* Data rows */}
+              {processedData.map((row, idx) => (
+                <TableRow key={row.id}>
+                  <TableCell className="font-medium">{idx + 1}</TableCell>
+                  {columns.map(col => (
+                    <TableCell key={col.key}>
+                      {renderCell(row, col)}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDelete(row.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        
+        {/* Mobile card view */}
+        <div className="lg:hidden">
+          {/* New row form for mobile */}
+          {newRow && (
+            <div className="border-b p-4 bg-muted/50">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Add New {entityType.replace('-', ' ')}</h4>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="ghost" onClick={handleSaveNewRow}>
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleCancelNewRow}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {columns.map(col => (
+                  <div key={col.key}>
+                    <label className="text-sm font-medium text-muted-foreground">{col.label}</label>
                     {col.type === 'select' && col.options ? (
                       <Select
                         value={newRow[col.key]}
                         onValueChange={(val) => setNewRow({ ...newRow, [col.key]: val })}
                       >
-                        <SelectTrigger className="h-8">
+                        <SelectTrigger className="h-9 mt-1">
                           <SelectValue placeholder="Select..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -326,45 +422,35 @@ function EditableDataTable({
                         </SelectContent>
                       </Select>
                     ) : col.type === 'boolean' ? (
-                      <input
-                        type="checkbox"
-                        checked={!!newRow[col.key]}
-                        onChange={(e) => setNewRow({ ...newRow, [col.key]: e.target.checked })}
-                      />
+                      <div className="flex items-center mt-2">
+                        <input
+                          type="checkbox"
+                          checked={!!newRow[col.key]}
+                          onChange={(e) => setNewRow({ ...newRow, [col.key]: e.target.checked })}
+                          className="rounded border-gray-300"
+                        />
+                      </div>
                     ) : (
                       <Input
                         type={col.type === 'number' ? 'number' : 'text'}
                         value={newRow[col.key]}
                         onChange={(e) => setNewRow({ ...newRow, [col.key]: e.target.value })}
                         placeholder={col.label}
-                        className="h-8"
+                        className="h-9 mt-1"
                       />
                     )}
-                  </TableCell>
-                ))}
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={handleSaveNewRow}>
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={handleCancelNewRow}>
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
-                </TableCell>
-              </TableRow>
-            )}
-
-            {/* Data rows */}
-            {processedData.map((row, idx) => (
-              <TableRow key={row.id}>
-                <TableCell className="font-medium">{idx + 1}</TableCell>
-                {columns.map(col => (
-                  <TableCell key={col.key}>
-                    {renderCell(row, col)}
-                  </TableCell>
                 ))}
-                <TableCell>
+              </div>
+            </div>
+          )}
+          
+          {/* Mobile data cards */}
+          <div className="space-y-3 p-4">
+            {processedData.map((row, idx) => (
+              <div key={row.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">#{idx + 1}</span>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -372,21 +458,31 @@ function EditableDataTable({
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
-                </TableCell>
-              </TableRow>
+                </div>
+                {columns.map(col => (
+                  <div key={col.key} className="flex flex-col space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {col.label}
+                    </label>
+                    <div className="text-sm">
+                      {renderCell(row, col)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ))}
-          </TableBody>
-        </Table>
+          </div>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-muted-foreground px-2">
+        <div className="text-center sm:text-left">
           Showing {processedData.length} of {data?.length || 0} rows
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>Previous</Button>
-          <Button variant="outline" size="sm" disabled>Next</Button>
+        <div className="flex gap-2 justify-center sm:justify-end">
+          <Button variant="outline" size="sm" disabled className="text-xs">Previous</Button>
+          <Button variant="outline" size="sm" disabled className="text-xs">Next</Button>
         </div>
       </div>
     </div>
@@ -668,23 +764,28 @@ export default function MasterDataPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center">
-          <FileText className="w-8 h-8 mr-3" />
-          Master Data Management
+    <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
+          <FileText className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3" />
+          <span className="hidden sm:inline">Master Data Management</span>
+          <span className="sm:hidden">Master Data</span>
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button 
             variant="outline"
             onClick={() => setShowAiAssistant(true)}
+            size="sm"
+            className="flex-1 sm:flex-initial"
           >
-            <Bot className="h-4 w-4 mr-2" />
-            AI Assistant
+            <Bot className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline ml-2">AI Assistant</span>
+            <span className="sm:hidden ml-1">AI</span>
           </Button>
-          <Button>
-            <Save className="h-4 w-4 mr-2" />
-            Save All Changes
+          <Button size="sm" className="flex-1 sm:flex-initial">
+            <Save className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline ml-2">Save All Changes</span>
+            <span className="sm:hidden ml-1">Save</span>
           </Button>
         </div>
       </div>
@@ -692,21 +793,21 @@ export default function MasterDataPage() {
       <Card>
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="border-b px-6 pt-6">
+            <div className="border-b px-3 sm:px-6 pt-4 sm:pt-6">
               <TabsList className="flex overflow-x-auto no-scrollbar gap-1 w-full bg-muted p-1 rounded-lg">
-                <TabsTrigger value="items" className="whitespace-nowrap flex-shrink-0">Items</TabsTrigger>
-                <TabsTrigger value="resources" className="whitespace-nowrap flex-shrink-0">Resources</TabsTrigger>
-                <TabsTrigger value="capabilities" className="whitespace-nowrap flex-shrink-0">Capabilities</TabsTrigger>
-                <TabsTrigger value="production-orders" className="whitespace-nowrap flex-shrink-0">Production Orders</TabsTrigger>
-                <TabsTrigger value="recipes" className="whitespace-nowrap flex-shrink-0">Recipes</TabsTrigger>
-                <TabsTrigger value="plants" className="whitespace-nowrap flex-shrink-0">Plants</TabsTrigger>
-                <TabsTrigger value="users" className="whitespace-nowrap flex-shrink-0">Users</TabsTrigger>
-                <TabsTrigger value="customers" className="whitespace-nowrap flex-shrink-0">Customers</TabsTrigger>
-                <TabsTrigger value="vendors" className="whitespace-nowrap flex-shrink-0">Vendors</TabsTrigger>
+                <TabsTrigger value="items" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Items</TabsTrigger>
+                <TabsTrigger value="resources" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Resources</TabsTrigger>
+                <TabsTrigger value="capabilities" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Capabilities</TabsTrigger>
+                <TabsTrigger value="production-orders" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Orders</TabsTrigger>
+                <TabsTrigger value="recipes" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Recipes</TabsTrigger>
+                <TabsTrigger value="plants" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Plants</TabsTrigger>
+                <TabsTrigger value="users" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Users</TabsTrigger>
+                <TabsTrigger value="customers" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Customers</TabsTrigger>
+                <TabsTrigger value="vendors" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Vendors</TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="p-6">
+            <div className="p-3 sm:p-6">
               <TabsContent value={activeTab} className="mt-0">
                 <EditableDataTable
                   data={data || []}
@@ -726,7 +827,7 @@ export default function MasterDataPage() {
 
       {/* AI Assistant Dialog */}
       <Dialog open={showAiAssistant} onOpenChange={setShowAiAssistant}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
@@ -754,40 +855,44 @@ export default function MasterDataPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
               <Button 
                 onClick={() => handleAiRequest('generate')}
                 disabled={aiProcessing}
                 size="sm"
+                className="text-xs sm:text-sm"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Data
+                <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
+                Generate
               </Button>
               <Button 
                 onClick={() => handleAiRequest('improve')}
                 disabled={aiProcessing}
                 variant="outline"
                 size="sm"
+                className="text-xs sm:text-sm"
               >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Improve Existing
+                <Wand2 className="h-4 w-4 mr-1 sm:mr-2" />
+                Improve
               </Button>
               <Button 
                 onClick={() => handleAiRequest('suggest')}
                 disabled={aiProcessing}
                 variant="outline"
                 size="sm"
+                className="text-xs sm:text-sm"
               >
-                <Lightbulb className="h-4 w-4 mr-2" />
-                Get Suggestions
+                <Lightbulb className="h-4 w-4 mr-1 sm:mr-2" />
+                Suggestions
               </Button>
               <Button 
                 onClick={() => handleAiRequest('bulk_edit')}
                 disabled={aiProcessing}
                 variant="outline"
                 size="sm"
+                className="text-xs sm:text-sm"
               >
-                <Zap className="h-4 w-4 mr-2" />
+                <Zap className="h-4 w-4 mr-1 sm:mr-2" />
                 Bulk Edit
               </Button>
             </div>
@@ -823,9 +928,9 @@ export default function MasterDataPage() {
                           </div>
                           <p className="text-sm mt-1">{suggestion.explanation}</p>
                           {suggestion.data && (
-                            <div className="mt-2 text-xs bg-muted p-2 rounded">
+                            <div className="mt-2 text-xs bg-muted p-2 rounded overflow-x-auto">
                               <strong>Suggested changes:</strong>
-                              <pre className="mt-1 text-xs">{JSON.stringify(suggestion.data, null, 2)}</pre>
+                              <pre className="mt-1 text-xs whitespace-pre-wrap break-all">{JSON.stringify(suggestion.data, null, 2)}</pre>
                             </div>
                           )}
                         </div>
