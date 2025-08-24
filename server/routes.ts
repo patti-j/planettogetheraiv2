@@ -25638,6 +25638,41 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
+  // Navigation routes for Max AI to discover all available routes
+  app.get('/api/navigation/routes', createSafeHandler(async (req, res) => {
+    // Essential routes that Max AI should know about for navigation
+    const routes = [
+      { route: '/', label: 'Home', description: 'Main dashboard and homepage' },
+      { route: '/control-tower', label: 'Global Control Tower', description: 'Enterprise-wide monitoring and insights' },
+      { route: '/production-schedule', label: 'Production Schedule', description: 'Detailed production scheduling with Gantt chart and operations timeline' },
+      { route: '/master-production-schedule', label: 'Master Production Schedule', description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
+      { route: '/shop-floor', label: 'Shop Floor', description: 'Shop floor monitoring and real-time production' },
+      { route: '/analytics', label: 'Analytics', description: 'Analytics and performance metrics' },
+      { route: '/alerts', label: 'Alerts & Notifications', description: 'System alerts and notifications' },
+      { route: '/resources', label: 'Resource Management', description: 'Resource and equipment management' },
+      { route: '/operations', label: 'Operations', description: 'Operations and work management' },
+      { route: '/capacity-planning', label: 'Capacity Planning', description: 'Capacity and resource planning' },
+      { route: '/inventory-optimization', label: 'Inventory Optimization', description: 'Inventory and materials management' },
+      { route: '/reports', label: 'Reports', description: 'Reports and documentation' },
+      { route: '/smart-kpi-tracking', label: 'SMART KPI Tracking', description: 'KPI tracking and performance monitoring' },
+      { route: '/visual-factory', label: 'Visual Factory', description: 'Visual factory displays and management' },
+      { route: '/mrp', label: 'Material Requirements Planning', description: 'Material Requirements Planning' },
+      { route: '/demand-planning', label: 'Demand Planning', description: 'Demand analysis and forecasting' },
+      { route: '/business-intelligence', label: 'Business Intelligence', description: 'Business intelligence and insights' },
+      { route: '/financial-management', label: 'Financial Management', description: 'Financial management and reporting' },
+      { route: '/master-data', label: 'Master Data Editor', description: 'Master data management and editing' },
+      { route: '/data-schema', label: 'Data Schema View', description: 'Database schema visualization' },
+      { route: '/maintenance', label: 'Maintenance', description: 'Equipment maintenance management' },
+      { route: '/optimization-studio', label: 'Optimization Studio', description: 'Production optimization tools' },
+      { route: '/design-studio', label: 'UI Design Studio', description: 'User interface design and customization' },
+      { route: '/quality-control', label: 'Quality Control', description: 'Quality control and inspection' },
+      { route: '/onboarding', label: 'Getting Started', description: 'System onboarding and getting started guide' },
+      { route: '/training', label: 'Training', description: 'Training materials and resources' }
+    ];
+    
+    res.json(routes);
+  }));
+
   const httpServer = createServer(app);
   // Add global error handling middleware at the end
   // TODO: Fix errorMiddleware import issue

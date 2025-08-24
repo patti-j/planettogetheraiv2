@@ -164,30 +164,34 @@ export class MaxAIService {
     return insights;
   }
 
-  // Get available application routes and features for AI to understand
-  private getApplicationRoutes(): { route: string; keywords: string[]; description: string }[] {
+  // Get all application routes from the centralized navigation config
+  private async getApplicationRoutes(): Promise<{ route: string; label: string; description: string }[]> {
+    try {
+      // Fetch navigation data from the frontend endpoint that serves navigation config
+      const response = await fetch(`http://localhost:5000/api/navigation/routes`);
+      if (response.ok) {
+        const routes = await response.json();
+        return routes;
+      }
+    } catch (error) {
+      console.log('Using fallback navigation routes:', error);
+    }
+    
+    // Fallback to some essential routes if API fails
     return [
-      { route: '/', keywords: ['home', 'dashboard', 'main'], description: 'Main dashboard and homepage' },
-      { route: '/control-tower', keywords: ['control tower', 'global control tower', 'enterprise map', 'overview', 'command center'], description: 'Global Control Tower for enterprise-wide monitoring and insights' },
-      { route: '/production-schedule', keywords: ['production schedule', 'detailed schedule', 'gantt', 'timeline', 'operations schedule'], description: 'Detailed production scheduling with Gantt chart and operations timeline' },
-      { route: '/master-production-schedule', keywords: ['master production schedule', 'mps', 'master schedule', 'production planning', 'demand planning'], description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
-      { route: '/shop-floor', keywords: ['shop floor', 'production floor', 'manufacturing', 'real-time'], description: 'Shop floor monitoring and real-time production' },
-      { route: '/analytics', keywords: ['analytics', 'reports', 'metrics', 'kpi', 'performance'], description: 'Analytics and performance metrics' },
-      { route: '/alerts', keywords: ['alerts', 'notifications', 'issues', 'problems', 'warnings'], description: 'System alerts and notifications' },
-      { route: '/resources', keywords: ['resources', 'machines', 'equipment', 'assets'], description: 'Resource and equipment management' },
-      { route: '/operations', keywords: ['operations', 'tasks', 'activities', 'work'], description: 'Operations and work management' },
-      { route: '/capacity-planning', keywords: ['capacity', 'planning', 'capacity plan', 'resource planning'], description: 'Capacity and resource planning' },
-      { route: '/inventory-optimization', keywords: ['inventory', 'stock', 'materials', 'supplies'], description: 'Inventory and materials management' },
-      { route: '/reports', keywords: ['reports', 'reporting', 'documents', 'analysis'], description: 'Reports and documentation' },
-      { route: '/smart-kpi-tracking', keywords: ['kpi', 'metrics', 'tracking', 'performance indicators'], description: 'KPI tracking and performance monitoring' },
-      { route: '/quality-control', keywords: ['quality', 'control', 'inspection', 'testing'], description: 'Quality control and inspection' },
-      { route: '/visual-factory', keywords: ['visual factory', 'displays', 'screens', 'visual management'], description: 'Visual factory displays and management' }
+      { route: '/', label: 'Home', description: 'Main dashboard and homepage' },
+      { route: '/control-tower', label: 'Global Control Tower', description: 'Enterprise-wide monitoring and insights' },
+      { route: '/production-schedule', label: 'Production Schedule', description: 'Production scheduling with Gantt chart' },
+      { route: '/master-production-schedule', label: 'Master Production Schedule', description: 'Master Production Schedule (MPS) planning' },
+      { route: '/shop-floor', label: 'Shop Floor', description: 'Shop floor monitoring and real-time production' },
+      { route: '/analytics', label: 'Analytics', description: 'Analytics and performance metrics' },
+      { route: '/alerts', label: 'Alerts', description: 'System alerts and notifications' },
     ];
   }
 
   // Use AI to intelligently determine user intent and target route
   private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number }> {
-    const routes = this.getApplicationRoutes();
+    const routes = await this.getApplicationRoutes();
     
     // Quick check for obvious data requests
     const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is'];
@@ -201,7 +205,7 @@ export class MaxAIService {
     
     if (hasNavigationIntent) {
       // Use AI to find the best matching route
-      const routeDescriptions = routes.map(r => `${r.route}: ${r.description} (keywords: ${r.keywords.join(', ')})`).join('\n');
+      const routeDescriptions = routes.map(r => `${r.route}: ${r.description} (${r.label})`).join('\n');
       
       try {
         const response = await openai.chat.completions.create({
