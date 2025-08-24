@@ -168,6 +168,7 @@ export class MaxAIService {
   private getApplicationRoutes(): { route: string; keywords: string[]; description: string }[] {
     return [
       { route: '/', keywords: ['home', 'dashboard', 'main'], description: 'Main dashboard and homepage' },
+      { route: '/control-tower', keywords: ['control tower', 'global control tower', 'enterprise map', 'overview', 'command center'], description: 'Global Control Tower for enterprise-wide monitoring and insights' },
       { route: '/production-schedule', keywords: ['production schedule', 'detailed schedule', 'gantt', 'timeline', 'operations schedule'], description: 'Detailed production scheduling with Gantt chart and operations timeline' },
       { route: '/master-production-schedule', keywords: ['master production schedule', 'mps', 'master schedule', 'production planning', 'demand planning'], description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
       { route: '/shop-floor', keywords: ['shop floor', 'production floor', 'manufacturing', 'real-time'], description: 'Shop floor monitoring and real-time production' },
