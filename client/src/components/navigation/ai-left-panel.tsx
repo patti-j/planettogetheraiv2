@@ -526,7 +526,7 @@ export function AILeftPanel() {
               </ScrollArea>
               
               {/* Chat Input */}
-              <div className="border-t pt-4 pb-6">
+              <div className="border-t pt-4 pb-2">
                 {/* Thinking indicator in input area */}
                 {showMaxThinking && (
                   <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
@@ -554,7 +554,7 @@ export function AILeftPanel() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-xs text-muted-foreground mt-1.5 mb-1">
                   Max can help with scheduling, optimization, and insights
                 </p>
               </div>
