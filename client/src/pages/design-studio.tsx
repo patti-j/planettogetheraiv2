@@ -1595,7 +1595,7 @@ export default function UIDesignStudio() {
                               description: item.description,
                               layout: item.configuration?.layout || "grid",
                               gridColumns: item.configuration?.gridColumns || 12,
-                              widgets: item.configuration?.customWidgets || item.configuration?.widgets || [],
+                              widgets: item.configuration?.standardWidgets || item.configuration?.customWidgets || item.configuration?.widgets || [],
                               targetPlatform: item.targetPlatform
                             });
                             setShowVisualDesigner(true);
@@ -1686,7 +1686,7 @@ export default function UIDesignStudio() {
                                       description: item.description,
                                       layout: item.configuration?.layout || "grid",
                                       gridColumns: item.configuration?.gridColumns || 12,
-                                      widgets: item.configuration?.customWidgets || item.configuration?.widgets || [],
+                                      widgets: item.configuration?.standardWidgets || item.configuration?.customWidgets || item.configuration?.widgets || [],
                                       targetPlatform: item.targetPlatform
                                     });
                                     setShowVisualDesigner(true);
