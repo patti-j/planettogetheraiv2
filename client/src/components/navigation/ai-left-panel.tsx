@@ -525,7 +525,9 @@ export function AILeftPanel() {
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
               <ScrollArea className="flex-1 pr-2">
                 <div className="space-y-4 pb-4">
-                  {chatMessages.map((message) => (
+                  {chatMessages
+                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                    .map((message) => (
                     <div
                       key={message.id}
                       className={cn(
