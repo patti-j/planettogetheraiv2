@@ -647,6 +647,7 @@ Shift template format:
   "shiftType": "regular|overtime|split|rotating",
   "startTime": "HH:MM",
   "endTime": "HH:MM", 
+  "duration": number (minutes between start and end time),
   "daysOfWeek": [0-6 array],
   "minimumStaffing": number,
   "maximumStaffing": number,
@@ -664,7 +665,9 @@ Plant ID: ${request.plantId || 'All plants'}
 Available Resources: ${request.resources.length} resources
 Existing Shifts: ${request.existingShifts.length} templates
 
-Please create optimized shift templates that meet these requirements while considering resource availability and existing shift patterns.`;
+Please create optimized shift templates that meet these requirements while considering resource availability and existing shift patterns.
+
+IMPORTANT: Calculate the duration field in minutes between start and end times. For example, if startTime is "06:00" and endTime is "14:00", the duration should be 480 minutes (8 hours).`;
     } else if (request.type === 'adjust') {
       userPrompt = `Adjust an existing shift template:
 Shift ID: ${request.shiftId}
