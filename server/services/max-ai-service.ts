@@ -482,7 +482,8 @@ Would you like me to analyze any specific area in detail?`;
       { type: 'resources', endpoint: '/api/resources', description: 'Manufacturing resources, machines, equipment' },
       { type: 'operations', endpoint: '/api/operations', description: 'Production operations and tasks' },
       { type: 'jobs', endpoint: '/api/jobs', description: 'Production jobs and orders' },
-      { type: 'alerts', endpoint: '/api/alerts', description: 'System alerts and notifications' }
+      { type: 'alerts', endpoint: '/api/alerts', description: 'System alerts and notifications' },
+      { type: 'sales-orders', endpoint: '/api/sales-orders', description: 'Sales orders, customer orders, order management' }
     ];
     
     try {
@@ -501,6 +502,7 @@ Rules:
 - If the user is asking about a specific data type, respond with just the type name (e.g., "resources")
 - If the query is about something not in the list or is conversational, respond with "NONE"
 - Be flexible - users might say "machines" and mean "resources", or "tasks" and mean "operations"
+- Users might say "orders" and mean "sales-orders", or "customer orders" and mean "sales-orders"
 - Focus on the main subject of their question`
           },
           {
