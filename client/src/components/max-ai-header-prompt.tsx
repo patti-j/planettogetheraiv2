@@ -143,9 +143,6 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   };
 
   const handleInputClick = () => {
-    console.log('Input clicked, setting showDropdown to true');
-    console.log('Current promptHistory:', promptHistory);
-    console.log('Current filteredPrompts:', filteredPrompts);
     setShowDropdown(true);
   };
 

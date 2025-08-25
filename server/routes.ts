@@ -23586,8 +23586,8 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
         requiredStartQty: schema.ptJobOperations.requiredStartQty,
         requiredFinishQty: schema.ptJobOperations.requiredFinishQty,
         minutesPerCycle: schema.ptJobOperations.minutesPerCycle,
-        scheduledStart: schema.ptJobOperations.scheduledStart,
-        scheduledEnd: schema.ptJobOperations.scheduledEnd,
+        postProcessingHours: schema.ptJobOperations.postProcessingHours,
+        qtyPerCycle: schema.ptJobOperations.qtyPerCycle,
         publishDate: schema.ptJobOperations.publishDate,
       }).from(schema.ptJobOperations)
         .where(eq(schema.ptJobOperations.manufacturingOrderId, manufacturingOrderId))
