@@ -57,7 +57,8 @@ interface ResourceTimeBlock {
 ### **Performance Standards**
 - Process 1000+ operations within 30 seconds
 - Support concurrent scheduling of multiple production orders
-- Maintain schedule feasibility at all times (no impossible schedules)
+<!-- - Maintain schedule feasibility at all times (no impossible schedules)
+-->!
 
 ---
 

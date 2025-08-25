@@ -163,7 +163,7 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/optimization-studio">
-                <ProtectedRoute feature="scheduling" action="view">
+                <ProtectedRoute feature="optimization-studio" action="view">
                   <OptimizationStudio />
                 </ProtectedRoute>
               </Route>
