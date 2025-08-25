@@ -157,10 +157,12 @@ export function AILeftPanel() {
       // Removed frontend navigation pattern matching that was interfering with Max AI
       
       // Otherwise, send to backend for AI processing
+      const authToken = localStorage.getItem('authToken');
       const response = await fetch('/api/max-ai/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
         body: JSON.stringify({
           message,
