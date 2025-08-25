@@ -2411,16 +2411,20 @@ Rules:
   }));
 
   // Keep old /api/jobs endpoint for backward compatibility
-  app.get("/api/jobs", createSafeHandler('Get Jobs (Legacy)')(async (req, res) => {
-    const productionOrders = await storage.getProductionOrders();
-    if (!productionOrders) {
-      throw new DatabaseError('Failed to retrieve production orders from database', {
-        operation: 'Get Jobs (Legacy)',
+  app.get("/api/jobs", createSafeHandler('Get PT Jobs')(async (req, res) => {
+    try {
+      console.log('getPtJobs: Fetching from ptJobs table');
+      const jobs = await db.select().from(schema.ptJobs).orderBy(schema.ptJobs.orderNumber);
+      console.log(`PT Jobs count: ${jobs.length}`);
+      res.json(jobs);
+    } catch (error) {
+      console.error('Error fetching PT jobs:', error);
+      throw new DatabaseError('Failed to retrieve PT jobs from database', {
+        operation: 'Get PT Jobs',
         endpoint: '/api/jobs',
         userId: req.user?.id
       });
     }
-    res.json(productionOrders);
   }));
 
   app.get("/api/production-orders/:id", async (req, res) => {
@@ -23425,7 +23429,15 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     try {
       const { search, searchType } = req.query;
       
-      if (!search || typeof search !== 'string' || search.length < 2) {
+      // If no search parameters, return all sales orders for master data management
+      if (!search) {
+        console.log('getSalesOrders: Fetching all from salesOrders table');
+        const salesOrders = await db.select().from(schema.salesOrders).orderBy(schema.salesOrders.orderNumber);
+        console.log(`Sales Orders count: ${salesOrders.length}`);
+        return res.json(salesOrders);
+      }
+      
+      if (typeof search !== 'string' || search.length < 2) {
         return res.json([]);
       }
 
@@ -23450,6 +23462,19 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     } catch (error) {
       console.error("Error fetching sales orders:", error);
       res.status(500).json({ error: "Failed to fetch sales orders" });
+    }
+  });
+
+  // Job Templates API - using PT Manufacturing Orders as templates
+  app.get("/api/job-templates", async (req, res) => {
+    try {
+      console.log('getJobTemplates: Fetching from ptManufacturingOrders table');
+      const templates = await db.select().from(schema.ptManufacturingOrders).orderBy(schema.ptManufacturingOrders.orderNumber);
+      console.log(`Job Templates count: ${templates.length}`);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching job templates:", error);
+      res.status(500).json({ error: "Failed to fetch job templates" });
     }
   });
 
