@@ -538,9 +538,255 @@ Respond with JSON:
     }
   }
 
+  // Auto-discovery mechanism for new data types
+  private async discoverAdditionalDataTypes(): Promise<Record<string, {method: string, description: string, keywords: string[]}>> {
+    const { storage } = await import('../storage');
+    const discoveredTypes: Record<string, {method: string, description: string, keywords: string[]}> = {};
+    
+    // Get all methods from storage that start with 'get' and return Promise<array>
+    const storageMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(storage))
+      .filter(method => method.startsWith('get') && typeof (storage as any)[method] === 'function');
+    
+    for (const method of storageMethods) {
+      // Convert method name to endpoint format (e.g., 'getJobTemplates' -> 'job-templates')
+      const dataType = method
+        .replace(/^get/, '')  // Remove 'get' prefix
+        .replace(/([A-Z])/g, '-$1')  // Add dash before capital letters
+        .toLowerCase()  // Convert to lowercase
+        .replace(/^-/, '');  // Remove leading dash
+      
+      // Skip if already in our main mapping
+      const mainMapping = this.getStaticDataTypeMapping();
+      if (mainMapping[dataType]) {
+        continue;
+      }
+      
+      // Create automatic description based on method name
+      const cleanName = method.replace(/^get/, '').replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+      discoveredTypes[dataType] = {
+        method,
+        description: `${cleanName} data and information`,
+        keywords: [cleanName, ...cleanName.split(' ')]
+      };
+    }
+    
+    return discoveredTypes;
+  }
+
+  // Comprehensive data type mapping - automatically includes ALL available data types  
+  private getStaticDataTypeMapping(): Record<string, {method: string, description: string, keywords: string[]}> {
+    return {
+      'plants': {
+        method: 'getPlants',
+        description: 'manufacturing facilities, locations, plant information',
+        keywords: ['plant', 'facility', 'location', 'factory', 'site']
+      },
+      'departments': {
+        method: 'getDepartments', 
+        description: 'organizational departments, business units',
+        keywords: ['department', 'division', 'unit', 'organization']
+      },
+      'capabilities': {
+        method: 'getCapabilities',
+        description: 'resource capabilities, skills, functions',
+        keywords: ['capability', 'skill', 'function', 'ability']
+      },
+      'resources': {
+        method: 'getResources',
+        description: 'machines, equipment, workstations, assets',
+        keywords: ['resource', 'machine', 'equipment', 'asset', 'workstation']
+      },
+      'jobs': {
+        method: 'getJobs',
+        description: 'production jobs, work orders, manufacturing orders',
+        keywords: ['job', 'order', 'work order', 'production order']
+      },
+      'production-orders': {
+        method: 'getProductionOrders',
+        description: 'production orders, manufacturing orders',
+        keywords: ['production order', 'manufacturing order', 'order']
+      },
+      'pt-jobs': {
+        method: 'getPtJobs',
+        description: 'PlanetTogether jobs, PT job data',
+        keywords: ['pt job', 'planettogether job']
+      },
+      'pt-manufacturing-orders': {
+        method: 'getPtManufacturingOrders',
+        description: 'PlanetTogether manufacturing orders',
+        keywords: ['pt manufacturing order', 'pt order']
+      },
+      'pt-operations': {
+        method: 'getPtJobOperations',
+        description: 'PlanetTogether operations, PT operations',
+        keywords: ['pt operation', 'planettogether operation']
+      },
+      'pt-resources': {
+        method: 'getPtResources',
+        description: 'PlanetTogether resources, PT resources',
+        keywords: ['pt resource', 'planettogether resource']
+      },
+      'planned-orders': {
+        method: 'getPlannedOrders',
+        description: 'planned production orders, future orders',
+        keywords: ['planned order', 'future order', 'planned production']
+      },
+      'operations': {
+        method: 'getOperations',
+        description: 'manufacturing operations, tasks, processes',
+        keywords: ['operation', 'task', 'process', 'activity']
+      },
+      'dependencies': {
+        method: 'getDependencies',
+        description: 'operation dependencies, task relationships',
+        keywords: ['dependency', 'relationship', 'prerequisite']
+      },
+      'resource-requirements': {
+        method: 'getResourceRequirements',
+        description: 'resource requirements, capacity needs',
+        keywords: ['resource requirement', 'capacity requirement', 'resource need']
+      },
+      'resource-views': {
+        method: 'getResourceViews',
+        description: 'resource view configurations, display settings',
+        keywords: ['resource view', 'view configuration']
+      },
+      'custom-text-labels': {
+        method: 'getCustomTextLabels',
+        description: 'custom text labels, UI customizations',
+        keywords: ['label', 'text label', 'custom label']
+      },
+      'kanban-configs': {
+        method: 'getKanbanConfigs',
+        description: 'kanban board configurations, workflow settings',
+        keywords: ['kanban', 'board configuration', 'workflow']
+      },
+      'report-configs': {
+        method: 'getReportConfigs',
+        description: 'report configurations, reporting settings',
+        keywords: ['report', 'report config', 'reporting']
+      },
+      'dashboard-configs': {
+        method: 'getDashboardConfigs',
+        description: 'dashboard configurations, display settings',
+        keywords: ['dashboard', 'dashboard config']
+      },
+      'schedule-scenarios': {
+        method: 'getScheduleScenarios',
+        description: 'scheduling scenarios, what-if analysis',
+        keywords: ['schedule scenario', 'scenario', 'what-if']
+      },
+      'system-users': {
+        method: 'getSystemUsers',
+        description: 'system users, user accounts',
+        keywords: ['system user', 'user account', 'account']
+      },
+      'system-environments': {
+        method: 'getSystemEnvironments',
+        description: 'system environments, deployment environments',
+        keywords: ['environment', 'system environment']
+      },
+      'capacity-scenarios': {
+        method: 'getCapacityPlanningScenarios',
+        description: 'capacity planning scenarios, capacity analysis',
+        keywords: ['capacity scenario', 'capacity planning', 'capacity analysis']
+      },
+      'business-goals': {
+        method: 'getBusinessGoals',
+        description: 'business goals, objectives, targets',
+        keywords: ['goal', 'business goal', 'objective', 'target']
+      },
+      'disruptions': {
+        method: 'getDisruptions',
+        description: 'production disruptions, incidents, issues',
+        keywords: ['disruption', 'incident', 'issue', 'problem']
+      },
+      'alerts': {
+        method: 'getAlerts',
+        description: 'system alerts, notifications, warnings',
+        keywords: ['alert', 'notification', 'warning', 'alarm']
+      },
+      'customers': {
+        method: 'getCustomers',
+        description: 'customer information, client data',
+        keywords: ['customer', 'client', 'buyer']
+      },
+      'vendors': {
+        method: 'getVendors',
+        description: 'vendor information, supplier data',
+        keywords: ['vendor', 'supplier', 'partner']
+      },
+      'sales-orders': {
+        method: 'getSalesOrders',
+        description: 'sales orders, customer orders',
+        keywords: ['sales order', 'customer order']
+      },
+      'users': {
+        method: 'getUsers',
+        description: 'application users, personnel',
+        keywords: ['user', 'person', 'personnel', 'employee']
+      },
+      'roles': {
+        method: 'getRoles',
+        description: 'user roles, permissions, access levels',
+        keywords: ['role', 'permission', 'access level']
+      },
+      'recipes': {
+        method: 'getRecipes',
+        description: 'production recipes, formulations, processes',
+        keywords: ['recipe', 'formulation', 'formula', 'process']
+      },
+      'stock-items': {
+        method: 'getStockItems',
+        description: 'inventory items, stock, materials',
+        keywords: ['stock', 'inventory', 'material', 'item']
+      },
+      'stock-balances': {
+        method: 'getStockBalances',
+        description: 'current stock levels, inventory balances',
+        keywords: ['stock balance', 'inventory level', 'stock level']
+      },
+      'demand-forecasts': {
+        method: 'getDemandForecasts',
+        description: 'demand forecasts, sales predictions',
+        keywords: ['demand forecast', 'forecast', 'prediction']
+      }
+    };
+  }
+
+  // Combined data mapping - includes both static and dynamically discovered types
+  private async getDataTypeMapping(): Promise<Record<string, {method: string, description: string, keywords: string[]}>> {
+    const staticMapping = this.getStaticDataTypeMapping();
+    const discoveredMapping = await this.discoverAdditionalDataTypes();
+    
+    // Log discovered types for visibility
+    const discoveredCount = Object.keys(discoveredMapping).length;
+    const staticCount = Object.keys(staticMapping).length;
+    const totalCount = staticCount + discoveredCount;
+    
+    console.log(`[Max AI] Data Access Summary:
+  ✅ Static data types: ${staticCount}
+  🔍 Auto-discovered types: ${discoveredCount}
+  📊 Total data types available: ${totalCount}`);
+    
+    if (discoveredCount > 0) {
+      console.log(`[Max AI] Auto-discovered data types:`, Object.keys(discoveredMapping).map(k => `/api/${k}`));
+    }
+    
+    // Merge static and discovered mappings (static takes priority)
+    return { ...discoveredMapping, ...staticMapping };
+  }
+
   private async handleDataFetchIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
     try {
-      // Let AI determine what data to fetch based on the query
+      const dataMapping = await this.getDataTypeMapping();
+      
+      // Create dynamic endpoint list for AI
+      const availableEndpoints = Object.entries(dataMapping).map(([key, value]) => 
+        `- /api/${key} - ${value.description}`
+      ).join('\n');
+
+      // Use AI to determine the most relevant data endpoint
       const dataResponse = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
@@ -549,16 +795,10 @@ Respond with JSON:
             content: `You are a data fetching assistant. Based on the user's query, determine what API endpoint to call.
 
 Available endpoints:
-- /api/jobs - production jobs and orders
-- /api/operations - manufacturing operations and tasks
-- /api/resources - machines, equipment, workstations
-- /api/sales-orders - customer orders and sales data
-- /api/alerts - system notifications and issues
-- /api/customers - customer information
-- /api/vendors - supplier data
-- /api/plants - facility information
+${availableEndpoints}
 
-Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.`
+Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.
+Focus on the most relevant data type that would answer the user's question.`
           },
           {
             role: 'user',
@@ -575,39 +815,23 @@ Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific
         // Import storage to access data directly instead of HTTP requests
         const { storage } = await import('../storage');
         
+        // Extract data type from endpoint
+        const dataType = endpoint.replace('/api/', '');
+        const mapping = dataMapping[dataType];
+        
         let data: any[] = [];
         
-        // Handle different endpoints
-        switch (endpoint) {
-          case '/api/plants':
-            data = await storage.getPlants();
-            break;
-          case '/api/jobs':
-            data = await storage.getProductionOrders();
-            break;
-          case '/api/operations':
-            data = await storage.getOperations();
-            break;
-          case '/api/resources':
-            data = await storage.getResources();
-            break;
-          case '/api/sales-orders':
-            data = await storage.getSalesOrders();
-            break;
-          case '/api/alerts':
-            data = await storage.getAlerts();
-            break;
-          case '/api/customers':
-            data = await storage.getCustomers();
-            break;
-          case '/api/vendors':
-            data = await storage.getVendors();
-            break;
-          case '/api/departments':
-            data = await storage.getDepartments();
-            break;
-          default:
+        if (mapping && typeof (storage as any)[mapping.method] === 'function') {
+          // Dynamically call the appropriate storage method
+          try {
+            data = await (storage as any)[mapping.method]();
+          } catch (error) {
+            console.error(`Error calling ${mapping.method}:`, error);
             data = [];
+          }
+        } else {
+          console.warn(`No mapping found for endpoint: ${endpoint}`);
+          data = [];
         }
         
         // Let AI analyze and format the response naturally
