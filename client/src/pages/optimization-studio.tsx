@@ -160,6 +160,10 @@ export default function OptimizationStudio() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<OptimizationAlgorithm | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showAICreateDialog, setShowAICreateDialog] = useState(false);
+  const [showAIModifyDialog, setShowAIModifyDialog] = useState(false);
+  const [algorithmToModify, setAlgorithmToModify] = useState<OptimizationAlgorithm | null>(null);
+  const [aiModifyPrompt, setAiModifyPrompt] = useState("");
+  const [aiModifyMessages, setAiModifyMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiSessionMessages, setAiSessionMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [aiSessionActive, setAiSessionActive] = useState(false);
@@ -395,6 +399,57 @@ export default function OptimizationStudio() {
       toast({ 
         title: errorMessage, 
         description: errorDetails, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // AI algorithm modification mutation
+  const aiModifyAlgorithmMutation = useMutation({
+    mutationFn: async ({ algorithmId, modificationRequest }: { algorithmId: number; modificationRequest: string }) => {
+      const response = await fetch('/api/algorithm-modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          algorithmId,
+          modificationRequest,
+          messages: aiModifyMessages
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to modify algorithm');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAiModifyMessages(prev => [...prev, 
+        { role: 'user', content: aiModifyPrompt },
+        { role: 'assistant', content: data.response }
+      ]);
+      
+      if (data.modifiedAlgorithm) {
+        // Update the algorithm in the cache
+        queryClient.setQueryData(['/api/optimization/algorithms'], (oldData: OptimizationAlgorithm[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map(alg => 
+            alg.id === data.modifiedAlgorithm.id ? { ...alg, ...data.modifiedAlgorithm } : alg
+          );
+        });
+        
+        setAlgorithmToModify(data.modifiedAlgorithm);
+        toast({ 
+          title: "Algorithm modified successfully", 
+          description: "The algorithm has been updated with your changes." 
+        });
+      }
+      
+      setAiModifyPrompt("");
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error modifying algorithm", 
+        description: error.message, 
         variant: "destructive" 
       });
     }
@@ -2745,9 +2800,21 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  Edit Algorithm
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    setAlgorithmToModify(selectedAlgorithm);
+                    setAiModifyMessages([{
+                      role: 'assistant',
+                      content: `I'll help you modify the "${selectedAlgorithm?.displayName}" algorithm. You can describe what changes you'd like to make, such as:\n\n• Adjust optimization parameters\n• Change algorithm logic\n• Modify constraints\n• Update performance settings\n• Add new features\n\nWhat would you like to modify?`
+                    }]);
+                    setShowAIModifyDialog(true);
+                  }}
+                >
+                  <Bot className="w-4 h-4 mr-2" />
+                  AI Modify
                 </Button>
                 <Button variant="outline" size="sm" className="w-full sm:w-auto">
                   <Copy className="w-4 h-4 mr-2" />
@@ -2757,6 +2824,150 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   <TestTube className="w-4 h-4 mr-2" />
                   Test Algorithm
                 </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* AI Algorithm Modification Dialog */}
+      {showAIModifyDialog && algorithmToModify && (
+        <Dialog open={showAIModifyDialog} onOpenChange={(open) => {
+          setShowAIModifyDialog(open);
+          if (!open) {
+            setAiModifyMessages([]);
+            setAiModifyPrompt("");
+            setAlgorithmToModify(null);
+          }
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5 text-purple-600" />
+                AI Modify: {algorithmToModify.displayName}
+              </DialogTitle>
+              <DialogDescription>
+                Use AI to modify the algorithm by describing your desired changes in natural language.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Algorithm Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> {algorithmToModify.displayName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Category:</span> {algorithmToModify.category}
+                  </div>
+                  <div>
+                    <span className="font-medium">Type:</span> {algorithmToModify.type}
+                  </div>
+                  <div>
+                    <span className="font-medium">Version:</span> {algorithmToModify.version}
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <span className="font-medium">Description:</span> {algorithmToModify.description}
+                </div>
+              </div>
+
+              {/* Current Algorithm Code */}
+              {algorithmToModify.algorithmCode && (
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Code className="w-4 h-4" />
+                    Current Algorithm Code
+                  </h4>
+                  <div className="bg-gray-100 p-4 rounded-lg overflow-x-auto max-h-40">
+                    <pre className="text-xs"><code>{algorithmToModify.algorithmCode}</code></pre>
+                  </div>
+                </div>
+              )}
+
+              {/* AI Conversation */}
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  AI Conversation
+                </h4>
+                <div className="bg-gray-50 border rounded-lg p-4 max-h-60 overflow-y-auto space-y-3">
+                  {aiModifyMessages.map((message, index) => (
+                    <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
+                        message.role === 'user' 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-white border border-gray-200'
+                      }`}>
+                        <div className="whitespace-pre-wrap">{message.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Input */}
+              <div className="space-y-2">
+                <Label htmlFor="ai-modify-prompt">Describe your modification request:</Label>
+                <div className="flex gap-2">
+                  <Textarea
+                    id="ai-modify-prompt"
+                    placeholder="Example: Increase the optimization speed by 20% and add a constraint for minimum resource utilization of 80%..."
+                    value={aiModifyPrompt}
+                    onChange={(e) => setAiModifyPrompt(e.target.value)}
+                    className="flex-1"
+                    rows={3}
+                  />
+                  <Button
+                    onClick={() => {
+                      if (aiModifyPrompt.trim()) {
+                        aiModifyAlgorithmMutation.mutate({
+                          algorithmId: algorithmToModify.id,
+                          modificationRequest: aiModifyPrompt
+                        });
+                      }
+                    }}
+                    disabled={!aiModifyPrompt.trim() || aiModifyAlgorithmMutation.isPending}
+                    className="self-end"
+                  >
+                    {aiModifyAlgorithmMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Modifying...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Modify
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Suggestions */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Quick suggestions:</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[
+                    "Optimize for speed over accuracy",
+                    "Add constraint validation",
+                    "Improve error handling",
+                    "Add logging and monitoring",
+                    "Increase iteration limit by 50%"
+                  ].map((suggestion) => (
+                    <Button
+                      key={suggestion}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setAiModifyPrompt(suggestion)}
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           </DialogContent>

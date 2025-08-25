@@ -4624,6 +4624,147 @@ Return ONLY a valid JSON object with this exact structure:
     });
   });
   
+  // AI Algorithm Modification Endpoint
+  app.post('/api/algorithm-modify', requireAuth, async (req, res) => {
+    try {
+      const { algorithmId, modificationRequest, messages = [] } = req.body;
+
+      if (!algorithmId || !modificationRequest) {
+        return res.status(400).json({ error: "Algorithm ID and modification request are required" });
+      }
+
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+
+      // Fetch the existing algorithm
+      const existingAlgorithm = await db.select().from(schema.optimizationAlgorithms)
+        .where(eq(schema.optimizationAlgorithms.id, algorithmId))
+        .limit(1);
+
+      if (existingAlgorithm.length === 0) {
+        return res.status(404).json({ error: "Algorithm not found" });
+      }
+
+      const algorithm = existingAlgorithm[0];
+
+      // Import OpenAI dynamically
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const systemPrompt = `You are an expert algorithm engineer specializing in manufacturing optimization algorithms. 
+
+You will be modifying an existing algorithm based on user requests. Respond with both an explanation of the changes and the modified algorithm.
+
+Current Algorithm Details:
+- Name: ${algorithm.displayName}
+- Category: ${algorithm.category}
+- Type: ${algorithm.type}
+- Description: ${algorithm.description}
+- Current Code: ${algorithm.algorithmCode || 'No code available'}
+- Current Configuration: ${JSON.stringify(algorithm.configuration, null, 2)}
+
+Instructions:
+1. Analyze the modification request carefully
+2. Explain what changes you're making and why
+3. Provide the updated algorithm code (if applicable)
+4. Update configuration parameters as needed
+5. Ensure the modifications are practical and safe for production use
+6. Maintain the algorithm's core functionality while implementing the requested changes
+
+Response Format:
+1. Provide a conversational explanation of the changes
+2. If code modifications are needed, include the updated algorithm code
+3. If configuration changes are needed, include the updated configuration
+
+Focus on:
+- Performance optimization
+- Safety and reliability
+- Maintainability
+- Manufacturing domain expertise`;
+
+      const conversationHistory = messages.map((msg: any) => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...conversationHistory,
+          { role: "user", content: modificationRequest }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const aiResponse = response.choices[0].message.content;
+
+      // Try to extract code and configuration from the response
+      let updatedCode = algorithm.algorithmCode;
+      let updatedConfiguration = algorithm.configuration;
+      let updatedDescription = algorithm.description;
+
+      // Simple extraction - look for code blocks
+      const codeMatch = aiResponse?.match(/```(?:javascript|typescript|js|ts)?\n([\s\S]*?)\n```/);
+      if (codeMatch) {
+        updatedCode = codeMatch[1];
+      }
+
+      // Look for configuration updates (JSON blocks)
+      const configMatch = aiResponse?.match(/```json\n([\s\S]*?)\n```/);
+      if (configMatch) {
+        try {
+          updatedConfiguration = JSON.parse(configMatch[1]);
+        } catch (e) {
+          console.warn('Could not parse configuration JSON from AI response');
+        }
+      }
+
+      // Update the algorithm in the database
+      const [updatedAlgorithm] = await db.update(schema.optimizationAlgorithms)
+        .set({
+          algorithmCode: updatedCode,
+          configuration: updatedConfiguration,
+          version: `${algorithm.version}.modified`,
+          updatedBy: req.user?.id || 1,
+          updatedAt: new Date()
+        })
+        .where(eq(schema.optimizationAlgorithms.id, algorithmId))
+        .returning();
+
+      res.json({
+        success: true,
+        response: aiResponse,
+        modifiedAlgorithm: updatedAlgorithm,
+        changes: {
+          codeModified: updatedCode !== algorithm.algorithmCode,
+          configurationModified: JSON.stringify(updatedConfiguration) !== JSON.stringify(algorithm.configuration)
+        }
+      });
+
+    } catch (error: any) {
+      console.error('AI algorithm modification error:', error);
+      
+      const isQuotaError = error.message?.includes('quota') || 
+                          error.code === 'insufficient_quota' ||
+                          error.status === 429;
+      
+      if (isQuotaError) {
+        return res.status(429).json({ 
+          error: "OpenAI quota exceeded",
+          details: "Please check your OpenAI account quota and billing status."
+        });
+      }
+      
+      res.status(500).json({ 
+        error: "Failed to modify algorithm with AI",
+        details: error.message 
+      });
+    }
+  });
+
   // NEW WORKING ENDPOINT - Using different path to avoid conflicts
   app.post('/api/algorithm-collaborate', requireAuth, function(req, res) {
     console.log('NEW ALGORITHM COLLABORATE ENDPOINT HIT');
