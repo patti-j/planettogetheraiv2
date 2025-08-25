@@ -24402,11 +24402,12 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
             const createPromises = suggestions.suggestions?.map(async (suggestion: any) => {
               if (suggestion.operation === 'create' && suggestion.data) {
                 try {
-                  // Use the existing master data creation logic
+                  // Use proper Drizzle insert syntax
                   const tableSchema = masterDataTables[entityType as keyof typeof masterDataTables];
-                  if (tableSchema?.create) {
-                    await tableSchema.create(suggestion.data);
+                  if (tableSchema) {
+                    await db.insert(tableSchema).values(suggestion.data);
                     savedCount++;
+                    console.log(`[AI Bulk Generate] Successfully saved ${entityType} record: ${suggestion.data.name || suggestion.data.orderNumber || suggestion.data.id || 'unnamed'}`);
                   }
                 } catch (error) {
                   console.error(`[AI Bulk Generate] Failed to save ${entityType} record:`, error.message);
