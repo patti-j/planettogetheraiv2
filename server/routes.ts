@@ -24112,10 +24112,10 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     recipeOperations: schema.recipeOperations,
     recipePhases: schema.recipePhases,
     recipeFormulas: schema.recipeFormulas,
-    productionVersions: schema.productionVersions,
-    constraints: schema.constraints,
-    employees: schema.employees,
-    sites: schema.sites
+    // Add missing entity types for bulk generation
+    jobs: schema.productionOrders,
+    'sales-orders': schema.salesOrders,
+    'job-templates': schema.recipes, // Using recipes as job templates for now
   };
 
   // AI-Assisted Master Data Management endpoint (specific route before generic table routes)
@@ -24232,7 +24232,7 @@ Generate a complete ${targetType} configuration that matches the user's requirem
       
       console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
       
-      const entityTypes = ['items', 'resources', 'capabilities', 'sales-orders', 'jobs', 'job-templates', 'plants', 'customers', 'vendors'];
+      const entityTypes = ['items', 'resources', 'capabilities', 'jobs', 'sales-orders', 'job-templates', 'plants', 'customers', 'vendors'];
       const results = {};
       
       // Process entities with timeout and better error handling
@@ -24242,9 +24242,9 @@ Generate a complete ${targetType} configuration that matches the user's requirem
             items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
             resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
             capabilities: "manufacturing capabilities and processes",
-            'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
             jobs: "production jobs with job numbers, priorities, quantities, and due dates",
-            'job-templates': "job templates defining standard manufacturing processes and operations",
+            'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
+            'job-templates': "manufacturing recipes and job templates with ingredients, steps, and batch information",
             plants: "manufacturing plants and facilities with locations and operational data",
             customers: "customer records with contact details and business information",
             vendors: "vendor and supplier information with payment terms and contacts"
