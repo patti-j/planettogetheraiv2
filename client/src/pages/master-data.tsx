@@ -501,6 +501,13 @@ interface HierarchicalDataTableProps {
   onShowAiAssistant?: () => void;
 }
 
+// Enhanced hierarchical data types
+interface HierarchicalData {
+  level: 'job' | 'manufacturing-order' | 'operation' | 'activity';
+  parentId: number;
+  data: any[];
+}
+
 function HierarchicalDataTable({ 
   data, 
   columns, 
@@ -511,37 +518,84 @@ function HierarchicalDataTable({
   isLoading,
   onShowAiAssistant
 }: HierarchicalDataTableProps) {
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [childData, setChildData] = useState<Record<number, any[]>>({});
-  const [loadingChildren, setLoadingChildren] = useState<Set<number>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [hierarchicalData, setHierarchicalData] = useState<Record<string, any[]>>({});
+  const [loadingChildren, setLoadingChildren] = useState<Set<string>>(new Set());
 
-  // Fetch child operations for a job
-  const fetchChildOperations = async (jobId: number) => {
+  // Fetch manufacturing orders for a job
+  const fetchManufacturingOrders = async (jobId: number) => {
     try {
-      setLoadingChildren(prev => new Set([...prev, jobId]));
-      const response = await apiRequest('GET', `/api/jobs/${jobId}/operations`);
-      const operations = await response.json();
-      setChildData(prev => ({ ...prev, [jobId]: operations }));
+      const key = `job-${jobId}`;
+      setLoadingChildren(prev => new Set([...prev, key]));
+      const response = await apiRequest('GET', `/api/jobs/${jobId}/manufacturing-orders`);
+      const manufacturingOrders = await response.json();
+      setHierarchicalData(prev => ({ ...prev, [key]: manufacturingOrders }));
     } catch (error) {
-      console.error('Failed to fetch child operations:', error);
+      console.error('Failed to fetch manufacturing orders:', error);
     } finally {
       setLoadingChildren(prev => {
         const newSet = new Set(prev);
-        newSet.delete(jobId);
+        newSet.delete(`job-${jobId}`);
         return newSet;
       });
     }
   };
 
-  const toggleRowExpansion = (rowId: number) => {
+  // Fetch operations for a manufacturing order
+  const fetchOperations = async (manufacturingOrderId: number) => {
+    try {
+      const key = `mo-${manufacturingOrderId}`;
+      setLoadingChildren(prev => new Set([...prev, key]));
+      const response = await apiRequest('GET', `/api/manufacturing-orders/${manufacturingOrderId}/operations`);
+      const operations = await response.json();
+      setHierarchicalData(prev => ({ ...prev, [key]: operations }));
+    } catch (error) {
+      console.error('Failed to fetch operations:', error);
+    } finally {
+      setLoadingChildren(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(`mo-${manufacturingOrderId}`);
+        return newSet;
+      });
+    }
+  };
+
+  // Fetch activities for an operation
+  const fetchActivities = async (operationId: number) => {
+    try {
+      const key = `op-${operationId}`;
+      setLoadingChildren(prev => new Set([...prev, key]));
+      const response = await apiRequest('GET', `/api/operations/${operationId}/activities`);
+      const activities = await response.json();
+      setHierarchicalData(prev => ({ ...prev, [key]: activities }));
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setLoadingChildren(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(`op-${operationId}`);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleRowExpansion = (level: 'job' | 'manufacturing-order' | 'operation', id: number) => {
+    const key = level === 'job' ? `job-${id}` : level === 'manufacturing-order' ? `mo-${id}` : `op-${id}`;
     const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(rowId)) {
-      newExpanded.delete(rowId);
+    
+    if (newExpanded.has(key)) {
+      newExpanded.delete(key);
     } else {
-      newExpanded.add(rowId);
+      newExpanded.add(key);
       // Fetch child data if not already loaded
-      if (!childData[rowId]) {
-        fetchChildOperations(rowId);
+      if (!hierarchicalData[key]) {
+        if (level === 'job') {
+          fetchManufacturingOrders(id);
+        } else if (level === 'manufacturing-order') {
+          fetchOperations(id);
+        } else if (level === 'operation') {
+          fetchActivities(id);
+        }
       }
     }
     setExpandedRows(newExpanded);
@@ -561,7 +615,16 @@ function HierarchicalDataTable({
     return value || '';
   };
 
-  // Child operations table columns
+  // Column definitions for different hierarchy levels
+  const manufacturingOrderColumns: Column[] = [
+    { key: 'manufacturingOrderId', label: 'MO ID', type: 'number' },
+    { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'requiredQty', label: 'Required Qty', type: 'number' },
+    { key: 'expectedFinishQty', label: 'Expected Qty', type: 'number' },
+    { key: 'productName', label: 'Product' }
+  ];
+
   const operationColumns: Column[] = [
     { key: 'operationId', label: 'Operation ID', type: 'number' },
     { key: 'name', label: 'Name' },
@@ -570,6 +633,14 @@ function HierarchicalDataTable({
     { key: 'requiredStartQty', label: 'Start Qty', type: 'number' },
     { key: 'requiredFinishQty', label: 'Finish Qty', type: 'number' },
     { key: 'minutesPerCycle', label: 'Minutes/Cycle', type: 'number' }
+  ];
+
+  const activityColumns: Column[] = [
+    { key: 'externalId', label: 'Activity ID' },
+    { key: 'productionStatus', label: 'Status' },
+    { key: 'comments', label: 'Comments' },
+    { key: 'scheduledStartDate', label: 'Start Date', type: 'date' },
+    { key: 'scheduledEndDate', label: 'End Date', type: 'date' }
   ];
 
   return (
@@ -618,12 +689,12 @@ function HierarchicalDataTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleRowExpansion(row.id)}
+                      onClick={() => toggleRowExpansion('job', row.id)}
                       className="h-6 w-6 p-0"
                     >
-                      {loadingChildren.has(row.id) ? (
+                      {loadingChildren.has(`job-${row.id}`) ? (
                         <RefreshCw className="h-3 w-3 animate-spin" />
-                      ) : expandedRows.has(row.id) ? (
+                      ) : expandedRows.has(`job-${row.id}`) ? (
                         <ChevronDown className="h-3 w-3" />
                       ) : (
                         <ChevronRight className="h-3 w-3" />
@@ -646,46 +717,135 @@ function HierarchicalDataTable({
                   </TableCell>
                 </TableRow>
 
-                {/* Expanded child rows (operations) */}
-                {expandedRows.has(row.id) && childData[row.id] && (
-                  <TableRow key={`child-${row.id}`}>
+                {/* Expanded child rows - Manufacturing Orders */}
+                {expandedRows.has(`job-${row.id}`) && hierarchicalData[`job-${row.id}`] && (
+                  <TableRow key={`child-job-${row.id}`}>
                     <TableCell></TableCell>
                     <TableCell colSpan={columns.length + 1}>
-                      <div className="bg-muted/50 p-4 rounded-lg ml-4">
+                      <div className="bg-muted/50 p-3 rounded-lg ml-4">
                         <div className="flex items-center gap-2 mb-3">
-                          <h4 className="font-medium text-sm">Operations for {row.externalId || row.name || `Job ${row.id}`}</h4>
+                          <h4 className="font-medium text-sm">Manufacturing Orders for {row.externalId || row.name || `Job ${row.id}`}</h4>
                           <Badge variant="outline" className="text-xs">
-                            {childData[row.id]?.length || 0} operations
+                            {hierarchicalData[`job-${row.id}`]?.length || 0} orders
                           </Badge>
                         </div>
                         
-                        {childData[row.id]?.length > 0 ? (
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            <Table className="text-xs">
-                              <TableHeader>
-                                <TableRow>
-                                  {operationColumns.map(col => (
-                                    <TableHead key={col.key} className="text-xs py-2">
-                                      {col.label}
-                                    </TableHead>
-                                  ))}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {childData[row.id].map(operation => (
-                                  <TableRow key={operation.id} className="hover:bg-muted/30">
-                                    {operationColumns.map(col => (
-                                      <TableCell key={col.key} className="py-1 text-xs">
-                                        {renderCell(operation, col)}
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                        {hierarchicalData[`job-${row.id}`]?.length > 0 ? (
+                          <div className="space-y-2">
+                            {hierarchicalData[`job-${row.id}`].map(mo => (
+                              <div key={mo.id} className="border rounded-lg p-3 bg-background">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleRowExpansion('manufacturing-order', mo.manufacturingOrderId)}
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    {loadingChildren.has(`mo-${mo.manufacturingOrderId}`) ? (
+                                      <RefreshCw className="h-3 w-3 animate-spin" />
+                                    ) : expandedRows.has(`mo-${mo.manufacturingOrderId}`) ? (
+                                      <ChevronDown className="h-3 w-3" />
+                                    ) : (
+                                      <ChevronRight className="h-3 w-3" />
+                                    )}
+                                  </Button>
+                                  <span className="font-medium text-sm">MO {mo.manufacturingOrderId}: {mo.name}</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {mo.productName}
+                                  </Badge>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                  <div><span className="text-muted-foreground">Required:</span> {mo.requiredQty}</div>
+                                  <div><span className="text-muted-foreground">Expected:</span> {mo.expectedFinishQty}</div>
+                                  <div><span className="text-muted-foreground">Product:</span> {mo.productName}</div>
+                                  <div><span className="text-muted-foreground">Description:</span> {mo.description}</div>
+                                </div>
+                                
+                                {/* Operations for this Manufacturing Order */}
+                                {expandedRows.has(`mo-${mo.manufacturingOrderId}`) && hierarchicalData[`mo-${mo.manufacturingOrderId}`] && (
+                                  <div className="mt-3 ml-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <h5 className="font-medium text-xs">Operations</h5>
+                                      <Badge variant="outline" className="text-xs">
+                                        {hierarchicalData[`mo-${mo.manufacturingOrderId}`]?.length || 0} operations
+                                      </Badge>
+                                    </div>
+                                    
+                                    {hierarchicalData[`mo-${mo.manufacturingOrderId}`]?.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {hierarchicalData[`mo-${mo.manufacturingOrderId}`].map(operation => (
+                                          <div key={operation.id} className="border rounded p-2 bg-muted/30">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => toggleRowExpansion('operation', operation.id)}
+                                                className="h-4 w-4 p-0"
+                                              >
+                                                {loadingChildren.has(`op-${operation.id}`) ? (
+                                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                                ) : expandedRows.has(`op-${operation.id}`) ? (
+                                                  <ChevronDown className="h-3 w-3" />
+                                                ) : (
+                                                  <ChevronRight className="h-3 w-3" />
+                                                )}
+                                              </Button>
+                                              <span className="font-medium text-xs">Op {operation.operationId}: {operation.name}</span>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs ml-6">
+                                              <div><span className="text-muted-foreground">Setup:</span> {operation.setupHours}h</div>
+                                              <div><span className="text-muted-foreground">Start Qty:</span> {operation.requiredStartQty}</div>
+                                              <div><span className="text-muted-foreground">Finish Qty:</span> {operation.requiredFinishQty}</div>
+                                              <div><span className="text-muted-foreground">Minutes/Cycle:</span> {operation.minutesPerCycle}</div>
+                                              <div><span className="text-muted-foreground">Description:</span> {operation.description}</div>
+                                            </div>
+                                            
+                                            {/* Activities for this Operation */}
+                                            {expandedRows.has(`op-${operation.id}`) && hierarchicalData[`op-${operation.id}`] && (
+                                              <div className="mt-2 ml-6">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                  <h6 className="font-medium text-xs">Activities</h6>
+                                                  <Badge variant="outline" className="text-xs">
+                                                    {hierarchicalData[`op-${operation.id}`]?.length || 0} activities
+                                                  </Badge>
+                                                </div>
+                                                
+                                                {hierarchicalData[`op-${operation.id}`]?.length > 0 ? (
+                                                  <div className="space-y-1">
+                                                    {hierarchicalData[`op-${operation.id}`].map(activity => (
+                                                      <div key={activity.id} className="border rounded p-2 bg-background text-xs">
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                          <div><span className="text-muted-foreground">ID:</span> {activity.externalId}</div>
+                                                          <div><span className="text-muted-foreground">Status:</span> {activity.productionStatus}</div>
+                                                          <div><span className="text-muted-foreground">Start:</span> {activity.scheduledStartDate ? new Date(activity.scheduledStartDate).toLocaleDateString() : 'N/A'}</div>
+                                                          <div><span className="text-muted-foreground">End:</span> {activity.scheduledEndDate ? new Date(activity.scheduledEndDate).toLocaleDateString() : 'N/A'}</div>
+                                                          {activity.comments && (
+                                                            <div className="col-span-2"><span className="text-muted-foreground">Comments:</span> {activity.comments}</div>
+                                                          )}
+                                                        </div>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-xs text-muted-foreground ml-2">No activities found for this operation</p>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground ml-2">No operations found for this manufacturing order</p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-muted-foreground">No operations found for this job</p>
+                          <p className="text-xs text-muted-foreground">No manufacturing orders found for this job</p>
                         )}
                       </div>
                     </TableCell>

@@ -23538,6 +23538,98 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
     }
   });
 
+  // Get manufacturing orders for a specific job
+  app.get("/api/jobs/:jobId/manufacturing-orders", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      if (isNaN(jobId)) {
+        return res.status(400).json({ error: "Invalid job ID" });
+      }
+
+      console.log(`Fetching manufacturing orders for job ${jobId}`);
+      const manufacturingOrders = await db.select({
+        id: schema.ptManufacturingOrders.id,
+        manufacturingOrderId: schema.ptManufacturingOrders.manufacturingOrderId,
+        name: schema.ptManufacturingOrders.name,
+        description: schema.ptManufacturingOrders.description,
+        requiredQty: schema.ptManufacturingOrders.requiredQty,
+        expectedFinishQty: schema.ptManufacturingOrders.expectedFinishQty,
+        productName: schema.ptManufacturingOrders.productName,
+        publishDate: schema.ptManufacturingOrders.publishDate,
+      }).from(schema.ptManufacturingOrders)
+        .where(eq(schema.ptManufacturingOrders.jobId, jobId))
+        .orderBy(schema.ptManufacturingOrders.manufacturingOrderId);
+
+      console.log(`Manufacturing orders count for job ${jobId}: ${manufacturingOrders.length}`);
+      res.json(manufacturingOrders);
+    } catch (error) {
+      console.error("Error fetching job manufacturing orders:", error);
+      res.status(500).json({ error: "Failed to fetch job manufacturing orders" });
+    }
+  });
+
+  // Get operations for a specific manufacturing order
+  app.get("/api/manufacturing-orders/:manufacturingOrderId/operations", async (req, res) => {
+    try {
+      const manufacturingOrderId = parseInt(req.params.manufacturingOrderId);
+      if (isNaN(manufacturingOrderId)) {
+        return res.status(400).json({ error: "Invalid manufacturing order ID" });
+      }
+
+      console.log(`Fetching operations for manufacturing order ${manufacturingOrderId}`);
+      const operations = await db.select({
+        id: schema.ptJobOperations.id,
+        operationId: schema.ptJobOperations.operationId,
+        name: schema.ptJobOperations.name,
+        description: schema.ptJobOperations.description,
+        setupHours: schema.ptJobOperations.setupHours,
+        requiredStartQty: schema.ptJobOperations.requiredStartQty,
+        requiredFinishQty: schema.ptJobOperations.requiredFinishQty,
+        minutesPerCycle: schema.ptJobOperations.minutesPerCycle,
+        scheduledStart: schema.ptJobOperations.scheduledStart,
+        scheduledEnd: schema.ptJobOperations.scheduledEnd,
+        publishDate: schema.ptJobOperations.publishDate,
+      }).from(schema.ptJobOperations)
+        .where(eq(schema.ptJobOperations.manufacturingOrderId, manufacturingOrderId))
+        .orderBy(schema.ptJobOperations.operationId);
+
+      console.log(`Operations count for manufacturing order ${manufacturingOrderId}: ${operations.length}`);
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching manufacturing order operations:", error);
+      res.status(500).json({ error: "Failed to fetch manufacturing order operations" });
+    }
+  });
+
+  // Get activities for a specific operation
+  app.get("/api/operations/:operationId/activities", async (req, res) => {
+    try {
+      const operationId = parseInt(req.params.operationId);
+      if (isNaN(operationId)) {
+        return res.status(400).json({ error: "Invalid operation ID" });
+      }
+
+      console.log(`Fetching activities for operation ${operationId}`);
+      const activities = await db.select({
+        id: schema.ptJobActivities.id,
+        externalId: schema.ptJobActivities.externalId,
+        productionStatus: schema.ptJobActivities.productionStatus,
+        comments: schema.ptJobActivities.comments,
+        scheduledStartDate: schema.ptJobActivities.scheduledStartDate,
+        scheduledEndDate: schema.ptJobActivities.scheduledEndDate,
+        publishDate: schema.ptJobActivities.publishDate,
+      }).from(schema.ptJobActivities)
+        .where(eq(schema.ptJobActivities.operationId, operationId))
+        .orderBy(schema.ptJobActivities.id);
+
+      console.log(`Activities count for operation ${operationId}: ${activities.length}`);
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching operation activities:", error);
+      res.status(500).json({ error: "Failed to fetch operation activities" });
+    }
+  });
+
   // Get paths for a specific job
   app.get("/api/jobs/:jobId/paths", async (req, res) => {
     try {
