@@ -536,11 +536,34 @@ export default function MasterDataPage() {
       { key: 'name', label: 'Name', editable: true, required: true },
       { key: 'description', label: 'Description', editable: true }
     ],
-    'production-orders': [
+    'sales-orders': [
       { key: 'orderNumber', label: 'Order Number', editable: true, required: true },
+      { key: 'customerName', label: 'Customer', editable: true, required: true },
+      { key: 'description', label: 'Description', editable: true },
+      { key: 'status', label: 'Status', editable: true, type: 'select', options: [
+        { value: 'draft', label: 'Draft' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'in_production', label: 'In Production' },
+        { value: 'shipped', label: 'Shipped' },
+        { value: 'delivered', label: 'Delivered' },
+        { value: 'cancelled', label: 'Cancelled' }
+      ]},
+      { key: 'priority', label: 'Priority', editable: true, type: 'select', options: [
+        { value: 'low', label: 'Low' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'high', label: 'High' },
+        { value: 'urgent', label: 'Urgent' }
+      ]},
+      { key: 'quantity', label: 'Quantity', editable: true, type: 'number' },
+      { key: 'requestedDate', label: 'Requested Date', editable: true, type: 'date' },
+      { key: 'promisedDate', label: 'Promised Date', editable: true, type: 'date' }
+    ],
+    jobs: [
+      { key: 'jobNumber', label: 'Job Number', editable: true, required: true },
       { key: 'name', label: 'Name', editable: true, required: true },
       { key: 'description', label: 'Description', editable: true },
       { key: 'status', label: 'Status', editable: true, type: 'select', options: [
+        { value: 'planned', label: 'Planned' },
         { value: 'released', label: 'Released' },
         { value: 'in_progress', label: 'In Progress' },
         { value: 'completed', label: 'Completed' },
@@ -553,21 +576,23 @@ export default function MasterDataPage() {
         { value: 'urgent', label: 'Urgent' }
       ]},
       { key: 'quantity', label: 'Quantity', editable: true, type: 'number' },
-      { key: 'dueDate', label: 'Due Date', editable: true, type: 'date' }
+      { key: 'dueDate', label: 'Due Date', editable: true, type: 'date' },
+      { key: 'salesOrderNumber', label: 'Sales Order', editable: true }
     ],
-    recipes: [
-      { key: 'recipeNumber', label: 'Recipe Number', editable: true, required: true },
-      { key: 'recipeName', label: 'Recipe Name', editable: true, required: true },
+    'job-templates': [
+      { key: 'templateNumber', label: 'Template Number', editable: true, required: true },
+      { key: 'templateName', label: 'Template Name', editable: true, required: true },
       { key: 'productItemNumber', label: 'Product Item', editable: true, required: true },
-      { key: 'recipeVersion', label: 'Version', editable: true },
+      { key: 'templateVersion', label: 'Version', editable: true },
       { key: 'status', label: 'Status', editable: true, type: 'select', options: [
-        { value: 'created', label: 'Created' },
-        { value: 'released_for_planning', label: 'Released for Planning' },
-        { value: 'released_for_execution', label: 'Released for Execution' },
-        { value: 'obsolete', label: 'Obsolete' }
+        { value: 'draft', label: 'Draft' },
+        { value: 'active', label: 'Active' },
+        { value: 'under_review', label: 'Under Review' },
+        { value: 'archived', label: 'Archived' }
       ]},
-      { key: 'batchSize', label: 'Batch Size', editable: true, type: 'number' },
-      { key: 'batchUnit', label: 'Batch Unit', editable: true }
+      { key: 'standardBatchSize', label: 'Standard Batch Size', editable: true, type: 'number' },
+      { key: 'batchUnit', label: 'Batch Unit', editable: true },
+      { key: 'estimatedDuration', label: 'Est. Duration (hrs)', editable: true, type: 'number' }
     ],
     plants: [
       { key: 'name', label: 'Name', editable: true, required: true },
@@ -620,8 +645,9 @@ export default function MasterDataPage() {
     items: '/api/stock-items',
     resources: '/api/resources',
     capabilities: '/api/capabilities',
-    'production-orders': '/api/production-orders',
-    recipes: '/api/recipes',
+    'sales-orders': '/api/sales-orders',
+    jobs: '/api/jobs',
+    'job-templates': '/api/job-templates',
     plants: '/api/plants',
     users: '/api/users',
     customers: '/api/customers',
@@ -797,8 +823,9 @@ export default function MasterDataPage() {
                 <TabsTrigger value="items" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Items</TabsTrigger>
                 <TabsTrigger value="resources" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Resources</TabsTrigger>
                 <TabsTrigger value="capabilities" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Capabilities</TabsTrigger>
-                <TabsTrigger value="production-orders" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Orders</TabsTrigger>
-                <TabsTrigger value="recipes" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Recipes</TabsTrigger>
+                <TabsTrigger value="sales-orders" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Sales Orders</TabsTrigger>
+                <TabsTrigger value="jobs" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Jobs</TabsTrigger>
+                <TabsTrigger value="job-templates" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Job Templates</TabsTrigger>
                 <TabsTrigger value="plants" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Plants</TabsTrigger>
                 <TabsTrigger value="users" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Users</TabsTrigger>
                 <TabsTrigger value="customers" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Customers</TabsTrigger>
