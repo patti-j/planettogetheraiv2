@@ -572,9 +572,40 @@ Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific
       const endpoint = dataResponse.choices[0].message.content?.trim();
       
       if (endpoint && endpoint !== 'NONE' && endpoint.startsWith('/api/')) {
-        // Fetch the data
-        const response = await fetch(`http://localhost:5000${endpoint}`);
-        const data = await response.json();
+        // Import storage to access data directly instead of HTTP requests
+        const { storage } = await import('../storage');
+        
+        let data: any[] = [];
+        
+        // Handle different endpoints
+        switch (endpoint) {
+          case '/api/plants':
+            data = await storage.getPlants();
+            break;
+          case '/api/jobs':
+            data = await storage.getProductionOrders();
+            break;
+          case '/api/operations':
+            data = await storage.getOperations();
+            break;
+          case '/api/resources':
+            data = await storage.getResources();
+            break;
+          case '/api/sales-orders':
+            data = await storage.getSalesOrders();
+            break;
+          case '/api/alerts':
+            data = await storage.getAlerts();
+            break;
+          case '/api/customers':
+            data = await storage.getCustomers();
+            break;
+          case '/api/vendors':
+            data = await storage.getVendors();
+            break;
+          default:
+            data = [];
+        }
         
         // Let AI analyze and format the response naturally
         const analysisResponse = await openai.chat.completions.create({
