@@ -160,6 +160,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   };
 
   const handleInputClick = () => {
+    console.log('Input clicked, showing dropdown');
     setShowDropdown(true);
   };
 
@@ -172,6 +173,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPrompt(e.target.value);
     if (!showDropdown) {
+      console.log('Showing dropdown from input change');
       setShowDropdown(true);
     }
   };
@@ -218,20 +220,21 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           {/* Dropdown */}
           {showDropdown && (
             <div 
-              className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[100] max-h-80 overflow-y-auto"
-              style={{ minWidth: '300px' }}
+              className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-xl z-[9999] max-h-80 overflow-y-auto"
+              style={{ minWidth: '320px', width: 'max-content' }}
             >
               {/* Chat History Section */}
               {chatMessages.length > 0 && (
-                <div className="border-b border-border">
-                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/30">
+                <div className="border-b border-gray-200 dark:border-gray-600">
+                  <div className="px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
                     Recent Conversation
                   </div>
                   <div className="max-h-48 overflow-y-auto">
                     {chatMessages.slice(-6).map((message, index) => (
                       <div
                         key={message.id}
-                        className="px-3 py-2 text-sm border-b border-border/50 last:border-b-0"
+                        className="px-3 py-2 text-sm border-b border-gray-100 dark:border-gray-600 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                        onClick={() => handlePromptSelect(message.content)}
                       >
                         <div className="flex items-start gap-2">
                           {message.role === 'user' ? (
@@ -240,10 +243,10 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
                             <Bot className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-xs text-muted-foreground mb-1">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                               {message.role === 'user' ? 'You' : 'Max AI'}
                             </div>
-                            <div className="text-xs leading-relaxed text-foreground/90 line-clamp-3">
+                            <div className="text-xs leading-relaxed text-gray-900 dark:text-gray-100 line-clamp-3">
                               {message.content}
                             </div>
                           </div>
@@ -257,7 +260,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
               {/* Prompt History Section */}
               {filteredPrompts.length > 0 ? (
                 <div>
-                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/30">
+                  <div className="px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700">
                     Recent Prompts
                   </div>
                   {filteredPrompts.slice(0, 5).map((historyPrompt, index) => (
@@ -265,15 +268,15 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
                       key={index}
                       type="button"
                       onClick={() => handlePromptSelect(historyPrompt)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border/50 last:border-b-0"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-b border-gray-100 dark:border-gray-600 last:border-b-0"
                     >
-                      <History className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">{historyPrompt}</span>
+                      <History className="h-3 w-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                      <span className="truncate text-gray-900 dark:text-gray-100">{historyPrompt}</span>
                     </button>
                   ))}
                 </div>
               ) : chatMessages.length === 0 && (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
+                <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                   No conversation history yet. Start by asking Max AI a question!
                 </div>
               )}
