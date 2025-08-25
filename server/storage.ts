@@ -9,6 +9,7 @@ import {
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   disruptions, disruptionActions, disruptionEscalations,
+  alerts,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
@@ -21,6 +22,7 @@ import {
   type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type Disruption, type DisruptionAction, type DisruptionEscalation,
+  type Alert,
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertPlannedOrder, 
@@ -1953,7 +1955,11 @@ export interface IStorage {
   removeAlgorithmFeedbackVote(feedbackId: number, userId: number): Promise<boolean>;
   getAlgorithmFeedbackVoteCounts(feedbackId: number): Promise<{ upvotes: number; downvotes: number }>;
 
+  // Alerts
+  getAlerts(): Promise<Alert[]>;
+
   // Sales Orders
+  getSalesOrders(): Promise<SalesOrder[]>;
   getSalesOrder(id: number): Promise<SalesOrder | undefined>;
   searchSalesOrdersByNumber(searchTerm: string): Promise<SalesOrder[]>;
   searchSalesOrdersByCustomer(searchTerm: string): Promise<SalesOrder[]>;
@@ -15534,7 +15540,16 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  // Alerts
+  async getAlerts(): Promise<Alert[]> {
+    return await db.select().from(alerts).orderBy(alerts.createdAt);
+  }
+
   // Sales Orders
+  async getSalesOrders(): Promise<SalesOrder[]> {
+    return await db.select().from(salesOrders).orderBy(salesOrders.orderNumber);
+  }
+
   async getSalesOrder(id: number): Promise<SalesOrder | undefined> {
     const [order] = await db.select()
       .from(salesOrders)
