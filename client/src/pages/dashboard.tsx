@@ -104,7 +104,7 @@ interface OptimizationExecution {
 }
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<"operations" | "resources" | "customers">("resources");
+  const [currentView, setCurrentView] = useState<"operations" | "resources" | "customers">("operations");
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
