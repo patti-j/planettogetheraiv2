@@ -201,19 +201,27 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           )}
           
           {/* Dropdown */}
-          {showDropdown && filteredPrompts.length > 0 && (
+          {showDropdown && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
-              {filteredPrompts.map((historyPrompt, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handlePromptSelect(historyPrompt)}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border last:border-b-0"
-                >
-                  <History className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                  <span className="truncate">{historyPrompt}</span>
-                </button>
-              ))}
+              {filteredPrompts.length > 0 ? (
+                <>
+                  {filteredPrompts.map((historyPrompt, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handlePromptSelect(historyPrompt)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border last:border-b-0"
+                    >
+                      <History className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{historyPrompt}</span>
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No previous prompts found. Start by asking Max AI a question!
+                </div>
+              )}
             </div>
           )}
         </div>
