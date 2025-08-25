@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs,
+  plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
   recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
@@ -12,7 +12,7 @@ import {
   alerts,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig,
+  type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
   type ProductionOrder, type InsertProductionOrder,
   type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
@@ -341,6 +341,9 @@ export interface IStorage {
   createPlant(plant: InsertPlant): Promise<Plant>;
   updatePlant(id: number, plant: Partial<InsertPlant>): Promise<Plant | undefined>;
   deletePlant(id: number): Promise<boolean>;
+  
+  // Departments
+  getDepartments(): Promise<Department[]>;
 
   // Capabilities
   getCapabilities(): Promise<Capability[]>;
@@ -2570,6 +2573,12 @@ export class DatabaseStorage implements IStorage {
   async deletePlant(id: number): Promise<boolean> {
     const result = await db.delete(plants).where(eq(plants.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Departments
+  async getDepartments(): Promise<Department[]> {
+    const result = await db.select().from(departments).orderBy(asc(departments.name));
+    return result;
   }
 
   async getCapabilities(): Promise<Capability[]> {

@@ -603,6 +603,9 @@ Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific
           case '/api/vendors':
             data = await storage.getVendors();
             break;
+          case '/api/departments':
+            data = await storage.getDepartments();
+            break;
           default:
             data = [];
         }
