@@ -1087,15 +1087,25 @@ ${companyInfo.description ? `Context: ${companyInfo.description}` : ''}
 
 Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with proper equipment names, production processes, and operational workflows.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: finalUserPrompt }
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 4000
-      });
+      let response;
+      try {
+        response = await openai.chat.completions.create({
+          model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: finalUserPrompt }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 4000,
+          timeout: 60000 // 60 second timeout
+        });
+      } catch (apiError: any) {
+        console.error(`[AI Bulk Generate] Error generating data:`, apiError.message);
+        if (apiError.message?.includes('timeout') || apiError.message?.includes('Request timeout')) {
+          throw new Error(`Request timeout - try reducing sample size or selecting fewer data types`);
+        }
+        throw new Error(`AI generation failed: ${apiError.message}`);
+      }
 
       const rawContent = response.choices[0].message.content;
       console.log('Raw OpenAI response length:', rawContent?.length);
@@ -1108,9 +1118,31 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
       let generatedData;
       try {
         generatedData = JSON.parse(rawContent);
+        if (!generatedData.dataTypes) {
+          throw new Error('Invalid response format: missing dataTypes');
+        }
       } catch (parseError) {
-        console.error('JSON parse error. Raw content:', rawContent);
-        throw new Error(`Failed to parse OpenAI response: ${String(parseError)}`);
+        console.error(`[AI Bulk Generate] JSON parsing error:`, parseError);
+        console.error('Raw content:', rawContent?.substring(0, 500));
+        // Fallback to minimal dataset if AI generation fails
+        generatedData = {
+          dataTypes: {},
+          summary: "AI generation failed, using fallback minimal dataset",
+          totalRecords: 0,
+          recommendations: ["Please try again with a smaller sample size"]
+        };
+        // Add basic data for each requested type
+        selectedDataTypes.forEach(type => {
+          if (type === 'plants') {
+            generatedData.dataTypes[type] = [{ name: 'Main Plant', address: '123 Manufacturing St', timezone: 'UTC' }];
+          } else if (type === 'resources') {
+            generatedData.dataTypes[type] = [{ name: 'Production Line 1', type: 'Equipment', description: 'Main production line', status: 'active' }];
+          } else if (type === 'capabilities') {
+            generatedData.dataTypes[type] = [{ name: 'Manufacturing', description: 'Basic manufacturing capability', category: 'manufacturing' }];
+          } else if (type === 'productionOrders') {
+            generatedData.dataTypes[type] = [{ orderNumber: 'PO-001', name: 'Sample Order', customer: 'Sample Customer', priority: 'medium', status: 'released', quantity: 100, description: 'Sample production order' }];
+          }
+        });
       }
       
       // Validate and potentially supplement generated data to meet minimum requirements
@@ -1175,14 +1207,19 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
             switch (dataType) {
               case 'plants':
                 for (const item of records) {
-                  const insertPlant = insertPlantSchema.parse({
-                    name: item.name || item.plantName || item.facilityName || 'Unknown Plant',
-                    location: item.location || '',
-                    address: item.address || item.location || '',
-                    timezone: item.timezone || 'UTC'
-                  });
-                  const plant = await storage.createPlant(insertPlant);
-                  results.push(plant);
+                  try {
+                    const insertPlant = insertPlantSchema.parse({
+                      name: item.name || item.plantName || item.facilityName || 'Unknown Plant',
+                      address: item.address || item.location || '',
+                      timezone: item.timezone || 'UTC'
+                    });
+                    const plant = await storage.createPlant(insertPlant);
+                    results.push(plant);
+                  } catch (plantError: any) {
+                    console.log(`[AI Bulk Generate] Failed to save plants record: ${plantError.message}`);
+                    // Continue with next record instead of failing completely
+                    continue;
+                  }
                 }
                 break;
               case 'capabilities':
