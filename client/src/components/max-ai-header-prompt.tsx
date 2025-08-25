@@ -143,6 +143,9 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   };
 
   const handleInputClick = () => {
+    console.log('Input clicked, setting showDropdown to true');
+    console.log('Current promptHistory:', promptHistory);
+    console.log('Current filteredPrompts:', filteredPrompts);
     setShowDropdown(true);
   };
 
@@ -202,7 +205,10 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           
           {/* Dropdown */}
           {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+            <div 
+              className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[100] max-h-64 overflow-y-auto"
+              style={{ minWidth: '200px' }}
+            >
               {filteredPrompts.length > 0 ? (
                 <>
                   {filteredPrompts.map((historyPrompt, index) => (
