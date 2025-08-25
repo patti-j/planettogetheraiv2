@@ -46,7 +46,7 @@ export function Toaster() {
                       ? 'text-destructive-foreground/70 hover:text-destructive-foreground'
                       : 'text-foreground/70 hover:text-foreground'
                 }`}
-                title={copiedToastId === id ? "Copied!" : "Copy message"}
+                title={copiedToastId === id ? "Copied!" : "Copy full message to clipboard"}
               >
                 <Copy className="h-4 w-4" />
               </button>
