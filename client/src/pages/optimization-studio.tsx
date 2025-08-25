@@ -1676,7 +1676,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-7 text-xs sm:text-sm h-9 sm:h-10 p-1">
+            <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:grid-cols-8 text-xs sm:text-sm h-auto sm:h-10 p-1 gap-1">
               <TabsTrigger value="algorithms" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
                 <span className="hidden sm:inline">Algorithms</span>
                 <span className="sm:hidden">Algo</span>
