@@ -24092,12 +24092,19 @@ Generate a complete ${targetType} configuration that matches the user's requirem
   registerScheduleRoutes(app);
 
   const masterDataTables = {
+    // Using PT (PlanetTogether) tables for master data
     plants: schema.plants,
-    resources: schema.resources,
-    workCenters: schema.workCenters,
+    resources: schema.ptResources,
     items: schema.items,
     customers: schema.customers,
     vendors: schema.vendors,
+    capabilities: schema.ptCapabilities,
+    jobs: schema.ptJobs,
+    'sales-orders': schema.salesOrders,
+    'job-templates': schema.ptManufacturingOrders, // Using PT manufacturing orders as job templates
+    'manufacturing-orders': schema.ptManufacturingOrders,
+    // Keep some regular tables for non-PT data
+    workCenters: schema.workCenters,
     billsOfMaterial: schema.billsOfMaterial,
     routings: schema.routings,
     recipes: schema.recipes,
@@ -24108,14 +24115,9 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     holidays: schema.holidays,
     stockItems: schema.stockItems,
     inventoryLots: schema.inventoryLots,
-    capabilities: schema.capabilities,
     recipeOperations: schema.recipeOperations,
     recipePhases: schema.recipePhases,
     recipeFormulas: schema.recipeFormulas,
-    // Add missing entity types for bulk generation
-    jobs: schema.productionOrders,
-    'sales-orders': schema.salesOrders,
-    'job-templates': schema.recipes, // Using recipes as job templates for now
   };
 
   // AI-Assisted Master Data Management endpoint (specific route before generic table routes)
@@ -24232,7 +24234,7 @@ Generate a complete ${targetType} configuration that matches the user's requirem
       
       console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
       
-      const entityTypes = ['items', 'resources', 'capabilities', 'jobs', 'sales-orders', 'job-templates', 'plants', 'customers', 'vendors'];
+      const entityTypes = ['items', 'resources', 'capabilities', 'jobs', 'sales-orders', 'job-templates', 'manufacturing-orders', 'plants', 'customers', 'vendors'];
       const results = {};
       
       // Process entities with timeout and better error handling
@@ -24240,11 +24242,12 @@ Generate a complete ${targetType} configuration that matches the user's requirem
         try {
           const contextDescription = {
             items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
-            resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
-            capabilities: "manufacturing capabilities and processes",
-            jobs: "production jobs with job numbers, priorities, quantities, and due dates",
+            resources: "PT manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
+            capabilities: "PT manufacturing capabilities and processes with resource assignments",
+            jobs: "PT production jobs with job numbers, priorities, quantities, and due dates",
             'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
-            'job-templates': "manufacturing recipes and job templates with ingredients, steps, and batch information",
+            'job-templates': "PT manufacturing orders serving as job templates with standard processes",
+            'manufacturing-orders': "PT manufacturing orders with routing, BOM, and operation sequences",
             plants: "manufacturing plants and facilities with locations and operational data",
             customers: "customer records with contact details and business information",
             vendors: "vendor and supplier information with payment terms and contacts"
