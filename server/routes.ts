@@ -24130,8 +24130,9 @@ Generate a complete ${targetType} configuration that matches the user's requirem
         items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
         resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
         capabilities: "manufacturing capabilities and processes",
-        'production-orders': "production orders with order numbers, priorities, quantities, and due dates",
-        recipes: "manufacturing recipes with ingredients, steps, and batch information",
+        'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
+        jobs: "production jobs with job numbers, priorities, quantities, and due dates",
+        'job-templates': "job templates defining standard manufacturing processes and operations",
         plants: "manufacturing plants and facilities with locations and operational data",
         users: "system users with roles, departments, and contact information",
         customers: "customer records with contact details and business information",
@@ -24147,8 +24148,8 @@ Generate a complete ${targetType} configuration that matches the user's requirem
 
       switch (operation) {
         case 'generate':
-          systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0`;
-          userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate new realistic ${entityType} records that fit the manufacturing context. Ensure data is consistent with existing patterns.`;
+          systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0. Generate as many records as requested, aim for 10-20 diverse records if no specific quantity is mentioned.`;
+          userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate diverse, realistic ${entityType} records that fit the manufacturing context. Create varied examples with different categories, types, and realistic business data. Ensure each record has unique, meaningful values and follows manufacturing industry standards.`;
           break;
           
         case 'improve':
@@ -24190,8 +24191,8 @@ Generate a complete ${targetType} configuration that matches the user's requirem
             { role: 'user', content: userPrompt }
           ],
           response_format: { type: "json_object" },
-          temperature: 0.7,
-          max_tokens: 2000
+          temperature: 0.8,
+          max_tokens: 4000
         }),
       });
 
@@ -24219,6 +24220,98 @@ Generate a complete ${targetType} configuration that matches the user's requirem
       res.status(500).json({ 
         success: false, 
         message: 'Failed to process AI request',
+        error: error.message 
+      });
+    }
+  });
+
+  // Bulk AI data generation for all tables
+  app.post('/api/master-data/bulk-generate', requireAuth, async (req, res) => {
+    try {
+      const { recordsPerTable = 15 } = req.body;
+      
+      console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
+      
+      const entityTypes = ['items', 'resources', 'capabilities', 'sales-orders', 'jobs', 'job-templates', 'plants', 'customers', 'vendors'];
+      const results = {};
+      
+      for (const entityType of entityTypes) {
+        try {
+          // Generate comprehensive sample data for each entity type
+          const contextDescription = {
+            items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
+            resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
+            capabilities: "manufacturing capabilities and processes",
+            'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
+            jobs: "production jobs with job numbers, priorities, quantities, and due dates",
+            'job-templates': "job templates defining standard manufacturing processes and operations",
+            plants: "manufacturing plants and facilities with locations and operational data",
+            customers: "customer records with contact details and business information",
+            vendors: "vendor and supplier information with payment terms and contacts"
+          }[entityType] || "data records";
+
+          const systemPrompt = `You are a manufacturing data expert. Generate ${recordsPerTable} diverse, realistic ${contextDescription} for a comprehensive manufacturing system. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9. Create varied, realistic business data covering different categories, types, and use cases.`;
+          
+          const userPrompt = `Generate ${recordsPerTable} comprehensive ${entityType} records for a manufacturing company. Include diverse examples:
+- Different categories, types, and classifications
+- Realistic names, codes, and descriptions  
+- Proper manufacturing industry values
+- Varied priorities, statuses, and attributes
+- Logical relationships between data
+
+Create complete, ready-to-use sample data that represents real manufacturing scenarios.`;
+
+          const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.9,
+              max_tokens: 4000
+            }),
+          });
+
+          if (openaiResponse.ok) {
+            const aiResult = await openaiResponse.json();
+            const suggestions = JSON.parse(aiResult.choices[0].message.content);
+            results[entityType] = {
+              success: true,
+              count: suggestions.suggestions?.length || 0,
+              data: suggestions.suggestions || []
+            };
+            console.log(`[AI Bulk Generate] Generated ${suggestions.suggestions?.length || 0} ${entityType} records`);
+          } else {
+            results[entityType] = { success: false, error: 'API call failed' };
+          }
+        } catch (error) {
+          console.error(`[AI Bulk Generate] Error generating ${entityType}:`, error);
+          results[entityType] = { success: false, error: error.message };
+        }
+      }
+      
+      const totalGenerated = Object.values(results).reduce((sum, result) => 
+        sum + (result.success ? result.count : 0), 0);
+      
+      res.json({
+        success: true,
+        message: `Bulk generation completed: ${totalGenerated} total records generated across ${entityTypes.length} entity types`,
+        results,
+        totalRecords: totalGenerated
+      });
+
+    } catch (error) {
+      console.error('[AI Bulk Generate] Error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to perform bulk generation',
         error: error.message 
       });
     }

@@ -788,6 +788,39 @@ export default function MasterDataPage() {
     setAiSuggestions(prev => prev.filter(s => s !== suggestion));
   };
 
+  const handleBulkGenerate = async () => {
+    setAiProcessing(true);
+    try {
+      const response = await apiRequest('/api/master-data/bulk-generate', {
+        method: 'POST',
+        body: JSON.stringify({ recordsPerTable: 15 })
+      });
+
+      if (response.success) {
+        toast({
+          title: 'Bulk Generation Successful',
+          description: `Generated ${response.totalRecords} records across all entity types. Refresh your browser to see the new data.`,
+        });
+        
+        // Refresh current data
+        queryClient.invalidateQueries({ queryKey: [endpoints[activeTab]] });
+        
+        setShowAiAssistant(false);
+      } else {
+        throw new Error(response.message || 'Bulk generation failed');
+      }
+    } catch (error) {
+      console.error('Bulk generation error:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate bulk sample data. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -920,6 +953,26 @@ export default function MasterDataPage() {
               >
                 <Zap className="h-4 w-4 mr-1 sm:mr-2" />
                 Bulk Edit
+              </Button>
+            </div>
+
+            {/* Bulk Generation Section */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm">Quick Setup</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Generate comprehensive sample data for all entity types at once to quickly populate your master data tables.
+              </p>
+              <Button 
+                onClick={handleBulkGenerate}
+                disabled={aiProcessing}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                size="sm"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate Sample Data for All Tables
+                <span className="ml-2 text-xs opacity-75">(15 records each)</span>
               </Button>
             </div>
 
