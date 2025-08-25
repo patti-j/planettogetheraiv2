@@ -9,10 +9,12 @@ This document defines the minimum standards and requirements for all AI-generate
 ## 1. DETAILED SCHEDULING ALGORITHMS
 
 ### **Minimum Requirements**
-- **Activity Creation**: Must create an individual activity record for each operation in the production schedule
+- **Activity Creation**: Must create an individual activity record for each operation in the production schedule (or multiple activity records if the operation has been split)
 - **Resource Blocks**: Must create schedulable time blocks on each assigned resource for every scheduled activity
 - **Time Validation**: All scheduled activities must respect working hours, shift calendars, and resource availability
 - **Constraint Compliance**: Must honor all scheduling constraints (start dates, due dates, setup requirements)
+- **One Path**: A single Alternate Path must be used, only scheduling operations that belong to the one chosen scheduled Path
+
 
 ### **Data Structures**
 ```typescript
