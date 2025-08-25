@@ -586,9 +586,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (location !== '/mobile-home') {
-                setLocation('/mobile-home');
-              }
+              // Always navigate to dashboard for home on mobile
+              console.log('Mobile home button clicked, navigating to /dashboard');
+              setLocation('/dashboard');
             }}
             className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
             style={{ minWidth: '44px', minHeight: '44px' }}
