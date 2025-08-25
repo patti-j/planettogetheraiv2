@@ -24235,9 +24235,9 @@ Generate a complete ${targetType} configuration that matches the user's requirem
       const entityTypes = ['items', 'resources', 'capabilities', 'sales-orders', 'jobs', 'job-templates', 'plants', 'customers', 'vendors'];
       const results = {};
       
-      for (const entityType of entityTypes) {
+      // Process entities with timeout and better error handling
+      const processEntity = async (entityType: string) => {
         try {
-          // Generate comprehensive sample data for each entity type
           const contextDescription = {
             items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
             resources: "manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
@@ -24261,7 +24261,12 @@ Generate a complete ${targetType} configuration that matches the user's requirem
 
 Create complete, ready-to-use sample data that represents real manufacturing scenarios.`;
 
-          const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          // Create timeout promise (30 seconds)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), 30000)
+          );
+
+          const apiPromise = fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -24275,29 +24280,46 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
               ],
               response_format: { type: "json_object" },
               temperature: 0.9,
-              max_tokens: 4000
+              max_tokens: 3000
             }),
           });
+
+          const openaiResponse = await Promise.race([apiPromise, timeoutPromise]) as Response;
 
           if (openaiResponse.ok) {
             const aiResult = await openaiResponse.json();
             const suggestions = JSON.parse(aiResult.choices[0].message.content);
-            results[entityType] = {
+            return {
               success: true,
               count: suggestions.suggestions?.length || 0,
               data: suggestions.suggestions || []
             };
-            console.log(`[AI Bulk Generate] Generated ${suggestions.suggestions?.length || 0} ${entityType} records`);
           } else {
-            results[entityType] = { success: false, error: 'API call failed' };
+            const errorText = await openaiResponse.text();
+            console.error(`[AI Bulk Generate] API error for ${entityType}:`, errorText);
+            return { success: false, error: `API call failed: ${openaiResponse.status}` };
           }
         } catch (error) {
-          console.error(`[AI Bulk Generate] Error generating ${entityType}:`, error);
-          results[entityType] = { success: false, error: error.message };
+          console.error(`[AI Bulk Generate] Error generating ${entityType}:`, error.message);
+          return { success: false, error: error.message };
         }
+      };
+
+      // Process entities in parallel with limited concurrency
+      const batchSize = 3; // Process 3 at a time to avoid overwhelming OpenAI API
+      for (let i = 0; i < entityTypes.length; i += batchSize) {
+        const batch = entityTypes.slice(i, i + batchSize);
+        const batchPromises = batch.map(async entityType => {
+          const result = await processEntity(entityType);
+          results[entityType] = result;
+          console.log(`[AI Bulk Generate] Completed ${entityType}: ${result.success ? result.count : 0} records`);
+          return result;
+        });
+        
+        await Promise.all(batchPromises);
       }
       
-      const totalGenerated = Object.values(results).reduce((sum, result) => 
+      const totalGenerated = Object.values(results).reduce((sum: number, result: any) => 
         sum + (result.success ? result.count : 0), 0);
       
       res.json({
