@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Loader2 } from 'lucide-react';
+import { Send, Bot, Loader2, ChevronDown, History } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
@@ -13,9 +13,65 @@ interface MaxAIHeaderPromptProps {
 
 export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   const [prompt, setPrompt] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [filteredPrompts, setFilteredPrompts] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Load prompt history from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('maxai-prompt-history');
+    if (saved) {
+      try {
+        const history = JSON.parse(saved);
+        setPromptHistory(history);
+        setFilteredPrompts(history);
+      } catch (error) {
+        console.error('Failed to parse prompt history:', error);
+      }
+    }
+  }, []);
+
+  // Save prompt to history
+  const savePromptToHistory = (newPrompt: string) => {
+    if (!newPrompt.trim()) return;
+    
+    setPromptHistory(prev => {
+      const filtered = prev.filter(p => p !== newPrompt.trim());
+      const updated = [newPrompt.trim(), ...filtered].slice(0, 10); // Keep only last 10 prompts
+      localStorage.setItem('maxai-prompt-history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  // Filter prompts based on current input
+  useEffect(() => {
+    if (!prompt.trim()) {
+      setFilteredPrompts(promptHistory);
+    } else {
+      const filtered = promptHistory.filter(p => 
+        p.toLowerCase().includes(prompt.toLowerCase())
+      );
+      setFilteredPrompts(filtered);
+    }
+  }, [prompt, promptHistory]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showDropdown]);
 
 
 
@@ -47,6 +103,9 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
       return response.json();
     },
     onSuccess: (data: any) => {
+      // Save prompt to history
+      savePromptToHistory(prompt);
+      
       // Handle navigation actions
       if (data.action?.type === 'navigate' && data.action.target) {
         // Navigate to the target page
@@ -63,6 +122,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
         });
       }
       setPrompt('');
+      setShowDropdown(false);
     },
     onError: (error) => {
       console.error('Failed to send prompt:', error);
@@ -82,6 +142,23 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
     sendPromptMutation.mutate(prompt);
   };
 
+  const handleInputClick = () => {
+    setShowDropdown(true);
+  };
+
+  const handlePromptSelect = (selectedPrompt: string) => {
+    setPrompt(selectedPrompt);
+    setShowDropdown(false);
+    inputRef.current?.focus();
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrompt(e.target.value);
+    if (!showDropdown) {
+      setShowDropdown(true);
+    }
+  };
+
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -97,21 +174,50 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   }, []);
 
   return (
-    <div className="relative flex items-center gap-2">
+    <div className="relative flex items-center gap-2" ref={dropdownRef}>
       <Bot className="h-4 w-4 text-muted-foreground" />
-      <form onSubmit={handleSubmit} className="flex items-center gap-1">
-        <Input
-          ref={inputRef}
-          type="text"
-          placeholder="Ask Max AI... (⌘K)"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className={cn(
-            "h-8 transition-all duration-200",
-            showText ? "w-48 lg:w-64" : "w-32 lg:w-48",
-            "placeholder:text-xs"
+      <form onSubmit={handleSubmit} className="relative flex items-center gap-1">
+        <div className="relative">
+          <Input
+            ref={inputRef}
+            type="text"
+            placeholder="Ask Max AI... (⌘K)"
+            value={prompt}
+            onChange={handleInputChange}
+            onClick={handleInputClick}
+            className={cn(
+              "h-8 transition-all duration-200 pr-6",
+              showText ? "w-48 lg:w-64" : "w-32 lg:w-48",
+              "placeholder:text-xs"
+            )}
+          />
+          {promptHistory.length > 0 && (
+            <ChevronDown 
+              className={cn(
+                "absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground transition-transform",
+                showDropdown && "rotate-180"
+              )}
+            />
           )}
-        />
+          
+          {/* Dropdown */}
+          {showDropdown && filteredPrompts.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+              {filteredPrompts.map((historyPrompt, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handlePromptSelect(historyPrompt)}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border last:border-b-0"
+                >
+                  <History className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{historyPrompt}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        
         <Button
           type="submit"
           size="sm"
