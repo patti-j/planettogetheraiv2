@@ -303,11 +303,11 @@ function AIShiftCreationForm({ plants, resources, onClose }: any) {
   };
 
   const handleImplementShifts = async () => {
-    if (!aiResponse?.shifts) return;
+    if (!aiResponse?.data?.shiftTemplates) return;
 
     setIsLoading(true);
     try {
-      for (const shift of aiResponse.shifts) {
+      for (const shift of aiResponse.data.shiftTemplates) {
         await apiRequest('POST', '/api/shift-templates', shift);
       }
 
@@ -348,10 +348,10 @@ function AIShiftCreationForm({ plants, resources, onClose }: any) {
         <div className="space-y-4">
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
             <h3 className="font-semibold text-green-800 mb-2">AI Recommendations</h3>
-            <p className="text-green-700 mb-4">{aiResponse.reasoning}</p>
+            <p className="text-green-700 mb-4">{aiResponse.data?.reasoning || aiResponse.message}</p>
             
             <div className="space-y-3">
-              {aiResponse.shifts?.map((shift: any, index: number) => (
+              {aiResponse.data?.shiftTemplates?.map((shift: any, index: number) => (
                 <div key={index} className="p-3 bg-white border rounded">
                   <h4 className="font-medium">{shift.name}</h4>
                   <p className="text-sm text-gray-600">{shift.description}</p>
