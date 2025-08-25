@@ -199,7 +199,12 @@ export class MaxAIService {
 
   // Use AI to intelligently determine user intent and target route
   private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number }> {
-    const routes = this.getApplicationRoutes();
+    const navigationMapping = await this.getNavigationMapping();
+    const routes = Object.values(navigationMapping).map(page => ({
+      route: page.path,
+      label: page.name,
+      description: page.description
+    }));
     
     // Quick check for obvious data requests
     const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is'];
@@ -536,6 +541,189 @@ Respond with JSON:
       console.error('Error with AI flexible response:', error);
       return null;
     }
+  }
+
+  // Auto-discovery mechanism for navigation pages
+  private async discoverAvailablePages(): Promise<Record<string, {path: string, name: string, description: string, keywords: string[]}>> {
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const discoveredPages: Record<string, {path: string, name: string, description: string, keywords: string[]}> = {};
+    
+    try {
+      const pagesDir = path.join(process.cwd(), 'client/src/pages');
+      
+      if (fs.existsSync(pagesDir)) {
+        const pageFiles = fs.readdirSync(pagesDir)
+          .filter(file => file.endsWith('.tsx') && !file.includes('.backup'))
+          .map(file => file.replace('.tsx', ''));
+        
+        for (const pageFile of pageFiles) {
+          // Convert file name to route path and readable name
+          const routePath = `/${pageFile.toLowerCase().replace(/([A-Z])/g, '-$1').replace(/^-/, '')}`;
+          const readableName = pageFile
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+          
+          // Create intelligent descriptions based on page names
+          let description = `${readableName} page and functionality`;
+          const keywords = [readableName.toLowerCase(), ...readableName.toLowerCase().split(' ')];
+          
+          // Add specific descriptions for known page types
+          if (pageFile.toLowerCase().includes('dashboard')) {
+            description = `${readableName} with overview and analytics`;
+            keywords.push('overview', 'summary', 'metrics', 'analytics');
+          } else if (pageFile.toLowerCase().includes('schedule')) {
+            description = `${readableName} for planning and scheduling`;
+            keywords.push('planning', 'timeline', 'calendar', 'schedule');
+          } else if (pageFile.toLowerCase().includes('master-data')) {
+            description = `${readableName} for managing system data`;
+            keywords.push('data', 'management', 'configuration', 'setup');
+          } else if (pageFile.toLowerCase().includes('report')) {
+            description = `${readableName} and analytics reports`;
+            keywords.push('reports', 'analytics', 'insights', 'metrics');
+          } else if (pageFile.toLowerCase().includes('optimization')) {
+            description = `${readableName} and performance optimization`;
+            keywords.push('optimization', 'performance', 'efficiency', 'improvement');
+          } else if (pageFile.toLowerCase().includes('planning')) {
+            description = `${readableName} and strategic planning`;
+            keywords.push('planning', 'strategy', 'forecasting', 'preparation');
+          }
+          
+          discoveredPages[pageFile.toLowerCase()] = {
+            path: routePath,
+            name: readableName,
+            description,
+            keywords
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error discovering pages:', error);
+    }
+    
+    return discoveredPages;
+  }
+
+  // Static navigation mappings for commonly used pages with specific paths
+  private getStaticNavigationMapping(): Record<string, {path: string, name: string, description: string, keywords: string[]}> {
+    return {
+      'home': {
+        path: '/',
+        name: 'Home Dashboard',
+        description: 'main dashboard with overview and key metrics',
+        keywords: ['home', 'main', 'dashboard', 'overview', 'start']
+      },
+      'mobile-home': {
+        path: '/mobile-home',
+        name: 'Mobile Home',
+        description: 'mobile optimized home dashboard',
+        keywords: ['mobile', 'home', 'dashboard']
+      },
+      'dashboard': {
+        path: '/dashboard',
+        name: 'Dashboard',
+        description: 'primary dashboard with analytics and insights',
+        keywords: ['dashboard', 'analytics', 'metrics', 'overview']
+      },
+      'analytics': {
+        path: '/analytics',
+        name: 'Analytics',
+        description: 'data analytics and reporting dashboard',
+        keywords: ['analytics', 'data', 'reports', 'insights', 'metrics']
+      },
+      'production-schedule': {
+        path: '/production-schedule',
+        name: 'Production Schedule',
+        description: 'production scheduling and timeline management',
+        keywords: ['schedule', 'production', 'planning', 'timeline', 'gantt']
+      },
+      'shift-management': {
+        path: '/shift-management',
+        name: 'Shift Management',
+        description: 'workforce shift planning and scheduling',
+        keywords: ['shift', 'schedule', 'workforce', 'planning', 'shifts']
+      },
+      'capacity-planning': {
+        path: '/capacity-planning',
+        name: 'Capacity Planning',
+        description: 'resource capacity planning and optimization',
+        keywords: ['capacity', 'planning', 'resources', 'optimization']
+      },
+      'optimization-studio': {
+        path: '/optimization-studio',
+        name: 'Optimization Studio',
+        description: 'advanced optimization tools and scenarios',
+        keywords: ['optimization', 'studio', 'advanced', 'scenarios']
+      },
+      'master-data': {
+        path: '/master-data',
+        name: 'Master Data',
+        description: 'master data management and configuration',
+        keywords: ['master', 'data', 'management', 'configuration', 'setup']
+      },
+      'visual-factory': {
+        path: '/visual-factory',
+        name: 'Visual Factory',
+        description: 'visual factory displays and monitoring',
+        keywords: ['visual', 'factory', 'displays', 'monitoring']
+      },
+      'business-goals': {
+        path: '/business-goals',
+        name: 'Business Goals',
+        description: 'business objectives and goal tracking',
+        keywords: ['business', 'goals', 'objectives', 'targets', 'kpi']
+      },
+      'alerts': {
+        path: '/alerts',
+        name: 'Alerts',
+        description: 'system alerts and notifications management',
+        keywords: ['alerts', 'notifications', 'warnings', 'issues']
+      },
+      'boards': {
+        path: '/boards',
+        name: 'Kanban Boards',
+        description: 'kanban boards and workflow management',
+        keywords: ['kanban', 'boards', 'workflow', 'tasks', 'cards']
+      },
+      'reports': {
+        path: '/reports',
+        name: 'Reports',
+        description: 'comprehensive reporting and analysis',
+        keywords: ['reports', 'reporting', 'analysis', 'data']
+      },
+      'settings': {
+        path: '/settings',
+        name: 'Settings',
+        description: 'system settings and configuration',
+        keywords: ['settings', 'configuration', 'preferences', 'setup']
+      }
+    };
+  }
+
+  // Combined navigation mapping with auto-discovery
+  private async getNavigationMapping(): Promise<Record<string, {path: string, name: string, description: string, keywords: string[]}>> {
+    const staticMapping = this.getStaticNavigationMapping();
+    const discoveredMapping = await this.discoverAvailablePages();
+    
+    // Log navigation discovery results
+    const discoveredCount = Object.keys(discoveredMapping).length;
+    const staticCount = Object.keys(staticMapping).length;
+    const totalCount = staticCount + discoveredCount - Object.keys(staticMapping).filter(key => discoveredMapping[key]).length; // Subtract overlaps
+    
+    console.log(`[Max AI] Navigation Discovery Summary:
+  ✅ Static navigation routes: ${staticCount}
+  🔍 Auto-discovered pages: ${discoveredCount}
+  📍 Total pages available: ${totalCount}`);
+    
+    if (discoveredCount > 10) {
+      const samplePages = Object.keys(discoveredMapping).slice(0, 10).map(k => discoveredMapping[k].path);
+      console.log(`[Max AI] Sample discovered pages:`, samplePages, `... and ${discoveredCount - 10} more`);
+    }
+    
+    // Merge mappings (static takes priority)
+    return { ...discoveredMapping, ...staticMapping };
   }
 
   // Auto-discovery mechanism for new data types
@@ -882,10 +1070,15 @@ Please answer their question using this data.`
   }
 
   private async handleNavigationIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
-    // Let AI determine the best navigation target
-    const routes = this.getApplicationRoutes();
+    // Use auto-discovered navigation mapping
+    const navigationMapping = await this.getNavigationMapping();
     
     try {
+      // Create list of available pages for AI
+      const availablePages = Object.entries(navigationMapping).map(([key, page]) => 
+        `${page.path} - ${page.description}`
+      ).join('\n');
+
       const navResponse = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
@@ -893,10 +1086,11 @@ Please answer their question using this data.`
             role: 'system',
             content: `You are a navigation assistant. Based on the user's request, determine the best page to navigate to.
 
-Available routes:
-${routes.map(r => `${r.route} - ${r.description}`).join('\n')}
+Available pages:
+${availablePages}
 
-Respond with just the route path (e.g., "/production-schedule") or "NONE" if no navigation is needed.`
+Respond with just the route path (e.g., "/production-schedule") or "NONE" if no navigation is needed.
+Focus on the most relevant page that matches the user's intent.`
           },
           {
             role: 'user',
@@ -910,8 +1104,12 @@ Respond with just the route path (e.g., "/production-schedule") or "NONE" if no 
       const route = navResponse.choices[0].message.content?.trim();
       
       if (route && route !== 'NONE' && route.startsWith('/')) {
+        // Find the page info for a better response message
+        const pageInfo = Object.values(navigationMapping).find(p => p.path === route);
+        const pageName = pageInfo?.name || route.replace('/', '').replace('-', ' ');
+        
         return {
-          content: `Taking you to ${route.replace('/', '').replace('-', ' ')}...`,
+          content: `Taking you to ${pageName}...`,
           action: {
             type: 'navigate',
             target: route
