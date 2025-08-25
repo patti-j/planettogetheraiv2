@@ -24289,9 +24289,29 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
           if (openaiResponse.ok) {
             const aiResult = await openaiResponse.json();
             const suggestions = JSON.parse(aiResult.choices[0].message.content);
+            
+            // Actually save the generated records to the database
+            let savedCount = 0;
+            const createPromises = suggestions.suggestions?.map(async (suggestion: any) => {
+              if (suggestion.operation === 'create' && suggestion.data) {
+                try {
+                  // Use the existing master data creation logic
+                  const tableSchema = masterDataTables[entityType as keyof typeof masterDataTables];
+                  if (tableSchema?.create) {
+                    await tableSchema.create(suggestion.data);
+                    savedCount++;
+                  }
+                } catch (error) {
+                  console.error(`[AI Bulk Generate] Failed to save ${entityType} record:`, error.message);
+                }
+              }
+            }) || [];
+            
+            await Promise.all(createPromises);
+            
             return {
               success: true,
-              count: suggestions.suggestions?.length || 0,
+              count: savedCount,
               data: suggestions.suggestions || []
             };
           } else {
@@ -24312,7 +24332,7 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
         const batchPromises = batch.map(async entityType => {
           const result = await processEntity(entityType);
           results[entityType] = result;
-          console.log(`[AI Bulk Generate] Completed ${entityType}: ${result.success ? result.count : 0} records`);
+          console.log(`[AI Bulk Generate] Completed ${entityType}: ${result.success ? `${result.count} records saved` : 'failed'}`);
           return result;
         });
         
