@@ -11487,7 +11487,7 @@ export type InsertCommentWatcher = z.infer<typeof insertCommentWatcherSchema>;
 // ========================================
 
 // PT Publish Jobs - Manufacturing orders from PlanetTogether
-export const ptJobs = pgTable("ptJobs", {
+export const ptJobs = pgTable("ptjobs", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11578,7 +11578,7 @@ export const ptJobs = pgTable("ptJobs", {
 });
 
 // PT Publish Resources - Resources from PlanetTogether
-export const ptResources = pgTable("ptResources", {
+export const ptResources = pgTable("ptresources", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11670,7 +11670,7 @@ export const ptResources = pgTable("ptResources", {
 });
 
 // PT Publish Job Operations - Operations from PlanetTogether
-export const ptJobOperations = pgTable("ptJobOperations", {
+export const ptJobOperations = pgTable("ptjoboperations", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11694,7 +11694,7 @@ export const ptJobOperations = pgTable("ptJobOperations", {
 });
 
 // PT Publish Capabilities - Resource capabilities from PlanetTogether
-export const ptCapabilities = pgTable("ptCapabilities", {
+export const ptCapabilities = pgTable("ptcapabilities", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11706,7 +11706,7 @@ export const ptCapabilities = pgTable("ptCapabilities", {
 });
 
 // PT Publish Metrics - Calculated metrics from PlanetTogether
-export const ptMetrics = pgTable("ptMetrics", {
+export const ptMetrics = pgTable("ptmetrics", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
@@ -11721,7 +11721,7 @@ export const ptMetrics = pgTable("ptMetrics", {
 });
 
 // PT Publish Manufacturing Orders - Manufacturing orders from PlanetTogether
-export const ptManufacturingOrders = pgTable("ptManufacturingOrders", {
+export const ptManufacturingOrders = pgTable("ptmanufacturingorders", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
