@@ -208,14 +208,12 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
               "placeholder:text-xs"
             )}
           />
-          {(chatMessages.length > 0 || promptHistory.length > 0) && (
-            <ChevronDown 
-              className={cn(
-                "absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground transition-transform",
-                showDropdown && "rotate-180"
-              )}
-            />
-          )}
+          <ChevronDown 
+            className={cn(
+              "absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground transition-transform",
+              showDropdown && "rotate-180"
+            )}
+          />
           
           {/* Dropdown */}
           {showDropdown && (

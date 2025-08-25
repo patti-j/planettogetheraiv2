@@ -69,11 +69,23 @@ const getCurrentUser = async () => {
   if (currentUserId) return;
   
   try {
+    // Try different token sources
+    const authToken = localStorage.getItem('authToken') || 
+                     localStorage.getItem('auth_token') || 
+                     sessionStorage.getItem('authToken') ||
+                     sessionStorage.getItem('auth_token');
+    
+    const headers: any = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+    
     const response = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
-        'Content-Type': 'application/json'
-      }
+      headers,
+      credentials: 'include' // Include cookies for session-based auth
     });
     
     if (!response.ok) {
@@ -85,6 +97,18 @@ const getCurrentUser = async () => {
     await loadChatHistory();
   } catch (error) {
     console.error('Failed to get current user:', error);
+    // Set a fallback welcome message even if auth fails
+    globalChatMessages = [
+      {
+        id: -1,
+        role: 'assistant',
+        content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
+        createdAt: new Date().toISOString(),
+        source: 'panel'
+      }
+    ];
+    messagesLoaded = true;
+    subscribers.forEach(callback => callback(globalChatMessages));
   }
 };
 
