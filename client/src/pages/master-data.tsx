@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Save, Trash2, Upload, Download, Search,
   Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText,
-  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap
+  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap, ChevronRight
 } from 'lucide-react';
 import {
   Table,
@@ -489,6 +489,217 @@ function EditableDataTable({
   );
 }
 
+// Hierarchical Data Table Component for multi-level entities like Jobs
+interface HierarchicalDataTableProps {
+  data: any[];
+  columns: Column[];
+  entityType: string;
+  onUpdate: (id: number, data: any) => void;
+  onCreate: (data: any) => void;
+  onDelete: (id: number) => void;
+  isLoading?: boolean;
+  onShowAiAssistant?: () => void;
+}
+
+function HierarchicalDataTable({ 
+  data, 
+  columns, 
+  entityType, 
+  onUpdate, 
+  onCreate, 
+  onDelete,
+  isLoading,
+  onShowAiAssistant
+}: HierarchicalDataTableProps) {
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [childData, setChildData] = useState<Record<number, any[]>>({});
+  const [loadingChildren, setLoadingChildren] = useState<Set<number>>(new Set());
+
+  // Fetch child operations for a job
+  const fetchChildOperations = async (jobId: number) => {
+    try {
+      setLoadingChildren(prev => new Set([...prev, jobId]));
+      const response = await apiRequest('GET', `/api/jobs/${jobId}/operations`);
+      const operations = await response.json();
+      setChildData(prev => ({ ...prev, [jobId]: operations }));
+    } catch (error) {
+      console.error('Failed to fetch child operations:', error);
+    } finally {
+      setLoadingChildren(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(jobId);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleRowExpansion = (rowId: number) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(rowId)) {
+      newExpanded.delete(rowId);
+    } else {
+      newExpanded.add(rowId);
+      // Fetch child data if not already loaded
+      if (!childData[rowId]) {
+        fetchChildOperations(rowId);
+      }
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const renderCell = (row: any, col: Column) => {
+    const value = row[col.key];
+    if (col.type === 'boolean') {
+      return value ? '✓' : '✗';
+    }
+    if (col.type === 'date' && value) {
+      return new Date(value).toLocaleDateString();
+    }
+    if (col.type === 'number' && value !== null && value !== undefined) {
+      return typeof value === 'number' ? value.toLocaleString() : value;
+    }
+    return value || '';
+  };
+
+  // Child operations table columns
+  const operationColumns: Column[] = [
+    { key: 'operationId', label: 'Operation ID', type: 'number' },
+    { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'setupHours', label: 'Setup Hours', type: 'number' },
+    { key: 'requiredStartQty', label: 'Start Qty', type: 'number' },
+    { key: 'requiredFinishQty', label: 'Finish Qty', type: 'number' },
+    { key: 'minutesPerCycle', label: 'Minutes/Cycle', type: 'number' }
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Header with AI Assistant */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold capitalize">{entityType.replace('-', ' ')}</h3>
+          <Badge variant="secondary">{data?.length || 0} records</Badge>
+        </div>
+        {onShowAiAssistant && (
+          <Button
+            onClick={onShowAiAssistant}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Bot className="h-4 w-4" />
+            AI Assistant
+          </Button>
+        )}
+      </div>
+
+      {/* Main table */}
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">
+                {/* Expand toggle column */}
+              </TableHead>
+              {columns.map(col => (
+                <TableHead key={col.key} className={col.width}>
+                  {col.label}
+                </TableHead>
+              ))}
+              <TableHead className="w-20">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data?.map(row => (
+              <>
+                {/* Main row */}
+                <TableRow key={`main-${row.id}`}>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleRowExpansion(row.id)}
+                      className="h-6 w-6 p-0"
+                    >
+                      {loadingChildren.has(row.id) ? (
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                      ) : expandedRows.has(row.id) ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </TableCell>
+                  {columns.map(col => (
+                    <TableCell key={col.key}>
+                      {renderCell(row, col)}
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDelete(row.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+
+                {/* Expanded child rows (operations) */}
+                {expandedRows.has(row.id) && childData[row.id] && (
+                  <TableRow key={`child-${row.id}`}>
+                    <TableCell></TableCell>
+                    <TableCell colSpan={columns.length + 1}>
+                      <div className="bg-muted/50 p-4 rounded-lg ml-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <h4 className="font-medium text-sm">Operations for {row.externalId || row.name || `Job ${row.id}`}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {childData[row.id]?.length || 0} operations
+                          </Badge>
+                        </div>
+                        
+                        {childData[row.id]?.length > 0 ? (
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            <Table className="text-xs">
+                              <TableHeader>
+                                <TableRow>
+                                  {operationColumns.map(col => (
+                                    <TableHead key={col.key} className="text-xs py-2">
+                                      {col.label}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {childData[row.id].map(operation => (
+                                  <TableRow key={operation.id} className="hover:bg-muted/30">
+                                    {operationColumns.map(col => (
+                                      <TableCell key={col.key} className="py-1 text-xs">
+                                        {renderCell(operation, col)}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No operations found for this job</p>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('items');
@@ -559,25 +770,13 @@ export default function MasterDataPage() {
       { key: 'promisedDate', label: 'Promised Date', editable: true, type: 'date' }
     ],
     jobs: [
-      { key: 'jobNumber', label: 'Job Number', editable: true, required: true },
-      { key: 'name', label: 'Name', editable: true, required: true },
+      { key: 'externalId', label: 'Job ID', editable: false, required: true },
       { key: 'description', label: 'Description', editable: true },
-      { key: 'status', label: 'Status', editable: true, type: 'select', options: [
-        { value: 'planned', label: 'Planned' },
-        { value: 'released', label: 'Released' },
-        { value: 'in_progress', label: 'In Progress' },
-        { value: 'completed', label: 'Completed' },
-        { value: 'cancelled', label: 'Cancelled' }
-      ]},
-      { key: 'priority', label: 'Priority', editable: true, type: 'select', options: [
-        { value: 'low', label: 'Low' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'high', label: 'High' },
-        { value: 'urgent', label: 'Urgent' }
-      ]},
-      { key: 'quantity', label: 'Quantity', editable: true, type: 'number' },
-      { key: 'dueDate', label: 'Due Date', editable: true, type: 'date' },
-      { key: 'salesOrderNumber', label: 'Sales Order', editable: true }
+      { key: 'priority', label: 'Priority', editable: true, type: 'number' },
+      { key: 'scheduled', label: 'Scheduled', editable: false, type: 'boolean' },
+      { key: 'needDateTime', label: 'Need Date', editable: true, type: 'date' },
+      { key: 'product', label: 'Product', editable: true },
+      { key: 'qty', label: 'Quantity', editable: true, type: 'number' }
     ],
     'job-templates': [
       { key: 'templateNumber', label: 'Template Number', editable: true, required: true },
@@ -871,16 +1070,29 @@ export default function MasterDataPage() {
 
             <div className="p-3 sm:p-6">
               <TabsContent value={activeTab} className="mt-0">
-                <EditableDataTable
-                  data={data || []}
-                  columns={columns[activeTab]}
-                  entityType={activeTab}
-                  onUpdate={(id, data) => updateMutation.mutate({ id, data })}
-                  onCreate={(data) => createMutation.mutate(data)}
-                  onDelete={(id) => deleteMutation.mutate(id)}
-                  isLoading={isLoading}
-                  onShowAiAssistant={() => setShowAiAssistant(true)}
-                />
+                {activeTab === 'jobs' ? (
+                  <HierarchicalDataTable
+                    data={data || []}
+                    columns={columns[activeTab]}
+                    entityType={activeTab}
+                    onUpdate={(id, data) => updateMutation.mutate({ id, data })}
+                    onCreate={(data) => createMutation.mutate(data)}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                    isLoading={isLoading}
+                    onShowAiAssistant={() => setShowAiAssistant(true)}
+                  />
+                ) : (
+                  <EditableDataTable
+                    data={data || []}
+                    columns={columns[activeTab]}
+                    entityType={activeTab}
+                    onUpdate={(id, data) => updateMutation.mutate({ id, data })}
+                    onCreate={(data) => createMutation.mutate(data)}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                    isLoading={isLoading}
+                    onShowAiAssistant={() => setShowAiAssistant(true)}
+                  />
+                )}
               </TabsContent>
             </div>
           </Tabs>

@@ -4,7 +4,7 @@ import path from "path";
 import { storage } from "./storage";
 import { db, checkDbHealth, getDbMetrics } from "./db";
 import * as schema from "@shared/schema";
-import { sql } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
@@ -23469,12 +23469,91 @@ CRITICAL: Do NOT include an "id" field in your response - the database will auto
   app.get("/api/job-templates", async (req, res) => {
     try {
       console.log('getJobTemplates: Fetching from ptManufacturingOrders table');
-      const templates = await db.select().from(schema.ptManufacturingOrders).orderBy(schema.ptManufacturingOrders.orderNumber);
+      const templates = await db.select().from(schema.ptManufacturingOrders).orderBy(schema.ptManufacturingOrders.name);
       console.log(`Job Templates count: ${templates.length}`);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching job templates:", error);
       res.status(500).json({ error: "Failed to fetch job templates" });
+    }
+  });
+
+  // Hierarchical data endpoints for master data drill-down
+
+  // Get operations for a specific job
+  app.get("/api/jobs/:jobId/operations", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      if (isNaN(jobId)) {
+        return res.status(400).json({ error: "Invalid job ID" });
+      }
+
+      console.log(`getJobOperations: Fetching operations for job ${jobId}`);
+      const operations = await db.select().from(schema.ptJobOperations).where(eq(schema.ptJobOperations.jobId, jobId)).orderBy(schema.ptJobOperations.operationId);
+      console.log(`Operations count for job ${jobId}: ${operations.length}`);
+      res.json(operations);
+    } catch (error) {
+      console.error("Error fetching job operations:", error);
+      res.status(500).json({ error: "Failed to fetch job operations" });
+    }
+  });
+
+  // Get materials for a specific operation
+  app.get("/api/jobs/:jobId/operations/:operationId/materials", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const operationId = parseInt(req.params.operationId);
+      if (isNaN(jobId) || isNaN(operationId)) {
+        return res.status(400).json({ error: "Invalid job or operation ID" });
+      }
+
+      console.log(`getOperationMaterials: Fetching materials for job ${jobId}, operation ${operationId}`);
+      // Note: Using simplified query for now - will enhance based on available tables
+      const materials = []; // TODO: Query ptjobmaterials table when schema is available
+      console.log(`Materials count for operation ${operationId}: ${materials.length}`);
+      res.json(materials);
+    } catch (error) {
+      console.error("Error fetching operation materials:", error);
+      res.status(500).json({ error: "Failed to fetch operation materials" });
+    }
+  });
+
+  // Get resources for a specific operation
+  app.get("/api/jobs/:jobId/operations/:operationId/resources", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const operationId = parseInt(req.params.operationId);
+      if (isNaN(jobId) || isNaN(operationId)) {
+        return res.status(400).json({ error: "Invalid job or operation ID" });
+      }
+
+      console.log(`getOperationResources: Fetching resources for job ${jobId}, operation ${operationId}`);
+      // Note: Using simplified query for now - will enhance based on available tables  
+      const resources = []; // TODO: Query ptjobresources table when schema is available
+      console.log(`Resources count for operation ${operationId}: ${resources.length}`);
+      res.json(resources);
+    } catch (error) {
+      console.error("Error fetching operation resources:", error);
+      res.status(500).json({ error: "Failed to fetch operation resources" });
+    }
+  });
+
+  // Get paths for a specific job
+  app.get("/api/jobs/:jobId/paths", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      if (isNaN(jobId)) {
+        return res.status(400).json({ error: "Invalid job ID" });
+      }
+
+      console.log(`getJobPaths: Fetching paths for job ${jobId}`);
+      // Note: Using simplified query for now - will enhance based on available tables
+      const paths = []; // TODO: Query ptjobpaths table when schema is available
+      console.log(`Paths count for job ${jobId}: ${paths.length}`);
+      res.json(paths);
+    } catch (error) {
+      console.error("Error fetching job paths:", error);
+      res.status(500).json({ error: "Failed to fetch job paths" });
     }
   });
 
