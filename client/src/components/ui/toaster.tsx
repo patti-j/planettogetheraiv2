@@ -14,14 +14,14 @@ export function Toaster() {
   const { toasts } = useToast()
   const [copiedToastId, setCopiedToastId] = useState<string | null>(null)
 
-  const copyErrorMessage = async (toastId: string, title?: string, description?: string) => {
+  const copyToastMessage = async (toastId: string, title?: string, description?: string) => {
     const message = [title, description].filter(Boolean).join(': ')
     try {
       await navigator.clipboard.writeText(message)
       setCopiedToastId(toastId)
       setTimeout(() => setCopiedToastId(null), 2000) // Reset after 2 seconds
     } catch (err) {
-      console.error('Failed to copy error message:', err)
+      console.error('Failed to copy toast message:', err)
     }
   }
 
@@ -37,19 +37,19 @@ export function Toaster() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {variant === 'destructive' && (
-                <button
-                  onClick={() => copyErrorMessage(id, title?.toString(), description?.toString())}
-                  className={`rounded-md p-1 transition-colors ${
-                    copiedToastId === id
-                      ? 'bg-green-100 text-green-600'
-                      : 'text-destructive-foreground/70 hover:text-destructive-foreground'
-                  }`}
-                  title={copiedToastId === id ? "Copied!" : "Copy error message"}
-                >
-                  <Copy className="h-4 w-4" />
-                </button>
-              )}
+              <button
+                onClick={() => copyToastMessage(id, title?.toString(), description?.toString())}
+                className={`rounded-md p-1 transition-colors ${
+                  copiedToastId === id
+                    ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
+                    : variant === 'destructive'
+                      ? 'text-destructive-foreground/70 hover:text-destructive-foreground'
+                      : 'text-foreground/70 hover:text-foreground'
+                }`}
+                title={copiedToastId === id ? "Copied!" : "Copy message"}
+              >
+                <Copy className="h-4 w-4" />
+              </button>
               {action}
               <ToastClose />
             </div>
