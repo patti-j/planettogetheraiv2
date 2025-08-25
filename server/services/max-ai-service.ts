@@ -305,11 +305,11 @@ Rules:
     const productionData = await this.getProductionStatus(context);
     const insights = await this.analyzeSchedule(context);
     
-    // Handle data display intent with specific data analysis
+    // Handle data display intent with flexible AI analysis
     if (intent.type === 'show_data' && intent.confidence > 0.7) {
-      const specificDataResponse = await this.getSpecificDataResponse(query, context);
-      if (specificDataResponse) {
-        return specificDataResponse;
+      const flexibleResponse = await this.getAIFlexibleResponse(query, context);
+      if (flexibleResponse) {
+        return flexibleResponse;
       }
       
       // Fallback to general production status
@@ -475,96 +475,246 @@ Would you like me to analyze any specific area in detail?`;
     return `${basePrompt}\n\nUser Role: ${context.userRole}\n${rolePrompts[context.userRole] || ''}\n\nCurrent Context: ${context.currentPage}\n${pageContexts[context.currentPage] || ''}`;
   }
 
-  // Use AI to understand what data the user wants and fetch it intelligently
-  private async getSpecificDataResponse(query: string, context: MaxContext): Promise<MaxResponse | null> {
-    // Available data endpoints for AI to choose from
-    const availableData = [
-      { type: 'resources', endpoint: '/api/resources', description: 'Manufacturing resources, machines, equipment' },
-      { type: 'operations', endpoint: '/api/operations', description: 'Production operations and tasks' },
-      { type: 'jobs', endpoint: '/api/jobs', description: 'Production jobs and orders' },
-      { type: 'alerts', endpoint: '/api/alerts', description: 'System alerts and notifications' },
-      { type: 'sales-orders', endpoint: '/api/sales-orders', description: 'Sales orders, customer orders, order management' }
-    ];
-    
+  // Use AI flexibly to understand user intent and determine appropriate actions
+  private async getAIFlexibleResponse(query: string, context: MaxContext): Promise<MaxResponse | null> {
     try {
-      // Use AI to determine what data type the user is asking about
-      const response = await openai.chat.completions.create({
+      // Let AI understand the user's intent and decide what to do
+      const intentResponse = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `You are a data intent analyzer for a manufacturing system. Determine what type of data the user is asking about.
+            content: `You are Max, an intelligent manufacturing AI assistant. Analyze the user's request and determine what they want.
 
-Available data types:
-${availableData.map(d => `${d.type}: ${d.description}`).join('\n')}
+Available actions you can take:
+1. FETCH_DATA - if they want specific information from the system
+2. NAVIGATE - if they want to go to a specific page/feature  
+3. ANALYZE - if they want analysis of current data
+4. HELP - if they need guidance or have questions
+5. CHAT - for general conversation
 
-Rules:
-- If the user is asking about a specific data type, respond with just the type name (e.g., "resources")
-- If the query is about something not in the list or is conversational, respond with "NONE"
-- Be flexible - users might say "machines" and mean "resources", or "tasks" and mean "operations"
-- Users might say "orders" and mean "sales-orders", or "customer orders" and mean "sales-orders"
-- Focus on the main subject of their question`
+Manufacturing system capabilities:
+- Production data: jobs, operations, schedules, resources
+- Sales data: orders, customers, delivery tracking
+- Quality data: metrics, inspections, compliance
+- Analytics: KPIs, trends, optimization insights
+- System navigation: schedule views, dashboards, reports
+
+Respond with JSON:
+{
+  "intent": "FETCH_DATA|NAVIGATE|ANALYZE|HELP|CHAT",
+  "target": "specific endpoint or page if applicable",
+  "reasoning": "brief explanation of what the user wants",
+  "query_type": "what kind of information or action they're seeking"
+}`
           },
           {
             role: 'user',
-            content: query
+            content: `User request: "${query}"\nContext: Currently on ${context.currentPage} as ${context.userRole}`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 200,
+        response_format: { type: "json_object" }
+      });
+      
+      const intent = JSON.parse(intentResponse.choices[0].message.content || '{}');
+      
+      // Handle the intent flexibly
+      if (intent.intent === 'FETCH_DATA') {
+        return await this.handleDataFetchIntent(query, intent, context);
+      } else if (intent.intent === 'NAVIGATE') {
+        return await this.handleNavigationIntent(query, intent, context);
+      } else if (intent.intent === 'ANALYZE') {
+        return await this.handleAnalysisIntent(query, intent, context);
+      } else {
+        // Let the main AI response handle HELP and CHAT
+        return null;
+      }
+      
+    } catch (error) {
+      console.error('Error with AI flexible response:', error);
+      return null;
+    }
+  }
+
+  private async handleDataFetchIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
+    try {
+      // Let AI determine what data to fetch based on the query
+      const dataResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a data fetching assistant. Based on the user's query, determine what API endpoint to call.
+
+Available endpoints:
+- /api/jobs - production jobs and orders
+- /api/operations - manufacturing operations and tasks
+- /api/resources - machines, equipment, workstations
+- /api/sales-orders - customer orders and sales data
+- /api/alerts - system notifications and issues
+- /api/customers - customer information
+- /api/vendors - supplier data
+- /api/plants - facility information
+
+Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.`
+          },
+          {
+            role: 'user',
+            content: `User query: "${query}"\nIntent reasoning: ${intent.reasoning}`
           }
         ],
         temperature: 0.1,
-        max_tokens: 20
+        max_tokens: 50
       });
+
+      const endpoint = dataResponse.choices[0].message.content?.trim();
       
-      const dataType = response.choices[0].message.content?.trim().toLowerCase();
-      const dataConfig = availableData.find(d => d.type === dataType);
-      
-      if (dataConfig) {
-        // Fetch the requested data
-        const dataResponse = await fetch(`http://localhost:5000${dataConfig.endpoint}`);
-        const data = await dataResponse.json();
+      if (endpoint && endpoint !== 'NONE' && endpoint.startsWith('/api/')) {
+        // Fetch the data
+        const response = await fetch(`http://localhost:5000${endpoint}`);
+        const data = await response.json();
         
-        // Use AI to analyze and format the response
+        // Let AI analyze and format the response naturally
         const analysisResponse = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
             {
               role: 'system',
-              content: `You are Max, a manufacturing AI assistant. Analyze the provided data and answer the user's question directly and concisely.
+              content: `You are Max, a manufacturing AI assistant. The user asked a question and we retrieved data to help answer it. 
+
+Analyze the data and provide a helpful, conversational response that directly answers their question.
 
 Guidelines:
-- Give specific numbers and facts
-- Use relevant emojis for visual appeal
-- Keep responses clear and actionable
-- If data is empty or minimal, explain what this means for production`
+- Be natural and conversational
+- Give specific numbers and facts when relevant
+- Use emojis for visual appeal if appropriate
+- If the data is empty, explain what this means
+- Focus on what the user actually wanted to know`
             },
             {
               role: 'user',
-              content: `User asked: "${query}"
+              content: `Original question: "${query}"
 
-Data retrieved (${dataConfig.type}): ${JSON.stringify(data.slice(0, 10), null, 2)}
+Retrieved data: ${JSON.stringify(data.slice(0, 15), null, 2)}
+Total records: ${data.length}
 
-Total count: ${data.length}
-
-Please answer their question with this data.`
+Please answer their question using this data.`
             }
           ],
           temperature: 0.3,
-          max_tokens: 300
+          max_tokens: 400
         });
         
         return {
           content: analysisResponse.choices[0].message.content || 'Data retrieved successfully.',
           action: {
             type: 'show_data',
-            data: { [dataConfig.type]: data.slice(0, 5), total: data.length }
+            data: { results: data.slice(0, 10), total: data.length, endpoint }
           }
         };
       }
       
     } catch (error) {
-      console.error('Error with AI-powered data response:', error);
+      console.error('Error handling data fetch intent:', error);
     }
     
-    return null; // No specific data request detected
+    return null;
+  }
+
+  private async handleNavigationIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
+    // Let AI determine the best navigation target
+    const routes = this.getApplicationRoutes();
+    
+    try {
+      const navResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a navigation assistant. Based on the user's request, determine the best page to navigate to.
+
+Available routes:
+${routes.map(r => `${r.route} - ${r.description}`).join('\n')}
+
+Respond with just the route path (e.g., "/production-schedule") or "NONE" if no navigation is needed.`
+          },
+          {
+            role: 'user',
+            content: `User wants: "${query}"\nReasoning: ${intent.reasoning}`
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 50
+      });
+
+      const route = navResponse.choices[0].message.content?.trim();
+      
+      if (route && route !== 'NONE' && route.startsWith('/')) {
+        return {
+          content: `Taking you to ${route.replace('/', '').replace('-', ' ')}...`,
+          action: {
+            type: 'navigate',
+            target: route
+          }
+        };
+      }
+      
+    } catch (error) {
+      console.error('Error handling navigation intent:', error);
+    }
+    
+    return null;
+  }
+
+  private async handleAnalysisIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
+    // Get current production data for analysis
+    const productionData = await this.getProductionStatus(context);
+    
+    try {
+      const analysisResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: `You are Max, a manufacturing analytics AI. Provide insightful analysis based on the user's request and available data.
+
+Focus on:
+- Production efficiency and bottlenecks
+- Resource utilization and optimization
+- Schedule adherence and delivery performance
+- Quality metrics and compliance
+- Cost optimization opportunities
+
+Be specific and actionable in your recommendations.`
+          },
+          {
+            role: 'user',
+            content: `User wants analysis: "${query}"
+            
+Current production data: ${JSON.stringify(productionData, null, 2)}
+
+Provide analysis and recommendations.`
+          }
+        ],
+        temperature: 0.4,
+        max_tokens: 500
+      });
+      
+      return {
+        content: analysisResponse.choices[0].message.content || 'Analysis complete.',
+        action: {
+          type: 'show_data',
+          data: productionData
+        }
+      };
+      
+    } catch (error) {
+      console.error('Error handling analysis intent:', error);
+    }
+    
+    return null;
   }
 
   // Enrich user query with production context

@@ -48,7 +48,7 @@ Note on concurrent work:
 - **API Design**: RESTful API with JSON responses, role-based authentication.
 - **Authentication System**: Unified role-based permissions system.
 - **Data Seeding**: Automatic database seeding with sample manufacturing data.
-- **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
+- **AI Integration**: OpenAI GPT-4o for natural language processing, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation. Max AI uses flexible AI-driven intent understanding rather than hard-coded patterns, allowing natural conversation and intelligent response generation.
 - **Hint System Service**: Intelligent contextual hints with user interaction tracking, prerequisites, and sequence management.
 
 ### Bryntum Scheduler Pro Documentation
