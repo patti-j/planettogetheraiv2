@@ -26406,6 +26406,53 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
+  // Max AI Chat Messages - Persistent chat history
+  app.get("/api/max-chat-messages/:userId", createSafeHandler('Get Max Chat Messages')(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const messages = await db.select({
+      id: schema.maxChatMessages.id,
+      role: schema.maxChatMessages.role,
+      content: schema.maxChatMessages.content,
+      source: schema.maxChatMessages.source,
+      createdAt: schema.maxChatMessages.createdAt
+    })
+    .from(schema.maxChatMessages)
+    .where(eq(schema.maxChatMessages.userId, userId))
+    .orderBy(schema.maxChatMessages.createdAt);
+
+    res.json(messages);
+  }));
+
+  app.post("/api/max-chat-messages", createSafeHandler('Save Max Chat Message')(async (req, res) => {
+    const validation = schema.insertMaxChatMessageSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Invalid message data", details: validation.error.errors });
+    }
+
+    const [message] = await db.insert(schema.maxChatMessages)
+      .values(validation.data)
+      .returning();
+
+    res.status(201).json(message);
+  }));
+
+  // Clear chat history for a user
+  app.delete("/api/max-chat-messages/:userId", createSafeHandler('Clear Max Chat Messages')(async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    await db.delete(schema.maxChatMessages)
+      .where(eq(schema.maxChatMessages.userId, userId));
+
+    res.status(204).send();
+  }));
+
   // Navigation routes for Max AI to discover all available routes
   app.get('/api/navigation/routes', createSafeHandler(async (req, res) => {
     // Essential routes that Max AI should know about for navigation

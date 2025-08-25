@@ -1,26 +1,95 @@
 import { useState, useEffect } from 'react';
+import { apiRequest } from '@/lib/queryClient';
 
 export interface ChatMessage {
-  id: string;
+  id: number;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: string;
+  createdAt: string;
   source?: 'header' | 'panel'; // Track where the message came from
 }
 
+// Current user ID - will be loaded from auth
+let currentUserId: number | null = null;
+
 // Global chat messages state
-let globalChatMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    source: 'panel'
-  }
-];
+let globalChatMessages: ChatMessage[] = [];
+
+// Track if messages are loaded from database
+let messagesLoaded = false;
 
 // Subscribers to chat message changes
 const subscribers = new Set<(messages: ChatMessage[]) => void>();
+
+// Load chat history from database
+const loadChatHistory = async () => {
+  if (!currentUserId || messagesLoaded) return;
+
+  try {
+    const response = await apiRequest('GET', `/api/max-chat-messages/${currentUserId}`);
+    const data = await response.json();
+    const loadedMessages = data.map((msg: any) => ({
+      ...msg,
+      createdAt: msg.createdAt || new Date().toISOString()
+    }));
+    
+    globalChatMessages = loadedMessages.length > 0 ? loadedMessages : [
+      {
+        id: -1, // Temporary ID for welcome message
+        role: 'assistant',
+        content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
+        createdAt: new Date().toISOString(),
+        source: 'panel'
+      }
+    ];
+    
+    messagesLoaded = true;
+    
+    // Notify all subscribers
+    subscribers.forEach(callback => callback(globalChatMessages));
+  } catch (error) {
+    console.error('Failed to load chat history:', error);
+    // Fallback to default welcome message
+    globalChatMessages = [
+      {
+        id: -1,
+        role: 'assistant',
+        content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
+        createdAt: new Date().toISOString(),
+        source: 'panel'
+      }
+    ];
+    messagesLoaded = true;
+    subscribers.forEach(callback => callback(globalChatMessages));
+  }
+};
+
+// Get current user ID
+const getCurrentUser = async () => {
+  if (currentUserId) return;
+  
+  try {
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const user = await response.json();
+    currentUserId = user.id;
+    await loadChatHistory();
+  } catch (error) {
+    console.error('Failed to get current user:', error);
+  }
+};
+
+// Initialize user and load history
+getCurrentUser();
 
 // Subscribe to chat message updates
 export const useChatSync = () => {
@@ -33,19 +102,55 @@ export const useChatSync = () => {
     
     subscribers.add(updateMessages);
     
+    // Try to load chat history if not already loaded
+    if (!messagesLoaded) {
+      getCurrentUser();
+    }
+    
     return () => {
       subscribers.delete(updateMessages);
     };
   }, []);
 
-  const addMessage = (message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
-    const newMessage: ChatMessage = {
-      ...message,
-      id: Date.now().toString(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+  const addMessage = async (message: Omit<ChatMessage, 'id' | 'createdAt'>) => {
+    if (!currentUserId) {
+      console.warn('No user ID available, saving message locally only');
+      const localMessage: ChatMessage = {
+        ...message,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      };
+      globalChatMessages = [...globalChatMessages, localMessage];
+      subscribers.forEach(callback => callback(globalChatMessages));
+      return;
+    }
 
-    globalChatMessages = [...globalChatMessages, newMessage];
+    try {
+      // Save to database
+      const response = await apiRequest('POST', '/api/max-chat-messages', {
+        userId: currentUserId,
+        role: message.role,
+        content: message.content,
+        source: message.source || 'panel'
+      });
+
+      const savedMessage = await response.json();
+      const newMessage: ChatMessage = {
+        ...savedMessage,
+        createdAt: savedMessage.createdAt || new Date().toISOString()
+      };
+
+      globalChatMessages = [...globalChatMessages, newMessage];
+    } catch (error) {
+      console.error('Failed to save message to database:', error);
+      // Fallback to local state
+      const fallbackMessage: ChatMessage = {
+        ...message,
+        id: Date.now(),
+        createdAt: new Date().toISOString()
+      };
+      globalChatMessages = [...globalChatMessages, fallbackMessage];
+    }
     
     // Notify all subscribers
     subscribers.forEach(callback => callback(globalChatMessages));
@@ -58,9 +163,31 @@ export const useChatSync = () => {
     subscribers.forEach(callback => callback(globalChatMessages));
   };
 
+  const clearMessages = async () => {
+    if (!currentUserId) {
+      globalChatMessages = [];
+      subscribers.forEach(callback => callback(globalChatMessages));
+      return;
+    }
+
+    try {
+      await apiRequest('DELETE', `/api/max-chat-messages/${currentUserId}`);
+      globalChatMessages = [];
+      messagesLoaded = false; // Allow reloading
+    } catch (error) {
+      console.error('Failed to clear chat history:', error);
+      // Still clear local state
+      globalChatMessages = [];
+    }
+    
+    // Notify all subscribers
+    subscribers.forEach(callback => callback(globalChatMessages));
+  };
+
   return {
     chatMessages,
     addMessage,
-    setMessages
+    setMessages,
+    clearMessages
   };
 };

@@ -11842,6 +11842,24 @@ export type InsertPtPublishMetric = z.infer<typeof insertPtPublishMetricSchema>;
 export type PtManufacturingOrder = typeof ptManufacturingOrders.$inferSelect;
 export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrderSchema>;
 
+// Max AI Chat Messages - Store persistent chat history
+export const maxChatMessages = pgTable("max_chat_messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  source: text("source").default("panel"), // 'header' or 'panel'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMaxChatMessageSchema = createInsertSchema(maxChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type MaxChatMessage = typeof maxChatMessages.$inferSelect;
+export type InsertMaxChatMessage = z.infer<typeof insertMaxChatMessageSchema>;
+
 // Create unified Operation type that combines different operation types
 export type Operation = {
   id: number;
