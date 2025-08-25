@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Loader2, ChevronDown, History } from 'lucide-react';
+import { Send, Bot, Loader2, ChevronDown, History, MessageSquare, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { addMessage } = useChatSync();
+  const { addMessage, chatMessages } = useChatSync();
 
   // Load prompt history from localStorage on mount
   useEffect(() => {
@@ -208,7 +208,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
               "placeholder:text-xs"
             )}
           />
-          {promptHistory.length > 0 && (
+          {(chatMessages.length > 0 || promptHistory.length > 0) && (
             <ChevronDown 
               className={cn(
                 "absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground transition-transform",
@@ -220,26 +220,63 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           {/* Dropdown */}
           {showDropdown && (
             <div 
-              className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[100] max-h-64 overflow-y-auto"
-              style={{ minWidth: '200px' }}
+              className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[100] max-h-80 overflow-y-auto"
+              style={{ minWidth: '300px' }}
             >
+              {/* Chat History Section */}
+              {chatMessages.length > 0 && (
+                <div className="border-b border-border">
+                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/30">
+                    Recent Conversation
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {chatMessages.slice(-6).map((message, index) => (
+                      <div
+                        key={message.id}
+                        className="px-3 py-2 text-sm border-b border-border/50 last:border-b-0"
+                      >
+                        <div className="flex items-start gap-2">
+                          {message.role === 'user' ? (
+                            <User className="h-3 w-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <Bot className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-muted-foreground mb-1">
+                              {message.role === 'user' ? 'You' : 'Max AI'}
+                            </div>
+                            <div className="text-xs leading-relaxed text-foreground/90 line-clamp-3">
+                              {message.content}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Prompt History Section */}
               {filteredPrompts.length > 0 ? (
-                <>
-                  {filteredPrompts.map((historyPrompt, index) => (
+                <div>
+                  <div className="px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/30">
+                    Recent Prompts
+                  </div>
+                  {filteredPrompts.slice(0, 5).map((historyPrompt, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => handlePromptSelect(historyPrompt)}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border last:border-b-0"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 border-b border-border/50 last:border-b-0"
                     >
                       <History className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{historyPrompt}</span>
                     </button>
                   ))}
-                </>
-              ) : (
+                </div>
+              ) : chatMessages.length === 0 && (
                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                  No previous prompts found. Start by asking Max AI a question!
+                  No conversation history yet. Start by asking Max AI a question!
                 </div>
               )}
             </div>
