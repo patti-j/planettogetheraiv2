@@ -1241,50 +1241,85 @@ function ShiftTemplateCard({ template }: any) {
   });
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{template.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant={template.isActive ? "default" : "secondary"}
-              style={{ backgroundColor: template.color }}
-            >
-              {template.shiftType}
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditDialogOpen(true)}
-              className="h-8 w-8 p-0"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+    <Card className="hover:shadow-lg transition-shadow border-l-4" style={{ borderLeftColor: template.color }}>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-lg leading-tight">{template.name}</CardTitle>
+              <Badge 
+                variant={template.isActive ? "default" : "secondary"}
+                className="text-xs"
+                style={{ backgroundColor: template.color, color: 'white' }}
+              >
+                {template.shiftType}
+              </Badge>
+            </div>
+            <CardDescription className="text-sm leading-relaxed">{template.description}</CardDescription>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditDialogOpen(true)}
+            className="h-8 w-8 p-0 shrink-0"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
         </div>
-        <CardDescription>{template.description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{template.startTime} - {template.endTime}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{template.minimumStaffing}-{template.maximumStaffing || '∞'}</span>
+      <CardContent className="space-y-4 pt-0">
+        {/* Time and Staffing - Prominent Display */}
+        <div className="bg-muted/30 rounded-lg p-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground font-medium">TIME</span>
+              </div>
+              <div className="font-semibold text-lg">{template.startTime}</div>
+              <div className="text-xs text-muted-foreground">to</div>
+              <div className="font-semibold text-lg">{template.endTime}</div>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground font-medium">STAFF</span>
+              </div>
+              <div className="font-semibold text-2xl" style={{ color: template.color }}>
+                {template.minimumStaffing}-{template.maximumStaffing || '∞'}
+              </div>
+              <div className="text-xs text-muted-foreground">people</div>
+            </div>
           </div>
         </div>
         
+        {/* Active Days - Visual Display */}
         <div>
-          <p className="text-sm font-medium mb-1">Active Days:</p>
-          <p className="text-sm text-muted-foreground">{activeDays}</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Active Days</p>
+          <div className="flex gap-1">
+            {daysOfWeek.map((day, index) => (
+              <div
+                key={index}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  template.daysOfWeek?.includes(index)
+                    ? 'text-white'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+                style={{
+                  backgroundColor: template.daysOfWeek?.includes(index) ? template.color : undefined
+                }}
+              >
+                {day[0]}
+              </div>
+            ))}
+          </div>
         </div>
 
+        {/* Premium Rate - Enhanced Display */}
         {template.premiumRate > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Premium Rate:</span>
-            <span className="text-sm text-green-600">+{template.premiumRate}%</span>
+          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+            <span className="text-sm font-medium text-green-800 dark:text-green-300">Premium Rate</span>
+            <span className="text-lg font-bold text-green-600 dark:text-green-400">+{template.premiumRate}%</span>
           </div>
         )}
       </CardContent>
