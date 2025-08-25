@@ -1934,21 +1934,23 @@ function OvertimeShiftsTab({ overtimeShifts, loading, resources, templates, user
 
       {/* Create Overtime Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Schedule Overtime Shift</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-h-[80vh]">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-lg sm:text-xl">Schedule Overtime Shift</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
               Create emergency coverage, project overtime, or maintenance shift
             </DialogDescription>
           </DialogHeader>
-          <CreateOvertimeForm 
-            resources={resources}
-            templates={templates}
-            users={users}
-            plants={plants}
-            onSubmit={(data: any) => createOvertimeMutation.mutate(data)}
-            isLoading={createOvertimeMutation.isPending}
-          />
+          <div className="py-2">
+            <CreateOvertimeForm 
+              resources={resources}
+              templates={templates}
+              users={users}
+              plants={plants}
+              onSubmit={(data: any) => createOvertimeMutation.mutate(data)}
+              isLoading={createOvertimeMutation.isPending}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
@@ -2125,11 +2127,12 @@ function CreateOvertimeForm({ resources, templates, users, plants, onSubmit, isL
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
+      {/* Resource Selection */}
       <div className="space-y-2">
-        <Label htmlFor="resource">Resource</Label>
+        <Label htmlFor="resource" className="text-sm font-medium">Resource</Label>
         <Select value={formData.resourceId} onValueChange={(value) => setFormData({...formData, resourceId: value})}>
-          <SelectTrigger>
+          <SelectTrigger className="h-11 sm:h-10">
             <SelectValue placeholder="Select resource" />
           </SelectTrigger>
           <SelectContent>
@@ -2142,43 +2145,83 @@ function CreateOvertimeForm({ resources, templates, users, plants, onSubmit, isL
         </Select>
       </div>
 
+      {/* Overtime Type */}
       <div className="space-y-2">
-        <Label htmlFor="reason">Reason</Label>
+        <Label htmlFor="overtimeType" className="text-sm font-medium">Overtime Type</Label>
+        <Select value={formData.overtimeType} onValueChange={(value) => setFormData({...formData, overtimeType: value})}>
+          <SelectTrigger className="h-11 sm:h-10">
+            <SelectValue placeholder="Select overtime type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="planned_overtime">Planned Overtime</SelectItem>
+            <SelectItem value="emergency_coverage">Emergency Coverage</SelectItem>
+            <SelectItem value="project_overtime">Project Overtime</SelectItem>
+            <SelectItem value="maintenance_shift">Maintenance Shift</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Reason */}
+      <div className="space-y-2">
+        <Label htmlFor="reason" className="text-sm font-medium">Reason</Label>
         <Textarea
           id="reason"
           value={formData.reason}
           onChange={(e) => setFormData({...formData, reason: e.target.value})}
-          placeholder="Reason for overtime shift"
+          placeholder="Describe the reason for this overtime shift..."
+          className="min-h-[80px] sm:min-h-[60px] resize-none"
           required
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Time Selection - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="startTime">Start Time</Label>
+          <Label htmlFor="startTime" className="text-sm font-medium">Start Time</Label>
           <Input
             id="startTime"
             type="datetime-local"
             value={formData.startTime}
             onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+            className="h-11 sm:h-10"
             required
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="endTime">End Time</Label>
+          <Label htmlFor="endTime" className="text-sm font-medium">End Time</Label>
           <Input
             id="endTime"
             type="datetime-local"
             value={formData.endTime}
             onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+            className="h-11 sm:h-10"
             required
           />
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <Button type="submit" disabled={isLoading}>
+      {/* Emergency Toggle */}
+      <div className="flex items-center space-x-3 p-3 sm:p-2 bg-muted/30 rounded-lg">
+        <input
+          type="checkbox"
+          id="isEmergency"
+          checked={formData.isEmergency}
+          onChange={(e) => setFormData({...formData, isEmergency: e.target.checked})}
+          className="h-4 w-4 rounded border-gray-300"
+        />
+        <Label htmlFor="isEmergency" className="text-sm font-medium cursor-pointer">
+          Mark as emergency (high priority)
+        </Label>
+      </div>
+
+      {/* Submit Button */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 pt-4 sm:pt-2 border-t">
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="w-full sm:w-auto sm:ml-auto h-11 sm:h-10 font-medium"
+        >
           {isLoading ? 'Creating...' : 'Request Overtime'}
         </Button>
       </div>
