@@ -11,7 +11,7 @@ import { Copy } from "lucide-react"
 import { useState } from "react"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  const { toasts, toggleAutoClose } = useToast()
   const [copiedToastId, setCopiedToastId] = useState<string | null>(null)
 
   const copyToastMessage = async (toastId: string, title?: string, description?: string) => {
@@ -27,9 +27,15 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, variant, ...props }) {
+      {toasts.map(function ({ id, title, description, action, variant, autoClose, ...props }) {
         return (
-          <Toast key={id} variant={variant} {...props}>
+          <Toast 
+            key={id} 
+            variant={variant} 
+            autoClose={autoClose}
+            onToggleAutoClose={() => toggleAutoClose(id)}
+            {...props}
+          >
             <div className="grid gap-1 flex-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (

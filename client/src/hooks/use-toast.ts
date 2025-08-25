@@ -13,6 +13,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  autoClose?: boolean
 }
 
 const actionTypes = {
@@ -55,8 +56,13 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, autoClose?: boolean) => {
   if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  // Only add to remove queue if autoClose is true (default) or undefined
+  if (autoClose === false) {
     return
   }
 
@@ -93,10 +99,11 @@ export const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
-        addToRemoveQueue(toastId)
+        const toast = state.toasts.find(t => t.id === toastId)
+        addToRemoveQueue(toastId, toast?.autoClose)
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, toast.autoClose)
         })
       }
 
@@ -139,7 +146,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ autoClose = true, ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -149,11 +156,36 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
+  const toggleAutoClose = () => {
+    const currentToast = memoryState.toasts.find(t => t.id === id)
+    if (currentToast) {
+      const newAutoClose = !currentToast.autoClose
+      
+      // If turning off autoClose, clear existing timeout first
+      if (!newAutoClose) {
+        const timeout = toastTimeouts.get(id)
+        if (timeout) {
+          clearTimeout(timeout)
+          toastTimeouts.delete(id)
+        }
+      }
+      
+      // Update the toast state
+      update({ ...currentToast, autoClose: newAutoClose })
+      
+      // If turning on autoClose, add to remove queue
+      if (newAutoClose) {
+        addToRemoveQueue(id, true)
+      }
+    }
+  }
+
   dispatch({
     type: "ADD_TOAST",
     toast: {
       ...props,
       id,
+      autoClose,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
@@ -161,10 +193,16 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Only add to auto-close queue if autoClose is enabled
+  if (autoClose) {
+    addToRemoveQueue(id, autoClose)
+  }
+
   return {
     id: id,
     dismiss,
     update,
+    toggleAutoClose,
   }
 }
 
@@ -181,10 +219,38 @@ function useToast() {
     }
   }, [state])
 
+  const toggleAutoClose = (toastId: string) => {
+    const currentToast = memoryState.toasts.find(t => t.id === toastId)
+    if (currentToast) {
+      const newAutoClose = !currentToast.autoClose
+      
+      // If turning off autoClose, clear existing timeout first
+      if (!newAutoClose) {
+        const timeout = toastTimeouts.get(toastId)
+        if (timeout) {
+          clearTimeout(timeout)
+          toastTimeouts.delete(toastId)
+        }
+      }
+      
+      // Update the toast state
+      dispatch({
+        type: "UPDATE_TOAST",
+        toast: { ...currentToast, id: toastId, autoClose: newAutoClose },
+      })
+      
+      // If turning on autoClose, add to remove queue
+      if (newAutoClose) {
+        addToRemoveQueue(toastId, true)
+      }
+    }
+  }
+
   return {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    toggleAutoClose,
   }
 }
 
