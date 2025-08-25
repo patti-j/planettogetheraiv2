@@ -10,6 +10,7 @@ import { HintSystem } from "@/components/HintBubble";
 
 // Application Pages
 import Dashboard from "@/pages/dashboard";
+import HomePage from "@/pages/home";
 import { SmartHomeWrapper } from "@/components/smart-home-wrapper";
 import Analytics from "@/pages/analytics";
 import KPIPage from "@/pages/kpi";
@@ -121,8 +122,8 @@ export default function ApplicationApp() {
               <Route path="/onboarding" component={Onboarding} />
 
               {/* Main Dashboard */}
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/mobile-home" component={Dashboard} />
+              <Route path="/dashboard" component={HomePage} />
+              <Route path="/mobile-home" component={HomePage} />
 
               {/* Analytics & Reports */}
               <Route path="/analytics">
