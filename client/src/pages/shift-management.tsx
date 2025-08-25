@@ -826,10 +826,27 @@ function AssignmentsTab({ assignments, loading, templates, resources, plants }: 
   const queryClient = useQueryClient();
 
   const createAssignmentMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('POST', '/api/resource-shift-assignments', data),
-    onSuccess: () => {
+    mutationFn: async (assignments: any[]) => {
+      // If it's a single assignment (backward compatibility)
+      if (!Array.isArray(assignments)) {
+        return apiRequest('POST', '/api/resource-shift-assignments', assignments);
+      }
+      
+      // Create multiple assignments sequentially
+      const results = [];
+      for (const assignment of assignments) {
+        const result = await apiRequest('POST', '/api/resource-shift-assignments', assignment);
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: (results: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/resource-shift-assignments'] });
-      toast({ title: "Success", description: "Shift assignment created successfully" });
+      const count = Array.isArray(results) ? results.length : 1;
+      toast({ 
+        title: "Success", 
+        description: `${count} shift assignment${count > 1 ? 's' : ''} created successfully` 
+      });
       setIsCreateDialogOpen(false);
     },
     onError: (error: any) => {
@@ -985,7 +1002,7 @@ function AIShiftAssignmentForm({ templates, resources, plants, onClose }: any) {
 // Manual Shift Assignment Form
 function ManualShiftAssignmentForm({ templates, resources, plants, onSubmit, isLoading }: any) {
   const [formData, setFormData] = useState({
-    resourceId: '',
+    selectedResourceIds: [] as number[],
     shiftTemplateId: '',
     effectiveDate: new Date().toISOString().split('T')[0],
     endDate: '',
@@ -994,41 +1011,86 @@ function ManualShiftAssignmentForm({ templates, resources, plants, onSubmit, isL
     isTemporary: false
   });
 
+  const handleResourceToggle = (resourceId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedResourceIds: prev.selectedResourceIds.includes(resourceId)
+        ? prev.selectedResourceIds.filter(id => id !== resourceId)
+        : [...prev.selectedResourceIds, resourceId]
+    }));
+  };
+
+  const handleSelectAllResources = () => {
+    const allResourceIds = resources.map((r: any) => r.id);
+    setFormData(prev => ({
+      ...prev,
+      selectedResourceIds: prev.selectedResourceIds.length === allResourceIds.length 
+        ? [] 
+        : allResourceIds
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const submitData = {
-      ...formData,
-      resourceId: parseInt(formData.resourceId),
+    if (formData.selectedResourceIds.length === 0) {
+      return; // Don't submit if no resources selected
+    }
+
+    // Create assignment data for each selected resource
+    const assignmentsData = formData.selectedResourceIds.map(resourceId => ({
+      resourceId,
       shiftTemplateId: parseInt(formData.shiftTemplateId),
       effectiveDate: new Date(formData.effectiveDate).toISOString(),
-      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null
-    };
+      endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+      assignedBy: formData.assignedBy,
+      notes: formData.notes,
+      isTemporary: formData.isTemporary
+    }));
     
-    onSubmit(submitData);
+    onSubmit(assignmentsData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="assignment-resource">Resource</Label>
-          <Select value={formData.resourceId} onValueChange={(value) => setFormData(prev => ({ ...prev, resourceId: value }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select resource" />
-            </SelectTrigger>
-            <SelectContent>
-              {resources.map((resource: any) => (
-                <SelectItem key={resource.id} value={resource.id.toString()}>
-                  {resource.name} ({resource.type})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center justify-between">
+            <Label>Select Resources ({formData.selectedResourceIds.length} selected)</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAllResources}
+              className="text-xs"
+            >
+              {formData.selectedResourceIds.length === resources.length ? 'Deselect All' : 'Select All'}
+            </Button>
+          </div>
+          <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+            {resources.map((resource: any) => (
+              <div key={resource.id} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`resource-${resource.id}`}
+                  checked={formData.selectedResourceIds.includes(resource.id)}
+                  onChange={() => handleResourceToggle(resource.id)}
+                  className="rounded"
+                />
+                <Label htmlFor={`resource-${resource.id}`} className="text-sm cursor-pointer flex-1">
+                  {resource.name} ({resource.type || 'Unknown Type'})
+                </Label>
+              </div>
+            ))}
+          </div>
+          {formData.selectedResourceIds.length === 0 && (
+            <p className="text-sm text-destructive">Please select at least one resource</p>
+          )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="assignment-template">Shift Template</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="assignment-template">Shift Template</Label>
           <Select value={formData.shiftTemplateId} onValueChange={(value) => setFormData(prev => ({ ...prev, shiftTemplateId: value }))}>
             <SelectTrigger>
               <SelectValue placeholder="Select shift template" />
@@ -1054,14 +1116,15 @@ function ManualShiftAssignmentForm({ templates, resources, plants, onSubmit, isL
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="assignment-end">End Date (Optional)</Label>
-          <Input
-            id="assignment-end"
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="assignment-end">End Date (Optional)</Label>
+            <Input
+              id="assignment-end"
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+            />
+          </div>
         </div>
       </div>
 
@@ -1088,8 +1151,17 @@ function ManualShiftAssignmentForm({ templates, resources, plants, onSubmit, isL
       </div>
 
       <div className="flex gap-2 pt-4 border-t">
-        <Button type="submit" disabled={isLoading} className="flex-1">
-          {isLoading ? "Creating..." : "Create Assignment"}
+        <Button 
+          type="submit" 
+          disabled={isLoading || formData.selectedResourceIds.length === 0} 
+          className="flex-1"
+        >
+          {isLoading 
+            ? "Creating Assignments..." 
+            : formData.selectedResourceIds.length > 1 
+              ? `Create Assignments (${formData.selectedResourceIds.length} resources)`
+              : "Create Assignment (1 resource)"
+          }
         </Button>
       </div>
     </form>
