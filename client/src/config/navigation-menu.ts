@@ -66,7 +66,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Calendar, label: "Production Schedule", href: "/production-schedule", feature: "schedule", action: "view", color: "bg-blue-500" },
       { icon: Layout, label: "Scheduler Dashboard", href: "/production-scheduler-dashboard", feature: "scheduling", action: "view", color: "bg-indigo-500" },
       { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "schedule", action: "view", color: "bg-purple-500" },
-      { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "shift-management", action: "view", color: "bg-cyan-500" },
+      { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "planning-scheduling", action: "view", color: "bg-cyan-500" },
       
       // 6. Constraints and optimization
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
