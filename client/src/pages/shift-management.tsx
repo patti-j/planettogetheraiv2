@@ -391,6 +391,9 @@ function CreateShiftTemplateForm({ plants, onSubmit, isLoading }: any) {
     shiftType: '',
     startTime: '',
     endTime: '',
+    duration: 480, // 8 hours in minutes
+    breakDuration: 30,
+    lunchDuration: 60,
     daysOfWeek: [] as number[],
     minimumStaffing: 1,
     maximumStaffing: 10,
@@ -402,7 +405,20 @@ function CreateShiftTemplateForm({ plants, onSubmit, isLoading }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Ensure all numeric fields are properly converted to numbers
+    const submissionData = {
+      ...formData,
+      duration: typeof formData.duration === 'string' ? parseInt(formData.duration) : formData.duration,
+      breakDuration: typeof formData.breakDuration === 'string' ? parseInt(formData.breakDuration) : formData.breakDuration,
+      lunchDuration: typeof formData.lunchDuration === 'string' ? parseInt(formData.lunchDuration) : formData.lunchDuration,
+      minimumStaffing: typeof formData.minimumStaffing === 'string' ? parseInt(formData.minimumStaffing) : formData.minimumStaffing,
+      maximumStaffing: typeof formData.maximumStaffing === 'string' ? parseInt(formData.maximumStaffing) : formData.maximumStaffing,
+      premiumRate: typeof formData.premiumRate === 'string' ? parseFloat(formData.premiumRate) : formData.premiumRate,
+      plantId: formData.plantId ? (typeof formData.plantId === 'string' ? parseInt(formData.plantId) : formData.plantId) : null
+    };
+    
+    onSubmit(submissionData);
   };
 
   const handleDayToggle = (dayIndex: number) => {
@@ -462,6 +478,42 @@ function CreateShiftTemplateForm({ plants, onSubmit, isLoading }: any) {
             type="time"
             value={formData.endTime}
             onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="duration">Duration (minutes)</Label>
+          <Input
+            id="duration"
+            type="number"
+            min="60"
+            value={formData.duration}
+            onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="breakDuration">Break Duration (minutes)</Label>
+          <Input
+            id="breakDuration"
+            type="number"
+            min="0"
+            value={formData.breakDuration}
+            onChange={(e) => setFormData(prev => ({ ...prev, breakDuration: parseInt(e.target.value) }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="lunchDuration">Lunch Duration (minutes)</Label>
+          <Input
+            id="lunchDuration"
+            type="number"
+            min="0"
+            value={formData.lunchDuration}
+            onChange={(e) => setFormData(prev => ({ ...prev, lunchDuration: parseInt(e.target.value) }))}
             required
           />
         </div>
@@ -534,6 +586,9 @@ function EditShiftTemplateForm({ template, onSubmit, onDelete, isLoading }: any)
     shiftType: template.shiftType || '',
     startTime: template.startTime || '',
     endTime: template.endTime || '',
+    duration: template.duration || 480, // 8 hours in minutes
+    breakDuration: template.breakDuration || 30,
+    lunchDuration: template.lunchDuration || 60,
     daysOfWeek: template.daysOfWeek || [],
     minimumStaffing: template.minimumStaffing || 1,
     maximumStaffing: template.maximumStaffing || 10,
@@ -545,7 +600,20 @@ function EditShiftTemplateForm({ template, onSubmit, onDelete, isLoading }: any)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Ensure all numeric fields are properly converted to numbers
+    const submissionData = {
+      ...formData,
+      duration: typeof formData.duration === 'string' ? parseInt(formData.duration) : formData.duration,
+      breakDuration: typeof formData.breakDuration === 'string' ? parseInt(formData.breakDuration) : formData.breakDuration,
+      lunchDuration: typeof formData.lunchDuration === 'string' ? parseInt(formData.lunchDuration) : formData.lunchDuration,
+      minimumStaffing: typeof formData.minimumStaffing === 'string' ? parseInt(formData.minimumStaffing) : formData.minimumStaffing,
+      maximumStaffing: typeof formData.maximumStaffing === 'string' ? parseInt(formData.maximumStaffing) : formData.maximumStaffing,
+      premiumRate: typeof formData.premiumRate === 'string' ? parseFloat(formData.premiumRate) : formData.premiumRate,
+      plantId: formData.plantId ? (typeof formData.plantId === 'string' ? parseInt(formData.plantId) : formData.plantId) : null
+    };
+    
+    onSubmit(submissionData);
   };
 
   const handleDayToggle = (dayIndex: number) => {
@@ -605,6 +673,42 @@ function EditShiftTemplateForm({ template, onSubmit, onDelete, isLoading }: any)
             type="time"
             value={formData.endTime}
             onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-duration">Duration (minutes)</Label>
+          <Input
+            id="edit-duration"
+            type="number"
+            min="60"
+            value={formData.duration}
+            onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-breakDuration">Break Duration (minutes)</Label>
+          <Input
+            id="edit-breakDuration"
+            type="number"
+            min="0"
+            value={formData.breakDuration}
+            onChange={(e) => setFormData(prev => ({ ...prev, breakDuration: parseInt(e.target.value) }))}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="edit-lunchDuration">Lunch Duration (minutes)</Label>
+          <Input
+            id="edit-lunchDuration"
+            type="number"
+            min="0"
+            value={formData.lunchDuration}
+            onChange={(e) => setFormData(prev => ({ ...prev, lunchDuration: parseInt(e.target.value) }))}
             required
           />
         </div>
