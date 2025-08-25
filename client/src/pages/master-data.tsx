@@ -791,23 +791,26 @@ export default function MasterDataPage() {
   const handleBulkGenerate = async () => {
     setAiProcessing(true);
     try {
-      const response = await apiRequest('/api/master-data/bulk-generate', {
-        method: 'POST',
-        body: JSON.stringify({ recordsPerTable: 15 })
+      const response = await apiRequest('POST', '/api/master-data/bulk-generate', {
+        recordsPerTable: 15
       });
+      
+      const result = await response.json();
 
-      if (response.success) {
+      if (result.success) {
         toast({
           title: 'Bulk Generation Successful',
-          description: `Generated ${response.totalRecords} records across all entity types. Refresh your browser to see the new data.`,
+          description: `Generated ${result.totalRecords} records across all entity types. Refresh your browser to see the new data.`,
         });
         
-        // Refresh current data
-        queryClient.invalidateQueries({ queryKey: [endpoints[activeTab]] });
+        // Refresh all data queries
+        Object.values(endpoints).forEach(endpoint => {
+          queryClient.invalidateQueries({ queryKey: [endpoint] });
+        });
         
         setShowAiAssistant(false);
       } else {
-        throw new Error(response.message || 'Bulk generation failed');
+        throw new Error(result.message || 'Bulk generation failed');
       }
     } catch (error) {
       console.error('Bulk generation error:', error);
