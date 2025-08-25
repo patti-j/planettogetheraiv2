@@ -237,7 +237,7 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/shift-management">
-                <ProtectedRoute feature="shift-management" action="view">
+                <ProtectedRoute feature="planning-scheduling" action="view">
                   <ShiftManagement />
                 </ProtectedRoute>
               </Route>
