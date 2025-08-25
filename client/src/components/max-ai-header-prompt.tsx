@@ -6,6 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useChatSync } from '@/hooks/useChatSync';
 
 interface MaxAIHeaderPromptProps {
   showText?: boolean;
@@ -20,6 +21,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { addMessage } = useChatSync();
 
   // Load prompt history from localStorage on mount
   useEffect(() => {
@@ -106,6 +108,21 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
       // Save prompt to history
       savePromptToHistory(prompt);
       
+      // Add user message to chat panel
+      addMessage({
+        role: 'user',
+        content: prompt,
+        source: 'header'
+      });
+
+      // Add AI response to chat panel
+      const responseContent = data.content || data.response || 'I understand your request. Let me help you with that.';
+      addMessage({
+        role: 'assistant', 
+        content: responseContent,
+        source: 'header'
+      });
+      
       // Handle navigation actions
       if (data.action?.type === 'navigate' && data.action.target) {
         // Navigate to the target page
@@ -118,7 +135,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
         // Show regular response
         toast({
           title: "Max AI Response",
-          description: data.content || data.response || 'I understand your request. Let me help you with that.',
+          description: responseContent,
         });
       }
       setPrompt('');
@@ -143,8 +160,6 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   };
 
   const handleInputClick = () => {
-    console.log('Input clicked! Setting showDropdown to true');
-    console.log('Current state:', { showDropdown, promptHistory, filteredPrompts });
     setShowDropdown(true);
   };
 
@@ -203,11 +218,10 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           )}
           
           {/* Dropdown */}
-          {console.log('Dropdown render check:', { showDropdown, filteredPromptsLength: filteredPrompts.length, promptHistoryLength: promptHistory.length })}
           {showDropdown && (
             <div 
               className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-[100] max-h-64 overflow-y-auto"
-              style={{ minWidth: '200px', border: '2px solid red' }}
+              style={{ minWidth: '200px' }}
             >
               {filteredPrompts.length > 0 ? (
                 <>

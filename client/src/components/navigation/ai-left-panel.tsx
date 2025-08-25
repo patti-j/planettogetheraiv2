@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useChatSync } from '@/hooks/useChatSync';
 
 interface AIInsight {
   id: string;
@@ -30,12 +31,7 @@ interface AIInsight {
   recommendation?: string;
 }
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
+// Remove duplicate interface - using the one from useChatSync
 
 export function AILeftPanel() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -111,14 +107,7 @@ export function AILeftPanel() {
       }));
     }
   }, [userPreferences]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const { chatMessages, addMessage } = useChatSync();
   
   const [showMaxThinking, setShowMaxThinking] = useState(false);
   const [currentRequestController, setCurrentRequestController] = useState<AbortController | null>(null);
@@ -148,13 +137,11 @@ export function AILeftPanel() {
       setShowMaxThinking(false);
       
       // Add cancellation message to chat
-      const cancelMessage: ChatMessage = {
-        id: Date.now().toString(),
+      addMessage({
         role: 'assistant',
         content: 'Request cancelled.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, cancelMessage]);
+        source: 'panel'
+      });
     }
   };
 
@@ -202,13 +189,11 @@ export function AILeftPanel() {
         setLocation(data.action.target);
         
         // Show navigation confirmation
-        const navigationResponse: ChatMessage = {
-          id: Date.now().toString(),
+        addMessage({
           role: 'assistant',
           content: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatMessages(prev => [...prev, navigationResponse]);
+          source: 'panel'
+        });
         return;
       }
       
@@ -216,13 +201,11 @@ export function AILeftPanel() {
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;
         
-        const aiResponse: ChatMessage = {
-          id: Date.now().toString(),
+        addMessage({
           role: 'assistant',
           content: responseContent,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
+          source: 'panel'
+        });
       }
       
       // If there are insights, show them (but not if we just navigated)
@@ -241,13 +224,11 @@ export function AILeftPanel() {
         return;
       }
       
-      const errorMessage: ChatMessage = {
-        id: Date.now().toString(),
+      addMessage({
         role: 'assistant',
         content: 'I apologize, but I encountered an error processing your request. Please try again.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, errorMessage]);
+        source: 'panel'
+      });
     }
   });
 
@@ -345,13 +326,11 @@ export function AILeftPanel() {
         <span
           key={`link-${index}`}
           onClick={() => {
-            const userMessage: ChatMessage = {
-              id: Date.now().toString(),
+            addMessage({
               role: 'user',
               content: replacement.query,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setChatMessages(prev => [...prev, userMessage]);
+              source: 'panel'
+            });
             sendMessageMutation.mutate(replacement.query);
             setPrompt('');
           }}
@@ -456,18 +435,17 @@ export function AILeftPanel() {
   const handleSendMessage = () => {
     if (!prompt.trim()) return;
 
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+    addMessage({
       role: 'user',
       content: prompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+      source: 'panel'
+    });
 
-    setChatMessages(prev => [...prev, newMessage]);
+    const currentPrompt = prompt;
     setPrompt('');
 
     // Send message to Max AI
-    sendMessageMutation.mutate(prompt);
+    sendMessageMutation.mutate(currentPrompt);
   };
 
   return (
