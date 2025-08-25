@@ -2807,8 +2807,8 @@ const LayoutManagerDialog: React.FC<LayoutManagerDialogProps> = ({
             <AreaManagerDialog 
               areas={areas}
               resources={resources}
-              onCreateArea={createArea}
-              onDeleteArea={deleteArea}
+              onCreateArea={onCreateArea}
+              onDeleteArea={onDeleteArea}
               onClose={() => setShowAreaManager(false)}
             />
           </DialogContent>
