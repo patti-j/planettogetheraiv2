@@ -293,7 +293,8 @@ function AIShiftCreationForm({ plants, resources, onClose }: any) {
         resources
       });
 
-      setAiResponse(response);
+      const responseData = await response.json();
+      setAiResponse(responseData);
       toast({ title: "Success", description: "AI has generated shift recommendations!" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
