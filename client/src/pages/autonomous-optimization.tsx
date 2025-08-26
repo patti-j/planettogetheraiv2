@@ -119,12 +119,12 @@ export default function AutonomousOptimizationPage() {
   const queryClient = useQueryClient();
   
   // Fetch plants data
-  const { data: plants = [] } = useQuery({
+  const { data: plants = [] as any[] } = useQuery({
     queryKey: ["/api/plants"],
   });
 
   // Fetch available algorithms for selection
-  const { data: algorithms = [] } = useQuery({
+  const { data: algorithms = [] as any[] } = useQuery({
     queryKey: ['/api/optimization/algorithms'],
     queryFn: async () => {
       const response = await fetch('/api/optimization/algorithms');
@@ -643,26 +643,13 @@ export default function AutonomousOptimizationPage() {
               {/* Plant Optimization Status */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Factory className="w-5 h-5" />
-                        Plant Status
-                      </CardTitle>
-                      <CardDescription>
-                        {currentMetrics.activePlants} of {currentMetrics.totalPlants} plants optimized
-                      </CardDescription>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowPlantSettings(true)}
-                      className="flex items-center gap-2"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Configure
-                    </Button>
-                  </div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Factory className="w-5 h-5" />
+                    Plant Status
+                  </CardTitle>
+                  <CardDescription>
+                    {currentMetrics.activePlants} of {currentMetrics.totalPlants} plants optimized
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[240px]">
@@ -776,7 +763,7 @@ export default function AutonomousOptimizationPage() {
 
           {/* Plant Settings Dialog */}
           <Dialog open={showPlantSettings} onOpenChange={setShowPlantSettings}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+            <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Factory className="w-5 h-5" />
