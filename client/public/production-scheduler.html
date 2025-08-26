@@ -15,12 +15,18 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            font-size: 14px;
         }
 
         .header {
@@ -30,6 +36,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
 
         .header h1 {
@@ -45,6 +52,7 @@
             align-items: center;
             gap: 1rem;
             border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
         }
 
         .toolbar-group {
@@ -102,11 +110,14 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             position: relative;
-            height: calc(100vh - 180px);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
         #scheduler {
-            height: 100%;
+            flex: 1;
+            min-height: 0;
         }
 
         .status-bar {
@@ -118,6 +129,7 @@
             font-size: 0.875rem;
             color: #666;
             border-top: 1px solid #e0e0e0;
+            flex-shrink: 0;
         }
 
         .loading-overlay {
@@ -412,17 +424,30 @@
                 document.getElementById('optimize').addEventListener('click', () => {
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
-                    setTimeout(() => {
-                        scheduler.project.propagate().then(() => {
+                    setTimeout(async () => {
+                        try {
+                            // Run the built-in optimization
+                            await scheduler.project.commitAsync();
+                            
+                            // Adjust events to minimize gaps (ASAP scheduling)
                             const events = scheduler.eventStore.records;
                             events.forEach(event => {
-                                event.setStartDate(event.earlyStartDate || event.startDate, true);
+                                if (event.earlyStartDate) {
+                                    event.setStartDate(event.earlyStartDate, true);
+                                }
                             });
+                            
+                            // Recalculate after changes
+                            await scheduler.project.commitAsync();
                             
                             document.getElementById('loadingOverlay').style.display = 'none';
                             updateStatus();
                             alert('Schedule optimized successfully!');
-                        });
+                        } catch (error) {
+                            console.error('Optimization error:', error);
+                            document.getElementById('loadingOverlay').style.display = 'none';
+                            alert('Failed to optimize schedule');
+                        }
                     }, 500);
                 });
                 
