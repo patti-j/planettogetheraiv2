@@ -465,8 +465,8 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Performance Charts Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-            <Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="w-5 h-5" />
@@ -496,21 +496,21 @@ export default function AutonomousOptimizationPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building className="w-5 h-5" />
-                  Plant Performance Distribution
+                  Plant Performance
                 </CardTitle>
                 <CardDescription>
-                  Optimization efficiency across all facilities
+                  Optimization efficiency distribution
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={plantPerformance}>
+                  <BarChart data={plantPerformance.slice(0, 4)}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="plant" angle={-45} textAnchor="end" height={80} />
+                    <XAxis dataKey="plant" angle={-45} textAnchor="end" height={60} />
                     <YAxis />
                     <RechartsTooltip />
-                    <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                      {plantPerformance.map((entry, index) => (
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {plantPerformance.slice(0, 4).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Bar>
@@ -521,9 +521,9 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Main Control and Monitoring Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
             {/* Optimization Control Panel */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
