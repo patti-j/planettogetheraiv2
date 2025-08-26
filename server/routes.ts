@@ -24887,6 +24887,17 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
     }
   });
 
+  // Serve the pure JavaScript production scheduler page (no auth required for testing)
+  app.get("/production-schedule-js", (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/production-schedule-js.html'));
+  });
+  
+  // Serve production scheduler module
+  app.get("/src/pages/production-scheduler-module.js", (req, res) => {
+    res.type('application/javascript');
+    res.sendFile(path.join(process.cwd(), 'client/src/pages/production-scheduler-module.js'));
+  });
+
   // AI-powered data modification
   app.post("/api/master-data/ai-modify", requireAuth, async (req, res) => {
     try {

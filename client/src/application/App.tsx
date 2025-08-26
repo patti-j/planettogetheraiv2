@@ -37,6 +37,7 @@ import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
 import BryntumSchedulerProDirect from "@/pages/bryntum-scheduler-pro-direct";
+import ProductionSchedulerStandalone from "@/pages/production-scheduler-standalone";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
@@ -194,6 +195,7 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/bryntum-scheduler-pro-direct" component={BryntumSchedulerProDirect} />
+              <Route path="/production-scheduler-js" component={ProductionSchedulerStandalone} />
 
               {/* Planning & Scheduling Routes */}
               <Route path="/planning-overview" component={PlanningOverview} />
