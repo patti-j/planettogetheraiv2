@@ -390,19 +390,19 @@ export default function DatabaseExplorer() {
                           <Badge variant="outline" className="text-xs">{tableSchema.length} columns</Badge>
                         </div>
                         
-                        <div className="overflow-x-auto">
+                        <div className="overflow-auto max-h-96 border rounded-md">
                           <UITable>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="text-xs">Column</TableHead>
-                                <TableHead className="text-xs">Type</TableHead>
-                                <TableHead className="text-xs">Null</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Column</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Type</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Null</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {tableSchema.map((column: TableColumn) => (
                                 <TableRow key={column.column_name}>
-                                  <TableCell className="font-medium text-xs">{column.column_name}</TableCell>
+                                  <TableCell className="font-medium text-xs break-words max-w-32">{column.column_name}</TableCell>
                                   <TableCell className="text-xs">
                                     <Badge className={`${getDataTypeBadgeColor(column.data_type)} text-xs`}>
                                       {column.data_type}
@@ -648,34 +648,36 @@ export default function DatabaseExplorer() {
                           <Badge variant="outline">{tableSchema.length} columns</Badge>
                         </div>
                         
-                        <UITable>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Column Name</TableHead>
-                              <TableHead>Data Type</TableHead>
-                              <TableHead>Nullable</TableHead>
-                              <TableHead>Default</TableHead>
-                              <TableHead>Max Length</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {tableSchema.map((column: TableColumn) => (
-                              <TableRow key={column.column_name}>
-                                <TableCell className="font-medium">{column.column_name}</TableCell>
-                                <TableCell>
-                                  <Badge className={getDataTypeBadgeColor(column.data_type)}>
-                                    {column.data_type}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>{column.is_nullable === 'YES' ? 'Yes' : 'No'}</TableCell>
-                                <TableCell className="max-w-32 truncate">
-                                  {column.column_default || '-'}
-                                </TableCell>
-                                <TableCell>{column.character_maximum_length || '-'}</TableCell>
+                        <div className="overflow-auto max-h-[60vh] border rounded-md">
+                          <UITable>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="sticky top-0 bg-background">Column Name</TableHead>
+                                <TableHead className="sticky top-0 bg-background">Data Type</TableHead>
+                                <TableHead className="sticky top-0 bg-background">Nullable</TableHead>
+                                <TableHead className="sticky top-0 bg-background">Default</TableHead>
+                                <TableHead className="sticky top-0 bg-background">Max Length</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </UITable>
+                            </TableHeader>
+                            <TableBody>
+                              {tableSchema.map((column: TableColumn) => (
+                                <TableRow key={column.column_name}>
+                                  <TableCell className="font-medium break-words max-w-48">{column.column_name}</TableCell>
+                                  <TableCell>
+                                    <Badge className={getDataTypeBadgeColor(column.data_type)}>
+                                      {column.data_type}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{column.is_nullable === 'YES' ? 'Yes' : 'No'}</TableCell>
+                                  <TableCell className="max-w-32 truncate">
+                                    {column.column_default || '-'}
+                                  </TableCell>
+                                  <TableCell>{column.character_maximum_length || '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </UITable>
+                        </div>
                       </div>
                     )}
                   </TabsContent>
