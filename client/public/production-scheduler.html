@@ -577,8 +577,8 @@
                 themeToggleBtn.addEventListener('click', () => {
                     isDarkMode = !isDarkMode;
                     if (isDarkMode) {
-                        // Use standard theme as dark (or thin dark theme)
-                        themeLink.href = '/schedulerpro.css';
+                        // Use the actual Bryntum classic dark theme
+                        themeLink.href = '/thin/schedulerpro.classic-dark.thin.css';
                         themeToggleBtn.innerHTML = '☀️ Light Mode';
                         document.body.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
                         // Add dark class for custom dark styles
