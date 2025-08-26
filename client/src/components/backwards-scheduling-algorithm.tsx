@@ -493,7 +493,8 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
+        {/* Mobile: Navigation and Title */}
         <div className="flex items-start gap-3">
           {/* Blue arrow navigation button positioned to avoid hamburger menu */}
           <Button
@@ -504,17 +505,20 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
           >
             <ArrowLeft className="w-6 h-6" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              Backwards Scheduling Algorithm
-              <Badge variant="secondary">Production Scheduling</Badge>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap">
+              <span className="break-words">Backwards Scheduling Algorithm</span>
+              <Badge variant="secondary" className="text-xs sm:text-sm">Production Scheduling</Badge>
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Advanced backwards scheduling that starts from due dates and works backwards to optimize start times
             </p>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        
+        {/* Action Buttons - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:justify-end">
+          {/* AI Modify Button - Prominent on mobile */}
           <Button 
             variant="outline" 
             onClick={() => {
@@ -524,15 +528,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               }]);
               setShowAIModifyDialog(true);
             }}
-            className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700 order-first sm:order-none"
+            className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700 w-full sm:w-auto order-1 sm:order-none"
           >
             <Bot className="w-4 h-4 mr-2" />
-            AI Modify
+            AI Modify Algorithm
           </Button>
+          
+          {/* Generate Schedule Button */}
           <Button 
             onClick={handleRunScheduling}
             disabled={isRunning || runSchedulingMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto order-2 sm:order-none"
           >
             {isRunning ? (
               <>
@@ -546,6 +552,8 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               </>
             )}
           </Button>
+          
+          {/* Feedback Button */}
           <AlgorithmFeedbackButton
             algorithmName="backwards-scheduling"
             algorithmVersion="2.1.0"
@@ -553,6 +561,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
             variant="outline"
             size="default"
             buttonText="Algorithm Feedback"
+            className="w-full sm:w-auto order-3 sm:order-none"
           />
         </div>
       </div>
