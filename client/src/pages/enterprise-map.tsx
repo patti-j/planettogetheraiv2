@@ -321,6 +321,19 @@ export default function EnterpriseMapPage() {
               </div>
               
               <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Find first plant and open its settings
+                    if (plants.length > 0) {
+                      setSelectedPlant(plants[0]);
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Plant Settings
+                </Button>
                 <Select value={timeRange} onValueChange={setTimeRange}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
@@ -532,39 +545,64 @@ export default function EnterpriseMapPage() {
               </CardContent>
             </Card>
 
-            {/* AI-Powered Insights & Predictions */}
+            {/* Plant Optimization Settings */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-purple-600" />
-                    AI Insights
+                    <Settings className="w-5 h-5 text-blue-600" />
+                    Optimization Settings
                   </span>
-                  <Badge variant="outline" className="text-purple-600">
-                    Real-time
+                  <Badge variant="outline" className="text-blue-600">
+                    {aggregatedMetrics.totalPlants} Plants
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-sm">
-                  <p className="font-medium mb-1">🎯 Optimization Opportunity</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Reallocating production from Plant #2 to Plant #4 could increase efficiency by 15% and reduce costs by $2.3M annually.
-                  </p>
-                </div>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Demand Forecast Accuracy</span>
-                    <span className="font-bold">94.2%</span>
+                  {plants.slice(0, 3).map((plant, index) => (
+                    <div key={plant.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${plant.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+                        <span className="text-sm font-medium">{plant.name}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedPlant(plant)}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                  ))}
+                  {plants.length > 3 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{plants.length - 3} more plants
+                    </div>
+                  )}
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Autonomous Optimization</span>
+                    <span className="font-bold text-green-600">Active</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Predicted Q4 Growth</span>
-                    <span className="font-bold text-green-600">+8.7%</span>
+                    <span>Default Algorithms</span>
+                    <span className="font-bold">Configured</span>
                   </div>
                 </div>
-                <Button className="w-full" size="sm" variant="outline">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  View All Predictions
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => {
+                    if (plants.length > 0) {
+                      setSelectedPlant(plants[0]);
+                    }
+                  }}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Manage All Settings
                 </Button>
               </CardContent>
             </Card>
