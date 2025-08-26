@@ -276,8 +276,7 @@ export const ptCustomers = pgTable("pt_customers", {
 
 export const ptCustomerConnections = pgTable("pt_customer_connections", {
   id: serial("id").primaryKey(),
-  customerExternalId: text("customer_external_id"),
-  jobExternalId: text("job_external_id"),
+  customerId: integer("customer_id").references(() => ptCustomers.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -285,7 +284,7 @@ export const ptCustomerConnections = pgTable("pt_customer_connections", {
 export const ptDepartments = pgTable("pt_departments", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  plantExternalId: text("plant_external_id"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
   name: text("name"),
   description: text("description"),
   departmentFrozenSpanHrs: text("department_frozen_span_hrs"),
@@ -300,8 +299,8 @@ export const ptForecasts = pgTable("pt_forecasts", {
   externalId: text("external_id"),
   name: text("name"),
   forecastVersion: text("forecast_version"),
-  itemExternalId: text("item_external_id"),
-  warehouseExternalId: text("warehouse_external_id"),
+  itemId: integer("item_id").references(() => ptItems.id),
+  warehouseId: integer("warehouse_id").references(() => ptWarehouses.id),
   forecastDate: text("forecast_date"),
   forecastQty: text("forecast_qty"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -310,8 +309,8 @@ export const ptForecasts = pgTable("pt_forecasts", {
 // Inventories
 export const ptInventories = pgTable("pt_inventories", {
   id: serial("id").primaryKey(),
-  itemExternalId: text("item_external_id"),
-  warehouseExternalId: text("warehouse_external_id"),
+  itemId: integer("item_id").references(() => ptItems.id),
+  warehouseId: integer("warehouse_id").references(() => ptWarehouses.id),
   autoGenerateForecasts: text("auto_generate_forecasts"),
   bufferStock: text("buffer_stock"),
   daysOnHand: text("days_on_hand"),
@@ -1013,7 +1012,7 @@ export const ptSalesOrders = pgTable("pt_sales_orders", {
   description: text("description"),
   cancelAtExpirationDate: text("cancel_at_expiration_date"),
   cancelled: text("cancelled"),
-  customerExternalId: text("customer_external_id"),
+  customerId: integer("customer_id").references(() => ptCustomers.id),
   estimate: text("estimate"),
   expirationDate: text("expiration_date"),
   notes: text("notes"),
@@ -1029,8 +1028,8 @@ export const ptSalesOrders = pgTable("pt_sales_orders", {
 // Sales Order Lines
 export const ptSalesOrderLines = pgTable("pt_sales_order_lines", {
   id: serial("id").primaryKey(),
-  salesOrderExternalId: text("sales_order_external_id"),
-  itemExternalId: text("item_external_id"),
+  salesOrderId: integer("sales_order_id").references(() => ptSalesOrders.id),
+  itemId: integer("item_id").references(() => ptItems.id),
   lineNumber: text("line_number"),
   description: text("description"),
   unitPrice: text("unit_price"),
@@ -1040,12 +1039,12 @@ export const ptSalesOrderLines = pgTable("pt_sales_order_lines", {
 // Sales Order Line Distributions
 export const ptSalesOrderLineDistributions = pgTable("pt_sales_order_line_distributions", {
   id: serial("id").primaryKey(),
-  salesOrderExternalId: text("sales_order_external_id"),
+  salesOrderId: integer("sales_order_id").references(() => ptSalesOrders.id),
   lineNumber: text("line_number"),
   qtyOrdered: text("qty_ordered"),
   requiredAvailableDate: text("required_available_date"),
-  mustSupplyFromWarehouseExternalId: text("must_supply_from_warehouse_external_id"),
-  useMustSupplyFromWarehouseExternalId: text("use_must_supply_from_warehouse_external_id"),
+  mustSupplyFromWarehouseId: integer("must_supply_from_warehouse_id").references(() => ptWarehouses.id),
+  useMustSupplyFromWarehouseId: text("use_must_supply_from_warehouse_id"),
   allowedLotCodes: text("allowed_lot_codes"),
   allowPartialAllocations: text("allow_partial_allocations"),
   closed: text("closed"),
@@ -1082,10 +1081,10 @@ export const ptTransferOrders = pgTable("pt_transfer_orders", {
 export const ptTransferOrderDistributions = pgTable("pt_transfer_order_distributions", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  transferOrderExternalId: text("transfer_order_external_id"),
-  itemExternalId: text("item_external_id"),
-  fromWarehouseExternalId: text("from_warehouse_external_id"),
-  toWarehouseExternalId: text("to_warehouse_external_id"),
+  transferOrderId: integer("transfer_order_id").references(() => ptTransferOrders.id),
+  itemId: integer("item_id").references(() => ptItems.id),
+  fromWarehouseId: integer("from_warehouse_id").references(() => ptWarehouses.id),
+  toWarehouseId: integer("to_warehouse_id").references(() => ptWarehouses.id),
   qtyOrdered: text("qty_ordered"),
   qtyReceived: text("qty_received"),
   qtyShipped: text("qty_shipped"),
@@ -1137,10 +1136,10 @@ export const ptWarehouses = pgTable("pt_warehouses", {
 // ForecastShipments - Forecast shipment data
 export const ptForecastShipments = pgTable("pt_forecast_shipments", {
   id: serial("id").primaryKey(),
-  forecastExternalId: text("forecast_external_id"),
+  forecastId: integer("forecast_id").references(() => ptForecasts.id),
   requiredDate: text("required_date"),
   requiredQty: text("required_qty"),
-  warehouseExternalId: text("warehouse_external_id"),
+  warehouseId: integer("warehouse_id").references(() => ptWarehouses.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1161,8 +1160,8 @@ export const ptJobSuccessorManufacturingOrders = pgTable("pt_job_successor_manuf
 export const ptLots = pgTable("pt_lots", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  itemExternalId: text("item_external_id"),
-  warehouseExternalId: text("warehouse_external_id"),
+  itemId: integer("item_id").references(() => ptItems.id),
+  warehouseId: integer("warehouse_id").references(() => ptWarehouses.id),
   qty: text("qty"),
   code: text("code"),
   expirationDate: text("expiration_date"),
@@ -1436,6 +1435,153 @@ export const ptJobResourceCapabilitiesRelations = relations(ptJobResourceCapabil
   operation: one(ptJobOperations, {
     fields: [ptJobResourceCapabilities.operationId],
     references: [ptJobOperations.id],
+  }),
+}));
+
+// Add relationship definitions for business entity tables
+export const ptCustomersRelations = relations(ptCustomers, ({ many }) => ({
+  customerConnections: many(ptCustomerConnections),
+  salesOrders: many(ptSalesOrders),
+}));
+
+export const ptCustomerConnectionsRelations = relations(ptCustomerConnections, ({ one }) => ({
+  customer: one(ptCustomers, {
+    fields: [ptCustomerConnections.customerId],
+    references: [ptCustomers.id],
+  }),
+}));
+
+export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
+  departments: many(ptDepartments),
+}));
+
+export const ptDepartmentsRelations = relations(ptDepartments, ({ one }) => ({
+  plant: one(ptPlants, {
+    fields: [ptDepartments.plantId],
+    references: [ptPlants.id],
+  }),
+}));
+
+export const ptItemsRelations = relations(ptItems, ({ many }) => ({
+  forecasts: many(ptForecasts),
+  inventories: many(ptInventories),
+  salesOrderLines: many(ptSalesOrderLines),
+  transferOrderDistributions: many(ptTransferOrderDistributions),
+  lots: many(ptLots),
+}));
+
+export const ptWarehousesRelations = relations(ptWarehouses, ({ many }) => ({
+  forecasts: many(ptForecasts),
+  inventories: many(ptInventories),
+  forecastShipments: many(ptForecastShipments),
+  lots: many(ptLots),
+  salesOrderLineDistributions: many(ptSalesOrderLineDistributions),
+  transferOrderDistributionsFrom: many(ptTransferOrderDistributions, { 
+    relationName: "fromWarehouse" 
+  }),
+  transferOrderDistributionsTo: many(ptTransferOrderDistributions, { 
+    relationName: "toWarehouse" 
+  }),
+}));
+
+export const ptForecastsRelations = relations(ptForecasts, ({ one, many }) => ({
+  item: one(ptItems, {
+    fields: [ptForecasts.itemId],
+    references: [ptItems.id],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptForecasts.warehouseId],
+    references: [ptWarehouses.id],
+  }),
+  forecastShipments: many(ptForecastShipments),
+}));
+
+export const ptInventoriesRelations = relations(ptInventories, ({ one }) => ({
+  item: one(ptItems, {
+    fields: [ptInventories.itemId],
+    references: [ptItems.id],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptInventories.warehouseId],
+    references: [ptWarehouses.id],
+  }),
+}));
+
+export const ptSalesOrdersRelations = relations(ptSalesOrders, ({ one, many }) => ({
+  customer: one(ptCustomers, {
+    fields: [ptSalesOrders.customerId],
+    references: [ptCustomers.id],
+  }),
+  salesOrderLines: many(ptSalesOrderLines),
+  salesOrderLineDistributions: many(ptSalesOrderLineDistributions),
+}));
+
+export const ptSalesOrderLinesRelations = relations(ptSalesOrderLines, ({ one }) => ({
+  salesOrder: one(ptSalesOrders, {
+    fields: [ptSalesOrderLines.salesOrderId],
+    references: [ptSalesOrders.id],
+  }),
+  item: one(ptItems, {
+    fields: [ptSalesOrderLines.itemId],
+    references: [ptItems.id],
+  }),
+}));
+
+export const ptSalesOrderLineDistributionsRelations = relations(ptSalesOrderLineDistributions, ({ one }) => ({
+  salesOrder: one(ptSalesOrders, {
+    fields: [ptSalesOrderLineDistributions.salesOrderId],
+    references: [ptSalesOrders.id],
+  }),
+  mustSupplyFromWarehouse: one(ptWarehouses, {
+    fields: [ptSalesOrderLineDistributions.mustSupplyFromWarehouseId],
+    references: [ptWarehouses.id],
+  }),
+}));
+
+export const ptTransferOrdersRelations = relations(ptTransferOrders, ({ many }) => ({
+  transferOrderDistributions: many(ptTransferOrderDistributions),
+}));
+
+export const ptTransferOrderDistributionsRelations = relations(ptTransferOrderDistributions, ({ one }) => ({
+  transferOrder: one(ptTransferOrders, {
+    fields: [ptTransferOrderDistributions.transferOrderId],
+    references: [ptTransferOrders.id],
+  }),
+  item: one(ptItems, {
+    fields: [ptTransferOrderDistributions.itemId],
+    references: [ptItems.id],
+  }),
+  fromWarehouse: one(ptWarehouses, {
+    fields: [ptTransferOrderDistributions.fromWarehouseId],
+    references: [ptWarehouses.id],
+    relationName: "fromWarehouse"
+  }),
+  toWarehouse: one(ptWarehouses, {
+    fields: [ptTransferOrderDistributions.toWarehouseId],
+    references: [ptWarehouses.id],
+    relationName: "toWarehouse"
+  }),
+}));
+
+export const ptForecastShipmentsRelations = relations(ptForecastShipments, ({ one }) => ({
+  forecast: one(ptForecasts, {
+    fields: [ptForecastShipments.forecastId],
+    references: [ptForecasts.id],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptForecastShipments.warehouseId],
+    references: [ptWarehouses.id],
+  }),
+}));
+
+export const ptLotsRelations = relations(ptLots, ({ one }) => ({
+  item: one(ptItems, {
+    fields: [ptLots.itemId],
+    references: [ptItems.id],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptLots.warehouseId],
+    references: [ptWarehouses.id],
   }),
 }));
 
