@@ -6938,7 +6938,406 @@ User Prompt: "${prompt}"`;
     }
   });
 
-  // Create sample System widgets for testing
+  // Create refined sample widgets for UI Design Studio
+  app.post("/api/seeds/sample-widgets", async (req, res) => {
+    try {
+      console.log("🎨 Creating refined sample widgets for UI Design Studio...");
+      
+      // Professional manufacturing-focused sample widgets
+      const professionalSampleWidgets = [
+        // Smart KPI Widgets
+        {
+          title: "Production Efficiency KPI",
+          targetPlatform: "both",
+          widgetType: "smart-kpi",
+          widgetSubtype: "kpi",
+          data: {
+            template: "efficiency",
+            description: "Monitor overall equipment effectiveness (OEE) and production efficiency in real-time"
+          },
+          configuration: {
+            metric: "Production Efficiency",
+            unit: "%",
+            targetValue: 85,
+            currentValue: 82,
+            visualization: "gauge",
+            colorScheme: "green",
+            showTrend: true,
+            showSparkline: true,
+            refreshInterval: 30,
+            size: "large"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Quality Metrics Dashboard",
+          targetPlatform: "both", 
+          widgetType: "smart-kpi",
+          widgetSubtype: "kpi",
+          data: {
+            template: "quality",
+            description: "Track defect rates, first-pass yield, and quality control metrics"
+          },
+          configuration: {
+            metric: "First Pass Yield",
+            unit: "%",
+            targetValue: 95,
+            currentValue: 93.2,
+            visualization: "progress",
+            colorScheme: "blue",
+            showTrend: true,
+            showSparkline: true,
+            refreshInterval: 60,
+            size: "medium"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Machine Utilization Rate",
+          targetPlatform: "both",
+          widgetType: "gauge",
+          widgetSubtype: "gauge",
+          data: {
+            template: "utilization",
+            description: "Real-time machine and resource utilization across all production lines"
+          },
+          configuration: {
+            metric: "Machine Utilization",
+            unit: "%",
+            min: 0,
+            max: 100,
+            targetValue: 78,
+            currentValue: 75.8,
+            visualization: "gauge",
+            colorScheme: "default",
+            warningThreshold: 60,
+            criticalThreshold: 40,
+            size: "large"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        
+        // Chart Widgets  
+        {
+          title: "Production Volume Trends",
+          targetPlatform: "both",
+          widgetType: "chart",
+          widgetSubtype: "chart",
+          data: {
+            template: "production-trends",
+            description: "Track daily, weekly, and monthly production volume trends with forecasting"
+          },
+          configuration: {
+            title: "Production Volume Trends",
+            chartType: "line",
+            xAxis: "Time Period",
+            yAxis: "Units Produced", 
+            colorScheme: "multi",
+            showLegend: true,
+            showDataLabels: false,
+            orientation: "horizontal",
+            visualization: "line",
+            size: "large",
+            timeRange: "30days"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Resource Allocation Analysis",
+          targetPlatform: "both",
+          widgetType: "chart", 
+          widgetSubtype: "chart",
+          data: {
+            template: "resource-allocation",
+            description: "Analyze resource distribution across departments and production lines"
+          },
+          configuration: {
+            title: "Resource Allocation by Department",
+            chartType: "bar",
+            xAxis: "Department",
+            yAxis: "Allocated Hours",
+            colorScheme: "corporate",
+            showLegend: true,
+            orientation: "vertical",
+            visualization: "bar",
+            size: "large"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Production Order Status",
+          targetPlatform: "both", 
+          widgetType: "chart",
+          widgetSubtype: "chart",
+          data: {
+            template: "order-status",
+            description: "Visual breakdown of production order statuses and priorities"
+          },
+          configuration: {
+            title: "Production Order Distribution",
+            chartType: "pie",
+            colorScheme: "status",
+            showLegend: true,
+            showPercentages: true,
+            visualization: "pie",
+            size: "medium"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        
+        // Activity & Table Widgets
+        {
+          title: "Production Events Feed",
+          targetPlatform: "both",
+          widgetType: "activity",
+          widgetSubtype: "activity", 
+          data: {
+            template: "production-events",
+            description: "Real-time feed of production events, completions, and system alerts"
+          },
+          configuration: {
+            maxItems: 25,
+            filterTypes: ["completion", "alert", "maintenance", "quality"],
+            showTimestamp: true,
+            showSeverity: true,
+            autoRefresh: true,
+            refreshInterval: 30,
+            visualization: "activity",
+            size: "medium"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Critical Operations Monitor",
+          targetPlatform: "both",
+          widgetType: "table",
+          widgetSubtype: "table",
+          data: {
+            template: "critical-operations",
+            description: "Monitor high-priority operations requiring immediate attention"
+          },
+          configuration: {
+            columns: ["Operation", "Resource", "Status", "Priority", "Due Date"],
+            showFilters: true,
+            showSearch: true,
+            sortable: true,
+            pageSize: 10,
+            highlightCritical: true,
+            visualization: "table",
+            size: "large"
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        
+        // Mobile-Optimized Widgets
+        {
+          title: "Mobile Production Dashboard",
+          targetPlatform: "mobile",
+          widgetType: "smart-kpi",
+          widgetSubtype: "kpi",
+          data: {
+            template: "mobile-dashboard",
+            description: "Streamlined production metrics optimized for mobile devices"
+          },
+          configuration: {
+            metric: "Daily Production",
+            unit: "units",
+            targetValue: 1000,
+            currentValue: 847,
+            visualization: "metric",
+            colorScheme: "compact",
+            showTrend: false,
+            size: "compact",
+            mobileOptimized: true
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        },
+        {
+          title: "Mobile Alert Center",
+          targetPlatform: "mobile",
+          widgetType: "activity",
+          widgetSubtype: "activity",
+          data: {
+            template: "mobile-alerts",
+            description: "Critical alerts and notifications optimized for mobile viewing"
+          },
+          configuration: {
+            maxItems: 10,
+            filterTypes: ["critical", "urgent"],
+            showTimestamp: true,
+            compactView: true,
+            visualization: "activity",
+            size: "mobile",
+            mobileOptimized: true
+          },
+          isVisible: true,
+          createdByMax: false,
+          isSystemWidget: false,
+          sessionId: "design-studio-samples"
+        }
+      ];
+
+      // Create all sample widgets
+      let createdCount = 0;
+      const createdWidgets = [];
+      
+      for (const widget of professionalSampleWidgets) {
+        try {
+          const created = await storage.createCanvasWidget(widget);
+          createdWidgets.push(created);
+          createdCount++;
+        } catch (error) {
+          console.error("Error creating sample widget:", widget.title, error);
+        }
+      }
+
+      // Professional sample dashboard configurations
+      const sampleDashboards = [
+        {
+          name: "Manufacturing Operations Dashboard",
+          description: "Comprehensive overview of production metrics, resource utilization, and operational efficiency",
+          config: {
+            layout: "grid",
+            theme: "professional",
+            autoRefresh: true,
+            refreshInterval: 60,
+            widgets: [
+              { id: "production-efficiency", position: { x: 0, y: 0, w: 4, h: 3 } },
+              { id: "machine-utilization", position: { x: 4, y: 0, w: 4, h: 3 } },
+              { id: "quality-metrics", position: { x: 8, y: 0, w: 4, h: 3 } },
+              { id: "production-trends", position: { x: 0, y: 3, w: 8, h: 4 } },
+              { id: "production-events", position: { x: 8, y: 3, w: 4, h: 4 } }
+            ]
+          },
+          isActive: true,
+          targetAudience: "production_managers",
+          category: "operations"
+        },
+        {
+          name: "Quality Control Dashboard", 
+          description: "Real-time quality metrics, defect tracking, and compliance monitoring",
+          config: {
+            layout: "quality-focused",
+            theme: "quality",
+            autoRefresh: true,
+            refreshInterval: 30,
+            widgets: [
+              { id: "quality-metrics", position: { x: 0, y: 0, w: 6, h: 3 } },
+              { id: "first-pass-yield", position: { x: 6, y: 0, w: 6, h: 3 } },
+              { id: "defect-trends", position: { x: 0, y: 3, w: 8, h: 4 } },
+              { id: "quality-alerts", position: { x: 8, y: 3, w: 4, h: 4 } }
+            ]
+          },
+          isActive: true,
+          targetAudience: "quality_managers",
+          category: "quality"
+        },
+        {
+          name: "Executive Production Summary",
+          description: "High-level KPIs and performance indicators for executive oversight",
+          config: {
+            layout: "executive",
+            theme: "executive",
+            autoRefresh: true,
+            refreshInterval: 300,
+            widgets: [
+              { id: "production-efficiency", position: { x: 0, y: 0, w: 3, h: 2 } },
+              { id: "quality-overview", position: { x: 3, y: 0, w: 3, h: 2 } },
+              { id: "financial-impact", position: { x: 6, y: 0, w: 3, h: 2 } },
+              { id: "performance-trends", position: { x: 0, y: 2, w: 9, h: 3 } }
+            ]
+          },
+          isActive: true,
+          targetAudience: "executives",
+          category: "executive"
+        },
+        {
+          name: "Mobile Production Monitor",
+          description: "Streamlined production monitoring optimized for mobile devices",
+          config: {
+            layout: "mobile-stack",
+            theme: "mobile",
+            autoRefresh: true,
+            refreshInterval: 60,
+            mobileOptimized: true,
+            widgets: [
+              { id: "mobile-production", position: { x: 0, y: 0, w: 12, h: 2 } },
+              { id: "mobile-alerts", position: { x: 0, y: 2, w: 12, h: 3 } },
+              { id: "mobile-status", position: { x: 0, y: 5, w: 12, h: 2 } }
+            ]
+          },
+          isActive: true,
+          targetAudience: "mobile_users",
+          category: "mobile"
+        }
+      ];
+
+      // Create sample dashboards (if storage supports dashboard creation)
+      let dashboardCount = 0;
+      const createdDashboards = [];
+      
+      if (storage.createDashboardConfig) {
+        for (const dashboard of sampleDashboards) {
+          try {
+            const created = await storage.createDashboardConfig(dashboard);
+            createdDashboards.push(created);
+            dashboardCount++;
+          } catch (error) {
+            console.error("Error creating sample dashboard:", dashboard.name, error);
+          }
+        }
+      }
+
+      console.log(`✅ Created ${createdCount} sample widgets and ${dashboardCount} sample dashboards`);
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully created ${createdCount} professional sample widgets and ${dashboardCount} sample dashboards`,
+        widgets: createdWidgets,
+        dashboards: createdDashboards,
+        counts: {
+          widgets: createdCount,
+          dashboards: dashboardCount
+        }
+      });
+    } catch (error) {
+      console.error("Error creating sample widgets and dashboards:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to create sample widgets and dashboards",
+        message: error.message 
+      });
+    }
+  });
+
+  // Create sample System widgets for testing (legacy endpoint)
   app.post("/api/canvas/widgets/create-system-samples", async (req, res) => {
     try {
       const systemWidgets = [

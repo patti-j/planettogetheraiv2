@@ -1240,7 +1240,84 @@ export default function UIDesignStudio() {
                     
                     {/* Widget Creation Options */}
                     {activeTab === 'widgets' ? (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
+                        {/* Professional Sample Widgets Section */}
+                        <div className="max-w-4xl mx-auto">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Professional Templates</h3>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const response = await apiRequest('POST', '/api/seeds/sample-widgets');
+                                  await response.json();
+                                  queryClient.invalidateQueries({ queryKey: ['/api/design-studio/widgets'] });
+                                  toast({
+                                    title: "Sample Widgets Created",
+                                    description: "Professional widget templates have been loaded."
+                                  });
+                                } catch (error) {
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to create sample widgets.",
+                                    variant: "destructive"
+                                  });
+                                }
+                              }}
+                            >
+                              <Package className="h-4 w-4 mr-1" />
+                              Load Professional Templates
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                            <Card className="border border-green-200 bg-green-50 dark:bg-green-900/20 hover:shadow-lg transition-shadow cursor-pointer">
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="p-1 bg-green-600 rounded">
+                                    <Target className="h-3 w-3 text-white" />
+                                  </div>
+                                  <span className="text-sm font-medium">Production Efficiency</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">OEE monitoring with real-time alerts</p>
+                              </CardContent>
+                            </Card>
+                            <Card className="border border-blue-200 bg-blue-50 dark:bg-blue-900/20 hover:shadow-lg transition-shadow cursor-pointer">
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="p-1 bg-blue-600 rounded">
+                                    <Gauge className="h-3 w-3 text-white" />
+                                  </div>
+                                  <span className="text-sm font-medium">Machine Utilization</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Resource utilization dashboard</p>
+                              </CardContent>
+                            </Card>
+                            <Card className="border border-purple-200 bg-purple-50 dark:bg-purple-900/20 hover:shadow-lg transition-shadow cursor-pointer">
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="p-1 bg-purple-600 rounded">
+                                    <BarChart3 className="h-3 w-3 text-white" />
+                                  </div>
+                                  <span className="text-sm font-medium">Production Trends</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Volume forecasting charts</p>
+                              </CardContent>
+                            </Card>
+                            <Card className="border border-orange-200 bg-orange-50 dark:bg-orange-900/20 hover:shadow-lg transition-shadow cursor-pointer">
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="p-1 bg-orange-600 rounded">
+                                    <Activity className="h-3 w-3 text-white" />
+                                  </div>
+                                  <span className="text-sm font-medium">Events Feed</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Real-time production events</p>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+
                         {/* SMART KPI Widget Studio - Featured Option */}
                         <Card className="max-w-md mx-auto border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
                           <CardHeader className="pb-3">
