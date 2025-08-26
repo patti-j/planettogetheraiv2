@@ -516,6 +516,464 @@ export default function EnterpriseMapPage() {
             </Card>
           </div>
 
+          {/* Main Content Area - Global Operations Network Map */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Map Section - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="w-5 h-5" />
+                        Global Operations Network
+                      </CardTitle>
+                      {showMetrics && (
+                        <Badge variant="outline" className="ml-2">
+                          Showing: {selectedMetric}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={showConnections ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setShowConnections(!showConnections)}
+                            >
+                              <Route className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Toggle supply chain routes</TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant={heatmapEnabled ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setHeatmapEnabled(!heatmapEnabled)}
+                            >
+                              <Layers className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Toggle heatmap overlay</TooltipContent>
+                        </Tooltip>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setZoom(Math.min(zoom * 1.5, 8))}
+                          disabled={zoom >= 8}
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setZoom(Math.max(zoom / 1.5, 0.8))}
+                          disabled={zoom <= 0.8}
+                        >
+                          <ZoomOut className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('north-america')}
+                      >
+                        NA
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('europe')}
+                      >
+                        EU
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('asia-pacific')}
+                      >
+                        APAC
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => focusRegion('latin-america')}
+                      >
+                        LATAM
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="w-full h-[500px] border rounded-lg overflow-hidden relative" 
+                    style={{
+                      background: 'linear-gradient(to bottom right, #f0f9ff, #e0f2fe)',
+                      backgroundImage: `
+                        linear-gradient(to bottom right, #f0f9ff, #e0f2fe),
+                        linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px)
+                      `,
+                      backgroundSize: '100% 100%, 50px 50px, 50px 50px'
+                    }}
+                  >
+                    <ComposableMap
+                      projection="geoMercator"
+                      projectionConfig={{
+                        scale: 147,
+                        center: center.coordinates,
+                      }}
+                      className="w-full h-full"
+                    >
+                      <ZoomableGroup 
+                        zoom={zoom} 
+                        center={center.coordinates}
+                        onMoveEnd={(geo: { coordinates: [number, number], zoom: number }) => setCenter(geo)}>
+                        {/* Base Map */}
+                        <Geographies geography={geoUrl}>
+                          {({ geographies }) =>
+                            geographies ? geographies.map((geo) => (
+                              <Geography
+                                key={geo.rsmKey}
+                                geography={geo}
+                                fill={heatmapEnabled ? "#e0f2fe" : "#f0f9ff"}
+                                stroke="#94a3b8"
+                                strokeWidth={0.5}
+                                style={{
+                                  default: {
+                                    fill: heatmapEnabled ? "#e0f2fe" : "#f0f9ff",
+                                    outline: "none"
+                                  },
+                                  hover: {
+                                    fill: "#dbeafe",
+                                    outline: "none"
+                                  },
+                                  pressed: {
+                                    fill: "#bfdbfe",
+                                    outline: "none"
+                                  }
+                                }}
+                              />
+                            )) : (
+                              // Fallback simple world representation
+                              <g>
+                                <rect x="-180" y="-90" width="360" height="180" fill="#f0f9ff" stroke="#94a3b8" strokeWidth="0.5" />
+                                <text x="0" y="0" textAnchor="middle" fill="#64748b" fontSize="14">
+                                  Loading world map...
+                                </text>
+                              </g>
+                            )
+                          }
+                        </Geographies>
+                        
+                        {/* Supply Chain Connections */}
+                        {showConnections && supplyChainConnections.map((connection, index) => (
+                          <Line
+                            key={index}
+                            from={connection.from}
+                            to={connection.to}
+                            stroke="#3B82F6"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeDasharray="5,5"
+                            className="animate-pulse"
+                          />
+                        ))}
+                        
+                        {/* Plant Markers */}
+                        {plants.map((plant) => {
+                          if (!plant.latitude || !plant.longitude) return null;
+                          
+                          const lat = parseFloat(plant.latitude);
+                          const lng = parseFloat(plant.longitude);
+                          
+                          if (isNaN(lat) || isNaN(lng)) return null;
+                          
+                          const markerColor = getMarkerColor(plant);
+                          
+                          return (
+                            <Marker 
+                              key={plant.id} 
+                              coordinates={[lng, lat]}
+                              onClick={() => setSelectedPlant(plant)}
+                            >
+                              <g className="cursor-pointer group">
+                                {/* Outer glow effect */}
+                                <circle
+                                  r={15}
+                                  fill={markerColor}
+                                  fillOpacity={0.2}
+                                  className="animate-ping"
+                                />
+                                {/* Main marker */}
+                                <circle
+                                  r={12}
+                                  fill={markerColor}
+                                  stroke="#ffffff"
+                                  strokeWidth={3}
+                                  className="transition-all duration-200"
+                                  fillOpacity={0.95}
+                                  filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+                                />
+                                {heatmapEnabled && (
+                                  <circle
+                                    r={35}
+                                    fill={markerColor}
+                                    fillOpacity={0.15}
+                                    className="animate-pulse"
+                                  />
+                                )}
+                                <Factory
+                                  x={-7}
+                                  y={-7}
+                                  width={14}
+                                  height={14}
+                                  fill="white"
+                                  className="pointer-events-none"
+                                />
+                                {/* Plant name label */}
+                                <text
+                                  y={25}
+                                  textAnchor="middle"
+                                  fill="#1e293b"
+                                  fontSize="11"
+                                  fontWeight="600"
+                                  className="pointer-events-none"
+                                  style={{
+                                    filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
+                                  }}
+                                >
+                                  {plant.name}
+                                </text>
+                              </g>
+                            </Marker>
+                          );
+                        })}
+                      </ZoomableGroup>
+                    </ComposableMap>
+                  </div>
+                  
+                  {/* Map Legend */}
+                  <div className="flex items-center justify-center gap-6 mt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Optimal (≥90%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Good (75-89%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Needs Attention (&lt;75%)</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Analytics Panel */}
+            <div className="space-y-6">
+              {/* Regional Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Regional Distribution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={regionalDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {regionalDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2 mt-4">
+                    {regionalDistribution.map((region) => (
+                      <div key={region.region} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: region.color }}></div>
+                          <span className="text-sm">{region.region}</span>
+                        </div>
+                        <span className="text-sm font-medium">{region.plants} plants</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* AI Monitoring Agent Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bot className="w-5 h-5" />
+                      AI Monitoring Agent
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {monitoringStatus?.isRunning ? (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                          <Activity className="w-3 h-3 mr-1" />
+                          Running
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+                          <Pause className="w-3 h-3 mr-1" />
+                          Stopped
+                        </Badge>
+                      )}
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    Intelligent system monitoring with AI-powered insights
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Status</div>
+                      <div className="text-2xl font-bold">
+                        {monitoringStatus?.isRunning ? (
+                          <span className="text-green-600">Active</span>
+                        ) : (
+                          <span className="text-gray-500">Inactive</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Interval</div>
+                      <div className="text-2xl font-bold">
+                        {monitoringStatus?.interval ? `${Math.round(monitoringStatus.interval / 1000)}s` : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {monitoringStatus?.lastCheck && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Last Check</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(monitoringStatus.lastCheck).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    {monitoringStatus?.isRunning ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stopMonitoringAgent.mutate()}
+                        disabled={stopMonitoringAgent.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Pause className="w-4 h-4" />
+                        Stop Agent
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => startMonitoringAgent.mutate()}
+                        disabled={startMonitoringAgent.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="w-4 h-4" />
+                        Start Agent
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Performance Trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="time" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <RechartsLine type="monotone" dataKey="efficiency" stroke="#3B82F6" strokeWidth={2} />
+                      <RechartsLine type="monotone" dataKey="utilization" stroke="#10B981" strokeWidth={2} />
+                      <RechartsLine type="monotone" dataKey="quality" stroke="#F59E0B" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Plant List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Plant Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {plants.map((plant) => (
+                        <div
+                          key={plant.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                          onClick={() => setSelectedPlant(plant)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
+                              plant.isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                            }`}></div>
+                            <div>
+                              <p className="font-medium text-sm">{plant.name}</p>
+                              <p className="text-xs text-gray-500">{plant.city}, {plant.country}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium">
+                              {plant.operationalMetrics?.efficiency || 85}%
+                            </p>
+                            <p className="text-xs text-gray-500">efficiency</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
           {/* Executive Strategic Command Center */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
             {/* Financial Performance Dashboard */}
