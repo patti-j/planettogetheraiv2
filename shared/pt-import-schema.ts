@@ -8,12 +8,12 @@ import { z } from "zod";
 // AllowedHelpers - Defines which resources can help other resources
 export const ptAllowedHelpers = pgTable("pt_allowed_helpers", {
   id: serial("id").primaryKey(),
-  allowedHelperPlantExternalId: text("allowed_helper_plant_external_id"),
-  allowedHelperDepartmentExternalId: text("allowed_helper_department_external_id"),
-  allowedHelperResourceExternalId: text("allowed_helper_resource_external_id"),
-  resourcePlantExternalId: text("resource_plant_external_id"),
-  resourceDepartmentExternalId: text("resource_department_external_id"),
-  resourceExternalId: text("resource_external_id"),
+  allowedHelperPlantId: integer("allowed_helper_plant_id").references(() => ptPlants.id),
+  allowedHelperDepartmentId: integer("allowed_helper_department_id").references(() => ptDepartments.id),
+  allowedHelperResourceId: integer("allowed_helper_resource_id").references(() => ptResources.id),
+  resourcePlantId: integer("resource_plant_id").references(() => ptPlants.id),
+  resourceDepartmentId: integer("resource_department_id").references(() => ptDepartments.id),
+  resourceId: integer("resource_id").references(() => ptResources.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -30,7 +30,7 @@ export const ptAttributeCodeTables = pgTable("pt_attribute_code_tables", {
 export const ptAttributeCodeTableAttrCodes = pgTable("pt_attribute_code_table_attr_codes", {
   id: serial("id").primaryKey(),
   tableName: text("table_name"),
-  attributeExternalId: text("attribute_external_id"),
+  attributeId: integer("attribute_id").references(() => ptAttributes.id),
   durationHours: text("duration_hours"),
   previousOpAttributeCode: text("previous_op_attribute_code"),
   nextOpAttributeCode: text("next_op_attribute_code"),
@@ -42,16 +42,16 @@ export const ptAttributeCodeTableAttrCodes = pgTable("pt_attribute_code_table_at
 export const ptAttributeCodeTableAttrNames = pgTable("pt_attribute_code_table_attr_names", {
   id: serial("id").primaryKey(),
   tableName: text("table_name"),
-  attributeExternalId: text("attribute_external_id"),
+  attributeId: integer("attribute_id").references(() => ptAttributes.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const ptAttributeCodeTableResources = pgTable("pt_attribute_code_table_resources", {
   id: serial("id").primaryKey(),
   tableName: text("table_name"),
-  plantExternalId: text("plant_external_id"),
-  departmentExternalId: text("department_external_id"),
-  resourceExternalId: text("resource_external_id"),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  departmentId: integer("department_id").references(() => ptDepartments.id),
+  resourceId: integer("resource_id").references(() => ptResources.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -66,7 +66,7 @@ export const ptAttributeRangeTables = pgTable("pt_attribute_range_tables", {
 
 export const ptAttributeRangeTableAttrNames = pgTable("pt_attribute_range_table_attr_names", {
   id: serial("id").primaryKey(),
-  attributeExternalId: text("attribute_external_id"),
+  attributeId: integer("attribute_id").references(() => ptAttributes.id),
   tableId: text("table_id"),
   description: text("description"),
   eligibilityConstraint: text("eligibility_constraint"),
@@ -75,7 +75,7 @@ export const ptAttributeRangeTableAttrNames = pgTable("pt_attribute_range_table_
 
 export const ptAttributeRangeTableFrom = pgTable("pt_attribute_range_table_from", {
   id: serial("id").primaryKey(),
-  attributeExternalId: text("attribute_external_id"),
+  attributeId: integer("attribute_id").references(() => ptAttributes.id),
   tableId: text("table_id"),
   fromId: text("from_id"),
   fromRangeStart: text("from_range_start"),
@@ -85,7 +85,7 @@ export const ptAttributeRangeTableFrom = pgTable("pt_attribute_range_table_from"
 
 export const ptAttributeRangeTableTo = pgTable("pt_attribute_range_table_to", {
   id: serial("id").primaryKey(),
-  attributeExternalId: text("attribute_external_id"),
+  attributeId: integer("attribute_id").references(() => ptAttributes.id),
   tableId: text("table_id"),
   fromId: text("from_id"),
   toRangeStart: text("to_range_start"),
@@ -1000,7 +1000,7 @@ export const ptResources = pgTable("pt_resources", {
   useOperationSetupTime: text("use_operation_setup_time"),
   userFields: jsonb("user_fields").$type<Record<string, any>>(),
   workcenter: text("workcenter"),
-  workcenterExternalId: text("workcenter_external_id"),
+  workcenterId: integer("workcenter_id").references(() => ptDepartments.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1175,7 +1175,7 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
   name: text("name"),
-  jobExternalId: text("job_external_id"),
+  jobId: integer("job_id").references(() => ptJobs.id),
   requiredQty: text("required_qty"),
   description: text("description"),
   alternatePathSelection: text("alternate_path_selection"),
@@ -1185,14 +1185,14 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   canSpanPlants: text("can_span_plants"),
   copyRoutingFromTemplate: text("copy_routing_from_template"),
   dbrShippingBufferOverrideDays: text("dbr_shipping_buffer_override_days"),
-  defaultPathExternalId: text("default_path_external_id"),
+  defaultPathId: integer("default_path_id").references(() => ptJobPaths.id),
   expectedFinishQty: text("expected_finish_qty"),
   family: text("family"),
   hold: text("hold"),
   holdReason: text("hold_reason"),
   holdUntilDate: text("hold_until_date"),
   isReleased: text("is_released"),
-  lockedPlantExternalId: text("locked_plant_external_id"),
+  lockedPlantId: integer("locked_plant_id").references(() => ptPlants.id),
   lockToCurrentAlternatePath: text("lock_to_current_alternate_path"),
   moNeedDate: text("mo_need_date"),
   needDate: text("need_date"),
@@ -1585,9 +1585,130 @@ export const ptLotsRelations = relations(ptLots, ({ one }) => ({
   }),
 }));
 
-// ptJobs does NOT have direct relations to activities, materials, operations, or paths
-// Jobs inherit all relationships through their connection to manufacturing orders
-export const ptJobsRelations = relations(ptJobs, ({ one }) => ({
+// Add relationship definitions for resource and operational tables
+export const ptAllowedHelpersRelations = relations(ptAllowedHelpers, ({ one }) => ({
+  allowedHelperPlant: one(ptPlants, {
+    fields: [ptAllowedHelpers.allowedHelperPlantId],
+    references: [ptPlants.id],
+    relationName: "allowedHelperPlant"
+  }),
+  allowedHelperDepartment: one(ptDepartments, {
+    fields: [ptAllowedHelpers.allowedHelperDepartmentId],
+    references: [ptDepartments.id],
+    relationName: "allowedHelperDepartment"
+  }),
+  allowedHelperResource: one(ptResources, {
+    fields: [ptAllowedHelpers.allowedHelperResourceId],
+    references: [ptResources.id],
+    relationName: "allowedHelperResource"
+  }),
+  resourcePlant: one(ptPlants, {
+    fields: [ptAllowedHelpers.resourcePlantId],
+    references: [ptPlants.id],
+    relationName: "resourcePlant"
+  }),
+  resourceDepartment: one(ptDepartments, {
+    fields: [ptAllowedHelpers.resourceDepartmentId],
+    references: [ptDepartments.id],
+    relationName: "resourceDepartment"
+  }),
+  resource: one(ptResources, {
+    fields: [ptAllowedHelpers.resourceId],
+    references: [ptResources.id],
+  }),
+}));
+
+export const ptAttributeCodeTableAttrCodesRelations = relations(ptAttributeCodeTableAttrCodes, ({ one }) => ({
+  attribute: one(ptAttributes, {
+    fields: [ptAttributeCodeTableAttrCodes.attributeId],
+    references: [ptAttributes.id],
+  }),
+}));
+
+export const ptAttributeCodeTableAttrNamesRelations = relations(ptAttributeCodeTableAttrNames, ({ one }) => ({
+  attribute: one(ptAttributes, {
+    fields: [ptAttributeCodeTableAttrNames.attributeId],
+    references: [ptAttributes.id],
+  }),
+}));
+
+export const ptAttributeCodeTableResourcesRelations = relations(ptAttributeCodeTableResources, ({ one }) => ({
+  plant: one(ptPlants, {
+    fields: [ptAttributeCodeTableResources.plantId],
+    references: [ptPlants.id],
+  }),
+  department: one(ptDepartments, {
+    fields: [ptAttributeCodeTableResources.departmentId],
+    references: [ptDepartments.id],
+  }),
+  resource: one(ptResources, {
+    fields: [ptAttributeCodeTableResources.resourceId],
+    references: [ptResources.id],
+  }),
+}));
+
+export const ptAttributeRangeTableAttrNamesRelations = relations(ptAttributeRangeTableAttrNames, ({ one }) => ({
+  attribute: one(ptAttributes, {
+    fields: [ptAttributeRangeTableAttrNames.attributeId],
+    references: [ptAttributes.id],
+  }),
+}));
+
+export const ptAttributeRangeTableFromRelations = relations(ptAttributeRangeTableFrom, ({ one }) => ({
+  attribute: one(ptAttributes, {
+    fields: [ptAttributeRangeTableFrom.attributeId],
+    references: [ptAttributes.id],
+  }),
+}));
+
+export const ptAttributeRangeTableToRelations = relations(ptAttributeRangeTableTo, ({ one }) => ({
+  attribute: one(ptAttributes, {
+    fields: [ptAttributeRangeTableTo.attributeId],
+    references: [ptAttributes.id],
+  }),
+}));
+
+export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ one, many }) => ({
+  job: one(ptJobs, {
+    fields: [ptManufacturingOrders.jobId],
+    references: [ptJobs.id],
+  }),
+  defaultPath: one(ptJobPaths, {
+    fields: [ptManufacturingOrders.defaultPathId],
+    references: [ptJobPaths.id],
+  }),
+  lockedPlant: one(ptPlants, {
+    fields: [ptManufacturingOrders.lockedPlantId],
+    references: [ptPlants.id],
+  }),
+  operations: many(ptJobOperations),
+  paths: many(ptJobPaths),
+  successorManufacturingOrders: many(ptJobSuccessorManufacturingOrders, {
+    relationName: "successorManufacturingOrders" 
+  }),
+  predecessorManufacturingOrders: many(ptJobSuccessorManufacturingOrders, {
+    relationName: "predecessorManufacturingOrders" 
+  }),
+}));
+
+export const ptResourcesRelations = relations(ptResources, ({ one, many }) => ({
+  workcenter: one(ptDepartments, {
+    fields: [ptResources.workcenterId],
+    references: [ptDepartments.id],
+  }),
+  allowedHelpersByResource: many(ptAllowedHelpers, {
+    relationName: "allowedHelperResource"
+  }),
+  allowedHelpersAsHelper: many(ptAllowedHelpers, {
+    relationName: "resource"
+  }),
+  jobResources: many(ptJobResources),
+  jobResourceCapabilities: many(ptJobResourceCapabilities),
+}));
+
+// Enhanced ptJobs relations with manufacturing order connection
+export const ptJobsRelations = relations(ptJobs, ({ one, many }) => ({
+  manufacturingOrders: many(ptManufacturingOrders),
   // Jobs can relate to manufacturing orders, but all other relationships
   // are established at the manufacturing order and operation level
 }));
