@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,6 +115,9 @@ export default function AutonomousOptimizationPage() {
   const [showPlantSettings, setShowPlantSettings] = useState(false);
   const [plantSettings, setPlantSettings] = useState<PlantOptimizationSettings>({});
   
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   // Fetch plants data
   const { data: plants = [] } = useQuery({
     queryKey: ["/api/plants"],
@@ -129,7 +133,17 @@ export default function AutonomousOptimizationPage() {
     }
   });
 
-  // Initialize plant settings when plants data is loaded
+  // Fetch existing plant optimization settings
+  const { data: savedPlantSettings = {} } = useQuery({
+    queryKey: ['/api/plant-optimization-settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/plant-optimization-settings');
+      if (!response.ok) throw new Error('Failed to fetch plant settings');
+      return response.json();
+    }
+  });
+
+  // Initialize plant settings when plants data is loaded, merging with saved settings
   useEffect(() => {
     if (plants.length > 0 && algorithms.length > 0 && Object.keys(plantSettings).length === 0) {
       const initialSettings: PlantOptimizationSettings = {};
@@ -144,7 +158,10 @@ export default function AutonomousOptimizationPage() {
       };
 
       plants.forEach((plant: any) => {
-        initialSettings[plant.id] = {
+        // Check if we have saved settings for this plant
+        const savedForPlant = savedPlantSettings[plant.id];
+        
+        initialSettings[plant.id] = savedForPlant || {
           enabled: plant.isActive || false,
           profile: "standard",
           priority: 1,
@@ -176,7 +193,38 @@ export default function AutonomousOptimizationPage() {
       });
       setPlantSettings(initialSettings);
     }
-  }, [plants, algorithms]);
+  }, [plants, algorithms, savedPlantSettings]);
+
+  // Save plant optimization settings mutation
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (settings: PlantOptimizationSettings) => {
+      const response = await fetch('/api/plant-optimization-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save plant settings');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/plant-optimization-settings'] });
+      setShowPlantSettings(false);
+      toast({ 
+        title: "Settings saved successfully", 
+        description: "Plant optimization settings have been updated." 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error saving settings", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
 
   // Toggle plant optimization
   const togglePlantOptimization = (plantId: number) => {
@@ -1338,12 +1386,10 @@ export default function AutonomousOptimizationPage() {
                   </Button>
                   <Button 
                     className="bg-gradient-to-r from-blue-500 to-purple-600"
-                    onClick={() => {
-                      // In a real app, this would save to the backend
-                      setShowPlantSettings(false);
-                    }}
+                    onClick={() => saveSettingsMutation.mutate(plantSettings)}
+                    disabled={saveSettingsMutation.isPending}
                   >
-                    Apply Settings
+                    {saveSettingsMutation.isPending ? 'Saving...' : 'Apply Settings'}
                   </Button>
                 </div>
               </div>

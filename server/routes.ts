@@ -10486,6 +10486,78 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
+  // Plant Optimization Settings API endpoints
+  app.get("/api/plant-optimization-settings", requireAuth, async (req, res) => {
+    try {
+      const settings = await db
+        .select()
+        .from(schema.plantOptimizationSettings)
+        .orderBy(schema.plantOptimizationSettings.plantId);
+      
+      // Transform to object format expected by frontend
+      const settingsMap = settings.reduce((acc, setting) => {
+        acc[setting.plantId] = {
+          enabled: setting.enabled,
+          profile: setting.profile,
+          priority: setting.priority,
+          modules: setting.modules,
+          algorithms: setting.algorithms,
+          constraints: setting.constraints
+        };
+        return acc;
+      }, {} as any);
+      
+      res.json(settingsMap);
+    } catch (error) {
+      console.error("Error fetching plant optimization settings:", error);
+      res.status(500).json({ error: "Failed to fetch plant optimization settings" });
+    }
+  });
+
+  app.post("/api/plant-optimization-settings", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      const settingsData = req.body;
+      
+      // Convert settings object to array for database storage
+      const settingsArray = Object.entries(settingsData).map(([plantId, settings]: [string, any]) => ({
+        plantId: parseInt(plantId),
+        enabled: settings.enabled,
+        profile: settings.profile,
+        priority: settings.priority,
+        modules: settings.modules,
+        algorithms: settings.algorithms,
+        constraints: settings.constraints,
+        updatedBy: userId
+      }));
+
+      // Delete existing settings and insert new ones
+      for (const setting of settingsArray) {
+        await db
+          .insert(schema.plantOptimizationSettings)
+          .values(setting)
+          .onConflictDoUpdate({
+            target: schema.plantOptimizationSettings.plantId,
+            set: {
+              enabled: setting.enabled,
+              profile: setting.profile,
+              priority: setting.priority,
+              modules: setting.modules,
+              algorithms: setting.algorithms,
+              constraints: setting.constraints,
+              updatedBy: setting.updatedBy,
+              updatedAt: new Date()
+            }
+          });
+      }
+      
+      res.json({ success: true, message: "Plant optimization settings saved successfully" });
+    } catch (error) {
+      console.error("Error saving plant optimization settings:", error);
+      res.status(500).json({ error: "Failed to save plant optimization settings" });
+    }
+  });
+
   // Helper function for backwards scheduling logic
   async function executeBackwardsScheduling({ parameters, productionOrders, plannedOrders, resources, operations, storage }) {
     try {

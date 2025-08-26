@@ -3483,6 +3483,63 @@ export const algorithmUsageLogs = pgTable("algorithm_usage_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Plant Optimization Settings for Autonomous Optimization
+export const plantOptimizationSettings = pgTable("plant_optimization_settings", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => plants.id).notNull().unique(),
+  enabled: boolean("enabled").default(true),
+  profile: text("profile").notNull().default("standard"), // standard, aggressive, conservative, custom
+  priority: integer("priority").default(1), // 1=high, 2=medium, 3=low
+  modules: jsonb("modules").$type<{
+    scheduling: boolean;
+    productionPlanning: boolean;
+    demandPlanning: boolean;
+    inventoryOptimization: boolean;
+    resourceAllocation: boolean;
+    qualityControl: boolean;
+    maintenancePlanning: boolean;
+    supplyChain: boolean;
+  }>().default({
+    scheduling: true,
+    productionPlanning: true,
+    demandPlanning: true,
+    inventoryOptimization: false,
+    resourceAllocation: true,
+    qualityControl: false,
+    maintenancePlanning: false,
+    supplyChain: false
+  }),
+  algorithms: jsonb("algorithms").$type<{
+    productionScheduling: string;
+    orderOptimization: string;
+    resequencing: string;
+    demandPlanning: string;
+    mrp: string;
+    mps: string;
+    capacityPlanning: string;
+  }>().default({
+    productionScheduling: "Standard Algorithm",
+    orderOptimization: "Standard Algorithm",
+    resequencing: "Standard Algorithm",
+    demandPlanning: "Standard Algorithm",
+    mrp: "Standard Algorithm",
+    mps: "Standard Algorithm",
+    capacityPlanning: "Standard Algorithm"
+  }),
+  constraints: jsonb("constraints").$type<{
+    maxUtilization: number;
+    minQuality: number;
+    maxCost: number;
+  }>().default({
+    maxUtilization: 90,
+    minQuality: 95,
+    maxCost: 105
+  }),
+  updatedBy: integer("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations for Algorithm Version Control
 export const algorithmVersionsRelations = relations(algorithmVersions, ({ many, one }) => ({
   plantDeployments: many(plantAlgorithmDeployments),
@@ -3536,6 +3593,17 @@ export const algorithmUsageLogsRelations = relations(algorithmUsageLogs, ({ one 
   }),
   user: one(users, {
     fields: [algorithmUsageLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const plantOptimizationSettingsRelations = relations(plantOptimizationSettings, ({ one }) => ({
+  plant: one(plants, {
+    fields: [plantOptimizationSettings.plantId],
+    references: [plants.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [plantOptimizationSettings.updatedBy],
     references: [users.id],
   }),
 }));
