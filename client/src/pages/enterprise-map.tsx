@@ -84,7 +84,8 @@ import {
   Eye,
   EyeOff,
   Maximize2,
-  Route
+  Route,
+  Target
 } from 'lucide-react';
 
 // World map topology URL - using reliable CDN source
@@ -1358,80 +1359,174 @@ export default function EnterpriseMapPage() {
                       <div className="space-y-4">
                         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                           <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                            Default Optimization Algorithm
+                            Plant Optimization Settings
                           </h4>
                           <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                            Set the default algorithm that will be used for all optimization runs at this plant unless a user chooses a different one.
+                            Configure default algorithms for each planning process and enable autonomous optimization.
                           </p>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <Label htmlFor="algorithm-select" className="text-sm font-medium">
-                                Algorithm:
-                              </Label>
-                              <Select 
-                                defaultValue={selectedPlant?.defaultAlgorithmId?.toString() || "none"}
-                                onValueChange={(value) => {
-                                  // Handle algorithm change
-                                  handleAlgorithmChange(selectedPlant?.id, value);
-                                }}
-                              >
-                                <SelectTrigger className="w-[250px]">
-                                  <SelectValue placeholder="Select default algorithm" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">No default algorithm</SelectItem>
-                                  {algorithms && algorithms.map((algorithm: any) => (
-                                    <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
-                                      {algorithm.displayName || algorithm.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          {/* Production Scheduling */}
+                          <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-blue-600" />
+                                <Label className="text-sm font-medium">Production Scheduling</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch 
+                                  checked={false}
+                                  onCheckedChange={() => {}}
+                                />
+                                <span className="text-xs text-gray-500">Autonomous</span>
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Current: {selectedPlant?.defaultAlgorithmId ? 
-                                algorithms && algorithms.find((a: any) => a.id === selectedPlant.defaultAlgorithmId)?.displayName || 'Unknown Algorithm' : 
-                                'No default algorithm set'
-                              }
+                            <Select defaultValue="none">
+                              <SelectTrigger className="h-8">
+                                <SelectValue placeholder="Select algorithm..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Standard Algorithm</SelectItem>
+                                {algorithms && algorithms.filter((alg: any) => 
+                                  alg.category?.toLowerCase().includes('scheduling') || 
+                                  alg.name?.toLowerCase().includes('scheduling') ||
+                                  alg.name?.toLowerCase().includes('asap') ||
+                                  alg.name?.toLowerCase().includes('alap')
+                                ).map((alg: any) => (
+                                  <SelectItem key={alg.id} value={alg.id.toString()}>
+                                    {alg.displayName || alg.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Used for production schedule optimization and sequencing
+                            </p>
+                          </div>
+
+                          {/* Order Optimization */}
+                          <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Target className="w-4 h-4 text-green-600" />
+                                <Label className="text-sm font-medium">Order Optimization</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch 
+                                  checked={false}
+                                  onCheckedChange={() => {}}
+                                />
+                                <span className="text-xs text-gray-500">Autonomous</span>
+                              </div>
                             </div>
+                            <Select defaultValue="none">
+                              <SelectTrigger className="h-8">
+                                <SelectValue placeholder="Select algorithm..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Standard Algorithm</SelectItem>
+                                {algorithms && algorithms.filter((alg: any) => 
+                                  alg.category?.toLowerCase().includes('optimization') || 
+                                  alg.name?.toLowerCase().includes('optimization') ||
+                                  alg.name?.toLowerCase().includes('order')
+                                ).map((alg: any) => (
+                                  <SelectItem key={alg.id} value={alg.id.toString()}>
+                                    {alg.displayName || alg.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Used for order prioritization and allocation optimization
+                            </p>
+                          </div>
+
+                          {/* Demand Planning */}
+                          <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <TrendingUp className="w-4 h-4 text-orange-600" />
+                                <Label className="text-sm font-medium">Demand Planning</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch 
+                                  checked={false}
+                                  onCheckedChange={() => {}}
+                                />
+                                <span className="text-xs text-gray-500">Autonomous</span>
+                              </div>
+                            </div>
+                            <Select defaultValue="none">
+                              <SelectTrigger className="h-8">
+                                <SelectValue placeholder="Select algorithm..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Standard Algorithm</SelectItem>
+                                {algorithms && algorithms.filter((alg: any) => 
+                                  alg.category?.toLowerCase().includes('demand') || 
+                                  alg.name?.toLowerCase().includes('demand') ||
+                                  alg.name?.toLowerCase().includes('forecast')
+                                ).map((alg: any) => (
+                                  <SelectItem key={alg.id} value={alg.id.toString()}>
+                                    {alg.displayName || alg.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Used for demand forecasting and planning optimization
+                            </p>
+                          </div>
+
+                          {/* Resource Allocation */}
+                          <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-purple-600" />
+                                <Label className="text-sm font-medium">Resource Allocation</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch 
+                                  checked={false}
+                                  onCheckedChange={() => {}}
+                                />
+                                <span className="text-xs text-gray-500">Autonomous</span>
+                              </div>
+                            </div>
+                            <Select defaultValue="none">
+                              <SelectTrigger className="h-8">
+                                <SelectValue placeholder="Select algorithm..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Standard Algorithm</SelectItem>
+                                {algorithms && algorithms.filter((alg: any) => 
+                                  alg.category?.toLowerCase().includes('resource') || 
+                                  alg.name?.toLowerCase().includes('resource') ||
+                                  alg.name?.toLowerCase().includes('allocation')
+                                ).map((alg: any) => (
+                                  <SelectItem key={alg.id} value={alg.id.toString()}>
+                                    {alg.displayName || alg.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-gray-500 mt-2">
+                              Used for optimal resource and capacity allocation
+                            </p>
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <Card className="p-3">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-green-600">
-                                {algorithms ? algorithms.filter((a: any) => a.status === 'approved').length : 0}
-                              </div>
-                              <div className="text-xs text-gray-500">Approved Algorithms</div>
+                        <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Autonomous Optimization</p>
+                              <p className="text-amber-700 dark:text-amber-300">
+                                When enabled, algorithms will automatically run optimization at scheduled intervals. 
+                                When disabled, algorithms serve as defaults for manual optimization runs.
+                              </p>
                             </div>
-                          </Card>
-                          <Card className="p-3">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600">
-                                {algorithms ? algorithms.filter((a: any) => a.isStandard).length : 0}
-                              </div>
-                              <div className="text-xs text-gray-500">Standard Algorithms</div>
-                            </div>
-                          </Card>
-                        </div>
-                        
-                        <div className="border rounded-lg p-3">
-                          <h5 className="font-medium mb-2">Available Algorithms</h5>
-                          <div className="space-y-2 max-h-32 overflow-y-auto">
-                            {algorithms && algorithms.map((algorithm: any) => (
-                              <div key={algorithm.id} className="flex items-center justify-between text-sm">
-                                <span>{algorithm.displayName || algorithm.name}</span>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={algorithm.status === 'approved' ? 'default' : 'secondary'}>
-                                    {algorithm.status}
-                                  </Badge>
-                                  {algorithm.isStandard && (
-                                    <Badge variant="outline">Standard</Badge>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       </div>
