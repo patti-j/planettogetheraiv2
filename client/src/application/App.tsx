@@ -292,6 +292,7 @@ export default function ApplicationApp() {
 
               {/* Business Management Routes */}
               <Route path="/plants-management" component={PlantsManagement} />
+              <Route path="/business-goals" component={BusinessGoals} />
               <Route path="/business-intelligence">
                 <ProtectedRoute feature="business-intelligence" action="view">
                   <Analytics />
