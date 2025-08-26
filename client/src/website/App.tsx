@@ -82,6 +82,12 @@ export default function WebsiteApp() {
             </WebsiteLayout>
           </Route>
           
+          <Route path="/technology-stack">
+            <WebsiteLayout>
+              <TechnologyStack />
+            </WebsiteLayout>
+          </Route>
+          
           {/* Demo tour route removed - component doesn't exist yet */}
           
           <Route path="/marketing">
