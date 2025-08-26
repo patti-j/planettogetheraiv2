@@ -344,10 +344,13 @@
             margin-bottom: 1rem;
             padding: 0.75rem;
             border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.5;
         }
         
         .max-ai-message.assistant {
             background: #f0f0f0;
+            font-size: 0.9rem;
         }
         
         .max-ai-message.user {
@@ -358,6 +361,11 @@
         .max-ai-message ul {
             margin-left: 1.5rem;
             margin-top: 0.5rem;
+        }
+        
+        .max-ai-message strong {
+            font-weight: 600;
+            color: #667eea;
         }
         
         .max-ai-input {
@@ -463,16 +471,21 @@
         </div>
         <div class="max-ai-content">
             <div class="max-ai-messages" id="maxMessages">
-                <div class="max-ai-message assistant">
-                    Hello! I'm Max, your AI scheduling assistant. I can help you:
-                    <ul>
-                        <li>Understand scheduling algorithms</li>
-                        <li>Optimize production schedules</li>
-                        <li>Analyze resource utilization</li>
-                        <li>Identify bottlenecks</li>
-                    </ul>
-                    How can I help you today?
-                </div>
+                <div class="max-ai-message assistant">Hello! I'm Max, your AI scheduling assistant. I can optimize your production schedule using different algorithms.
+
+<strong>💡 Quick Commands:</strong>
+• "Run ASAP" - Schedule operations as early as possible
+• "Apply ALAP" - Schedule operations as late as possible
+• "Execute critical path" - Optimize the critical path
+• "Level resources" - Balance workload across resources
+• "Apply drum scheduling" - Optimize around bottlenecks
+
+<strong>📊 Analysis:</strong>
+• "Analyze schedule" - Get current schedule statistics
+• "What is the current algorithm?" - Check active algorithm
+• "Explain [algorithm name]" - Learn about an algorithm
+
+Type "help" for all available commands. What would you like to optimize?</div>
             </div>
             <div class="max-ai-input">
                 <input type="text" id="maxInput" placeholder="Ask me anything about scheduling..." />
@@ -769,7 +782,7 @@
                     maxAI.classList.remove('open');
                 });
                 
-                // Max AI chat functionality (simulated)
+                // Max AI chat functionality with algorithm execution
                 function sendMaxMessage() {
                     const message = maxInput.value.trim();
                     if (!message) return;
@@ -783,35 +796,115 @@
                     // Clear input
                     maxInput.value = '';
                     
-                    // Simulate AI response
-                    setTimeout(() => {
+                    // Process AI response and execute algorithms
+                    setTimeout(async () => {
                         const aiMsg = document.createElement('div');
                         aiMsg.className = 'max-ai-message assistant';
                         
-                        // Context-aware responses based on keywords
-                        let response = '';
+                        // Parse message for algorithm commands
                         const lowerMessage = message.toLowerCase();
+                        let response = '';
+                        let executedAlgorithm = null;
                         
-                        if (lowerMessage.includes('asap')) {
-                            response = 'ASAP (As Soon As Possible) scheduling pushes all operations to the earliest possible time slots. This is ideal for urgent orders or when you want to maximize early throughput.';
-                        } else if (lowerMessage.includes('alap')) {
-                            response = 'ALAP (As Late As Possible) scheduling delays operations to the latest time that still meets due dates. This minimizes inventory holding costs and is useful for Just-In-Time manufacturing.';
-                        } else if (lowerMessage.includes('critical path')) {
-                            response = 'Critical Path scheduling identifies the longest sequence of dependent tasks and optimizes them first. This ensures your project completion time is minimized by focusing on bottleneck operations.';
-                        } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
-                            response = 'Resource Leveling distributes work evenly across all resources to prevent overloading. This improves overall efficiency and reduces wear on heavily used equipment.';
-                        } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
-                            response = 'Drum scheduling (Theory of Constraints) identifies your bottleneck resource and optimizes the entire schedule around it. This maximizes throughput by ensuring the constraint is always working.';
-                        } else if (lowerMessage.includes('help')) {
-                            response = 'I can help you understand the 5 scheduling algorithms: ASAP, ALAP, Critical Path, Resource Leveling, and Drum (TOC). Just ask me about any of them!';
-                        } else {
-                            response = `I understand you're asking about "${message}". Try selecting different algorithms from the dropdown and observe how operations move on the timeline. Each algorithm optimizes for different business objectives.`;
+                        // Check for algorithm execution commands
+                        if (lowerMessage.includes('run') || lowerMessage.includes('execute') || lowerMessage.includes('apply') || lowerMessage.includes('optimize')) {
+                            if (lowerMessage.includes('asap') || lowerMessage.includes('forward')) {
+                                executedAlgorithm = 'asap';
+                                response = '🚀 Executing ASAP (Forward) scheduling algorithm...';
+                            } else if (lowerMessage.includes('alap') || lowerMessage.includes('backward')) {
+                                executedAlgorithm = 'alap';
+                                response = '⏰ Executing ALAP (Backward) scheduling algorithm...';
+                            } else if (lowerMessage.includes('critical path')) {
+                                executedAlgorithm = 'criticalPath';
+                                response = '🎯 Executing Critical Path optimization...';
+                            } else if (lowerMessage.includes('level') || lowerMessage.includes('balance resource')) {
+                                executedAlgorithm = 'levelResources';
+                                response = '⚖️ Executing Resource Leveling algorithm...';
+                            } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc') || lowerMessage.includes('constraint')) {
+                                executedAlgorithm = 'drum';
+                                response = '🥁 Executing Drum (Theory of Constraints) optimization...';
+                            } else {
+                                response = 'To optimize the schedule, please specify an algorithm. You can say:\n• "Run ASAP scheduling"\n• "Apply ALAP algorithm"\n• "Execute critical path optimization"\n• "Level resources"\n• "Apply drum scheduling"';
+                            }
+                        } 
+                        // Check for analysis or information requests
+                        else if (lowerMessage.includes('what') || lowerMessage.includes('explain') || lowerMessage.includes('tell me about')) {
+                            if (lowerMessage.includes('asap')) {
+                                response = 'ASAP (As Soon As Possible) pushes all operations to the earliest possible time slots. Best for urgent orders or maximizing early throughput. Say "Run ASAP" to apply it.';
+                            } else if (lowerMessage.includes('alap')) {
+                                response = 'ALAP (As Late As Possible) delays operations to the latest time that still meets due dates. Minimizes inventory holding costs. Say "Run ALAP" to apply it.';
+                            } else if (lowerMessage.includes('critical path')) {
+                                response = 'Critical Path identifies the longest sequence of dependent tasks and optimizes them first. Minimizes project completion time. Say "Execute critical path" to apply it.';
+                            } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
+                                response = 'Resource Leveling distributes work evenly across all resources. Prevents overloading and improves efficiency. Say "Level resources" to apply it.';
+                            } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
+                                response = 'Drum scheduling (TOC) identifies your bottleneck resource and optimizes around it. Maximizes throughput. Say "Apply drum scheduling" to apply it.';
+                            } else if (lowerMessage.includes('current') || lowerMessage.includes('active')) {
+                                const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+                                const algoNames = {
+                                    'asap': 'ASAP (Forward)',
+                                    'alap': 'ALAP (Backward)',
+                                    'criticalPath': 'Critical Path',
+                                    'levelResources': 'Resource Leveling',
+                                    'drum': 'Drum (TOC)'
+                                };
+                                response = `The current active algorithm is: ${algoNames[currentAlgo]}. You can ask me to run any other algorithm to change it.`;
+                            } else {
+                                response = 'I can help you optimize the schedule. Try asking:\n• "Run ASAP scheduling"\n• "What is the current algorithm?"\n• "Explain critical path"\n• "Level the resources"';
+                            }
+                        }
+                        // Check for help commands
+                        else if (lowerMessage.includes('help') || lowerMessage.includes('commands')) {
+                            response = '📊 **Schedule Optimization Commands:**\n\n**Execute Algorithms:**\n• Run ASAP\n• Apply ALAP\n• Execute critical path\n• Level resources\n• Apply drum scheduling\n\n**Get Information:**\n• What is ASAP?\n• Explain critical path\n• Current algorithm?\n\n**Analysis:**\n• Analyze schedule\n• Show utilization';
+                        }
+                        // Check for analysis commands
+                        else if (lowerMessage.includes('analyze') || lowerMessage.includes('utilization')) {
+                            const utilization = document.getElementById('resourceUtilization').textContent;
+                            const totalOps = document.getElementById('totalOperations').textContent;
+                            response = `📈 **Current Schedule Analysis:**\n• ${totalOps}\n• ${utilization}\n\nTry different algorithms to optimize for your specific goals!`;
+                        }
+                        else {
+                            response = `I understand you're asking about "${message}". I can help you optimize the schedule using different algorithms. Say "help" to see available commands.`;
                         }
                         
-                        aiMsg.textContent = response;
-                        maxMessages.appendChild(aiMsg);
-                        maxMessages.scrollTop = maxMessages.scrollHeight;
-                    }, 500);
+                        // Execute the algorithm if one was selected
+                        if (executedAlgorithm) {
+                            aiMsg.textContent = response;
+                            maxMessages.appendChild(aiMsg);
+                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                            
+                            // Change the dropdown and execute
+                            document.getElementById('schedulingAlgorithm').value = executedAlgorithm;
+                            
+                            // Execute the algorithm after a brief delay
+                            setTimeout(() => {
+                                applySchedulingAlgorithm();
+                                
+                                // Add success message
+                                const successMsg = document.createElement('div');
+                                successMsg.className = 'max-ai-message assistant';
+                                const algoNames = {
+                                    'asap': 'ASAP (Forward)',
+                                    'alap': 'ALAP (Backward)',
+                                    'criticalPath': 'Critical Path',
+                                    'levelResources': 'Resource Leveling',
+                                    'drum': 'Drum (TOC)'
+                                };
+                                
+                                // Get updated stats
+                                const utilization = document.getElementById('resourceUtilization').textContent;
+                                const totalOps = document.getElementById('totalOperations').textContent;
+                                
+                                successMsg.textContent = `✅ Successfully applied ${algoNames[executedAlgorithm]} algorithm!\n\nResults:\n• ${totalOps}\n• ${utilization}\n\nThe schedule has been optimized. Would you like to try a different algorithm?`;
+                                maxMessages.appendChild(successMsg);
+                                maxMessages.scrollTop = maxMessages.scrollHeight;
+                            }, 500);
+                        } else {
+                            aiMsg.textContent = response;
+                            maxMessages.appendChild(aiMsg);
+                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                        }
+                    }, 300);
                     
                     maxMessages.scrollTop = maxMessages.scrollHeight;
                 }
