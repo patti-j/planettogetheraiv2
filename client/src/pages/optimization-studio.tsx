@@ -15,7 +15,7 @@ import {
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
   Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
   Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle, Bot,
-  Shield, Users, FileText, Pause, XCircle
+  Shield, Users, FileText, Pause, XCircle, Send
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -2686,7 +2686,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
       {/* Algorithm Detail Dialog */}
       {selectedAlgorithm && (
         <Dialog open={!!selectedAlgorithm} onOpenChange={() => setSelectedAlgorithm(null)}>
-          <DialogContent className="max-w-4xl sm:max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-lg sm:text-xl">{selectedAlgorithm.displayName}</span>
@@ -2799,11 +2799,11 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col gap-2 pt-4 border-t sm:flex-row sm:justify-end">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto order-1 bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700"
                   onClick={() => {
                     setAlgorithmToModify(selectedAlgorithm);
                     setAiModifyMessages([{
@@ -2816,11 +2816,11 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   <Bot className="w-4 h-4 mr-2" />
                   AI Modify
                 </Button>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto order-2">
                   <Copy className="w-4 h-4 mr-2" />
                   Duplicate
                 </Button>
-                <Button size="sm" className="w-full sm:w-auto">
+                <Button size="sm" className="w-full sm:w-auto order-3">
                   <TestTube className="w-4 h-4 mr-2" />
                   Test Algorithm
                 </Button>
