@@ -587,9 +587,9 @@
                                 // Get all events sorted by their dependencies (reverse topological sort)
                                 const events = [...scheduler.eventStore.records];
                                 
-                                // Define a due date (e.g., end of next week)
+                                // Define a due date (3 days from now for visibility)
                                 const dueDate = new Date();
-                                dueDate.setDate(dueDate.getDate() + 14); // 2 weeks from now
+                                dueDate.setDate(dueDate.getDate() + 3); // 3 days from now
                                 dueDate.setHours(17, 0, 0, 0); // 5 PM
                                 
                                 // Group events by resource and sort by priority
@@ -639,6 +639,31 @@
                                 });
                                 
                                 scheduler.refresh();
+                                
+                                // Adjust view to show all scheduled operations
+                                if (changed && events.length > 0) {
+                                    // Find earliest and latest dates
+                                    let minDate = new Date(events[0].startDate);
+                                    let maxDate = new Date(events[0].endDate);
+                                    
+                                    events.forEach(event => {
+                                        if (event.startDate < minDate) minDate = new Date(event.startDate);
+                                        if (event.endDate > maxDate) maxDate = new Date(event.endDate);
+                                    });
+                                    
+                                    // Add some padding to the view
+                                    minDate.setDate(minDate.getDate() - 1);
+                                    maxDate.setDate(maxDate.getDate() + 1);
+                                    
+                                    // Update scheduler view range
+                                    scheduler.setTimeSpan(minDate, maxDate);
+                                    
+                                    // Zoom to fit after a short delay
+                                    setTimeout(() => {
+                                        scheduler.zoomToFit();
+                                    }, 100);
+                                }
+                                
                                 document.getElementById('loadingOverlay').style.display = 'none';
                                 updateStatus();
                                 
@@ -742,6 +767,31 @@
                                 });
                                 
                                 scheduler.refresh();
+                                
+                                // Adjust view to show all scheduled operations
+                                if (changed && events.length > 0) {
+                                    // Find earliest and latest dates
+                                    let minDate = new Date(events[0].startDate);
+                                    let maxDate = new Date(events[0].endDate);
+                                    
+                                    events.forEach(event => {
+                                        if (event.startDate < minDate) minDate = new Date(event.startDate);
+                                        if (event.endDate > maxDate) maxDate = new Date(event.endDate);
+                                    });
+                                    
+                                    // Add some padding to the view
+                                    minDate.setDate(minDate.getDate() - 1);
+                                    maxDate.setDate(maxDate.getDate() + 1);
+                                    
+                                    // Update scheduler view range
+                                    scheduler.setTimeSpan(minDate, maxDate);
+                                    
+                                    // Zoom to fit after a short delay
+                                    setTimeout(() => {
+                                        scheduler.zoomToFit();
+                                    }, 100);
+                                }
+                                
                                 document.getElementById('loadingOverlay').style.display = 'none';
                                 updateStatus();
                                 
