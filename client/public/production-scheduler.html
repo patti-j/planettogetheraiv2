@@ -878,26 +878,29 @@ Type "help" for all available commands. What would you like to optimize?</div>
                             
                             // Execute the algorithm after a brief delay
                             setTimeout(() => {
-                                applySchedulingAlgorithm();
+                                // Click the apply button to trigger the algorithm
+                                document.getElementById('applyScheduling').click();
                                 
-                                // Add success message
-                                const successMsg = document.createElement('div');
-                                successMsg.className = 'max-ai-message assistant';
-                                const algoNames = {
-                                    'asap': 'ASAP (Forward)',
-                                    'alap': 'ALAP (Backward)',
-                                    'criticalPath': 'Critical Path',
-                                    'levelResources': 'Resource Leveling',
-                                    'drum': 'Drum (TOC)'
-                                };
-                                
-                                // Get updated stats
-                                const utilization = document.getElementById('resourceUtilization').textContent;
-                                const totalOps = document.getElementById('totalOperations').textContent;
-                                
-                                successMsg.textContent = `✅ Successfully applied ${algoNames[executedAlgorithm]} algorithm!\n\nResults:\n• ${totalOps}\n• ${utilization}\n\nThe schedule has been optimized. Would you like to try a different algorithm?`;
-                                maxMessages.appendChild(successMsg);
-                                maxMessages.scrollTop = maxMessages.scrollHeight;
+                                // Add success message after algorithm completes
+                                setTimeout(() => {
+                                    const successMsg = document.createElement('div');
+                                    successMsg.className = 'max-ai-message assistant';
+                                    const algoNames = {
+                                        'asap': 'ASAP (Forward)',
+                                        'alap': 'ALAP (Backward)',
+                                        'criticalPath': 'Critical Path',
+                                        'levelResources': 'Resource Leveling',
+                                        'drum': 'Drum (TOC)'
+                                    };
+                                    
+                                    // Get updated stats
+                                    const utilization = document.getElementById('resourceUtilization').textContent;
+                                    const totalOps = document.getElementById('operationCount').textContent;
+                                    
+                                    successMsg.textContent = `✅ Successfully applied ${algoNames[executedAlgorithm]} algorithm!\n\nResults:\n• ${totalOps}\n• ${utilization}\n\nThe schedule has been optimized. Would you like to try a different algorithm?`;
+                                    maxMessages.appendChild(successMsg);
+                                    maxMessages.scrollTop = maxMessages.scrollHeight;
+                                }, 1500); // Wait for algorithm to complete
                             }, 500);
                         } else {
                             aiMsg.textContent = response;
