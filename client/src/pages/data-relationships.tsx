@@ -341,7 +341,7 @@ export default function DataRelationships() {
                                     setViewMode('details');
                                   }}>
                               <CardHeader className="pb-3">
-                                <CardTitle className="text-lg">{table.name}</CardTitle>
+                                <CardTitle className="text-lg break-words truncate" title={table.name}>{table.name}</CardTitle>
                                 <CardDescription>
                                   {table.columns.length} columns • {tableRelationships.length} relationships
                                 </CardDescription>
@@ -392,9 +392,9 @@ export default function DataRelationships() {
                           setViewMode('details');
                         }}>
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        {table.name}
+                      <CardTitle className="flex items-center gap-2 min-w-0">
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="break-words truncate" title={table.name}>{table.name}</span>
                       </CardTitle>
                       <CardDescription>{category}</CardDescription>
                     </CardHeader>
