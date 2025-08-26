@@ -30,7 +30,8 @@ import {
   List,
   Info,
   Menu,
-  X
+  X,
+  GitBranch
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -68,12 +69,23 @@ interface TableData {
   };
 }
 
+interface TableRelationship {
+  constraint_name: string;
+  constraint_type: 'FOREIGN KEY' | 'PRIMARY KEY' | 'UNIQUE';
+  table_name: string;
+  column_name: string;
+  foreign_table_name?: string;
+  foreign_column_name?: string;
+  is_deferrable?: string;
+  initially_deferred?: string;
+}
+
 export default function DatabaseExplorer() {
   const { toast } = useToast();
   
   // State management
   const [selectedTable, setSelectedTable] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'schema' | 'data'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'schema' | 'relations' | 'data'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -102,6 +114,13 @@ export default function DatabaseExplorer() {
     enabled: !!selectedTable && viewMode === 'data'
   });
   const tableData = tableDataRaw as TableData;
+
+  // Fetch table relationships when viewing relations
+  const { data: tableRelationshipsRaw = [], isLoading: relationshipsLoading } = useQuery({
+    queryKey: [`/api/database/tables/${selectedTable}/relationships`],
+    enabled: !!selectedTable && viewMode === 'relations'
+  });
+  const tableRelationships = tableRelationshipsRaw as TableRelationship[];
 
   // Export mutation
   const exportMutation = useMutation({
@@ -365,11 +384,15 @@ export default function DatabaseExplorer() {
             </CardHeader>
 
             <CardContent className="flex-1 overflow-hidden p-3">
-              <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'data') => setViewMode(value)}>
+              <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'relations' | 'data') => setViewMode(value)}>
                 <TabsList className="mb-3 h-8">
                   <TabsTrigger value="schema" className="flex items-center gap-2 text-xs h-7">
                     <Info className="h-3 w-3" />
                     Schema
+                  </TabsTrigger>
+                  <TabsTrigger value="relations" className="flex items-center gap-2 text-xs h-7">
+                    <GitBranch className="h-3 w-3" />
+                    Relations
                   </TabsTrigger>
                   <TabsTrigger value="data" className="flex items-center gap-2 text-xs h-7">
                     <Grid3x3 className="h-3 w-3" />
@@ -414,6 +437,60 @@ export default function DatabaseExplorer() {
                             </TableBody>
                           </UITable>
                         </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="relations" className="mt-0">
+                    {relationshipsLoading ? (
+                      <div className="text-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4" />
+                        <p className="text-sm">Loading table relationships...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 mb-4">
+                          <Badge variant="outline" className="text-xs">{tableRelationships.length} relationships</Badge>
+                        </div>
+                        
+                        {tableRelationships.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <GitBranch className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No relationships found for this table</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-auto max-h-96 border rounded-md">
+                            <UITable>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs sticky top-0 bg-background">Type</TableHead>
+                                  <TableHead className="text-xs sticky top-0 bg-background">Column</TableHead>
+                                  <TableHead className="text-xs sticky top-0 bg-background">References</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {tableRelationships.map((rel: TableRelationship, index) => (
+                                  <TableRow key={`${rel.constraint_name}-${index}`}>
+                                    <TableCell className="text-xs">
+                                      <Badge variant={rel.constraint_type === 'FOREIGN KEY' ? 'default' : 
+                                                    rel.constraint_type === 'PRIMARY KEY' ? 'secondary' : 'outline'} 
+                                             className="text-xs">
+                                        {rel.constraint_type === 'FOREIGN KEY' ? 'FK' : 
+                                         rel.constraint_type === 'PRIMARY KEY' ? 'PK' : 'UK'}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="font-medium text-xs break-words max-w-24">{rel.column_name}</TableCell>
+                                    <TableCell className="text-xs break-words max-w-32">
+                                      {rel.foreign_table_name && rel.foreign_column_name 
+                                        ? `${rel.foreign_table_name}.${rel.foreign_column_name}`
+                                        : '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </UITable>
+                          </div>
+                        )}
                       </div>
                     )}
                   </TabsContent>
@@ -624,11 +701,15 @@ export default function DatabaseExplorer() {
               </CardHeader>
 
               <CardContent className="flex-1 overflow-hidden">
-                <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'data') => setViewMode(value)}>
+                <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'relations' | 'data') => setViewMode(value)}>
                   <TabsList className="mb-4">
                     <TabsTrigger value="schema" className="flex items-center gap-2">
                       <Info className="h-4 w-4" />
                       Schema
+                    </TabsTrigger>
+                    <TabsTrigger value="relations" className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4" />
+                      Relations
                     </TabsTrigger>
                     <TabsTrigger value="data" className="flex items-center gap-2">
                       <Grid3x3 className="h-4 w-4" />
@@ -678,6 +759,61 @@ export default function DatabaseExplorer() {
                             </TableBody>
                           </UITable>
                         </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="relations">
+                    {relationshipsLoading ? (
+                      <div className="text-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                        <p>Loading table relationships...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 mb-4">
+                          <Badge variant="outline">{tableRelationships.length} relationships</Badge>
+                        </div>
+                        
+                        {tableRelationships.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <GitBranch className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium mb-2">No relationships found</p>
+                            <p className="text-sm">This table has no foreign keys, primary keys, or unique constraints defined</p>
+                          </div>
+                        ) : (
+                          <div className="overflow-auto max-h-[60vh] border rounded-md">
+                            <UITable>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="sticky top-0 bg-background">Constraint Name</TableHead>
+                                  <TableHead className="sticky top-0 bg-background">Type</TableHead>
+                                  <TableHead className="sticky top-0 bg-background">Column</TableHead>
+                                  <TableHead className="sticky top-0 bg-background">References</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {tableRelationships.map((rel: TableRelationship, index) => (
+                                  <TableRow key={`${rel.constraint_name}-${index}`}>
+                                    <TableCell className="font-medium break-words max-w-48">{rel.constraint_name}</TableCell>
+                                    <TableCell>
+                                      <Badge variant={rel.constraint_type === 'FOREIGN KEY' ? 'default' : 
+                                                    rel.constraint_type === 'PRIMARY KEY' ? 'secondary' : 'outline'}>
+                                        {rel.constraint_type}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{rel.column_name}</TableCell>
+                                    <TableCell className="break-words max-w-64">
+                                      {rel.foreign_table_name && rel.foreign_column_name 
+                                        ? `${rel.foreign_table_name}.${rel.foreign_column_name}`
+                                        : '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </UITable>
+                          </div>
+                        )}
                       </div>
                     )}
                   </TabsContent>
