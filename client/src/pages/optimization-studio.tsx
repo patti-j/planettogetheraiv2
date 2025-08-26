@@ -180,10 +180,7 @@ export default function OptimizationStudio() {
   const [selectedPlantId, setSelectedPlantId] = useState<number | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<PlantAlgorithmApproval | null>(null);
-  const [selectedRescheduleAlgorithm, setSelectedRescheduleAlgorithm] = useState<string>(() => {
-    // Load the selected algorithm from localStorage on component mount
-    return localStorage.getItem('selectedRescheduleAlgorithm') || '';
-  });
+
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [showCodePreview, setShowCodePreview] = useState(false);
   const [showExamplesLibrary, setShowExamplesLibrary] = useState(false);
@@ -1676,57 +1673,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
           </div>
         </div>
 
-        {/* Algorithm Selector for Reschedule Function */}
-        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex-1">
-              <h3 className="font-semibold text-sm mb-1 flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Active Reschedule Algorithm
-              </h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Select which algorithm to use for production rescheduling operations
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select 
-                value={selectedRescheduleAlgorithm} 
-                onValueChange={setSelectedRescheduleAlgorithm}
-              >
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Choose reschedule algorithm" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fifo">FIFO (First In, First Out)</SelectItem>
-                  <SelectItem value="spt">SPT (Shortest Processing Time)</SelectItem>
-                  <SelectItem value="edd">EDD (Earliest Due Date)</SelectItem>
-                  <SelectItem value="critical-ratio">Critical Ratio</SelectItem>
-                  <SelectItem value="backwards-scheduling">Backwards Scheduling</SelectItem>
-                  <SelectItem value="toc-dbr">TOC Drum-Buffer-Rope</SelectItem>
-                  <SelectItem value="genetic-algorithm">Genetic Algorithm</SelectItem>
-                  <SelectItem value="simulated-annealing">Simulated Annealing</SelectItem>
-                  <SelectItem value="ai-optimized">AI-Optimized (GPT-4)</SelectItem>
-                </SelectContent>
-              </Select>
-              {selectedRescheduleAlgorithm && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    // Store the selected algorithm in localStorage for persistence
-                    localStorage.setItem('selectedRescheduleAlgorithm', selectedRescheduleAlgorithm);
-                    toast({
-                      title: "Algorithm Applied",
-                      description: `${selectedRescheduleAlgorithm.replace('-', ' ').toUpperCase()} algorithm is now active for rescheduling operations`,
-                    });
-                  }}
-                >
-                  Apply
-                </Button>
-              )}
-            </div>
-          </div>
-        </Card>
+
 
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
