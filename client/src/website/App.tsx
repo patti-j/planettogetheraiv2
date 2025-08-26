@@ -14,6 +14,7 @@ import Pricing from "@/pages/pricing";
 import Login from "@/pages/Login";
 import WhatsComing from "@/pages/whats-coming-v13";
 import SolutionsComparison from "@/pages/solutions-comparison";
+import TechnologyStack from "@/pages/technology-stack";
 // // // // import DemoTour from "@/pages/demo-tour"; // Temporarily commented out - page doesn't exist // Removed - file doesn't exist // Commented out - file doesn't exist // Component doesn't exist yet
 import PresentationPage from "@/pages/presentation";
 import ClearStorage from "@/pages/clear-storage";
