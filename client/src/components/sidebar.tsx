@@ -103,7 +103,6 @@ export default function Sidebar() {
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: Briefcase, label: "Implementation Projects", href: "/implementation-projects", active: location === "/implementation-projects", feature: "implementation-projects", action: "view" },
-    { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
@@ -229,7 +228,7 @@ export default function Sidebar() {
   const originalItems = [
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
-    { icon: BarChart3, label: "Production Schedule", href: "/production-schedule", active: location === "/production-schedule", feature: "production-scheduling", action: "view" },
+    { icon: BarChart3, label: "Production Schedule", href: "/production-scheduler.html", active: location === "/production-scheduler.html", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },
