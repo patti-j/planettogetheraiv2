@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, jsonb, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, jsonb, numeric, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -429,9 +429,7 @@ export const ptJobs = pgTable("pt_jobs", {
 export const ptJobActivities = pgTable("pt_job_activities", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   requiredFinishQty: text("required_finish_qty"),
   actualResourcesUsed: text("actual_resources_used"),
   anchor: text("anchor"),
@@ -483,9 +481,7 @@ export const ptJobActivities = pgTable("pt_job_activities", {
 export const ptJobMaterials = pgTable("pt_job_materials", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   itemExternalId: text("item_external_id"),
   warehouseExternalId: text("warehouse_external_id"),
   totalRequiredQty: text("total_required_qty"),
@@ -523,9 +519,7 @@ export const ptJobMaterials = pgTable("pt_job_materials", {
 export const ptJobOperationAttributes = pgTable("pt_job_operation_attributes", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   attributeExternalId: text("attribute_external_id"),
   code: text("code"),
   codeManualUpdateOnly: text("code_manual_update_only"),
@@ -548,8 +542,7 @@ export const ptJobOperations = pgTable("pt_job_operations", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
   name: text("name"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
+  manufacturingOrderId: integer("manufacturing_order_id").references(() => ptManufacturingOrders.id),
   requiredFinishQty: text("required_finish_qty"),
   cycleHrs: text("cycle_hrs"),
   cycleSpanManualUpdateOnly: text("cycle_span_manual_update_only"),
@@ -623,8 +616,7 @@ export const ptJobOperations = pgTable("pt_job_operations", {
 export const ptJobPaths = pgTable("pt_job_paths", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
+  manufacturingOrderId: integer("manufacturing_order_id").references(() => ptManufacturingOrders.id),
   name: text("name"),
   autoBuildLinearPath: text("auto_build_linear_path"),
   autoUse: text("auto_use"),
@@ -636,10 +628,8 @@ export const ptJobPaths = pgTable("pt_job_paths", {
 // Job Path Nodes - Connections between operations in job paths
 export const ptJobPathNodes = pgTable("pt_job_path_nodes", {
   id: serial("id").primaryKey(),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  pathExternalId: text("path_external_id"),
-  predecessorOperationExternalId: text("predecessor_operation_external_id"),
+  pathId: integer("path_id").references(() => ptJobPaths.id),
+  predecessorOperationId: integer("predecessor_operation_id").references(() => ptJobOperations.id),
   allowManualConnectorViolation: text("allow_manual_connector_violation"),
   autoFinishPredecessor: text("auto_finish_predecessor"),
   ignoreInvalidSuccessorOperationExternalIds: text("ignore_invalid_successor_operation_external_ids"),
@@ -648,7 +638,7 @@ export const ptJobPathNodes = pgTable("pt_job_path_nodes", {
   overlapSetups: text("overlap_setups"),
   overlapTransferHrs: text("overlap_transfer_hrs"),
   overlapType: text("overlap_type"),
-  successorOperationExternalId: text("successor_operation_external_id"),
+  successorOperationId: integer("successor_operation_id").references(() => ptJobOperations.id),
   transferDuringPredeccessorOnlineTime: text("transfer_during_predecessor_online_time"),
   transferHrs: text("transfer_hrs"),
   transferStart: text("transfer_start"),
@@ -661,9 +651,7 @@ export const ptJobPathNodes = pgTable("pt_job_path_nodes", {
 export const ptJobProducts = pgTable("pt_job_products", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   itemExternalId: text("item_external_id"),
   warehouseExternalId: text("warehouse_external_id"),
   totalOutputQty: text("total_output_qty"),
@@ -685,10 +673,7 @@ export const ptJobProducts = pgTable("pt_job_products", {
 // Job Resource Capabilities - Capabilities required by job resources
 export const ptJobResourceCapabilities = pgTable("pt_job_resource_capabilities", {
   id: serial("id").primaryKey(),
-  capabilityExternalId: text("capability_external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   resourceRequirementExternalId: text("resource_requirement_external_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -697,9 +682,7 @@ export const ptJobResourceCapabilities = pgTable("pt_job_resource_capabilities",
 export const ptJobResources = pgTable("pt_job_resources", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  opExternalId: text("op_external_id"),
+  operationId: integer("operation_id").references(() => ptJobOperations.id),
   description: text("description"),
   attentionPercent: text("attention_percent"),
   blockFillImageFile: text("block_fill_image_file"),
@@ -1327,56 +1310,59 @@ export type PtJobResourceBlockIntervals = typeof ptJobResourceBlockIntervals.$in
 // ptJobActivities relates to ptJobOperations, NOT to ptJobs
 export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => ({
   operation: one(ptJobOperations, {
-    fields: [ptJobActivities.opExternalId],
-    references: [ptJobOperations.externalId],
+    fields: [ptJobActivities.operationId],
+    references: [ptJobOperations.id],
   }),
 }));
 
 // ptJobMaterials relates to ptJobOperations, NOT to ptJobs  
 export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
   operation: one(ptJobOperations, {
-    fields: [ptJobMaterials.opExternalId],
-    references: [ptJobOperations.externalId],
+    fields: [ptJobMaterials.operationId],
+    references: [ptJobOperations.id],
   }),
 }));
 
 // ptJobOperations relates to ptJobManufacturingOrders and ptJobPathNodes, NOT to ptJobs
 export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many }) => ({
   manufacturingOrder: one(ptManufacturingOrders, {
-    fields: [ptJobOperations.moExternalId],
-    references: [ptManufacturingOrders.externalId],
+    fields: [ptJobOperations.manufacturingOrderId],
+    references: [ptManufacturingOrders.id],
   }),
   activities: many(ptJobActivities),
   materials: many(ptJobMaterials),
   resources: many(ptJobResources),
+  operationAttributes: many(ptJobOperationAttributes),
+  products: many(ptJobProducts),
+  resourceCapabilities: many(ptJobResourceCapabilities),
 }));
 
 // ptJobPathNodes relates to ptJobOperations through successor/predecessor operation fields
 export const ptJobPathNodesRelations = relations(ptJobPathNodes, ({ one }) => ({
+  path: one(ptJobPaths, {
+    fields: [ptJobPathNodes.pathId],
+    references: [ptJobPaths.id],
+  }),
   predecessorOperation: one(ptJobOperations, {
-    fields: [ptJobPathNodes.predecessorOperationExternalId],
-    references: [ptJobOperations.externalId],
+    fields: [ptJobPathNodes.predecessorOperationId],
+    references: [ptJobOperations.id],
   }),
   successorOperation: one(ptJobOperations, {
-    fields: [ptJobPathNodes.successorOperationExternalId], 
-    references: [ptJobOperations.externalId],
+    fields: [ptJobPathNodes.successorOperationId], 
+    references: [ptJobOperations.id],
   }),
 }));
 
 // ptJobResources relates to ptJobOperations, NOT to ptJobs
 export const ptJobResourcesRelations = relations(ptJobResources, ({ one }) => ({
   operation: one(ptJobOperations, {
-    fields: [ptJobResources.opExternalId],
-    references: [ptJobOperations.externalId],
+    fields: [ptJobResources.operationId],
+    references: [ptJobOperations.id],
   }),
 }));
 
 // ptJobResourceBlocks relates to ptJobOperations and has many intervals
 export const ptJobResourceBlocksRelations = relations(ptJobResourceBlocks, ({ one, many }) => ({
-  operation: one(ptJobOperations, {
-    fields: [ptJobResourceBlocks.operationId],
-    references: [ptJobOperations.externalId],
-  }),
   intervals: many(ptJobResourceBlockIntervals),
 }));
 
@@ -1389,11 +1375,12 @@ export const ptJobResourceBlockIntervalsRelations = relations(ptJobResourceBlock
 }));
 
 // ptJobPaths relates to ptManufacturingOrders, NOT to ptJobs
-export const ptJobPathsRelations = relations(ptJobPaths, ({ one }) => ({
+export const ptJobPathsRelations = relations(ptJobPaths, ({ one, many }) => ({
   manufacturingOrder: one(ptManufacturingOrders, {
-    fields: [ptJobPaths.moExternalId],
-    references: [ptManufacturingOrders.externalId],
+    fields: [ptJobPaths.manufacturingOrderId],
+    references: [ptManufacturingOrders.id],
   }),
+  pathNodes: many(ptJobPathNodes),
 }));
 
 // ptManufacturingOrders has relations to operations and paths
@@ -1427,6 +1414,28 @@ export const ptJobSuccessorManufacturingOrdersRelations = relations(ptJobSuccess
   successorPath: one(ptJobPaths, {
     fields: [ptJobSuccessorManufacturingOrders.successorPathId],
     references: [ptJobPaths.id],
+  }),
+}));
+
+// Add missing relationship definitions for new integer ID-based tables
+export const ptJobOperationAttributesRelations = relations(ptJobOperationAttributes, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobOperationAttributes.operationId],
+    references: [ptJobOperations.id],
+  }),
+}));
+
+export const ptJobProductsRelations = relations(ptJobProducts, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobProducts.operationId],
+    references: [ptJobOperations.id],
+  }),
+}));
+
+export const ptJobResourceCapabilitiesRelations = relations(ptJobResourceCapabilities, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobResourceCapabilities.operationId],
+    references: [ptJobOperations.id],
   }),
 }));
 
