@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, timestamp, jsonb, numeric } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -1234,3 +1235,27 @@ export type PtLots = typeof ptLots.$inferSelect;
 export const insertPtManufacturingOrdersSchema = createInsertSchema(ptManufacturingOrders).omit({ id: true, createdAt: true });
 export type InsertPtManufacturingOrders = z.infer<typeof insertPtManufacturingOrdersSchema>;
 export type PtManufacturingOrders = typeof ptManufacturingOrders.$inferSelect;
+
+export const insertPtJobPathsSchema = createInsertSchema(ptJobPaths).omit({ id: true, createdAt: true });
+export type InsertPtJobPaths = z.infer<typeof insertPtJobPathsSchema>;
+export type PtJobPaths = typeof ptJobPaths.$inferSelect;
+
+// Relations for PT Import tables
+// ptJobPaths relates ONLY to ptManufacturingOrders, NOT to ptJobs
+export const ptJobPathsRelations = relations(ptJobPaths, ({ one }) => ({
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobPaths.moExternalId],
+    references: [ptManufacturingOrders.externalId],
+  }),
+}));
+
+export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
+  jobPaths: many(ptJobPaths),
+}));
+
+// ptJobs does NOT have a direct relation to ptJobPaths
+// Jobs inherit paths through their connection to manufacturing orders
+export const ptJobsRelations = relations(ptJobs, ({ one }) => ({
+  // Jobs can relate to manufacturing orders, but not directly to job paths
+  // Path relationships are established at the manufacturing order level
+}));
