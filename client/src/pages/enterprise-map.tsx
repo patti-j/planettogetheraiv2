@@ -1323,8 +1323,8 @@ export default function EnterpriseMapPage() {
 
           {/* Plant Details Dialog */}
           <Dialog open={!!selectedPlant} onOpenChange={() => setSelectedPlant(null)}>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
+            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle className="flex items-center gap-2">
                   <Factory className="w-5 h-5" />
                   {selectedPlant?.name}
@@ -1335,7 +1335,8 @@ export default function EnterpriseMapPage() {
               </DialogHeader>
               
               {selectedPlant && (
-                <div className="space-y-4 mt-4">
+                <ScrollArea className="flex-1 pr-6">
+                  <div className="space-y-4 mt-4">
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <p className="text-sm text-gray-500">Status</p>
@@ -1603,7 +1604,8 @@ export default function EnterpriseMapPage() {
                       </div>
                     </TabsContent>
                   </Tabs>
-                </div>
+                  </div>
+                </ScrollArea>
               )}
             </DialogContent>
           </Dialog>
