@@ -99,6 +99,7 @@ import bcrypt from "bcryptjs";
 import connectPg from "connect-pg-simple";
 import OpenAI from "openai";
 import crypto from "crypto";
+import { systemMonitoringAgent } from "./monitoring-agent";
 
 // Session interface is declared in index.ts
 
@@ -27067,6 +27068,55 @@ Be careful to preserve data integrity and relationships.`;
   }));
 
   // (AI-Assisted Master Data Management endpoint moved above for proper route matching)
+
+  // System Monitoring Agent API Routes
+  app.get("/api/monitoring-agent/status", requireAuth, async (req, res) => {
+    try {
+      const status = systemMonitoringAgent.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting monitoring agent status:", error);
+      res.status(500).json({ error: "Failed to get monitoring agent status" });
+    }
+  });
+
+  app.post("/api/monitoring-agent/start", requireAuth, async (req, res) => {
+    try {
+      await systemMonitoringAgent.start();
+      res.json({ success: true, message: "Monitoring agent started" });
+    } catch (error) {
+      console.error("Error starting monitoring agent:", error);
+      res.status(500).json({ error: "Failed to start monitoring agent" });
+    }
+  });
+
+  app.post("/api/monitoring-agent/stop", requireAuth, async (req, res) => {
+    try {
+      await systemMonitoringAgent.stop();
+      res.json({ success: true, message: "Monitoring agent stopped" });
+    } catch (error) {
+      console.error("Error stopping monitoring agent:", error);
+      res.status(500).json({ error: "Failed to stop monitoring agent" });
+    }
+  });
+
+  app.post("/api/monitoring-agent/interval", requireAuth, async (req, res) => {
+    try {
+      const { intervalMs } = req.body;
+      if (!intervalMs || intervalMs < 30000) { // Minimum 30 seconds
+        return res.status(400).json({ error: "Invalid interval. Minimum is 30 seconds." });
+      }
+      
+      systemMonitoringAgent.updateInterval(intervalMs);
+      res.json({ success: true, message: `Monitoring interval updated to ${intervalMs}ms` });
+    } catch (error) {
+      console.error("Error updating monitoring interval:", error);
+      res.status(500).json({ error: "Failed to update monitoring interval" });
+    }
+  });
+
+  // Start the monitoring agent automatically
+  systemMonitoringAgent.start().catch(console.error);
 
   const httpServer = createServer(app);
   // Add global error handling middleware at the end

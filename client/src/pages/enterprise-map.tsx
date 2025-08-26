@@ -73,6 +73,9 @@ import {
   BarChart3,
   Gauge,
   Building,
+  Bot,
+  Play,
+  Pause,
   Network,
   ArrowUpRight,
   ArrowDownRight,
@@ -139,6 +142,53 @@ export default function EnterpriseMapPage() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Fetch monitoring agent status
+  const { data: monitoringStatus } = useQuery({
+    queryKey: ['/api/monitoring-agent/status'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Mutations for monitoring agent control
+  const startMonitoringAgent = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/monitoring-agent/start', 'POST');
+    },
+    onSuccess: () => {
+      toast({
+        title: "AI Monitoring Agent",
+        description: "Monitoring agent started successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/monitoring-agent/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start monitoring agent",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stopMonitoringAgent = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('/api/monitoring-agent/stop', 'POST');
+    },
+    onSuccess: () => {
+      toast({
+        title: "AI Monitoring Agent",
+        description: "Monitoring agent stopped",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/monitoring-agent/status'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to stop monitoring agent",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Mutation to update plant default algorithm
   const updatePlantAlgorithm = useMutation({
@@ -1253,6 +1303,89 @@ export default function EnterpriseMapPage() {
                         <span className="text-sm font-medium">{region.plants} plants</span>
                       </div>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* AI Monitoring Agent Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bot className="w-5 h-5" />
+                      AI Monitoring Agent
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {monitoringStatus?.isRunning ? (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                          <Activity className="w-3 h-3 mr-1" />
+                          Running
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+                          <Pause className="w-3 h-3 mr-1" />
+                          Stopped
+                        </Badge>
+                      )}
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    Intelligent system monitoring with AI-powered insights
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Status</div>
+                      <div className="text-2xl font-bold">
+                        {monitoringStatus?.isRunning ? (
+                          <span className="text-green-600">Active</span>
+                        ) : (
+                          <span className="text-gray-500">Inactive</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Interval</div>
+                      <div className="text-2xl font-bold">
+                        {monitoringStatus?.interval ? `${Math.round(monitoringStatus.interval / 1000)}s` : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {monitoringStatus?.lastCheck && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">Last Check</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(monitoringStatus.lastCheck).toLocaleString()}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    {monitoringStatus?.isRunning ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stopMonitoringAgent.mutate()}
+                        disabled={stopMonitoringAgent.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Pause className="w-4 h-4" />
+                        Stop Agent
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => startMonitoringAgent.mutate()}
+                        disabled={startMonitoringAgent.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="w-4 h-4" />
+                        Start Agent
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
