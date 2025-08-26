@@ -10,13 +10,13 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { 
   Clock, Target, Settings, Play, CheckCircle, AlertTriangle, 
   Info, TrendingUp, Calendar, Users, Zap, BarChart3,
   ArrowLeft, ArrowRight, Layers, Brain, BookmarkPlus, Edit,
-  Save, Trash2, History, Star
+  Save, Trash2, History, Star, Bot, Send
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -27,10 +27,22 @@ import { addDays, format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { ProductionOrder, PlannedOrder, DiscreteOperation, ProcessOperation, Resource, OptimizationProfile, ProfileUsageHistory } from "@shared/schema";
+import type { ProductionOrder, PlannedOrder, Resource, OptimizationProfile, ProfileUsageHistory } from "@shared/schema";
 
-// Legacy Operation type for backward compatibility
-type Operation = DiscreteOperation | ProcessOperation;
+// Operation interface for scheduling
+interface Operation {
+  id: number;
+  name: string;
+  description?: string;
+  duration: number;
+  jobId?: number;
+  productionOrderId?: number;
+  order?: number;
+  status?: string;
+  assignedResourceId?: number | null;
+  startTime?: Date | null;
+  endTime?: Date | null;
+}
 
 interface BackwardsSchedulingParams {
   bufferTime: number;
@@ -57,7 +69,7 @@ const profileFormSchema = z.object({
       resourceIds: z.array(z.number()).default([])
     }),
     objectives: z.object({
-      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'minimize_tardiness']).default('minimize_makespan'),
+      primary: z.enum(['minimize_makespan', 'maximize_utilization', 'minimize_cost', 'minimize_tardiness', 'maximize_throughput', 'minimize_lateness']).default('minimize_makespan'),
       weights: z.object({
         cost: z.number().min(0).max(1).default(0.3),
         time: z.number().min(0).max(1).default(0.7)
@@ -118,6 +130,9 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [showCreateProfile, setShowCreateProfile] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState<number | null>(null);
+  const [showAIModifyDialog, setShowAIModifyDialog] = useState(false);
+  const [aiModifyPrompt, setAiModifyPrompt] = useState("");
+  const [aiModifyMessages, setAiModifyMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
   const [parameters, setParameters] = useState<BackwardsSchedulingParams>({
     bufferTime: 0.5,
     priorityWeight: 1.0,
@@ -280,6 +295,48 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
         title: "Scheduling Error",
         description: error.message || "Failed to generate schedule",
         variant: "destructive"
+      });
+    }
+  });
+
+  // AI algorithm modification mutation
+  const aiModifyAlgorithmMutation = useMutation({
+    mutationFn: async ({ modificationRequest }: { modificationRequest: string }) => {
+      const response = await fetch('/api/algorithm-modify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          algorithmId: 1, // Backwards scheduling algorithm ID
+          modificationRequest,
+          messages: aiModifyMessages
+        })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to modify algorithm');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setAiModifyMessages(prev => [...prev, 
+        { role: 'user', content: aiModifyPrompt },
+        { role: 'assistant', content: data.response }
+      ]);
+      
+      if (data.modifiedAlgorithm) {
+        toast({ 
+          title: "Algorithm modified successfully", 
+          description: "The Backwards Scheduling algorithm has been updated with your changes."
+        });
+      }
+      
+      setAiModifyPrompt("");
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to modify algorithm", 
+        description: error.message, 
+        variant: "destructive" 
       });
     }
   });
@@ -457,7 +514,21 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setAiModifyMessages([{
+                role: 'assistant',
+                content: `I'll help you modify the Backwards Scheduling algorithm. You can describe what changes you'd like to make, such as:\n\n• Adjust buffer time and scheduling parameters\n• Change priority weighting logic\n• Modify resource utilization targets\n• Update working hours constraints\n• Add new optimization features\n\nWhat would you like to modify?`
+              }]);
+              setShowAIModifyDialog(true);
+            }}
+            className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700 order-first sm:order-none"
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            AI Modify
+          </Button>
           <Button 
             onClick={handleRunScheduling}
             disabled={isRunning || runSchedulingMutation.isPending}
@@ -1161,6 +1232,130 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
           defaultValues={profiles.find(p => p.id === showEditProfile)}
         />
       )}
+
+      {/* AI Algorithm Modification Dialog */}
+      {showAIModifyDialog && (
+        <Dialog open={showAIModifyDialog} onOpenChange={(open) => {
+          setShowAIModifyDialog(open);
+          if (!open) {
+            setAiModifyMessages([]);
+            setAiModifyPrompt("");
+          }
+        }}>
+          <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Bot className="w-5 h-5 text-purple-600" />
+                AI Modify: Backwards Scheduling Algorithm
+              </DialogTitle>
+              <DialogDescription>
+                Use AI to modify the backwards scheduling algorithm by describing your desired changes in natural language.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Algorithm Info */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Name:</span> Backwards Scheduling Algorithm
+                  </div>
+                  <div>
+                    <span className="font-medium">Category:</span> Production Scheduling
+                  </div>
+                  <div>
+                    <span className="font-medium">Type:</span> Optimization Algorithm
+                  </div>
+                  <div>
+                    <span className="font-medium">Version:</span> 2.1.0
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <span className="font-medium">Description:</span> Advanced backwards scheduling that starts from due dates and works backwards to optimize start times
+                </div>
+              </div>
+
+              {/* Conversation History */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {aiModifyMessages.map((message, index) => (
+                  <div key={index} className={`p-3 rounded-lg ${
+                    message.role === 'assistant' 
+                      ? 'bg-purple-50 border-l-4 border-purple-500' 
+                      : 'bg-gray-50 border-l-4 border-gray-500'
+                  }`}>
+                    <div className="font-medium text-sm mb-1">
+                      {message.role === 'assistant' ? 'AI Assistant' : 'You'}
+                    </div>
+                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* AI Input */}
+              <div className="space-y-2">
+                <Label htmlFor="ai-modify-prompt">Describe your modification request:</Label>
+                <div className="flex gap-2">
+                  <Textarea
+                    id="ai-modify-prompt"
+                    placeholder="Example: Increase buffer time to 1.0 hours and add priority weighting for urgent orders..."
+                    value={aiModifyPrompt}
+                    onChange={(e) => setAiModifyPrompt(e.target.value)}
+                    className="flex-1"
+                    rows={3}
+                  />
+                  <Button
+                    onClick={() => {
+                      if (aiModifyPrompt.trim()) {
+                        aiModifyAlgorithmMutation.mutate({
+                          modificationRequest: aiModifyPrompt
+                        });
+                      }
+                    }}
+                    disabled={!aiModifyPrompt.trim() || aiModifyAlgorithmMutation.isPending}
+                    className="self-end"
+                  >
+                    {aiModifyAlgorithmMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Modifying...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Modify
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Quick Suggestions */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Quick suggestions:</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[
+                    "Increase buffer time to 1.0 hours",
+                    "Add priority weighting for urgent orders",
+                    "Allow overtime scheduling",
+                    "Optimize for cost reduction",
+                    "Enable planned order integration"
+                  ].map((suggestion) => (
+                    <Button
+                      key={suggestion}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setAiModifyPrompt(suggestion)}
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
@@ -1185,7 +1380,7 @@ function ProfileFormDialog({ open, onOpenChange, onSubmit, isLoading, title, des
       algorithmId: defaultValues.algorithmId,
       profileConfig: defaultValues.profileConfig || {
         scope: { plantIds: [], resourceIds: [] },
-        objectives: { primary: 'minimize_makespan', weights: { cost: 0.3, time: 0.7 } },
+        objectives: { primary: 'minimize_makespan' as const, weights: { cost: 0.3, time: 0.7 } },
         constraints: { maxExecutionTime: 60, resourceCapacityLimits: true },
         algorithmParameters: {
           backwardsScheduling: { bufferTime: 0.5, allowOvertime: false, prioritizeByDueDate: true }
@@ -1198,7 +1393,7 @@ function ProfileFormDialog({ open, onOpenChange, onSubmit, isLoading, title, des
       algorithmId: 1,
       profileConfig: {
         scope: { plantIds: [], resourceIds: [] },
-        objectives: { primary: 'minimize_makespan', weights: { cost: 0.3, time: 0.7 } },
+        objectives: { primary: 'minimize_makespan' as const, weights: { cost: 0.3, time: 0.7 } },
         constraints: { maxExecutionTime: 60, resourceCapacityLimits: true },
         algorithmParameters: {
           backwardsScheduling: { bufferTime: 0.5, allowOvertime: false, prioritizeByDueDate: true }
