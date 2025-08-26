@@ -103,6 +103,18 @@ Note on concurrent work:
 - **Resource Timeline Fixes**: Resolved hoisting issue with initializeSchedulerEngine function
 - **External Partners Portal**: Multi-tenant architecture for suppliers, customers, and OEM partners
 
+## Recent Updates (August 2025)
+- **PT Job Resource Block Tables Added**: Enhanced database schema with proper scheduling output tables
+  - Added `ptjobresourceblocks` table: Primary scheduling output defining which resources are used at which time intervals
+  - Added `ptjobresourceblockintervals` table: Detailed breakdown defining contiguous time segments of each block
+  - Implemented correct one-to-many relationship: `ptjobresourceblockintervals.blockId` → `ptjobresourceblocks.blockId`
+  - Updated PT schema with authentic field mappings matching actual PT Publish database structure
+  - Enhanced database relationship explorer to show correct job resource scheduling data flow
+- **Database Performance Optimizations**: Enhanced database explorer search with stable handlers and optimized re-renders
+  - Fixed TypeScript errors in navigation components with proper function signatures
+  - Expanded recent pages limits: NavigationContext (6→12), Home page (5→8), Global Search (5→8)
+  - Improved user experience with better utilization of available view space
+
 ## Core System Design & Features
 - **Navigation Architecture**: Unified layout system with consistent header/navigation for desktop and footer bar for mobile. Client-side navigation uses wouter.
 - **Data Model**: Comprehensive database schema for manufacturing, emphasizing normalized relationships, including SAP-compliant production version architecture.

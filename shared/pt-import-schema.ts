@@ -729,6 +729,63 @@ export const ptJobResources = pgTable("pt_job_resources", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Job Resource Blocks - Primary scheduling output defining which resources are used at which time intervals
+export const ptJobResourceBlocks = pgTable("ptjobresourceblocks", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: text("instance_id").notNull(),
+  jobId: text("job_id").notNull(),
+  manufacturingOrderId: text("manufacturing_order_id").notNull(),
+  operationId: text("operation_id").notNull(),
+  activityId: text("activity_id").notNull(),
+  blockId: text("block_id").notNull(),
+  batchId: text("batch_id").notNull(),
+  plantId: text("plant_id").notNull(),
+  departmentId: text("department_id").notNull(),
+  resourceId: text("resource_id").notNull(),
+  scheduledStart: text("scheduled_start"),
+  scheduledEnd: text("scheduled_end"),
+  locked: boolean("locked"),
+  sequence: text("sequence"),
+  runNbr: text("run_nbr"),
+  resourceRequirementId: text("resource_requirement_id"),
+  durationHrs: text("duration_hrs"),
+  laborCost: text("labor_cost"),
+  machineCost: text("machine_cost"),
+  resourceRequirementIndex: text("resource_requirement_index"),
+  scheduled: boolean("scheduled"),
+  batched: boolean("batched"),
+  scheduleId: text("schedule_id"),
+});
+
+// Job Resource Block Intervals - Detailed breakdown defining the various contiguous time segments of the block
+export const ptJobResourceBlockIntervals = pgTable("ptjobresourceblockintervals", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: text("instance_id").notNull(),
+  jobId: text("job_id").notNull(),
+  manufacturingOrderId: text("manufacturing_order_id").notNull(),
+  operationId: text("operation_id").notNull(),
+  activityId: text("activity_id").notNull(),
+  blockId: text("block_id").notNull(), // References ptJobResourceBlocks.blockId (not database id)
+  intervalIndex: text("interval_index").notNull(),
+  outputQty: text("output_qty"),
+  shiftStart: text("shift_start"),
+  shiftEnd: text("shift_end"),
+  shiftName: text("shift_name"),
+  shiftDescription: text("shift_description"),
+  shiftNbrOfPeople: text("shift_nbr_of_people"),
+  shiftType: text("shift_type"),
+  setupStart: text("setup_start"),
+  setupEnd: text("setup_end"),
+  runStart: text("run_start"),
+  runEnd: text("run_end"),
+  postProcessingStart: text("post_processing_start"),
+  postProcessingEnd: text("post_processing_end"),
+  scheduledStart: text("scheduled_start"),
+  scheduledEnd: text("scheduled_end"),
+});
+
 // Plants - Manufacturing facilities
 export const ptPlants = pgTable("pt_plants", {
   id: serial("id").primaryKey(),
@@ -1256,6 +1313,14 @@ export const insertPtJobResourcesSchema = createInsertSchema(ptJobResources).omi
 export type InsertPtJobResources = z.infer<typeof insertPtJobResourcesSchema>;
 export type PtJobResources = typeof ptJobResources.$inferSelect;
 
+export const insertPtJobResourceBlocksSchema = createInsertSchema(ptJobResourceBlocks).omit({ id: true, createdAt: true });
+export type InsertPtJobResourceBlocks = z.infer<typeof insertPtJobResourceBlocksSchema>;
+export type PtJobResourceBlocks = typeof ptJobResourceBlocks.$inferSelect;
+
+export const insertPtJobResourceBlockIntervalsSchema = createInsertSchema(ptJobResourceBlockIntervals).omit({ id: true, createdAt: true });
+export type InsertPtJobResourceBlockIntervals = z.infer<typeof insertPtJobResourceBlockIntervalsSchema>;
+export type PtJobResourceBlockIntervals = typeof ptJobResourceBlockIntervals.$inferSelect;
+
 
 
 // Relations for PT Import tables - Updated Architecture
@@ -1305,6 +1370,23 @@ export const ptJobResourcesRelations = relations(ptJobResources, ({ one }) => ({
   operation: one(ptJobOperations, {
     fields: [ptJobResources.opExternalId],
     references: [ptJobOperations.externalId],
+  }),
+}));
+
+// ptJobResourceBlocks relates to ptJobOperations and has many intervals
+export const ptJobResourceBlocksRelations = relations(ptJobResourceBlocks, ({ one, many }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobResourceBlocks.operationId],
+    references: [ptJobOperations.externalId],
+  }),
+  intervals: many(ptJobResourceBlockIntervals),
+}));
+
+// ptJobResourceBlockIntervals relates ONLY to ptJobResourceBlocks on blockId (one-to-many relationship)
+export const ptJobResourceBlockIntervalsRelations = relations(ptJobResourceBlockIntervals, ({ one }) => ({
+  block: one(ptJobResourceBlocks, {
+    fields: [ptJobResourceBlockIntervals.blockId],
+    references: [ptJobResourceBlocks.blockId], // Both are text fields in PT system
   }),
 }));
 
