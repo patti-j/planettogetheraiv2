@@ -7210,7 +7210,13 @@ User Prompt: "${prompt}"`;
       
       for (const widget of professionalSampleWidgets) {
         try {
-          const created = await storage.createCanvasWidget(widget);
+          // Add default size and position to prevent widget.size.width errors
+          const widgetWithDefaults = {
+            ...widget,
+            position: widget.position || { x: 0, y: 0 },
+            size: widget.size || { width: 400, height: 300 }
+          };
+          const created = await storage.createCanvasWidget(widgetWithDefaults);
           createdWidgets.push(created);
           createdCount++;
         } catch (error) {
@@ -7418,7 +7424,13 @@ User Prompt: "${prompt}"`;
       const createdWidgets = [];
       for (const widget of systemWidgets) {
         try {
-          const created = await storage.createCanvasWidget(widget);
+          // Add default size and position to prevent widget.size.width errors
+          const widgetWithDefaults = {
+            ...widget,
+            position: widget.position || { x: 0, y: 0 },
+            size: widget.size || { width: 400, height: 300 }
+          };
+          const created = await storage.createCanvasWidget(widgetWithDefaults);
           createdWidgets.push(created);
         } catch (error) {
           console.error("Error creating system widget:", error);

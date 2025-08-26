@@ -296,8 +296,8 @@ function CanvasWidget({
     resizeRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      startWidth: widget.size.width,
-      startHeight: widget.size.height,
+      startWidth: widget.size?.width || 400,
+      startHeight: widget.size?.height || 300,
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -329,10 +329,10 @@ function CanvasWidget({
         isDragging ? "opacity-50" : ""
       } ${isSelected ? "ring-2 ring-blue-500" : ""} ${isResizing ? "cursor-nwse-resize" : "cursor-move"}`}
       style={{
-        left: widget.position.x,
-        top: widget.position.y,
-        width: widget.size.width,
-        height: widget.size.height,
+        left: widget.position?.x || 0,
+        top: widget.position?.y || 0,
+        width: widget.size?.width || 400,
+        height: widget.size?.height || 300,
       }}
       onClick={() => onSelect(widget.id)}
     >

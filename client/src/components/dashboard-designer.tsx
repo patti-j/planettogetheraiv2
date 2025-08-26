@@ -421,10 +421,10 @@ export function DashboardDesigner({ open, onOpenChange, existingDashboard, onSav
                         key={widget.id}
                         className="absolute bg-white dark:bg-gray-700 border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                         style={{
-                          left: widget.position.x,
-                          top: widget.position.y,
-                          width: widget.size.width,
-                          height: widget.size.height
+                          left: widget.position?.x || 0,
+                          top: widget.position?.y || 0,
+                          width: widget.size?.width || 400,
+                          height: widget.size?.height || 300
                         }}
                         onMouseDown={(e) => {
                           const target = e.target as Element;
@@ -435,8 +435,8 @@ export function DashboardDesigner({ open, onOpenChange, existingDashboard, onSav
                             
                             const handleMouseMove = (e: MouseEvent) => {
                               const snapSize = 20; // Grid size for snapping
-                              const rawX = Math.max(0, Math.min(canvasWidth - widget.size.width, e.clientX - startX));
-                              const rawY = Math.max(0, Math.min(canvasHeight - widget.size.height, e.clientY - startY));
+                              const rawX = Math.max(0, Math.min(canvasWidth - (widget.size?.width || 400), e.clientX - startX));
+                              const rawY = Math.max(0, Math.min(canvasHeight - (widget.size?.height || 300), e.clientY - startY));
                               
                               // Snap to grid
                               const newX = Math.round(rawX / snapSize) * snapSize;

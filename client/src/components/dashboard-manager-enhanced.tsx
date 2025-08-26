@@ -750,10 +750,10 @@ export function EnhancedDashboardManager({
                                   key={widget.id}
                                   className="absolute bg-white dark:bg-gray-700 border rounded-lg shadow-sm group hover:border-blue-500 cursor-move"
                                   style={{
-                                    left: widget.position.x,
-                                    top: widget.position.y,
-                                    width: widget.size.width,
-                                    height: widget.size.height
+                                    left: widget.position?.x || 0,
+                                    top: widget.position?.y || 0,
+                                    width: widget.size?.width || 400,
+                                    height: widget.size?.height || 300
                                   }}
                                   onMouseDown={(e) => {
                                     const target = e.target as Element;
@@ -764,8 +764,8 @@ export function EnhancedDashboardManager({
                                       
                                       const handleMouseMove = (e: MouseEvent) => {
                                         const snapSize = 20; // Grid size for snapping
-                                        const rawX = Math.max(0, Math.min(canvasWidth - widget.size.width, e.clientX - startX));
-                                        const rawY = Math.max(0, Math.min(canvasHeight - widget.size.height, e.clientY - startY));
+                                        const rawX = Math.max(0, Math.min(canvasWidth - (widget.size?.width || 400), e.clientX - startX));
+                                        const rawY = Math.max(0, Math.min(canvasHeight - (widget.size?.height || 300), e.clientY - startY));
                                         
                                         // Snap to grid
                                         const newX = Math.round(rawX / snapSize) * snapSize;
@@ -864,11 +864,11 @@ export function EnhancedDashboardManager({
                                       onMouseDown={(e) => {
                                         e.stopPropagation();
                                         const startX = e.clientX;
-                                        const startWidth = widget.size.width;
+                                        const startWidth = widget.size?.width || 400;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
                                           const snapSize = 20; // Grid size for snapping
-                                          const rawWidth = Math.max(100, Math.min(canvasWidth - widget.position.x, startWidth + (e.clientX - startX)));
+                                          const rawWidth = Math.max(100, Math.min(canvasWidth - (widget.position?.x || 0), startWidth + (e.clientX - startX)));
                                           
                                           // Snap to grid
                                           const newWidth = Math.round(rawWidth / snapSize) * snapSize;
@@ -877,7 +877,7 @@ export function EnhancedDashboardManager({
                                             const updatedConfig = {
                                               ...editingDashboard.configuration,
                                               customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
-                                                w.id === widget.id ? { ...w, size: { width: newWidth, height: widget.size.height } } : w
+                                                w.id === widget.id ? { ...w, size: { width: newWidth, height: widget.size?.height || 300 } } : w
                                               )
                                             };
                                             setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });
@@ -900,11 +900,11 @@ export function EnhancedDashboardManager({
                                       onMouseDown={(e) => {
                                         e.stopPropagation();
                                         const startY = e.clientY;
-                                        const startHeight = widget.size.height;
+                                        const startHeight = widget.size?.height || 300;
                                         
                                         const handleMouseMove = (e: MouseEvent) => {
                                           const snapSize = 20; // Grid size for snapping
-                                          const rawHeight = Math.max(80, Math.min(canvasHeight - widget.position.y, startHeight + (e.clientY - startY)));
+                                          const rawHeight = Math.max(80, Math.min(canvasHeight - (widget.position?.y || 0), startHeight + (e.clientY - startY)));
                                           
                                           // Snap to grid
                                           const newHeight = Math.round(rawHeight / snapSize) * snapSize;
@@ -913,7 +913,7 @@ export function EnhancedDashboardManager({
                                             const updatedConfig = {
                                               ...editingDashboard.configuration,
                                               customWidgets: editingDashboard.configuration.customWidgets?.map((w: any) => 
-                                                w.id === widget.id ? { ...w, size: { width: widget.size.width, height: newHeight } } : w
+                                                w.id === widget.id ? { ...w, size: { width: widget.size?.width || 400, height: newHeight } } : w
                                               )
                                             };
                                             setEditingDashboard({ ...editingDashboard, configuration: updatedConfig });

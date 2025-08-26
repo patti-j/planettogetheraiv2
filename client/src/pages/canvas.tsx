@@ -102,7 +102,7 @@ export default function CanvasPage() {
       type: widget.type as any,
       title: widget.title,
       content: widget.config?.data || widget.config,
-      width: widget.size?.width ? `${widget.size.width}px` : undefined,
+      width: widget.size?.width ? `${widget.size?.width || 400}px` : undefined,
       height: widget.size?.height ? `${widget.size.height}px` : undefined,
       position: widget.position
     };
