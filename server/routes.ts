@@ -2179,6 +2179,47 @@ Rules:
     }
   });
 
+  // Update plant default algorithm
+  app.patch("/api/plants/:id/default-algorithm", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid plant ID" });
+      }
+
+      const { defaultAlgorithmId } = req.body;
+      
+      // Validate defaultAlgorithmId if provided
+      if (defaultAlgorithmId !== null && defaultAlgorithmId !== undefined) {
+        const algorithmIdNum = parseInt(defaultAlgorithmId);
+        if (isNaN(algorithmIdNum)) {
+          return res.status(400).json({ error: "Invalid algorithm ID" });
+        }
+        
+        // Verify algorithm exists
+        const algorithm = await storage.getOptimizationAlgorithm(algorithmIdNum);
+        if (!algorithm) {
+          return res.status(404).json({ error: "Algorithm not found" });
+        }
+      }
+
+      // Update the plant's default algorithm
+      const plant = await storage.updatePlant(id, { defaultAlgorithmId });
+      if (!plant) {
+        return res.status(404).json({ error: "Plant not found" });
+      }
+
+      res.json({
+        success: true,
+        message: "Default algorithm updated successfully",
+        plant
+      });
+    } catch (error) {
+      console.error("Error updating plant default algorithm:", error);
+      res.status(500).json({ error: "Failed to update default algorithm" });
+    }
+  });
+
   app.get("/api/capabilities", async (req, res) => {
     try {
       const capabilities = await storage.getCapabilities();

@@ -106,6 +106,7 @@ interface Plant {
   plantType: string;
   capacity: Record<string, any>;
   operationalMetrics: Record<string, any>;
+  defaultAlgorithmId?: number | null;
   createdAt: string;
 }
 
@@ -130,7 +131,7 @@ export default function EnterpriseMapPage() {
   });
 
   // Fetch optimization algorithms
-  const { data: algorithms = [] } = useQuery({
+  const { data: algorithms = [] } = useQuery<any[]>({
     queryKey: ['/api/optimization-algorithms'],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -141,10 +142,7 @@ export default function EnterpriseMapPage() {
   // Mutation to update plant default algorithm
   const updatePlantAlgorithm = useMutation({
     mutationFn: async ({ plantId, algorithmId }: { plantId: number; algorithmId: number | null }) => {
-      return await apiRequest(`/api/plants/${plantId}/default-algorithm`, {
-        method: 'PATCH',
-        body: { defaultAlgorithmId: algorithmId },
-      });
+      return await apiRequest(`/api/plants/${plantId}/default-algorithm`, 'PATCH', { defaultAlgorithmId: algorithmId });
     },
     onSuccess: () => {
       toast({
@@ -1382,7 +1380,7 @@ export default function EnterpriseMapPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="">No default algorithm</SelectItem>
-                                  {algorithms.map((algorithm: any) => (
+                                  {algorithms && algorithms.map((algorithm: any) => (
                                     <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
                                       {algorithm.displayName || algorithm.name}
                                     </SelectItem>
@@ -1392,7 +1390,7 @@ export default function EnterpriseMapPage() {
                             </div>
                             <div className="text-xs text-gray-500">
                               Current: {selectedPlant?.defaultAlgorithmId ? 
-                                algorithms.find((a: any) => a.id === selectedPlant.defaultAlgorithmId)?.displayName || 'Unknown Algorithm' : 
+                                algorithms && algorithms.find((a: any) => a.id === selectedPlant.defaultAlgorithmId)?.displayName || 'Unknown Algorithm' : 
                                 'No default algorithm set'
                               }
                             </div>
@@ -1403,7 +1401,7 @@ export default function EnterpriseMapPage() {
                           <Card className="p-3">
                             <div className="text-center">
                               <div className="text-lg font-bold text-green-600">
-                                {algorithms.filter((a: any) => a.status === 'approved').length}
+                                {algorithms ? algorithms.filter((a: any) => a.status === 'approved').length : 0}
                               </div>
                               <div className="text-xs text-gray-500">Approved Algorithms</div>
                             </div>
@@ -1411,7 +1409,7 @@ export default function EnterpriseMapPage() {
                           <Card className="p-3">
                             <div className="text-center">
                               <div className="text-lg font-bold text-blue-600">
-                                {algorithms.filter((a: any) => a.isStandard).length}
+                                {algorithms ? algorithms.filter((a: any) => a.isStandard).length : 0}
                               </div>
                               <div className="text-xs text-gray-500">Standard Algorithms</div>
                             </div>
@@ -1421,7 +1419,7 @@ export default function EnterpriseMapPage() {
                         <div className="border rounded-lg p-3">
                           <h5 className="font-medium mb-2">Available Algorithms</h5>
                           <div className="space-y-2 max-h-32 overflow-y-auto">
-                            {algorithms.map((algorithm: any) => (
+                            {algorithms && algorithms.map((algorithm: any) => (
                               <div key={algorithm.id} className="flex items-center justify-between text-sm">
                                 <span>{algorithm.displayName || algorithm.name}</span>
                                 <div className="flex items-center gap-2">
