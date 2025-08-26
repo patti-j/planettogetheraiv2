@@ -208,12 +208,277 @@
         .dark-theme #scheduler .b-icon {
             filter: invert(1) hue-rotate(-180deg);
         }
+        
+        /* Header updates for hamburger and Max AI */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .hamburger-btn, .max-ai-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .hamburger-btn:hover, .max-ai-btn:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
+            transform: translateY(-1px);
+        }
+        
+        /* Navigation Menu */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            z-index: 2000;
+        }
+        
+        .nav-menu.open {
+            left: 0;
+        }
+        
+        .nav-menu-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-menu-header h3 {
+            margin: 0;
+        }
+        
+        .close-menu, .close-max-ai {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .nav-menu-items {
+            padding: 1rem;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        /* Max AI Panel */
+        .max-ai-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .max-ai-panel.open {
+            right: 0;
+        }
+        
+        .max-ai-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .max-ai-header h3 {
+            margin: 0;
+        }
+        
+        .max-ai-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .max-ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .max-ai-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .max-ai-message.assistant {
+            background: #f0f0f0;
+        }
+        
+        .max-ai-message.user {
+            background: rgba(102, 126, 234, 0.1);
+            margin-left: 2rem;
+        }
+        
+        .max-ai-message ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .max-ai-input {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid #e0e0e0;
+            gap: 0.5rem;
+        }
+        
+        .max-ai-input input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .max-ai-input button {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .max-ai-input button:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
+        }
+        
+        /* Dark theme for nav menu and Max AI */
+        .dark-theme .nav-menu,
+        .dark-theme .max-ai-panel {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .dark-theme .nav-item {
+            color: #ccc;
+        }
+        
+        .dark-theme .nav-item:hover {
+            background: #333;
+        }
+        
+        .dark-theme .nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        
+        .dark-theme .max-ai-message.assistant {
+            background: #333;
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-message.user {
+            background: rgba(102, 126, 234, 0.2);
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-input {
+            border-top-color: #444;
+        }
+        
+        .dark-theme .max-ai-input input {
+            background: #333;
+            color: white;
+            border-color: #444;
+        }
     </style>
 </head>
 <body>
     <div class="header">
+        <button id="hamburgerMenu" class="hamburger-btn">☰</button>
         <h1>Production Schedule</h1>
-        <div id="lastUpdate">Last updated: --</div>
+        <div class="header-actions">
+            <button id="maxAIBtn" class="max-ai-btn">🤖 Max AI</button>
+            <span id="lastUpdate">Last updated: --</span>
+        </div>
+    </div>
+    
+    <!-- Navigation Menu -->
+    <div id="navMenu" class="nav-menu">
+        <div class="nav-menu-header">
+            <h3>Navigation</h3>
+            <button id="closeMenu" class="close-menu">×</button>
+        </div>
+        <div class="nav-menu-items">
+            <a href="/" class="nav-item">🏠 Home</a>
+            <a href="/production-scheduler.html" class="nav-item active">📊 Production Scheduler</a>
+            <a href="/business-goals" class="nav-item">📈 Business Goals</a>
+            <a href="/implementation-projects" class="nav-item">💼 Projects</a>
+            <a href="/control-tower" class="nav-item">🌐 Control Tower</a>
+            <a href="/help" class="nav-item">📚 Help</a>
+        </div>
+    </div>
+    
+    <!-- Max AI Assistant -->
+    <div id="maxAI" class="max-ai-panel">
+        <div class="max-ai-header">
+            <h3>🤖 Max AI Assistant</h3>
+            <button id="closeMaxAI" class="close-max-ai">×</button>
+        </div>
+        <div class="max-ai-content">
+            <div class="max-ai-messages" id="maxMessages">
+                <div class="max-ai-message assistant">
+                    Hello! I'm Max, your AI scheduling assistant. I can help you:
+                    <ul>
+                        <li>Understand scheduling algorithms</li>
+                        <li>Optimize production schedules</li>
+                        <li>Analyze resource utilization</li>
+                        <li>Identify bottlenecks</li>
+                    </ul>
+                    How can I help you today?
+                </div>
+            </div>
+            <div class="max-ai-input">
+                <input type="text" id="maxInput" placeholder="Ask me anything about scheduling..." />
+                <button id="maxSend">Send</button>
+            </div>
+        </div>
     </div>
 
     <div class="toolbar">
@@ -475,6 +740,87 @@
                     document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                 }
 
+                // Hamburger Menu Handler
+                const hamburgerBtn = document.getElementById('hamburgerMenu');
+                const navMenu = document.getElementById('navMenu');
+                const closeMenu = document.getElementById('closeMenu');
+                
+                hamburgerBtn.addEventListener('click', () => {
+                    navMenu.classList.add('open');
+                });
+                
+                closeMenu.addEventListener('click', () => {
+                    navMenu.classList.remove('open');
+                });
+                
+                // Max AI Handler
+                const maxAIBtn = document.getElementById('maxAIBtn');
+                const maxAI = document.getElementById('maxAI');
+                const closeMaxAI = document.getElementById('closeMaxAI');
+                const maxInput = document.getElementById('maxInput');
+                const maxSend = document.getElementById('maxSend');
+                const maxMessages = document.getElementById('maxMessages');
+                
+                maxAIBtn.addEventListener('click', () => {
+                    maxAI.classList.add('open');
+                });
+                
+                closeMaxAI.addEventListener('click', () => {
+                    maxAI.classList.remove('open');
+                });
+                
+                // Max AI chat functionality (simulated)
+                function sendMaxMessage() {
+                    const message = maxInput.value.trim();
+                    if (!message) return;
+                    
+                    // Add user message
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'max-ai-message user';
+                    userMsg.textContent = message;
+                    maxMessages.appendChild(userMsg);
+                    
+                    // Clear input
+                    maxInput.value = '';
+                    
+                    // Simulate AI response
+                    setTimeout(() => {
+                        const aiMsg = document.createElement('div');
+                        aiMsg.className = 'max-ai-message assistant';
+                        
+                        // Context-aware responses based on keywords
+                        let response = '';
+                        const lowerMessage = message.toLowerCase();
+                        
+                        if (lowerMessage.includes('asap')) {
+                            response = 'ASAP (As Soon As Possible) scheduling pushes all operations to the earliest possible time slots. This is ideal for urgent orders or when you want to maximize early throughput.';
+                        } else if (lowerMessage.includes('alap')) {
+                            response = 'ALAP (As Late As Possible) scheduling delays operations to the latest time that still meets due dates. This minimizes inventory holding costs and is useful for Just-In-Time manufacturing.';
+                        } else if (lowerMessage.includes('critical path')) {
+                            response = 'Critical Path scheduling identifies the longest sequence of dependent tasks and optimizes them first. This ensures your project completion time is minimized by focusing on bottleneck operations.';
+                        } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
+                            response = 'Resource Leveling distributes work evenly across all resources to prevent overloading. This improves overall efficiency and reduces wear on heavily used equipment.';
+                        } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
+                            response = 'Drum scheduling (Theory of Constraints) identifies your bottleneck resource and optimizes the entire schedule around it. This maximizes throughput by ensuring the constraint is always working.';
+                        } else if (lowerMessage.includes('help')) {
+                            response = 'I can help you understand the 5 scheduling algorithms: ASAP, ALAP, Critical Path, Resource Leveling, and Drum (TOC). Just ask me about any of them!';
+                        } else {
+                            response = `I understand you're asking about "${message}". Try selecting different algorithms from the dropdown and observe how operations move on the timeline. Each algorithm optimizes for different business objectives.`;
+                        }
+                        
+                        aiMsg.textContent = response;
+                        maxMessages.appendChild(aiMsg);
+                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }, 500);
+                    
+                    maxMessages.scrollTop = maxMessages.scrollHeight;
+                }
+                
+                maxSend.addEventListener('click', sendMaxMessage);
+                maxInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMaxMessage();
+                });
+                
                 // Theme toggle handler
                 const themeToggle = document.getElementById('themeToggle');
                 let isDarkMode = localStorage.getItem('darkMode') === 'true';
