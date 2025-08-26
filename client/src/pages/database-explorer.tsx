@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -216,10 +216,15 @@ export default function DatabaseExplorer() {
       <CardContent className="h-[calc(100%-120px)] overflow-y-auto">
         <div className="space-y-2 mb-4">
           <Input
+            key="mobile-table-search"
             placeholder="Search tables..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="h-8"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
           />
         </div>
         
@@ -273,8 +278,48 @@ export default function DatabaseExplorer() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80">
-              <div className="h-full">
-                <TablesList />
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b">
+                  <h2 className="text-lg font-semibold mb-3">Database Tables</h2>
+                  <Input
+                    placeholder="Search tables..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-8"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="flex-1 overflow-y-auto p-2">
+                  {tablesLoading ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Loading tables...</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredTables.map((table: DatabaseTable) => (
+                        <button
+                          key={table.name}
+                          onClick={() => {
+                            handleTableSelect(table.name);
+                            setMobileSheetOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                            selectedTable === table.name
+                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <Table className="h-4 w-4" />
+                          <span className="text-sm font-medium truncate">{table.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
