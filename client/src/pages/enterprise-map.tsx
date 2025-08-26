@@ -152,7 +152,7 @@ export default function EnterpriseMapPage() {
   // Mutations for monitoring agent control
   const startMonitoringAgent = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/monitoring-agent/start', 'POST');
+      return await apiRequest('/api/monitoring-agent/start', 'POST', {});
     },
     onSuccess: () => {
       toast({
@@ -172,7 +172,7 @@ export default function EnterpriseMapPage() {
 
   const stopMonitoringAgent = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/monitoring-agent/stop', 'POST');
+      return await apiRequest('/api/monitoring-agent/stop', 'POST', {});
     },
     onSuccess: () => {
       toast({
