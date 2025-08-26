@@ -428,20 +428,48 @@
                     requestAnimationFrame(() => {
                         setTimeout(() => {
                             try {
-                                // Simple optimization - move all events to start as early as possible
-                                const events = scheduler.eventStore.records;
-                                let changed = false;
+                                // Get all events sorted by their current start date
+                                const events = [...scheduler.eventStore.records].sort((a, b) => 
+                                    a.startDate.getTime() - b.startDate.getTime()
+                                );
                                 
+                                let changed = false;
+                                const baseDate = new Date(2025, 0, 27, 7, 0); // Start at 7 AM
+                                
+                                // Group events by resource
+                                const resourceEvents = {};
                                 events.forEach(event => {
-                                    // Check if event can start earlier
-                                    const currentStart = event.startDate;
-                                    const earliestStart = event.earlyStartDate || currentStart;
-                                    
-                                    if (earliestStart < currentStart) {
-                                        event.startDate = earliestStart;
-                                        changed = true;
+                                    if (!resourceEvents[event.resourceId]) {
+                                        resourceEvents[event.resourceId] = [];
                                     }
+                                    resourceEvents[event.resourceId].push(event);
                                 });
+                                
+                                // Optimize each resource's schedule (pack events tightly)
+                                Object.keys(resourceEvents).forEach(resourceId => {
+                                    const resEvents = resourceEvents[resourceId];
+                                    let nextAvailableTime = new Date(baseDate);
+                                    
+                                    resEvents.forEach(event => {
+                                        // Move event to next available time slot
+                                        const oldStart = new Date(event.startDate);
+                                        event.startDate = new Date(nextAvailableTime);
+                                        
+                                        // Calculate next available time (add duration to current event)
+                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
+                                        nextAvailableTime = new Date(event.startDate.getTime() + durationMs);
+                                        
+                                        // Add 30 minute buffer between tasks
+                                        nextAvailableTime.setMinutes(nextAvailableTime.getMinutes() + 30);
+                                        
+                                        if (oldStart.getTime() !== event.startDate.getTime()) {
+                                            changed = true;
+                                        }
+                                    });
+                                });
+                                
+                                // Refresh the scheduler view
+                                scheduler.refresh();
                                 
                                 // Hide loading and show success message
                                 document.getElementById('loadingOverlay').style.display = 'none';
@@ -449,7 +477,7 @@
                                 
                                 // Show non-blocking success message
                                 const message = changed ? 
-                                    'Schedule optimized - events rescheduled for earliest possible times!' : 
+                                    'Schedule optimized - all operations compacted!' : 
                                     'Schedule is already optimized!';
                                 
                                 // Update status bar with message
