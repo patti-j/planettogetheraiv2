@@ -6,7 +6,7 @@
     <title>Production Schedule - PlanetTogether</title>
     
     <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.css">
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
     
     <style>
         * {
@@ -195,6 +195,10 @@
         <div class="toolbar-group">
             <button id="optimize">Optimize Schedule</button>
         </div>
+        
+        <div class="toolbar-group">
+            <button id="themeToggle">🌙 Dark Mode</button>
+        </div>
     </div>
 
     <div class="scheduler-container">
@@ -220,6 +224,17 @@
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
+                // Get today's date
+                const today = new Date();
+                today.setHours(8, 0, 0, 0); // Start at 8 AM
+                
+                // Helper to create a date relative to today
+                function createDate(hoursFromNow) {
+                    const date = new Date(today);
+                    date.setHours(date.getHours() + hoursFromNow);
+                    return date;
+                }
+                
                 // Sample data for production scheduling
                 const resources = [
                     { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
@@ -234,7 +249,7 @@
                     {
                         id: 1,
                         name: 'Part Machining - Order #1001',
-                        startDate: new Date(2025, 0, 27, 8, 0),
+                        startDate: createDate(0), // Today 8 AM
                         duration: 4,
                         durationUnit: 'hour',
                         resourceId: 'cnc1',
@@ -244,7 +259,7 @@
                     {
                         id: 2,
                         name: 'Part Machining - Order #1002',
-                        startDate: new Date(2025, 0, 27, 13, 0),
+                        startDate: createDate(5), // Today 1 PM
                         duration: 3,
                         durationUnit: 'hour',
                         resourceId: 'cnc1',
@@ -254,7 +269,7 @@
                     {
                         id: 3,
                         name: 'Component Assembly - Order #1001',
-                        startDate: new Date(2025, 0, 27, 14, 0),
+                        startDate: createDate(6), // Today 2 PM
                         duration: 5,
                         durationUnit: 'hour',
                         resourceId: 'assembly1',
@@ -264,7 +279,7 @@
                     {
                         id: 4,
                         name: 'Quality Inspection - Order #1001',
-                        startDate: new Date(2025, 0, 28, 9, 0),
+                        startDate: createDate(25), // Tomorrow 9 AM
                         duration: 2,
                         durationUnit: 'hour',
                         resourceId: 'qc1',
@@ -274,7 +289,7 @@
                     {
                         id: 5,
                         name: 'Packaging - Order #1001',
-                        startDate: new Date(2025, 0, 28, 11, 30),
+                        startDate: createDate(27.5), // Tomorrow 11:30 AM
                         duration: 1.5,
                         durationUnit: 'hour',
                         resourceId: 'packaging1',
@@ -284,7 +299,7 @@
                     {
                         id: 6,
                         name: 'Part Machining - Order #1003',
-                        startDate: new Date(2025, 0, 28, 8, 0),
+                        startDate: createDate(24), // Tomorrow 8 AM
                         duration: 6,
                         durationUnit: 'hour',
                         resourceId: 'cnc2',
@@ -384,8 +399,17 @@
                         autoCalculateEndDate: true
                     },
 
-                    startDate: new Date(2025, 0, 26),
-                    endDate: new Date(2025, 1, 2),
+                    startDate: (() => {
+                        const start = new Date();
+                        start.setHours(0, 0, 0, 0);
+                        return start;
+                    })(),
+                    endDate: (() => {
+                        const end = new Date();
+                        end.setDate(end.getDate() + 7); // Show 1 week
+                        end.setHours(23, 59, 59, 999);
+                        return end;
+                    })(),
                     zoomLevel: 10
                 });
 
@@ -434,7 +458,8 @@
                                 );
                                 
                                 let changed = false;
-                                const baseDate = new Date(2025, 0, 27, 7, 0); // Start at 7 AM
+                                const baseDate = new Date();
+                                baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
                                 
                                 // Group events by resource
                                 const resourceEvents = {};
@@ -515,8 +540,31 @@
                 scheduler.on('aftereventadd', updateStatus);
                 scheduler.on('aftereventremove', updateStatus);
                 
+                // Theme toggle functionality
+                let isDarkMode = false;
+                const themeToggleBtn = document.getElementById('themeToggle');
+                const themeLink = document.getElementById('scheduler-theme');
+                
+                themeToggleBtn.addEventListener('click', () => {
+                    isDarkMode = !isDarkMode;
+                    if (isDarkMode) {
+                        themeLink.href = '/schedulerpro.classic-dark.css';
+                        themeToggleBtn.innerHTML = '☀️ Light Mode';
+                        document.body.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
+                    } else {
+                        themeLink.href = '/schedulerpro.classic-light.css';
+                        themeToggleBtn.innerHTML = '🌙 Dark Mode';
+                        document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    }
+                });
+                
                 // Initial status update
                 updateStatus();
+                
+                // Fit to view after a short delay to ensure proper rendering
+                setTimeout(() => {
+                    scheduler.zoomToFit();
+                }, 100);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
