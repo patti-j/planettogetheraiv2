@@ -92,14 +92,15 @@
 
         .toolbar button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            color: white !important;
             border: none;
             font-weight: 500;
         }
 
         .toolbar button:hover {
-            opacity: 0.9;
+            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
             transform: translateY(-1px);
+            color: white !important;
         }
 
         .scheduler-container {
@@ -195,6 +196,17 @@
         
         .dark-theme .scheduler-container {
             background: #2a2a2a;
+        }
+        
+        /* Dark theme for scheduler using filter */
+        .dark-theme #scheduler {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+        
+        /* Re-invert images and icons in dark mode */
+        .dark-theme #scheduler img,
+        .dark-theme #scheduler .b-icon {
+            filter: invert(1) hue-rotate(-180deg);
         }
     </style>
 </head>
@@ -577,14 +589,11 @@
                 themeToggleBtn.addEventListener('click', () => {
                     isDarkMode = !isDarkMode;
                     if (isDarkMode) {
-                        // Use the actual Bryntum classic dark theme
-                        themeLink.href = '/schedulerpro.classic-dark.css';
+                        // Apply dark theme using CSS filters
                         themeToggleBtn.innerHTML = '☀️ Light Mode';
                         document.body.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
-                        // Add dark class for custom dark styles
                         document.body.classList.add('dark-theme');
                     } else {
-                        themeLink.href = '/schedulerpro.classic-light.css';
                         themeToggleBtn.innerHTML = '🌙 Dark Mode';
                         document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                         document.body.classList.remove('dark-theme');
