@@ -10297,6 +10297,195 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
+  // Algorithm Governance API Endpoints using existing plantAlgorithmDeployments table
+  app.get("/api/algorithm-governance/approvals", requireAuth, async (req, res) => {
+    try {
+      const { status, plantId } = req.query;
+      
+      let query = db
+        .select({
+          id: schema.plantAlgorithmDeployments.id,
+          algorithmVersionId: schema.plantAlgorithmDeployments.algorithmVersionId,
+          plantId: schema.plantAlgorithmDeployments.plantId,
+          status: schema.plantAlgorithmDeployments.deploymentStatus,
+          approvalLevel: schema.plantAlgorithmDeployments.approvalLevel,
+          priority: schema.plantAlgorithmDeployments.priority,
+          requestedBy: schema.plantAlgorithmDeployments.createdBy,
+          requestedAt: schema.plantAlgorithmDeployments.createdAt,
+          reviewedBy: schema.plantAlgorithmDeployments.approvedBy,
+          reviewedAt: schema.plantAlgorithmDeployments.approvalDate,
+          notes: schema.plantAlgorithmDeployments.approvalComments,
+          algorithm: {
+            name: schema.algorithmVersions.displayName,
+            version: schema.algorithmVersions.version,
+            category: schema.algorithmVersions.category
+          },
+          plant: {
+            name: schema.plants.name
+          }
+        })
+        .from(schema.plantAlgorithmDeployments)
+        .leftJoin(
+          schema.algorithmVersions,
+          eq(schema.plantAlgorithmDeployments.algorithmVersionId, schema.algorithmVersions.id)
+        )
+        .leftJoin(
+          schema.plants,
+          eq(schema.plantAlgorithmDeployments.plantId, schema.plants.id)
+        );
+
+      if (status) {
+        query = query.where(eq(schema.plantAlgorithmDeployments.deploymentStatus, status as string));
+      }
+      if (plantId) {
+        query = query.where(eq(schema.plantAlgorithmDeployments.plantId, parseInt(plantId as string)));
+      }
+
+      const approvals = await query.orderBy(schema.plantAlgorithmDeployments.createdAt);
+      res.json(approvals);
+    } catch (error) {
+      console.error("Error fetching algorithm approvals:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm approvals" });
+    }
+  });
+
+  app.post("/api/algorithm-governance/approvals", requireAuth, async (req, res) => {
+    try {
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      
+      const approvalData = {
+        plantId: req.body.plantId,
+        algorithmVersionId: req.body.algorithmVersionId,
+        approvalLevel: req.body.approvalLevel,
+        priority: req.body.priority || 100,
+        deploymentStatus: 'pending',
+        approvalComments: req.body.notes,
+        createdBy: userId
+      };
+
+      const [approval] = await db
+        .insert(schema.plantAlgorithmDeployments)
+        .values(approvalData)
+        .returning();
+      
+      res.status(201).json(approval);
+    } catch (error) {
+      console.error("Error creating algorithm approval:", error);
+      res.status(500).json({ error: "Failed to create algorithm approval" });
+    }
+  });
+
+  app.post("/api/algorithm-governance/approvals/:id/approve", requireAuth, async (req, res) => {
+    try {
+      const approvalId = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      const { notes } = req.body;
+
+      if (isNaN(approvalId)) {
+        return res.status(400).json({ error: "Invalid approval ID" });
+      }
+
+      const [approval] = await db
+        .update(schema.plantAlgorithmDeployments)
+        .set({
+          deploymentStatus: 'approved',
+          approvedBy: userId,
+          approvalDate: new Date(),
+          approvalComments: notes
+        })
+        .where(eq(schema.plantAlgorithmDeployments.id, approvalId))
+        .returning();
+
+      if (!approval) {
+        return res.status(404).json({ error: "Approval not found" });
+      }
+
+      res.json(approval);
+    } catch (error) {
+      console.error("Error approving algorithm:", error);
+      res.status(500).json({ error: "Failed to approve algorithm" });
+    }
+  });
+
+  app.post("/api/algorithm-governance/approvals/:id/reject", requireAuth, async (req, res) => {
+    try {
+      const approvalId = parseInt(req.params.id);
+      const userId = typeof req.user.id === 'string' ? 1 : req.user.id;
+      const { reason } = req.body;
+
+      if (isNaN(approvalId)) {
+        return res.status(400).json({ error: "Invalid approval ID" });
+      }
+
+      const [approval] = await db
+        .update(schema.plantAlgorithmDeployments)
+        .set({
+          deploymentStatus: 'rejected',
+          approvedBy: userId,
+          approvalDate: new Date(),
+          approvalComments: reason
+        })
+        .where(eq(schema.plantAlgorithmDeployments.id, approvalId))
+        .returning();
+
+      if (!approval) {
+        return res.status(404).json({ error: "Approval not found" });
+      }
+
+      res.json(approval);
+    } catch (error) {
+      console.error("Error rejecting algorithm:", error);
+      res.status(500).json({ error: "Failed to reject algorithm" });
+    }
+  });
+
+  app.post("/api/algorithm-governance/approvals/:id/unapprove", requireAuth, async (req, res) => {
+    try {
+      const approvalId = parseInt(req.params.id);
+      const { reason } = req.body;
+
+      if (isNaN(approvalId)) {
+        return res.status(400).json({ error: "Invalid approval ID" });
+      }
+
+      const [approval] = await db
+        .update(schema.plantAlgorithmDeployments)
+        .set({
+          deploymentStatus: 'pending',
+          approvedBy: null,
+          approvalDate: null,
+          approvalComments: reason
+        })
+        .where(eq(schema.plantAlgorithmDeployments.id, approvalId))
+        .returning();
+
+      if (!approval) {
+        return res.status(404).json({ error: "Approval not found" });
+      }
+
+      res.json(approval);
+    } catch (error) {
+      console.error("Error revoking algorithm approval:", error);
+      res.status(500).json({ error: "Failed to revoke algorithm approval" });
+    }
+  });
+
+  // Add API endpoint for algorithm versions  
+  app.get("/api/algorithm-versions", requireAuth, async (req, res) => {
+    try {
+      const versions = await db
+        .select()
+        .from(schema.algorithmVersions)
+        .where(eq(schema.algorithmVersions.isActive, true))
+        .orderBy(schema.algorithmVersions.displayName);
+      
+      res.json(versions);
+    } catch (error) {
+      console.error("Error fetching algorithm versions:", error);
+      res.status(500).json({ error: "Failed to fetch algorithm versions" });
+    }
+  });
+
   // Helper function for backwards scheduling logic
   async function executeBackwardsScheduling({ parameters, productionOrders, plannedOrders, resources, operations, storage }) {
     try {

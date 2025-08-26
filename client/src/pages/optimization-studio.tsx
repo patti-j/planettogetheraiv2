@@ -180,6 +180,13 @@ export default function OptimizationStudio() {
   const [selectedPlantId, setSelectedPlantId] = useState<number | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<PlantAlgorithmApproval | null>(null);
+  const [newApprovalData, setNewApprovalData] = useState({
+    algorithmVersionId: null as number | null,
+    plantId: null as number | null,
+    approvalLevel: "",
+    priority: null as number | null,
+    notes: ""
+  });
 
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [showCodePreview, setShowCodePreview] = useState(false);
@@ -242,9 +249,9 @@ export default function OptimizationStudio() {
 
   // Fetch algorithm versions for governance
   const { data: algorithmVersions = [] } = useQuery({
-    queryKey: ['/api/algorithm-governance/versions'],
+    queryKey: ['/api/algorithm-versions'],
     queryFn: async () => {
-      const response = await fetch('/api/algorithm-governance/versions');
+      const response = await fetch('/api/algorithm-versions');
       if (!response.ok) throw new Error('Failed to fetch algorithm versions');
       return response.json();
     }
@@ -480,6 +487,128 @@ export default function OptimizationStudio() {
     },
     onError: (error: any) => {
       toast({ title: "Error creating algorithm", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Approve algorithm mutation
+  const approveAlgorithmMutation = useMutation({
+    mutationFn: async ({ approvalId, notes }: { approvalId: number; notes?: string }) => {
+      const response = await fetch(`/api/algorithm-governance/approvals/${approvalId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve algorithm');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/algorithm-governance/approvals'] });
+      toast({ title: "Algorithm approved successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error approving algorithm", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Unapprove algorithm mutation
+  const unapproveAlgorithmMutation = useMutation({
+    mutationFn: async ({ approvalId, reason }: { approvalId: number; reason?: string }) => {
+      const response = await fetch(`/api/algorithm-governance/approvals/${approvalId}/unapprove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to unapprove algorithm');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/algorithm-governance/approvals'] });
+      toast({ title: "Algorithm approval revoked successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error revoking approval", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Reject algorithm mutation
+  const rejectAlgorithmMutation = useMutation({
+    mutationFn: async ({ approvalId, reason }: { approvalId: number; reason?: string }) => {
+      const response = await fetch(`/api/algorithm-governance/approvals/${approvalId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reject algorithm');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/algorithm-governance/approvals'] });
+      toast({ title: "Algorithm rejected successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error rejecting algorithm", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Create new approval request mutation
+  const createApprovalMutation = useMutation({
+    mutationFn: async (approvalData: {
+      algorithmVersionId: number;
+      plantId: number;
+      approvalLevel: string;
+      priority: number;
+      notes?: string;
+    }) => {
+      const response = await fetch('/api/algorithm-governance/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(approvalData)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create approval request');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/algorithm-governance/approvals'] });
+      setShowApprovalDialog(false);
+      setNewApprovalData({
+        algorithmVersionId: null,
+        plantId: null,
+        approvalLevel: "",
+        priority: null,
+        notes: ""
+      });
+      toast({ title: "Approval request created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error creating approval request", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     }
   });
 
@@ -2529,7 +2658,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button>
+                <Button onClick={() => setShowApprovalDialog(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Approval Request
                 </Button>
@@ -2591,27 +2720,52 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     )}
 
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setSelectedApproval(approval)}
+                      >
                         <Eye className="w-3 h-3 mr-1" />
                         View Details
                       </Button>
                       {approval.status === 'pending' && (
                         <>
-                          <Button size="sm" variant="default">
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            onClick={() => approveAlgorithmMutation.mutate({ approvalId: approval.id })}
+                            disabled={approveAlgorithmMutation.isPending}
+                          >
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Approve
+                            {approveAlgorithmMutation.isPending ? 'Approving...' : 'Approve'}
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => rejectAlgorithmMutation.mutate({ approvalId: approval.id })}
+                            disabled={rejectAlgorithmMutation.isPending}
+                          >
                             <XCircle className="w-3 h-3 mr-1" />
-                            Reject
+                            {rejectAlgorithmMutation.isPending ? 'Rejecting...' : 'Reject'}
                           </Button>
                         </>
                       )}
                       {approval.status === 'approved' && (
-                        <Button size="sm">
-                          <Play className="w-3 h-3 mr-1" />
-                          Deploy
-                        </Button>
+                        <>
+                          <Button size="sm">
+                            <Play className="w-3 h-3 mr-1" />
+                            Deploy
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => unapproveAlgorithmMutation.mutate({ approvalId: approval.id })}
+                            disabled={unapproveAlgorithmMutation.isPending}
+                          >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            {unapproveAlgorithmMutation.isPending ? 'Revoking...' : 'Revoke Approval'}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </CardContent>
@@ -2954,6 +3108,124 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* New Approval Request Dialog */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              New Approval Request
+            </DialogTitle>
+            <DialogDescription>
+              Request approval for an algorithm to be used in a specific plant
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Algorithm Version</Label>
+              <Select 
+                value={newApprovalData.algorithmVersionId?.toString() || ""}
+                onValueChange={(value) => setNewApprovalData(prev => ({ ...prev, algorithmVersionId: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select algorithm version..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {algorithmVersions.map((version: any) => (
+                    <SelectItem key={version.id} value={version.id.toString()}>
+                      {version.displayName} v{version.version}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Plant</Label>
+              <Select 
+                value={newApprovalData.plantId?.toString() || ""}
+                onValueChange={(value) => setNewApprovalData(prev => ({ ...prev, plantId: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plant..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {plants.map((plant: any) => (
+                    <SelectItem key={plant.id} value={plant.id.toString()}>
+                      {plant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Approval Level</Label>
+              <Select 
+                value={newApprovalData.approvalLevel || ""}
+                onValueChange={(value) => setNewApprovalData(prev => ({ ...prev, approvalLevel: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select approval level..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plant_manager">Plant Manager</SelectItem>
+                  <SelectItem value="regional_director">Regional Director</SelectItem>
+                  <SelectItem value="corporate">Corporate</SelectItem>
+                  <SelectItem value="emergency">Emergency</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <Select 
+                value={newApprovalData.priority?.toString() || ""}
+                onValueChange={(value) => setNewApprovalData(prev => ({ ...prev, priority: parseInt(value) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select priority..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">High Priority</SelectItem>
+                  <SelectItem value="100">Medium Priority</SelectItem>
+                  <SelectItem value="150">Low Priority</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea 
+                placeholder="Additional context or requirements for this approval..."
+                rows={3}
+                value={newApprovalData.notes || ""}
+                onChange={(e) => setNewApprovalData(prev => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowApprovalDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={() => createApprovalMutation.mutate(newApprovalData)}
+                disabled={createApprovalMutation.isPending || !newApprovalData.algorithmVersionId || !newApprovalData.plantId || !newApprovalData.approvalLevel}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {createApprovalMutation.isPending ? 'Creating...' : 'Create Request'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
