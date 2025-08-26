@@ -234,9 +234,15 @@
         </div>
 
         <div class="toolbar-group">
-            <button id="optimize">Optimize Schedule</button>
-            <button id="backwardBtn">⏪ Backward Schedule</button>
-            <button id="drumBtn">🥁 Drum Schedule</button>
+            <label for="schedulingAlgorithm">Algorithm:</label>
+            <select id="schedulingAlgorithm">
+                <option value="asap">ASAP (Forward)</option>
+                <option value="alap">ALAP (Backward)</option>
+                <option value="criticalPath">Critical Path</option>
+                <option value="levelResources">Level Resources</option>
+                <option value="drum">Drum (TOC)</option>
+            </select>
+            <button id="applyScheduling">Apply Algorithm</button>
         </div>
         
         <div class="toolbar-group">
@@ -487,86 +493,80 @@
                     scheduler.zoomToFit();
                 });
                 
-                // Optimize button
-                document.getElementById('optimize').addEventListener('click', () => {
+                // Apply Scheduling Algorithm button
+                document.getElementById('applyScheduling').addEventListener('click', () => {
+                    const algorithm = document.getElementById('schedulingAlgorithm').value;
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
-                    // Use requestAnimationFrame to ensure UI updates
+                    
                     requestAnimationFrame(() => {
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             try {
-                                // Get all events sorted by their current start date
-                                const events = [...scheduler.eventStore.records].sort((a, b) => 
-                                    a.startDate.getTime() - b.startDate.getTime()
-                                );
+                                const project = scheduler.project;
+                                let message = '';
+                                let color = 'green';
                                 
-                                let changed = false;
-                                const baseDate = new Date();
-                                baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
-                                
-                                // Group events by resource
-                                const resourceEvents = {};
-                                events.forEach(event => {
-                                    if (!resourceEvents[event.resourceId]) {
-                                        resourceEvents[event.resourceId] = [];
-                                    }
-                                    resourceEvents[event.resourceId].push(event);
-                                });
-                                
-                                // Optimize each resource's schedule (pack events tightly)
-                                Object.keys(resourceEvents).forEach(resourceId => {
-                                    const resEvents = resourceEvents[resourceId];
-                                    let nextAvailableTime = new Date(baseDate);
-                                    
-                                    resEvents.forEach(event => {
-                                        // Move event to next available time slot
-                                        const oldStart = new Date(event.startDate);
-                                        event.startDate = new Date(nextAvailableTime);
+                                switch(algorithm) {
+                                    case 'asap':
+                                        // ASAP - As Soon As Possible (Forward Scheduling)
+                                        await asapScheduling();
+                                        message = 'ASAP scheduling applied - operations scheduled as early as possible!';
+                                        break;
                                         
-                                        // Calculate next available time (add duration to current event)
-                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
-                                        nextAvailableTime = new Date(event.startDate.getTime() + durationMs);
+                                    case 'alap':
+                                        // ALAP - As Late As Possible (Backward Scheduling)
+                                        await alapScheduling();
+                                        message = 'ALAP scheduling applied - operations scheduled as late as possible!';
+                                        color = 'blue';
+                                        break;
                                         
-                                        // Add 30 minute buffer between tasks
-                                        nextAvailableTime.setMinutes(nextAvailableTime.getMinutes() + 30);
+                                    case 'criticalPath':
+                                        // Critical Path Method
+                                        await criticalPathScheduling();
+                                        message = 'Critical Path identified and optimized!';
+                                        color = 'orange';
+                                        break;
                                         
-                                        if (oldStart.getTime() !== event.startDate.getTime()) {
-                                            changed = true;
-                                        }
-                                    });
-                                });
+                                    case 'levelResources':
+                                        // Resource Leveling
+                                        await levelResourcesScheduling();
+                                        message = 'Resources leveled - workload balanced across resources!';
+                                        color = 'purple';
+                                        break;
+                                        
+                                    case 'drum':
+                                        // Drum (Theory of Constraints)
+                                        await drumScheduling();
+                                        message = 'Drum scheduling applied - optimized around bottleneck!';
+                                        color = 'brown';
+                                        break;
+                                }
                                 
-                                // Refresh the scheduler view
+                                // Refresh the scheduler
                                 scheduler.refresh();
+                                scheduler.zoomToFit();
                                 
                                 // Hide loading and show success message
                                 document.getElementById('loadingOverlay').style.display = 'none';
                                 updateStatus();
                                 
-                                // Show non-blocking success message
-                                const message = changed ? 
-                                    'Schedule optimized - all operations compacted!' : 
-                                    'Schedule is already optimized!';
-                                
-                                // Update status bar with message
+                                // Show message in status bar
                                 const statusElement = document.getElementById('operationCount');
                                 const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: green; font-weight: bold;">${message}</span>`;
+                                statusElement.innerHTML = `<span style="color: ${color}; font-weight: bold;">${message}</span>`;
                                 
-                                // Reset message after 3 seconds
                                 setTimeout(() => {
                                     statusElement.textContent = originalText;
                                     updateStatus();
                                 }, 3000);
                                 
                             } catch (error) {
-                                console.error('Optimization error:', error);
+                                console.error('Scheduling error:', error);
                                 document.getElementById('loadingOverlay').style.display = 'none';
                                 
-                                // Show error in status bar
                                 const statusElement = document.getElementById('operationCount');
                                 const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: red;">Optimization failed - check console</span>`;
+                                statusElement.innerHTML = `<span style="color: red;">Scheduling failed - ${error.message}</span>`;
                                 
                                 setTimeout(() => {
                                     statusElement.textContent = originalText;
@@ -577,319 +577,255 @@
                     });
                 });
                 
-                // Backward Scheduling Algorithm
-                document.getElementById('backwardBtn').addEventListener('click', () => {
-                    document.getElementById('loadingOverlay').style.display = 'flex';
+                // Scheduling Algorithm Implementations
+                async function asapScheduling() {
+                    // Forward scheduling - pack operations as early as possible
+                    const events = [...scheduler.eventStore.records].sort((a, b) => 
+                        a.startDate.getTime() - b.startDate.getTime()
+                    );
                     
-                    requestAnimationFrame(() => {
-                        setTimeout(() => {
-                            try {
-                                // Get all events
-                                const events = [...scheduler.eventStore.records];
-                                
-                                if (events.length === 0) {
-                                    document.getElementById('loadingOverlay').style.display = 'none';
-                                    return;
-                                }
-                                
-                                // Define a due date (3 days from now for visibility)
-                                const dueDate = new Date();
-                                dueDate.setDate(dueDate.getDate() + 3); // 3 days from now
-                                dueDate.setHours(17, 0, 0, 0); // 5 PM
-                                
-                                // Group events by resource
-                                const resourceEvents = {};
-                                events.forEach(event => {
-                                    if (!resourceEvents[event.resourceId]) {
-                                        resourceEvents[event.resourceId] = [];
-                                    }
-                                    resourceEvents[event.resourceId].push(event);
-                                });
-                                
-                                let changed = false;
-                                
-                                // Schedule backwards from due date for each resource
-                                Object.keys(resourceEvents).forEach(resourceId => {
-                                    const resEvents = resourceEvents[resourceId];
-                                    
-                                    // Start from the due date
-                                    let currentEndTime = new Date(dueDate);
-                                    
-                                    // Process events in reverse order (last operations first)
-                                    resEvents.reverse().forEach(event => {
-                                        try {
-                                            const duration = event.duration || 2; // Default 2 hours if no duration
-                                            const durationMs = duration * 60 * 60 * 1000; // Convert hours to ms
-                                            
-                                            // Calculate end time first
-                                            let newEnd = new Date(currentEndTime);
-                                            
-                                            // If end time is after 5 PM, move to 5 PM
-                                            if (newEnd.getHours() >= 17) {
-                                                newEnd.setHours(17, 0, 0, 0);
-                                            }
-                                            
-                                            // Calculate start time by subtracting duration
-                                            let newStart = new Date(newEnd.getTime() - durationMs);
-                                            
-                                            // If start time is before 7 AM, shift the whole operation
-                                            while (newStart.getHours() < 7 && newStart.getDate() === newEnd.getDate()) {
-                                                // Move to previous day at 5 PM
-                                                newEnd.setDate(newEnd.getDate() - 1);
-                                                newEnd.setHours(17, 0, 0, 0);
-                                                newStart = new Date(newEnd.getTime() - durationMs);
-                                            }
-                                            
-                                            // Store old dates for comparison
-                                            const oldStart = new Date(event.startDate);
-                                            
-                                            // Update event dates
-                                            event.startDate = newStart;
-                                            event.endDate = newEnd;
-                                            
-                                            // Update current end time for next operation (with 30 min buffer)
-                                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000);
-                                            
-                                            // If buffer puts us before 7 AM, move to previous day
-                                            if (currentEndTime.getHours() < 7) {
-                                                currentEndTime.setDate(currentEndTime.getDate() - 1);
-                                                currentEndTime.setHours(17, 0, 0, 0);
-                                            }
-                                            
-                                            if (oldStart.getTime() !== event.startDate.getTime()) {
-                                                changed = true;
-                                            }
-                                            
-                                            console.log(`Scheduled ${event.name}: ${newStart.toLocaleString()} - ${newEnd.toLocaleString()}`);
-                                        } catch (eventError) {
-                                            console.error('Error scheduling event:', event.name, eventError);
-                                        }
-                                    });
-                                });
-                                
-                                // Commit changes to the event store
-                                if (scheduler.eventStore) {
-                                    scheduler.eventStore.commit();
-                                }
-                                scheduler.refresh();
-                                
-                                // Adjust view to show all scheduled operations
-                                if (changed && events.length > 0) {
-                                    // Find earliest and latest dates
-                                    let minDate = new Date(events[0].startDate);
-                                    let maxDate = new Date(events[0].endDate);
-                                    
-                                    events.forEach(event => {
-                                        if (event.startDate < minDate) minDate = new Date(event.startDate);
-                                        if (event.endDate > maxDate) maxDate = new Date(event.endDate);
-                                    });
-                                    
-                                    // Add some padding to the view
-                                    minDate.setDate(minDate.getDate() - 1);
-                                    maxDate.setDate(maxDate.getDate() + 1);
-                                    
-                                    // Update scheduler view range
-                                    scheduler.setTimeSpan(minDate, maxDate);
-                                    
-                                    // Zoom to fit after a short delay
-                                    setTimeout(() => {
-                                        scheduler.zoomToFit();
-                                    }, 100);
-                                }
-                                
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                                updateStatus();
-                                
-                                const message = changed ? 
-                                    'Backward scheduling applied - working back from due date!' : 
-                                    'Schedule already optimized backwards!';
-                                
-                                const statusElement = document.getElementById('operationCount');
-                                const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: blue; font-weight: bold;">${message}</span>`;
-                                
-                                setTimeout(() => {
-                                    statusElement.textContent = originalText;
-                                    updateStatus();
-                                }, 3000);
-                                
-                            } catch (error) {
-                                console.error('Backward scheduling error:', error.message || error);
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                                
-                                // Show error in status bar
-                                const statusElement = document.getElementById('operationCount');
-                                const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: red;">Backward scheduling failed - check console</span>`;
-                                
-                                setTimeout(() => {
-                                    statusElement.textContent = originalText;
-                                    updateStatus();
-                                }, 3000);
-                            }
-                        }, 300);
-                    });
-                });
-                
-                // Drum Scheduling Algorithm (Theory of Constraints)
-                document.getElementById('drumBtn').addEventListener('click', () => {
-                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
                     
-                    requestAnimationFrame(() => {
-                        setTimeout(() => {
-                            try {
-                                const events = [...scheduler.eventStore.records];
-                                
-                                // Identify the bottleneck resource (the one with most load)
-                                const resourceLoad = {};
-                                events.forEach(event => {
-                                    if (!resourceLoad[event.resourceId]) {
-                                        resourceLoad[event.resourceId] = 0;
-                                    }
-                                    resourceLoad[event.resourceId] += event.duration;
-                                });
-                                
-                                // Find the drum (bottleneck resource)
-                                let drumResourceId = null;
-                                let maxLoad = 0;
-                                Object.entries(resourceLoad).forEach(([resourceId, load]) => {
-                                    if (load > maxLoad) {
-                                        maxLoad = load;
-                                        drumResourceId = resourceId;
-                                    }
-                                });
-                                
-                                if (!drumResourceId) return;
-                                
-                                let changed = false;
-                                const baseDate = new Date();
-                                baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
-                                
-                                // Step 1: Schedule the drum (bottleneck) resource optimally
-                                const drumEvents = events.filter(e => e.resourceId === drumResourceId);
-                                let drumTime = new Date(baseDate);
-                                
-                                drumEvents.sort((a, b) => b.duration - a.duration); // Longest jobs first
-                                
-                                drumEvents.forEach(event => {
-                                    const oldStart = new Date(event.startDate);
-                                    event.startDate = new Date(drumTime);
-                                    
-                                    const durationMs = event.duration * 60 * 60 * 1000;
-                                    drumTime = new Date(event.startDate.getTime() + durationMs);
-                                    drumTime.setMinutes(drumTime.getMinutes() + 15); // Small buffer
-                                    
-                                    if (oldStart.getTime() !== event.startDate.getTime()) {
-                                        changed = true;
-                                    }
-                                });
-                                
-                                // Step 2: Schedule feeding resources (before the drum)
-                                const feedingResources = events.filter(e => e.resourceId !== drumResourceId);
-                                const resourceSchedules = {};
-                                
-                                feedingResources.forEach(event => {
-                                    if (!resourceSchedules[event.resourceId]) {
-                                        // Start feeding resources 2 hours before drum
-                                        const feedTime = new Date(baseDate);
-                                        feedTime.setHours(5, 0, 0, 0);
-                                        resourceSchedules[event.resourceId] = feedTime;
-                                    }
-                                    
-                                    const oldStart = new Date(event.startDate);
-                                    event.startDate = new Date(resourceSchedules[event.resourceId]);
-                                    
-                                    const durationMs = event.duration * 60 * 60 * 1000;
-                                    resourceSchedules[event.resourceId] = new Date(
-                                        event.startDate.getTime() + durationMs + 30 * 60 * 1000
-                                    );
-                                    
-                                    if (oldStart.getTime() !== event.startDate.getTime()) {
-                                        changed = true;
-                                    }
-                                });
-                                
-                                scheduler.refresh();
-                                
-                                // Adjust view to show all scheduled operations
-                                if (changed && events.length > 0) {
-                                    // Find earliest and latest dates
-                                    let minDate = new Date(events[0].startDate);
-                                    let maxDate = new Date(events[0].endDate);
-                                    
-                                    events.forEach(event => {
-                                        if (event.startDate < minDate) minDate = new Date(event.startDate);
-                                        if (event.endDate > maxDate) maxDate = new Date(event.endDate);
-                                    });
-                                    
-                                    // Add some padding to the view
-                                    minDate.setDate(minDate.getDate() - 1);
-                                    maxDate.setDate(maxDate.getDate() + 1);
-                                    
-                                    // Update scheduler view range
-                                    scheduler.setTimeSpan(minDate, maxDate);
-                                    
-                                    // Zoom to fit after a short delay
-                                    setTimeout(() => {
-                                        scheduler.zoomToFit();
-                                    }, 100);
-                                }
-                                
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                                updateStatus();
-                                
-                                const drumResource = scheduler.resourceStore.getById(drumResourceId);
-                                const drumName = drumResource ? drumResource.name : 'Unknown';
-                                const message = changed ? 
-                                    `Drum scheduling applied - optimized around bottleneck: ${drumName}!` : 
-                                    'Schedule already optimized using drum method!';
-                                
-                                const statusElement = document.getElementById('operationCount');
-                                const originalText = statusElement.textContent;
-                                statusElement.innerHTML = `<span style="color: purple; font-weight: bold;">${message}</span>`;
-                                
-                                setTimeout(() => {
-                                    statusElement.textContent = originalText;
-                                    updateStatus();
-                                }, 3000);
-                                
-                            } catch (error) {
-                                console.error('Drum scheduling error:', error);
-                                document.getElementById('loadingOverlay').style.display = 'none';
-                            }
-                        }, 300);
+                    const resourceEvents = {};
+                    events.forEach(event => {
+                        if (!resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId] = [];
+                        }
+                        resourceEvents[event.resourceId].push(event);
                     });
-                });
+                    
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId];
+                        let nextAvailableTime = new Date(baseDate);
+                        
+                        resEvents.forEach(event => {
+                            event.startDate = new Date(nextAvailableTime);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
+                        });
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
                 
-                // Listen to scheduler events
-                scheduler.on('eventdrop', updateStatus);
-                scheduler.on('eventresizeend', updateStatus);
-                scheduler.on('aftereventadd', updateStatus);
-                scheduler.on('aftereventremove', updateStatus);
+                async function alapScheduling() {
+                    // Backward scheduling - pack operations as late as possible
+                    const events = [...scheduler.eventStore.records];
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + 5); // 5 days from now
+                    dueDate.setHours(17, 0, 0, 0); // 5 PM
+                    
+                    const resourceEvents = {};
+                    events.forEach(event => {
+                        if (!resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId] = [];
+                        }
+                        resourceEvents[event.resourceId].push(event);
+                    });
+                    
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId];
+                        let currentEndTime = new Date(dueDate);
+                        
+                        resEvents.reverse().forEach(event => {
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            const newEnd = new Date(currentEndTime);
+                            const newStart = new Date(newEnd.getTime() - durationMs);
+                            
+                            // Ensure within working hours
+                            if (newStart.getHours() < 7) {
+                                newEnd.setDate(newEnd.getDate() - 1);
+                                newEnd.setHours(17, 0, 0, 0);
+                                newStart.setTime(newEnd.getTime() - durationMs);
+                            }
+                            
+                            event.startDate = newStart;
+                            event.endDate = newEnd;
+                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000);
+                        });
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
                 
-                // Theme toggle functionality
-                let isDarkMode = false;
-                const themeToggleBtn = document.getElementById('themeToggle');
-                const themeLink = document.getElementById('scheduler-theme');
+                async function criticalPathScheduling() {
+                    // Identify and optimize critical path
+                    const events = [...scheduler.eventStore.records];
+                    const dependencies = scheduler.dependencyStore?.records || [];
+                    
+                    // Simple implementation: prioritize longest chain
+                    const eventMap = new Map(events.map(e => [e.id, e]));
+                    const criticalEvents = new Set();
+                    
+                    // Find events with no successors (end events)
+                    const endEvents = events.filter(event => 
+                        !dependencies.some(dep => dep.fromEvent === event.id)
+                    );
+                    
+                    // Mark critical path (simplified)
+                    endEvents.forEach(event => {
+                        criticalEvents.add(event.id);
+                        // Trace back through dependencies
+                        let current = event;
+                        while (current) {
+                            const prevDep = dependencies.find(d => d.toEvent === current.id);
+                            if (prevDep && eventMap.has(prevDep.fromEvent)) {
+                                current = eventMap.get(prevDep.fromEvent);
+                                criticalEvents.add(current.id);
+                            } else {
+                                current = null;
+                            }
+                        }
+                    });
+                    
+                    // Schedule critical path first
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0);
+                    let currentTime = new Date(baseDate);
+                    
+                    events.forEach(event => {
+                        if (criticalEvents.has(event.id)) {
+                            event.startDate = new Date(currentTime);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        }
+                    });
+                    
+                    // Schedule non-critical after
+                    events.forEach(event => {
+                        if (!criticalEvents.has(event.id)) {
+                            event.startDate = new Date(currentTime);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        }
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
                 
-                themeToggleBtn.addEventListener('click', () => {
-                    isDarkMode = !isDarkMode;
-                    if (isDarkMode) {
-                        // Apply dark theme using CSS filters
-                        themeToggleBtn.innerHTML = '☀️ Light Mode';
-                        document.body.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
-                        document.body.classList.add('dark-theme');
-                    } else {
-                        themeToggleBtn.innerHTML = '🌙 Dark Mode';
-                        document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                        document.body.classList.remove('dark-theme');
-                    }
-                });
+                async function levelResourcesScheduling() {
+                    // Balance workload across resources
+                    const events = [...scheduler.eventStore.records];
+                    const resources = [...scheduler.resourceStore.records];
+                    
+                    // Calculate total duration per resource
+                    const resourceLoad = {};
+                    resources.forEach(r => resourceLoad[r.id] = 0);
+                    events.forEach(e => {
+                        if (resourceLoad[e.resourceId] !== undefined) {
+                            resourceLoad[e.resourceId] += e.duration;
+                        }
+                    });
+                    
+                    // Find average load
+                    const totalLoad = Object.values(resourceLoad).reduce((a, b) => a + b, 0);
+                    const avgLoad = totalLoad / resources.length;
+                    
+                    // Redistribute events to balance load
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0);
+                    
+                    const resourceSchedules = {};
+                    resources.forEach(r => {
+                        resourceSchedules[r.id] = new Date(baseDate);
+                    });
+                    
+                    // Sort events by duration (largest first)
+                    events.sort((a, b) => b.duration - a.duration);
+                    
+                    events.forEach(event => {
+                        // Find resource with least load
+                        let minResourceId = event.resourceId;
+                        let minTime = resourceSchedules[minResourceId];
+                        
+                        Object.entries(resourceSchedules).forEach(([resId, time]) => {
+                            if (time < minTime) {
+                                minTime = time;
+                                minResourceId = resId;
+                            }
+                        });
+                        
+                        // Can reassign if resource compatible (simplified - keep original for now)
+                        event.startDate = new Date(resourceSchedules[event.resourceId]);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
                 
-                // Initial status update
+                async function drumScheduling() {
+                    // Theory of Constraints - optimize around bottleneck
+                    const events = [...scheduler.eventStore.records];
+                    
+                    // Find bottleneck resource (most loaded)
+                    const resourceLoad = {};
+                    events.forEach(event => {
+                        if (!resourceLoad[event.resourceId]) {
+                            resourceLoad[event.resourceId] = 0;
+                        }
+                        resourceLoad[event.resourceId] += event.duration;
+                    });
+                    
+                    let drumResourceId = null;
+                    let maxLoad = 0;
+                    Object.entries(resourceLoad).forEach(([resourceId, load]) => {
+                        if (load > maxLoad) {
+                            maxLoad = load;
+                            drumResourceId = resourceId;
+                        }
+                    });
+                    
+                    if (!drumResourceId) return;
+                    
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0);
+                    
+                    // Schedule drum resource optimally
+                    const drumEvents = events.filter(e => e.resourceId === drumResourceId);
+                    let drumTime = new Date(baseDate);
+                    
+                    drumEvents.sort((a, b) => b.duration - a.duration); // Longest first
+                    
+                    drumEvents.forEach(event => {
+                        event.startDate = new Date(drumTime);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000);
+                    });
+                    
+                    // Schedule feeding resources
+                    const feedingEvents = events.filter(e => e.resourceId !== drumResourceId);
+                    const resourceSchedules = {};
+                    
+                    feedingEvents.forEach(event => {
+                        if (!resourceSchedules[event.resourceId]) {
+                            const feedTime = new Date(baseDate);
+                            feedTime.setHours(6, 0, 0, 0); // Start earlier
+                            resourceSchedules[event.resourceId] = feedTime;
+                        }
+                        
+                        event.startDate = new Date(resourceSchedules[event.resourceId]);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
+                
+                // Initialize status updates
                 updateStatus();
                 
-                // Fit to view after a short delay to ensure proper rendering
+                // Periodic status refresh
+                setInterval(updateStatus, 30000); // Update every 30 seconds
+                
+                // Initial zoom to fit
                 setTimeout(() => {
                     scheduler.zoomToFit();
                 }, 100);
