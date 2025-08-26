@@ -161,11 +161,11 @@ export default function EnterpriseMapPage() {
     },
   });
 
-  const handleAlgorithmChange = (plantId: number | undefined, algorithmId: number) => {
+  const handleAlgorithmChange = (plantId: number | undefined, value: string) => {
     if (!plantId) return;
     
-    const finalAlgorithmId = algorithmId || null;
-    updatePlantAlgorithm.mutate({ plantId, algorithmId: finalAlgorithmId });
+    const algorithmId = value === "none" ? null : parseInt(value);
+    updatePlantAlgorithm.mutate({ plantId, algorithmId });
   };
 
   // Mock supply chain connections
@@ -1369,17 +1369,17 @@ export default function EnterpriseMapPage() {
                                 Algorithm:
                               </Label>
                               <Select 
-                                defaultValue={selectedPlant?.defaultAlgorithmId?.toString() || ""}
+                                defaultValue={selectedPlant?.defaultAlgorithmId?.toString() || "none"}
                                 onValueChange={(value) => {
                                   // Handle algorithm change
-                                  handleAlgorithmChange(selectedPlant?.id, parseInt(value));
+                                  handleAlgorithmChange(selectedPlant?.id, value);
                                 }}
                               >
                                 <SelectTrigger className="w-[250px]">
                                   <SelectValue placeholder="Select default algorithm" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">No default algorithm</SelectItem>
+                                  <SelectItem value="none">No default algorithm</SelectItem>
                                   {algorithms && algorithms.map((algorithm: any) => (
                                     <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
                                       {algorithm.displayName || algorithm.name}
