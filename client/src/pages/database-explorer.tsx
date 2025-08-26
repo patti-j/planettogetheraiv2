@@ -86,7 +86,8 @@ export default function DatabaseExplorer() {
   // State management
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [viewMode, setViewMode] = useState<'list' | 'schema' | 'relations' | 'data'>('list');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [tableSearchTerm, setTableSearchTerm] = useState('');
+  const [dataSearchTerm, setDataSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [sortBy, setSortBy] = useState('');
@@ -110,7 +111,7 @@ export default function DatabaseExplorer() {
 
   // Fetch table data when viewing data
   const { data: tableDataRaw, isLoading: dataLoading, refetch: refetchData } = useQuery({
-    queryKey: [`/api/database/tables/${selectedTable}/data?page=${currentPage}&limit=${pageSize}`, searchTerm, sortBy, sortOrder, filters],
+    queryKey: [`/api/database/tables/${selectedTable}/data?page=${currentPage}&limit=${pageSize}`, dataSearchTerm, sortBy, sortOrder, filters],
     enabled: !!selectedTable && viewMode === 'data'
   });
   const tableData = tableDataRaw as TableData;
@@ -192,7 +193,7 @@ export default function DatabaseExplorer() {
 
   // Filter tables based on search
   const filteredTables = tables.filter((table: DatabaseTable) =>
-    table && table.name && table.name.toLowerCase().includes(searchTerm.toLowerCase())
+    table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
   );
 
   // Get data type badge color
@@ -237,8 +238,8 @@ export default function DatabaseExplorer() {
           <Input
             key="mobile-table-search"
             placeholder="Search tables..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={tableSearchTerm}
+            onChange={(e) => setTableSearchTerm(e.target.value)}
             className="h-8"
             autoComplete="off"
             autoCorrect="off"
@@ -302,8 +303,8 @@ export default function DatabaseExplorer() {
                   <h2 className="text-lg font-semibold mb-3">Database Tables</h2>
                   <Input
                     placeholder="Search tables..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={tableSearchTerm}
+                    onChange={(e) => setTableSearchTerm(e.target.value)}
                     className="h-8"
                     autoComplete="off"
                     autoCorrect="off"
@@ -503,8 +504,8 @@ export default function DatabaseExplorer() {
                           <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
                           <Input
                             placeholder="Search data..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={dataSearchTerm}
+                            onChange={(e) => setDataSearchTerm(e.target.value)}
                             className="h-8 text-sm flex-1"
                           />
                         </div>
@@ -826,8 +827,8 @@ export default function DatabaseExplorer() {
                           <Search className="h-4 w-4 text-gray-500" />
                           <Input
                             placeholder="Search data..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={dataSearchTerm}
+                            onChange={(e) => setDataSearchTerm(e.target.value)}
                             className="w-64"
                           />
                           <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
