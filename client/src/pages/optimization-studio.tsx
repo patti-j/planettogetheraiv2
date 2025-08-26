@@ -1730,44 +1730,78 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
         {/* Main Content */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <TabsList className="grid w-full sm:w-auto grid-cols-4 sm:grid-cols-8 text-xs sm:text-sm h-auto sm:h-10 p-1 gap-1">
-              <TabsTrigger value="algorithms" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <span className="hidden sm:inline">Algorithms</span>
-                <span className="sm:hidden">Algo</span>
-              </TabsTrigger>
-              <TabsTrigger value="development" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <span className="hidden sm:inline">Development</span>
-                <span className="sm:hidden">Dev</span>
-              </TabsTrigger>
-              <TabsTrigger value="testing" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <span className="hidden sm:inline">Testing</span>
-                <span className="sm:hidden">Test</span>
-              </TabsTrigger>
-              <TabsTrigger value="deployments" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <span className="hidden sm:inline">Deployments</span>
-                <span className="sm:hidden">Deploy</span>
-              </TabsTrigger>
-              <TabsTrigger value="governance" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <Shield className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Governance</span>
-                <span className="sm:hidden">Gov</span>
-              </TabsTrigger>
-              <TabsTrigger value="approvals" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Approvals</span>
-                <span className="sm:hidden">App</span>
-              </TabsTrigger>
-              <TabsTrigger value="versions" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <FileText className="w-3 h-3 mr-1" />
-                <span className="hidden sm:inline">Versions</span>
-                <span className="sm:hidden">Ver</span>
-              </TabsTrigger>
-              <TabsTrigger value="extensions" className="px-1 sm:px-4 py-1 sm:py-2 text-xs sm:text-sm">
-                <span className="hidden sm:inline">Extensions</span>
-                <span className="sm:hidden">Ext</span>
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex flex-col gap-2">
+            {/* Desktop tabs - use scrollable horizontal layout */}
+            <div className="hidden lg:block overflow-x-auto">
+              <TabsList className="inline-flex h-10 items-center justify-start p-1 text-muted-foreground bg-muted rounded-md min-w-max">
+                <TabsTrigger value="algorithms" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  Algorithms
+                </TabsTrigger>
+                <TabsTrigger value="development" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  Development
+                </TabsTrigger>
+                <TabsTrigger value="testing" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  Testing
+                </TabsTrigger>
+                <TabsTrigger value="deployments" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  Deployments
+                </TabsTrigger>
+                <TabsTrigger value="governance" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Governance
+                </TabsTrigger>
+                <TabsTrigger value="approvals" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Approvals
+                </TabsTrigger>
+                <TabsTrigger value="versions" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Versions
+                </TabsTrigger>
+                <TabsTrigger value="extensions" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
+                  Extensions
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Mobile/Tablet tabs - stacked layout */}
+            <div className="lg:hidden">
+              <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mb-2">
+                <TabsTrigger value="algorithms" className="px-2 py-2 text-xs font-medium">
+                  Algorithms
+                </TabsTrigger>
+                <TabsTrigger value="development" className="px-2 py-2 text-xs font-medium">
+                  Development
+                </TabsTrigger>
+              </TabsList>
+              <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mb-2">
+                <TabsTrigger value="testing" className="px-2 py-2 text-xs font-medium">
+                  Testing
+                </TabsTrigger>
+                <TabsTrigger value="deployments" className="px-2 py-2 text-xs font-medium">
+                  Deployments
+                </TabsTrigger>
+              </TabsList>
+              <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1 mb-2">
+                <TabsTrigger value="governance" className="px-2 py-2 text-xs font-medium">
+                  <Shield className="w-3 h-3 mr-1" />
+                  Gov
+                </TabsTrigger>
+                <TabsTrigger value="approvals" className="px-2 py-2 text-xs font-medium">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  App
+                </TabsTrigger>
+              </TabsList>
+              <TabsList className="grid w-full grid-cols-2 h-auto p-1 gap-1">
+                <TabsTrigger value="versions" className="px-2 py-2 text-xs font-medium">
+                  <FileText className="w-3 h-3 mr-1" />
+                  Ver
+                </TabsTrigger>
+                <TabsTrigger value="extensions" className="px-2 py-2 text-xs font-medium">
+                  Ext
+                </TabsTrigger>
+              </TabsList>
+            </div>
             
             {selectedTab === "algorithms" && (
               <div className="flex flex-col sm:flex-row gap-2 flex-1">
