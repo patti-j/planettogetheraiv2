@@ -528,9 +528,9 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Main Control and Monitoring Section */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
             {/* Optimization Control Panel */}
-            <div className="xl:col-span-2">
+            <div className="lg:col-span-3">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -639,7 +639,7 @@ export default function AutonomousOptimizationPage() {
             </div>
 
             {/* Side Panel */}
-            <div className="space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* Plant Optimization Status */}
               <Card>
                 <CardHeader>
@@ -652,23 +652,23 @@ export default function AutonomousOptimizationPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[200px]">
-                    <div className="space-y-2">
+                  <ScrollArea className="h-[240px]">
+                    <div className="space-y-3">
                       {plants.map((plant: any) => {
                         const settings = plantSettings[plant.id];
                         return (
                           <div 
                             key={plant.id} 
-                            className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
                             onClick={() => setShowPlantSettings(true)}
                           >
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full ${
                                 settings?.enabled ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
                               }`} />
                               <div>
                                 <p className="font-medium text-sm">{plant.name}</p>
-                                <p className="text-xs text-gray-500">{plant.city}</p>
+                                <p className="text-xs text-gray-500">{plant.location || plant.city}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -730,26 +730,27 @@ export default function AutonomousOptimizationPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[250px]">
-                    <div className="space-y-2">
+                  <ScrollArea className="h-[320px]">
+                    <div className="space-y-3">
                       {optimizationHistory.map((item) => (
-                        <div key={item.id} className="flex items-start gap-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
-                          <div className={`p-1 rounded-full ${
+                        <div key={item.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <div className={`p-1.5 rounded-full ${
                             item.status === 'success' ? 'bg-green-100' : 'bg-yellow-100'
                           }`}>
                             {item.status === 'success' ? 
-                              <CheckCircle className="w-3 h-3 text-green-600" /> :
-                              <AlertTriangle className="w-3 h-3 text-yellow-600" />
+                              <CheckCircle className="w-4 h-4 text-green-600" /> :
+                              <AlertTriangle className="w-4 h-4 text-yellow-600" />
                             }
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium text-sm">{item.type}</p>
-                              <Badge variant="secondary" className="text-xs">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-medium text-sm truncate">{item.type}</p>
+                              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
                                 {item.impact}
                               </Badge>
                             </div>
-                            <p className="text-xs text-gray-500">{item.plant} • {item.timestamp}</p>
+                            <p className="text-xs text-gray-500 truncate">{item.plant}</p>
+                            <p className="text-xs text-gray-400 mt-1">{item.timestamp}</p>
                           </div>
                         </div>
                       ))}
