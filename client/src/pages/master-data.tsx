@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Save, Trash2, Upload, Download, Search,
   Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText,
-  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap, ChevronRight
+  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap, ChevronRight,
+  Route, ArrowRight, Layers, Clock, Settings
 } from 'lucide-react';
 import {
   Table,
@@ -52,6 +53,179 @@ interface DataTableProps {
   onDelete: (id: number) => void;
   isLoading?: boolean;
   onShowAiAssistant?: () => void;
+}
+
+interface ManufacturingPath {
+  id: number;
+  operationNumber: string;
+  operationName: string;
+  workCenter: string;
+  estimatedDuration: number;
+  status: string;
+  description?: string;
+}
+
+interface ManufacturingPathViewerProps {
+  jobId: number;
+  jobDescription: string;
+  onClose: () => void;
+}
+
+interface HierarchicalDataTableProps extends DataTableProps {
+  setSelectedJobForPath?: (job: { id: number; description: string }) => void;
+}
+
+// Manufacturing Path Viewer Component
+function ManufacturingPathViewer({ jobId, jobDescription, onClose }: ManufacturingPathViewerProps) {
+  const [pathData, setPathData] = useState<ManufacturingPath[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchManufacturingPath = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiRequest('GET', `/api/jobs/${jobId}/manufacturing-path`);
+        const data = await response.json();
+        setPathData(data);
+      } catch (error) {
+        console.error('Failed to fetch manufacturing path:', error);
+        // Fallback to operations if manufacturing path endpoint doesn't exist
+        try {
+          const operationsResponse = await apiRequest('GET', `/api/jobs/${jobId}/operations`);
+          const operations = await operationsResponse.json();
+          // Convert operations to manufacturing path format
+          const convertedPath = operations.map((op: any, index: number) => ({
+            id: op.id,
+            operationNumber: String(index + 1).padStart(4, '0'),
+            operationName: op.name || op.operationName || `Operation ${index + 1}`,
+            workCenter: op.workCenter || op.resourceName || 'Not Assigned',
+            estimatedDuration: op.duration || op.estimatedDuration || 0,
+            status: op.status || 'planned',
+            description: op.description || op.notes || ''
+          }));
+          setPathData(convertedPath);
+        } catch (fallbackError) {
+          console.error('Failed to fetch operations:', fallbackError);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchManufacturingPath();
+  }, [jobId]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'scheduled': return 'bg-yellow-100 text-yellow-800';
+      case 'planned': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Route className="w-5 h-5 text-blue-500" />
+            Manufacturing Path - {jobDescription}
+          </DialogTitle>
+          <DialogDescription>
+            View the complete manufacturing routing and operation sequence for this job
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-600">Loading manufacturing path...</span>
+            </div>
+          ) : pathData.length === 0 ? (
+            <div className="text-center py-8">
+              <Layers className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-600">No manufacturing operations found for this job</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Path Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{pathData.length}</div>
+                  <div className="text-sm text-gray-600">Operations</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {Math.round(pathData.reduce((sum, op) => sum + op.estimatedDuration, 0))}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Hours</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {new Set(pathData.map(op => op.workCenter)).size}
+                  </div>
+                  <div className="text-sm text-gray-600">Work Centers</div>
+                </div>
+              </div>
+
+              {/* Manufacturing Path Flow */}
+              <div className="space-y-3">
+                {pathData.map((operation, index) => (
+                  <div key={operation.id} className="flex items-center">
+                    {/* Operation Card */}
+                    <div className="flex-1 border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
+                            {operation.operationNumber}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{operation.operationName}</h4>
+                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                              <span className="flex items-center gap-1">
+                                <Settings className="w-3 h-3" />
+                                {operation.workCenter}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {operation.estimatedDuration}h
+                              </span>
+                            </div>
+                            {operation.description && (
+                              <p className="text-sm text-gray-500 mt-1">{operation.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(operation.status)}>
+                          {operation.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Arrow connector (except for last item) */}
+                    {index < pathData.length - 1 && (
+                      <div className="flex items-center justify-center w-8 h-8 mx-2">
+                        <ArrowRight className="w-5 h-5 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 interface Column {
@@ -516,7 +690,8 @@ function HierarchicalDataTable({
   onCreate, 
   onDelete,
   isLoading,
-  onShowAiAssistant
+  onShowAiAssistant,
+  setSelectedJobForPath
 }: HierarchicalDataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [hierarchicalData, setHierarchicalData] = useState<Record<string, any[]>>({});
@@ -707,13 +882,23 @@ function HierarchicalDataTable({
                     </TableCell>
                   ))}
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onDelete(row.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedJobForPath({ id: row.id, description: row.description || row.externalId || `Job ${row.id}` })}
+                        title="View Manufacturing Path"
+                      >
+                        <Route className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onDelete(row.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
 
@@ -867,6 +1052,7 @@ export default function MasterDataPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [selectedJobForPath, setSelectedJobForPath] = useState<{ id: number; description: string } | null>(null);
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -1240,6 +1426,7 @@ export default function MasterDataPage() {
                     onDelete={(id) => deleteMutation.mutate(id)}
                     isLoading={isLoading}
                     onShowAiAssistant={() => setShowAiAssistant(true)}
+                    setSelectedJobForPath={setSelectedJobForPath}
                   />
                 ) : (
                   <EditableDataTable
@@ -1422,6 +1609,15 @@ export default function MasterDataPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manufacturing Path Viewer */}
+      {selectedJobForPath && (
+        <ManufacturingPathViewer
+          jobId={selectedJobForPath.id}
+          jobDescription={selectedJobForPath.description}
+          onClose={() => setSelectedJobForPath(null)}
+        />
+      )}
     </div>
   );
 }

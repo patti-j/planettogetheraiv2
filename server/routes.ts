@@ -2491,6 +2491,50 @@ Rules:
     }
   });
 
+  // Manufacturing Path endpoint
+  app.get("/api/jobs/:id/manufacturing-path", async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      console.log('Manufacturing path request for job:', jobId);
+      
+      // First get the job to ensure it exists
+      const job = await db.select().from(schema.ptJobs).where(eq(schema.ptJobs.id, jobId)).limit(1);
+      if (job.length === 0) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      // Get operations for this job directly
+      const operations = await db.select()
+        .from(schema.ptJobOperations)
+        .where(eq(schema.ptJobOperations.jobId, String(jobId)))
+        .orderBy(schema.ptJobOperations.operationId);
+
+      console.log('Found operations:', operations.length);
+
+      // Transform operations to manufacturing path format
+      const manufacturingPath = operations.map((operation, index) => ({
+        id: operation.id,
+        operationNumber: String(index + 1).padStart(4, '0'),
+        operationName: operation.name || `Operation ${operation.operationId}`,
+        workCenter: operation.scheduledResourceId || 'Not Assigned',
+        estimatedDuration: Math.round((parseFloat(operation.setupHours || '0') + parseFloat(operation.runHrs || '0')) || 1),
+        status: 'planned',
+        description: operation.description || `${operation.name || 'Operation'}`,
+        operationId: operation.operationId,
+        scheduledStart: operation.scheduledStart,
+        scheduledEnd: operation.scheduledEnd
+      }));
+
+      // Sort by operation sequence
+      manufacturingPath.sort((a, b) => a.operationNumber.localeCompare(b.operationNumber));
+
+      res.json(manufacturingPath);
+    } catch (error) {
+      console.error('Error fetching manufacturing path:', error);
+      res.status(500).json({ message: "Failed to fetch manufacturing path" });
+    }
+  });
+
   app.post("/api/production-orders", createSafeHandler('Create Production Order')(async (req, res) => {
     const parseResult = insertProductionOrderSchema.safeParse(req.body);
     if (!parseResult.success) {
