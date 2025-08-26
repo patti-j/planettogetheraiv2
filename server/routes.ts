@@ -24510,12 +24510,11 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     billsOfMaterial: schema.billsOfMaterial,
     routings: schema.routings,
     recipes: schema.recipes,
-    stocks: schema.stocks,
+    stockItems: schema.stockItems,  // Fixed: Changed from 'stocks' to 'stockItems' to match entityTypes array
     storageLocations: schema.storageLocations,
     departments: schema.departments,
     shifts: schema.shifts,
     holidays: schema.holidays,
-    stockItems: schema.stockItems,
     inventoryLots: schema.inventoryLots,
     recipeOperations: schema.recipeOperations,
     recipePhases: schema.recipePhases,
@@ -24589,7 +24588,7 @@ Generate a complete ${targetType} configuration that matches the user's requirem
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o', // Using GPT-4o as the latest available model
+          model: 'gpt-4o', // Using GPT-4o for now until GPT-5 API compatibility is confirmed
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -24636,24 +24635,45 @@ Generate a complete ${targetType} configuration that matches the user's requirem
       
       console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
       
-      const entityTypes = ['items', 'resources', 'capabilities', 'jobs', 'sales-orders', 'job-templates', 'manufacturing-orders', 'plants', 'customers', 'vendors'];
+      const entityTypes = [
+        'items', 
+        'customers', 
+        'vendors', 
+        'capabilities', 
+        'resources', 
+        'plants', 
+        'workCenters',
+        'stockItems',
+        'jobs', 
+        'sales-orders', 
+        'manufacturing-orders',
+        'job-templates',
+        'billsOfMaterial',
+        'routings',
+        'recipes'
+      ];
       const results = {};
       
       // Process entities with timeout and better error handling
       const processEntity = async (entityType: string) => {
         try {
           const contextDescription = {
-            items: "inventory items, products, and materials with properties like name, SKU, category, cost, lead time",
-            resources: "PT manufacturing resources like machines, tools, workstations with efficiency and cost metrics", 
-            capabilities: "PT manufacturing capabilities and processes with resource assignments",
-            jobs: "PT production jobs with job numbers, priorities, quantities, and due dates",
-            'sales-orders': "sales orders with customer information, order numbers, quantities, and delivery dates",
-            'job-templates': "PT manufacturing orders serving as job templates with standard processes",
-            'manufacturing-orders': "PT manufacturing orders with routing, BOM, and operation sequences",
-            plants: "manufacturing plants and facilities with locations and operational data",
-            customers: "customer records with contact details and business information",
-            vendors: "vendor and supplier information with payment terms and contacts"
-          }[entityType] || "data records";
+            items: "diverse manufacturing inventory items including raw materials, components, finished products, packaging materials, and chemicals with properties like name, SKU, category, unit cost, supplier, lead time, safety stock levels, and ABC classification",
+            customers: "comprehensive customer database with company names, contact persons, addresses, phone numbers, emails, payment terms, credit limits, shipping preferences, industry types, and account managers",
+            vendors: "complete vendor/supplier records including company details, contact information, payment terms, lead times, quality ratings, certifications, product categories supplied, and performance metrics",
+            capabilities: "manufacturing capabilities and processes including machining, assembly, packaging, quality testing, chemical processing, with required skills, equipment, and capacity constraints",
+            resources: "manufacturing resources like CNC machines, packaging lines, reactors, conveyors, forklifts, with efficiency ratings, hourly costs, capacity, maintenance schedules, and operational status", 
+            plants: "manufacturing facilities with locations, addresses, operational capacity, production lines, warehouse space, utilities, certifications, and management contacts",
+            workCenters: "production work centers including machining stations, assembly lines, testing labs, packaging areas with capacity, labor requirements, and standard costs",
+            stockItems: "detailed stock/inventory records with current quantities, locations, lot numbers, expiration dates, quality status, and valuation methods",
+            jobs: "production jobs with unique job numbers, customer orders, product specifications, quantities, priorities, due dates, and routing requirements",
+            'sales-orders': "customer sales orders with order numbers, line items, quantities, pricing, delivery dates, shipping addresses, and special instructions",
+            'manufacturing-orders': "production orders with BOM requirements, routing sequences, labor and material costs, and quality specifications",
+            'job-templates': "standardized job templates with predefined operations, material lists, labor requirements, and quality checkpoints",
+            billsOfMaterial: "detailed BOMs showing parent-child relationships, component quantities, scrap factors, effective dates, and revision levels",
+            routings: "manufacturing routings with operation sequences, work centers, setup times, run times, and quality requirements",
+            recipes: "formulation recipes for chemical/pharmaceutical products with ingredients, quantities, process parameters, and quality specifications"
+          }[entityType] || "comprehensive data records";
 
           const systemPrompt = `You are a manufacturing data expert. Generate ${recordsPerTable} diverse, realistic ${contextDescription} for a comprehensive manufacturing system. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9. Create varied, realistic business data covering different categories, types, and use cases.`;
           
@@ -24678,14 +24698,14 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'gpt-4o',
+              model: 'gpt-4o', // Using GPT-4o for now until GPT-5 API compatibility is confirmed
               messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
               ],
               response_format: { type: "json_object" },
               temperature: 0.9,
-              max_tokens: 3000
+              max_tokens: 4000
             }),
           });
 
