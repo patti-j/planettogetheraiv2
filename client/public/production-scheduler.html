@@ -498,6 +498,10 @@
                     const algorithm = document.getElementById('schedulingAlgorithm').value;
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
+                    // Store current view settings to maintain consistent timeline
+                    const currentZoomLevel = scheduler.zoomLevel;
+                    const currentStartDate = scheduler.startDate;
+                    const currentEndDate = scheduler.endDate;
                     
                     requestAnimationFrame(() => {
                         setTimeout(async () => {
@@ -544,7 +548,10 @@
                                 
                                 // Refresh the scheduler
                                 scheduler.refresh();
-                                scheduler.zoomToFit();
+                                
+                                // Restore the original view settings to maintain consistent timeline
+                                scheduler.zoomLevel = currentZoomLevel;
+                                scheduler.setTimeSpan(currentStartDate, currentEndDate);
                                 
                                 // Hide loading and show success message
                                 document.getElementById('loadingOverlay').style.display = 'none';
