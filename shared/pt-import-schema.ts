@@ -1165,12 +1165,10 @@ export const ptForecastShipments = pgTable("pt_forecast_shipments", {
 export const ptJobSuccessorManufacturingOrders = pgTable("pt_job_successor_manufacturing_orders", {
   id: serial("id").primaryKey(),
   externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  moExternalId: text("mo_external_id"),
-  successorJobExternalId: text("successor_job_external_id"),
-  successorManufacturingOrderExternalId: text("successor_manufacturing_order_external_id"),
-  successorOperationExternalId: text("successor_operation_external_id"),
-  successorPathExternalId: text("successor_path_external_id"),
+  manufacturingOrderId: integer("manufacturing_order_id").references(() => ptManufacturingOrders.id),
+  successorManufacturingOrderId: integer("successor_manufacturing_order_id").references(() => ptManufacturingOrders.id),
+  successorOperationId: integer("successor_operation_id").references(() => ptJobOperations.id),
+  successorPathId: integer("successor_path_id").references(() => ptJobPaths.id),
   transferHrs: text("transfer_hrs"),
   usageQtyPerCycle: text("usage_qty_per_cycle"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1402,6 +1400,34 @@ export const ptJobPathsRelations = relations(ptJobPaths, ({ one }) => ({
 export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
   operations: many(ptJobOperations),
   jobPaths: many(ptJobPaths),
+  successorManufacturingOrders: many(ptJobSuccessorManufacturingOrders, { 
+    relationName: "successorManufacturingOrders" 
+  }),
+  predecessorManufacturingOrders: many(ptJobSuccessorManufacturingOrders, { 
+    relationName: "predecessorManufacturingOrders" 
+  }),
+}));
+
+// ptJobSuccessorManufacturingOrders relationships
+export const ptJobSuccessorManufacturingOrdersRelations = relations(ptJobSuccessorManufacturingOrders, ({ one }) => ({
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobSuccessorManufacturingOrders.manufacturingOrderId],
+    references: [ptManufacturingOrders.id],
+    relationName: "predecessorManufacturingOrders"
+  }),
+  successorManufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobSuccessorManufacturingOrders.successorManufacturingOrderId],
+    references: [ptManufacturingOrders.id],
+    relationName: "successorManufacturingOrders"
+  }),
+  successorOperation: one(ptJobOperations, {
+    fields: [ptJobSuccessorManufacturingOrders.successorOperationId],
+    references: [ptJobOperations.id],
+  }),
+  successorPath: one(ptJobPaths, {
+    fields: [ptJobSuccessorManufacturingOrders.successorPathId],
+    references: [ptJobPaths.id],
+  }),
 }));
 
 // ptJobs does NOT have direct relations to activities, materials, operations, or paths
