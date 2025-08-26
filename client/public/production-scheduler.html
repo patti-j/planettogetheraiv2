@@ -475,6 +475,29 @@
                     document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                 }
 
+                // Theme toggle handler
+                const themeToggle = document.getElementById('themeToggle');
+                let isDarkMode = localStorage.getItem('darkMode') === 'true';
+                
+                // Apply saved theme on load
+                if (isDarkMode) {
+                    document.body.classList.add('dark-theme');
+                    themeToggle.textContent = '☀️ Light Mode';
+                }
+                
+                themeToggle.addEventListener('click', () => {
+                    isDarkMode = !isDarkMode;
+                    document.body.classList.toggle('dark-theme');
+                    
+                    if (isDarkMode) {
+                        themeToggle.textContent = '☀️ Light Mode';
+                        localStorage.setItem('darkMode', 'true');
+                    } else {
+                        themeToggle.textContent = '🌙 Dark Mode';
+                        localStorage.setItem('darkMode', 'false');
+                    }
+                });
+                
                 // View preset selector
                 document.getElementById('viewPreset').addEventListener('change', (e) => {
                     scheduler.viewPreset = e.target.value;
