@@ -643,13 +643,26 @@ export default function AutonomousOptimizationPage() {
               {/* Plant Optimization Status */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Factory className="w-5 h-5" />
-                    Plant Status
-                  </CardTitle>
-                  <CardDescription>
-                    {currentMetrics.activePlants} of {currentMetrics.totalPlants} plants optimized
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Factory className="w-5 h-5" />
+                        Plant Status
+                      </CardTitle>
+                      <CardDescription>
+                        {currentMetrics.activePlants} of {currentMetrics.totalPlants} plants optimized
+                      </CardDescription>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowPlantSettings(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Configure
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[240px]">
