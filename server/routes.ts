@@ -24888,14 +24888,14 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
   });
 
   // Serve the pure JavaScript production scheduler page (no auth required for testing)
-  app.get("/production-schedule-js", (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'client/src/pages/production-schedule-js.html'));
+  app.get("/production-scheduler-js", (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/production-scheduler.html'));
   });
   
-  // Serve production scheduler module
-  app.get("/src/pages/production-scheduler-module.js", (req, res) => {
+  // Serve production scheduler JavaScript module
+  app.get("/production-scheduler.js", (req, res) => {
     res.type('application/javascript');
-    res.sendFile(path.join(process.cwd(), 'client/src/pages/production-scheduler-module.js'));
+    res.sendFile(path.join(process.cwd(), 'client/public/production-scheduler.js'));
   });
 
   // AI-powered data modification
