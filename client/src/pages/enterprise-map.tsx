@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 import {
   ComposableMap,
   Geographies,
@@ -126,6 +128,47 @@ export default function EnterpriseMapPage() {
   const { data: plants = [], isLoading } = useQuery<Plant[]>({
     queryKey: ['/api/plants'],
   });
+
+  // Fetch optimization algorithms
+  const { data: algorithms = [] } = useQuery({
+    queryKey: ['/api/optimization-algorithms'],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Mutation to update plant default algorithm
+  const updatePlantAlgorithm = useMutation({
+    mutationFn: async ({ plantId, algorithmId }: { plantId: number; algorithmId: number | null }) => {
+      return await apiRequest(`/api/plants/${plantId}/default-algorithm`, {
+        method: 'PATCH',
+        body: { defaultAlgorithmId: algorithmId },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Default algorithm updated successfully",
+      });
+      // Invalidate and refetch plants data
+      queryClient.invalidateQueries({ queryKey: ['/api/plants'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update default algorithm",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAlgorithmChange = (plantId: number | undefined, algorithmId: number) => {
+    if (!plantId) return;
+    
+    const finalAlgorithmId = algorithmId || null;
+    updatePlantAlgorithm.mutate({ plantId, algorithmId: finalAlgorithmId });
+  };
 
   // Mock supply chain connections
   const supplyChainConnections = [
@@ -1266,9 +1309,10 @@ export default function EnterpriseMapPage() {
                   </div>
                   
                   <Tabs defaultValue="metrics" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="metrics">Metrics</TabsTrigger>
                       <TabsTrigger value="performance">Performance</TabsTrigger>
+                      <TabsTrigger value="algorithm">Algorithm</TabsTrigger>
                       <TabsTrigger value="details">Details</TabsTrigger>
                     </TabsList>
                     
@@ -1310,6 +1354,89 @@ export default function EnterpriseMapPage() {
                           <Bar dataKey="value" fill="#3B82F6" radius={[8, 8, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
+                    </TabsContent>
+                    
+                    <TabsContent value="algorithm" className="mt-4">
+                      <div className="space-y-4">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                            Default Optimization Algorithm
+                          </h4>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                            Set the default algorithm that will be used for all optimization runs at this plant unless a user chooses a different one.
+                          </p>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                              <Label htmlFor="algorithm-select" className="text-sm font-medium">
+                                Algorithm:
+                              </Label>
+                              <Select 
+                                defaultValue={selectedPlant?.defaultAlgorithmId?.toString() || ""}
+                                onValueChange={(value) => {
+                                  // Handle algorithm change
+                                  handleAlgorithmChange(selectedPlant?.id, parseInt(value));
+                                }}
+                              >
+                                <SelectTrigger className="w-[250px]">
+                                  <SelectValue placeholder="Select default algorithm" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">No default algorithm</SelectItem>
+                                  {algorithms.map((algorithm: any) => (
+                                    <SelectItem key={algorithm.id} value={algorithm.id.toString()}>
+                                      {algorithm.displayName || algorithm.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Current: {selectedPlant?.defaultAlgorithmId ? 
+                                algorithms.find((a: any) => a.id === selectedPlant.defaultAlgorithmId)?.displayName || 'Unknown Algorithm' : 
+                                'No default algorithm set'
+                              }
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <Card className="p-3">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-green-600">
+                                {algorithms.filter((a: any) => a.status === 'approved').length}
+                              </div>
+                              <div className="text-xs text-gray-500">Approved Algorithms</div>
+                            </div>
+                          </Card>
+                          <Card className="p-3">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">
+                                {algorithms.filter((a: any) => a.isStandard).length}
+                              </div>
+                              <div className="text-xs text-gray-500">Standard Algorithms</div>
+                            </div>
+                          </Card>
+                        </div>
+                        
+                        <div className="border rounded-lg p-3">
+                          <h5 className="font-medium mb-2">Available Algorithms</h5>
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {algorithms.map((algorithm: any) => (
+                              <div key={algorithm.id} className="flex items-center justify-between text-sm">
+                                <span>{algorithm.displayName || algorithm.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={algorithm.status === 'approved' ? 'default' : 'secondary'}>
+                                    {algorithm.status}
+                                  </Badge>
+                                  {algorithm.isStandard && (
+                                    <Badge variant="outline">Standard</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </TabsContent>
                     
                     <TabsContent value="details" className="mt-4">

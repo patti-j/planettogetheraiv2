@@ -20,6 +20,7 @@ export const plants = pgTable("plants", {
   plantType: text("plant_type").default("manufacturing"), // manufacturing, distribution, warehouse, office
   capacity: jsonb("capacity").$type<Record<string, any>>().default({}),
   operationalMetrics: jsonb("operational_metrics").$type<Record<string, any>>().default({}),
+  defaultAlgorithmId: integer("default_algorithm_id"), // Default optimization algorithm for this plant
   createdAt: timestamp("created_at").defaultNow(),
 });
 
