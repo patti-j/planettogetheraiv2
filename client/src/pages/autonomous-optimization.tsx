@@ -119,37 +119,30 @@ export default function AutonomousOptimizationPage() {
   const queryClient = useQueryClient();
   
   // Fetch plants data
-  const { data: plants = [] as any[] } = useQuery({
+  const { data: plants = [], isLoading: plantsLoading } = useQuery({
     queryKey: ["/api/plants"],
   });
 
   // Fetch available algorithms for selection
-  const { data: algorithms = [] as any[] } = useQuery({
+  const { data: algorithms = [], isLoading: algorithmsLoading } = useQuery({
     queryKey: ['/api/optimization/algorithms'],
-    queryFn: async () => {
-      const response = await fetch('/api/optimization/algorithms');
-      if (!response.ok) throw new Error('Failed to fetch algorithms');
-      return response.json();
-    }
   });
 
   // Fetch existing plant optimization settings
   const { data: savedPlantSettings = {} } = useQuery({
     queryKey: ['/api/plant-optimization-settings'],
-    queryFn: async () => {
-      const response = await fetch('/api/plant-optimization-settings');
-      if (!response.ok) throw new Error('Failed to fetch plant settings');
-      return response.json();
-    }
+    retry: false, // Don't retry auth failures
+    enabled: false, // Disable for now since it's causing auth issues
   });
 
   // Initialize plant settings when plants data is loaded, merging with saved settings
   useEffect(() => {
-    if (plants.length > 0 && algorithms.length > 0 && Object.keys(plantSettings).length === 0) {
+    if (Array.isArray(plants) && plants.length > 0 && Array.isArray(algorithms) && Object.keys(plantSettings).length === 0) {
       const initialSettings: PlantOptimizationSettings = {};
       
       // Get default algorithms by category
       const getDefaultAlgorithm = (category: string) => {
+        if (!Array.isArray(algorithms)) return 'Standard Algorithm';
         const categoryAlgorithms = algorithms.filter((alg: any) => 
           alg.category?.toLowerCase().includes(category.toLowerCase()) || 
           alg.name?.toLowerCase().includes(category.toLowerCase())
@@ -654,9 +647,14 @@ export default function AutonomousOptimizationPage() {
                 <CardContent>
                   <ScrollArea className="h-[240px]">
                     <div className="space-y-3">
-                      {plants.map((plant: any) => {
-                        const settings = plantSettings[plant.id];
-                        return (
+                      {plantsLoading ? (
+                        <div className="text-center py-4 text-gray-500">Loading plants...</div>
+                      ) : !Array.isArray(plants) || plants.length === 0 ? (
+                        <div className="text-center py-4 text-gray-500">No plants found</div>
+                      ) : (
+                        plants.map((plant: any) => {
+                          const settings = plantSettings[plant.id];
+                          return (
                           <div 
                             key={plant.id} 
                             className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
@@ -682,8 +680,9 @@ export default function AutonomousOptimizationPage() {
                               }`} />
                             </div>
                           </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
                     </div>
                   </ScrollArea>
                 </CardContent>
@@ -806,13 +805,13 @@ export default function AutonomousOptimizationPage() {
                     </Button>
                   </div>
                   <Badge variant="default" className="bg-green-500">
-                    {Object.values(plantSettings).filter(s => s?.enabled).length} of {plants.length} Active
+                    {Object.values(plantSettings).filter(s => s?.enabled).length} of {Array.isArray(plants) ? plants.length : 0} Active
                   </Badge>
                 </div>
 
                 <ScrollArea className="h-[50vh] pr-4">
                   <div className="space-y-4">
-                    {plants.map((plant: any) => {
+                    {Array.isArray(plants) && plants.map((plant: any) => {
                       const settings = plantSettings[plant.id];
                       if (!settings) return null;
                       
@@ -923,7 +922,7 @@ export default function AutonomousOptimizationPage() {
                                             <SelectValue placeholder="Select algorithm..." />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {algorithms.filter((alg: any) => 
+                                            {Array.isArray(algorithms) && algorithms.filter((alg: any) => 
                                               alg.category?.toLowerCase().includes('scheduling') || 
                                               alg.name?.toLowerCase().includes('scheduling') ||
                                               alg.name?.toLowerCase().includes('asap') ||
@@ -950,7 +949,7 @@ export default function AutonomousOptimizationPage() {
                                             <SelectValue placeholder="Select algorithm..." />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {algorithms.filter((alg: any) => 
+                                            {Array.isArray(algorithms) && algorithms.filter((alg: any) => 
                                               alg.category?.toLowerCase().includes('optimization') || 
                                               alg.name?.toLowerCase().includes('optimization') ||
                                               alg.name?.toLowerCase().includes('order')
@@ -976,7 +975,7 @@ export default function AutonomousOptimizationPage() {
                                             <SelectValue placeholder="Select algorithm..." />
                                           </SelectTrigger>
                                           <SelectContent>
-                                            {algorithms.filter((alg: any) => 
+                                            {Array.isArray(algorithms) && algorithms.filter((alg: any) => 
                                               alg.category?.toLowerCase().includes('sequence') || 
                                               alg.name?.toLowerCase().includes('sequence') ||
                                               alg.name?.toLowerCase().includes('resequence')
