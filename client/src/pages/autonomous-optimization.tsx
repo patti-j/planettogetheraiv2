@@ -332,7 +332,7 @@ export default function AutonomousOptimizationPage() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-blue-950 dark:to-purple-950">
-        <div className="container mx-auto p-4 lg:p-6 space-y-6">
+        <div className="container mx-auto p-3 sm:p-4 lg:p-6 space-y-4 lg:space-y-6">
           
           {/* Enhanced Header */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -400,71 +400,71 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Enhanced Metrics Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-green-700 dark:text-green-400">Active Optimizations</p>
-                    <p className="text-3xl font-bold text-green-800 dark:text-green-300 mt-2">{currentMetrics.totalOptimizations.toLocaleString()}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span className="text-xs text-green-600">+12% from last hour</span>
+                    <p className="text-2xl lg:text-3xl font-bold text-green-800 dark:text-green-300 mt-1 truncate">{currentMetrics.totalOptimizations.toLocaleString()}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <TrendingUp className="w-3 h-3 text-green-600 flex-shrink-0" />
+                      <span className="text-xs text-green-600 truncate">+12% from last hour</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
-                    <Activity className="w-6 h-6 text-green-600" />
+                  <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-full flex-shrink-0">
+                    <Activity className="w-5 h-5 text-green-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Success Rate</p>
-                    <p className="text-3xl font-bold text-blue-800 dark:text-blue-300 mt-2">{currentMetrics.successRate}%</p>
-                    <Progress value={currentMetrics.successRate} className="mt-2 h-2" />
+                    <p className="text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-300 mt-1">{currentMetrics.successRate}%</p>
+                    <Progress value={currentMetrics.successRate} className="mt-2 h-1.5" />
                   </div>
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full">
-                    <Target className="w-6 h-6 text-blue-600" />
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full flex-shrink-0">
+                    <Target className="w-5 h-5 text-blue-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-purple-700 dark:text-purple-400">Avg Improvement</p>
-                    <p className="text-3xl font-bold text-purple-800 dark:text-purple-300 mt-2">+{currentMetrics.averageImprovement}%</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <Sparkles className="w-4 h-4 text-purple-600" />
-                      <span className="text-xs text-purple-600">AI-optimized</span>
+                    <p className="text-2xl lg:text-3xl font-bold text-purple-800 dark:text-purple-300 mt-1">+{currentMetrics.averageImprovement}%</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Sparkles className="w-3 h-3 text-purple-600 flex-shrink-0" />
+                      <span className="text-xs text-purple-600 truncate">AI-optimized</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full">
-                    <TrendingUp className="w-6 h-6 text-purple-600" />
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-full flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Cost Savings</p>
-                    <p className="text-3xl font-bold text-amber-800 dark:text-amber-300 mt-2">${(currentMetrics.costSavings / 1000).toFixed(0)}K</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <DollarSign className="w-4 h-4 text-amber-600" />
-                      <span className="text-xs text-amber-600">This month</span>
+                    <p className="text-2xl lg:text-3xl font-bold text-amber-800 dark:text-amber-300 mt-1 truncate">${(currentMetrics.costSavings / 1000).toFixed(0)}K</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <DollarSign className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                      <span className="text-xs text-amber-600 truncate">This month</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-                    <Gauge className="w-6 h-6 text-amber-600" />
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full flex-shrink-0">
+                    <Gauge className="w-5 h-5 text-amber-600" />
                   </div>
                 </div>
               </CardContent>
@@ -472,7 +472,7 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Performance Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -528,9 +528,9 @@ export default function AutonomousOptimizationPage() {
           </div>
 
           {/* Main Control and Monitoring Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
             {/* Optimization Control Panel */}
-            <div className="lg:col-span-2">
+            <div className="xl:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
