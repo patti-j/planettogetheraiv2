@@ -548,6 +548,7 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">75%</span>
                           </div>
                           <Slider defaultValue={[75]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Controls how quickly AI responds to demand changes</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -555,6 +556,7 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">60%</span>
                           </div>
                           <Slider defaultValue={[60]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Threshold for triggering disruption response protocols</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -562,6 +564,7 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">95%</span>
                           </div>
                           <Slider defaultValue={[95]} max={100} step={1} />
+                          <p className="text-xs text-gray-500 mt-1">Minimum acceptable quality level for all processes</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -569,30 +572,109 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">85%</span>
                           </div>
                           <Slider defaultValue={[85]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Target efficiency level for optimization algorithms</p>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label>Cost Optimization Aggressiveness</Label>
+                            <span className="text-sm text-gray-500">70%</span>
+                          </div>
+                          <Slider defaultValue={[70]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Balance between cost savings and operational stability</p>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label>Learning Rate</Label>
+                            <span className="text-sm text-gray-500">65%</span>
+                          </div>
+                          <Slider defaultValue={[65]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">How quickly AI adapts to new patterns and conditions</p>
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <Bot className="w-4 h-4 text-blue-600 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">AI Recommendation</p>
+                              <p className="text-blue-700 dark:text-blue-300">
+                                Current settings are optimized for pharmaceutical manufacturing. Consider increasing disruption tolerance to 75% for better resilience during peak seasons.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>
 
                     <TabsContent value="distribution" className="mt-4">
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={distributionData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={(entry) => `${entry.name}: ${entry.value}%`}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {distributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-3">Optimization Focus Distribution</h4>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie
+                                data={distributionData}
+                                cx="50%"
+                                cy="50%"
+                                labelLine={false}
+                                label={(entry) => `${entry.name}: ${entry.value}%`}
+                                outerRadius={80}
+                                fill="#8884d8"
+                                dataKey="value"
+                              >
+                                {distributionData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          {distributionData.map((item, index) => (
+                            <div key={item.name} className="flex items-center gap-2 p-2 border rounded">
+                              <div 
+                                className="w-3 h-3 rounded-full flex-shrink-0" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium truncate">{item.name}</p>
+                                <p className="text-xs text-gray-500">{item.value}% focus</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="pt-4 border-t space-y-3">
+                          <h4 className="text-sm font-medium">Distribution Settings</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs">Auto-balance distribution</Label>
+                              <Switch defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs">Priority scheduling</Label>
+                              <Switch defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs">Dynamic reallocation</Label>
+                              <Switch />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <TrendingUp className="w-4 h-4 text-green-600 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-green-900 dark:text-green-100 mb-1">Optimization Status</p>
+                              <p className="text-green-700 dark:text-green-300">
+                                Current distribution is well-balanced. Production focus at optimal level for pharmaceutical manufacturing.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </TabsContent>
 
                     <TabsContent value="constraints" className="space-y-4 mt-4">
@@ -603,6 +685,7 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">90%</span>
                           </div>
                           <Slider defaultValue={[90]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Maximum capacity utilization before triggering constraints</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -610,6 +693,7 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">95%</span>
                           </div>
                           <Slider defaultValue={[95]} max={100} step={1} />
+                          <p className="text-xs text-gray-500 mt-1">Hard constraint for minimum quality acceptance</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
@@ -617,10 +701,51 @@ export default function AutonomousOptimizationPage() {
                             <span className="text-sm text-gray-500">5%</span>
                           </div>
                           <Slider defaultValue={[5]} max={20} step={1} />
+                          <p className="text-xs text-gray-500 mt-1">Maximum acceptable cost increase from optimization</p>
                         </div>
-                        <div className="flex items-center gap-2 pt-2">
-                          <Shield className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm">Safety buffers enabled</span>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label>Safety Stock Buffer</Label>
+                            <span className="text-sm text-gray-500">15%</span>
+                          </div>
+                          <Slider defaultValue={[15]} max={50} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Minimum safety stock percentage to maintain</p>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label>Lead Time Variability</Label>
+                            <span className="text-sm text-gray-500">25%</span>
+                          </div>
+                          <Slider defaultValue={[25]} max={100} step={5} />
+                          <p className="text-xs text-gray-500 mt-1">Acceptable variance in supplier lead times</p>
+                        </div>
+                        
+                        <div className="space-y-3 pt-4 border-t">
+                          <h4 className="text-sm font-medium">Constraint Enforcement</h4>
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm">Safety buffers enabled</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600" />
+                            <span className="text-sm">Real-time constraint monitoring active</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-sm">Automated constraint violation alerts</span>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
+                            <div className="text-sm">
+                              <p className="font-medium text-amber-900 dark:text-amber-100 mb-1">Constraint Warning</p>
+                              <p className="text-amber-700 dark:text-amber-300">
+                                Current resource utilization approaching 85% threshold. Consider adjusting max utilization or adding capacity buffer.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>
