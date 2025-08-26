@@ -304,38 +304,44 @@ export default function EnterpriseMapPage() {
         <div className="container mx-auto p-4 lg:p-6 space-y-6">
           
           {/* Enhanced Header */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg">
-                  <Globe className="w-8 h-8 text-white" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 lg:p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-start gap-3 lg:gap-4">
+                  <div className="p-2 lg:p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg">
+                    <Globe className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      Global Control Tower
+                    </h1>
+                    <p className="text-sm lg:text-base text-gray-600 dark:text-gray-300 mt-1">
+                      Real-time visualization of worldwide operations and supply chain network
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    Global Control Tower
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-300 mt-1">
-                    Real-time visualization of worldwide operations and supply chain network
-                  </p>
+                
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (plants.length > 0) {
+                        setSelectedPlant(plants[0]);
+                      }
+                    }}
+                    className="gap-2 text-sm"
+                    size="sm"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Plant Settings</span>
+                    <span className="sm:hidden">Settings</span>
+                  </Button>
                 </div>
               </div>
               
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    // Find first plant and open its settings
-                    if (plants.length > 0) {
-                      setSelectedPlant(plants[0]);
-                    }
-                  }}
-                  className="gap-2"
-                >
-                  <Settings className="w-4 h-4" />
-                  Plant Settings
-                </Button>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-full sm:w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -346,118 +352,122 @@ export default function EnterpriseMapPage() {
                   </SelectContent>
                 </Select>
                 
-                <Button variant="outline" size="icon">
-                  <Download className="w-4 h-4" />
-                </Button>
-                
-                <Button variant="outline" size="icon">
-                  <Settings className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                    <Download className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                  
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                    <Settings className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Configure</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Executive Command Center - Enhanced KPI Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 lg:gap-4">
             <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Total Plants</p>
-                    <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{aggregatedMetrics.totalPlants}</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-400 truncate">Total Plants</p>
+                    <p className="text-lg lg:text-2xl font-bold text-blue-800 dark:text-blue-300">{aggregatedMetrics.totalPlants}</p>
                   </div>
-                  <Factory className="w-5 h-5 text-blue-600" />
+                  <Factory className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-green-700 dark:text-green-400">Active</p>
-                    <p className="text-2xl font-bold text-green-800 dark:text-green-300">{aggregatedMetrics.activePlants}</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">Active</p>
+                    <p className="text-lg lg:text-2xl font-bold text-green-800 dark:text-green-300">{aggregatedMetrics.activePlants}</p>
                   </div>
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-4 h-4 lg:w-5 lg:h-5 text-green-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-purple-700 dark:text-purple-400">Countries</p>
-                    <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{aggregatedMetrics.countries}</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-400 truncate">Countries</p>
+                    <p className="text-lg lg:text-2xl font-bold text-purple-800 dark:text-purple-300">{aggregatedMetrics.countries}</p>
                   </div>
-                  <Globe className="w-5 h-5 text-purple-600" />
+                  <Globe className="w-4 h-4 lg:w-5 lg:h-5 text-purple-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Efficiency</p>
-                    <p className="text-2xl font-bold text-amber-800 dark:text-amber-300">{aggregatedMetrics.avgEfficiency}%</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400 truncate">Efficiency</p>
+                    <p className="text-lg lg:text-2xl font-bold text-amber-800 dark:text-amber-300">{aggregatedMetrics.avgEfficiency}%</p>
                   </div>
-                  <TrendingUp className="w-5 h-5 text-amber-600" />
+                  <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5 text-amber-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200 dark:border-cyan-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400">Utilization</p>
-                    <p className="text-2xl font-bold text-cyan-800 dark:text-cyan-300">{aggregatedMetrics.avgUtilization}%</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400 truncate">Utilization</p>
+                    <p className="text-lg lg:text-2xl font-bold text-cyan-800 dark:text-cyan-300">{aggregatedMetrics.avgUtilization}%</p>
                   </div>
-                  <Activity className="w-5 h-5 text-cyan-600" />
+                  <Activity className="w-4 h-4 lg:w-5 lg:h-5 text-cyan-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-indigo-200 dark:border-indigo-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400">Workforce</p>
-                    <p className="text-2xl font-bold text-indigo-800 dark:text-indigo-300">{(aggregatedMetrics.totalWorkforce / 1000).toFixed(1)}K</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400 truncate">Workforce</p>
+                    <p className="text-lg lg:text-2xl font-bold text-indigo-800 dark:text-indigo-300">{(aggregatedMetrics.totalWorkforce / 1000).toFixed(1)}K</p>
                   </div>
-                  <Users className="w-5 h-5 text-indigo-600" />
+                  <Users className="w-4 h-4 lg:w-5 lg:h-5 text-indigo-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200 dark:border-rose-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-rose-700 dark:text-rose-400">Capacity</p>
-                    <p className="text-2xl font-bold text-rose-800 dark:text-rose-300">{(aggregatedMetrics.totalCapacity / 1000).toFixed(0)}K</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-rose-700 dark:text-rose-400 truncate">Capacity</p>
+                    <p className="text-lg lg:text-2xl font-bold text-rose-800 dark:text-rose-300">{(aggregatedMetrics.totalCapacity / 1000).toFixed(0)}K</p>
                   </div>
-                  <Package className="w-5 h-5 text-rose-600" />
+                  <Package className="w-4 h-4 lg:w-5 lg:h-5 text-rose-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 border-gray-200 dark:border-gray-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-400">Regions</p>
-                    <p className="text-2xl font-bold text-gray-800 dark:text-gray-300">{aggregatedMetrics.regions}</p>
+              <CardContent className="p-3 lg:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-400 truncate">Regions</p>
+                    <p className="text-lg lg:text-2xl font-bold text-gray-800 dark:text-gray-300">{aggregatedMetrics.regions}</p>
                   </div>
-                  <Network className="w-5 h-5 text-gray-600" />
+                  <Network className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 flex-shrink-0" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Executive Strategic Command Center */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
             {/* Financial Performance Dashboard */}
             <Card>
               <CardHeader className="pb-3">
@@ -611,66 +621,68 @@ export default function EnterpriseMapPage() {
           {/* Supply Chain Optimization Controls */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span className="flex items-center gap-2">
                   <Network className="w-5 h-5" />
                   Supply Chain Optimization Suite
                 </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Report
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                    <Download className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Export Report</span>
+                    <span className="sm:hidden">Export</span>
                   </Button>
-                  <Button size="sm">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Optimize Now
+                  <Button size="sm" className="w-full sm:w-auto">
+                    <Settings className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Optimize Now</span>
+                    <span className="sm:hidden">Optimize</span>
                   </Button>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="inventory" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
-                  <TabsTrigger value="inventory">Inventory</TabsTrigger>
-                  <TabsTrigger value="production">Production</TabsTrigger>
-                  <TabsTrigger value="logistics">Logistics</TabsTrigger>
-                  <TabsTrigger value="allocation">Allocation</TabsTrigger>
-                  <TabsTrigger value="scenarios">Scenarios</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-1">
+                  <TabsTrigger value="inventory" className="text-xs md:text-sm">Inventory</TabsTrigger>
+                  <TabsTrigger value="production" className="text-xs md:text-sm">Production</TabsTrigger>
+                  <TabsTrigger value="logistics" className="text-xs md:text-sm">Logistics</TabsTrigger>
+                  <TabsTrigger value="allocation" className="text-xs md:text-sm">Allocation</TabsTrigger>
+                  <TabsTrigger value="scenarios" className="text-xs md:text-sm col-span-2 md:col-span-1">Scenarios</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="inventory" className="mt-4">
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <p className="text-sm text-gray-500">Total Inventory Value</p>
-                      <p className="text-2xl font-bold">$128.4M</p>
+                      <p className="text-xl lg:text-2xl font-bold">$128.4M</p>
                       <p className="text-xs text-green-600">-5.2% vs last month</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-gray-500">Turnover Rate</p>
-                      <p className="text-2xl font-bold">12.3x</p>
+                      <p className="text-xl lg:text-2xl font-bold">12.3x</p>
                       <p className="text-xs text-green-600">+0.8x improvement</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-gray-500">Stock-out Risk</p>
-                      <p className="text-2xl font-bold">3.2%</p>
+                      <p className="text-xl lg:text-2xl font-bold">3.2%</p>
                       <p className="text-xs text-yellow-600">2 items at risk</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm text-gray-500">Days of Supply</p>
-                      <p className="text-2xl font-bold">42 days</p>
+                      <p className="text-xl lg:text-2xl font-bold">42 days</p>
                       <p className="text-xs text-green-600">Optimal range</p>
                     </div>
                   </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button size="sm" variant="outline">Reorder Points Analysis</Button>
-                    <Button size="sm" variant="outline">Safety Stock Optimization</Button>
-                    <Button size="sm" variant="outline">ABC Classification</Button>
+                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto">Reorder Points Analysis</Button>
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto">Safety Stock Optimization</Button>
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto">ABC Classification</Button>
                   </div>
                 </TabsContent>
                 
                 <TabsContent value="production" className="mt-4">
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="p-3 border rounded-lg">
                         <p className="text-sm font-medium mb-2">Production Efficiency</p>
                         <Progress value={87} className="mb-1" />
@@ -687,10 +699,10 @@ export default function EnterpriseMapPage() {
                         <p className="text-xs text-gray-500">92% - Excellent</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm">Balance Production Lines</Button>
-                      <Button size="sm" variant="outline">Shift Optimization</Button>
-                      <Button size="sm" variant="outline">Changeover Reduction</Button>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button size="sm" className="w-full sm:w-auto">Balance Production Lines</Button>
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto">Shift Optimization</Button>
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto">Changeover Reduction</Button>
                     </div>
                   </div>
                 </TabsContent>
