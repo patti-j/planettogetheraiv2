@@ -303,8 +303,8 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/smart-kpi-tracking">
-                <ProtectedRoute feature="business-goals" action="view">
-                  <BusinessGoals />
+                <ProtectedRoute feature="analytics" action="view">
+                  <KPIPage />
                 </ProtectedRoute>
               </Route>
 
