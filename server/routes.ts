@@ -9082,7 +9082,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
   });
 
   // Business Goals
-  app.get("/api/business-goals", async (req, res) => {
+  app.get("/api/business-goals", requireAuth, async (req, res) => {
     try {
       const goals = await storage.getBusinessGoals();
       res.json(goals);
@@ -9092,7 +9092,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
-  app.get("/api/business-goals/:id", async (req, res) => {
+  app.get("/api/business-goals/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -9110,7 +9110,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
-  app.post("/api/business-goals", async (req, res) => {
+  app.post("/api/business-goals", requireAuth, async (req, res) => {
     try {
       const validation = insertBusinessGoalSchema.safeParse(req.body);
       if (!validation.success) {
@@ -9132,7 +9132,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
-  app.put("/api/business-goals/:id", async (req, res) => {
+  app.put("/api/business-goals/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -9160,7 +9160,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
-  app.delete("/api/business-goals/:id", async (req, res) => {
+  app.delete("/api/business-goals/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -9179,7 +9179,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
   });
 
   // Goal Progress
-  app.get("/api/goal-progress", async (req, res) => {
+  app.get("/api/goal-progress", requireAuth, async (req, res) => {
     try {
       const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : undefined;
       const progress = await storage.getGoalProgress(goalId);
@@ -9190,7 +9190,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     }
   });
 
-  app.post("/api/goal-progress", async (req, res) => {
+  app.post("/api/goal-progress", requireAuth, async (req, res) => {
     try {
       const validation = insertGoalProgressSchema.safeParse(req.body);
       if (!validation.success) {
