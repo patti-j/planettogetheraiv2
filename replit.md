@@ -66,10 +66,15 @@ Note on concurrent work:
 - ✅ Integration with Jim's corrections for PT table relationships
 
 ## Recent Updates (January 2025)
-- **Production Scheduler Algorithms**: Added Backward and Drum scheduling algorithms to pure JavaScript Bryntum implementation
-  - Backward Scheduling: Works from due dates backwards for Just-In-Time manufacturing
-  - Drum Scheduling: Theory of Constraints approach that optimizes around bottleneck resources
-  - Both algorithms respect working hours and provide visual feedback
+- **Production Scheduler Complete Algorithm Suite**: Implemented 5 scheduling algorithms in pure JavaScript Bryntum
+  - ASAP (Forward): Schedules operations as early as possible
+  - ALAP (Backward): Schedules operations as late as possible from due date
+  - Critical Path: Identifies and optimizes the critical path
+  - Level Resources: Balances workload across resources
+  - Drum (TOC): Theory of Constraints optimization around bottlenecks
+  - Algorithm dropdown selector for easy switching
+  - Maintains consistent timeline view when switching between algorithms
+  - Dark mode toggle with localStorage persistence
 - **Authentication Flow**: When starting the preview, unauthenticated users are automatically redirected to the login page instead of seeing the website homepage
 - **Global Control Tower Route**: Renamed enterprise-map route to /control-tower to align with "Global Control Tower" naming
 - **Mobile UI Improvements**: Fixed mobile header settings icon to open Max AI Settings
