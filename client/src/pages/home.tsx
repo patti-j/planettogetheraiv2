@@ -288,7 +288,7 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {recentPages.slice(0, 5).map((page, index) => {
+                    {recentPages.slice(0, 8).map((page, index) => {
                       // Handle icon - it could be a string name, component, or empty/invalid
                       const IconComponent = typeof page.icon === 'string' 
                         ? null // Icon names as strings aren't directly renderable

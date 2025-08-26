@@ -21,8 +21,8 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const { hasPermission } = usePermissions();
   // Safe navigation context access with fallback
   let recentPages = [];
-  let togglePinPage = () => {};
-  let addRecentPage = () => {};
+  let togglePinPage = (path: string) => {};
+  let addRecentPage = (path: string, label: string, icon?: string) => {};
   try {
     const navigation = useNavigation();
     recentPages = navigation.recentPages || [];
@@ -171,7 +171,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                   Recent Pages
                 </h3>
                 <div className="space-y-1">
-                  {recentPages.slice(0, 4).map((page) => {
+                  {recentPages.map((page) => {
                     // Find the icon for this page from navigation menu
                     const getIconForPage = (path: string) => {
                       for (const group of navigationGroups) {

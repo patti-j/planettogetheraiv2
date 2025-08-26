@@ -43,7 +43,7 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
-const MAX_RECENT_PAGES = 6;
+const MAX_RECENT_PAGES = 12;
 
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {

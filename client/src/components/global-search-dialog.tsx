@@ -81,7 +81,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
 
   // Get recent items for quick access
   const getRecentItems = () => {
-    return recentPages.slice(0, 5).map(page => ({
+    return recentPages.slice(0, 8).map(page => ({
       ...page,
       isRecent: true
     }));
