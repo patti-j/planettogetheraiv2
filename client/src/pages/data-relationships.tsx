@@ -59,15 +59,15 @@ interface RelationshipInfo {
 }
 
 const DATA_CATEGORIES = {
-  'Core Manufacturing': ['plants', 'resources', 'capabilities', 'plant_resources'],
-  'Production Management': ['production_orders', 'operations', 'production_versions', 'planned_orders'],
-  'Materials & Inventory': ['items', 'bills_of_material', 'bom_items', 'recipes', 'recipe_phases'],
-  'Planning & Scheduling': ['production_plans', 'production_targets', 'scheduling_history', 'scheduling_results'],
-  'Business Partners': ['customers', 'vendors', 'sales_orders', 'purchase_orders'],
-  'Quality & Compliance': ['quality_tests', 'quality_results', 'inspections', 'non_conformances'],
+  'Core Manufacturing': ['ptplants', 'ptresources', 'ptcapabilities', 'ptplantresources', 'ptworkcenters', 'ptresourcecapabilities'],
+  'Production Management': ['ptmanufacturingorders', 'ptjobs', 'ptjoboperations', 'ptoperations', 'ptproductionversions', 'ptplannedorders'],
+  'Materials & Inventory': ['ptitems', 'ptboms', 'ptbomitems', 'ptrecipes', 'ptrecipephases', 'ptmaterials', 'ptitemcharacteristics'],
+  'Planning & Scheduling': ['ptschedules', 'ptjobresourceblocks', 'ptjobresourceblockintervals', 'ptschedulingresults', 'ptschedulinghistory'],
+  'Business Partners': ['ptcustomers', 'ptvendors', 'ptsalesorders', 'ptpurchaseorders', 'ptcustomerorders'],
+  'Quality & Compliance': ['ptqualitytests', 'ptqualityresults', 'ptinspections', 'ptnonconformances', 'ptqualitystandards'],
   'User Management': ['users', 'roles', 'permissions', 'user_roles', 'role_permissions'],
   'System Integration': ['system_integrations', 'integration_jobs', 'integration_events', 'api_credentials'],
-  'Analytics & Reporting': ['reports', 'dashboards', 'metrics', 'kpi_definitions'],
+  'Analytics & Reporting': ['reports', 'dashboards', 'metrics', 'kpi_definitions', 'smart_kpi_definitions'],
   'Other': []
 };
 
@@ -143,11 +143,18 @@ export default function DataRelationships() {
     addRecentPage('/data-relationships', 'Data Relationships', 'Database');
   }, [addRecentPage]);
 
-  const { data: schemaData, isLoading } = useQuery<TableInfo[]>({
-    queryKey: ['/api/database/schema'],
+  // Fetch real database tables
+  const { data: tablesRaw = [], isLoading } = useQuery({
+    queryKey: ['/api/database/tables'],
   });
+  
+  // Transform database tables to TableInfo format
+  const tables: TableInfo[] = (tablesRaw as any[]).map(table => ({
+    name: table.name,
+    columns: [], // We'll need to fetch column info separately if needed
+    category: categorizeTable(table.name)
+  }));
 
-  const tables = schemaData || [];
   const relationships = analyzeRelationships(tables);
 
   // Categorize tables
@@ -278,9 +285,9 @@ export default function DataRelationships() {
               <Key className="h-8 w-8 text-yellow-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {tables.reduce((acc, table) => acc + getForeignKeys(table).length, 0)}
+                  {filteredTables.length}
                 </p>
-                <p className="text-sm text-gray-600">Foreign Keys</p>
+                <p className="text-sm text-gray-600">Filtered Tables</p>
               </div>
             </div>
           </CardContent>
