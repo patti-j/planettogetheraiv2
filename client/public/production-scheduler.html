@@ -167,6 +167,35 @@
             margin: 1rem;
             text-align: center;
         }
+        
+        /* Dark theme overrides */
+        .dark-theme .header {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+        
+        .dark-theme .header h1 {
+            color: white;
+        }
+        
+        .dark-theme .toolbar {
+            background: rgba(40, 40, 40, 0.9);
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .toolbar label {
+            color: #ccc;
+        }
+        
+        .dark-theme .status-bar {
+            background: rgba(30, 30, 30, 0.95);
+            color: #ccc;
+            border-top-color: #444;
+        }
+        
+        .dark-theme .scheduler-container {
+            background: #2a2a2a;
+        }
     </style>
 </head>
 <body>
@@ -548,13 +577,17 @@
                 themeToggleBtn.addEventListener('click', () => {
                     isDarkMode = !isDarkMode;
                     if (isDarkMode) {
-                        themeLink.href = '/schedulerpro.classic-dark.css';
+                        // Use standard theme as dark (or thin dark theme)
+                        themeLink.href = '/schedulerpro.css';
                         themeToggleBtn.innerHTML = '☀️ Light Mode';
                         document.body.style.background = 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)';
+                        // Add dark class for custom dark styles
+                        document.body.classList.add('dark-theme');
                     } else {
                         themeLink.href = '/schedulerpro.classic-light.css';
                         themeToggleBtn.innerHTML = '🌙 Dark Mode';
                         document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                        document.body.classList.remove('dark-theme');
                     }
                 });
                 
