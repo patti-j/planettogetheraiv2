@@ -164,9 +164,7 @@ export default function AutonomousOptimizationPage() {
             demandPlanning: true,
             inventoryOptimization: false,
             resourceAllocation: true,
-            qualityControl: false,
-            maintenancePlanning: false,
-            supplyChain: false
+            maintenancePlanning: false
           },
           algorithms: {
             productionScheduling: getDefaultAlgorithm('scheduling'),
@@ -1221,28 +1219,7 @@ export default function AutonomousOptimizationPage() {
                                         />
                                       </div>
                                       
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <CheckCircle className="w-4 h-4 text-emerald-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Quality Control</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.qualityControl || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  qualityControl: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
+
                                       <div className="flex items-center justify-between p-3 border rounded-lg">
                                         <div className="flex items-center gap-2">
                                           <Settings className="w-4 h-4 text-gray-600" />
@@ -1265,30 +1242,10 @@ export default function AutonomousOptimizationPage() {
                                         />
                                       </div>
                                       
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Truck className="w-4 h-4 text-indigo-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Supply Chain</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.supplyChain || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  supplyChain: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
+
                                     </div>
                                     <div className="mt-2 text-xs text-gray-500">
-                                      {Object.values(settings.modules || {}).filter(Boolean).length} of 8 modules active
+                                      {Object.values(settings.modules || {}).filter(Boolean).length} of 6 modules active
                                     </div>
                                   </div>
                                 </TabsContent>
