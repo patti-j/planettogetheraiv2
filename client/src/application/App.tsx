@@ -74,6 +74,7 @@ import DatabaseExplorer from "@/pages/database-explorer";
 import PresentationSystem from "@/pages/presentation-system";
 import SystemsManagementDashboard from "@/pages/systems-management-dashboard";
 import TableFieldViewer from "@/pages/table-field-viewer";
+import TechnologyStack from "@/pages/technology-stack";
 import TenantAdmin from "@/pages/tenant-admin";
 import Training from "@/pages/training";
 import UserAccessManagement from "@/pages/user-access-management";
@@ -274,6 +275,7 @@ export default function ApplicationApp() {
               {/* Management & Administration Routes */}
               <Route path="/implementation-projects" component={ImplementationProjects} />
               <Route path="/systems-management-dashboard" component={SystemsManagementDashboard} />
+              <Route path="/technology-stack" component={TechnologyStack} />
               <Route path="/user-access-management" component={UserAccessManagement} />
               <Route path="/extension-studio" component={ExtensionStudio} />
               <Route path="/error-logs" component={ErrorLogs} />
