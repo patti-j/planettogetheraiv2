@@ -1248,13 +1248,15 @@ export const insertPtJobMaterialsSchema = createInsertSchema(ptJobMaterials).omi
 export type InsertPtJobMaterials = z.infer<typeof insertPtJobMaterialsSchema>;
 export type PtJobMaterials = typeof ptJobMaterials.$inferSelect;
 
-export const insertPtJobOperationsSchema = createInsertSchema(ptJobOperations).omit({ id: true, createdAt: true });
-export type InsertPtJobOperations = z.infer<typeof insertPtJobOperationsSchema>;
-export type PtJobOperations = typeof ptJobOperations.$inferSelect;
-
 export const insertPtJobPathNodesSchema = createInsertSchema(ptJobPathNodes).omit({ id: true, createdAt: true });
 export type InsertPtJobPathNodes = z.infer<typeof insertPtJobPathNodesSchema>;
 export type PtJobPathNodes = typeof ptJobPathNodes.$inferSelect;
+
+export const insertPtJobResourcesSchema = createInsertSchema(ptJobResources).omit({ id: true, createdAt: true });
+export type InsertPtJobResources = z.infer<typeof insertPtJobResourcesSchema>;
+export type PtJobResources = typeof ptJobResources.$inferSelect;
+
+
 
 // Relations for PT Import tables - Updated Architecture
 // New hierarchical structure: Jobs → Manufacturing Orders → Operations/Paths
@@ -1283,6 +1285,7 @@ export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many 
   }),
   activities: many(ptJobActivities),
   materials: many(ptJobMaterials),
+  resources: many(ptJobResources),
 }));
 
 // ptJobPathNodes relates to ptJobOperations through successor/predecessor operation fields
@@ -1293,6 +1296,14 @@ export const ptJobPathNodesRelations = relations(ptJobPathNodes, ({ one }) => ({
   }),
   successorOperation: one(ptJobOperations, {
     fields: [ptJobPathNodes.successorOperationExternalId], 
+    references: [ptJobOperations.externalId],
+  }),
+}));
+
+// ptJobResources relates to ptJobOperations, NOT to ptJobs
+export const ptJobResourcesRelations = relations(ptJobResources, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobResources.opExternalId],
     references: [ptJobOperations.externalId],
   }),
 }));
