@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -191,9 +191,20 @@ export default function DatabaseExplorer() {
     setCurrentPage(1);
   };
 
+  // Stable handlers to prevent re-renders
+  const handleTableSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTableSearchTerm(e.target.value);
+  }, []);
+
+  const handleDataSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDataSearchTerm(e.target.value);
+  }, []);
+
   // Filter tables based on search
-  const filteredTables = tables.filter((table: DatabaseTable) =>
-    table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
+  const filteredTables = useMemo(() => 
+    tables.filter((table: DatabaseTable) =>
+      table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
+    ), [tables, tableSearchTerm]
   );
 
   // Get data type badge color
@@ -236,10 +247,10 @@ export default function DatabaseExplorer() {
       <CardContent className="h-[calc(100%-120px)] overflow-y-auto">
         <div className="space-y-2 mb-4">
           <Input
-            key="mobile-table-search"
+            key="mobile-table-search-stable"
             placeholder="Search tables..."
             value={tableSearchTerm}
-            onChange={(e) => setTableSearchTerm(e.target.value)}
+            onChange={handleTableSearchChange}
             className="h-8"
             autoComplete="off"
             autoCorrect="off"
@@ -304,7 +315,7 @@ export default function DatabaseExplorer() {
                   <Input
                     placeholder="Search tables..."
                     value={tableSearchTerm}
-                    onChange={(e) => setTableSearchTerm(e.target.value)}
+                    onChange={handleTableSearchChange}
                     className="h-8"
                     autoComplete="off"
                     autoCorrect="off"
@@ -505,7 +516,7 @@ export default function DatabaseExplorer() {
                           <Input
                             placeholder="Search data..."
                             value={dataSearchTerm}
-                            onChange={(e) => setDataSearchTerm(e.target.value)}
+                            onChange={handleDataSearchChange}
                             className="h-8 text-sm flex-1"
                           />
                         </div>
@@ -828,7 +839,7 @@ export default function DatabaseExplorer() {
                           <Input
                             placeholder="Search data..."
                             value={dataSearchTerm}
-                            onChange={(e) => setDataSearchTerm(e.target.value)}
+                            onChange={handleDataSearchChange}
                             className="w-64"
                           />
                           <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
