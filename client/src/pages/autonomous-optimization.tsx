@@ -71,6 +71,16 @@ import {
   Truck
 } from "lucide-react";
 
+interface PlanningProcessAlgorithms {
+  productionScheduling: string; // Algorithm ID for production scheduling
+  orderOptimization: string; // Algorithm ID for order optimization
+  resequencing: string; // Algorithm ID for drag & drop resequencing
+  demandPlanning: string; // Algorithm ID for demand planning
+  mrp: string; // Algorithm ID for Material Requirements Planning
+  mps: string; // Algorithm ID for Master Production Schedule
+  capacityPlanning: string; // Algorithm ID for capacity planning
+}
+
 interface OptimizationModules {
   scheduling: boolean;
   productionPlanning: boolean;
@@ -88,6 +98,7 @@ interface PlantOptimizationSettings {
     profile: string;
     priority: number;
     modules: OptimizationModules;
+    algorithms: PlanningProcessAlgorithms;
     constraints: {
       maxUtilization: number;
       minQuality: number;
@@ -108,10 +119,30 @@ export default function AutonomousOptimizationPage() {
     queryKey: ["/api/plants"],
   });
 
+  // Fetch available algorithms for selection
+  const { data: algorithms = [] } = useQuery({
+    queryKey: ['/api/optimization/algorithms'],
+    queryFn: async () => {
+      const response = await fetch('/api/optimization/algorithms');
+      if (!response.ok) throw new Error('Failed to fetch algorithms');
+      return response.json();
+    }
+  });
+
   // Initialize plant settings when plants data is loaded
   useEffect(() => {
-    if (plants.length > 0 && Object.keys(plantSettings).length === 0) {
+    if (plants.length > 0 && algorithms.length > 0 && Object.keys(plantSettings).length === 0) {
       const initialSettings: PlantOptimizationSettings = {};
+      
+      // Get default algorithms by category
+      const getDefaultAlgorithm = (category: string) => {
+        const categoryAlgorithms = algorithms.filter((alg: any) => 
+          alg.category?.toLowerCase().includes(category.toLowerCase()) || 
+          alg.name?.toLowerCase().includes(category.toLowerCase())
+        );
+        return categoryAlgorithms.length > 0 ? categoryAlgorithms[0].name : 'Standard Algorithm';
+      };
+
       plants.forEach((plant: any) => {
         initialSettings[plant.id] = {
           enabled: plant.isActive || false,
@@ -127,6 +158,15 @@ export default function AutonomousOptimizationPage() {
             maintenancePlanning: false,
             supplyChain: false
           },
+          algorithms: {
+            productionScheduling: getDefaultAlgorithm('scheduling'),
+            orderOptimization: getDefaultAlgorithm('optimization'),
+            resequencing: getDefaultAlgorithm('sequence'),
+            demandPlanning: getDefaultAlgorithm('demand'),
+            mrp: getDefaultAlgorithm('mrp'),
+            mps: getDefaultAlgorithm('mps'),
+            capacityPlanning: getDefaultAlgorithm('capacity')
+          },
           constraints: {
             maxUtilization: 90,
             minQuality: 95,
@@ -136,7 +176,7 @@ export default function AutonomousOptimizationPage() {
       });
       setPlantSettings(initialSettings);
     }
-  }, [plants]);
+  }, [plants, algorithms]);
 
   // Toggle plant optimization
   const togglePlantOptimization = (plantId: number) => {
@@ -167,6 +207,20 @@ export default function AutonomousOptimizationPage() {
       [plantId]: {
         ...prev[plantId],
         priority
+      }
+    }));
+  };
+
+  // Update plant algorithm for specific planning process
+  const updatePlantAlgorithm = (plantId: number, processType: keyof PlanningProcessAlgorithms, algorithm: string) => {
+    setPlantSettings(prev => ({
+      ...prev,
+      [plantId]: {
+        ...prev[plantId],
+        algorithms: {
+          ...prev[plantId]?.algorithms,
+          [processType]: algorithm
+        }
       }
     }));
   };
@@ -741,8 +795,9 @@ export default function AutonomousOptimizationPage() {
                           {settings.enabled && (
                             <CardContent className="pt-0">
                               <Tabs defaultValue="general" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3">
+                                <TabsList className="grid w-full grid-cols-4">
                                   <TabsTrigger value="general">General</TabsTrigger>
+                                  <TabsTrigger value="algorithms">Algorithms</TabsTrigger>
                                   <TabsTrigger value="modules">Modules</TabsTrigger>
                                   <TabsTrigger value="constraints">Constraints</TabsTrigger>
                                 </TabsList>
@@ -792,6 +847,213 @@ export default function AutonomousOptimizationPage() {
                                         <span className="text-sm">
                                           {plant.operationalMetrics?.efficiency || 85}% Efficiency
                                         </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TabsContent>
+
+                                <TabsContent value="algorithms" className="space-y-4 mt-4">
+                                  <div className="space-y-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <Brain className="w-4 h-4 text-blue-600" />
+                                      <Label className="text-sm font-medium">Planning Process Algorithms</Label>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-4">
+                                      {/* Production Scheduling */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Clock className="w-4 h-4 text-blue-600" />
+                                          <Label className="text-sm font-medium">Production Scheduling</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.productionScheduling || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'productionScheduling', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('scheduling') || 
+                                              alg.name?.toLowerCase().includes('scheduling') ||
+                                              alg.name?.toLowerCase().includes('asap') ||
+                                              alg.name?.toLowerCase().includes('alap')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Order Optimization */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Target className="w-4 h-4 text-green-600" />
+                                          <Label className="text-sm font-medium">Order Optimization</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.orderOptimization || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'orderOptimization', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('optimization') || 
+                                              alg.name?.toLowerCase().includes('optimization') ||
+                                              alg.name?.toLowerCase().includes('order')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Resequencing (Drag & Drop) */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <RefreshCw className="w-4 h-4 text-purple-600" />
+                                          <Label className="text-sm font-medium">Resequencing (Drag & Drop)</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.resequencing || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'resequencing', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('sequence') || 
+                                              alg.name?.toLowerCase().includes('sequence') ||
+                                              alg.name?.toLowerCase().includes('resequence')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Demand Planning */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <TrendingUp className="w-4 h-4 text-orange-600" />
+                                          <Label className="text-sm font-medium">Demand Planning</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.demandPlanning || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'demandPlanning', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('demand') || 
+                                              alg.name?.toLowerCase().includes('demand') ||
+                                              alg.name?.toLowerCase().includes('forecast')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* MRP */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Package className="w-4 h-4 text-red-600" />
+                                          <Label className="text-sm font-medium">Material Requirements Planning (MRP)</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.mrp || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'mrp', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('mrp') || 
+                                              alg.name?.toLowerCase().includes('mrp') ||
+                                              alg.name?.toLowerCase().includes('material')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* MPS */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <BarChart3 className="w-4 h-4 text-indigo-600" />
+                                          <Label className="text-sm font-medium">Master Production Schedule (MPS)</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.mps || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'mps', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('mps') || 
+                                              alg.name?.toLowerCase().includes('mps') ||
+                                              alg.name?.toLowerCase().includes('master')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Capacity Planning */}
+                                      <div className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Gauge className="w-4 h-4 text-teal-600" />
+                                          <Label className="text-sm font-medium">Capacity Planning</Label>
+                                        </div>
+                                        <Select 
+                                          value={settings.algorithms?.capacityPlanning || 'Standard Algorithm'} 
+                                          onValueChange={(value) => updatePlantAlgorithm(plant.id, 'capacityPlanning', value)}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue placeholder="Select algorithm..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {algorithms.filter((alg: any) => 
+                                              alg.category?.toLowerCase().includes('capacity') || 
+                                              alg.name?.toLowerCase().includes('capacity') ||
+                                              alg.name?.toLowerCase().includes('resource')
+                                            ).map((alg: any) => (
+                                              <SelectItem key={alg.id} value={alg.name}>{alg.displayName || alg.name}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Standard Algorithm">Standard Algorithm</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                      <div className="flex items-start gap-2">
+                                        <Bot className="w-4 h-4 text-blue-600 mt-0.5" />
+                                        <div className="text-sm">
+                                          <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">Algorithm Selection Note</p>
+                                          <p className="text-blue-700 dark:text-blue-300">
+                                            These algorithms will be used when autonomous optimization is triggered for this plant. 
+                                            Each planning process can use a different algorithm optimized for its specific requirements.
+                                          </p>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
