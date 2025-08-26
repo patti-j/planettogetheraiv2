@@ -158,14 +158,7 @@ export default function AutonomousOptimizationPage() {
           enabled: plant.isActive || false,
           profile: "standard",
           priority: 1,
-          modules: {
-            scheduling: true,
-            productionPlanning: true,
-            demandPlanning: true,
-            inventoryOptimization: false,
-            resourceAllocation: true,
-            maintenancePlanning: false
-          },
+
           algorithms: {
             productionScheduling: getDefaultAlgorithm('scheduling'),
             orderOptimization: getDefaultAlgorithm('optimization'),
@@ -966,10 +959,9 @@ export default function AutonomousOptimizationPage() {
                           {settings.enabled && (
                             <CardContent className="pt-0">
                               <Tabs defaultValue="general" className="w-full">
-                                <TabsList className="grid w-full grid-cols-4">
+                                <TabsList className="grid w-full grid-cols-3">
                                   <TabsTrigger value="general">General</TabsTrigger>
                                   <TabsTrigger value="algorithms">Algorithms</TabsTrigger>
-                                  <TabsTrigger value="modules">Modules</TabsTrigger>
                                   <TabsTrigger value="constraints">Constraints</TabsTrigger>
                                 </TabsList>
                                 
@@ -1226,151 +1218,6 @@ export default function AutonomousOptimizationPage() {
                                           </p>
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                </TabsContent>
-                                
-                                <TabsContent value="modules" className="space-y-4 mt-4">
-                                  <div className="space-y-3">
-                                    <Label className="text-sm font-medium">Active Optimization Modules</Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Clock className="w-4 h-4 text-blue-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Production Scheduling</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.scheduling || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  scheduling: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Factory className="w-4 h-4 text-green-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Production Planning</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.productionPlanning || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  productionPlanning: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <TrendingUp className="w-4 h-4 text-purple-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Demand Planning</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.demandPlanning || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  demandPlanning: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Package className="w-4 h-4 text-orange-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Inventory Optimization</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.inventoryOptimization || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  inventoryOptimization: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Users className="w-4 h-4 text-cyan-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Resource Allocation</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.resourceAllocation || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  resourceAllocation: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-
-                                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-2">
-                                          <Settings className="w-4 h-4 text-gray-600" />
-                                          <Label className="text-sm font-normal cursor-pointer">Maintenance Planning</Label>
-                                        </div>
-                                        <Switch
-                                          checked={settings.modules?.maintenancePlanning || false}
-                                          onCheckedChange={(checked) => {
-                                            setPlantSettings(prev => ({
-                                              ...prev,
-                                              [plant.id]: {
-                                                ...prev[plant.id],
-                                                modules: {
-                                                  ...prev[plant.id].modules,
-                                                  maintenancePlanning: checked
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                        />
-                                      </div>
-                                      
-
-                                    </div>
-                                    <div className="mt-2 text-xs text-gray-500">
-                                      {Object.values(settings.modules || {}).filter(Boolean).length} of 6 modules active
                                     </div>
                                   </div>
                                 </TabsContent>
