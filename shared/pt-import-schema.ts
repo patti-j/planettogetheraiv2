@@ -1240,8 +1240,64 @@ export const insertPtJobPathsSchema = createInsertSchema(ptJobPaths).omit({ id: 
 export type InsertPtJobPaths = z.infer<typeof insertPtJobPathsSchema>;
 export type PtJobPaths = typeof ptJobPaths.$inferSelect;
 
-// Relations for PT Import tables
-// ptJobPaths relates ONLY to ptManufacturingOrders, NOT to ptJobs
+export const insertPtJobActivitiesSchema = createInsertSchema(ptJobActivities).omit({ id: true, createdAt: true });
+export type InsertPtJobActivities = z.infer<typeof insertPtJobActivitiesSchema>;
+export type PtJobActivities = typeof ptJobActivities.$inferSelect;
+
+export const insertPtJobMaterialsSchema = createInsertSchema(ptJobMaterials).omit({ id: true, createdAt: true });
+export type InsertPtJobMaterials = z.infer<typeof insertPtJobMaterialsSchema>;
+export type PtJobMaterials = typeof ptJobMaterials.$inferSelect;
+
+export const insertPtJobOperationsSchema = createInsertSchema(ptJobOperations).omit({ id: true, createdAt: true });
+export type InsertPtJobOperations = z.infer<typeof insertPtJobOperationsSchema>;
+export type PtJobOperations = typeof ptJobOperations.$inferSelect;
+
+export const insertPtJobPathNodesSchema = createInsertSchema(ptJobPathNodes).omit({ id: true, createdAt: true });
+export type InsertPtJobPathNodes = z.infer<typeof insertPtJobPathNodesSchema>;
+export type PtJobPathNodes = typeof ptJobPathNodes.$inferSelect;
+
+// Relations for PT Import tables - Updated Architecture
+// New hierarchical structure: Jobs → Manufacturing Orders → Operations/Paths
+
+// ptJobActivities relates to ptJobOperations, NOT to ptJobs
+export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobActivities.opExternalId],
+    references: [ptJobOperations.externalId],
+  }),
+}));
+
+// ptJobMaterials relates to ptJobOperations, NOT to ptJobs  
+export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobMaterials.opExternalId],
+    references: [ptJobOperations.externalId],
+  }),
+}));
+
+// ptJobOperations relates to ptJobManufacturingOrders and ptJobPathNodes, NOT to ptJobs
+export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many }) => ({
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobOperations.moExternalId],
+    references: [ptManufacturingOrders.externalId],
+  }),
+  activities: many(ptJobActivities),
+  materials: many(ptJobMaterials),
+}));
+
+// ptJobPathNodes relates to ptJobOperations through successor/predecessor operation fields
+export const ptJobPathNodesRelations = relations(ptJobPathNodes, ({ one }) => ({
+  predecessorOperation: one(ptJobOperations, {
+    fields: [ptJobPathNodes.predecessorOperationExternalId],
+    references: [ptJobOperations.externalId],
+  }),
+  successorOperation: one(ptJobOperations, {
+    fields: [ptJobPathNodes.successorOperationExternalId], 
+    references: [ptJobOperations.externalId],
+  }),
+}));
+
+// ptJobPaths relates to ptManufacturingOrders, NOT to ptJobs
 export const ptJobPathsRelations = relations(ptJobPaths, ({ one }) => ({
   manufacturingOrder: one(ptManufacturingOrders, {
     fields: [ptJobPaths.moExternalId],
@@ -1249,13 +1305,15 @@ export const ptJobPathsRelations = relations(ptJobPaths, ({ one }) => ({
   }),
 }));
 
+// ptManufacturingOrders has relations to operations and paths
 export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
+  operations: many(ptJobOperations),
   jobPaths: many(ptJobPaths),
 }));
 
-// ptJobs does NOT have a direct relation to ptJobPaths
-// Jobs inherit paths through their connection to manufacturing orders
+// ptJobs does NOT have direct relations to activities, materials, operations, or paths
+// Jobs inherit all relationships through their connection to manufacturing orders
 export const ptJobsRelations = relations(ptJobs, ({ one }) => ({
-  // Jobs can relate to manufacturing orders, but not directly to job paths
-  // Path relationships are established at the manufacturing order level
+  // Jobs can relate to manufacturing orders, but all other relationships
+  // are established at the manufacturing order and operation level
 }));
