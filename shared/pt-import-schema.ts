@@ -1256,51 +1256,6 @@ export const insertPtJobResourcesSchema = createInsertSchema(ptJobResources).omi
 export type InsertPtJobResources = z.infer<typeof insertPtJobResourcesSchema>;
 export type PtJobResources = typeof ptJobResources.$inferSelect;
 
-// Job Resource Blocks - Resource allocation blocks for scheduled activities
-export const ptJobResourceBlocks = pgTable("pt_job_resource_blocks", {
-  id: serial("id").primaryKey(),
-  externalId: text("external_id"),
-  jobExternalId: text("job_external_id"),
-  opExternalId: text("op_external_id"),
-  activityExternalId: text("activity_external_id"),
-  resourceExternalId: text("resource_external_id"),
-  scheduleId: text("schedule_id"), // Added as requested
-  startTime: timestamp("start_time"),
-  endTime: timestamp("end_time"),
-  blockType: text("block_type"), // setup, run, clean, etc.
-  allocatedQuantity: numeric("allocated_quantity"),
-  blockStatus: text("block_status"), // scheduled, in_progress, completed
-  notes: text("notes"),
-  userFields: jsonb("user_fields").$type<Record<string, any>>(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Schedules - Master schedule definitions  
-export const ptSchedules = pgTable("pt_schedules", {
-  id: serial("id").primaryKey(),
-  externalId: text("external_id"),
-  name: text("name"),
-  description: text("description"),
-  scheduleType: text("schedule_type"), // master, production, maintenance, etc.
-  plantExternalId: text("plant_external_id"),
-  startDate: timestamp("start_date"),
-  endDate: timestamp("end_date"),
-  status: text("status"), // draft, active, completed, archived
-  version: text("version"),
-  createdBy: text("created_by"),
-  notes: text("notes"),
-  userFields: jsonb("user_fields").$type<Record<string, any>>(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const insertPtJobResourceBlocksSchema = createInsertSchema(ptJobResourceBlocks).omit({ id: true, createdAt: true });
-export type InsertPtJobResourceBlocks = z.infer<typeof insertPtJobResourceBlocksSchema>;
-export type PtJobResourceBlocks = typeof ptJobResourceBlocks.$inferSelect;
-
-export const insertPtSchedulesSchema = createInsertSchema(ptSchedules).omit({ id: true, createdAt: true });
-export type InsertPtSchedules = z.infer<typeof insertPtSchedulesSchema>;
-export type PtSchedules = typeof ptSchedules.$inferSelect;
-
 
 
 // Relations for PT Import tables - Updated Architecture

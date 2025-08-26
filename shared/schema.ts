@@ -12619,5 +12619,36 @@ export const insertIntegrationLogSchema = createInsertSchema(integrationLogs).om
 export type InsertIntegrationLog = z.infer<typeof insertIntegrationLogSchema>;
 export type IntegrationLog = typeof integrationLogs.$inferSelect;
 
+// ========================================
+// Additional Relations for Resource Management
+// ========================================
+
+// Relations for Schedule Scenarios - Many-to-many with resource requirement blocks
+export const scheduleScenarioRelations = relations(scheduleScenarios, ({ many }) => ({
+  resourceRequirementBlocks: many(resourceRequirementBlocks),
+}));
+
+// Relations for Resource Requirement Blocks
+export const resourceRequirementBlocksRelations = relations(resourceRequirementBlocks, ({ one, many }) => ({
+  // Many-to-one with schedule scenarios
+  scenario: one(scheduleScenarios, {
+    fields: [resourceRequirementBlocks.scenarioId],
+    references: [scheduleScenarios.id],
+  }),
+  // Many-to-one with PT Job Operations
+  ptJobOperation: one(ptJobOperations, {
+    fields: [resourceRequirementBlocks.ptJobOperationId],
+    references: [ptJobOperations.id],
+  }),
+  // Many-to-one with assigned resources
+  assignedResource: one(resources, {
+    fields: [resourceRequirementBlocks.assignedResourceId],
+    references: [resources.id],
+  }),
+}));
+
+// Note: PT Job Activities and PT Job Resources relationships are handled 
+// through the ptJobOperations relationship already established above
+
 
 
