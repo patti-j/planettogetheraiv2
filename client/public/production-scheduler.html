@@ -301,13 +301,20 @@
                     barMargin: 8,
 
                     features: {
+                        // Dependencies feature for showing task relationships
                         dependencies: true,
+                        
+                        // Enable drag and drop with tooltip
                         eventDrag: {
                             showTooltip: true
                         },
+                        
+                        // Enable resize with tooltip
                         eventResize: {
                             showTooltip: true
                         },
+                        
+                        // Event tooltips on hover
                         eventTooltip: {
                             template: ({ eventRecord }) => `
                                 <div style="padding: 10px;">
@@ -318,15 +325,26 @@
                                 </div>
                             `
                         },
+                        
+                        // Show current time line
                         timeRanges: {
                             showCurrentTimeLine: true
                         },
-                        progressLine: {
-                            disabled: false
-                        },
-                        nonWorkingTime: {
-                            disabled: false
-                        }
+                        
+                        // Progress line feature - shows percentage complete
+                        percentBar: true,
+                        
+                        // Non-working time visualization
+                        nonWorkingTime: true,
+                        
+                        // Critical paths feature
+                        criticalPaths: false,
+                        
+                        // Event menu on right-click
+                        eventMenu: true,
+                        
+                        // Schedule menu on right-click
+                        scheduleMenu: true
                     },
 
                     eventRenderer({ eventRecord, renderData }) {
@@ -344,9 +362,12 @@
                     },
 
                     project: {
-                        resourcesData: resources,
-                        eventsData: events,
-                        dependenciesData: dependencies,
+                        // Use correct property names (not deprecated)
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling
                         autoCalculateStartDate: true,
                         autoCalculateEndDate: true
                     },
