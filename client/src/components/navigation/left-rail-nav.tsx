@@ -97,25 +97,7 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
                   </TooltipTrigger>
                 </Tooltip>
 
-                {/* Close Button */}
-                {onClose && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClose}
-                        className="h-8 w-8 p-0 flex-shrink-0"
-                        aria-label="Close navigation panel"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Close panel</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-1">

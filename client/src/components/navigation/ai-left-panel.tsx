@@ -689,20 +689,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="text-white hover:bg-white/20"
+            title={isCollapsed ? "Expand panel" : "Collapse panel"}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </Button>
-          {onClose && !isCollapsed && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="text-white hover:bg-white/20"
-              title="Close panel"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          )}
         </div>
       </div>
 
