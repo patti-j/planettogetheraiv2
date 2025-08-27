@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { X, Search } from 'lucide-react';
+import { X, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,6 +30,48 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Get flat list of all navigation items for arrow navigation
+  const getAllNavigationItems = () => {
+    const items: any[] = [];
+    navigationGroups.forEach(group => {
+      group.features.forEach(item => {
+        // Check permissions
+        const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour', 'Master Production Schedule'];
+        if (!alwaysVisibleItems.includes(item.label)) {
+          if (item.feature && item.action && !hasPermission(item.feature, item.action)) {
+            return;
+          }
+        }
+        items.push(item);
+      });
+    });
+    return items;
+  };
+
+  const allItems = getAllNavigationItems();
+  const currentIndex = allItems.findIndex(item => item.href === location);
+
+  const handleItemClick = (item: any) => {
+    setLocation(item.href);
+    addRecentPage(item.href, item.label, item.icon);
+    onClose();
+  };
+
+  // Navigation functions
+  const navigateToNext = () => {
+    if (allItems.length === 0) return;
+    const nextIndex = currentIndex < allItems.length - 1 ? currentIndex + 1 : 0;
+    const nextItem = allItems[nextIndex];
+    handleItemClick(nextItem);
+  };
+
+  const navigateToPrevious = () => {
+    if (allItems.length === 0) return;
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : allItems.length - 1;
+    const prevItem = allItems[prevIndex];
+    handleItemClick(prevItem);
+  };
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,16 +88,28 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
-  // Close menu on escape key
+  // Handle keyboard navigation
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          onClose();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          navigateToPrevious();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          navigateToNext();
+          break;
       }
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', handleKeydown);
+    return () => document.removeEventListener('keydown', handleKeydown);
+  }, [isOpen, onClose, currentIndex, allItems.length]);
 
   // Auto-focus search input when menu opens
   useEffect(() => {
@@ -67,12 +121,6 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
-
-  const handleItemClick = (item: any) => {
-    setLocation(item.href);
-    addRecentPage(item.href, item.label, item.icon);
-    onClose();
-  };
 
   // Filter items based on search and permissions
   const filteredGroups = navigationGroups.map(group => ({
@@ -123,15 +171,53 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Navigation</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {/* Navigation Arrow Buttons */}
+              <div className="flex items-center bg-muted/50 rounded-md p-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={navigateToPrevious}
+                  disabled={allItems.length === 0}
+                  className="h-7 w-7 hover:bg-background"
+                  title="Previous page (↑)"
+                >
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={navigateToNext}
+                  disabled={allItems.length === 0}
+                  className="h-7 w-7 hover:bg-background"
+                  title="Next page (↓)"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+                title="Close menu"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+          
+          {/* Current Page Indicator */}
+          {currentIndex >= 0 && allItems.length > 0 && (
+            <div className="text-xs text-muted-foreground mb-3 flex items-center justify-between">
+              <span>
+                Page {currentIndex + 1} of {allItems.length}
+              </span>
+              <span className="text-primary font-medium">
+                {allItems[currentIndex]?.label}
+              </span>
+            </div>
+          )}
 
           {/* Search */}
           <div className="relative">
