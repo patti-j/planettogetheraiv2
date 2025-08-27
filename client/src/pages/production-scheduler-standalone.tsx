@@ -8,7 +8,7 @@ const ProductionSchedulerStandalone: React.FC = () => {
     if (container) {
       container.innerHTML = `
         <iframe 
-          src="/production-schedule-js" 
+          src="/production-scheduler.html" 
           style="width: 100%; height: 100%; border: none;"
           title="Production Scheduler"
         ></iframe>
