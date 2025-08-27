@@ -121,30 +121,51 @@ export function AILeftPanel() {
   const { chatMessages, addMessage } = useChatSync();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Voice synthesis function
-  const speakResponse = useCallback((text: string) => {
+  // OpenAI voice synthesis function
+  const speakResponse = useCallback(async (text: string) => {
     if (!aiSettings.soundEnabled || !text.trim()) return;
     
-    // Cancel any ongoing speech
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const response = await fetch('/api/ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: JSON.stringify({
+          text: text.substring(0, 4000), // Limit text length for TTS
+          voice: aiSettings.voice || 'alloy',
+          speed: aiSettings.voiceSpeed || 1.0
+        })
+      });
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = aiSettings.voiceSpeed;
-    utterance.volume = 0.8;
-    
-    // Set voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const selectedVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes(aiSettings.voice) || 
-      voice.name.toLowerCase().includes('english')
-    );
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        await audio.play();
+      } else {
+        console.error('Failed to generate speech:', response.statusText);
+        // Fallback to browser speech synthesis
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = aiSettings.voiceSpeed;
+        utterance.volume = 0.8;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (error) {
+      console.error('Voice playback error:', error);
+      // Fallback to browser speech synthesis
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = aiSettings.voiceSpeed;
+      utterance.volume = 0.8;
+      window.speechSynthesis.speak(utterance);
     }
-
-    window.speechSynthesis.speak(utterance);
   }, [aiSettings.soundEnabled, aiSettings.voice, aiSettings.voiceSpeed]);
 
   // Auto-scroll to bottom when new messages are added
