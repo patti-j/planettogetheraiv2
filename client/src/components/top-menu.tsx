@@ -24,6 +24,7 @@ import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { navigationGroups } from "@/config/navigation-menu";
+import companyLogo from '@/assets/planet-together-logo.png';
 
 // Use shared navigation groups
 const featureGroups = navigationGroups;
@@ -467,6 +468,15 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
             {/* Menu Header with Logo and Controls */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                {/* Logo */}
+                <div className="flex items-center space-x-2">
+                  <img 
+                    src={companyLogo}
+                    alt="PlanetTogether"
+                    className="w-8 h-8 object-contain"
+                  />
+                  <span className="font-bold text-lg text-gray-900 dark:text-white">PlanetTogether</span>
+                </div>
                 {/* Close Menu Button - Red X in top left */}
                 <Button
                   onClick={() => {
