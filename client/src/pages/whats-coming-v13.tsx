@@ -258,7 +258,7 @@ export default function WhatsComing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-blue-600"
+                className="border-white text-white bg-transparent hover:bg-white hover:text-blue-600"
                 onClick={() => setLocation('/demo-tour')}
               >
                 <Eye className="h-5 w-5 mr-2" />
