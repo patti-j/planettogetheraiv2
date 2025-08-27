@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Wand2, 
+  Bot, 
   MessageSquare, 
   Shield, 
   Zap, 
@@ -13,7 +13,6 @@ import {
   Users, 
   BarChart3, 
   Workflow, 
-  Bot, 
   TrendingUp,
   Database,
   Smartphone,
@@ -53,7 +52,7 @@ export default function WhatsComing() {
       {
         title: "ML Demand Planning",
         description: "Machine learning powered demand forecasting and planning with predictive analytics",
-        icon: <Wand2 className="h-6 w-6" />,
+        icon: <Bot className="h-6 w-6" />,
         status: "New",
         benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing", "Pattern recognition"]
       },
@@ -90,7 +89,7 @@ export default function WhatsComing() {
       {
         title: "AI-Powered Optimization",
         description: "AI driven continuous improvement and performance optimization",
-        icon: <Wand2 className="h-6 w-6" />,
+        icon: <Bot className="h-6 w-6" />,
         status: "New",
         benefits: ["Optimization studio", "Autonomous scheduling", "Feedback driven adaptation"]
       },
@@ -234,7 +233,7 @@ export default function WhatsComing() {
     ai: {
       title: "AI & Intelligence",
       description: "Revolutionary AI capabilities transforming manufacturing operations",
-      icon: <Wand2 className="h-5 w-5" />
+      icon: <Bot className="h-5 w-5" />
     },
     analytics: {
       title: "Analytics & Insights",

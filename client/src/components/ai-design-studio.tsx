@@ -15,7 +15,6 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { 
   Bot, 
   Sparkles, 
-  Wand2, 
   Send, 
   Loader2, 
   CheckCircle, 

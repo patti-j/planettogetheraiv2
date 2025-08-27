@@ -35,7 +35,7 @@ import {
   Upload,
   Copy,
   Settings,
-  Wand2,
+  Bot,
   Palette,
   Grid,
   BarChart3,
@@ -1005,7 +1005,7 @@ export default function UIDesignStudio() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wand2 className="h-5 w-5" />
+              <Bot className="h-5 w-5" />
               AI Design Assistant
             </CardTitle>
             <p className="text-sm text-muted-foreground">Let me help you create amazing designs with natural language</p>
@@ -1028,7 +1028,7 @@ export default function UIDesignStudio() {
                 {isGenerating ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Wand2 className="h-4 w-4" />
+                  <Bot className="h-4 w-4" />
                 )}
               </Button>
             </div>

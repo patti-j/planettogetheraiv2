@@ -12,7 +12,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Wand2 } from "lucide-react";
+import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Bot } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Playbook } from "@shared/schema";
@@ -266,7 +266,7 @@ export default function PlaybookPage() {
             className="flex-1 h-8"
             onClick={() => setActiveTab('ai')}
           >
-            <Wand2 className="h-3 w-3 mr-1" />
+            <Bot className="h-3 w-3 mr-1" />
             Max AI
           </Button>
         </div>

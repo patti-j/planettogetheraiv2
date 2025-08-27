@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { 
   ArrowRight, 
-  Wand2, 
+  Bot, 
   Calendar, 
   Factory, 
   TrendingUp, 
@@ -815,7 +815,7 @@ const PlanningOverview = () => {
                 <h3 className="text-lg font-semibold mb-4">AI Integration Points</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <Wand2 className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                    <Bot className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                     <div className="font-semibold text-blue-800">Smart Forecasting</div>
                     <div className="text-sm text-blue-700">AI improves demand prediction accuracy</div>
                   </div>

@@ -32,7 +32,7 @@ import {
   Pause,
   RotateCcw,
   Eye,
-  Wand2
+  Bot
 } from 'lucide-react';
 import { format, addDays, differenceInHours, parseISO } from 'date-fns';
 
@@ -350,7 +350,7 @@ export default function OrderOptimization() {
                     disabled={generateOptionsMutation.isPending}
                     className="w-full"
                   >
-                    <Wand2 className="w-4 h-4 mr-2" />
+                    <Bot className="w-4 h-4 mr-2" />
                     {generateOptionsMutation.isPending ? 'Analyzing...' : 'Generate Options'}
                   </Button>
                 </CardContent>

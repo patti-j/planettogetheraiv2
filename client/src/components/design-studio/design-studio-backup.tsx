@@ -28,8 +28,7 @@ import {
   Filter,
   MoreVertical,
   Bot,
-  Sparkles,
-  Wand2
+  Sparkles
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { useToast } from '@/hooks/use-toast';

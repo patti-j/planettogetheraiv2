@@ -3,7 +3,7 @@ import {
   DollarSign, Headphones, Settings, Wrench, MessageSquare, MessageCircle, 
   Truck, ChevronDown, ChevronRight, Target, Database, Building, Server, TrendingUp, 
   Shield, GraduationCap, UserCheck, BookOpen, AlertTriangle, 
-  Package, Wand2, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
+  Package, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
   Workflow, Users, ArrowUpDown, FolderKanban
@@ -49,7 +49,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Workflow, label: "Planning Process Guide", href: "/planning-overview", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       
       // 2. Demand analysis and forecasting
-      { icon: Wand2, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
+      { icon: Bot, label: "Demand Planning", href: "/demand-planning", feature: "demand-planning", action: "view", color: "bg-indigo-500" },
       { icon: Target, label: "Demand/Supply Alignment", href: "/demand-supply-alignment", feature: "demand-supply-alignment", action: "view", color: "bg-blue-700" },
       
       // 3. Capacity and resource planning
@@ -84,7 +84,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Bot, label: "Max AI Assistant", href: "#max", feature: "", action: "", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
       { icon: GraduationCap, label: "Onboarding Assistant", href: "/onboarding-assistant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
       { icon: Bot, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "optimization", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
-      { icon: Wand2, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
+      { icon: Bot, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },

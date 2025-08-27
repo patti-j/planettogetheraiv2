@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { 
-  TrendingUp, TrendingDown, BarChart3, Activity, Wand2, Target,
+  TrendingUp, TrendingDown, BarChart3, Activity, Bot, Target,
   Plus, Calendar, Eye, AlertCircle, CheckCircle, Clock,
   ArrowUp, ArrowDown, Zap
 } from "lucide-react";
@@ -236,7 +236,7 @@ export default function DemandPlanningPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-              <Wand2 className="w-6 h-6 mr-2" />
+              <Bot className="w-6 h-6 mr-2" />
               Demand Planning
             </h1>
             <p className="text-sm md:text-base text-gray-600">AI-powered demand planning and analysis for optimal production scheduling</p>
@@ -348,7 +348,7 @@ export default function DemandPlanningPage() {
                 </>
               ) : (
                 <>
-                  <Wand2 className="w-4 h-4 mr-2" />
+                  <Bot className="w-4 h-4 mr-2" />
                   Generate Forecasts
                 </>
               )}

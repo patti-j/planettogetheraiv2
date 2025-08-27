@@ -277,7 +277,7 @@ export function WelcomeOverview({ onComplete }: { onComplete: () => void }) {
               Quick Setup
             </Badge>
             <Badge variant="secondary" className="text-sm py-1 px-3">
-              <Wand2 className="h-3 w-3 mr-1" />
+              <Bot className="h-3 w-3 mr-1" />
               AI-Powered
             </Badge>
             <Badge variant="secondary" className="text-sm py-1 px-3">
@@ -621,7 +621,7 @@ export function WelcomeOverview({ onComplete }: { onComplete: () => void }) {
                   <div className="space-y-3">
                     <Link href="/chat">
                       <Button variant="ghost" className="w-full justify-start">
-                        <Wand2 className="h-4 w-4 mr-2" />
+                        <Bot className="h-4 w-4 mr-2" />
                         Ask Max AI for Help
                       </Button>
                     </Link>

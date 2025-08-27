@@ -626,7 +626,7 @@ export default function IntegratedAIAssistant() {
                       {insight.type === 'suggestion' && <Lightbulb className="h-4 w-4 text-yellow-500" />}
                       {insight.type === 'warning' && <AlertTriangle className="h-4 w-4 text-orange-500" />}
                       {insight.type === 'optimization' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                      {insight.type === 'learning' && <Wand2 className="h-4 w-4 text-purple-500" />}
+                      {insight.type === 'learning' && <Bot className="h-4 w-4 text-purple-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-900">{insight.title}</p>
@@ -808,7 +808,7 @@ export default function IntegratedAIAssistant() {
                   {/* Memory Section */}
                   <div>
                     <h4 className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-                      <Wand2 className="h-3 w-3" />
+                      <Bot className="h-3 w-3" />
                       What Max Remembers ({memoryData.length})
                     </h4>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -939,7 +939,7 @@ export default function IntegratedAIAssistant() {
                         {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
                         {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                         {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                        {insight.type === 'learning' && <Wand2 className="h-3 w-3 text-purple-500" />}
+                        {insight.type === 'learning' && <Bot className="h-3 w-3 text-purple-500" />}
                         <span className="font-medium">{insight.title}</span>
                       </div>
                       <p className="text-gray-600">{insight.message}</p>

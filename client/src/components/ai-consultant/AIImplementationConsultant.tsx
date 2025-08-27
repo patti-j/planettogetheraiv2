@@ -10,7 +10,7 @@ import {
   TrendingUp, Users, Package, Calendar, Brain,
   Sparkles, BookOpen, Video, Phone, Mail,
   ChevronRight, Clock, Award, BarChart3,
-  Settings, Database, Workflow, Globe, GraduationCap
+  Settings, Database, Workflow, Globe, GraduationCap, Bot, X
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
@@ -794,7 +794,7 @@ const AIConsultantChat: React.FC<{ onClose: () => void; context: any }> = ({ onC
     <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white dark:bg-gray-900 rounded-lg shadow-2xl z-50 flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-purple-600" />
+          <Bot className="h-5 w-5 text-purple-600" />
           <span className="font-semibold">Max AI Consultant</span>
         </div>
         <Button variant="ghost" size="sm" onClick={onClose}>

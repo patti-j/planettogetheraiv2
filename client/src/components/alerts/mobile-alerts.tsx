@@ -295,7 +295,7 @@ export function MobileAlerts() {
           <TabsTrigger value="resolved" className="text-xs">Resolved</TabsTrigger>
           <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
           <TabsTrigger value="ai-settings" className="flex items-center gap-1 text-xs">
-            <Wand2 className="h-3 w-3" />
+            <Bot className="h-3 w-3" />
             AI
           </TabsTrigger>
         </TabsList>
@@ -338,7 +338,7 @@ export function MobileAlerts() {
         <Card className="border-purple-200 dark:border-purple-800">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Wand2 className="h-4 w-4 text-purple-500" />
+              <Bot className="h-4 w-4 text-purple-500" />
               AI Insights
             </CardTitle>
           </CardHeader>
@@ -459,7 +459,7 @@ export function MobileAlerts() {
                       {alert.aiInsights && (
                         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 mb-3">
                           <div className="flex items-center gap-2 mb-1">
-                            <Wand2 className="h-3 w-3 text-purple-500" />
+                            <Bot className="h-3 w-3 text-purple-500" />
                             <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
                               AI Analysis
                             </span>
@@ -694,7 +694,7 @@ export function MobileAlerts() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Wand2 className="h-4 w-4 text-purple-500" />
+                  <Bot className="h-4 w-4 text-purple-500" />
                   AI Alert Generation
                 </CardTitle>
                 <CardDescription className="text-sm">

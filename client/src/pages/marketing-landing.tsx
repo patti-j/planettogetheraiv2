@@ -22,7 +22,7 @@ import {
   Building2,
   Cog,
   Database,
-  Wand2,
+  Bot,
   Smartphone,
   Globe,
   ChevronRight,

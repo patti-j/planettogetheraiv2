@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { 
-  Maximize2, Minimize2, Sparkles, Wand2, Target, Cpu, Play, 
+  Maximize2, Minimize2, Sparkles, Bot, Target, Cpu, Play, 
   CheckCircle, Settings, Database, Monitor, TrendingUp, 
   Code, TestTube, Rocket, BarChart3, Layers, Package,
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
   Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
-  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle, Bot,
+  Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle,
   Shield, Users, FileText, Pause, XCircle, Send
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -939,14 +939,14 @@ export default function OptimizationStudio() {
             }}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
-                  <Wand2 className="w-4 h-4 mr-2" />
+                  <Bot className="w-4 h-4 mr-2" />
                   AI Collaborate
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl h-[70vh] sm:h-[85vh] max-h-[70vh] sm:max-h-[85vh] w-[95vw] sm:w-full flex flex-col overflow-hidden" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                 <DialogHeader className="flex-shrink-0 pb-2">
                   <DialogTitle className="flex items-center gap-2">
-                    <Wand2 className="w-5 h-5" />
+                    <Bot className="w-5 h-5" />
                     AI Algorithm Development Assistant
                     {aiSessionActive && (
                       <Badge variant="outline" className="ml-2">
@@ -966,7 +966,7 @@ export default function OptimizationStudio() {
                       <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
                         <div className="flex items-start gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <Wand2 className="w-5 h-5 text-white flex-shrink-0" />
+                            <Bot className="w-5 h-5 text-white flex-shrink-0" />
                           </div>
                           <div className="space-y-2">
                             <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Let's Build Your Algorithm Together</h3>
@@ -1101,7 +1101,7 @@ export default function OptimizationStudio() {
                         {aiSessionMessages.length === 0 ? (
                           <div className="flex items-center justify-center h-full min-h-[200px] text-gray-500 dark:text-gray-400">
                             <div className="text-center p-4">
-                              <Wand2 className="w-8 h-8 mx-auto mb-2 text-purple-400" />
+                              <Bot className="w-8 h-8 mx-auto mb-2 text-purple-400" />
                               <p className="text-sm">Starting AI collaboration session...</p>
                               <p className="text-xs mt-1">Please wait a moment while I prepare.</p>
                             </div>
@@ -2065,7 +2065,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     }
                   </p>
                   <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
-                    <Wand2 className="w-4 h-4 mr-2" />
+                    <Bot className="w-4 h-4 mr-2" />
                     Generate with AI
                   </Button>
                 </Card>
@@ -2083,7 +2083,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Algorithm Development & Improvement</h2>
               <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
-                <Wand2 className="w-4 h-4 mr-2" />
+                <Bot className="w-4 h-4 mr-2" />
                 Create New Algorithm
               </Button>
             </div>
@@ -2194,7 +2194,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                       Choose an algorithm from the left panel to review user feedback and identify improvement opportunities
                     </p>
                     <Button onClick={() => setShowAICreateDialog(true)} className="bg-gradient-to-r from-purple-500 to-pink-600">
-                      <Wand2 className="w-4 h-4 mr-2" />
+                      <Bot className="w-4 h-4 mr-2" />
                       Create New Algorithm Instead
                     </Button>
                   </Card>
@@ -2906,7 +2906,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               {/* How It Works */}
               <div className="space-y-3">
                 <h4 className="font-semibold text-base flex items-center gap-2">
-                  <Wand2 className="w-5 h-5" />
+                  <Bot className="w-5 h-5" />
                   How It Works
                 </h4>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

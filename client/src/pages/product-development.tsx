@@ -1718,7 +1718,7 @@ export default function ProductDevelopment() {
                 Cancel
               </Button>
               <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-                <Wand2 className="w-4 h-4 mr-2" />
+                <Bot className="w-4 h-4 mr-2" />
                 Generate
               </Button>
             </div>

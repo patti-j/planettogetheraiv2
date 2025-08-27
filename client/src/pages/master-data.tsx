@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, Save, Trash2, Upload, Download, Search,
   Filter, ChevronUp, ChevronDown, Edit2, X, Check, FileText,
-  Bot, Wand2, Sparkles, Lightbulb, RefreshCw, Zap, ChevronRight,
+  Bot, Sparkles, Lightbulb, RefreshCw, Zap, ChevronRight,
   Route, ArrowRight, Layers, Clock, Settings
 } from 'lucide-react';
 import {
@@ -1493,7 +1493,7 @@ export default function MasterDataPage() {
                 size="sm"
                 className="text-xs sm:text-sm"
               >
-                <Wand2 className="h-4 w-4 mr-1 sm:mr-2" />
+                <Bot className="h-4 w-4 mr-1 sm:mr-2" />
                 Improve
               </Button>
               <Button 

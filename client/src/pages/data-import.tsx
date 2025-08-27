@@ -21,7 +21,7 @@ import {
   Edit2, ClipboardList, AlertTriangle, Cog, Search, ChevronLeft, ChevronRight, 
   ChevronUp, ArrowUpDown, Filter, Eye, EyeOff, Info, Beaker, 
   Table as TableIcon, Undo2, Shield, BarChart3, Clock, Settings, Save, 
-  ArrowRightLeft, Wand2, Target 
+  ArrowRightLeft, Bot, Target 
 } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -99,7 +99,7 @@ function DataImport() {
     { id: 'inventory-optimization', name: 'Inventory Management', icon: Package, description: 'Track materials, optimize stock levels, and manage supply chain' },
     { id: 'production-planning', name: 'Production Plan Optimization', icon: ClipboardList, description: 'Create and manage production plans, targets, and milestones' },
     { id: 'maintenance-management', name: 'Maintenance Planning', icon: Wrench, description: 'Schedule preventive maintenance and track equipment health' },
-    { id: 'ai-optimization', name: 'AI Optimization', icon: Wand2, description: 'Leverage artificial intelligence for automated optimization and insights' },
+    { id: 'ai-optimization', name: 'AI Optimization', icon: Bot, description: 'Leverage artificial intelligence for automated optimization and insights' },
   ];
 
   // Feature to data requirements mapping

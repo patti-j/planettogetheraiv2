@@ -9,7 +9,7 @@ import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Minimize, Send, Sparkles, Wand2, Menu } from 'lucide-react';
+import { Minimize, Send, Sparkles, Bot, Menu } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';

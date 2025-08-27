@@ -1197,7 +1197,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                     {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
                     {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                     {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                    {insight.type === 'learning' && <Wand2 className="h-3 w-3 text-purple-500" />}
+                    {insight.type === 'learning' && <Bot className="h-3 w-3 text-purple-500" />}
                     <span className="font-medium">{insight.title}</span>
                   </div>
                 </div>

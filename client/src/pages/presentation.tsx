@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Rocket, 
-  Wand2, 
+  Bot, 
   BarChart3, 
   Users, 
   Settings, 
@@ -155,7 +155,7 @@ const PresentationPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {[
               { number: "14+", label: "Specialized Roles", icon: Users },
-              { number: "AI", label: "Powered Assistant", icon: Wand2 },
+              { number: "AI", label: "Powered Assistant", icon: Bot },
               { number: "Multi", label: "Plant Support", icon: Factory },
               { number: "Real-time", label: "Updates", icon: Zap }
             ].map((stat, index) => (
@@ -186,7 +186,7 @@ const PresentationPage = () => {
               {
                 title: "Intelligent Operations",
                 description: "AI-powered production scheduling with predictive analytics and automated optimization",
-                icon: Wand2,
+                icon: Bot,
                 features: ["Smart scheduling algorithms", "Predictive maintenance", "Resource optimization", "Bottleneck detection"]
               },
               {
@@ -255,7 +255,7 @@ const PresentationPage = () => {
                 {
                   title: "Memory System",
                   description: "Learns your workflow patterns and preferences with user-controllable memory management",
-                  icon: Wand2
+                  icon: Bot
                 },
                 {
                   title: "Canvas Visualization",
@@ -279,7 +279,7 @@ const PresentationPage = () => {
               <CardContent className="p-0">
                 <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <Wand2 className="h-8 w-8" />
+                    <Bot className="h-8 w-8" />
                     <div>
                       <h3 className="text-xl font-semibold">Max AI Assistant</h3>
                       <p className="text-purple-100">Intelligent Manufacturing Companion</p>
