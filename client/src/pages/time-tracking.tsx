@@ -45,6 +45,19 @@ export default function TimeTracking() {
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<number[]>([]);
   const [teamName, setTeamName] = useState<string>("");
 
+  // Safe date formatting function
+  const formatSafeDate = (dateString: string | null | undefined, formatString: string) => {
+    if (!dateString) return 'No time';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid time';
+      return format(date, formatString);
+    } catch (error) {
+      console.error('Date formatting error:', error, dateString);
+      return 'Invalid time';
+    }
+  };
+
   // Get current user
   const { data: currentUser } = useQuery({
     queryKey: ['/api/auth/me'],
@@ -54,22 +67,12 @@ export default function TimeTracking() {
   const { data: activeEntry, isLoading: loadingActive } = useQuery({
     queryKey: ['/api/time-tracking/active', currentUser?.id],
     enabled: !!currentUser?.id,
-    queryFn: async () => {
-      if (!currentUser?.id) return null;
-      const response = await apiRequest(`/api/time-tracking/active/${currentUser.id}`);
-      return response.entries?.[0] || null;
-    }
   });
 
   // Get user's time entries
   const { data: timeEntries, isLoading: loadingEntries } = useQuery({
     queryKey: ['/api/time-tracking/user', currentUser?.id],
     enabled: !!currentUser?.id,
-    queryFn: async () => {
-      if (!currentUser?.id) return [];
-      const response = await apiRequest(`/api/time-tracking/user/${currentUser.id}`);
-      return response;
-    }
   });
 
   // Get operations for dropdown
@@ -254,6 +257,12 @@ export default function TimeTracking() {
     
     const start = new Date(activeEntry.clockInTime);
     const now = new Date();
+    
+    // Validate dates
+    if (isNaN(start.getTime())) {
+      console.error('Invalid clock in time:', activeEntry.clockInTime);
+      return;
+    }
     const diff = now.getTime() - start.getTime();
     
     const hours = Math.floor(diff / 3600000);
@@ -326,7 +335,7 @@ export default function TimeTracking() {
               <div>
                 <p className="text-sm text-muted-foreground">Clock In Time</p>
                 <p className="font-medium">
-                  {format(new Date(activeEntry.clockInTime), 'h:mm a')}
+                  {formatSafeDate(activeEntry.clockInTime, 'h:mm a')}
                 </p>
               </div>
               {activeEntry.operationId && (
@@ -399,7 +408,7 @@ export default function TimeTracking() {
                     <SelectValue placeholder="Select an operation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {operations?.map((op: any) => (
                       <SelectItem key={op.id} value={op.id.toString()}>
                         {op.name}
@@ -416,7 +425,7 @@ export default function TimeTracking() {
                     <SelectValue placeholder="Select a job" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {jobs?.map((job: any) => (
                       <SelectItem key={job.id} value={job.id.toString()}>
                         {job.name}
@@ -500,7 +509,7 @@ export default function TimeTracking() {
                   <SelectValue placeholder="Select a job" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {jobs?.map((job: any) => (
                     <SelectItem key={job.id} value={job.id.toString()}>
                       {job.name}
@@ -613,12 +622,12 @@ export default function TimeTracking() {
                       </div>
                       <p className="text-sm mt-1">
                         <span className="font-medium">Clock In:</span>{' '}
-                        {format(new Date(entry.clockInTime), 'MMM d, h:mm a')}
+                        {formatSafeDate(entry.clockInTime, 'MMM d, h:mm a')}
                       </p>
                       {entry.clockOutTime && (
                         <p className="text-sm">
                           <span className="font-medium">Clock Out:</span>{' '}
-                          {format(new Date(entry.clockOutTime), 'h:mm a')}
+                          {formatSafeDate(entry.clockOutTime, 'h:mm a')}
                         </p>
                       )}
                       {entry.location && (
