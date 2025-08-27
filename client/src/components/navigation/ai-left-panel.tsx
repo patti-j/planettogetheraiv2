@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X, Copy, Check } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,8 +43,11 @@ export function AILeftPanel() {
   });
   const [isResizing, setIsResizing] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
@@ -419,6 +422,52 @@ export function AILeftPanel() {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom function with proper spacing for Activity Center
+  const scrollToBottom = useCallback(() => {
+    if (chatScrollRef.current) {
+      // Add extra padding to account for Activity Center at bottom
+      const scrollHeight = chatScrollRef.current.scrollHeight;
+      const clientHeight = chatScrollRef.current.clientHeight;
+      const maxScrollTop = scrollHeight - clientHeight;
+      
+      chatScrollRef.current.scrollTo({
+        top: maxScrollTop,
+        behavior: 'smooth'
+      });
+      
+      setIsNearBottom(true);
+      setShowScrollButton(false);
+    }
+  }, []);
+
+  // Handle scroll events to show/hide scroll button
+  const handleScroll = useCallback(() => {
+    if (chatScrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatScrollRef.current;
+      const scrolledFromBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // Show scroll button if more than 100px from bottom
+      const shouldShowButton = scrolledFromBottom > 100;
+      setShowScrollButton(shouldShowButton);
+      setIsNearBottom(scrolledFromBottom < 50);
+    }
+  }, []);
+
+  // Auto-scroll chat to bottom when new messages arrive (only if near bottom)
+  useEffect(() => {
+    if (chatScrollRef.current && chatMessages.length > 0) {
+      // Only auto-scroll if user is near the bottom to not interrupt reading
+      if (isNearBottom) {
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      } else {
+        // Show scroll button if new message arrives while user is scrolled up
+        setShowScrollButton(true);
+      }
+    }
+  }, [chatMessages, isNearBottom, scrollToBottom]);
+
   // Listen for toggle event from command palette
   useEffect(() => {
     const handleToggle = () => setIsCollapsed(prev => !prev);
@@ -586,9 +635,15 @@ export function AILeftPanel() {
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
-              <ScrollArea className="flex-1 pr-2" ref={chatScrollRef}>
-                <div className="space-y-4 pb-4">
-                  {chatMessages
+              <div className="relative flex-1">
+                <ScrollArea 
+                  className="flex-1 pr-2" 
+                  ref={chatScrollRef}
+                  onScrollCapture={handleScroll}
+                >
+                  <div className="space-y-4 pb-20">
+                    {/* Added extra bottom padding for Activity Center */}
+                    {chatMessages
                     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                     .map((message) => (
                     <div
@@ -654,9 +709,21 @@ export function AILeftPanel() {
                     </div>
                   ))}
 
-                </div>
-              </ScrollArea>
-              
+                  </div>
+                </ScrollArea>
+                
+                {/* Scroll to bottom button */}
+                {showScrollButton && (
+                  <Button
+                    onClick={scrollToBottom}
+                    size="sm"
+                    className="absolute bottom-2 right-2 z-10 rounded-full shadow-lg"
+                    title="Scroll to bottom"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
 
             </TabsContent>
 
