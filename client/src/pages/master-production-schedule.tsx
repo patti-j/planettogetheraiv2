@@ -451,106 +451,109 @@ export default function MasterProductionSchedulePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Master Production Schedule</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold">Master Production Schedule</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
             Plan finished goods production to meet demand based on sales orders and forecasts
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             onClick={() => optimizeMPSMutation.mutate({ itemNumbers: displayMPSItems.map(item => item.itemNumber) })}
             disabled={optimizeMPSMutation.isPending}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm"
+            size="sm"
           >
             <Brain className="h-4 w-4 mr-2" />
             {optimizeMPSMutation.isPending ? 'Optimizing...' : 'AI Optimize'}
           </Button>
-          <Button variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-sm">
+              <RefreshCw className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            <Button variant="outline" size="sm" className="text-sm">
+              <Download className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Summary Metrics */}
       {summaryMetrics && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Items</p>
-                  <p className="text-2xl font-bold">{summaryMetrics.totalItems}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Total Items</p>
+                  <p className="text-lg md:text-2xl font-bold">{summaryMetrics.totalItems}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-500" />
+                <Package className="h-6 w-6 md:h-8 md:w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Items with Issues</p>
-                  <p className="text-2xl font-bold text-orange-600">{summaryMetrics.itemsWithIssues}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Issues</p>
+                  <p className="text-lg md:text-2xl font-bold text-orange-600">{summaryMetrics.itemsWithIssues}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
+                <AlertTriangle className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Forecast Demand</p>
-                  <p className="text-2xl font-bold">{summaryMetrics.totalForecastDemand.toLocaleString()}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Demand</p>
+                  <p className="text-lg md:text-2xl font-bold">{summaryMetrics.totalForecastDemand.toLocaleString()}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
+                <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Planned Production</p>
-                  <p className="text-2xl font-bold">{summaryMetrics.totalPlannedProduction.toLocaleString()}</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Production</p>
+                  <p className="text-lg md:text-2xl font-bold">{summaryMetrics.totalPlannedProduction.toLocaleString()}</p>
                 </div>
-                <Target className="h-8 w-8 text-purple-500" />
+                <Target className="h-6 w-6 md:h-8 md:w-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Supply Ratio</p>
-                  <p className="text-2xl font-bold">{(summaryMetrics.planSupplyRatio * 100).toFixed(1)}%</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">Supply Ratio</p>
+                  <p className="text-lg md:text-2xl font-bold">{(summaryMetrics.planSupplyRatio * 100).toFixed(1)}%</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-indigo-500" />
+                <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-indigo-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 md:p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">AI Confidence</p>
-                  <p className="text-2xl font-bold">{summaryMetrics.averageAIConfidence}%</p>
+                  <p className="text-xs md:text-sm font-medium text-muted-foreground">AI Confidence</p>
+                  <p className="text-lg md:text-2xl font-bold">{summaryMetrics.averageAIConfidence}%</p>
                 </div>
-                <Brain className="h-8 w-8 text-pink-500" />
+                <Brain className="h-6 w-6 md:h-8 md:w-8 text-pink-500" />
               </div>
             </CardContent>
           </Card>
@@ -560,34 +563,39 @@ export default function MasterProductionSchedulePage() {
       {/* Priority Alert Dashboard */}
       {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length > 0 && (
         <Card className="border-l-4 border-l-red-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-700 text-lg">
               <AlertTriangle className="h-5 w-5" />
-              Critical Supply-Demand Misalignments ({sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length} items)
+              <span className="hidden sm:inline">Critical Supply-Demand Misalignments</span>
+              <span className="sm:hidden">Critical Issues</span>
+              <span className="text-sm">({sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length})</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               Items requiring immediate planner attention to resolve supply-demand gaps
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="p-3 md:p-6">
+            <div className="space-y-2 md:space-y-3">
               {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).slice(0, 5).map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
+                <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-red-50 dark:bg-red-950/20 rounded-lg gap-2">
+                  <div className="flex items-start gap-3">
+                    <div className="h-3 w-3 rounded-full bg-red-500 mt-1" />
                     <div>
-                      <div className="font-medium">{item.itemNumber} - {item.itemDescription}</div>
-                      <div className="text-sm text-red-600">Priority: {item.alignmentData.priority} | Issues: {item.alignmentData.issues.join(', ')}</div>
+                      <div className="font-medium text-sm md:text-base">{item.itemNumber}</div>
+                      <div className="text-xs md:text-sm text-muted-foreground">{item.itemDescription}</div>
+                      <div className="text-xs text-red-600 mt-1">
+                        Priority: {item.alignmentData.priority} | {item.alignmentData.issues.join(', ')}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-muted-foreground">Supply Gap</div>
-                    <div className="font-medium text-red-600">{item.alignmentData.supplyGap.toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">Supply Gap</div>
+                    <div className="font-medium text-red-600 text-sm">{item.alignmentData.supplyGap.toLocaleString()}</div>
                   </div>
                 </div>
               ))}
               {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length > 5 && (
-                <div className="text-sm text-muted-foreground text-center pt-2">
+                <div className="text-xs md:text-sm text-muted-foreground text-center pt-2">
                   ...and {sortedMPSItems.filter(item => item.alignmentData.priority >= 50).length - 5} more critical items
                 </div>
               )}
@@ -604,12 +612,12 @@ export default function MasterProductionSchedulePage() {
             Planning Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <CardContent className="p-3 md:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="plant-select">Plant</Label>
+              <Label htmlFor="plant-select" className="text-sm">Plant</Label>
               <Select value={selectedPlant} onValueChange={setSelectedPlant}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Select plant" />
                 </SelectTrigger>
                 <SelectContent>
@@ -621,9 +629,9 @@ export default function MasterProductionSchedulePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="item-select">Item</Label>
+              <Label htmlFor="item-select" className="text-sm">Item</Label>
               <Select value={selectedItem} onValueChange={setSelectedItem}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Select item" />
                 </SelectTrigger>
                 <SelectContent>
@@ -638,9 +646,9 @@ export default function MasterProductionSchedulePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="time-period">Time Period</Label>
+              <Label htmlFor="time-period" className="text-sm">Time Period</Label>
               <Select value={timePeriod} onValueChange={(value: TimePeriod) => setTimePeriod(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Select time period" />
                 </SelectTrigger>
                 <SelectContent>
@@ -654,7 +662,7 @@ export default function MasterProductionSchedulePage() {
 
             <div className="space-y-2">
               <div className="min-h-5">
-                <Label htmlFor="horizon">
+                <Label htmlFor="horizon" className="text-sm">
                   Planning Horizon
                   <span className="text-xs text-muted-foreground ml-1">
                     ({getPeriodLabel(timePeriod)}s)
@@ -668,16 +676,17 @@ export default function MasterProductionSchedulePage() {
                 onChange={(e) => setPlanningHorizon(Number(e.target.value))}
                 min="1"
                 max={timePeriod === 'daily' ? 365 : timePeriod === 'weekly' ? 52 : timePeriod === 'monthly' ? 24 : 8}
+                className="text-sm"
               />
             </div>
 
             <div className="space-y-2">
               <div className="min-h-5">
-                <Label className="invisible">Placeholder</Label>
+                <Label className="invisible text-sm">Placeholder</Label>
               </div>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full text-sm" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Advanced Settings
+                <span className="hidden sm:inline">Advanced </span>Settings
               </Button>
             </div>
           </div>
@@ -687,32 +696,45 @@ export default function MasterProductionSchedulePage() {
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="schedule">MPS Schedule</TabsTrigger>
-          <TabsTrigger value="forecast">Demand Forecast</TabsTrigger>
-          <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+          <TabsTrigger value="schedule" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">MPS </span>Schedule
+          </TabsTrigger>
+          <TabsTrigger value="forecast" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Demand </span>Forecast
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">AI </span>Analysis
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="schedule" className="space-y-4">
           {sortedMPSItems.map((item) => (
             <Card key={item.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {item.itemNumber} - {item.itemDescription}
-                      <Badge variant={item.isPublished ? "default" : "secondary"}>
-                        {item.isPublished ? "Published" : "Draft"}
-                      </Badge>
-                      {item.alignmentData.priority > 0 && (
-                        <Badge variant={getPriorityColor(item.alignmentData.priority)} className="ml-2">
-                          Priority: {item.alignmentData.priority}
+              <CardHeader className="pb-3">
+                <div className="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-start">
+                  <div className="flex-1">
+                    <CardTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-lg">
+                      <span className="font-bold">{item.itemNumber}</span>
+                      <span className="text-base text-muted-foreground">- {item.itemDescription}</span>
+                      <div className="flex gap-2 mt-1 sm:mt-0">
+                        <Badge variant={item.isPublished ? "default" : "secondary"} className="text-xs">
+                          {item.isPublished ? "Published" : "Draft"}
                         </Badge>
-                      )}
+                        {item.alignmentData.priority > 0 && (
+                          <Badge variant={getPriorityColor(item.alignmentData.priority)} className="text-xs">
+                            Priority: {item.alignmentData.priority}
+                          </Badge>
+                        )}
+                      </div>
                     </CardTitle>
-                    <CardDescription>
-                      Lead Time: {item.manufacturingLeadTimeDays} days | Lot Size: {item.fixedLotSize} | Safety Stock: {item.safetyStockDays} days
+                    <CardDescription className="text-sm mt-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-xs">
+                        <span>Lead Time: {item.manufacturingLeadTimeDays} days</span>
+                        <span>Lot Size: {item.fixedLotSize}</span>
+                        <span>Safety Stock: {item.safetyStockDays} days</span>
+                      </div>
                       {item.alignmentData.issues.length > 0 && (
-                        <div className="mt-1 text-red-600 font-medium">
+                        <div className="mt-2 text-red-600 font-medium text-xs">
                           ⚠️ Issues: {item.alignmentData.issues.join(', ')} | Supply Gap: {item.alignmentData.supplyGap.toLocaleString()}
                         </div>
                       )}
@@ -720,19 +742,96 @@ export default function MasterProductionSchedulePage() {
                   </div>
                   <div className="flex gap-2">
                     {item.alignmentData.priority >= 50 && (
-                      <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700">
+                      <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700 text-xs">
                         <Target className="h-3 w-3 mr-1" />
-                        Fix Alignment
+                        <span className="hidden sm:inline">Fix Alignment</span>
+                        <span className="sm:hidden">Fix</span>
                       </Button>
                     )}
-                    <Button size="sm" variant="outline">
-                      Edit Parameters
+                    <Button size="sm" variant="outline" className="text-xs">
+                      <span className="hidden sm:inline">Edit Parameters</span>
+                      <span className="sm:hidden">Edit</span>
                     </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
+                {/* Mobile-friendly view */}
+                <div className="lg:hidden space-y-3">
+                  {item.mpsData.slice(0, Math.min(6, planningHorizon)).map((period, periodIndex) => {
+                    const alignment = getSupplyDemandAlignment(period);
+                    const supplyGap = period.totalDemand - period.masterProductionScheduleQuantity;
+                    return (
+                      <Card key={periodIndex} className="p-3">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="font-medium text-sm">{format(new Date(period.periodStartDate), timePeriod === 'daily' ? 'MMM dd' : timePeriod === 'weekly' ? 'MMM dd' : timePeriod === 'monthly' ? 'MMM yyyy' : "'Q'Q yyyy")}</div>
+                            <div className="text-xs text-muted-foreground">{getPeriodLabel(timePeriod)} {period.periodNumber}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-3 w-3 rounded-full ${getStatusColor(period.status)}`} />
+                            <div className={`h-3 w-3 rounded-full ${alignment.color}`} />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <div className="text-muted-foreground">Sales Orders</div>
+                            <div className="font-medium">{period.salesOrderDemand.toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Forecast</div>
+                            <div className="font-medium">{period.forecastDemand.toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Total Demand</div>
+                            <div className="font-medium text-blue-600">{period.totalDemand.toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">MPS Quantity</div>
+                            <div className="font-medium">{period.masterProductionScheduleQuantity.toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Projected OH</div>
+                            <div className={`font-medium ${period.projectedOnHand < period.safetyStockRequirement ? "text-red-600" : ""}`}>
+                              {period.projectedOnHand.toLocaleString()}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">ATP</div>
+                            <div className="font-medium">{period.availableToPromise.toLocaleString()}</div>
+                          </div>
+                        </div>
+                        
+                        {Math.abs(supplyGap) > 0 && (
+                          <div className={`mt-2 text-xs px-2 py-1 rounded ${supplyGap > 0 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {supplyGap > 0 ? `Short ${supplyGap.toLocaleString()}` : `Over ${Math.abs(supplyGap).toLocaleString()}`}
+                          </div>
+                        )}
+                        
+                        {showAIRecommendations && period.aiRecommendedQuantity && (
+                          <div className="mt-2 flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">AI Recommendation</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-purple-600 font-medium">{period.aiRecommendedQuantity.toLocaleString()}</span>
+                              <Badge variant="outline" className="text-xs">{period.aiConfidenceScore}%</Badge>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
+                  {item.mpsData.length > 6 && (
+                    <div className="text-center py-2">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Show {item.mpsData.length - 6} More Periods
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop table view */}
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
@@ -890,52 +989,52 @@ export default function MasterProductionSchedulePage() {
                 Intelligent insights and optimization recommendations for your Master Production Schedule
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 md:p-6">
+              <div className="space-y-3 md:space-y-4">
                 {displayMPSItems.map((item, itemIndex) => (
                   <Card key={item.id} className="border-l-4 border-l-purple-500">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{item.itemNumber} - {item.itemDescription}</CardTitle>
+                      <CardTitle className="text-base md:text-lg">{item.itemNumber} - {item.itemDescription}</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CardContent className="p-3 md:p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
-                          <h4 className="font-medium mb-2">Key Insights</h4>
-                          <ul className="space-y-1 text-sm">
+                          <h4 className="font-medium mb-2 text-sm md:text-base">Key Insights</h4>
+                          <ul className="space-y-1 text-xs md:text-sm">
                             <li className="flex items-center gap-2">
-                              <div className="h-1 w-1 bg-blue-500 rounded-full" />
-                              Demand trend is {itemIndex % 2 === 0 ? 'increasing' : 'stable'} over the planning horizon
+                              <div className="h-1 w-1 bg-blue-500 rounded-full flex-shrink-0" />
+                              <span>Demand trend is {itemIndex % 2 === 0 ? 'increasing' : 'stable'} over the planning horizon</span>
                             </li>
                             <li className="flex items-center gap-2">
-                              <div className="h-1 w-1 bg-blue-500 rounded-full" />
-                              Average lead time utilization: {85 + (itemIndex * 5)}%
+                              <div className="h-1 w-1 bg-blue-500 rounded-full flex-shrink-0" />
+                              <span>Average lead time utilization: {85 + (itemIndex * 5)}%</span>
                             </li>
                             <li className="flex items-center gap-2">
-                              <div className="h-1 w-1 bg-blue-500 rounded-full" />
-                              Safety stock coverage: {7 + itemIndex} days average
+                              <div className="h-1 w-1 bg-blue-500 rounded-full flex-shrink-0" />
+                              <span>Safety stock coverage: {7 + itemIndex} days average</span>
                             </li>
                           </ul>
                         </div>
                         <div>
-                          <h4 className="font-medium mb-2">Recommendations</h4>
-                          <ul className="space-y-1 text-sm">
-                            <li className="flex items-center gap-2">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              Consider increasing lot size by 10% to improve efficiency
+                          <h4 className="font-medium mb-2 text-sm md:text-base">Recommendations</h4>
+                          <ul className="space-y-1 text-xs md:text-sm">
+                            <li className="flex items-start gap-2">
+                              <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span>Consider increasing lot size by 10% to improve efficiency</span>
                             </li>
-                            <li className="flex items-center gap-2">
-                              <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                              Monitor week {3 + itemIndex} for potential capacity constraint
+                            <li className="flex items-start gap-2">
+                              <AlertTriangle className="h-3 w-3 text-yellow-500 flex-shrink-0 mt-0.5" />
+                              <span>Monitor week {3 + itemIndex} for potential capacity constraint</span>
                             </li>
-                            <li className="flex items-center gap-2">
-                              <CheckCircle className="h-3 w-3 text-green-500" />
-                              Current safety stock levels appear adequate
+                            <li className="flex items-start gap-2">
+                              <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                              <span>Current safety stock levels appear adequate</span>
                             </li>
                           </ul>
                         </div>
                       </div>
                       <div className="mt-4 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                        <p className="text-sm text-purple-700 dark:text-purple-300">
+                        <p className="text-xs md:text-sm text-purple-700 dark:text-purple-300">
                           <strong>AI Confidence Score:</strong> {75 + (itemIndex * 5)}% - 
                           Recommendations based on historical demand patterns, capacity constraints, and inventory optimization algorithms.
                         </p>
