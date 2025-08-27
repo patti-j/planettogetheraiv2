@@ -117,10 +117,10 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
       <div
         ref={menuRef}
         className={cn(
-          "fixed left-0 top-0 h-full bg-background border-r shadow-xl z-50",
+          "fixed right-0 top-0 h-full bg-background border-l shadow-xl z-50",
           "transition-transform duration-300 ease-in-out",
           "w-80",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
         {/* Header */}

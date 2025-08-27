@@ -79,7 +79,7 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
                       <ChevronRight className="h-3 w-3 transition-transform" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left">
+                  <TooltipContent side="right">
                     <p>Collapse navigation</p>
                   </TooltipContent>
                 </Tooltip>
@@ -114,7 +114,7 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
                       <ChevronLeft className="h-3 w-3 transition-transform" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left">
+                  <TooltipContent side="right">
                     <p>Expand navigation</p>
                   </TooltipContent>
                 </Tooltip>
@@ -130,7 +130,7 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
                       <Home className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="left">
+                  <TooltipContent side="right">
                     <p>Home</p>
                   </TooltipContent>
                 </Tooltip>
