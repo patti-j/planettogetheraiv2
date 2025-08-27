@@ -4338,6 +4338,8 @@ Return ONLY a valid JSON object with this exact structure:
   // Memory detection and storage function for Max AI
   async function detectAndStoreMemory(userMessage: string, aiResponse: any, userId: number, user: any): Promise<void> {
     try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      
       // Use OpenAI to analyze if the message contains important user preferences or instructions
       const memoryAnalysis = await openai.chat.completions.create({
         model: "gpt-4o",

@@ -2,8 +2,8 @@ import { OpenAI } from 'openai';
 import { db } from '../db';
 import { 
   alerts,
-  memoryBooks,
-  type InsertMemoryBook
+  aiMemories,
+  type InsertAIMemorySchema
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
 
@@ -100,21 +100,26 @@ Only store information that would be helpful for future conversations. Don't sto
       const analysis = JSON.parse(memoryAnalysis.choices[0].message.content || '{}');
       
       if (analysis.shouldStore && analysis.confidence > 0.7) {
-        // Create memory book entry
-        const memoryData: InsertMemoryBook = {
-          title: analysis.title || `User ${analysis.type || 'preference'} - ${new Date().toLocaleDateString()}`,
+        // Create AI memory entry
+        const memoryData = {
+          userId: (userId || 'demo').toString(),
+          type: analysis.type || 'preference',
+          category: 'user_interaction',
           content: `${analysis.content}\n\n--- Context ---\nUser said: "${userMessage}"\nDate: ${new Date().toISOString()}`,
-          tags: [
-            ...analysis.tags || [],
-            `user-${userId}`,
-            'max-ai-memory',
-            analysis.type || 'general'
-          ],
-          createdBy: userId,
-          lastEditedBy: userId
+          context: {
+            confidence: analysis.confidence,
+            metadata: {
+              tags: analysis.tags || [],
+              source: 'max-ai-memory',
+              type: analysis.type || 'general'
+            }
+          },
+          confidence: Math.round((analysis.confidence || 0.7) * 100),
+          importance: analysis.confidence > 0.8 ? 'high' : 'medium',
+          source: 'chat'
         };
 
-        await db.insert(memoryBooks).values(memoryData);
+        await db.insert(aiMemories).values(memoryData);
         console.log(`📝 Stored memory: ${analysis.title} for user ${userId}`);
       }
     } catch (error) {
@@ -126,23 +131,20 @@ Only store information that would be helpful for future conversations. Don't sto
   // Retrieve relevant memories for context
   private async getRelevantMemories(userId: number, userMessage: string): Promise<string> {
     try {
-      // Get user's memory books
+      // Get user's AI memories
       const userMemories = await db.select({
-        title: memoryBooks.title,
-        content: memoryBooks.content,
-        tags: memoryBooks.tags,
-        createdAt: memoryBooks.createdAt
-      }).from(memoryBooks)
+        type: aiMemories.type,
+        content: aiMemories.content,
+        context: aiMemories.context,
+        createdAt: aiMemories.createdAt
+      }).from(aiMemories)
         .where(
           and(
-            eq(memoryBooks.isActive, true),
-            or(
-              eq(memoryBooks.createdBy, userId),
-              like(memoryBooks.tags, `%user-${userId}%`)
-            )
+            eq(aiMemories.isActive, true),
+            eq(aiMemories.userId, (userId || 'demo').toString())
           )
         )
-        .orderBy(desc(memoryBooks.updatedAt))
+        .orderBy(desc(aiMemories.updatedAt))
         .limit(10);
 
       if (userMemories.length === 0) {
@@ -158,7 +160,7 @@ Only store information that would be helpful for future conversations. Don't sto
             content: `You are analyzing stored memories to find what's relevant to the current user message.
 
 Available memories:
-${userMemories.map((m, i) => `${i + 1}. ${m.title}\nContent: ${m.content}\nTags: ${m.tags}\n`).join('\n')}
+${userMemories.map((m, i) => `${i + 1}. Type: ${m.type}\nContent: ${m.content}\nContext: ${JSON.stringify(m.context)}\n`).join('\n')}
 
 Current user message: "${userMessage}"
 

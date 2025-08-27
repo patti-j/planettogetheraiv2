@@ -17246,24 +17246,14 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // Memory Book System Implementation
-  async getMemoryBooks(scope?: string, plantId?: number, userId?: number): Promise<MemoryBook[]> {
-    let query = this.db.select().from(memoryBooks);
+  // AI Memory System Implementation (adapted from Memory Books)
+  async getMemoryBooks(scope?: string, plantId?: number, userId?: number): Promise<any[]> {
+    let query = this.db.select().from(aiMemories);
     const conditions = [];
     
-    if (scope) conditions.push(eq(memoryBooks.scope, scope));
-    if (plantId) conditions.push(eq(memoryBooks.plantId, plantId));
+    if (scope) conditions.push(eq(aiMemories.category, scope));
     if (userId) {
-      // Check if user is creator or collaborator
-      const collaboratorQuery = this.db
-        .select({ memoryBookId: memoryBookCollaborators.memoryBookId })
-        .from(memoryBookCollaborators)
-        .where(eq(memoryBookCollaborators.userId, userId));
-      
-      conditions.push(or(
-        eq(memoryBooks.createdBy, userId),
-        inArray(memoryBooks.id, collaboratorQuery)
-      ));
+      conditions.push(eq(aiMemories.userId, userId.toString()));
     }
     
     if (conditions.length > 0) {
@@ -17271,40 +17261,55 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query
-      .where(eq(memoryBooks.isActive, true))
-      .orderBy(desc(memoryBooks.updatedAt));
+      .where(eq(aiMemories.isActive, true))
+      .orderBy(desc(aiMemories.updatedAt));
   }
 
-  async getMemoryBook(id: number): Promise<MemoryBook | undefined> {
-    const [book] = await this.db
+  async getMemoryBook(id: number): Promise<any | undefined> {
+    const [memory] = await this.db
       .select()
-      .from(memoryBooks)
-      .where(eq(memoryBooks.id, id));
-    return book;
+      .from(aiMemories)
+      .where(eq(aiMemories.id, id));
+    return memory;
   }
 
-  async createMemoryBook(book: InsertMemoryBook): Promise<MemoryBook> {
-    const [newBook] = await this.db
-      .insert(memoryBooks)
-      .values(book)
+  async createMemoryBook(book: any): Promise<any> {
+    const memoryData = {
+      userId: book.createdBy?.toString() || '1',
+      type: 'knowledge',
+      category: book.scope || 'general',
+      content: book.content,
+      context: {
+        title: book.title,
+        tags: book.tags || [],
+        metadata: {}
+      },
+      confidence: 80,
+      importance: 'medium',
+      source: 'manual'
+    };
+    
+    const [newMemory] = await this.db
+      .insert(aiMemories)
+      .values(memoryData)
       .returning();
-    return newBook;
+    return newMemory;
   }
 
-  async updateMemoryBook(id: number, updates: Partial<InsertMemoryBook>): Promise<MemoryBook | undefined> {
+  async updateMemoryBook(id: number, updates: any): Promise<any | undefined> {
     const [updated] = await this.db
-      .update(memoryBooks)
+      .update(aiMemories)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(memoryBooks.id, id))
+      .where(eq(aiMemories.id, id))
       .returning();
     return updated;
   }
 
   async deleteMemoryBook(id: number): Promise<boolean> {
     const result = await this.db
-      .update(memoryBooks)
+      .update(aiMemories)
       .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(memoryBooks.id, id));
+      .where(eq(aiMemories.id, id));
     return result.rowCount > 0;
   }
 
