@@ -51,6 +51,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
+  const [showFloatingNotification, setShowFloatingNotification] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -119,6 +121,31 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [userPreferences]);
 
+  // Monitor for new messages and show floating notification when collapsed
+  useEffect(() => {
+    const currentMessageCount = chatMessages.length;
+    const previousCount = previousMessageCountRef.current;
+    
+    // Check if there's a new assistant message and panel is collapsed
+    if (currentMessageCount > previousCount && isCollapsed) {
+      const newMessages = chatMessages.slice(previousCount);
+      const latestAssistantMessage = newMessages.find(msg => msg.role === 'assistant');
+      
+      if (latestAssistantMessage) {
+        setFloatingNotification(latestAssistantMessage);
+        setShowFloatingNotification(true);
+        
+        // Auto-hide after 8 seconds
+        setTimeout(() => {
+          setShowFloatingNotification(false);
+          setTimeout(() => setFloatingNotification(null), 300); // Allow fade out
+        }, 8000);
+      }
+    }
+    
+    previousMessageCountRef.current = currentMessageCount;
+  }, [chatMessages, isCollapsed]);
+
   // Save AI settings to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
@@ -126,6 +153,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   
   const { chatMessages, addMessage } = useChatSync();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(chatMessages.length);
 
   // Stop current audio playback
   const stopAudio = useCallback(() => {
