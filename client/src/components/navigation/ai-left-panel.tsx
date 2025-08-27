@@ -674,7 +674,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               variant="ghost"
               size="icon"
               onClick={stopAudio}
-              className="text-white hover:bg-white/20 animate-pulse"
+              className="text-white hover:text-white/80 animate-pulse bg-transparent"
               title="Stop audio playback"
             >
               <Square className="w-4 h-4" />
@@ -684,7 +684,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             variant="ghost"
             size="icon"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-white hover:bg-white/20"
+            className="text-white hover:text-white/80 bg-transparent"
             title={isCollapsed ? "Expand panel" : "Collapse panel"}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
