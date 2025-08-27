@@ -236,7 +236,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <Input
-              placeholder="Ask Max AI anything..."
+              placeholder="Ask anything"
               value={floatingPrompt}
               onChange={(e) => setFloatingPrompt(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}

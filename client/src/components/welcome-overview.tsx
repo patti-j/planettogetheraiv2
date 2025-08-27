@@ -622,7 +622,7 @@ export function WelcomeOverview({ onComplete }: { onComplete: () => void }) {
                     <Link href="/chat">
                       <Button variant="ghost" className="w-full justify-start">
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Ask Max AI for Help
+                        Ask for Help
                       </Button>
                     </Link>
                     <Link href="/feedback">

@@ -200,7 +200,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Ask Max AI... (⌘K)"
+            placeholder="Ask anything... (⌘K)"
             value={prompt}
             onChange={handleInputChange}
             onClick={handleInputClick}
