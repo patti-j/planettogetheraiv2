@@ -84,6 +84,143 @@ export default function Reports() {
 
   const selectedConfig = reportConfigs.find((config: any) => config.id === selectedConfigId);
 
+  // Sample manufacturing reports based on PT Publish data
+  const getSampleReports = (): Report[] => {
+    return [
+      {
+        id: "brewery-production-summary",
+        title: "Brewery Production Summary",
+        type: "production",
+        description: "Comprehensive overview of brewery production performance including Newcastle Brown Ale, Guinness, and other beverage operations",
+        data: {
+          totalJobs: 48,
+          completedJobs: 35,
+          activeJobs: 8,
+          overdueJobs: 5,
+          operations: 533,
+          completedOperations: 387,
+          jobsByPriority: {
+            high: 12,
+            medium: 28,
+            low: 8
+          },
+          topProducts: ["Newcastle Brown Ale", "Guinness Stout", "IPA Premium"],
+          efficiency: 89.2,
+          onTimeDelivery: 91.5
+        },
+        createdAt: new Date("2025-08-27")
+      },
+      {
+        id: "resource-utilization-analysis",
+        title: "Resource Utilization Analysis",
+        type: "resource",
+        description: "Analysis of brewing equipment utilization including kettles, fermentation tanks, and bottling lines",
+        data: {
+          totalResources: 23,
+          activeResources: 20,
+          maintenanceResources: 2,
+          idleResources: 1,
+          resourceTypes: ["Brew Kettles", "Fermentation Tanks", "Bottling Lines", "Quality Control"],
+          utilizationRate: 87,
+          topPerformers: [
+            { name: "Brew Kettle 1", utilization: 95.2 },
+            { name: "Fermentation Tank A", utilization: 92.8 },
+            { name: "Bottling Line 2", utilization: 88.5 }
+          ],
+          bottlenecks: ["Quality Control Station", "Packaging Line 1"]
+        },
+        createdAt: new Date("2025-08-27")
+      },
+      {
+        id: "operational-efficiency-metrics",
+        title: "Operational Efficiency Metrics",
+        type: "efficiency",
+        description: "Key performance indicators for brewery operations including OEE, cycle times, and quality metrics",
+        data: {
+          onTimeJobs: 43,
+          totalJobs: 48,
+          averageLeadTime: 5.2,
+          resourceUtilization: 87,
+          bottlenecks: ["Quality Control", "Packaging"],
+          oee: 84.7,
+          qualityRate: 96.3,
+          cycleEfficiency: 89.1,
+          trends: {
+            weekly: "+2.3%",
+            monthly: "+5.7%",
+            quarterly: "+12.1%"
+          }
+        },
+        createdAt: new Date("2025-08-27")
+      },
+      {
+        id: "quality-control-report",
+        title: "Quality Control Report",
+        type: "custom",
+        description: "Quality metrics and inspection results across all production lines with focus on beer quality standards",
+        data: {
+          totalInspections: 156,
+          passedInspections: 150,
+          failedInspections: 6,
+          qualityScore: 96.2,
+          defectTypes: {
+            "Taste Issues": 3,
+            "Clarity Problems": 2,
+            "Packaging Defects": 1
+          },
+          batchAnalysis: {
+            "Newcastle Brown Ale": { quality: 97.8, batches: 24 },
+            "Guinness Stout": { quality: 95.6, batches: 18 },
+            "IPA Premium": { quality: 94.3, batches: 12 }
+          }
+        },
+        createdAt: new Date("2025-08-26")
+      },
+      {
+        id: "inventory-status-report",
+        title: "Inventory Status Report", 
+        type: "custom",
+        description: "Current inventory levels for raw materials, work-in-process, and finished goods across brewery operations",
+        data: {
+          rawMaterials: {
+            "Hops": { current: 2450, target: 3000, status: "Low" },
+            "Malt": { current: 8900, target: 10000, status: "Good" },
+            "Yeast": { current: 156, target: 200, status: "Good" },
+            "Water": { current: 45000, target: 50000, status: "Good" }
+          },
+          finishedGoods: {
+            "Newcastle Brown Ale": { cases: 8450, status: "High" },
+            "Guinness Stout": { cases: 6200, status: "Good" },
+            "IPA Premium": { cases: 3100, status: "Low" }
+          },
+          turnoverRate: 12.3,
+          stockoutRisk: ["Hops", "IPA Premium"]
+        },
+        createdAt: new Date("2025-08-26")
+      },
+      {
+        id: "maintenance-schedule-report",
+        title: "Maintenance Schedule Report",
+        type: "resource", 
+        description: "Preventive maintenance schedule and equipment health status for critical brewery equipment",
+        data: {
+          scheduledMaintenance: 8,
+          completedMaintenance: 6,
+          overdueMaintenance: 1,
+          criticalEquipment: [
+            { name: "Brew Kettle 2", nextMaintenance: "Aug 30", status: "Due Soon" },
+            { name: "Cooling System", nextMaintenance: "Sep 5", status: "Scheduled" },
+            { name: "Bottling Line 1", nextMaintenance: "Aug 25", status: "Overdue" }
+          ],
+          mtbf: 720, // Mean Time Between Failures (hours)
+          mttr: 4.2, // Mean Time To Repair (hours)
+          availability: 94.8
+        },
+        createdAt: new Date("2025-08-25")
+      }
+    ];
+  };
+
   // Auto-select default or first config if none selected
   useEffect(() => {
     if (!selectedConfigId && reportConfigs.length > 0) {
@@ -94,12 +231,15 @@ export default function Reports() {
 
   useEffect(() => {
     if (selectedConfig && selectedConfig.configuration) {
-      setReports(selectedConfig.configuration.reports || []);
+      setReports(selectedConfig.configuration.reports || getSampleReports());
     } else if (selectedConfig && !selectedConfig.configuration.reports) {
-      // If config exists but has no reports, initialize with empty array
-      setReports([]);
+      // If config exists but has no reports, initialize with sample reports
+      setReports(getSampleReports());
+    } else if (!selectedConfig && reportConfigs.length === 0) {
+      // If no configs exist yet, show sample reports
+      setReports(getSampleReports());
     }
-  }, [selectedConfig]);
+  }, [selectedConfig, reportConfigs]);
 
   const createConfigMutation = useMutation({
     mutationFn: async (configData: { name: string; description: string; configuration: any }) => {

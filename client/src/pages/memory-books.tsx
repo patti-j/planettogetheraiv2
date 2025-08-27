@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, Brain, FileText, Clock, Users, Target } from "lucide-react";
+import { Search, Plus, Wand2, FileText, Clock, Users, Target } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { MemoryBook, MemoryBookEntry, InsertMemoryBook, InsertMemoryBookEntry } from "@shared/schema";
