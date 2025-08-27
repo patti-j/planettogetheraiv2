@@ -611,7 +611,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       )}
       
       {/* Header */}
-      <div className={cn("p-4 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
+      <div className={cn("px-4 py-2 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
             <Brain className="w-5 h-5 text-white" />
