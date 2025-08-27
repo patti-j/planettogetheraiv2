@@ -137,11 +137,8 @@ export default function App() {
   // Check if user has a token for the main app
   const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
   
-  // If on root path and not authenticated, redirect to login
-  if (currentPath === '/' && !hasToken && !isLoading && !isPortalRoute) {
-    window.location.href = '/login';
-    return null;
-  }
+  // If on root path and not authenticated, show website (don't redirect)
+  // Authenticated users at root path will see the ApplicationApp
   
   // For dashboard and mobile-home, wait for auth check to complete
   if ((currentPath === '/dashboard' || currentPath === '/mobile-home') && isLoading && !isPortalRoute) {
@@ -156,7 +153,12 @@ export default function App() {
   }
   
   // Determine if we should show website or app (but not for portal routes)
-  const shouldShowWebsite = !isPortalRoute && ((isPublicPath && currentPath !== '/') || (!hasToken && !isLoading));
+  const shouldShowWebsite = !isPortalRoute && (
+    // Show website for public paths (except root when authenticated)
+    (isPublicPath && !(currentPath === '/' && hasToken)) || 
+    // Show website when not authenticated and not loading
+    (!hasToken && !isLoading)
+  );
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
   if (isLoading && !isPublicPath && !isPortalRoute) {
