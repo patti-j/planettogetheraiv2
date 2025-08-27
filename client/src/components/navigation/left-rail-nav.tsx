@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Home, Clock, ChevronRight, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, Bot, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
+import { Home, Clock, ChevronRight, ChevronLeft, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, Bot, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -111,10 +111,10 @@ export function LeftRailNav() {
                       className="h-8 w-8 p-0 flex-shrink-0"
                       aria-label="Collapse navigation"
                     >
-                      <ChevronRight className="h-3 w-3 transition-transform rotate-180" />
+                      <ChevronLeft className="h-3 w-3 transition-transform" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">
+                  <TooltipContent side="left">
                     <p>Collapse navigation</p>
                   </TooltipContent>
                 </Tooltip>
@@ -147,10 +147,10 @@ export function LeftRailNav() {
                       className="w-6 h-6 p-0 flex-shrink-0"
                       aria-label="Expand navigation"
                     >
-                      <ChevronRight className="h-3 w-3 transition-transform rotate-0" />
+                      <ChevronRight className="h-3 w-3 transition-transform" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">
+                  <TooltipContent side="left">
                     <p>Expand navigation</p>
                   </TooltipContent>
                 </Tooltip>
