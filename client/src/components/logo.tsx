@@ -1,4 +1,4 @@
-import companyLogo from '@/assets/planettogether-logo.svg';
+import companyLogo from '@/assets/planet-together-logo.png';
 
 interface LogoProps {
   size?: 'small' | 'medium' | 'large';
