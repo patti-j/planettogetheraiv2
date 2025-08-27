@@ -14,7 +14,6 @@ import { navigationGroups } from '@/config/navigation-menu';
 export function LeftRailNav() {
   const [location, setLocation] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user } = useAuth();
   // Safe navigation context access with fallback
@@ -52,34 +51,9 @@ export function LeftRailNav() {
         onClose={() => setIsMenuOpen(false)} 
       />
       
-      {/* Minimized state - floating restore button */}
-      {isMinimized && (
-        <div className="fixed left-2 top-4 z-30">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsMinimized(false)}
-                  className="h-10 w-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
-                  aria-label="Restore navigation"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Restore navigation</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
-      
       <TooltipProvider>
         <div className={cn(
           "h-full bg-background border-r transition-all duration-300 flex flex-col",
-          isMinimized && "hidden",
           isCollapsed ? "w-16" : "w-64"
         )}>
 
@@ -289,31 +263,6 @@ export function LeftRailNav() {
             </div>
           </ScrollArea>
         </div>
-
-        {/* Minimize Control */}
-        <div className="p-2 border-t">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMinimized(true)}
-                className={cn(
-                  "w-full justify-start",
-                  isCollapsed && "justify-center"
-                )}
-                aria-label="Minimize navigation"
-              >
-                <Minimize2 className="h-4 w-4" />
-                {!isCollapsed && <span className="ml-2">Minimize</span>}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Minimize navigation</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
         </div>
       </TooltipProvider>
     </>
