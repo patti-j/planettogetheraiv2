@@ -71,7 +71,7 @@ export const navigationGroups: NavigationGroup[] = [
       
       // 6. Constraints and optimization
       { icon: AlertCircle, label: "Constraints Management", href: "/constraints", feature: "production-scheduling", action: "view", color: "bg-orange-600" },
-      { icon: Sparkles, label: "Order Optimization", href: "/scheduling-optimizer", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" }
+      { icon: Sparkles, label: "Order Optimization", href: "/order-optimization", feature: "scheduling-optimizer", action: "view", color: "bg-amber-500" }
     ]
   },
   {
