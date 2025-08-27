@@ -64,7 +64,9 @@ import {
   Route,
   Layers,
   AlertTriangle,
-  Target
+  Target,
+  Settings,
+  Cog
 } from 'lucide-react';
 
 // World map topology URL
@@ -101,6 +103,8 @@ export default function EnterpriseMapPage() {
   const [showConnections, setShowConnections] = useState(false);
   const [timeRange, setTimeRange] = useState('24h');
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
+  const [showAlgorithmConfig, setShowAlgorithmConfig] = useState(false);
+  const [algorithmConfigs, setAlgorithmConfigs] = useState<Record<string, Record<string, number>>>({});
 
   // Fetch plants data
   const { data: plants = [], isLoading } = useQuery<Plant[]>({
@@ -120,6 +124,42 @@ export default function EnterpriseMapPage() {
   const { data: monitoringStatus } = useQuery({
     queryKey: ['/api/monitoring-agent/status'],
     refetchInterval: 30000,
+  });
+
+  // Planning processes that can have algorithm configurations
+  const planningProcesses = [
+    { id: 'scheduling', name: 'Production Scheduling', description: 'Optimize production schedules and resource allocation' },
+    { id: 'master_production_schedule', name: 'Master Production Schedule', description: 'Plan and manage master production schedules' },
+    { id: 'inventory_optimization', name: 'Inventory Optimization', description: 'Optimize inventory levels and reorder points' },
+    { id: 'capacity_planning', name: 'Capacity Planning', description: 'Plan and optimize resource capacity' },
+    { id: 'demand_forecasting', name: 'Demand Forecasting', description: 'Forecast demand and plan accordingly' },
+    { id: 'supply_chain_optimization', name: 'Supply Chain Optimization', description: 'Optimize supply chain operations' },
+    { id: 'labor_planning', name: 'Labor Planning', description: 'Optimize workforce planning and scheduling' },
+    { id: 'quality_management', name: 'Quality Management', description: 'Optimize quality control processes' }
+  ];
+
+  // Mutation to update plant algorithm configurations
+  const updatePlantAlgorithmConfig = useMutation({
+    mutationFn: async ({ plantId, process, algorithmId }: { plantId: number, process: string, algorithmId: number }) => {
+      return await apiRequest('PUT', `/api/plants/${plantId}/algorithm-config`, {
+        process,
+        algorithmId
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Algorithm Configuration Updated",
+        description: "Default algorithm has been updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/plants/map'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update algorithm configuration",
+        variant: "destructive",
+      });
+    },
   });
 
   // Mutations for monitoring agent control
@@ -305,6 +345,15 @@ export default function EnterpriseMapPage() {
                     <SelectItem value="30d">Last 30 Days</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAlgorithmConfig(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Algorithm Config
+                </Button>
                 
                 <Button variant="outline" size="sm">
                   <Download className="w-4 h-4 mr-2" />
@@ -742,6 +791,203 @@ export default function EnterpriseMapPage() {
                   </div>
                 </div>
               )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Algorithm Configuration Dialog */}
+          <Dialog open={showAlgorithmConfig} onOpenChange={setShowAlgorithmConfig}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Cog className="w-5 h-5" />
+                  Central Algorithm Configuration
+                </DialogTitle>
+                <DialogDescription>
+                  Configure default optimization algorithms for each plant and planning process
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-6">
+                {/* Algorithm Categories Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{algorithms.filter(a => a.category === 'schedule_optimization').length}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Scheduling Algorithms</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{algorithms.filter(a => a.category === 'inventory_optimization').length}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Inventory Algorithms</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{algorithms.filter(a => a.category === 'capacity_optimization').length}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Capacity Algorithms</div>
+                  </div>
+                </div>
+
+                {/* Configuration Matrix */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Algorithm Configuration Matrix</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // Apply configurations to all plants
+                        plants.forEach(plant => {
+                          planningProcesses.forEach(process => {
+                            const config = algorithmConfigs[plant.id.toString()]?.[process.id];
+                            if (config) {
+                              updatePlantAlgorithmConfig.mutate({
+                                plantId: plant.id,
+                                process: process.id,
+                                algorithmId: config
+                              });
+                            }
+                          });
+                        });
+                      }}
+                      disabled={updatePlantAlgorithmConfig.isPending}
+                    >
+                      Save All Changes
+                    </Button>
+                  </div>
+
+                  {plants.map((plant) => (
+                    <Card key={plant.id} className="border-gray-200 dark:border-gray-700">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Factory className="w-4 h-4" />
+                          {plant.name}
+                          <Badge variant={plant.isActive ? "secondary" : "outline"} className={plant.isActive ? "bg-green-100 text-green-800" : ""}>
+                            {plant.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </CardTitle>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {plant.city}, {plant.country} • Efficiency: {plant.operationalMetrics?.efficiency || 85}%
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {planningProcesses.map((process) => (
+                            <div key={process.id} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium text-sm">{process.name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{process.description}</div>
+                                </div>
+                              </div>
+                              <Select
+                                value={algorithmConfigs[plant.id.toString()]?.[process.id]?.toString() || plant.defaultAlgorithmId?.toString() || ''}
+                                onValueChange={(value) => {
+                                  setAlgorithmConfigs(prev => ({
+                                    ...prev,
+                                    [plant.id.toString()]: {
+                                      ...prev[plant.id.toString()],
+                                      [process.id]: parseInt(value)
+                                    }
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Select algorithm" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {algorithms
+                                    .filter(alg => {
+                                      // Filter algorithms by relevant category for the process
+                                      const processAlgorithmMap = {
+                                        'scheduling': 'schedule_optimization',
+                                        'master_production_schedule': 'schedule_optimization',
+                                        'inventory_optimization': 'inventory_optimization',
+                                        'capacity_planning': 'capacity_optimization',
+                                        'demand_forecasting': 'demand_forecasting',
+                                        'supply_chain_optimization': 'ctp_optimization',
+                                        'labor_planning': 'schedule_optimization',
+                                        'quality_management': 'schedule_optimization'
+                                      };
+                                      return alg.category === processAlgorithmMap[process.id] || alg.isStandard;
+                                    })
+                                    .map((alg: any) => (
+                                      <SelectItem key={alg.id} value={alg.id.toString()}>
+                                        <div className="flex items-center justify-between w-full">
+                                          <span>{alg.displayName || alg.name}</span>
+                                          {alg.isStandard && (
+                                            <Badge variant="outline" className="ml-2 text-xs">Standard</Badge>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Quick Actions */}
+                <div className="flex flex-wrap gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Set standard algorithms for all plants
+                      const standardSchedulingAlg = algorithms.find(a => a.isStandard && a.category === 'schedule_optimization');
+                      const standardInventoryAlg = algorithms.find(a => a.isStandard && a.category === 'inventory_optimization');
+                      
+                      if (standardSchedulingAlg || standardInventoryAlg) {
+                        const newConfigs: Record<string, Record<string, number>> = {};
+                        plants.forEach(plant => {
+                          newConfigs[plant.id.toString()] = {};
+                          planningProcesses.forEach(process => {
+                            if (['scheduling', 'master_production_schedule', 'labor_planning'].includes(process.id) && standardSchedulingAlg) {
+                              newConfigs[plant.id.toString()][process.id] = standardSchedulingAlg.id;
+                            } else if (process.id === 'inventory_optimization' && standardInventoryAlg) {
+                              newConfigs[plant.id.toString()][process.id] = standardInventoryAlg.id;
+                            }
+                          });
+                        });
+                        setAlgorithmConfigs(newConfigs);
+                      }
+                    }}
+                  >
+                    Apply Standard Algorithms
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Clear all configurations
+                      setAlgorithmConfigs({});
+                    }}
+                  >
+                    Clear All
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Copy configuration from first plant to all others
+                      if (plants.length > 0) {
+                        const sourceConfig = algorithmConfigs[plants[0].id.toString()];
+                        if (sourceConfig) {
+                          const newConfigs: Record<string, Record<string, number>> = {};
+                          plants.forEach(plant => {
+                            newConfigs[plant.id.toString()] = { ...sourceConfig };
+                          });
+                          setAlgorithmConfigs(newConfigs);
+                        }
+                      }
+                    }}
+                  >
+                    Copy from {plants[0]?.name}
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
