@@ -80,7 +80,7 @@ export default function MemoryBookPage() {
       setEditingBook(null);
       setIsEditing(false);
       if (!editingBook && newBook && typeof newBook === 'object' && 'id' in newBook) {
-        setSelectedBook(newBook as MemoryBook);
+        setSelectedBook(newBook as unknown as MemoryBook);
       }
       toast({
         title: "Success",
@@ -419,21 +419,21 @@ export default function MemoryBookPage() {
               }}
             >
               <CardContent className="p-3">
-                <div className="font-medium text-sm mb-1">{book.title}</div>
+                <div className="font-medium text-sm mb-1">{item.title}</div>
                 <div className="text-xs text-gray-600 line-clamp-2 mb-2">
-                  {(book.content || "").substring(0, 100)}...
+                  {(item.content || "").substring(0, 100)}...
                 </div>
                 <div className="flex items-center gap-2">
-                  {book.tags && book.tags.length > 0 && (
+                  {item.tags && item.tags.length > 0 && (
                     <div className="flex gap-1 flex-wrap">
-                      {book.tags.slice(0, 3).map((tag, index) => (
+                      {item.tags.slice(0, 3).map((tag, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
-                      {book.tags.length > 3 && (
+                      {item.tags.length > 3 && (
                         <Badge variant="outline" className="text-xs">
-                          +{book.tags.length - 3}
+                          +{item.tags.length - 3}
                         </Badge>
                       )}
                     </div>
