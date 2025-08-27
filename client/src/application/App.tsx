@@ -36,6 +36,7 @@ import OptimizationStudio from "@/pages/optimization-studio";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
+import MasterProductionSchedule from "@/pages/master-production-schedule";
 import BryntumSchedulerProDirect from "@/pages/bryntum-scheduler-pro-direct";
 import ProductionSchedulerStandalone from "@/pages/production-scheduler-standalone";
 import IntegrationsPage from "@/pages/integrations";
@@ -182,7 +183,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/master-production-schedule">
                 <ProtectedRoute feature="master-production-schedule" action="view">
-                  <ProductionScheduleSimple />
+                  <MasterProductionSchedule />
                 </ProtectedRoute>
               </Route>
               <Route path="/production-scheduler-dashboard">
