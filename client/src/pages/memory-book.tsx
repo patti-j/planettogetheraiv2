@@ -201,8 +201,8 @@ export default function MemoryBookPage() {
   const onCreateBook = (data: MemoryBookFormData) => {
     const bookData: InsertMemoryBook = {
       ...data,
-      createdBy: 1, // This should come from auth context
-      lastEditedBy: 1
+      createdBy: 4, // Use current user ID
+      lastEditedBy: 4
     };
     createBookMutation.mutate(bookData);
   };
