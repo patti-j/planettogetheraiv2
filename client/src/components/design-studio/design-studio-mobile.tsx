@@ -9,7 +9,8 @@ import {
   Bot, 
   Plus, 
   X, 
-  Palette 
+  Palette,
+  Sparkles
 } from 'lucide-react';
 
 interface MobileDesignStudioProps {

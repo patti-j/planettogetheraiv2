@@ -66,7 +66,8 @@ import {
   AlertTriangle,
   Target,
   Settings,
-  Cog
+  Cog,
+  Sparkles
 } from 'lucide-react';
 
 // World map topology URL

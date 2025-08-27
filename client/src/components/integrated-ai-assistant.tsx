@@ -33,7 +33,8 @@ import {
   Edit,
   Eye,
   Dock,
-  Move
+  Move,
+  Sparkles
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";

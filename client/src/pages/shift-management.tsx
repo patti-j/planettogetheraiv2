@@ -23,7 +23,7 @@ import {
   Plus, Building2, ChevronLeft, Trash2, UserCheck, 
   ArrowRight, CheckCircle, AlertCircle, Edit, AlertTriangle,
   Wrench, Timer, DollarSign, User, MapPin, FileText,
-  PlayCircle, PauseCircle, StopCircle, Activity
+  PlayCircle, PauseCircle, StopCircle, Activity, Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMaxDock } from '@/contexts/MaxDockContext';

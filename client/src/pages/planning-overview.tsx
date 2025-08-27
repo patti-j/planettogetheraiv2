@@ -24,7 +24,8 @@ import {
   Award,
   Settings,
   FileText,
-  Star
+  Star,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
