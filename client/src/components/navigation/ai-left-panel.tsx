@@ -626,11 +626,12 @@ export function AILeftPanel() {
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
-              <div className="relative flex-1">
+              <div className="relative flex-1 overflow-hidden">
                 <div 
-                  className="flex-1 pr-2 overflow-y-auto" 
+                  className="absolute inset-0 pr-2 overflow-y-auto" 
                   ref={scrollAreaRef}
                   onScroll={handleScroll}
+                  style={{ height: '100%' }}
                 >
                   <div className="space-y-4 pb-20">
                     {/* Added extra bottom padding for Activity Center */}
@@ -714,6 +715,32 @@ export function AILeftPanel() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 )}
+              </div>
+
+              {/* Chat Input Area */}
+              <div className="p-4 border-t bg-background">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ask Max AI..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    className="flex-1"
+                    disabled={sendMessageMutation.isPending}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    size="sm"
+                    disabled={!prompt.trim() || sendMessageMutation.isPending}
+                    className="px-3"
+                  >
+                    {sendMessageMutation.isPending ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
             </TabsContent>
