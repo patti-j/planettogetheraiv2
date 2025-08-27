@@ -1315,10 +1315,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       {/* Collapsed state - show icon indicators */}
       {isCollapsed && (
         <div className="flex-1 flex flex-col items-center py-4 gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative bg-transparent hover:bg-transparent"
+          <button 
+            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('chat');
@@ -1327,12 +1325,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           >
             <Brain className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          </Button>
+          </button>
           <Separator className="w-6" />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative bg-transparent hover:bg-transparent"
+          <button 
+            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('insights');
@@ -1343,11 +1339,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               3
             </Badge>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative bg-transparent hover:bg-transparent"
+          </button>
+          <button 
+            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('anomalies');
@@ -1358,11 +1352,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               1
             </Badge>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="bg-transparent hover:bg-transparent"
+          </button>
+          <button 
+            className="p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('simulations');
@@ -1370,7 +1362,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             title="Run AI Simulations"
           >
             <Activity className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
       )}
     </div>
