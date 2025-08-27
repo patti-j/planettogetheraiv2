@@ -97,9 +97,10 @@ export default function Sidebar() {
     action: string;
     onClick?: () => void;
     isAI?: boolean;
+    isExternal?: boolean;
   }> = [
     { icon: Home, label: "Home", href: "/", active: location === "/", feature: "", action: "" },
-    { icon: BarChart3, label: "Production Schedule", href: "/production-scheduler.html", active: false, feature: "", action: "" },
+    { icon: BarChart3, label: "Production Schedule", href: "/production-scheduler.html", active: false, feature: "", action: "", isExternal: true },
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: Briefcase, label: "Implementation Projects", href: "/implementation-projects", active: location === "/implementation-projects", feature: "implementation-projects", action: "view" },
@@ -451,6 +452,18 @@ export default function Sidebar() {
                       </div>
                     )}
                   </button>
+                ) : item.isExternal ? (
+                  <a
+                    href={item.href}
+                    className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap ${
+                      item.active
+                        ? "text-gray-700 bg-blue-50 border-l-4 border-primary"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4 md:w-5 md:h-5 mr-3 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </a>
                 ) : (
                   <Link href={item.href}>
                     <a
