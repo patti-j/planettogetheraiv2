@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Package, TrendingUp, TrendingDown, BarChart3, DollarSign, Zap, Brain,
+  Package, TrendingUp, TrendingDown, BarChart3, DollarSign, Zap, Wand2,
   Plus, Calendar, Eye, AlertCircle, CheckCircle, Clock, RefreshCw,
   ArrowUp, ArrowDown, Activity, Target, Settings
 } from "lucide-react";
