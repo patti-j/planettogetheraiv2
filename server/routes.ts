@@ -28222,6 +28222,155 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
+  // Order Optimization APIs
+  app.get('/api/orders', createSafeHandler(async (req, res) => {
+    const { status } = req.query;
+    
+    try {
+      // Fetch pending orders from production orders table
+      const orders = await storage.getProductionOrders();
+      
+      const formattedOrders = orders
+        .filter(order => !status || order.status === status)
+        .map(order => ({
+          id: order.id,
+          orderNumber: order.order_number || `PO-${order.id}`,
+          productName: order.item_id || 'Unknown Product',
+          quantity: order.quantity || 0,
+          dueDate: order.end_date || new Date().toISOString(),
+          priority: order.priority || 'medium',
+          status: order.status || 'pending',
+          estimatedDuration: order.planned_run_time || 8,
+          customer: order.description || 'Customer',
+          operations: [],
+          requirements: {
+            specialEquipment: [],
+            skillRequirements: [],
+            qualityChecks: []
+          }
+        }));
+      
+      res.json(formattedOrders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  }));
+
+  app.get('/api/resources', createSafeHandler(async (req, res) => {
+    try {
+      const resources = await storage.getResources();
+      
+      const formattedResources = resources.map(resource => ({
+        id: resource.id,
+        name: resource.name,
+        type: resource.type || 'equipment',
+        capacity: resource.capacity || 100,
+        availability: resource.availability || 100,
+        skills: [],
+        workCenter: resource.work_center_id
+      }));
+      
+      res.json(formattedResources);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+      res.status(500).json({ error: "Failed to fetch resources" });
+    }
+  }));
+
+  app.post('/api/order-optimization/analyze', createSafeHandler(async (req, res) => {
+    const { orderIds, criteria, currentSchedule } = req.body;
+    
+    try {
+      // Simulate AI-powered optimization analysis
+      const orders = await storage.getProductionOrders();
+      const resources = await storage.getResources();
+      
+      const optimizationResults = orderIds.map((orderId: number) => {
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return null;
+        
+        // Simulate optimization calculations
+        const proposedStartTime = new Date();
+        proposedStartTime.setHours(proposedStartTime.getHours() + Math.random() * 24);
+        
+        const proposedEndTime = new Date(proposedStartTime);
+        proposedEndTime.setHours(proposedEndTime.getHours() + (order.planned_run_time || 8));
+        
+        const assignedResources = resources
+          .slice(0, Math.floor(Math.random() * 3) + 1)
+          .map(r => r.name);
+        
+        // Generate conflicts based on criteria
+        const conflicts = [];
+        
+        if (Math.random() > 0.7) {
+          conflicts.push({
+            type: 'resource',
+            severity: Math.random() > 0.5 ? 'medium' : 'low',
+            description: `Resource ${assignedResources[0]} has scheduling conflict`,
+            affectedOrders: [orderId],
+            suggestedResolution: 'Consider alternative resource or adjust timing'
+          });
+        }
+        
+        if (Math.random() > 0.8) {
+          conflicts.push({
+            type: 'timing',
+            severity: 'high',
+            description: 'Scheduling conflicts with due date requirements',
+            affectedOrders: [orderId],
+            suggestedResolution: 'Prioritize this order or extend deadline'
+          });
+        }
+        
+        return {
+          orderId,
+          proposedStartTime: proposedStartTime.toISOString(),
+          proposedEndTime: proposedEndTime.toISOString(),
+          assignedResources,
+          conflicts,
+          impactScore: Math.floor(Math.random() * 100),
+          confidence: Math.floor(Math.random() * 40) + 60
+        };
+      }).filter(Boolean);
+      
+      res.json({ results: optimizationResults });
+    } catch (error) {
+      console.error("Error analyzing order optimization:", error);
+      res.status(500).json({ error: "Failed to analyze order optimization" });
+    }
+  }));
+
+  app.post('/api/order-optimization/apply', createSafeHandler(async (req, res) => {
+    const { scheduleUpdates } = req.body;
+    
+    try {
+      // In a real implementation, this would update the production schedule
+      // For now, we'll simulate the update
+      
+      for (const update of scheduleUpdates) {
+        const order = await storage.getProductionOrder(update.orderId);
+        if (order) {
+          // Update the production order with new schedule
+          await storage.updateProductionOrder(update.orderId, {
+            start_date: new Date(update.proposedStartTime),
+            end_date: new Date(update.proposedEndTime),
+            status: 'scheduled'
+          });
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Successfully updated schedule for ${scheduleUpdates.length} orders` 
+      });
+    } catch (error) {
+      console.error("Error applying schedule updates:", error);
+      res.status(500).json({ error: "Failed to apply schedule updates" });
+    }
+  }));
+
   // Start the monitoring agent automatically
   systemMonitoringAgent.start().catch(console.error);
 

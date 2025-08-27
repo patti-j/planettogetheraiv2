@@ -83,6 +83,7 @@ import VisualFactory from "@/pages/visual-factory";
 import AIScenarioCreator from "@/pages/ai-scenario-creator";
 import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
+import OrderOptimization from "@/pages/order-optimization";
 
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -249,9 +250,9 @@ export default function ApplicationApp() {
                   <ShiftManagement />
                 </ProtectedRoute>
               </Route>
-              <Route path="/optimize-orders">
+              <Route path="/order-optimization">
                 <ProtectedRoute feature="scheduling-optimizer" action="view">
-                  <Dashboard />
+                  <OrderOptimization />
                 </ProtectedRoute>
               </Route>
               <Route path="/constraints" component={Constraints} />
