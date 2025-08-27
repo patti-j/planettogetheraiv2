@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Minimize, Send, Sparkles } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
@@ -28,6 +28,64 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [location] = useLocation();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
+
+  // Get AI settings for voice functionality
+  const [aiSettings] = useState(() => {
+    const saved = localStorage.getItem('ai-settings');
+    let settings = {
+      soundEnabled: false,
+      voice: 'alloy',
+      voiceSpeed: 1.0
+    };
+    
+    if (saved) {
+      try {
+        const parsedSettings = JSON.parse(saved);
+        settings = { ...settings, ...parsedSettings };
+      } catch (e) {
+        // Fall back to defaults if parse fails
+      }
+    }
+    
+    return settings;
+  });
+
+  // Voice functionality for floating prompt
+  const playVoiceResponse = async (text: string) => {
+    if (!aiSettings.soundEnabled || !text) return;
+    
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const response = await fetch('/api/ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: JSON.stringify({
+          text: text.substring(0, 4000), // Limit text length for TTS
+          voice: aiSettings.voice || 'alloy',
+          speed: aiSettings.voiceSpeed || 1.0
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        await audio.play();
+      } else {
+        console.error('Failed to generate speech:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Voice playback error:', error);
+    }
+  };
 
   // Floating Max AI message mutation
   const sendFloatingMessage = useMutation({
@@ -66,11 +124,16 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       // Add assistant response
       if (data?.content || data?.message) {
+        const responseContent = data.content || data.message;
+        
         addMessage({
           role: 'assistant',
-          content: data.content || data.message,
+          content: responseContent,
           source: 'floating'
         });
+
+        // Play voice response if enabled
+        playVoiceResponse(responseContent);
       }
       
       setFloatingPrompt('');

@@ -132,6 +132,43 @@ export function AILeftPanel() {
       console.error('Failed to copy text: ', err);
     }
   };
+
+  // Voice functionality
+  const playVoiceResponse = async (text: string) => {
+    if (!aiSettings.soundEnabled || !text) return;
+    
+    try {
+      const authToken = localStorage.getItem('authToken');
+      const response = await fetch('/api/ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: JSON.stringify({
+          text: text.substring(0, 4000), // Limit text length for TTS
+          voice: aiSettings.voice || 'alloy',
+          speed: aiSettings.voiceSpeed || 1.0
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        await audio.play();
+      } else {
+        console.error('Failed to generate speech:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Voice playback error:', error);
+    }
+  };
   
   // Get current page location
   const [location] = useState(() => window.location.pathname);
@@ -229,6 +266,9 @@ export function AILeftPanel() {
           content: responseContent,
           source: 'panel'
         });
+
+        // Play voice response if enabled
+        playVoiceResponse(responseContent);
       }
       
       // If there are insights, show them (but not if we just navigated)
@@ -592,14 +632,14 @@ export function AILeftPanel() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => copyToClipboard(message.content, message.id)}
+                              onClick={() => copyToClipboard(message.content, message.id.toString())}
                               className={cn(
                                 "absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
                                 "bg-background/80 hover:bg-background border border-border/50"
                               )}
                               title="Copy message"
                             >
-                              {copiedMessageId === message.id ? (
+                              {copiedMessageId === message.id.toString() ? (
                                 <Check className="h-3 w-3 text-green-600" />
                               ) : (
                                 <Copy className="h-3 w-3" />
@@ -608,7 +648,7 @@ export function AILeftPanel() {
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground px-1">
-                          {message.timestamp}
+                          {new Date(message.createdAt).toLocaleTimeString()}
                         </span>
                       </div>
                     </div>
