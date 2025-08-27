@@ -1312,7 +1312,12 @@ IMPORTANT RULES:
       if (route && route !== 'NONE' && route.startsWith('/')) {
         // Find the page info for a better response message
         const pageInfo = Object.values(navigationMapping).find(p => p.path === route);
-        const pageName = pageInfo?.name || route.replace('/', '').replace('-', ' ');
+        let pageName = pageInfo?.name || route.replace('/', '').replace('-', ' ');
+        
+        // Special handling for HTML files to show cleaner names
+        if (route === '/production-scheduler.html') {
+          pageName = 'Production Scheduler';
+        }
         
         return {
           content: `Taking you to ${pageName}...`,
