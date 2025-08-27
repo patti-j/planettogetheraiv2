@@ -235,8 +235,8 @@ export default function MemoryBookPage() {
     const matchesSearch = !searchTerm || 
       entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !categoryFilter || entry.category === categoryFilter;
-    const matchesType = !entryTypeFilter || entry.entryType === entryTypeFilter;
+    const matchesCategory = !categoryFilter || categoryFilter === 'all' || entry.category === categoryFilter;
+    const matchesType = !entryTypeFilter || entryTypeFilter === 'all' || entry.entryType === entryTypeFilter;
     return matchesSearch && matchesCategory && matchesType;
   });
 
@@ -603,7 +603,7 @@ export default function MemoryBookPage() {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       <SelectItem value="scheduling">Scheduling</SelectItem>
                       <SelectItem value="optimization">Optimization</SelectItem>
                       <SelectItem value="production">Production</SelectItem>
@@ -616,7 +616,7 @@ export default function MemoryBookPage() {
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="instruction">Instruction</SelectItem>
                       <SelectItem value="procedure">Procedure</SelectItem>
                       <SelectItem value="lesson_learned">Lesson Learned</SelectItem>
