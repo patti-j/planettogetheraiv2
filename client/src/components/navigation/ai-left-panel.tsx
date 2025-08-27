@@ -607,11 +607,21 @@ export function AILeftPanel() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid grid-cols-5 mx-4 mt-2 text-xs">
-              <TabsTrigger value="chat" className="px-2">Chat</TabsTrigger>
-              <TabsTrigger value="insights" className="px-2">Insights</TabsTrigger>
-              <TabsTrigger value="anomalies" className="px-2">Alerts</TabsTrigger>
-              <TabsTrigger value="simulations" className="px-2">Sims</TabsTrigger>
-              <TabsTrigger value="settings" className="px-2">Settings</TabsTrigger>
+              <TabsTrigger value="chat" className="px-2" title="Chat">
+                <MessageSquare className="w-4 h-4" />
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="px-2" title="Insights">
+                <TrendingUp className="w-4 h-4" />
+              </TabsTrigger>
+              <TabsTrigger value="anomalies" className="px-2" title="Alerts">
+                <AlertTriangle className="w-4 h-4" />
+              </TabsTrigger>
+              <TabsTrigger value="simulations" className="px-2" title="Simulations">
+                <Activity className="w-4 h-4" />
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="px-2" title="Settings">
+                <Settings className="w-4 h-4" />
+              </TabsTrigger>
             </TabsList>
 
             {/* Chat Tab with its own layout */}
