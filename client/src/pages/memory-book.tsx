@@ -12,7 +12,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText } from "lucide-react";
+import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Brain } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { MemoryBook } from "@shared/schema";
@@ -35,6 +35,7 @@ export default function MemoryBookPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newTag, setNewTag] = useState("");
+  const [activeTab, setActiveTab] = useState<'manual' | 'ai'>('manual');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,6 +53,12 @@ export default function MemoryBookPage() {
   // Fetch memory books
   const { data: memoryBooks = [], isLoading: booksLoading } = useQuery<MemoryBook[]>({
     queryKey: ["/api/memory-books"],
+  });
+
+  // Fetch Max AI memories
+  const { data: maxAIMemories = [], isLoading: maxMemoriesLoading } = useQuery<any[]>({
+    queryKey: ["/api/max-ai/memories"],
+    select: (data: any) => data.memories || []
   });
 
   // Create/update memory book mutation
@@ -72,8 +79,8 @@ export default function MemoryBookPage() {
       setCreateBookOpen(false);
       setEditingBook(null);
       setIsEditing(false);
-      if (!editingBook) {
-        setSelectedBook(newBook);
+      if (!editingBook && newBook && typeof newBook === 'object' && 'id' in newBook) {
+        setSelectedBook(newBook as MemoryBook);
       }
       toast({
         title: "Success",
@@ -187,10 +194,25 @@ export default function MemoryBookPage() {
     return matchesSearch && matchesTag;
   });
 
-  // Get all unique tags from all books
-  const allTags = Array.from(new Set(
-    memoryBooks.flatMap(book => book.tags || [])
-  )).sort();
+  const filteredAIMemories = maxAIMemories.filter((memory: any) => {
+    const matchesSearch = !searchTerm || 
+      memory.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (memory.content || "").toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesTag = !tagFilter || tagFilter === 'all' || 
+      (memory.tags && memory.tags.some((tag: string) => tag.toLowerCase().includes(tagFilter.toLowerCase())));
+    
+    return matchesSearch && matchesTag;
+  });
+
+  const currentData = activeTab === 'manual' ? filteredBooks : filteredAIMemories;
+  const isLoading = activeTab === 'manual' ? booksLoading : maxMemoriesLoading;
+
+  // Get all unique tags from all books and memories
+  const allTags = Array.from(new Set([
+    ...memoryBooks.flatMap(book => book.tags || []),
+    ...maxAIMemories.flatMap((memory: any) => memory.tags || [])
+  ])).sort();
 
   const addTag = () => {
     if (newTag.trim()) {
@@ -226,13 +248,36 @@ export default function MemoryBookPage() {
             </Button>
           )}
         </div>
-        <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="w-full">
-              <Plus className="h-4 w-4 mr-1" />
-              New Memory Book
-            </Button>
-          </DialogTrigger>
+        
+        {/* Tab Selector */}
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-4">
+          <Button
+            variant={activeTab === 'manual' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1 h-8"
+            onClick={() => setActiveTab('manual')}
+          >
+            <FileText className="h-3 w-3 mr-1" />
+            Manual
+          </Button>
+          <Button
+            variant={activeTab === 'ai' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1 h-8"
+            onClick={() => setActiveTab('ai')}
+          >
+            <Brain className="h-3 w-3 mr-1" />
+            Max AI
+          </Button>
+        </div>
+        {activeTab === 'manual' && (
+          <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-1" />
+                New Memory Book
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingBook ? "Edit Memory Book" : "Create Memory Book"}</DialogTitle>
@@ -321,6 +366,7 @@ export default function MemoryBookPage() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
       
       <div className="p-4 border-b border-gray-200">
@@ -349,19 +395,26 @@ export default function MemoryBookPage() {
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {booksLoading ? (
-          <div className="text-center py-8 text-gray-500">Loading books...</div>
-        ) : filteredBooks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No memory books found</div>
+        {isLoading ? (
+          <div className="text-center py-8 text-gray-500">
+            Loading {activeTab === 'manual' ? 'books' : 'AI memories'}...
+          </div>
+        ) : currentData.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {activeTab === 'manual' ? 'No memory books found' : 'No AI memories found'}
+            {activeTab === 'ai' && (
+              <p className="text-sm mt-2">AI memories are automatically created when Max AI detects important preferences or instructions in your conversations.</p>
+            )}
+          </div>
         ) : (
-          filteredBooks.map((book: MemoryBook) => (
+          currentData.map((item: any) => (
             <Card
-              key={book.id}
+              key={item.id}
               className={`cursor-pointer transition-colors ${
-                selectedBook?.id === book.id ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
+                selectedBook?.id === item.id ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
               }`}
               onClick={() => {
-                setSelectedBook(book);
+                setSelectedBook(item);
                 if (isMobile) setSidebarOpen(false);
               }}
             >

@@ -1,9 +1,11 @@
 import { OpenAI } from 'openai';
 import { db } from '../db';
 import { 
-  alerts
+  alerts,
+  memoryBooks,
+  type InsertMemoryBook
 } from '@shared/schema';
-import { eq, and, or, gte, lte, isNull, sql, desc, asc } from 'drizzle-orm';
+import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -55,6 +57,126 @@ interface ProductionInsight {
 export class MaxAIService {
   // Store conversation history in memory (in production, use Redis or database)
   private conversationStore = new Map<number, ConversationMessage[]>();
+  
+  // Memory book integration - detect and store user preferences/instructions
+  private async detectAndStoreMemory(userId: number, userMessage: string, aiResponse: string): Promise<void> {
+    try {
+      // Use AI to detect if this should be stored as memory
+      const memoryAnalysis = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are analyzing conversation messages to detect user preferences, instructions, or important information that should be remembered for future interactions.
+
+Analyze the user message and determine if it contains:
+1. Personal preferences (e.g., "I prefer charts over tables", "I like detailed explanations")
+2. Work instructions (e.g., "Always check Plant 1 first", "Focus on critical alerts only")
+3. Process requirements (e.g., "Send reports every Monday", "Include safety metrics")
+4. Important context (e.g., "I'm the production manager for Plant 2", "My shift is 6AM-2PM")
+5. Specific system configurations (e.g., "Default to ASAP algorithm", "Show only active operations")
+
+Respond with JSON:
+{
+  "shouldStore": true/false,
+  "type": "preference|instruction|context|configuration",
+  "title": "Brief descriptive title",
+  "content": "Key information to remember",
+  "tags": ["relevant", "tags", "for", "organization"],
+  "confidence": 0.0-1.0
+}
+
+Only store information that would be helpful for future conversations. Don't store basic questions or temporary requests.`
+          },
+          {
+            role: "user",
+            content: `User said: "${userMessage}"\n\nAI responded: "${aiResponse}"`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      });
+
+      const analysis = JSON.parse(memoryAnalysis.choices[0].message.content || '{}');
+      
+      if (analysis.shouldStore && analysis.confidence > 0.7) {
+        // Create memory book entry
+        const memoryData: InsertMemoryBook = {
+          title: analysis.title || `User ${analysis.type || 'preference'} - ${new Date().toLocaleDateString()}`,
+          content: `${analysis.content}\n\n--- Context ---\nUser said: "${userMessage}"\nDate: ${new Date().toISOString()}`,
+          tags: [
+            ...analysis.tags || [],
+            `user-${userId}`,
+            'max-ai-memory',
+            analysis.type || 'general'
+          ],
+          createdBy: userId,
+          lastEditedBy: userId
+        };
+
+        await db.insert(memoryBooks).values(memoryData);
+        console.log(`📝 Stored memory: ${analysis.title} for user ${userId}`);
+      }
+    } catch (error) {
+      console.error('Memory storage error:', error);
+      // Don't fail the main conversation for memory issues
+    }
+  }
+
+  // Retrieve relevant memories for context
+  private async getRelevantMemories(userId: number, userMessage: string): Promise<string> {
+    try {
+      // Get user's memory books
+      const userMemories = await db.select({
+        title: memoryBooks.title,
+        content: memoryBooks.content,
+        tags: memoryBooks.tags,
+        createdAt: memoryBooks.createdAt
+      }).from(memoryBooks)
+        .where(
+          and(
+            eq(memoryBooks.isActive, true),
+            or(
+              eq(memoryBooks.createdBy, userId),
+              like(memoryBooks.tags, `%user-${userId}%`)
+            )
+          )
+        )
+        .orderBy(desc(memoryBooks.updatedAt))
+        .limit(10);
+
+      if (userMemories.length === 0) {
+        return '';
+      }
+
+      // Use AI to find the most relevant memories
+      const relevanceCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are analyzing stored memories to find what's relevant to the current user message.
+
+Available memories:
+${userMemories.map((m, i) => `${i + 1}. ${m.title}\nContent: ${m.content}\nTags: ${m.tags}\n`).join('\n')}
+
+Current user message: "${userMessage}"
+
+Return the 3 most relevant memories as a concise summary that would help provide better context for the AI response. Focus on preferences, instructions, and context that would influence how to respond to this user.
+
+Format as: "Based on what I remember about you: [relevant info]" or return empty string if no memories are relevant.`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 300
+      });
+
+      return relevanceCheck.choices[0].message.content || '';
+    } catch (error) {
+      console.error('Memory retrieval error:', error);
+      return '';
+    }
+  }
   
   // Get conversation history for a user
   private getConversationHistory(userId: number): ConversationMessage[] {
@@ -303,6 +425,9 @@ Rules:
       timestamp: new Date()
     });
     
+    // Get relevant memories for context
+    const relevantMemories = await this.getRelevantMemories(context.userId, query);
+    
     // Analyze conversation context
     const conversationContext = this.analyzeConversationContext(history);
     
@@ -330,8 +455,8 @@ Rules:
       };
     }
     
-    // Build context-aware prompt with conversation history
-    const systemPrompt = this.buildSystemPrompt(context, intent);
+    // Build context-aware prompt with conversation history and memories
+    const systemPrompt = this.buildSystemPrompt(context, intent, relevantMemories);
     const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
 
     try {
@@ -388,6 +513,9 @@ Rules:
           }
         });
         
+        // Detect and store memory for function call responses too
+        await this.detectAndStoreMemory(context.userId, query, result.content || '');
+        
         return result;
       }
 
@@ -403,6 +531,9 @@ Rules:
           lastTopic: this.extractTopic(assistantContent)
         }
       });
+
+      // Detect and store memory after successful response
+      await this.detectAndStoreMemory(context.userId, query, assistantContent);
 
       return {
         content: assistantContent,
@@ -436,10 +567,12 @@ Would you like me to analyze any specific area in detail?`;
   }
 
   // Build role and context-specific system prompt
-  private buildSystemPrompt(context: MaxContext, intent?: { type: string; target?: string; confidence: number }): string {
+  private buildSystemPrompt(context: MaxContext, intent?: { type: string; target?: string; confidence: number }, relevantMemories?: string): string {
     const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether SCM + APS system. 
     You have deep knowledge of production scheduling, resource optimization, quality management, and supply chain operations.
     You provide actionable insights and can help optimize manufacturing processes.
+
+    ${relevantMemories ? `\n    PERSONAL CONTEXT:\n    ${relevantMemories}\n    Remember to apply these preferences and context to your responses.\n` : ''}
 
     COMMUNICATION RULES:
     - When users ask to "show me" something specific (like "show me the production schedule"), understand they want to SEE that page/data, not just talk about it

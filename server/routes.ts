@@ -4332,6 +4332,65 @@ Return ONLY a valid JSON object with this exact structure:
     }
   });
 
+  // Memory detection and storage function for Max AI
+  async function detectAndStoreMemory(userMessage: string, aiResponse: any, userId: number, user: any): Promise<void> {
+    try {
+      // Use OpenAI to analyze if the message contains important user preferences or instructions
+      const memoryAnalysis = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are analyzing conversation messages to detect user preferences, instructions, or important information that should be remembered for future interactions.
+
+Analyze the user message and determine if it contains:
+1. Personal preferences (e.g., "I prefer charts over tables", "I like detailed explanations")
+2. Work instructions (e.g., "Always check Plant 1 first", "Focus on critical alerts only") 
+3. Process requirements (e.g., "Send reports every Monday", "Include safety metrics")
+4. User context (e.g., "I work in the pharmaceutical industry", "I manage Plant 3")
+5. Important specifications or requirements they want remembered
+
+If the message contains something worth remembering, respond with JSON:
+{
+  "shouldStore": true,
+  "title": "Brief descriptive title",
+  "content": "Detailed content to store including context",
+  "tags": ["relevant", "tags", "like", "user-${userId}", "preferences", "process"]
+}
+
+If nothing important to remember, respond with:
+{
+  "shouldStore": false
+}`
+          },
+          {
+            role: "user", 
+            content: `User message: "${userMessage}"\n\nAI response: "${aiResponse.content || JSON.stringify(aiResponse)}"`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const analysis = JSON.parse(memoryAnalysis.choices[0].message.content || '{"shouldStore": false}');
+      
+      if (analysis.shouldStore) {
+        console.log('Storing memory for user:', userId, analysis.title);
+        
+        // Create memory book entry
+        await storage.createMemoryBook({
+          title: analysis.title,
+          content: analysis.content,
+          tags: [...(analysis.tags || []), `user-${userId}`, `created-by-max-ai`],
+          createdBy: userId,
+          lastEditedBy: userId
+        });
+      }
+    } catch (error) {
+      console.error('Error in memory detection:', error);
+      // Don't throw - memory storage failures shouldn't break the main chat flow
+    }
+  }
+
   // Clear all AI memories
   // Max AI endpoints for manufacturing intelligence
   app.post("/api/max-ai/chat", requireAuth, async (req, res) => {
@@ -4346,24 +4405,60 @@ Return ONLY a valid JSON object with this exact structure:
       // Import the Max AI service
       const { maxAI } = await import("./services/max-ai-service");
       
-      // Get user role
+      // Get user role and existing memories
       const user = await storage.getUser(userId);
       const role = user?.activeRoleId ? await storage.getRole(user.activeRoleId) : null;
       
-      // Generate AI response with context
+      // Get user's existing memory books for context
+      const memories = await storage.getMemoryBooks("global", undefined, userId);
+      
+      // Generate AI response with context and memories
       const response = await maxAI.generateResponse(message, {
         userId,
         userRole: role?.name || 'User',
         currentPage: context?.currentPage || '/',
         selectedData: context?.selectedData,
-        recentActions: context?.recentActions
+        recentActions: context?.recentActions,
+        existingMemories: memories
       });
+      
+      // After generating response, detect if we should store something in memory
+      await detectAndStoreMemory(message, response, userId, user);
       
       console.log('Max AI Response:', JSON.stringify(response, null, 2));
       res.json(response);
     } catch (error) {
       console.error("Max AI chat error:", error);
       res.status(500).json({ error: "Failed to generate AI response" });
+    }
+  });
+
+  // Memory books endpoint for Max AI
+  app.get("/api/max-ai/memories", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      
+      // Get user's memory books for Max AI context
+      const memories = await storage.getMemoryBooks("global", undefined, userId);
+      
+      res.json({ memories });
+    } catch (error) {
+      console.error("Max AI memories error:", error);
+      res.status(500).json({ error: "Failed to fetch memories" });
+    }
+  });
+
+  // Clear Max AI conversation history
+  app.post("/api/max-ai/clear-history", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const { maxAI } = await import("./services/max-ai-service");
+      
+      maxAI.clearConversationHistory(userId);
+      res.json({ success: true, message: "Conversation history cleared" });
+    } catch (error) {
+      console.error("Max AI clear history error:", error);
+      res.status(500).json({ error: "Failed to clear history" });
     }
   });
 
