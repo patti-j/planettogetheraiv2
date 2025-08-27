@@ -84,6 +84,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
 import OrderOptimization from "@/pages/order-optimization";
+import CanvasPage from "@/pages/canvas";
 
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -263,6 +264,7 @@ export default function ApplicationApp() {
               <Route path="/onboarding-assistant" component={OnboardingAssistant} />
               <Route path="/design-studio" component={DesignStudio} />
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
+              <Route path="/canvas" component={CanvasPage} />
               <Route path="/playbooks" component={MemoryBookPage} />
               <Route path="/agent-history" component={AgentHistory} />
               
