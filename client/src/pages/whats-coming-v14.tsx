@@ -384,7 +384,7 @@ export default function WhatsComing() {
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">Release Timeline</h3>
             <p className="text-lg text-gray-600">
-              Progressive rollout of PlanetTogether 13 features
+              Progressive rollout of PlanetTogether 14 features
             </p>
           </div>
 
