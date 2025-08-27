@@ -717,31 +717,7 @@ export function AILeftPanel() {
                 )}
               </div>
 
-              {/* Chat Input Area */}
-              <div className="p-4 border-t bg-background">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ask Max AI..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                    disabled={sendMessageMutation.isPending}
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    size="sm"
-                    disabled={!prompt.trim() || sendMessageMutation.isPending}
-                    className="px-3"
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+
 
             </TabsContent>
 
