@@ -121,7 +121,7 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning', type: 'page' },
     { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat', type: 'page' },
     { id: 'help', label: 'Help', icon: 'HelpCircle', href: '/help', type: 'page' },
-    { id: 'max-ai', label: 'Max AI', icon: 'Bot', action: 'max-ai', type: 'action' },
+
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', type: 'action' },
     { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications', type: 'action' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
@@ -370,11 +370,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           setLocation('/alerts');
           addRecentPage('/alerts', 'Alerts & Notifications', 'AlertTriangle');
           break;
-        case 'max-ai':
-          // Toggle Max AI dock
-          const event = new CustomEvent('toggle-max-ai');
-          document.dispatchEvent(event);
-          break;
+
         case 'workspace-switcher':
           // Workspace switcher is handled by the component directly
           // No action needed here since it's a dropdown component
