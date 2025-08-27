@@ -1401,12 +1401,12 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       {/* Floating Notification - appears when panel is collapsed and there's a new message */}
       {showFloatingNotification && floatingNotification && isCollapsed && (
         <div className="fixed bottom-20 left-4 z-50 max-w-sm animate-in slide-in-from-left duration-300">
-          <Card className="shadow-lg border-l-4 border-l-primary bg-background/95 backdrop-blur">
-            <CardHeader className="pb-2">
+          <Card className="shadow-lg border-l-4 bg-background/95 backdrop-blur" style={{ borderLeftColor: getThemeGradient(aiSettings.aiThemeColor).includes('purple') ? '#a855f7' : getThemeGradient(aiSettings.aiThemeColor).includes('blue') ? '#3b82f6' : getThemeGradient(aiSettings.aiThemeColor).includes('emerald') ? '#10b981' : getThemeGradient(aiSettings.aiThemeColor).includes('orange') ? '#f97316' : getThemeGradient(aiSettings.aiThemeColor).includes('violet') ? '#8b5cf6' : '#06b6d4' }}>
+            <CardHeader className={cn("pb-2 text-white", getThemeGradient(aiSettings.aiThemeColor))}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <CardTitle className="text-sm">Max AI Reply</CardTitle>
+                  <Sparkles className="w-4 h-4 text-white" />
+                  <CardTitle className="text-sm text-white">Max AI Reply</CardTitle>
                 </div>
                 <Button
                   variant="ghost"
@@ -1415,7 +1415,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     setShowFloatingNotification(false);
                     setTimeout(() => setFloatingNotification(null), 300);
                   }}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 text-white hover:text-white/80 bg-transparent"
                 >
                   <X className="h-3 w-3" />
                 </Button>
