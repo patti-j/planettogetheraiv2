@@ -970,6 +970,37 @@ export const dashboardConfigs = pgTable("dashboard_configs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Agent Action History - tracks all AI agent actions for transparency and undo capability
+export const agentActions = pgTable("agent_actions", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(), // Chat or interaction session ID
+  agentType: text("agent_type").notNull(), // 'max', 'scheduler', 'optimizer', 'analytics', etc.
+  actionType: text("action_type").notNull(), // 'create', 'update', 'delete', 'optimize', 'analyze', 'generate'
+  entityType: text("entity_type").notNull(), // 'production_order', 'schedule', 'resource', 'dashboard', etc.
+  entityId: text("entity_id"), // ID of the affected entity (if applicable)
+  actionDescription: text("action_description").notNull(), // Human-readable description of what was done
+  reasoning: text("reasoning").notNull(), // Why the agent took this action
+  userPrompt: text("user_prompt"), // Original user request that triggered this action
+  beforeState: jsonb("before_state").$type<Record<string, any>>(), // State before the action
+  afterState: jsonb("after_state").$type<Record<string, any>>(), // State after the action
+  undoInstructions: jsonb("undo_instructions").$type<{
+    method: string; // 'api_call', 'database_restore', 'state_revert'
+    endpoint?: string; // API endpoint to call for undo
+    data?: Record<string, any>; // Data needed for undo operation
+    dependencies?: string[]; // Other actions that must be undone first
+  }>(), // Instructions for how to undo this action
+  isUndone: boolean("is_undone").default(false),
+  undoneAt: timestamp("undone_at"),
+  undoneBy: integer("undone_by").references(() => users.id),
+  parentActionId: integer("parent_action_id"), // Links to parent action if this is a sub-action
+  batchId: text("batch_id"), // Groups related actions together
+  executionTime: integer("execution_time"), // Time taken to execute in milliseconds
+  success: boolean("success").default(true),
+  errorMessage: text("error_message"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Schedule Scenarios for evaluation and comparison
 export const scheduleScenarios = pgTable("schedule_scenarios", {
   id: serial("id").primaryKey(),
@@ -1105,8 +1136,8 @@ export const scenarioDiscussions: any = pgTable("scenario_discussions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Memory Book System - Free-form wiki-like collaborative knowledge base
-export const memoryBooks = pgTable("memory_books", {
+// Playbook System - Free-form wiki-like collaborative knowledge base
+export const playbooks = pgTable("playbooks", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(), // Free-form markdown content - the main wiki content
@@ -1117,27 +1148,27 @@ export const memoryBooks = pgTable("memory_books", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  contentSearchIndex: index("memory_content_search_idx").on(table.content),
-  titleSearchIndex: index("memory_title_search_idx").on(table.title),
-  tagsIndex: index("memory_tags_idx").on(table.tags),
+  contentSearchIndex: index("playbook_content_search_idx").on(table.content),
+  titleSearchIndex: index("playbook_title_search_idx").on(table.title),
+  tagsIndex: index("playbook_tags_idx").on(table.tags),
 }));
 
-// Memory Book Collaborators - users who can edit specific memory books
-export const memoryBookCollaborators = pgTable("memory_book_collaborators", {
+// Playbook Collaborators - users who can edit specific playbooks
+export const playbookCollaborators = pgTable("playbook_collaborators", {
   id: serial("id").primaryKey(),
-  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
+  playbookId: integer("playbook_id").references(() => playbooks.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   permission: text("permission").notNull().default("edit"), // read, edit, admin
   addedBy: integer("added_by").references(() => users.id).notNull(),
   addedAt: timestamp("added_at").defaultNow(),
 }, (table) => ({
-  collaboratorUnique: unique().on(table.memoryBookId, table.userId),
+  collaboratorUnique: unique().on(table.playbookId, table.userId),
 }));
 
-// Memory Book History - track all changes for audit purposes
-export const memoryBookHistory = pgTable("memory_book_history", {
+// Playbook History - track all changes for audit purposes
+export const playbookHistory = pgTable("playbook_history", {
   id: serial("id").primaryKey(),
-  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
+  playbookId: integer("playbook_id").references(() => playbooks.id).notNull(),
   previousContent: text("previous_content"),
   newContent: text("new_content"),
   changeType: text("change_type").notNull(), // created, updated, archived, restored
@@ -1146,10 +1177,10 @@ export const memoryBookHistory = pgTable("memory_book_history", {
   editedAt: timestamp("edited_at").defaultNow(),
 });
 
-// Memory Book Usage Analytics - track how knowledge is being accessed and used
-export const memoryBookUsage = pgTable("memory_book_usage", {
+// Playbook Usage Analytics - track how knowledge is being accessed and used
+export const playbookUsage = pgTable("playbook_usage", {
   id: serial("id").primaryKey(),
-  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
+  playbookId: integer("playbook_id").references(() => playbooks.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   actionType: text("action_type").notNull(), // viewed, applied, referenced, shared
   context: text("context"), // where it was used (scheduling, optimization, etc.)
@@ -1499,6 +1530,9 @@ export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
 export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
+
+export const insertAgentActionSchema = createInsertSchema(agentActions, {}).omit({ id: true, createdAt: true, undoneAt: true });
+export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
 // Junction table insert schema for many-to-many relationship
 export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {}).omit({ id: true, convertedAt: true });
@@ -2887,40 +2921,40 @@ export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts).omit
   updatedAt: true,
 });
 
-// Memory Book Insert Schemas
-export const insertMemoryBookSchema = createInsertSchema(memoryBooks).omit({
+// Playbook Insert Schemas
+export const insertPlaybookSchema = createInsertSchema(playbooks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertMemoryBookCollaboratorSchema = createInsertSchema(memoryBookCollaborators).omit({
+export const insertPlaybookCollaboratorSchema = createInsertSchema(playbookCollaborators).omit({
   id: true,
   addedAt: true,
 });
 
-export const insertMemoryBookHistorySchema = createInsertSchema(memoryBookHistory).omit({
+export const insertPlaybookHistorySchema = createInsertSchema(playbookHistory).omit({
   id: true,
   editedAt: true,
 });
 
-export const insertMemoryBookUsageSchema = createInsertSchema(memoryBookUsage).omit({
+export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage).omit({
   id: true,
   usedAt: true,
 });
 
-// Memory Book Types
-export type MemoryBook = typeof memoryBooks.$inferSelect;
-export type InsertMemoryBook = z.infer<typeof insertMemoryBookSchema>;
+// Playbook Types
+export type Playbook = typeof playbooks.$inferSelect;
+export type InsertPlaybook = z.infer<typeof insertPlaybookSchema>;
 
-export type MemoryBookCollaborator = typeof memoryBookCollaborators.$inferSelect;
-export type InsertMemoryBookCollaborator = z.infer<typeof insertMemoryBookCollaboratorSchema>;
+export type PlaybookCollaborator = typeof playbookCollaborators.$inferSelect;
+export type InsertPlaybookCollaborator = z.infer<typeof insertPlaybookCollaboratorSchema>;
 
-export type MemoryBookHistory = typeof memoryBookHistory.$inferSelect;
-export type InsertMemoryBookHistory = z.infer<typeof insertMemoryBookHistorySchema>;
+export type PlaybookHistory = typeof playbookHistory.$inferSelect;
+export type InsertPlaybookHistory = z.infer<typeof insertPlaybookHistorySchema>;
 
-export type MemoryBookUsage = typeof memoryBookUsage.$inferSelect;
-export type InsertMemoryBookUsage = z.infer<typeof insertMemoryBookUsageSchema>;
+export type PlaybookUsage = typeof playbookUsage.$inferSelect;
+export type InsertPlaybookUsage = z.infer<typeof insertPlaybookUsageSchema>;
 
 export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets).omit({
   id: true,
@@ -4822,6 +4856,8 @@ export type InsertVendor = z.infer<typeof insertVendorSchema>;
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+
+export type AgentAction = typeof agentActions.$inferSelect;
 
 // Onboarding Management Tables
 export const companyOnboarding = pgTable("company_onboarding", {

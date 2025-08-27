@@ -114,10 +114,10 @@ import {
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
   
-  // Memory Book System
-  memoryBooks, memoryBookCollaborators, memoryBookHistory, memoryBookUsage,
-  type MemoryBook, type MemoryBookCollaborator, type MemoryBookUsage,
-  type InsertMemoryBook, type InsertMemoryBookCollaborator, type InsertMemoryBookUsage,
+  // Playbook System
+  playbooks, playbookCollaborators, playbookHistory, playbookUsage,
+  type Playbook, type PlaybookCollaborator, type PlaybookUsage,
+  type InsertPlaybook, type InsertPlaybookCollaborator, type InsertPlaybookUsage,
   type PtJob, type PtResource, type PtJobOperation, type PtManufacturingOrder, type PtCapability, type PtMetric,
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,

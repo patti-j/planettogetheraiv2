@@ -82,6 +82,7 @@ import UserAccessManagement from "@/pages/user-access-management";
 import VisualFactory from "@/pages/visual-factory";
 import AIScenarioCreator from "@/pages/ai-scenario-creator";
 import MemoryBookPage from "@/pages/memory-book";
+import AgentHistory from "@/pages/agent-history";
 
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -261,7 +262,8 @@ export default function ApplicationApp() {
               <Route path="/onboarding-assistant" component={OnboardingAssistant} />
               <Route path="/design-studio" component={DesignStudio} />
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
-              <Route path="/memory-books" component={MemoryBookPage} />
+              <Route path="/playbooks" component={MemoryBookPage} />
+              <Route path="/agent-history" component={AgentHistory} />
               
               {/* Data Management Routes */}
               <Route path="/data-import" component={DataImport} />

@@ -15,22 +15,22 @@ import { z } from "zod";
 import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Brain } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { MemoryBook } from "@shared/schema";
+import type { Playbook } from "@shared/schema";
 
-const memoryBookFormSchema = z.object({
+const playbookFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
   tags: z.array(z.string()).default([])
 });
 
-type MemoryBookFormData = z.infer<typeof memoryBookFormSchema>;
+type PlaybookFormData = z.infer<typeof playbookFormSchema>;
 
-export default function MemoryBookPage() {
-  const [selectedBook, setSelectedBook] = useState<MemoryBook | null>(null);
+export default function PlaybookPage() {
+  const [selectedBook, setSelectedBook] = useState<Playbook | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [createBookOpen, setCreateBookOpen] = useState(false);
-  const [editingBook, setEditingBook] = useState<MemoryBook | null>(null);
+  const [editingBook, setEditingBook] = useState<Playbook | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -50,9 +50,9 @@ export default function MemoryBookPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fetch memory books
-  const { data: memoryBooks = [], isLoading: booksLoading } = useQuery<MemoryBook[]>({
-    queryKey: ["/api/memory-books"],
+  // Fetch playbooks
+  const { data: playbooks = [], isLoading: booksLoading } = useQuery<Playbook[]>({
+    queryKey: ["/api/playbooks"],
   });
 
   // Fetch Max AI memories
@@ -61,10 +61,10 @@ export default function MemoryBookPage() {
     select: (data: any) => data.memories || []
   });
 
-  // Create/update memory book mutation
+  // Create/update playbook mutation
   const saveBookMutation = useMutation({
-    mutationFn: async (data: MemoryBookFormData & { id?: number }) => {
-      const url = data.id ? `/api/memory-books/${data.id}` : "/api/memory-books";
+    mutationFn: async (data: PlaybookFormData & { id?: number }) => {
+      const url = data.id ? `/api/playbooks/${data.id}` : "/api/playbooks";
       const method = data.id ? "PUT" : "POST";
       const { id, ...payload } = data;
       const bookData = {
@@ -75,51 +75,51 @@ export default function MemoryBookPage() {
       return apiRequest(url, method, bookData);
     },
     onSuccess: (newBook) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/memory-books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
       setCreateBookOpen(false);
       setEditingBook(null);
       setIsEditing(false);
       if (!editingBook && newBook && typeof newBook === 'object' && 'id' in newBook) {
-        setSelectedBook(newBook as unknown as MemoryBook);
+        setSelectedBook(newBook as unknown as Playbook);
       }
       toast({
         title: "Success",
-        description: editingBook ? "Memory book updated successfully" : "Memory book created successfully",
+        description: editingBook ? "Playbook updated successfully" : "Playbook created successfully",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: `Failed to ${editingBook ? "update" : "create"} memory book`,
+        description: `Failed to ${editingBook ? "update" : "create"} playbook`,
         variant: "destructive",
       });
     },
   });
 
-  // Delete memory book mutation
+  // Delete playbook mutation
   const deleteBookMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/memory-books/${id}`, "DELETE");
+      return apiRequest(`/api/playbooks/${id}`, "DELETE");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/memory-books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playbooks"] });
       setSelectedBook(null);
       toast({
         title: "Success",
-        description: "Memory book deleted successfully",
+        description: "Playbook deleted successfully",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to delete memory book",
+        description: "Failed to delete playbook",
         variant: "destructive",
       });
     },
   });
 
-  const bookForm = useForm<MemoryBookFormData>({
-    resolver: zodResolver(memoryBookFormSchema),
+  const bookForm = useForm<PlaybookFormData>({
+    resolver: zodResolver(playbookFormSchema),
     defaultValues: {
       title: "",
       content: "",
@@ -139,7 +139,7 @@ export default function MemoryBookPage() {
     }
   }, [editingBook, bookForm]);
 
-  const onSaveBook = (data: MemoryBookFormData) => {
+  const onSaveBook = (data: PlaybookFormData) => {
     const bookData = {
       ...data,
       ...(editingBook && { id: editingBook.id })
@@ -147,12 +147,12 @@ export default function MemoryBookPage() {
     saveBookMutation.mutate(bookData);
   };
 
-  const handleEditBook = (book: MemoryBook) => {
+  const handleEditBook = (book: Playbook) => {
     setEditingBook(book);
   };
 
   const handleDeleteBook = (bookId: number) => {
-    if (confirm("Are you sure you want to delete this memory book? This action cannot be undone.")) {
+    if (confirm("Are you sure you want to delete this playbook? This action cannot be undone.")) {
       deleteBookMutation.mutate(bookId);
     }
   };
@@ -183,7 +183,7 @@ export default function MemoryBookPage() {
     }
   };
 
-  const filteredBooks = memoryBooks.filter(book => {
+  const filteredBooks = playbooks.filter(book => {
     const matchesSearch = !searchTerm || 
       book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (book.content || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -210,7 +210,7 @@ export default function MemoryBookPage() {
 
   // Get all unique tags from all books and memories
   const allTags = Array.from(new Set([
-    ...memoryBooks.flatMap(book => book.tags || []),
+    ...playbooks.flatMap(book => book.tags || []),
     ...maxAIMemories.flatMap((memory: any) => memory.tags || [])
   ])).sort();
 
@@ -236,7 +236,7 @@ export default function MemoryBookPage() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Memory Books
+            Playbooks
           </h1>
           {isMobile && (
             <Button
@@ -275,12 +275,12 @@ export default function MemoryBookPage() {
             <DialogTrigger asChild>
               <Button size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-1" />
-                New Memory Book
+                New Playbook
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingBook ? "Edit Memory Book" : "Create Memory Book"}</DialogTitle>
+              <DialogTitle>{editingBook ? "Edit Playbook" : "Create Playbook"}</DialogTitle>
               <DialogDescription>
                 Create a free-form knowledge base for your team. Use tags to organize content.
               </DialogDescription>

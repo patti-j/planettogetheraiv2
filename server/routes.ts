@@ -78,7 +78,9 @@ import {
   insertDemandChangeRequestSchema, insertDemandChangeCommentSchema,
   insertDemandChangeApprovalSchema, insertDemandCollaborationSessionSchema,
   // Workspace Dashboard Schema
-  insertWorkspaceDashboardSchema
+  insertWorkspaceDashboardSchema,
+  // Agent Actions Schema
+  insertAgentActionSchema
 } from "@shared/schema";
 
 // Import PT Publish schemas
@@ -103,6 +105,7 @@ import connectPg from "connect-pg-simple";
 import OpenAI from "openai";
 import crypto from "crypto";
 import { systemMonitoringAgent } from "./monitoring-agent";
+import { agentActionService } from "./agent-action-service";
 
 // Session interface is declared in index.ts
 
@@ -4459,6 +4462,279 @@ If nothing important to remember, respond with:
     } catch (error) {
       console.error("Max AI clear history error:", error);
       res.status(500).json({ error: "Failed to clear history" });
+    }
+  });
+
+  // Agent Action History endpoints
+  // Create a new agent action
+  app.post("/api/agent-actions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const actionData = req.body;
+      
+      // Validate required fields
+      if (!actionData.agentType || !actionData.actionType || !actionData.entityType || !actionData.actionDescription) {
+        return res.status(400).json({ 
+          error: "Missing required fields: agentType, actionType, entityType, actionDescription" 
+        });
+      }
+      
+      // Create the action record
+      const newAction = await db.insert(schema.agentActions).values({
+        sessionId: actionData.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        agentType: actionData.agentType,
+        actionType: actionData.actionType,
+        entityType: actionData.entityType,
+        entityId: actionData.entityId || null,
+        actionDescription: actionData.actionDescription,
+        reasoning: actionData.reasoning || '',
+        userPrompt: actionData.userPrompt || null,
+        beforeState: actionData.beforeState || null,
+        afterState: actionData.afterState || null,
+        undoInstructions: actionData.undoInstructions || null,
+        parentActionId: actionData.parentActionId || null,
+        batchId: actionData.batchId || null,
+        executionTime: actionData.executionTime || null,
+        success: actionData.success ?? true,
+        errorMessage: actionData.errorMessage || null,
+        createdBy: userId
+      }).returning();
+      
+      res.status(201).json(newAction[0]);
+    } catch (error) {
+      console.error("Error creating agent action:", error);
+      res.status(500).json({ error: "Failed to create agent action" });
+    }
+  });
+
+  app.get("/api/agent-actions", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).userId;
+      const { search, agent, action, success } = req.query;
+      
+      // Build the query with filters
+      let query = db.select({
+        id: schema.agentActions.id,
+        sessionId: schema.agentActions.sessionId,
+        agentType: schema.agentActions.agentType,
+        actionType: schema.agentActions.actionType,
+        entityType: schema.agentActions.entityType,
+        entityId: schema.agentActions.entityId,
+        actionDescription: schema.agentActions.actionDescription,
+        reasoning: schema.agentActions.reasoning,
+        userPrompt: schema.agentActions.userPrompt,
+        beforeState: schema.agentActions.beforeState,
+        afterState: schema.agentActions.afterState,
+        undoInstructions: schema.agentActions.undoInstructions,
+        isUndone: schema.agentActions.isUndone,
+        undoneAt: schema.agentActions.undoneAt,
+        undoneBy: schema.agentActions.undoneBy,
+        parentActionId: schema.agentActions.parentActionId,
+        batchId: schema.agentActions.batchId,
+        executionTime: schema.agentActions.executionTime,
+        success: schema.agentActions.success,
+        errorMessage: schema.agentActions.errorMessage,
+        createdBy: schema.agentActions.createdBy,
+        createdAt: schema.agentActions.createdAt,
+        // Join with users table for created by and undone by user info
+        createdByUser: {
+          id: schema.users.id,
+          username: schema.users.username
+        },
+        undoneByUser: {
+          id: schema.users.id,
+          username: schema.users.username
+        }
+      })
+      .from(schema.agentActions)
+      .leftJoin(schema.users, eq(schema.agentActions.createdBy, schema.users.id))
+      .leftJoin(schema.users, eq(schema.agentActions.undoneBy, schema.users.id))
+      .orderBy(sql`${schema.agentActions.createdAt} DESC`)
+      .limit(500);
+
+      // Apply filters
+      const conditions = [];
+      
+      if (search) {
+        const searchTerm = `%${search}%`;
+        conditions.push(sql`(
+          ${schema.agentActions.actionDescription} ILIKE ${searchTerm} OR
+          ${schema.agentActions.reasoning} ILIKE ${searchTerm} OR
+          ${schema.agentActions.userPrompt} ILIKE ${searchTerm}
+        )`);
+      }
+      
+      if (agent && agent !== 'all') {
+        conditions.push(eq(schema.agentActions.agentType, agent));
+      }
+      
+      if (action && action !== 'all') {
+        conditions.push(eq(schema.agentActions.actionType, action));
+      }
+      
+      if (success === 'success') {
+        conditions.push(eq(schema.agentActions.success, true));
+      } else if (success === 'failure') {
+        conditions.push(eq(schema.agentActions.success, false));
+      } else if (success === 'undone') {
+        conditions.push(eq(schema.agentActions.isUndone, true));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      const actions = await query;
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching agent actions:", error);
+      res.status(500).json({ error: "Failed to fetch agent actions" });
+    }
+  });
+
+  // Undo a specific agent action
+  app.post("/api/agent-actions/:id/undo", requireAuth, async (req, res) => {
+    try {
+      const actionId = parseInt(req.params.id);
+      const userId = (req as any).userId;
+      
+      if (isNaN(actionId)) {
+        return res.status(400).json({ error: "Invalid action ID" });
+      }
+      
+      // Get the action to undo
+      const action = await db.select()
+        .from(schema.agentActions)
+        .where(eq(schema.agentActions.id, actionId))
+        .limit(1);
+      
+      if (action.length === 0) {
+        return res.status(404).json({ error: "Action not found" });
+      }
+      
+      const actionToUndo = action[0];
+      
+      if (actionToUndo.isUndone) {
+        return res.status(400).json({ error: "Action is already undone" });
+      }
+      
+      if (!actionToUndo.undoInstructions) {
+        return res.status(400).json({ error: "This action cannot be undone" });
+      }
+      
+      try {
+        // Execute undo instructions based on the method
+        const undoInstructions = actionToUndo.undoInstructions;
+        
+        switch (undoInstructions.method) {
+          case 'api_call':
+            if (undoInstructions.endpoint && undoInstructions.data) {
+              // Make API call to undo the action
+              // This would need to be implemented based on specific endpoints
+              console.log(`Would call ${undoInstructions.endpoint} with data:`, undoInstructions.data);
+            }
+            break;
+            
+          case 'database_restore':
+            if (actionToUndo.beforeState && actionToUndo.entityType && actionToUndo.entityId) {
+              // Restore database state
+              // This would need specific implementation based on entity type
+              console.log(`Would restore ${actionToUndo.entityType} ${actionToUndo.entityId} to:`, actionToUndo.beforeState);
+            }
+            break;
+            
+          case 'state_revert':
+            if (undoInstructions.data) {
+              // Revert state changes
+              console.log('Would revert state changes:', undoInstructions.data);
+            }
+            break;
+            
+          default:
+            throw new Error(`Unsupported undo method: ${undoInstructions.method}`);
+        }
+        
+        // Mark the action as undone
+        await db.update(schema.agentActions)
+          .set({
+            isUndone: true,
+            undoneAt: new Date(),
+            undoneBy: userId
+          })
+          .where(eq(schema.agentActions.id, actionId));
+        
+        // Create an undo action record
+        await db.insert(schema.agentActions).values({
+          sessionId: actionToUndo.sessionId,
+          agentType: 'system',
+          actionType: 'undo',
+          entityType: actionToUndo.entityType,
+          entityId: actionToUndo.entityId,
+          actionDescription: `Undid: ${actionToUndo.actionDescription}`,
+          reasoning: `User requested undo of action #${actionId}`,
+          userPrompt: null,
+          beforeState: actionToUndo.afterState,
+          afterState: actionToUndo.beforeState,
+          undoInstructions: null,
+          parentActionId: actionId,
+          batchId: actionToUndo.batchId,
+          executionTime: null,
+          success: true,
+          errorMessage: null,
+          createdBy: userId
+        });
+        
+        res.json({ success: true, message: "Action undone successfully" });
+        
+      } catch (undoError) {
+        console.error("Error executing undo:", undoError);
+        res.status(500).json({ error: "Failed to execute undo operation" });
+      }
+      
+    } catch (error) {
+      console.error("Error undoing agent action:", error);
+      res.status(500).json({ error: "Failed to undo agent action" });
+    }
+  });
+
+  // Get agent action statistics
+  app.get("/api/agent-actions/stats", requireAuth, async (req, res) => {
+    try {
+      const stats = await db.select({
+        agentType: schema.agentActions.agentType,
+        actionType: schema.agentActions.actionType,
+        count: sql<number>`count(*)::int`,
+        successCount: sql<number>`sum(case when success = true then 1 else 0 end)::int`,
+        undoneCount: sql<number>`sum(case when is_undone = true then 1 else 0 end)::int`
+      })
+      .from(schema.agentActions)
+      .groupBy(schema.agentActions.agentType, schema.agentActions.actionType)
+      .orderBy(schema.agentActions.agentType, schema.agentActions.actionType);
+      
+      const summary = await db.select({
+        totalActions: sql<number>`count(*)::int`,
+        successfulActions: sql<number>`sum(case when success = true then 1 else 0 end)::int`,
+        failedActions: sql<number>`sum(case when success = false then 1 else 0 end)::int`,
+        undoneActions: sql<number>`sum(case when is_undone = true then 1 else 0 end)::int`,
+        uniqueAgents: sql<number>`count(distinct agent_type)::int`,
+        uniqueSessions: sql<number>`count(distinct session_id)::int`
+      })
+      .from(schema.agentActions);
+      
+      res.json({ 
+        stats, 
+        summary: summary[0] || { 
+          totalActions: 0, 
+          successfulActions: 0, 
+          failedActions: 0, 
+          undoneActions: 0, 
+          uniqueAgents: 0, 
+          uniqueSessions: 0 
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching agent action stats:", error);
+      res.status(500).json({ error: "Failed to fetch agent action statistics" });
     }
   });
 
@@ -27709,8 +27985,8 @@ Be careful to preserve data integrity and relationships.`;
     }
   });
 
-  // Memory Book System Routes
-  app.get("/api/memory-books", requireAuth, async (req, res) => {
+  // Playbook System Routes
+  app.get("/api/playbooks", requireAuth, async (req, res) => {
     try {
       const { scope, plantId, userId } = req.query;
       const books = await storage.getMemoryBooks(
@@ -27720,59 +27996,59 @@ Be careful to preserve data integrity and relationships.`;
       );
       res.json(books);
     } catch (error) {
-      console.error("Error fetching memory books:", error);
-      res.status(500).json({ error: "Failed to fetch memory books" });
+      console.error("Error fetching playbooks:", error);
+      res.status(500).json({ error: "Failed to fetch playbooks" });
     }
   });
 
-  app.get("/api/memory-books/:id", requireAuth, async (req, res) => {
+  app.get("/api/playbooks/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const book = await storage.getMemoryBook(id);
-      if (!book) return res.status(404).json({ error: "Memory book not found" });
+      if (!book) return res.status(404).json({ error: "Playbook not found" });
       res.json(book);
     } catch (error) {
-      console.error("Error fetching memory book:", error);
-      res.status(500).json({ error: "Failed to fetch memory book" });
+      console.error("Error fetching playbook:", error);
+      res.status(500).json({ error: "Failed to fetch playbook" });
     }
   });
 
-  app.post("/api/memory-books", requireAuth, async (req, res) => {
+  app.post("/api/playbooks", requireAuth, async (req, res) => {
     try {
       const book = await storage.createMemoryBook(req.body);
       res.status(201).json(book);
     } catch (error) {
-      console.error("Error creating memory book:", error);
-      res.status(500).json({ error: "Failed to create memory book" });
+      console.error("Error creating playbook:", error);
+      res.status(500).json({ error: "Failed to create playbook" });
     }
   });
 
-  app.put("/api/memory-books/:id", requireAuth, async (req, res) => {
+  app.put("/api/playbooks/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const book = await storage.updateMemoryBook(id, req.body);
-      if (!book) return res.status(404).json({ error: "Memory book not found" });
+      if (!book) return res.status(404).json({ error: "Playbook not found" });
       res.json(book);
     } catch (error) {
-      console.error("Error updating memory book:", error);
-      res.status(500).json({ error: "Failed to update memory book" });
+      console.error("Error updating playbook:", error);
+      res.status(500).json({ error: "Failed to update playbook" });
     }
   });
 
-  app.delete("/api/memory-books/:id", requireAuth, async (req, res) => {
+  app.delete("/api/playbooks/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteMemoryBook(id);
-      if (!success) return res.status(404).json({ error: "Memory book not found" });
+      if (!success) return res.status(404).json({ error: "Playbook not found" });
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting memory book:", error);
-      res.status(500).json({ error: "Failed to delete memory book" });
+      console.error("Error deleting playbook:", error);
+      res.status(500).json({ error: "Failed to delete playbook" });
     }
   });
 
-  // Memory Book Entries Routes
-  app.get("/api/memory-book-entries", requireAuth, async (req, res) => {
+  // Playbook Entries Routes
+  app.get("/api/playbook-entries", requireAuth, async (req, res) => {
     try {
       const { memoryBookId, category, search } = req.query;
       const entries = await storage.getMemoryBookEntries(
@@ -27782,16 +28058,16 @@ Be careful to preserve data integrity and relationships.`;
       );
       res.json(entries);
     } catch (error) {
-      console.error("Error fetching memory book entries:", error);
-      res.status(500).json({ error: "Failed to fetch memory book entries" });
+      console.error("Error fetching playbook entries:", error);
+      res.status(500).json({ error: "Failed to fetch playbook entries" });
     }
   });
 
-  app.get("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+  app.get("/api/playbook-entries/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const entry = await storage.getMemoryBookEntry(id);
-      if (!entry) return res.status(404).json({ error: "Memory book entry not found" });
+      if (!entry) return res.status(404).json({ error: "Playbook entry not found" });
       
       // Record view usage
       await storage.recordMemoryBookUsage({
@@ -27803,46 +28079,46 @@ Be careful to preserve data integrity and relationships.`;
       
       res.json(entry);
     } catch (error) {
-      console.error("Error fetching memory book entry:", error);
-      res.status(500).json({ error: "Failed to fetch memory book entry" });
+      console.error("Error fetching playbook entry:", error);
+      res.status(500).json({ error: "Failed to fetch playbook entry" });
     }
   });
 
-  app.post("/api/memory-book-entries", requireAuth, async (req, res) => {
+  app.post("/api/playbook-entries", requireAuth, async (req, res) => {
     try {
       const entry = await storage.createMemoryBookEntry(req.body);
       res.status(201).json(entry);
     } catch (error) {
-      console.error("Error creating memory book entry:", error);
-      res.status(500).json({ error: "Failed to create memory book entry" });
+      console.error("Error creating playbook entry:", error);
+      res.status(500).json({ error: "Failed to create playbook entry" });
     }
   });
 
-  app.put("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+  app.put("/api/playbook-entries/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const entry = await storage.updateMemoryBookEntry(id, req.body);
-      if (!entry) return res.status(404).json({ error: "Memory book entry not found" });
+      if (!entry) return res.status(404).json({ error: "Playbook entry not found" });
       res.json(entry);
     } catch (error) {
-      console.error("Error updating memory book entry:", error);
-      res.status(500).json({ error: "Failed to update memory book entry" });
+      console.error("Error updating playbook entry:", error);
+      res.status(500).json({ error: "Failed to update playbook entry" });
     }
   });
 
-  app.delete("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+  app.delete("/api/playbook-entries/:id", requireAuth, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteMemoryBookEntry(id);
-      if (!success) return res.status(404).json({ error: "Memory book entry not found" });
+      if (!success) return res.status(404).json({ error: "Playbook entry not found" });
       res.json({ success: true });
     } catch (error) {
-      console.error("Error deleting memory book entry:", error);
-      res.status(500).json({ error: "Failed to delete memory book entry" });
+      console.error("Error deleting playbook entry:", error);
+      res.status(500).json({ error: "Failed to delete playbook entry" });
     }
   });
 
-  app.get("/api/memory-book-entries/search/:searchTerm", requireAuth, async (req, res) => {
+  app.get("/api/playbook-entries/search/:searchTerm", requireAuth, async (req, res) => {
     try {
       const { searchTerm } = req.params;
       const { memoryBookId } = req.query;
@@ -27852,24 +28128,24 @@ Be careful to preserve data integrity and relationships.`;
       );
       res.json(entries);
     } catch (error) {
-      console.error("Error searching memory book entries:", error);
-      res.status(500).json({ error: "Failed to search memory book entries" });
+      console.error("Error searching playbook entries:", error);
+      res.status(500).json({ error: "Failed to search playbook entries" });
     }
   });
 
-  // Memory Book Collaborators Routes
-  app.get("/api/memory-books/:id/collaborators", requireAuth, async (req, res) => {
+  // Playbook Collaborators Routes
+  app.get("/api/playbooks/:id/collaborators", requireAuth, async (req, res) => {
     try {
       const memoryBookId = parseInt(req.params.id);
       const collaborators = await storage.getMemoryBookCollaborators(memoryBookId);
       res.json(collaborators);
     } catch (error) {
-      console.error("Error fetching memory book collaborators:", error);
-      res.status(500).json({ error: "Failed to fetch memory book collaborators" });
+      console.error("Error fetching playbook collaborators:", error);
+      res.status(500).json({ error: "Failed to fetch playbook collaborators" });
     }
   });
 
-  app.post("/api/memory-books/:id/collaborators", requireAuth, async (req, res) => {
+  app.post("/api/playbooks/:id/collaborators", requireAuth, async (req, res) => {
     try {
       const memoryBookId = parseInt(req.params.id);
       const collaborator = await storage.addMemoryBookCollaborator({
