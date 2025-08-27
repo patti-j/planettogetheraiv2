@@ -172,11 +172,22 @@ export function useAuth() {
         throw error;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       try {
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        console.log("Desktop login successful, redirecting to /dashboard");
+        // Immediately invalidate the auth query to refetch user data
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        
+        // Add a small delay to ensure state is properly updated
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       } catch (error) {
-        console.error("Query invalidation error:", error);
+        console.error("Post-login processing error:", error);
+        // Even if invalidation fails, still redirect to dashboard
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       }
     },
     onError: (error) => {
