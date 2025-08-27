@@ -135,13 +135,47 @@ export default function CanvasPage() {
     setShowClearConfirmation(true);
   };
 
-  const confirmClearCanvas = () => {
-    setItems([]);
-    setShowClearConfirmation(false);
-    toast({
-      title: "Canvas Cleared",
-      description: "All canvas content has been removed"
-    });
+  const confirmClearCanvas = async () => {
+    try {
+      // Clear local items
+      setItems([]);
+      
+      // Clear database widgets by making them invisible
+      if (canvasWidgets && canvasWidgets.length > 0) {
+        await Promise.all(
+          canvasWidgets.map(async (widget: CanvasWidget) => {
+            try {
+              await fetch(`/api/canvas/widgets/${widget.id}`, {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ isVisible: false }),
+              });
+            } catch (error) {
+              console.log(`Failed to hide widget ${widget.id}:`, error);
+            }
+          })
+        );
+      }
+      
+      setShowClearConfirmation(false);
+      
+      // Refresh the canvas widgets query to update the display
+      window.location.reload();
+      
+      toast({
+        title: "Canvas Cleared",
+        description: "All canvas content has been removed"
+      });
+    } catch (error) {
+      console.error('Failed to clear canvas:', error);
+      toast({
+        title: "Clear Failed",
+        description: "Unable to clear all canvas content",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCopyToClipboard = async () => {
