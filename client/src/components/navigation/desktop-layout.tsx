@@ -31,10 +31,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {/* Customizable desktop header - hidden in full screen */}
       {!isFullScreen && <CustomizableHeader />}
       
-      {/* Main content area with left rail and AI panel */}
+      {/* Main content area with AI panel on left and navigation on right */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Rail Navigation - hidden in full screen */}
-        {!isFullScreen && <LeftRailNav />}
+        {/* AI Panel - now on the left side - hidden in full screen */}
+        {!isFullScreen && <AILeftPanel />}
         
         {/* Main content */}
         <div className="flex-1 flex flex-col">
@@ -47,8 +47,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </div>
         </div>
         
-        {/* AI Right Panel - hidden in full screen */}
-        {!isFullScreen && <AILeftPanel />}
+        {/* Navigation Rail - now on the right side - hidden in full screen */}
+        {!isFullScreen && <LeftRailNav />}
       </div>
       
       {/* Bottom drawer for notifications - hidden in full screen */}
