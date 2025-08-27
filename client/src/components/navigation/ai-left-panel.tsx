@@ -376,7 +376,13 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       
       // Handle navigation actions from Max AI
       if (data?.action?.type === 'navigate' && data?.action?.target) {
-        setLocation(data.action.target);
+        const target = data.action.target;
+        // Handle external links (HTML files) by opening in new window
+        if (target.endsWith('.html')) {
+          window.open(target, '_blank');
+        } else {
+          setLocation(target);
+        }
         
         // Show navigation confirmation
         addMessage({

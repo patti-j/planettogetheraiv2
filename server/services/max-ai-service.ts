@@ -353,7 +353,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     return [
       { route: '/', label: 'Home', description: 'Main dashboard and homepage' },
       { route: '/control-tower', label: 'Global Control Tower', description: 'Enterprise-wide monitoring and insights' },
-      { route: '/production-schedule', label: 'Production Schedule', description: 'Detailed production scheduling with Gantt chart and operations timeline' },
+      { route: '/production-scheduler.html', label: 'Production Scheduler Pro', description: 'Advanced production scheduling with Gantt chart and operations timeline' },
       { route: '/master-production-schedule', label: 'Master Production Schedule', description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
       { route: '/shop-floor', label: 'Shop Floor', description: 'Shop floor monitoring and real-time production' },
       { route: '/analytics', label: 'Analytics', description: 'Analytics and performance metrics' },
@@ -833,10 +833,10 @@ Respond with JSON:
         keywords: ['analytics', 'data', 'reports', 'insights', 'metrics']
       },
       'production-schedule': {
-        path: '/production-schedule',
-        name: 'Production Schedule',
-        description: 'production scheduling and timeline management',
-        keywords: ['schedule', 'production', 'planning', 'timeline', 'gantt']
+        path: '/production-scheduler.html',
+        name: 'Production Scheduler Pro',
+        description: 'advanced production scheduling with Gantt chart and timeline management',
+        keywords: ['schedule', 'production', 'planning', 'timeline', 'gantt', 'scheduler', 'pro']
       },
       'shift-management': {
         path: '/shift-management',
