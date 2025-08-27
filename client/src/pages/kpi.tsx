@@ -236,37 +236,42 @@ export default function KPIPage() {
             <CardTitle>Performance Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    type="monotone"
-                    dataKey="oee"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    name="OEE %"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="delivery"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    name="On-Time Delivery %"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="quality"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    name="Quality %"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              config={{
+                oee: { label: "OEE %", color: "#10b981" },
+                delivery: { label: "On-Time Delivery %", color: "#3b82f6" },
+                quality: { label: "Quality %", color: "#8b5cf6" },
+              }}
+              className="h-80"
+            >
+              <LineChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="oee"
+                  stroke="var(--color-oee)"
+                  strokeWidth={2}
+                  name="OEE %"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="delivery"
+                  stroke="var(--color-delivery)"
+                  strokeWidth={2}
+                  name="On-Time Delivery %"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="quality"
+                  stroke="var(--color-quality)"
+                  strokeWidth={2}
+                  name="Quality %"
+                />
+              </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -275,21 +280,24 @@ export default function KPIPage() {
             <CardTitle>Department Performance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={departmentPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                    {departmentPerformance.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              config={{
+                value: { label: "Performance %", color: "#3b82f6" },
+              }}
+              className="h-80"
+            >
+              <BarChart data={departmentPerformance}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {departmentPerformance.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
