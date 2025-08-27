@@ -50,7 +50,7 @@ import {
   CheckCircle,
   Clock,
   Target,
-  Brain,
+  Wand2,
   Gauge,
   PlayCircle,
   RefreshCw,

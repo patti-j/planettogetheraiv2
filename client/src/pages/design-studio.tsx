@@ -46,7 +46,6 @@ import {
   Globe,
   ChevronRight,
   ChevronDown,
-  Brain,
   Zap,
   Search,
   Filter,

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { 
-  Bot, Brain, ChevronDown, ChevronRight, Undo2, AlertTriangle, 
+  Bot, Wand2, ChevronDown, ChevronRight, Undo2, AlertTriangle, 
   CheckCircle, XCircle, Clock, Search, Filter, RotateCcw, 
   Eye, EyeOff, Calendar, User, Database, Zap, BarChart3,
   Factory, Package, Shield, Sparkles
@@ -58,7 +58,7 @@ interface AgentAction {
 }
 
 const agentTypeIcons = {
-  max: Brain,
+  max: Wand2,
   scheduler: Calendar,
   optimizer: Zap,
   analytics: BarChart3,

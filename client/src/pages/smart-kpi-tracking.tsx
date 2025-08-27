@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Target, TrendingUp, AlertTriangle, Calendar, Users, 
-  CheckCircle2, XCircle, Clock, BarChart3, Brain,
+  CheckCircle2, XCircle, Clock, BarChart3, Wand2,
   Trophy, Zap, MessageSquare, Plus, Settings,
   Award, Flame, Star, ArrowUp, ArrowDown, Minus,
   Bell, UserCheck, Activity, RefreshCw, Eye,

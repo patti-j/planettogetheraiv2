@@ -37,7 +37,7 @@ import {
   Calendar, 
   Clock, 
   Target, 
-  Brain,
+  Wand2,
   Activity,
   Settings,
   History

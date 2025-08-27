@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Brain, Shield, Zap } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Wand2, Shield, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 

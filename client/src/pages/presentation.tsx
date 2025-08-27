@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Rocket, 
-  Brain, 
+  Wand2, 
   BarChart3, 
   Users, 
   Settings, 
@@ -155,7 +155,7 @@ const PresentationPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             {[
               { number: "14+", label: "Specialized Roles", icon: Users },
-              { number: "AI", label: "Powered Assistant", icon: Brain },
+              { number: "AI", label: "Powered Assistant", icon: Wand2 },
               { number: "Multi", label: "Plant Support", icon: Factory },
               { number: "Real-time", label: "Updates", icon: Zap }
             ].map((stat, index) => (
@@ -186,7 +186,7 @@ const PresentationPage = () => {
               {
                 title: "Intelligent Operations",
                 description: "AI-powered production scheduling with predictive analytics and automated optimization",
-                icon: Brain,
+                icon: Wand2,
                 features: ["Smart scheduling algorithms", "Predictive maintenance", "Resource optimization", "Bottleneck detection"]
               },
               {

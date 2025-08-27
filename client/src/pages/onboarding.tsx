@@ -17,7 +17,7 @@ import { useTour } from "@/contexts/TourContext";
 import { WelcomeOverview } from "@/components/welcome-overview";
 import {
   Factory, Users, BarChart3, Package, Settings, CheckCircle2, ArrowRight,
-  Building, Target, Calendar, Truck, Wrench, Brain, Sparkles, Upload,
+  Building, Target, Calendar, Truck, Wrench, Wand2, Sparkles, Upload,
   PlayCircle, BookOpen, Lightbulb, ChevronRight, Clock, Award, TrendingUp, ClipboardList,
   Star, FileImage, Info, X, Zap
 } from "lucide-react";
@@ -133,7 +133,7 @@ const featureModules: FeatureModule[] = [
     id: 'ai-optimization',
     name: 'AI Optimization',
     description: 'Leverage artificial intelligence for automated optimization and insights',
-    icon: Brain,
+    icon: Wand2,
     complexity: 'advanced',
     prerequisites: ['production-scheduling', 'capacity-planning'],
     estimatedSetupTime: '45-60 minutes',

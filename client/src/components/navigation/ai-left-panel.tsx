@@ -774,14 +774,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         message.role === 'user' && "flex-row-reverse"
                       )}
                     >
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-6 w-6 flex-shrink-0">
                         <AvatarFallback>
-                          {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                          {message.role === 'user' ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
                         </AvatarFallback>
                       </Avatar>
                       <div
                         className={cn(
-                          "flex flex-col gap-1 max-w-[85%]",
+                          "flex flex-col gap-1 max-w-[90%]",
                           message.role === 'user' && "items-end"
                         )}
                       >

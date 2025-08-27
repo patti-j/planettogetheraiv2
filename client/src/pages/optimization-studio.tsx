@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { 
-  Maximize2, Minimize2, Sparkles, Brain, Target, Cpu, Play, 
+  Maximize2, Minimize2, Sparkles, Wand2, Target, Cpu, Play, 
   CheckCircle, Settings, Database, Monitor, TrendingUp, 
   Code, TestTube, Rocket, BarChart3, Layers, Package,
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,

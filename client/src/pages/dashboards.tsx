@@ -16,7 +16,7 @@ import {
   BarChart3, 
   PieChart, 
   Activity, 
-  Brain, 
+  Wand2, 
   Sparkles, 
   Edit, 
   Trash2, 
