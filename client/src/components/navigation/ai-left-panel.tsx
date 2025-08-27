@@ -1397,6 +1397,55 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </div>
         </div>
       )}
+      
+      {/* Floating Notification - appears when panel is collapsed and there's a new message */}
+      {showFloatingNotification && floatingNotification && isCollapsed && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm animate-in slide-in-from-right duration-300">
+          <Card className="shadow-lg border-l-4 border-l-primary bg-background/95 backdrop-blur">
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <CardTitle className="text-sm">Max AI Reply</CardTitle>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowFloatingNotification(false);
+                    setTimeout(() => setFloatingNotification(null), 300);
+                  }}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground line-clamp-3">
+                {floatingNotification.content}
+              </p>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-xs text-muted-foreground">
+                  {new Date(floatingNotification.createdAt).toLocaleTimeString()}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsCollapsed(false);
+                    setActiveTab('chat');
+                    setShowFloatingNotification(false);
+                    setTimeout(() => setFloatingNotification(null), 300);
+                  }}
+                  className="h-7 text-xs"
+                >
+                  View Chat
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
