@@ -1318,7 +1318,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative"
+            className="relative bg-transparent hover:bg-transparent"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('chat');
@@ -1332,7 +1332,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative"
+            className="relative bg-transparent hover:bg-transparent"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('insights');
@@ -1347,7 +1347,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="relative"
+            className="relative bg-transparent hover:bg-transparent"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('anomalies');
@@ -1362,6 +1362,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           <Button 
             variant="ghost" 
             size="icon"
+            className="bg-transparent hover:bg-transparent"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('simulations');
