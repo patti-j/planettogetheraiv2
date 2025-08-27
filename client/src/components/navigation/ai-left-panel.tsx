@@ -112,15 +112,74 @@ export function AILeftPanel() {
       }));
     }
   }, [userPreferences]);
+
+  // Save AI settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
+  }, [aiSettings]);
   
   const { chatMessages, addMessage } = useChatSync();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Voice synthesis function
+  const speakResponse = useCallback((text: string) => {
+    if (!aiSettings.soundEnabled || !text.trim()) return;
+    
+    // Cancel any ongoing speech
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = aiSettings.voiceSpeed;
+    utterance.volume = 0.8;
+    
+    // Set voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const selectedVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes(aiSettings.voice) || 
+      voice.name.toLowerCase().includes('english')
+    );
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    window.speechSynthesis.speak(utterance);
+  }, [aiSettings.soundEnabled, aiSettings.voice, aiSettings.voiceSpeed]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    if (scrollAreaRef.current && activeTab === 'chat') {
+      const scrollElement = scrollAreaRef.current;
+      scrollElement.scrollTop = scrollElement.scrollHeight;
+      
+      // Check for new assistant messages and speak them
+      const lastMessage = chatMessages[chatMessages.length - 1];
+      if (lastMessage?.role === 'assistant' && aiSettings.soundEnabled) {
+        // Add small delay to ensure message is rendered
+        setTimeout(() => {
+          speakResponse(lastMessage.content);
+        }, 300);
+      }
     }
-  }, [chatMessages]);
+  }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
+
+  // Scroll detection for scroll button
+  const handleScroll = useCallback(() => {
+    if (!scrollAreaRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsNearBottom(isNearBottom);
+    setShowScrollButton(!isNearBottom);
+  }, []);
+
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, []);
   
   const [showMaxThinking, setShowMaxThinking] = useState(false);
   const [currentRequestController, setCurrentRequestController] = useState<AbortController | null>(null);
@@ -136,42 +195,7 @@ export function AILeftPanel() {
     }
   };
 
-  // Voice functionality
-  const playVoiceResponse = async (text: string) => {
-    if (!aiSettings.soundEnabled || !text) return;
-    
-    try {
-      const authToken = localStorage.getItem('authToken');
-      const response = await fetch('/api/ai/text-to-speech', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-        },
-        body: JSON.stringify({
-          text: text.substring(0, 4000), // Limit text length for TTS
-          voice: aiSettings.voice || 'alloy',
-          speed: aiSettings.voiceSpeed || 1.0
-        })
-      });
 
-      if (response.ok) {
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-        };
-        
-        await audio.play();
-      } else {
-        console.error('Failed to generate speech:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Voice playback error:', error);
-    }
-  };
   
   // Get current page location
   const [location] = useState(() => window.location.pathname);
@@ -420,33 +444,7 @@ export function AILeftPanel() {
     return <span>{elements}</span>;
   };
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom function with proper spacing for Activity Center
-  const scrollToBottom = useCallback(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-      
-      setIsNearBottom(true);
-      setShowScrollButton(false);
-    }
-  }, []);
-
-  // Handle scroll events to show/hide scroll button
-  const handleScroll = useCallback(() => {
-    if (scrollAreaRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
-      const scrolledFromBottom = scrollHeight - scrollTop - clientHeight;
-      
-      // Show scroll button if more than 100px from bottom
-      const shouldShowButton = scrolledFromBottom > 100;
-      setShowScrollButton(shouldShowButton);
-      setIsNearBottom(scrolledFromBottom < 50);
-    }
-  }, []);
 
 
 
