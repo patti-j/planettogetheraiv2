@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +49,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -125,9 +127,24 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const { chatMessages, addMessage } = useChatSync();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // OpenAI voice synthesis function
+  // Stop current audio playback
+  const stopAudio = useCallback(() => {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      setCurrentAudio(null);
+    }
+    setIsPlaying(false);
+    // Also stop browser speech synthesis if active
+    window.speechSynthesis.cancel();
+  }, [currentAudio]);
+
+  // OpenAI voice synthesis function with enhanced controls
   const speakResponse = useCallback(async (text: string) => {
     if (!aiSettings.soundEnabled || !text.trim()) return;
+    
+    // Stop any currently playing audio
+    stopAudio();
     
     try {
       const authToken = localStorage.getItem('authToken');
@@ -139,7 +156,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         },
         body: JSON.stringify({
           text: text.substring(0, 4000), // Limit text length for TTS
-          voice: aiSettings.voice || 'alloy',
+          voice: aiSettings.voice || 'nova',
           speed: aiSettings.voiceSpeed || 1.0
         })
       });
@@ -149,17 +166,47 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
+        // Set up audio event listeners
+        audio.onplay = () => setIsPlaying(true);
+        audio.onpause = () => setIsPlaying(false);
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
+          setCurrentAudio(null);
+          setIsPlaying(false);
+        };
+        audio.onerror = (error) => {
+          URL.revokeObjectURL(audioUrl);
+          setCurrentAudio(null);
+          setIsPlaying(false);
+          console.error('Audio playback error:', error);
         };
         
-        await audio.play();
+        setCurrentAudio(audio);
+        
+        try {
+          await audio.play();
+        } catch (playError) {
+          console.error('Audio play error:', playError);
+          // Fallback to browser speech synthesis if audio fails
+          const utterance = new SpeechSynthesisUtterance(text.substring(0, 4000));
+          utterance.rate = aiSettings.voiceSpeed;
+          utterance.volume = 0.8;
+          utterance.onstart = () => setIsPlaying(true);
+          utterance.onend = () => setIsPlaying(false);
+          window.speechSynthesis.speak(utterance);
+          
+          // Clean up failed audio
+          URL.revokeObjectURL(audioUrl);
+          setCurrentAudio(null);
+        }
       } else {
         console.error('Failed to generate speech:', response.statusText);
         // Fallback to browser speech synthesis
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = aiSettings.voiceSpeed;
         utterance.volume = 0.8;
+        utterance.onstart = () => setIsPlaying(true);
+        utterance.onend = () => setIsPlaying(false);
         window.speechSynthesis.speak(utterance);
       }
     } catch (error) {
@@ -168,9 +215,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = aiSettings.voiceSpeed;
       utterance.volume = 0.8;
+      utterance.onstart = () => setIsPlaying(true);
+      utterance.onend = () => setIsPlaying(false);
       window.speechSynthesis.speak(utterance);
     }
-  }, [aiSettings.soundEnabled, aiSettings.voice, aiSettings.voiceSpeed]);
+  }, [aiSettings.soundEnabled, aiSettings.voice, aiSettings.voiceSpeed, stopAudio]);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -619,6 +668,22 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </div>
         )}
         <div className="flex items-center gap-1">
+          {/* Audio Control Button */}
+          {!isCollapsed && aiSettings.soundEnabled && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={stopAudio}
+              className={cn(
+                "text-white hover:bg-white/20 transition-all",
+                isPlaying ? "animate-pulse" : ""
+              )}
+              title={isPlaying ? "Stop audio" : "Audio ready"}
+              disabled={!isPlaying}
+            >
+              {isPlaying ? <Square className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -1032,20 +1097,32 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     </div>
                     
                     <div>
-                      <Label htmlFor="voice" className="text-sm">Voice</Label>
+                      <Label htmlFor="voice" className="text-sm">OpenAI Voice</Label>
                       <Select value={aiSettings.voice} onValueChange={(value) => setAiSettings(prev => ({ ...prev, voice: value }))}>
                         <SelectTrigger className="w-full mt-2">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
-                          <SelectItem value="echo">Echo (Male)</SelectItem>
-                          <SelectItem value="fable">Fable (British)</SelectItem>
-                          <SelectItem value="onyx">Onyx (Deep Male)</SelectItem>
-                          <SelectItem value="nova">Nova (Female)</SelectItem>
-                          <SelectItem value="shimmer">Shimmer (Soft Female)</SelectItem>
+                          <SelectItem value="nova">Nova - Clear Female (Recommended)</SelectItem>
+                          <SelectItem value="alloy">Alloy - Balanced Neutral</SelectItem>
+                          <SelectItem value="echo">Echo - Professional Male</SelectItem>
+                          <SelectItem value="fable">Fable - Warm British Accent</SelectItem>
+                          <SelectItem value="onyx">Onyx - Deep Authoritative Male</SelectItem>
+                          <SelectItem value="shimmer">Shimmer - Gentle Female</SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        High-quality OpenAI text-to-speech voices
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => speakResponse("Testing voice quality with OpenAI text-to-speech. This is how your selected voice sounds.")}
+                        className="w-full mt-2"
+                        disabled={!aiSettings.soundEnabled}
+                      >
+                        Test Voice
+                      </Button>
                     </div>
 
                     <div>
