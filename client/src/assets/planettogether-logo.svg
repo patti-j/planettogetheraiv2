@@ -21,11 +21,11 @@
     <rect x="25" y="11" width="8" height="18" fill="#6B7280" rx="0.5"/>
   </g>
   
-  <!-- Company text placeholder -->
-  <text x="45" y="16" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="currentColor">
-    Your
+  <!-- PlanetTogether text -->
+  <text x="45" y="16" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="currentColor">
+    Planet
   </text>
-  <text x="45" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="currentColor">
-    Company
+  <text x="45" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="currentColor">
+    Together
   </text>
 </svg>
