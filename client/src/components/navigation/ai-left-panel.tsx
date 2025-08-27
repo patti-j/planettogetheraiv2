@@ -539,20 +539,23 @@ export function AILeftPanel() {
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!prompt.trim()) return;
-
-    addMessage({
-      role: 'user',
-      content: prompt,
-      source: 'panel'
-    });
 
     const currentPrompt = prompt;
     setPrompt('');
 
-    // Send message to Max AI
-    sendMessageMutation.mutate(currentPrompt);
+    // Save user message first to ensure proper chronological order
+    await addMessage({
+      role: 'user',
+      content: currentPrompt,
+      source: 'panel'
+    });
+
+    // Small delay to ensure user message is saved before AI response
+    setTimeout(() => {
+      sendMessageMutation.mutate(currentPrompt);
+    }, 100);
   };
 
   return (
@@ -634,7 +637,18 @@ export function AILeftPanel() {
                   <div className="space-y-4 pb-20">
                     {/* Added extra bottom padding for Activity Center */}
                     {chatMessages
-                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                    .sort((a, b) => {
+                      // First sort by timestamp
+                      const timeA = new Date(a.createdAt).getTime();
+                      const timeB = new Date(b.createdAt).getTime();
+                      const timeDiff = timeA - timeB;
+                      
+                      // If times are very close (within 5 seconds), use ID to maintain conversation order
+                      if (Math.abs(timeDiff) < 5000) {
+                        return a.id - b.id;
+                      }
+                      return timeDiff;
+                    })
                     .map((message) => (
                     <div
                       key={message.id}
