@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
-import logoSvg from "@/assets/planettogether-logo.svg";
+import logoSvg from "@/assets/planet-together-logo.png";
 
 const WebsiteHeader: React.FC = () => {
   const [, setLocation] = useLocation();
