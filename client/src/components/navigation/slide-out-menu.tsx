@@ -52,6 +52,13 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const currentIndex = allItems.findIndex(item => item.href === location);
 
   const handleItemClick = (item: any) => {
+    // Handle external links (e.g., HTML files)
+    if (item.isExternal || item.href.endsWith('.html')) {
+      window.open(item.href, '_blank');
+      onClose();
+      return;
+    }
+    
     setLocation(item.href);
     addRecentPage(item.href, item.label, item.icon);
     onClose();
