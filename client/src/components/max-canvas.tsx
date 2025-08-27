@@ -93,13 +93,9 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
     setShowClearConfirmation(false);
   };
 
-  // Use opacity instead of conditional rendering to prevent flashing
+  // Use conditional rendering to prevent white screen issues
   if (!isVisible) {
-    return (
-      <div className="h-full w-full opacity-0 pointer-events-none">
-        <div className="h-full bg-gray-50" />
-      </div>
-    );
+    return null;
   }
 
   const renderCanvasItem = (item: CanvasItem) => {

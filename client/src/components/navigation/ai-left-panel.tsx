@@ -18,6 +18,7 @@ import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
+import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 
 interface AIInsight {
   id: string;
@@ -123,6 +124,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   const { chatMessages, addMessage } = useChatSync();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { canvasItems, setCanvasItems, isCanvasVisible, setCanvasVisible } = useMaxDock();
   const previousMessageCountRef = useRef(0);
 
   // Monitor for new messages and show floating notification when collapsed
@@ -400,6 +402,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         if (aiSettings.soundEnabled) {
           speakResponse(responseContent);
         }
+      }
+
+      // Handle canvas actions if present
+      if (data.canvasAction) {
+        console.log('AI Left Panel - Canvas action detected:', data.canvasAction);
+        handleCanvasAction(data.canvasAction);
+      } else {
+        console.log('AI Left Panel - No canvas action in response');
       }
       
       // If there are insights, show them (but not if we just navigated)
