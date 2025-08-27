@@ -607,22 +607,6 @@ export function AILeftPanel() {
 
       {!isCollapsed && (
         <>
-          {/* AI Status */}
-          <div className="p-4 bg-muted/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium">AI Active</span>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <RefreshCw className="w-3 h-3" />
-              </Button>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Analyzing production data in real-time
-            </div>
-          </div>
-
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid grid-cols-5 mx-4 mt-2 text-xs">
