@@ -425,47 +425,30 @@ export function AILeftPanel() {
   // Scroll to bottom function with proper spacing for Activity Center
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTo({
-          top: viewport.scrollHeight,
-          behavior: 'smooth'
-        });
-        
-        setIsNearBottom(true);
-        setShowScrollButton(false);
-      }
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      
+      setIsNearBottom(true);
+      setShowScrollButton(false);
     }
   }, []);
 
   // Handle scroll events to show/hide scroll button
   const handleScroll = useCallback(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        const { scrollTop, scrollHeight, clientHeight } = viewport;
-        const scrolledFromBottom = scrollHeight - scrollTop - clientHeight;
-        
-        // Show scroll button if more than 100px from bottom
-        const shouldShowButton = scrolledFromBottom > 100;
-        setShowScrollButton(shouldShowButton);
-        setIsNearBottom(scrolledFromBottom < 50);
-      }
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      const scrolledFromBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // Show scroll button if more than 100px from bottom
+      const shouldShowButton = scrolledFromBottom > 100;
+      setShowScrollButton(shouldShowButton);
+      setIsNearBottom(scrolledFromBottom < 50);
     }
   }, []);
 
-  // Set up scroll event listener for ScrollArea viewport
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.addEventListener('scroll', handleScroll);
-        return () => {
-          viewport.removeEventListener('scroll', handleScroll);
-        };
-      }
-    }
-  }, [handleScroll]);
+
 
   // Auto-scroll chat to bottom when new messages arrive (only if near bottom)
   useEffect(() => {
@@ -634,9 +617,10 @@ export function AILeftPanel() {
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
               <div className="relative flex-1">
-                <ScrollArea 
-                  className="flex-1 pr-2" 
+                <div 
+                  className="flex-1 pr-2 overflow-y-auto" 
                   ref={scrollAreaRef}
+                  onScroll={handleScroll}
                 >
                   <div className="space-y-4 pb-20">
                     {/* Added extra bottom padding for Activity Center */}
@@ -707,7 +691,7 @@ export function AILeftPanel() {
                   ))}
 
                   </div>
-                </ScrollArea>
+                </div>
                 
                 {/* Scroll to bottom button */}
                 {showScrollButton && (
