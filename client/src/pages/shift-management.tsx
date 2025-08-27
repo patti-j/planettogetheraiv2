@@ -214,7 +214,7 @@ function ShiftTemplatesTab({ templates, loading, plants, resources }: any) {
           <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                <Brain className="mr-2 h-4 w-4" />
+                <Wand2 className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">AI Create Shifts</span>
                 <span className="sm:hidden">AI</span>
               </Button>
@@ -867,7 +867,7 @@ function AssignmentsTab({ assignments, loading, templates, resources, plants }: 
           <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
-                <Brain className="mr-2 h-4 w-4" />
+                <Wand2 className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">AI Assign Shifts</span>
                 <span className="sm:hidden">AI</span>
               </Button>

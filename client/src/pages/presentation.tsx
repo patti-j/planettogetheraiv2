@@ -255,7 +255,7 @@ const PresentationPage = () => {
                 {
                   title: "Memory System",
                   description: "Learns your workflow patterns and preferences with user-controllable memory management",
-                  icon: Brain
+                  icon: Wand2
                 },
                 {
                   title: "Canvas Visualization",
@@ -279,7 +279,7 @@ const PresentationPage = () => {
               <CardContent className="p-0">
                 <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-t-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <Brain className="h-8 w-8" />
+                    <Wand2 className="h-8 w-8" />
                     <div>
                       <h3 className="text-xl font-semibold">Max AI Assistant</h3>
                       <p className="text-purple-100">Intelligent Manufacturing Companion</p>

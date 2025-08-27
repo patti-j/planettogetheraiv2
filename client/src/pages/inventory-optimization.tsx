@@ -336,7 +336,7 @@ export default function InventoryOptimizationPage() {
                 </>
               ) : (
                 <>
-                  <Brain className="w-4 h-4 mr-2" />
+                  <Wand2 className="w-4 h-4 mr-2" />
                   Run Optimization
                 </>
               )}

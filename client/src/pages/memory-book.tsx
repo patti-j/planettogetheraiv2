@@ -266,7 +266,7 @@ export default function PlaybookPage() {
             className="flex-1 h-8"
             onClick={() => setActiveTab('ai')}
           >
-            <Brain className="h-3 w-3 mr-1" />
+            <Wand2 className="h-3 w-3 mr-1" />
             Max AI
           </Button>
         </div>

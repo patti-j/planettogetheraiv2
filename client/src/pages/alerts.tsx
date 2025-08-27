@@ -368,7 +368,7 @@ export default function AlertsPage() {
           <TabsTrigger value="resolved" className="text-xs sm:text-sm">Resolved</TabsTrigger>
           <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
           <TabsTrigger value="ai-settings" className="flex items-center gap-1 text-xs sm:text-sm">
-            <Brain className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">AI Settings</span>
             <span className="sm:hidden">AI</span>
           </TabsTrigger>
@@ -491,7 +491,7 @@ export default function AlertsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-500" />
+                  <Wand2 className="h-5 w-5 text-purple-500" />
                   AI Alert Generation
                 </CardTitle>
                 <CardDescription>

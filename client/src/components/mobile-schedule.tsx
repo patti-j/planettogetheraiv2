@@ -114,7 +114,7 @@ const OptimizationDetailsDialog = ({ operation }: { operation: Operation }) => {
                 className="h-6 w-6 p-0 flex-shrink-0 hover:bg-blue-100 hover:text-blue-600"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Brain className="h-4 w-4" />
+                <Wand2 className="h-4 w-4" />
               </Button>
             </DialogTrigger>
           </TooltipTrigger>
@@ -126,7 +126,7 @@ const OptimizationDetailsDialog = ({ operation }: { operation: Operation }) => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-blue-600" />
+              <Wand2 className="h-5 w-5 text-blue-600" />
               Optimization Analysis
             </DialogTitle>
           </DialogHeader>

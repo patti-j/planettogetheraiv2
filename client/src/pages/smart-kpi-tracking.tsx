@@ -1246,7 +1246,7 @@ export default function SmartKpiTrackingPage() {
                         Teams with daily morning huddles show 15% better KPI performance
                       </p>
                       <Badge className="mt-2" variant="outline">
-                        <Brain className="h-3 w-3 mr-1" />
+                        <Wand2 className="h-3 w-3 mr-1" />
                         Insight
                       </Badge>
                     </div>
@@ -1256,7 +1256,7 @@ export default function SmartKpiTrackingPage() {
                         Regular PM reduces downtime by 40% and improves OEE by 8%
                       </p>
                       <Badge className="mt-2" variant="outline">
-                        <Brain className="h-3 w-3 mr-1" />
+                        <Wand2 className="h-3 w-3 mr-1" />
                         Proven
                       </Badge>
                     </div>

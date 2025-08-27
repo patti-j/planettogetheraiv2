@@ -808,7 +808,7 @@ export default function AutonomousOptimizationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5" />
+                    <Wand2 className="w-5 h-5" />
                     AI Insights
                   </CardTitle>
                 </CardHeader>
@@ -1018,7 +1018,7 @@ export default function AutonomousOptimizationPage() {
                                 <TabsContent value="algorithms" className="space-y-4 mt-4">
                                   <div className="space-y-4">
                                     <div className="flex items-center gap-2 mb-4">
-                                      <Brain className="w-4 h-4 text-blue-600" />
+                                      <Wand2 className="w-4 h-4 text-blue-600" />
                                       <Label className="text-sm font-medium">Planning Process Algorithms</Label>
                                     </div>
                                     

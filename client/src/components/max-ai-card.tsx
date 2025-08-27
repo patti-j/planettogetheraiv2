@@ -143,7 +143,7 @@ export function MaxAICard({ className = "", showDemo = false }: MaxAICardProps) 
             <span>Voice Commands</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Brain className="w-4 h-4 text-purple-500" />
+            <Wand2 className="w-4 h-4 text-purple-500" />
             <span>Smart Analysis</span>
           </div>
           <div className="flex items-center gap-2 text-sm">

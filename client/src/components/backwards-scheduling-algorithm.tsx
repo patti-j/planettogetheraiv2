@@ -814,7 +814,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-purple-500" />
+                <Wand2 className="w-5 h-5 text-purple-500" />
                 How the Backwards Scheduling Algorithm Works
               </CardTitle>
               <CardDescription>

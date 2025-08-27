@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square } from 'lucide-react';
+import { Wand2, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -663,7 +663,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       <div className={cn("px-4 py-2 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-white" />
+            <Wand2 className="w-5 h-5 text-white" />
             <span className="font-semibold">Max AI Assistant</span>
           </div>
         )}
@@ -983,7 +983,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                        <Brain className="w-4 h-4" />
+                        <Wand2 className="w-4 h-4" />
                         AI Model
                       </h3>
                       <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))}>
@@ -1324,7 +1324,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             title="Open AI Chat"
             style={{ padding: '8px', background: 'none', border: 'none' }}
           >
-            <Brain className="w-5 h-5" />
+            <Wand2 className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           </div>
           <Separator className="w-6" />

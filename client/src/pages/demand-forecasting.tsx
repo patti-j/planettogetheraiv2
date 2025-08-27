@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, TrendingUp, Calendar, BarChart3, AlertCircle, Target } from "lucide-react";
+import { Wand2, TrendingUp, Calendar, BarChart3, AlertCircle, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -10,7 +10,7 @@ export default function DemandForecasting() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Brain className="h-8 w-8 text-purple-600" />
+            <Wand2 className="h-8 w-8 text-purple-600" />
             Demand Forecasting
           </h1>
           <p className="text-muted-foreground mt-2">

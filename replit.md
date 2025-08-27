@@ -16,6 +16,13 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Recent Major Changes (August 2025)
+- **Icon Standardization**: Completed comprehensive replacement of all Brain icons with Magic Wand (Wand2) icons across the entire application (35+ files updated)
+- **Authentication Enhancement**: Successfully added five admin users with "padres" password and Administrator roles
+- **Route Security**: Fixed critical routing issue by adding /production-scheduler-js to publicPaths array
+- **PlanetTogether Migration**: Completed v13-14 migration with all branding and authentication issues resolved
+- **Design Consistency**: All AI-related features now use consistent Wand2 icon throughout navigation panels, dialogs, and interface elements
+
 ## System Architecture
 
 ### Design Principles & Guidelines

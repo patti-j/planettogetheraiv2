@@ -1006,7 +1006,7 @@ export default function UIDesignStudio() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
+              <Wand2 className="h-5 w-5" />
               AI Design Assistant
             </CardTitle>
             <p className="text-sm text-muted-foreground">Let me help you create amazing designs with natural language</p>
