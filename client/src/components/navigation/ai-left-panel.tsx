@@ -701,7 +701,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         {!isCollapsed && (
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-white" />
-            <span className="font-semibold">Max AI Assistant</span>
+            <span className="font-semibold">Max</span>
           </div>
         )}
         <div className="flex items-center gap-1">

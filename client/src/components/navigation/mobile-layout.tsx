@@ -60,7 +60,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     ...group,
     features: group.features.filter((feature) => {
       // Skip permission check for common menu items that should always be visible
-      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max AI Assistant', 'Getting Started', 'Take a Guided Tour'];
+      const alwaysVisibleItems = ['SMART KPI Tracking', 'Max', 'Getting Started', 'Take a Guided Tour'];
       
       // Check permissions only if not in always visible list
       if (!alwaysVisibleItems.includes(feature.label)) {
@@ -473,7 +473,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 </div>
               </div>
               <div className="flex-1 min-w-0 pr-6">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max AI Assistant</h3>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max</h3>
                 <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                   {renderContentWithClickableKeywords(maxResponse.content)}
                 </div>
