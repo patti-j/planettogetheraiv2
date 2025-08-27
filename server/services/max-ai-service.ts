@@ -406,6 +406,8 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     
     // Also check for direct page mentions (like "master production schedule")
     const directPageMentions = query.toLowerCase().includes('production schedule') || 
+                              query.toLowerCase().includes('production scheduling') ||
+                              query.toLowerCase().includes('scheduler') ||
                               query.toLowerCase().includes('master production') ||
                               query.toLowerCase().includes('control tower') ||
                               query.toLowerCase().includes('shop floor') ||
@@ -433,13 +435,14 @@ Rules:
 - If they say "show me X" or "see X" they want to navigate to X
 - If uncertain, respond with "NONE"
 - Be flexible with language:
+  * "production schedule", "production scheduling", "scheduler" = "/production-scheduler.html"
   * "master production schedule" = "/master-production-schedule"
-  * "production schedule" = "/production-schedule" 
   * "control tower" = "/control-tower"
   * "shop floor" = "/shop-floor"
   * "analytics" = "/analytics"
   * "capacity planning" = "/capacity-planning"
   * "inventory" = "/inventory-optimization"
+- IMPORTANT: For production scheduling requests, always use "/production-scheduler.html"
 - Always prefer navigation over explanation`
             },
             {
@@ -1288,8 +1291,11 @@ Please answer their question using this data.`
 Available pages:
 ${availablePages}
 
-Respond with just the route path (e.g., "/production-schedule") or "NONE" if no navigation is needed.
-Focus on the most relevant page that matches the user's intent.`
+IMPORTANT RULES:
+- For "production schedule", "production scheduling", "scheduler" requests → use "/production-scheduler.html"
+- For other requests, match to the most relevant available page
+- Respond with just the route path (e.g., "/production-scheduler.html") or "NONE" if no navigation is needed
+- Focus on the most relevant page that matches the user's intent`
           },
           {
             role: 'user',
@@ -1301,6 +1307,7 @@ Focus on the most relevant page that matches the user's intent.`
       });
 
       const route = navResponse.choices[0].message.content?.trim();
+      console.log(`Max AI Navigation Debug: Query="${query}", AI suggested route="${route}"`);
       
       if (route && route !== 'NONE' && route.startsWith('/')) {
         // Find the page info for a better response message
