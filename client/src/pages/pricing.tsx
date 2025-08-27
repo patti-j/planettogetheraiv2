@@ -78,8 +78,8 @@ const optimizationAddons: OptimizationAddon[] = [
     id: "production-scheduling",
     name: "Schedule Optimization",
     description: "Core scheduling engine with Gantt charts, resource allocation, and timeline optimization",
-    monthlyPrice: 25,
-    yearlyPrice: 250,
+    monthlyPrice: 0, // Contact Sales
+    yearlyPrice: 0, // Contact Sales
     features: [
       "Interactive Gantt chart scheduling",
       "Drag-and-drop operation assignment",
@@ -96,8 +96,8 @@ const optimizationAddons: OptimizationAddon[] = [
     id: "capacity-planning",
     name: "Capacity Optimization",
     description: "Advanced capacity forecasting, bottleneck analysis, and resource optimization",
-    monthlyPrice: 35,
-    yearlyPrice: 350,
+    monthlyPrice: 0, // Contact Sales
+    yearlyPrice: 0, // Contact Sales
     features: [
       "Capacity forecasting & modeling",
       "Bottleneck identification & analysis",
@@ -115,8 +115,8 @@ const optimizationAddons: OptimizationAddon[] = [
     id: "inventory-optimization",
     name: "Inventory Optimization",
     description: "Advanced inventory optimization with AI-powered demand forecasting and stock optimization",
-    monthlyPrice: 30,
-    yearlyPrice: 300,
+    monthlyPrice: 0, // Contact Sales
+    yearlyPrice: 0, // Contact Sales
     features: [
       "Inventory level optimization",
       "Automated reorder point calculation",
@@ -134,8 +134,8 @@ const optimizationAddons: OptimizationAddon[] = [
     id: "demand-planning",
     name: "Demand Plan Optimization",
     description: "AI-powered demand forecasting with predictive analytics and market intelligence",
-    monthlyPrice: 40,
-    yearlyPrice: 400,
+    monthlyPrice: 0, // Contact Sales
+    yearlyPrice: 0, // Contact Sales
     features: [
       "AI-powered demand forecasting",
       "Seasonal trend analysis",
@@ -153,8 +153,8 @@ const optimizationAddons: OptimizationAddon[] = [
     id: "theory-of-constraints",
     name: "Theory of Constraints (TOC)",
     description: "Advanced constraint-based optimization with drum-buffer-rope scheduling and buffer management",
-    monthlyPrice: 45,
-    yearlyPrice: 450,
+    monthlyPrice: 0, // Contact Sales
+    yearlyPrice: 0, // Contact Sales
     features: [
       "Bottleneck (drum) identification & management",
       "Automated drum analysis & recommendations",
@@ -220,9 +220,9 @@ export default function Pricing() {
     {
       id: "starter",
       name: "Starter",
-      price: billingCycle === "monthly" ? 35 : 350,
+      price: 0, // Contact Sales
       billingPeriod: billingCycle,
-      description: "Essential manufacturing management for small teams - $35 per user per month",
+      description: "Essential manufacturing management for small teams",
       features: [
         "Production scheduling with Gantt charts",
         "Resource & job management",
@@ -251,9 +251,9 @@ export default function Pricing() {
     {
       id: "professional",
       name: "Professional",
-      price: billingCycle === "monthly" ? 75 : 750,
+      price: 0, // Contact Sales
       billingPeriod: billingCycle,
-      description: "Advanced AI-powered manufacturing optimization - $75 per user per month",
+      description: "Advanced AI-powered manufacturing optimization",
       features: [
         "Everything in Starter",
         "Max AI Assistant with voice interaction",
@@ -287,9 +287,9 @@ export default function Pricing() {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: billingCycle === "monthly" ? 125 : 1250,
+      price: 0, // Contact Sales
       billingPeriod: billingCycle,
-      description: "Complete enterprise manufacturing platform - $125 per user per month",
+      description: "Complete enterprise manufacturing platform",
       features: [
         "Everything in Professional",
         "Unlimited multi-plant operations",
@@ -332,7 +332,7 @@ export default function Pricing() {
       name: "Data Processing",
       description: "Large-scale manufacturing data management with high-performance processing",
       baseIncluded: "Base tier limits included",
-      overageRate: "$0.05 per 1,000 additional records processed",
+      overageRate: "Contact Sales for pricing",
       icon: <Database className="w-6 h-6" />,
       examples: [
         "Processing 500K+ production orders monthly",
@@ -346,7 +346,7 @@ export default function Pricing() {
       name: "AI & Machine Learning",
       description: "Advanced AI processing for optimization, forecasting, and intelligent automation",
       baseIncluded: "Base tier AI requests included",
-      overageRate: "$0.10 per additional AI request",
+      overageRate: "Contact Sales for pricing",
       icon: <Bot className="w-6 h-6" />,
       examples: [
         "Max AI conversations and file analysis",
@@ -361,7 +361,7 @@ export default function Pricing() {
       name: "Additional Storage",
       description: "Extended storage for large manufacturing datasets and historical archives",
       baseIncluded: "Base tier storage included",
-      overageRate: "$0.25 per GB per month",
+      overageRate: "Contact Sales for pricing",
       icon: <Cloud className="w-6 h-6" />,
       examples: [
         "Long-term historical data retention",
@@ -580,10 +580,16 @@ export default function Pricing() {
                 </div>
                 <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
                 <div className="text-4xl font-bold mt-4">
-                  ${tier.price}
-                  <span className="text-lg font-normal text-gray-500">
-                    /user/{billingCycle === "monthly" ? "mo" : "yr"}
-                  </span>
+                  {tier.price === 0 ? (
+                    <span className="text-2xl">Contact Sales</span>
+                  ) : (
+                    <>
+                      ${tier.price}
+                      <span className="text-lg font-normal text-gray-500">
+                        /user/{billingCycle === "monthly" ? "mo" : "yr"}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <p className="text-gray-600 mt-2">{tier.description}</p>
               </CardHeader>
@@ -649,7 +655,7 @@ export default function Pricing() {
                     {selectedTier === tier.id ? "Getting Started..." : "Get Started"}
                   </Button>
                   <Button
-                    onClick={() => handleSubscribe(tier.id)}
+                    onClick={() => window.location.href = 'mailto:sales@planettogether.com?subject=Pricing Inquiry'}
                     className={`w-full ${
                       tier.popular 
                         ? "bg-blue-600 hover:bg-blue-700" 
@@ -657,9 +663,8 @@ export default function Pricing() {
                           ? "bg-purple-600 hover:bg-purple-700"
                           : ""
                     }`}
-                    disabled={selectedTier === tier.id}
                   >
-                    {selectedTier === tier.id ? "Processing..." : "Subscribe Now"}
+                    Contact Sales
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -726,17 +731,9 @@ export default function Pricing() {
                               {addon.complexity}
                             </Badge>
                           </CardTitle>
-                          <div className="text-2xl font-bold text-blue-600 mt-1">
-                            ${billingCycle === "monthly" ? addon.monthlyPrice : addon.yearlyPrice}
-                            <span className="text-sm font-normal text-gray-500">
-                              /plant/{billingCycle === "monthly" ? "mo" : "yr"}
-                            </span>
+                          <div className="text-xl font-bold text-blue-600 mt-1">
+                            Contact Sales
                           </div>
-                          {numberOfPlants > 1 && (
-                            <div className="text-lg font-semibold text-gray-700 mt-1">
-                              ${(billingCycle === "monthly" ? addon.monthlyPrice : addon.yearlyPrice) * numberOfPlants} total
-                            </div>
-                          )}
                         </div>
                       </div>
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
