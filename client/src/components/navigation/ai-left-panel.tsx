@@ -1400,7 +1400,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       
       {/* Floating Notification - appears when panel is collapsed and there's a new message */}
       {showFloatingNotification && floatingNotification && isCollapsed && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm animate-in slide-in-from-right duration-300">
+        <div className="fixed bottom-20 left-4 z-50 max-w-sm animate-in slide-in-from-left duration-300">
           <Card className="shadow-lg border-l-4 border-l-primary bg-background/95 backdrop-blur">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
