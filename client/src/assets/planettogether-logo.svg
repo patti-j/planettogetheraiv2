@@ -1,31 +1,28 @@
-<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Accurate recreation of the provided logo -->
-  <g transform="translate(0, 0)">
-    <!-- Main white circular background -->
-    <circle cx="20" cy="20" r="19" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+<svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- PlanetTogether Logo -->
+  <g>
+    <!-- Main circular background with white fill -->
+    <circle cx="20" cy="20" r="18" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1"/>
     
     <!-- Large blue section (left side, roughly 3/4 circle) -->
-    <path d="M 1 20 A 19 19 0 1 1 20 1 L 20 20 Z" fill="#0BA5E4"/>
+    <path d="M 2 20 A 18 18 0 1 1 20 2 L 20 20 Z" fill="#0EA5E9"/>
     
     <!-- Small blue triangular section (top right) -->
-    <path d="M 20 1 L 39 1 A 19 19 0 0 1 35 5 L 20 20 Z" fill="#0BA5E4"/>
+    <path d="M 20 2 L 38 2 A 18 18 0 0 1 34 6 L 20 20 Z" fill="#0EA5E9"/>
     
-    <!-- White area with gray geometric shapes -->
-    <!-- Top gray rectangle -->
-    <rect x="9" y="11" width="8" height="5" fill="#9CA3AF" rx="0.5"/>
-    
-    <!-- Bottom gray rectangle -->
-    <rect x="9" y="24" width="8" height="5" fill="#9CA3AF" rx="0.5"/>
-    
-    <!-- Right gray rectangle (taller) -->
-    <rect x="25" y="11" width="8" height="18" fill="#6B7280" rx="0.5"/>
+    <!-- Gray geometric shapes in white area -->
+    <rect x="10" y="12" width="7" height="4" fill="#9CA3AF" rx="1"/>
+    <rect x="10" y="24" width="7" height="4" fill="#9CA3AF" rx="1"/>
+    <rect x="26" y="12" width="7" height="16" fill="#6B7280" rx="1"/>
   </g>
   
   <!-- PlanetTogether text -->
-  <text x="45" y="15" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#1F2937">
-    Planet
-  </text>
-  <text x="45" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#1F2937">
-    Together
-  </text>
+  <g>
+    <text x="45" y="16" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#1F2937">
+      Planet
+    </text>
+    <text x="45" y="29" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#1F2937">
+      Together
+    </text>
+  </g>
 </svg>
