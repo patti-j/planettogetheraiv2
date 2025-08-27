@@ -129,7 +129,6 @@ export function DesktopTopBar() {
     { label: 'Master Data', action: () => setLocation('/master-data') },
     { label: 'Reports', action: () => setLocation('/reports') },
     { label: 'Settings', action: () => setLocation('/settings') },
-    { label: 'AI Insights', action: () => document.dispatchEvent(new CustomEvent('toggle-ai-panel')) },
     { label: 'Create New Order', action: () => setLocation('/orders/new') },
     { label: 'View Notifications', action: () => document.dispatchEvent(new CustomEvent('toggle-bottom-drawer')) },
   ];
