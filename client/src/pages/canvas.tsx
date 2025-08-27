@@ -245,7 +245,7 @@ export default function CanvasPage() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Canvas Header */}
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
