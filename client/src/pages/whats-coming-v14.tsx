@@ -345,7 +345,7 @@ export default function WhatsComing() {
 
         {/* Feature Categories */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-12 h-auto p-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-12 h-auto p-1">
             {Object.entries(categoryInfo).map(([key, info]) => (
               <TabsTrigger 
                 key={key} 
