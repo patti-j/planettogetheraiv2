@@ -108,9 +108,11 @@ export default function EnterpriseMapPage() {
   const [algorithmConfigs, setAlgorithmConfigs] = useState<Record<string, Record<string, number>>>({});
 
   // Fetch plants data
-  const { data: plants = [], isLoading } = useQuery<Plant[]>({
+  const { data: plants = [], isLoading, error } = useQuery<Plant[]>({
     queryKey: ['/api/plants/map'],
   });
+
+
 
   // Fetch optimization algorithms
   const { data: algorithms = [] } = useQuery<any[]>({
@@ -551,34 +553,30 @@ export default function EnterpriseMapPage() {
                               onClick={() => setSelectedPlant(plant)}
                             >
                               <g className="cursor-pointer group">
-                                {/* Main marker */}
+                                {/* Main marker circle */}
                                 <circle
-                                  r={12}
+                                  r={10}
                                   fill={markerColor}
                                   stroke="#ffffff"
-                                  strokeWidth={3}
-                                  className="transition-all duration-200"
-                                  fillOpacity={0.95}
-                                  filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
+                                  strokeWidth={2}
+                                  className="transition-all duration-200 group-hover:r-12"
                                 />
-                                <Factory
-                                  x={-7}
-                                  y={-7}
-                                  width={14}
-                                  height={14}
+                                {/* Inner marker */}
+                                <circle
+                                  r={4}
                                   fill="white"
                                   className="pointer-events-none"
                                 />
                                 {/* Plant name label */}
                                 <text
-                                  y={25}
+                                  y={22}
                                   textAnchor="middle"
                                   fill="#1e293b"
-                                  fontSize="11"
+                                  fontSize="12"
                                   fontWeight="600"
-                                  className="pointer-events-none"
+                                  className="pointer-events-none select-none"
                                   style={{
-                                    filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
+                                    textShadow: '1px 1px 2px rgba(255,255,255,0.8)'
                                   }}
                                 >
                                   {plant.name}
