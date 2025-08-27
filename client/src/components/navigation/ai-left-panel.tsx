@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, Bot, GripVertical, Settings, Volume2, Palette, Zap, Shield, Bell, X, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ export function AILeftPanel() {
     return saved ? parseInt(saved, 10) : 320;
   });
   const [isResizing, setIsResizing] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -111,6 +112,17 @@ export function AILeftPanel() {
   
   const [showMaxThinking, setShowMaxThinking] = useState(false);
   const [currentRequestController, setCurrentRequestController] = useState<AbortController | null>(null);
+
+  // Copy functionality
+  const copyToClipboard = async (text: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
   
   // Get current page location
   const [location] = useState(() => window.location.pathname);
@@ -548,18 +560,43 @@ export function AILeftPanel() {
                           message.role === 'user' && "items-end"
                         )}
                       >
-                        <div
-                          className={cn(
-                            "rounded-lg px-3 py-2 text-sm",
-                            message.role === 'user'
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                        <div className={cn(
+                          "relative group",
+                          message.role === 'assistant' && "pr-8"
+                        )}>
+                          <div
+                            className={cn(
+                              "rounded-lg px-3 py-2 text-sm",
+                              message.role === 'user'
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            )}
+                          >
+                            {message.role === 'assistant' 
+                              ? renderContentWithClickableKeywords(message.content)
+                              : message.content
+                            }
+                          </div>
+                          
+                          {/* Copy button for assistant messages */}
+                          {message.role === 'assistant' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(message.content, message.id)}
+                              className={cn(
+                                "absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                                "bg-background/80 hover:bg-background border border-border/50"
+                              )}
+                              title="Copy message"
+                            >
+                              {copiedMessageId === message.id ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
                           )}
-                        >
-                          {message.role === 'assistant' 
-                            ? renderContentWithClickableKeywords(message.content)
-                            : message.content
-                          }
                         </div>
                         <span className="text-xs text-muted-foreground px-1">
                           {message.timestamp}
