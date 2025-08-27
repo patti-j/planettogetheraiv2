@@ -1316,7 +1316,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       {isCollapsed && (
         <div className="flex-1 flex flex-col items-center py-4 gap-4">
           <button 
-            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
+            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
+            style={{ backgroundColor: 'transparent' }}
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('chat');
@@ -1328,7 +1329,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </button>
           <Separator className="w-6" />
           <button 
-            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
+            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
+            style={{ backgroundColor: 'transparent' }}
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('insights');
@@ -1341,7 +1343,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             </Badge>
           </button>
           <button 
-            className="relative p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
+            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
+            style={{ backgroundColor: 'transparent' }}
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('anomalies');
@@ -1354,7 +1357,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             </Badge>
           </button>
           <button 
-            className="p-2 bg-transparent hover:bg-transparent border-0 outline-none focus:outline-none"
+            className="p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
+            style={{ backgroundColor: 'transparent' }}
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('simulations');
