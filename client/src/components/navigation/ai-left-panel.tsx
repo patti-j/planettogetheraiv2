@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square } from 'lucide-react';
+import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +58,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   
   // Helper function to get gradient class based on theme
   const getThemeGradient = (theme: string) => {
@@ -301,8 +301,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
 
   
-  // Get current page location
-  const [location] = useState(() => window.location.pathname);
+
   
   // Fetch production status from Max AI
   const { data: productionStatus } = useQuery({
@@ -706,6 +705,39 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </div>
         )}
         <div className="flex items-center gap-1">
+          {/* Navigation Icons - show when expanded */}
+          {!isCollapsed && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation('/canvas')}
+                className="text-white hover:text-white/80 bg-transparent"
+                title="Open AI Canvas"
+              >
+                <Monitor className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation('/playbooks')}
+                className="text-white hover:text-white/80 bg-transparent"
+                title="Open Playbooks"
+              >
+                <BookOpen className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation('/agent-history')}
+                className="text-white hover:text-white/80 bg-transparent"
+                title="Open Agent History"
+              >
+                <History className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+          
           {/* Audio Control Button - only show when audio is playing */}
           {!isCollapsed && isPlaying && (
             <Button
