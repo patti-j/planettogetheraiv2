@@ -6354,9 +6354,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId));
   }
 
-  private async getUserWithRolesByUsername(username: string): Promise<UserWithRoles | undefined> {
-    // Make username lookup case-insensitive
-    const [user] = await db.select().from(users).where(sql`LOWER(${users.username}) = LOWER(${username})`);
+  private async getUserWithRolesByUsername(usernameOrEmail: string): Promise<UserWithRoles | undefined> {
+    // Make username and email lookup case-insensitive - support both username and email login
+    const [user] = await db.select().from(users).where(
+      or(
+        sql`LOWER(${users.username}) = LOWER(${usernameOrEmail})`,
+        sql`LOWER(${users.email}) = LOWER(${usernameOrEmail})`
+      )
+    );
     if (!user) return undefined;
 
     return await this.getUserWithRoles(user.id);
