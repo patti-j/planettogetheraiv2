@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { X, Search, Pin, PinOff, FileText } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
@@ -20,13 +20,9 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const [searchFilter, setSearchFilter] = useState('');
   const { hasPermission } = usePermissions();
   // Safe navigation context access with fallback
-  let recentPages = [];
-  let togglePinPage = (path: string) => {};
   let addRecentPage = (path: string, label: string, icon?: string) => {};
   try {
     const navigation = useNavigation();
-    recentPages = navigation.recentPages || [];
-    togglePinPage = navigation.togglePinPage;
     addRecentPage = navigation.addRecentPage;
   } catch (error) {
     console.warn('NavigationContext not available in SlideOutMenu, using fallback:', error);
@@ -164,66 +160,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         {/* Menu Content */}
         <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
           <div className="py-3">
-            {/* Recent Pages Section */}
-            {recentPages.length > 0 && !searchFilter && (
-              <div className="px-3 pb-3 mb-3 border-b">
-                <h3 className="text-[11px] font-medium text-muted-foreground/70 mb-2 uppercase tracking-wider">
-                  Recent Pages
-                </h3>
-                <div className="space-y-1">
-                  {recentPages.map((page) => {
-                    // Find the icon for this page from navigation menu
-                    const getIconForPage = (path: string) => {
-                      for (const group of navigationGroups) {
-                        const feature = group.features.find((f: any) => f.href === path);
-                        if (feature) {
-                          // Convert bg-color to text-color
-                          const bgToText = (bgColor: string) => {
-                            if (!bgColor) return 'text-blue-500';
-                            if (bgColor.includes('gradient')) return 'text-purple-500';
-                            return bgColor.replace('bg-', 'text-');
-                          };
-                          return { icon: feature.icon, color: bgToText(feature.color) };
-                        }
-                      }
-                      return { icon: FileText, color: 'text-gray-500' };
-                    };
-                    
-                    const pageIcon = getIconForPage(page.path);
-                    const IconComponent = pageIcon.icon;
-                    
-                    return (
-                      <Button
-                        key={page.path}
-                        variant={location === page.path ? 'secondary' : 'ghost'}
-                        className="w-full justify-start group h-7 px-2 text-sm font-normal"
-                        onClick={() => {
-                          setLocation(page.path);
-                          onClose();
-                        }}
-                      >
-                        <IconComponent className={cn(
-                          "h-3.5 w-3.5 flex-shrink-0 mr-2.5",
-                          pageIcon.color || "text-blue-500"
-                        )} />
-                        <span className="flex-1 text-left truncate opacity-90">{page.label}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePinPage(page.path);
-                          }}
-                        >
-                          {page.isPinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
-                        </Button>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+
 
             {/* Navigation Groups */}
             {filteredGroups.map((group, index) => {
