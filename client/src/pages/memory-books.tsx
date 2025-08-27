@@ -167,7 +167,7 @@ export default function MemoryBooksPage() {
                   </Select>
                 </div>
                 <Button type="submit" disabled={createBookMutation.isPending}>
-                  {createBookMutation.isPending ? "Creating..." : "Create Memory Book"}
+                  {createBookMutation.isPending ? "Creating..." : "Create Playbook"}
                 </Button>
               </div>
             </form>
@@ -176,19 +176,19 @@ export default function MemoryBooksPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Memory Books List */}
+        {/* Playbooks List */}
         <div className="lg:col-span-1">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Memory Books</CardTitle>
-              <CardDescription>Select a memory book to view its entries</CardDescription>
+              <CardTitle className="text-lg">Playbooks</CardTitle>
+              <CardDescription>Select a playbook to view its entries</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {booksLoading ? (
-                  <div className="text-sm text-gray-500">Loading memory books...</div>
+                  <div className="text-sm text-gray-500">Loading playbooks...</div>
                 ) : memoryBooks.length === 0 ? (
-                  <div className="text-sm text-gray-500">No memory books found</div>
+                  <div className="text-sm text-gray-500">No playbooks found</div>
                 ) : (
                   memoryBooks.map((book: MemoryBook) => (
                     <div
@@ -215,7 +215,7 @@ export default function MemoryBooksPage() {
           </Card>
         </div>
 
-        {/* Memory Book Entries */}
+        {/* Playbook Entries */}
         <div className="lg:col-span-2">
           {selectedBook ? (
             <Card>
@@ -234,7 +234,7 @@ export default function MemoryBooksPage() {
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle>Create Memory Entry</DialogTitle>
+                        <DialogTitle>Create Playbook Entry</DialogTitle>
                       </DialogHeader>
                       <form action={handleCreateEntry}>
                         <div className="space-y-4">

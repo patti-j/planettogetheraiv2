@@ -584,13 +584,13 @@ export default function PlaybookPage() {
                   onClick={() => setSidebarOpen(true)}
                 >
                   <Menu className="h-4 w-4 mr-2" />
-                  Browse Memory Books
+                  Browse Playbooks
                 </Button>
               )}
               <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Memory Book</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Playbook</h3>
               <p className="text-gray-600">
-                Choose a memory book from the sidebar to view and edit its content
+                Choose a playbook from the sidebar to view and edit its content
               </p>
             </div>
           </div>
