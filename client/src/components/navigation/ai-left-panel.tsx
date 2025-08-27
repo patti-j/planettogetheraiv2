@@ -1436,6 +1436,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     setActiveTab('chat');
                     setShowFloatingNotification(false);
                     setTimeout(() => setFloatingNotification(null), 300);
+                    // Auto-scroll to bottom after a brief delay to ensure panel is expanded
+                    setTimeout(() => {
+                      scrollToBottom();
+                    }, 100);
                   }}
                   className="h-7 text-xs"
                 >
