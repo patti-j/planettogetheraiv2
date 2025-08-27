@@ -24,7 +24,7 @@ import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { navigationGroups } from "@/config/navigation-menu";
-import companyLogo from '@/assets/company-logo.png';
+import companyLogo from '@/assets/planettogether-logo.svg';
 
 // Use shared navigation groups
 const featureGroups = navigationGroups;

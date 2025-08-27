@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import companyLogo from '@/assets/company-logo.png';
+import companyLogo from '@/assets/planettogether-logo.svg';
 
 
 // Icon mapping for quick access items
