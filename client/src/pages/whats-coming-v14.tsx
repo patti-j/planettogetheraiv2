@@ -32,7 +32,7 @@ import {
 
 export default function WhatsComing() {
   const [, setLocation] = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState('planning');
+  const [selectedCategory, setSelectedCategory] = useState('ai');
 
   const features = {
     planning: [
@@ -240,15 +240,15 @@ export default function WhatsComing() {
   };
 
   const categoryInfo = {
-    planning: {
-      title: "Planning Functions",
-      description: "Advanced planning capabilities for production, maintenance, and workforce optimization",
-      icon: <Workflow className="h-5 w-5" />
-    },
     ai: {
       title: "AI & Intelligence",
       description: "Revolutionary AI capabilities transforming manufacturing operations",
       icon: <Sparkles className="h-5 w-5" />
+    },
+    planning: {
+      title: "Planning Functions",
+      description: "Advanced planning capabilities for production, maintenance, and workforce optimization",
+      icon: <Workflow className="h-5 w-5" />
     },
     analytics: {
       title: "Analytics & Insights",
