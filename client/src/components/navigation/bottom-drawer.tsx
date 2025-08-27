@@ -139,10 +139,16 @@ export function BottomDrawer() {
   const notifications = mockActivities.filter(a => a.type === 'notification');
 
   return (
-    <div className={cn(
-      "fixed bottom-0 left-0 right-0 bg-background border-t transition-all duration-300 z-40",
-      isOpen ? "h-80" : "h-10"
-    )}>
+    <div 
+      className={cn(
+        "fixed bottom-0 bg-background border-t transition-all duration-300 z-40",
+        isOpen ? "h-80" : "h-10"
+      )}
+      style={{
+        left: '320px', // Start at the right edge of AI panel (default width)
+        right: '256px', // End at the left edge of navigation panel (w-64 = 256px)
+      }}
+    >
       {/* Handle bar */}
       <div 
         className="h-10 flex items-center justify-between px-4 cursor-pointer hover:bg-muted/50"
